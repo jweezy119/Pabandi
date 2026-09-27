@@ -1,213 +1,78 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Surface, Button, Badge, tokens } from '../design-system';
-import { walletService } from '../services/api';
+import React from 'react';
+import { PageTransition } from '../components/PageTransition';
+import { ErrorBoundary } from '../components/ErrorBoundary';
+import { Button } from '../components/primitives/Button';
+import toast from 'react-hot-toast';
 
-export const WalletPage: React.FC = () => {
-  const navigate = useNavigate();
-  const [wallet, setWallet] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [showCreate, setShowCreate] = useState(false);
-
-  useEffect(() => {
-    fetchWallet();
-  }, []);
-
-  const fetchWallet = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await walletService.getWallet();
-      if (res.data?.success) {
-        setWallet(res.data.wallet);
-      } else {
-        setShowCreate(true);
-      }
-    } catch (err) {
-      setError('Failed to fetch wallet');
-    } finally {
-      setLoading(false);
-    }
+export default function WalletPage() {
+  const handleAction = () => {
+    toast.success('Action initiated');
   };
-
-  const handleCreateWallet = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await walletService.createWallet();
-      if (res.data?.success) {
-        setWallet(res.data.wallet);
-        setShowCreate(false);
-      } else {
-        setError(res.data?.message || 'Failed to create wallet');
-      }
-    } catch (err) {
-      setError('Network error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleClaimAirdrop = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await walletService.claimAirdrop();
-      if (res.data?.success) {
-        alert(res.data.message);
-        fetchWallet();
-      } else {
-        setError(res.data?.message || 'Failed to claim airdrop');
-      }
-    } catch (err) {
-      setError('Network error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: tokens.color.background }}>
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-[var(--clay)] border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="gov--soft-stone]">Loading wallet...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (showCreate || !wallet) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: tokens.color.background }}>
-        <div className="w-full max-w-md">
-          <Surface className="p-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-[var(--clay)]/20 flex items-center justify-center mx-auto mb-4">
-              <span className="material-symbols-outlined text-[32px] text-[var(--clay)]">account_balance_wallet</span>
-            </div>
-            <h1 className="text-2xl font-black text-[var(--warm-ink)] mb-2">Create Your Wallet</h1>
-            <p className="text-sm gov--soft-stone] mb-6">
-              Get a Solana wallet to interact with the Pabandi ecosystem — earn $PAB rewards, make bookings, and more.
-            </p>
-            {error && (
-              <div className="mb-4 p-3 rounded-lg bg-[var(--terracotta)]/10 border border-red-500/20 text-sm text-[var(--terracotta)]">
-                {error}
-              </div>
-            )}
-            <Button onClick={handleCreateWallet} disabled={loading} className="w-full">
-              {loading ? 'Creating...' : 'Create Wallet'}
-            </Button>
-            <button
-              onClick={() => navigate('/')}
-              className="mt-4 text-sm gov--soft-stone] hover:text-[var(--warm-ink)]"
-            >
-              Skip for now
-            </button>
-          </Surface>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen" style={{ background: tokens.color.background }}>
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-black text-[var(--warm-ink)]">My Wallet</h1>
-            <p className="text-sm gov--soft-stone]">Manage your $PAB and Solana assets</p>
-          </div>
-          <Button variant="ghost" onClick={() => navigate('/profile')}>
-            Back to Profile
-          </Button>
-        </div>
+    <ErrorBoundary>
+      <PageTransition>
+        <div className="max-w-4xl mx-auto p-6 lg:p-10 space-y-8">
+          
+          <header>
+            <h1 className="text-3xl font-bold text-[var(--warm-ink)] font-headline tracking-tight">
+              Pabandi Wallet
+            </h1>
+            <p className="text-[var(--soft-stone)] mt-1">
+              Manage your funds, escrow deposits, and crypto balances.
+            </p>
+          </header>
 
-        <Surface className="p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-sm gov--soft-stone]">Total Balance</p>
-              <p className="text-3xl font-black text-[var(--warm-ink)]">{wallet.balance || 0} <span className="text-lg text-[var(--clay)]">$PAB</span></p>
-            </div>
-            <div className="w-12 h-12 rounded-full bg-[var(--clay)]/20 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[24px] text-[var(--clay)]">account_balance_wallet</span>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(wallet.address)}>
-              Copy Address
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => {}}>
-              Receive
-            </Button>
-          </div>
-          <p className="mt-3 text-xs gov--warm-ink]/40 font-mono truncate">{wallet.address}</p>
-        </Surface>
-
-        {!wallet.airdropClaimed && (
-          <Surface className="p-6 mb-6 border border-green-500/20 bg-green-500/5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-green-300">🎉 Welcome Airdrop Available</p>
-                <p className="text-xs gov--soft-stone]">Claim your free $PAB to get started</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-gradient-to-br from-[var(--warm-ink)] to-[#1a1816] p-8 rounded-3xl text-white shadow-lg relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+              
+              <div className="flex items-center gap-2 opacity-80 mb-2">
+                <span className="material-symbols-outlined text-sm">account_balance_wallet</span>
+                <span className="text-sm font-semibold uppercase tracking-wider">USDC Balance</span>
               </div>
-              <Button onClick={handleClaimAirdrop} disabled={loading}>
-                Claim {wallet.airdropAmount || 100} $PAB
+              <div className="text-5xl font-bold tracking-tight mb-8">$0.00</div>
+              
+              <div className="flex gap-3">
+                <Button variant="primary" onClick={handleAction} className="bg-white text-[var(--warm-ink)] hover:bg-[rgba(255,255,255,0.9)] border-none">
+                  Deposit
+                </Button>
+                <Button variant="secondary" onClick={handleAction} className="bg-[rgba(255,255,255,0.1)] text-white hover:bg-[rgba(255,255,255,0.2)] border-none">
+                  Withdraw
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-white p-8 rounded-3xl border border-[rgba(191,179,163,0.2)] shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 text-[var(--soft-stone)] mb-2">
+                  <span className="material-symbols-outlined text-sm">stars</span>
+                  <span className="text-sm font-semibold uppercase tracking-wider">Trust Tokens (PAB)</span>
+                </div>
+                <div className="text-4xl font-bold text-[var(--clay)] mb-2">0.00 PAB</div>
+                <p className="text-sm text-[var(--soft-stone)]">
+                  Earn PAB by completing jobs reliably and keeping commitments.
+                </p>
+              </div>
+              <Button variant="outline" className="mt-6 self-start" onClick={handleAction}>
+                View Rewards
               </Button>
             </div>
-          </Surface>
-        )}
+          </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Surface className="p-4 text-center">
-            <p className="text-xl font-bold text-[var(--warm-ink)]">{wallet.totalStaked || 0}</p>
-            <p className="text-xs gov--soft-stone]">Staked</p>
-          </Surface>
-          <Surface className="p-4 text-center">
-            <p className="text-xl font-bold text-[var(--warm-ink)]">{wallet.lockedPab || 0}</p>
-            <p className="text-xs gov--soft-stone]">Locked</p>
-          </Surface>
-          <Surface className="p-4 text-center">
-            <p className="text-xl font-bold text-[var(--warm-ink)]">{wallet.usdcBalance || 0}</p>
-            <p className="text-xs gov--soft-stone]">USDC</p>
-          </Surface>
-          <Surface className="p-4 text-center">
-            <Badge tone={wallet.airdropClaimed ? 'success' : 'warning'}>
-              {wallet.airdropClaimed ? 'Airdrop Claimed' : 'Airdrop Pending'}
-            </Badge>
-          </Surface>
+          <section>
+            <h2 className="text-sm font-bold text-[var(--soft-stone)] uppercase tracking-wider mb-4">Transaction History</h2>
+            <div className="bg-white rounded-3xl shadow-sm border border-[rgba(191,179,163,0.2)] p-10 text-center">
+              <span className="material-symbols-outlined text-[48px] text-[rgba(191,179,163,0.3)] mb-4">receipt_long</span>
+              <h3 className="text-lg font-bold text-[var(--warm-ink)]">No transactions yet</h3>
+              <p className="text-[var(--soft-stone)] max-w-sm mx-auto mt-2 text-sm">
+                Your deposit and withdrawal history will appear here.
+              </p>
+            </div>
+          </section>
+
         </div>
-
-        <Surface className="p-6">
-          <h3 className="text-lg font-semibold text-[var(--warm-ink)] mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <button className="p-4 rounded-xl border border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] transition-colors text-center">
-              <span className="material-symbols-outlined text-[24px] text-[var(--clay)] mb-2">send</span>
-              <p className="text-xs font-semibold text-[var(--warm-ink)]">Send</p>
-            </button>
-            <button className="p-4 rounded-xl border border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] transition-colors text-center">
-              <span className="material-symbols-outlined text-[24px] text-green-400 mb-2">call_received</span>
-              <p className="text-xs font-semibold text-[var(--warm-ink)]">Receive</p>
-            </button>
-            <button className="p-4 rounded-xl border border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] transition-colors text-center">
-              <span className="material-symbols-outlined text-[24px] text-yellow-400 mb-2">swap_horiz</span>
-              <p className="text-xs font-semibold text-[var(--warm-ink)]">Swap</p>
-            </button>
-            <button className="p-4 rounded-xl border border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] transition-colors text-center">
-              <span className="material-symbols-outlined text-[24px] text-[var(--sky-wash)] mb-2">history</span>
-              <p className="text-xs font-semibold text-[var(--warm-ink)]">History</p>
-            </button>
-          </div>
-        </Surface>
-
-        {error && (
-          <div className="mt-6 p-4 rounded-xl bg-[var(--terracotta)]/10 border border-red-500/20 text-sm text-[var(--terracotta)]">
-            {error}
-          </div>
-        )}
-      </div>
-    </div>
+      </PageTransition>
+    </ErrorBoundary>
   );
-};
-
-export default WalletPage;
+}

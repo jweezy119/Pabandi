@@ -1,5 +1,9 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import SitaraApp from './sitara/SitaraApp';
+import { Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
+import { AppShell } from './components/AppShell';
+import DashboardPage from './pages/DashboardPage';
+import BusinessPage from './pages/BusinessPage';
+// import SitaraApp from './sitara/SitaraApp';
 import { useAuthStore } from './store/authStore';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
@@ -27,7 +31,7 @@ import ProjectDetailPage from './pages/ProjectDetailPage';
 import TapPayPage from './pages/TapPayPage';
 import UniversalCheckoutPage from './pages/UniversalCheckoutPage';
 import { DemoCheckoutPage } from './pages/DemoCheckoutPage';
-import BusinessProfilePage from './pages/BusinessProfilePage';
+import LegacyBusinessProfilePage from './pages/BusinessProfilePage';
 import BusinessCrmPage from './pages/BusinessCrmPage';
 import BusinessJoinPage from './pages/BusinessJoinPage';
 import PostBusinessPage from './pages/PostBusinessPage';
@@ -36,7 +40,7 @@ import BusinessModelPage from './pages/BusinessModelPage';
 import TechnologyPage from './pages/TechnologyPage';
 import ContactPage from './pages/ContactPage';
 import BusinessSettingsPage from './pages/BusinessSettingsPage';
-import NotificationsPage from './pages/NotificationsPage';
+import LegacyNotificationsPage from './pages/NotificationsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilesPage from './pages/ProfilesPage';
@@ -92,7 +96,7 @@ import CalculatorPage from './pages/CalculatorPage';
 import SmartSearchPage from './pages/SmartSearchPage';
 import AiChatPage from './pages/AiChatPage';
 import AiPropertyAnalyzerPage from './pages/AiPropertyAnalyzerPage';
-import SettingsPage from './pages/SettingsPage';
+// import SettingsPage from './pages/SettingsPage';
 import MarketIntelligencePage from './pages/MarketIntelligencePage';
 import PortfolioAnalyzerPage from './pages/PortfolioAnalyzerPage';
 import AdvancedPropertyIntelligencePage from './pages/AdvancedPropertyIntelligencePage';
@@ -129,13 +133,13 @@ import BackgroundCheckReportPage from './pages/BackgroundCheckReportPage';
 import PromoPage from './pages/PromoPage';
 import PromotionsPage from './pages/PromotionsPage';
 import FiatPaymentPage from './pages/FiatPaymentPage';
-import VenueSearchPage from './pages/VenueSearchPage';
-import VenueDetailPage from './pages/VenueDetailPage';
-import BookingCheckoutPage from './pages/BookingCheckoutPage';
-import MyBookingsPage from './pages/MyBookingsPage';
-import RaastConfirmPage from './pages/RaastConfirmPage';
-import PromoterDashboardPage from './pages/PromoterDashboardPage';
-import GuestListPage from './pages/GuestListPage';
+// import VenueSearchPage from './pages/VenueSearchPage';
+// import VenueDetailPage from './pages/VenueDetailPage';
+// import BookingCheckoutPage from './pages/BookingCheckoutPage';
+// import MyBookingsPage from './pages/MyBookingsPage';
+// import RaastConfirmPage from './pages/RaastConfirmPage';
+// import PromoterDashboardPage from './pages/PromoterDashboardPage';
+// import GuestListPage from './pages/GuestListPage';
 import PpdWizardPage from './pages/PpdWizardPage';
 import PassportDirectoryPage from './pages/PassportDirectoryPage';
 import CashOutPage from './pages/CashOutPage';
@@ -146,7 +150,7 @@ import SearchPage from './pages/SearchPage';
 import AboutPage from './pages/AboutPage';
 import DarazScannerPage from './pages/DarazScannerPage';
 import FreelanceStorefrontPage from './pages/FreelanceStorefrontPage';
-import ShariaCompliancePage from './pages/ShariaCompliancePage';
+// import ShariaCompliancePage from './pages/ShariaCompliancePage';
 import { MudarabahPoolsPage } from './pages/MudarabahPoolsPage';
 import ServiceBusinessDashboard from './pages/crm/ServiceBusinessDashboard';
 import ProfitDashboardPage from './pages/ProfitDashboardPage';
@@ -220,8 +224,19 @@ import LedgerAccountsPage from './pages/ledger/LedgerAccountsPage';
 import LedgerReportsPage from './pages/ledger/LedgerReportsPage';
 import ProtocolDashboardPage from './pages/ProtocolDashboardPage';
 
-function App() {
+function AppShellLayout() {
+  const { isAuthenticated } = useAuthStore();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return (
+    <AppShell>
+      <Outlet />
+    </AppShell>
+  );
+}
+
+function AnimatedAppRoutes() {
   const { isAuthenticated, user, fetchWalletData } = useAuthStore();
+  const location = useLocation();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -238,14 +253,6 @@ function App() {
     } catch { /* malformed */ }
   }, []);
 
-  const DashboardPage = () => {
-    if (!isAuthenticated) return <Navigate to="/login" />;
-    if (user?.role === 'ADMIN') return <Navigate to="/admin" replace />;
-    if (user?.role === 'BUSINESS_OWNER') return <Navigate to="/property" replace />;
-    if (user?.role === 'FREELANCER') return <Navigate to="/freelance" replace />;
-    return <Navigate to="/property" replace />;
-  };
-
   const AuthRequiredProfilesPage = () => {
     if (!isAuthenticated) return <Navigate to="/login" replace />;
     return <ProfilesPage />;
@@ -257,9 +264,13 @@ function App() {
   };
 
   return (
-    <HelmetProvider>
-      <LanguageProvider>
-        <Routes>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route element={<AppShellLayout />}>
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="wallet" element={<WalletPage />} />
+          <Route path="business" element={<BusinessPage />} />
           {/* PropertyOS (formerly AbodeOS) - Property Management */}
           <Route path="property" element={<PropertyOSPage />} />
           <Route path="property/tenants" element={<PropertyTenantsPage />} />
@@ -284,7 +295,7 @@ function App() {
           <Route path="contact" element={<ContactOSPage />} />
           <Route path="contact/clients" element={<ContactClientsPage />} />
           <Route path="contact/clients/:id" element={<ContactClientDetailPage />} />
-<Route path="contact/jobs" element={<ContactJobsPage />} />
+<Route path="contact/jobs" element={<ContactJobsPage businessId={user?.businessId || 'default'} />} />
           <Route path="contact/jobs/:id" element={<ContactJobDetailPage />} />
           <Route path="contact/deals" element={<ContactDealsPage />} />
           <Route path="contact/deals/:id" element={<ContactDealDetailPage />} />
@@ -315,9 +326,10 @@ function App() {
           <Route path="ledger/expenses" element={<LedgerExpensesPage />} />
           <Route path="ledger/accounts" element={<LedgerAccountsPage />} />
           <Route path="ledger/reports" element={<LedgerReportsPage />} />
+        </Route>
 
-          {/* Redirects from old routes */}
-          <Route path="abode/*" element={<Navigate to="/property" replace />} />
+        {/* Redirects from old routes */}
+        <Route path="abode/*" element={<Navigate to="/property" replace />} />
           <Route path="haq/*" element={<Navigate to="/property" replace />} />
           <Route path="saf/*" element={<Navigate to="/freight" replace />} />
           <Route path="sitara/*" element={<Navigate to="/booking" replace />} />
@@ -447,7 +459,7 @@ function App() {
             <Route path="business/join" element={<BusinessJoinPage />} />
             <Route path="business/join-claim" element={<BusinessJoinPage />} />
             <Route path="business/register" element={isAuthenticated ? <BusinessActivationPage /> : <Navigate to="/login" />} />
-            <Route path="business/:id" element={<BusinessProfilePage />} />
+            <Route path="business/:id" element={<LegacyBusinessProfilePage />} />
             <Route path="business/:id/book" element={<BookingPage />} />
             <Route path="business/activate/:id" element={<BusinessActivationPage />} />
             <Route path="business/crm" element={isAuthenticated ? <BusinessCrmPage /> : <Navigate to="/login" />} />
@@ -497,7 +509,7 @@ function App() {
             <Route path="verify-email" element={<VerifyEmailPage />} />
             <Route path="passport/dietary" element={<DietaryPassportPage />} />
             <Route path="demo" element={<DemoWalkthroughPage />} />
-            <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="notifications" element={<LegacyNotificationsPage />} />
             <Route path="try" element={<Navigate to="/demo" replace />} />
             <Route path="oauth/authorize" element={<OAuthConsentPage />} />
             <Route path="outreach" element={isAuthenticated && user?.role === 'ADMIN' ? <OutreachCRMPage /> : <Navigate to="/login" />} />
@@ -510,7 +522,16 @@ function App() {
             <Route path="admin" element={isAuthenticated && user?.role === 'ADMIN' ? <AdminDashboardPage /> : <Navigate to="/admin/setup" />} />
             <Route path="admin/setup" element={<AdminSetupPage />} />
           </Route>
-        </Routes>
+      </Routes>
+    </AnimatePresence>
+  );
+}
+
+function App() {
+  return (
+    <HelmetProvider>
+      <LanguageProvider>
+        <AnimatedAppRoutes />
       </LanguageProvider>
     </HelmetProvider>
   );

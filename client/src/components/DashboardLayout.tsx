@@ -121,7 +121,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: 'var(--atmosphere)' }}>
+    <div className="h-full flex" style={{ background: 'var(--atmosphere)' }}>
       {/* Mobile overlay */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -140,7 +140,7 @@ export default function DashboardLayout({
 
       {/* ─── Sidebar — lifted off content with warm shadow ────────── */}
       <aside
-        className={`fixed lg:static z-50 w-64 h-screen flex flex-col transition-transform duration-300 ${
+        className={`absolute lg:static z-50 w-64 h-full flex flex-col transition-transform duration-300 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
         style={{
@@ -320,81 +320,7 @@ export default function DashboardLayout({
       {/* ─── Main content ─────────────────────────────────────────── */}
       <main className="flex-1 flex flex-col min-w-0">
         {/* Mobile header */}
-        <header
-          className="sticky top-0 z-30 lg:hidden px-4 py-3 flex items-center justify-between"
-          style={{
-            background: 'rgba(245, 239, 230, 0.92)',
-            backdropFilter: 'blur(16px)',
-            borderBottom: '1px solid rgba(191, 179, 163, 0.2)',
-          }}
-        >
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-xl transition-colors duration-150"
-            style={{ color: 'var(--soft-stone)' }}
-            aria-label="Open menu"
-          >
-            <span className="material-symbols-outlined">menu</span>
-          </button>
-          <div className="flex items-center gap-2">
-            <div className={`w-8 h-8 rounded-lg ${colors.icon} flex items-center justify-center text-white font-bold text-sm`}>
-              {osIcon}
-            </div>
-            <span className="font-bold" style={{ color: 'var(--warm-ink)', fontFamily: 'var(--font-headline)' }}>
-              {osName}
-            </span>
-          </div>
-          <button
-            className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-            style={{ background: 'rgba(255,255,255,0.6)', color: 'var(--warm-ink)', boxShadow: '0 1px 3px rgba(180,130,90,0.08)' }}
-            aria-label="User menu"
-          >
-            U
-          </button>
-        </header>
 
-        {/* Desktop header — breadcrumb bar */}
-        <header
-          className="hidden lg:flex sticky top-0 z-30 px-8 py-3.5 items-center justify-between"
-          style={{
-            background: 'rgba(245, 239, 230, 0.88)',
-            backdropFilter: 'blur(16px)',
-            borderBottom: '1px solid rgba(191, 179, 163, 0.15)',
-          }}
-        >
-          <div style={{ fontSize: '13px', color: 'var(--soft-stone)', fontFamily: 'var(--font-body)' }}>
-            <Link to="/" className="hover:text-[var(--clay)] transition-colors duration-150">Pabandi</Link>
-            <span className="mx-2 opacity-40">›</span>
-            <span style={{ color: 'var(--warm-ink)', fontWeight: 600 }}>{osName}</span>
-            {description && <span className="ml-2 opacity-60">— {description}</span>}
-          </div>
-          <div className="flex items-center gap-3">
-            <div
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl"
-              style={{ background: 'rgba(255,255,255,0.5)', boxShadow: '0 1px 3px rgba(180,130,90,0.06)' }}
-            >
-              <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--soft-stone)' }}>account_balance_wallet</span>
-              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--warm-ink)', fontFamily: 'var(--font-body)', fontVariantNumeric: 'tabular-nums' }}>
-                $0.00
-              </span>
-            </div>
-            <div
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl"
-              style={{ background: 'rgba(255,255,255,0.5)', boxShadow: '0 1px 3px rgba(180,130,90,0.06)' }}
-            >
-              <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--muted-ochre)' }}>stars</span>
-              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--warm-ink)' }}>Bronze Tier</span>
-            </div>
-            <button
-              className="p-2 rounded-xl relative transition-colors duration-150"
-              style={{ color: 'var(--soft-stone)' }}
-              aria-label="Notifications"
-            >
-              <span className="material-symbols-outlined text-[20px]">notifications</span>
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style={{ background: 'var(--terracotta)' }} />
-            </button>
-          </div>
-        </header>
 
         {/* Page content */}
         <motion.div

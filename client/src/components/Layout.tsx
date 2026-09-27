@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import PageTransition from './PageTransition';
+import { PageTransition } from './PageTransition';
 import GlobalAIConciergeWidget from './GlobalAIConciergeWidget';
 import { useAuthStore } from '../store/authStore';
 import { useEffect, useState, useRef } from 'react';

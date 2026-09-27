@@ -1,193 +1,92 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { Surface, Button, Badge, tokens } from '../design-system';
+import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
+import { PageTransition } from '../components/PageTransition';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 
-interface DashboardWidget {
-  id: string;
-  title: string;
-  value: string | number;
-  change?: string;
-  icon: string;
-  color: string;
-  link?: string;
-}
+const modules = [
+  { id: 'contact', title: 'ContactOS', desc: 'CRM & Pipeline', path: '/contact', icon: 'contacts', color: 'var(--clay)' },
+  { id: 'booking', title: 'BookingOS', desc: 'Schedules & Services', path: '/property', icon: 'book_online', color: 'var(--sage)' },
+  { id: 'freight', title: 'FreightOS', desc: 'Logistics & Dispatch', path: '/freight', icon: 'local_shipping', color: 'var(--muted-ochre)' },
+  { id: 'ledger', title: 'LedgerOS', desc: 'Finance & Invoices', path: '/ledger', icon: 'account_balance', color: 'var(--dusty-rose)' },
+];
 
-interface Activity {
-  id: string;
-  type: string;
-  message: string;
-  time: string;
-  icon: string;
-}
-
-export const DashboardPage: React.FC = () => {
+export default function DashboardPage() {
   const { user } = useAuthStore();
-  const [widgets, setWidgets] = useState<DashboardWidget[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Simulate loading dashboard data
-    setTimeout(() => {
-      setWidgets([
-        { id: '1', title: 'Properties', value: 12, change: '+2 this month', icon: '🏠', color: '#6366f1', link: '/property-manager' },
-        { id: '2', title: 'Active Listings', value: 5, change: '+1 this week', icon: '📋', color: '#10b981', link: '/marketplace' },
-        { id: '3', title: 'PAB Balance', value: '2,500', change: '+125 today', icon: '💰', color: '#f59e0b', link: '/token' },
-        { id: '4', title: 'Trust Score', value: '73.8', change: '+2.1 this month', icon: '🛡️', color: '#ec4899', link: '/passport' },
-        { id: '5', title: 'Open Escrows', value: 3, change: '$750 total', icon: '🔒', color: '#8b5cf6', link: '/escrow' },
-        { id: '6', title: 'Pending Apps', value: 8, change: '2 need review', icon: '📝', color: '#ef4444', link: '/applications' },
-      ]);
-
-      setActivities([
-        { id: '1', type: 'listing', message: 'New listing: "IKEA Sofa - Like New" viewed 12 times', time: '2 min ago', icon: '👁️' },
-        { id: '2', type: 'escrow', message: 'Escrow #esc-123 funded — $250 locked', time: '15 min ago', icon: '🔒' },
-        { id: '3', type: 'tenant', message: 'Tenant application received from Sarah M.', time: '1 hour ago', icon: '📋' },
-        { id: '4', type: 'pab', message: 'Earned +15 PAB for completing a sale', time: '2 hours ago', icon: '💰' },
-        { id: '5', type: 'screening', message: 'Background check completed for John D. — LOW risk', time: '3 hours ago', icon: '🔍' },
-        { id: '6', type: 'maintenance', message: 'Maintenance request "Kitchen leak" assigned to Carlos R.', time: '5 hours ago', icon: '🔧' },
-      ]);
-
-      setLoading(false);
-    }, 500);
-  }, []);
-
-  const quickActions = [
-    { icon: '🏠', label: 'Add Property', link: '/property-manager' },
-    { icon: '📋', label: 'Create Listing', link: '/marketplace' },
-    { icon: '🔍', label: 'Screen Tenant', link: '/background-check' },
-    { icon: '📝', label: 'Generate Lease', link: '/ai/lease-anomaly' },
-    { icon: '🤖', label: 'Ask AI', link: '/ai/analyze' },
-    { icon: '🔒', label: 'Open Escrow', link: '/escrow' },
-  ];
-
+  
   return (
-    <div className="min-h-screen" style={{ background: tokens.color.background }}>
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-black text-[var(--warm-ink)] font-headline">
-              Welcome back{user?.firstName ? `, ${user.firstName}` : ''}
-            </h1>
-            <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>
-              Here's what's happening across your Pabandi ecosystem
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge tone="success">● Live</Badge>
-            <Badge tone="info">v2.0</Badge>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-6">
-          {quickActions.map((action) => (
-            <Link key={action.label} to={action.link}>
-              <Surface className="p-3 text-center hover:bg-[var(--cream)] transition-all cursor-pointer">
-                <div className="text-xl mb-1">{action.icon}</div>
-                <div className="text-xs font-semibold text-[var(--warm-ink)]">{action.label}</div>
-              </Surface>
-            </Link>
-          ))}
-        </div>
-
-        {/* Stats Grid */}
-        {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-            {[...Array(6)].map((_, i) => (
-              <Surface key={i} className="p-4 animate-pulse">
-                <div className="h-4 bg-[var(--warm-sand)] rounded w-1/2 mb-2" />
-                <div className="h-6 bg-[var(--warm-sand)] rounded w-3/4" />
-              </Surface>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-            {widgets.map((widget) => (
-              <Link key={widget.id} to={widget.link || '#'}>
-                <Surface className="p-4 hover:bg-[var(--cream)] transition-all cursor-pointer">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg">{widget.icon}</span>
-                    <span className="text-xs" style={{ color: tokens.color.textDim }}>{widget.title}</span>
-                  </div>
-                  <div className="text-xl font-bold" style={{ color: widget.color }}>{widget.value}</div>
-                  {widget.change && (
-                    <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{widget.change}</div>
-                  )}
-                </Surface>
-              </Link>
-            ))}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Activity Feed */}
-          <Surface className="p-4 lg:col-span-2">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-[var(--warm-ink)]">Recent Activity</h3>
-              <Link to="/notifications" className="text-xs text-[var(--terracotta)] hover:text-[var(--terracotta)]">View all →</Link>
+    <ErrorBoundary>
+      <PageTransition>
+        <div className="max-w-6xl mx-auto p-6 lg:p-10 space-y-8">
+          
+          <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-[var(--warm-ink)] font-headline tracking-tight">
+                Welcome back, {user?.name?.split(' ')[0] || 'User'}
+              </h1>
+              <p className="text-[var(--soft-stone)] mt-1 font-medium">
+                Here is what is happening across your business today.
+              </p>
             </div>
-            <div className="space-y-3">
-              {activities.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-3 p-3 rounded-xl bg-[var(--cream)]">
-                  <div className="text-lg">{activity.icon}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm text-[var(--warm-ink)]">{activity.message}</div>
-                    <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{activity.time}</div>
-                  </div>
-                </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl shadow-sm border border-[rgba(191,179,163,0.2)]">
+                <span className="material-symbols-outlined text-[var(--sage)]">verified</span>
+                <span className="font-semibold text-[var(--warm-ink)] text-sm">Trust Score: 98</span>
+              </div>
+              <Link to="/wallet" className="flex items-center gap-2 px-4 py-2 bg-[rgba(201,123,90,0.1)] rounded-2xl border border-[rgba(201,123,90,0.2)] hover:bg-[rgba(201,123,90,0.15)] transition-colors">
+                <span className="material-symbols-outlined text-[var(--terracotta)]">account_balance_wallet</span>
+                <span className="font-semibold text-[var(--terracotta)] text-sm">$0.00</span>
+              </Link>
+            </div>
+          </header>
+
+          <section>
+            <h2 className="text-sm font-bold text-[var(--soft-stone)] uppercase tracking-wider mb-4">Enabled Modules</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {modules.map((mod, i) => (
+                <motion.div
+                  key={mod.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                >
+                  <Link
+                    to={mod.path}
+                    className="group block p-5 bg-white rounded-3xl shadow-sm border border-[rgba(191,179,163,0.2)] hover:shadow-md hover:border-[rgba(191,179,163,0.4)] transition-all"
+                  >
+                    <div 
+                      className="w-12 h-12 rounded-2xl flex items-center justify-center text-white mb-4 shadow-sm"
+                      style={{ backgroundColor: mod.color }}
+                    >
+                      <span className="material-symbols-outlined">{mod.icon}</span>
+                    </div>
+                    <h3 className="font-bold text-[var(--warm-ink)] text-lg group-hover:text-[var(--clay)] transition-colors">
+                      {mod.title}
+                    </h3>
+                    <p className="text-[var(--soft-stone)] text-sm mt-1">
+                      {mod.desc}
+                    </p>
+                  </Link>
+                </motion.div>
               ))}
             </div>
-          </Surface>
+          </section>
 
-          {/* Quick Stats */}
-          <div className="space-y-4">
-            <Surface className="p-4">
-              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-3">💰 PAB Economy</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span style={{ color: tokens.color.textDim }}>Balance</span>
-                  <span className="text-[var(--sage)] font-bold">2,500 $PAB</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span style={{ color: tokens.color.textDim }}>Staked</span>
-                  <span className="text-[var(--muted-ochre)] font-bold">500 $PAB</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span style={{ color: tokens.color.textDim }}>Tier</span>
-                  <Badge tone="success">Silver</Badge>
-                </div>
-              </div>
-              <Link to="/token"><Button size="sm" className="w-full mt-3">View Dashboard</Button></Link>
-            </Surface>
+          <section>
+            <h2 className="text-sm font-bold text-[var(--soft-stone)] uppercase tracking-wider mb-4">Recent Activity</h2>
+            <div className="bg-white rounded-3xl shadow-sm border border-[rgba(191,179,163,0.2)] p-10 text-center">
+              <span className="material-symbols-outlined text-[48px] text-[rgba(191,179,163,0.3)] mb-4">inbox</span>
+              <h3 className="text-lg font-bold text-[var(--warm-ink)]">No recent activity</h3>
+              <p className="text-[var(--soft-stone)] max-w-sm mx-auto mt-2 text-sm">
+                Activities from your enabled modules will appear here as you work.
+              </p>
+            </div>
+          </section>
 
-            <Surface className="p-4">
-              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-3">🛡️ Trust Passport</h3>
-              <div className="text-center mb-3">
-                <div className="text-3xl font-black text-[var(--warm-ink)]">73.8</div>
-                <div className="text-xs" style={{ color: tokens.color.textDim }}>Trust Score</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-center text-xs">
-                <div><div className="font-bold text-[var(--warm-ink)]">127</div><div style={{ color: tokens.color.textDim }}>Transactions</div></div>
-                <div><div className="font-bold text-[var(--sage)]">98.4%</div><div style={{ color: tokens.color.textDim }}>Success</div></div>
-              </div>
-              <Link to="/passport"><Button size="sm" className="w-full mt-3">View Passport</Button></Link>
-            </Surface>
-
-            <Surface className="p-4">
-              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-3">🤖 AI Tools</h3>
-              <div className="space-y-2">
-                <Link to="/ai/analyze" className="block p-2 rounded-lg bg-[var(--cream)] hover:bg-[var(--warm-sand)] text-sm text-[var(--warm-ink)]">Property Valuation</Link>
-                <Link to="/ai/lease-anomaly" className="block p-2 rounded-lg bg-[var(--cream)] hover:bg-[var(--warm-sand)] text-sm text-[var(--warm-ink)]">Lease Analyzer</Link>
-                <Link to="/ai/lease-anomaly" className="block p-2 rounded-lg bg-[var(--cream)] hover:bg-[var(--warm-sand)] text-sm text-[var(--warm-ink)]">Maintenance Assistant</Link>
-              </div>
-            </Surface>
-          </div>
         </div>
-      </div>
-    </div>
+      </PageTransition>
+    </ErrorBoundary>
   );
-};
-
-export default DashboardPage;
+}
