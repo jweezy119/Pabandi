@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
-import { Link } from 'react-router-dom';
-import { Card, Button, Input, Modal, EmptyState, ClaySkeletonCard } from '../../components/primitives';
+import { Button, Modal, EmptyState, ClaySkeletonCard } from '../../components/primitives';
+import ClientListTable from '../crm/components/ClientListTable';
+import ClientFormModal from '../crm/components/ClientFormModal';
 
 const navItems = [
   { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
   { path: '/contact/clients', label: 'Clients', icon: 'groups' },
   { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
+  { path: '/contact/jobs', label: 'Jobs', icon: 'work' },
   { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
   { path: '/contact/settings/modules', label: 'Settings', icon: 'settings' },
 ];
@@ -14,16 +16,32 @@ const navItems = [
 export default function ContactClientsPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<any>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
-  
-  const [form, setForm] = useState({ id: '', name: '', email: '', phone: '', company: '', notes: '' });
+  const [customFields, setCustomFields] = useState<any[]>([]);
 
   useEffect(() => {
     fetchClients();
+    fetchBusinessSettings();
   }, []);
+
+  async function fetchBusinessSettings() {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/settings`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const settings = data.data;
+        if (settings?.customFields?.client) {
+          setCustomFields(settings.customFields.client);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch settings:', err);
+    }
+  }
 
   async function fetchClients() {
     try {
@@ -41,41 +59,26 @@ export default function ContactClientsPage() {
     }
   }
 
-  async function handleAddClient(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSaveClient(form: any) {
+    const isEdit = !!form.id;
+    const url = isEdit 
+      ? `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients/${form.id}`
+      : `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`;
+    
     try {
-      await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
-        method: 'POST',
+      await fetch(url, {
+        method: isEdit ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
         body: JSON.stringify(form),
       });
-      setShowAddModal(false);
-      resetForm();
+      setShowFormModal(false);
+      setSelectedClient(null);
       fetchClients();
     } catch (err) {
-      console.error('Failed to add client:', err);
-    }
-  }
-
-  async function handleEditClient(e: React.FormEvent) {
-    e.preventDefault();
-    try {
-      await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients/${form.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(form),
-      });
-      setShowEditModal(false);
-      resetForm();
-      fetchClients();
-    } catch (err) {
-      console.error('Failed to update client:', err);
+      console.error('Failed to save client:', err);
     }
   }
 
@@ -92,21 +95,12 @@ export default function ContactClientsPage() {
     }
   }
 
-  function openEditModal(client: any) {
-    setForm(client);
-    setShowEditModal(true);
-  }
-
-  function resetForm() {
-    setForm({ id: '', name: '', email: '', phone: '', company: '', notes: '' });
-  }
-
   return (
     <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
       <div className="space-y-6">
-        <div className="flex items-center justify-between clay-heading">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 clay-heading">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Clients</h1>
-          <Button onClick={() => { resetForm(); setShowAddModal(true); }} icon="add">
+          <Button onClick={() => { setSelectedClient(null); setShowFormModal(true); }} icon="add">
             Add Client
           </Button>
         </div>
@@ -121,70 +115,28 @@ export default function ContactClientsPage() {
             title="No Clients Yet" 
             description="Start building your CRM by adding your first client. You can track their deals, lifetime value, and activities here." 
             actionText="Add Your First Client" 
-            onAction={() => { resetForm(); setShowAddModal(true); }} 
+            onAction={() => { setSelectedClient(null); setShowFormModal(true); }} 
           />
         ) : (
-          <Card hover={false} className="clay-rise p-0 overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-[var(--warm-sand)]">
-                  <th className="text-left p-4 text-sm font-semibold text-[var(--warm-ink)] font-label">Name</th>
-                  <th className="text-left p-4 text-sm font-semibold text-[var(--warm-ink)] font-label">Company</th>
-                  <th className="text-left p-4 text-sm font-semibold text-[var(--warm-ink)] font-label">Contact</th>
-                  <th className="text-right p-4 text-sm font-semibold text-[var(--warm-ink)] font-label">Lifetime Value</th>
-                  <th className="text-right p-4 text-sm font-semibold text-[var(--warm-ink)] font-label">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {clients.map((client) => (
-                  <tr key={client.id} className="clay-table-row border-t border-[rgba(191,179,163,0.2)]">
-                    <td className="p-4 font-medium text-[var(--warm-ink)]">
-                      <Link to={`/contact/clients/${client.id}`} className="hover:text-[var(--clay)] transition">
-                        {client.name}
-                      </Link>
-                    </td>
-                    <td className="p-4 text-[var(--soft-stone)] text-sm">{client.company || '—'}</td>
-                    <td className="p-4 text-[var(--soft-stone)] text-sm">
-                      <div>{client.email || '—'}</div>
-                      <div className="text-xs">{client.phone || '—'}</div>
-                    </td>
-                    <td className="p-4 text-right font-medium text-[var(--terracotta)]">
-                      ${(client.totalSpent || 0).toLocaleString()}
-                    </td>
-                    <td className="p-4 text-right">
-                      <button onClick={() => openEditModal(client)} className="p-2 text-[var(--soft-stone)] hover:text-[var(--clay)] transition clay-card--interactive rounded-full" aria-label="Edit">
-                        <span className="material-symbols-outlined text-[20px]">edit</span>
-                      </button>
-                      <button onClick={() => setShowDeleteConfirm(client.id)} className="p-2 text-[var(--soft-stone)] hover:text-[var(--terracotta)] transition clay-card--interactive rounded-full" aria-label="Delete">
-                        <span className="material-symbols-outlined text-[20px]">delete</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Card>
+          <ClientListTable 
+            clients={clients} 
+            onEdit={(client: any) => { setSelectedClient(client); setShowFormModal(true); }}
+            onDelete={(id: string) => setShowDeleteConfirm(id)}
+          />
         )}
 
         {/* Add/Edit Modal */}
         <Modal
-          isOpen={showAddModal || showEditModal}
-          onClose={() => { setShowAddModal(false); setShowEditModal(false); }}
-          title={showEditModal ? 'Edit Client' : 'New Client'}
+          isOpen={showFormModal}
+          onClose={() => setShowFormModal(false)}
+          title={selectedClient ? 'Edit Client' : 'New Client'}
         >
-          <form onSubmit={showEditModal ? handleEditClient : handleAddClient} className="space-y-4">
-            <Input label="Full Name" required value={form.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, name: e.target.value })} />
-            <div className="grid grid-cols-2 gap-4">
-              <Input label="Email" type="email" value={form.email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, email: e.target.value })} />
-              <Input label="Phone" type="text" value={form.phone} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, phone: e.target.value })} />
-            </div>
-            <Input label="Company (Optional)" type="text" value={form.company} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, company: e.target.value })} />
-            <Input label="Notes" textarea rows={3} value={form.notes} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setForm({ ...form, notes: e.target.value })} />
-            <div className="flex gap-3 pt-4 justify-end">
-              <Button type="button" variant="ghost" onClick={() => { setShowAddModal(false); setShowEditModal(false); }}>Cancel</Button>
-              <Button type="submit">{showEditModal ? 'Save Changes' : 'Create Client'}</Button>
-            </div>
-          </form>
+          <ClientFormModal 
+            client={selectedClient} 
+            onClose={() => setShowFormModal(false)} 
+            onSave={handleSaveClient} 
+            customFields={customFields}
+          />
         </Modal>
 
         {/* Delete Confirmation Modal */}
