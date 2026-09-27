@@ -189,9 +189,10 @@ import ContactClientsPage from './pages/contact/ContactClientsPage';
 import ContactClientDetailPage from './pages/contact/ContactClientDetailPage';
 import ContactDealsPage from './pages/contact/ContactDealsPage';
 import ContactDealDetailPage from './pages/contact/ContactDealDetailPage';
-import ContactActivitiesPage from './pages/contact/ContactActivitiesPage';
-import ContactJobsPage from "./pages/crm/ContactJobsPage";
-import ContactJobDetailPage from "./pages/crm/ContactJobDetailPage";
+import { ContactActivitiesPage } from './pages/crm/ContactActivitiesPage';
+import { ContactTasksPage } from './pages/crm/ContactTasksPage';
+import { ContactJobsPage } from "./pages/crm/ContactJobsPage";
+import { ContactJobDetailPage } from "./pages/crm/ContactJobDetailPage";
 import ModulesSettingsPage from './pages/contact/settings/ModulesSettingsPage';
 import SetupWizardPage from './pages/contact/SetupWizardPage';
 // LedgerOS
@@ -274,6 +275,7 @@ function App() {
           <Route path="contact/deals" element={<ContactDealsPage />} />
           <Route path="contact/deals/:id" element={<ContactDealDetailPage />} />
           <Route path="contact/activities" element={<ContactActivitiesPage />} />
+          <Route path="contact/tasks" element={<ContactTasksPage />} />
           <Route path="contact/invoices" element={<InvoicesPage />} />
           <Route path="contact/invoices/:id" element={<ContactInvoiceDetailPage />} />
           <Route path="contact/settings/modules" element={<ModulesSettingsPage />} />

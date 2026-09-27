@@ -3,8 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card } from '../../components/primitives/Card';
 import { Button } from '../../components/primitives/Button';
 import { JobCheckinPanel } from './components/JobCheckinPanel';
-import { usePabandiApi } from '../../hooks/usePabandiApi';
-import { Input } from '../../components/primitives/Input';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` });
+const api = {
+  get: async (url: string) => { const r = await fetch(API_BASE + url, { headers: getHeaders() }); return { data: await r.json() }; },
+  post: async (url: string, data: any) => { const r = await fetch(API_BASE + url, { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) }); return { data: await r.json() }; },
+  patch: async (url: string, data: any) => { const r = await fetch(API_BASE + url, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(data) }); return { data: await r.json() }; }
+};import { Input } from '../../components/primitives/Input';
 
 type JobData = {
   id: string;
@@ -19,7 +24,7 @@ type JobData = {
 export function ContactJobDetailPage() {
   const { jobId } = useParams<{ jobId: string }>();
   const navigate = useNavigate();
-  const api = usePabandiApi();
+
   const [job, setJob] = useState<JobData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<JobData>>({});

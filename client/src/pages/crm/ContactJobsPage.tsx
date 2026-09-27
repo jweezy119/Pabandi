@@ -4,8 +4,13 @@ import { Button } from '../../components/primitives/Button';
 import { JobList } from './components/JobList';
 import { JobCalendar } from './components/JobCalendar';
 import { JobFormModal, JobFormData } from './components/JobFormModal';
-import { usePabandiApi } from '../../hooks/usePabandiApi';
-
+const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` });
+const api = {
+  get: async (url: string) => { const r = await fetch(API_BASE + url, { headers: getHeaders() }); return { data: await r.json() }; },
+  post: async (url: string, data: any) => { const r = await fetch(API_BASE + url, { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) }); return { data: await r.json() }; },
+  patch: async (url: string, data: any) => { const r = await fetch(API_BASE + url, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(data) }); return { data: await r.json() }; }
+};
 type JobData = {
   id: string;
   serviceType: string;
@@ -26,7 +31,7 @@ export function ContactJobsPage({ businessId }: { businessId: string }) {
   const [jobs, setJobs] = useState<JobData[]>([]);
   const [clients, setClients] = useState<ClientData[]>([]);
   const navigate = useNavigate();
-  const api = usePabandiApi();
+
 
   useEffect(() => {
     if (businessId) {
