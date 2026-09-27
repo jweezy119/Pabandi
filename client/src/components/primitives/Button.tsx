@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -6,6 +5,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'sm' | 'md' | 'lg';
   href?: string;
   icon?: string;
+  loading?: boolean;
 }
 
 export function Button({
@@ -13,6 +13,7 @@ export function Button({
   size = 'md',
   href,
   icon,
+  loading = false,
   className = '',
   children,
   disabled,
@@ -27,9 +28,9 @@ export function Button({
 
   const variantStyles: Record<string, React.CSSProperties> = {
     primary: {
-      background: 'var(--clay)',
+      background: loading ? 'var(--soft-stone)' : 'var(--clay)',
       color: 'white',
-      boxShadow: 'var(--shadow-btn)',
+      boxShadow: loading ? 'none' : 'var(--shadow-btn)',
       border: 'none',
     },
     secondary: {
@@ -57,7 +58,8 @@ export function Button({
     'transition-all duration-150',
     'select-none',
     sizeClasses[size],
-    disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+    disabled || loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+    loading ? 'relative' : '',
     className,
   ].join(' ');
 
@@ -67,11 +69,15 @@ export function Button({
     ...style,
   };
 
-  const content = (
-    <>
+  const content = loading ? (
+    <span className="material-symbols-outlined text-[16px] animate-spin" style={{ animationDuration: '1s' }}>
+      sync
+    </span>
+  ) : (
+    (<>
       {icon && <span className="material-symbols-outlined text-[18px] align-[-3px]">{icon}</span>}
       {children}
-    </>
+    </>)
   );
 
   if (href) {

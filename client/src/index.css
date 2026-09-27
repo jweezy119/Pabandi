@@ -407,6 +407,61 @@ a[role="button"]:not(:disabled):active {
   scroll-behavior: smooth;
 }
 
+/* ── Phase 1: New primitive CSS ─────────────────────────────────── */
+.clay-skeleton-pulse {
+  animation: clay-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes clay-skeleton-pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.clay-select-trigger {
+  transition: all 200ms ease;
+}
+
+.clay-select-open {
+  border-color: var(--clay) !important;
+}
+
+.clay-dropdown-menu {
+  animation: clay-rise 200ms var(--ease-smooth) both;
+}
+
+.clay-dropdown-menu-clay {
+  animation: clay-rise 200ms var(--ease-smooth) both;
+}
+
+.clay-table-header {
+  transition: color 150ms ease;
+}
+
+.clay-table-header:hover {
+  color: var(--warm-ink);
+}
+
+.clay-checkbox {
+  accent-color: var(--clay);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.clay-toast {
+  animation: clay-rise 300ms var(--ease-entrance) both;
+}
+
+.clay-drawer {
+  will-change: transform;
+}
+
+@media (hover: hover) {
+  .clay-toast:hover {
+    box-shadow: 0 8px 24px rgba(42,37,32,0.14);
+  }
+}
+
 /* ── Respect users who prefer no motion ────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
