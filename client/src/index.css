@@ -3,7 +3,382 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Safe area padding for iOS notched devices */
+/* ═══════════════════════════════════════════════════════════════
+   Clay Motion System — Tactile, soft, alive
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Card depth system ─────────────────────────────────────────── */
+.clay-card {
+  position: relative;
+  border-radius: var(--radius-card);
+  background: white;
+  box-shadow: var(--shadow-soft);
+  border-top: 1px solid rgba(255, 255, 255, 0.6);
+  transition:
+    transform 250ms var(--ease-smooth),
+    box-shadow 250ms var(--ease-smooth);
+}
+
+.clay-card--interactive {
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .clay-card--interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lift);
+  }
+}
+
+.clay-card--interactive:active {
+  transform: translateY(0) scale(0.995);
+  box-shadow: var(--shadow-pressed);
+  transition: all 80ms ease-out;
+}
+
+/* ── Clay card inner glow (upper-left light) ──────────────────── */
+.clay-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.8) 0%, transparent 40%);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  pointer-events: none;
+}
+
+/* ── Flat card variant (no shadow, for embedding) ─────────────── */
+.clay-card--flat {
+  box-shadow: none;
+  border: 1px solid rgba(191, 179, 163, 0.2);
+  background: var(--cream);
+}
+
+/* ── Pressed card (for selected/checked states) ───────────────── */
+.clay-card--pressed {
+  box-shadow: var(--shadow-pressed);
+  border-color: rgba(201, 123, 90, 0.3);
+  background: var(--cream);
+}
+
+/* ── Button physical feel ──────────────────────────────────────── */
+button, a[role="button"] {
+  transition:
+    transform 150ms var(--ease-clay),
+    box-shadow 150ms var(--ease-clay),
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+@media (hover: hover) {
+  button:not(:disabled):hover,
+  a[role="button"]:not(:disabled):hover {
+    transform: translateY(-1px);
+  }
+}
+
+button:not(:disabled):active,
+a[role="button"]:not(:disabled):active {
+  transform: scale(0.97) translateY(1px);
+  transition: all 80ms ease-out;
+}
+
+/* ── Entrance animations — staggered fade-up ──────────────────── */
+@keyframes clay-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes clay-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes clay-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.clay-rise {
+  animation: clay-rise 400ms var(--ease-entrance) both;
+}
+.clay-fade {
+  animation: clay-fade 400ms ease both;
+}
+.clay-scale-in {
+  animation: clay-scale-in 350ms var(--ease-entrance) both;
+}
+
+/* Stagger delays */
+.clay-delay-1 { animation-delay: 80ms; }
+.clay-delay-2 { animation-delay: 160ms; }
+.clay-delay-3 { animation-delay: 240ms; }
+.clay-delay-4 { animation-delay: 320ms; }
+.clay-delay-5 { animation-delay: 400ms; }
+.clay-delay-6 { animation-delay: 480ms; }
+
+/* ── Typography foundations ─────────────────────────────────────── */
+.font-headline {
+  font-family: var(--font-headline);
+}
+
+.font-label {
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.stat-number {
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* ── Clay heading style (Fraunces with soft contrast) ─────────── */
+.clay-heading {
+  font-family: var(--font-headline);
+  font-weight: 700;
+  color: var(--warm-ink);
+  letter-spacing: -0.01em;
+}
+
+/* ── Clay label tag (Space Grotesk uppercase) ─────────────────── */
+.clay-label {
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--soft-stone);
+}
+
+/* ── Table row clay feel ────────────────────────────────────────── */
+.clay-table-row {
+  transition: background-color 150ms ease;
+}
+
+@media (hover: hover) {
+  .clay-table-row:hover {
+    background-color: rgba(232, 217, 197, 0.3);
+  }
+}
+
+/* ── Kanban column clay feel ────────────────────────────────────── */
+.clay-kanban-column {
+  background: rgba(232, 217, 197, 0.15);
+  border: 1px solid rgba(191, 179, 163, 0.25);
+  transition: box-shadow 250ms var(--ease-smooth), border-color 250ms ease;
+}
+
+@media (hover: hover) {
+  .clay-kanban-column:hover {
+    box-shadow: 0 4px 16px rgba(180, 130, 90, 0.06);
+    border-color: rgba(191, 179, 163, 0.4);
+  }
+}
+
+/* ── Tab bar clay feel ──────────────────────────────────────────── */
+.clay-tab {
+  transition: all 200ms var(--ease-smooth);
+}
+
+.clay-tab--active {
+  background: var(--clay);
+  color: white;
+  box-shadow: var(--shadow-btn);
+}
+
+.clay-tab--inactive {
+  color: var(--soft-stone);
+  background: transparent;
+}
+
+@media (hover: hover) {
+  .clay-tab--inactive:hover {
+    background: rgba(232, 217, 197, 0.4);
+    color: var(--warm-ink);
+  }
+}
+
+/* ── Toggle switch clay feel ────────────────────────────────────── */
+.clay-toggle-track {
+  transition: background-color 250ms var(--ease-clay);
+}
+
+.clay-toggle-thumb {
+  transition: transform 250ms var(--ease-clay);
+}
+
+/* ── Stat card icon container ───────────────────────────────────── */
+.clay-stat-icon {
+  background: var(--clay);
+  color: white;
+  box-shadow: 0 4px 12px rgba(201, 123, 90, 0.25);
+  transition: transform 200ms var(--ease-clay), box-shadow 200ms var(--ease-clay);
+}
+
+@media (hover: hover) {
+  .clay-stat-icon:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(201, 123, 90, 0.35);
+  }
+}
+
+/* ── Filter chip clay feel ──────────────────────────────────────── */
+.clay-filter-chip {
+  transition: all 200ms var(--ease-clay);
+}
+
+.clay-filter-chip--active {
+  background: var(--warm-ink);
+  color: white;
+  box-shadow: var(--shadow-btn);
+}
+
+.clay-filter-chip--inactive {
+  background: white;
+  color: var(--soft-stone);
+  border: 1px solid rgba(191, 179, 163, 0.25);
+}
+
+@media (hover: hover) {
+  .clay-filter-chip--inactive:hover {
+    background: rgba(232, 217, 197, 0.5);
+    border-color: rgba(201, 123, 90, 0.3);
+  }
+}
+
+/* ── Activity type indicator ────────────────────────────────────── */
+.clay-activity-icon {
+  background: rgba(232, 217, 197, 0.5);
+  color: var(--clay);
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+@media (hover: hover) {
+  .clay-activity-icon:hover {
+    background: rgba(201, 123, 90, 0.12);
+    color: var(--terracotta);
+  }
+}
+
+/* ── Alert / notification clay variants ────────────────────────── */
+.clay-alert {
+  border-radius: 16px;
+  padding: 12px 16px;
+  border: 1px solid;
+}
+
+.clay-alert--info {
+  background: rgba(184, 201, 212, 0.15);
+  border-color: rgba(184, 201, 212, 0.3);
+  color: var(--warm-ink);
+}
+
+.clay-alert--warning {
+  background: rgba(217, 168, 84, 0.12);
+  border-color: rgba(217, 168, 84, 0.3);
+  color: var(--warm-ink);
+}
+
+.clay-alert--critical {
+  background: rgba(212, 165, 165, 0.12);
+  border-color: rgba(212, 165, 165, 0.3);
+  color: var(--warm-ink);
+}
+
+.clay-alert--opportunity {
+  background: rgba(138, 154, 123, 0.12);
+  border-color: rgba(138, 154, 123, 0.3);
+  color: var(--warm-ink);
+}
+
+/* ── Form field clay feel ───────────────────────────────────────── */
+.clay-field-label {
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--soft-stone);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.clay-field-input {
+  border-radius: var(--radius-input);
+  background: white;
+  border: 1.5px solid rgba(191, 179, 163, 0.3);
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--warm-ink);
+  outline: none;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+  font-family: var(--font-body);
+}
+
+.clay-field-input:focus {
+  border-color: var(--clay);
+  box-shadow: 0 0 0 3px rgba(201, 123, 90, 0.12);
+}
+
+.clay-field-input::placeholder {
+  color: var(--soft-stone);
+  opacity: 0.6;
+}
+
+/* ── Empty state clay feel ──────────────────────────────────────── */
+.clay-empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: rgba(201, 123, 90, 0.10);
+  box-shadow: 0 2px 8px rgba(201, 123, 90, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+/* ── iOS input zoom prevention ─────────────────────────────────── */
+@media (max-width: 767px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* ── Tables become swipeable on small screens ─────────────────── */
+@media (max-width: 767px) {
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  table thead, table tbody {
+    min-width: 560px;
+    display: table;
+    width: 100%;
+  }
+}
+
+/* ── Safe area padding for iOS notched devices ─────────────────── */
 .safe-area-pb {
   padding-bottom: max(0.375rem, env(safe-area-inset-bottom));
 }
@@ -11,138 +386,33 @@
   padding-bottom: max(0.375rem, env(safe-area-inset-bottom));
 }
 
-/* Hide scrollbar on mobile nav */
+/* ── Hide scrollbar on mobile nav ──────────────────────────────── */
 @media (max-width: 767px) {
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
-/* Touch-friendly tap targets on mobile */
+/* ── Touch-friendly tap targets on mobile ──────────────────────── */
 @media (max-width: 767px) {
-  .mobile-tap {
-    min-height: 44px;
-    min-width: 44px;
-  }
+  .mobile-tap,
   .touch-target {
     min-height: 44px;
     min-width: 44px;
   }
 }
 
-/* Smooth horizontal scroll on mobile */
+/* ── Smooth horizontal scroll on mobile ────────────────────────── */
 .mobile-scroll {
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
 }
 
-/* ── Sitara motion + touch system ───────────────────────────── */
-/* .tile: any tappable card. Lift on hover, press-down on tap. */
-.sitara .tile {
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-  will-change: transform;
-}
-@media (hover: hover) {
-  .sitara .tile:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 28px -12px rgba(0, 0, 0, 0.25);
-  }
-  .sitara .tile-img img {
-    transition: transform 0.3s ease;
-  }
-  .sitara .tile-img:hover img {
-    transform: scale(1.05);
-  }
-  .sitara .tile-arrow {
-    transition: transform 0.18s ease;
-  }
-  .sitara .tile:hover .tile-arrow {
-    transform: translateX(4px);
-  }
-}
-.sitara .tile:active {
-  transform: scale(0.98);
-  box-shadow: 0 4px 12px -6px rgba(0, 0, 0, 0.2);
-}
-
-/* Buttons: press feedback everywhere in Sitara */
-.sitara button, .sitara a[class*="bg-amber"], .sitara a[class*="bg-slate-900"] {
-  transition: transform 0.12s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-}
-.sitara button:active, .sitara a[class*="bg-amber"]:active, .sitara a[class*="bg-slate-900"]:active {
-  transform: scale(0.97);
-}
-
-/* Sidebar / tab links: slide + glow on hover */
-.sitara aside nav a, .sitara nav a {
-  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
-}
-@media (hover: hover) {
-  .sitara aside nav a:hover {
-    transform: translateX(3px);
-  }
-}
-
-/* Card entrance: staggered fade-up */
-@keyframes sitara-rise {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.sitara .rise {
-  animation: sitara-rise 0.35s ease both;
-}
-.sitara .rise-1 { animation-delay: 0.03s; }
-.sitara .rise-2 { animation-delay: 0.08s; }
-.sitara .rise-3 { animation-delay: 0.13s; }
-.sitara .rise-4 { animation-delay: 0.18s; }
-.sitara .rise-5 { animation-delay: 0.23s; }
-
-/* Tables become swipeable on small screens */
-@media (max-width: 767px) {
-  .sitara table {
-    display: block;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  .sitara table thead, .sitara table tbody {
-    min-width: 560px;
-    display: table;
-    width: 100%;
-  }
-  /* Bottom tab bar tap targets */
-  .sitara .tabbar a {
-    min-height: 60px;
-    min-width: 56px;
-  }
-  /* Page padding breathes on phones */
-  .sitara main {
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-  }
-}
-
-/* Respect users who prefer no motion */
+/* ── Respect users who prefer no motion ────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .sitara *, .sitara *::before, .sitara *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
 
-/* ── Mobile correctness fixes ─────────────────────────────────── */
-@media (max-width: 767px) {
-  /* iOS zooms on focus when inputs are <16px — the #1 "broken" feeling */
-  .sitara input, .sitara select, .sitara textarea {
-    font-size: 16px !important;
-  }
-  /* Star-rating + icon buttons get real tap targets */
-  .sitara .rate-star {
-    min-width: 44px;
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-}
-
-/* ── Readability scale lives on <html> while Sitara is mounted ────── */
-/* (see TextSizeToggle; root-rems scale the whole Sitara tree) */

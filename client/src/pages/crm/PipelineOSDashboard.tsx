@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FiBriefcase, FiUsers, FiTrendingUp, FiAlertTriangle, FiStar, FiZap, FiEye, FiCheckCircle, FiX, FiClock, FiPhone, FiMail, FiMapPin } from 'react-icons/fi';
+import { Card, EmptyState } from '../../components/primitives';
+import DashboardLayout from '../../components/DashboardLayout';
 
 // ─── API Helper ───────────────────────────────────────────────────────────────
 
@@ -44,41 +46,50 @@ interface Alert {
   entityType: string;
   entityId: string;
   createdAt: string;
+  dismissed?: boolean;
 }
 
 // ─── Shared Components ────────────────────────────────────────────────────────
 
-function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+function ClayCard({ children, className = '', hover = false, ...props }: any) {
   return (
-    <div className={`rounded-2xl border border-[var(--soft-stone)]/30 bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm shadow-[var(--shadow-lift)] ${className}`}>
+    <Card hover={hover} className={className} {...props}>
       {children}
-    </div>
+    </Card>
   );
 }
 
-function Badge({ children, variant = 'default' }: { children: React.ReactNode; variant?: string }) {
-  const v: Record<string, string> = {
-    default: 'bg-[var(--soft-stone)] text-[var(--warm-ink)]',
-    blue: 'bg-blue-500/20 text-blue-300',
-    green: 'bg-[var(--sage)]/20 text-[var(--sage)]',
-    red: 'bg-[var(--terracotta)]/20 text-[var(--terracotta)]',
-    yellow: 'bg-yellow-500/20 text-yellow-300',
-    purple: 'bg-[var(--dusty-rose)]/20 text-purple-300',
-    gray: 'bg-gray-500/20 text-[var(--soft-stone)]',
+function ClayBadge({ children, variant = 'neutral' }: { children: React.ReactNode; variant?: 'default' | 'clay' | 'sage' | 'terracotta' | 'ochre' | 'dusty-rose' | 'sky-wash' | 'neutral' }) {
+  const variantStyles: Record<string, React.CSSProperties> = {
+    default: { backgroundColor: 'rgba(90, 83, 72, 0.15)', color: 'var(--warm-ink)', border: '1px solid rgba(90, 83, 72, 0.2)' },
+    clay: { backgroundColor: 'rgba(201, 123, 90, 0.12)', color: 'var(--clay)', border: '1px solid rgba(201, 123, 90, 0.2)' },
+    sage: { backgroundColor: 'rgba(138, 154, 123, 0.15)', color: 'var(--sage)', border: '1px solid rgba(138, 154, 123, 0.2)' },
+    terracotta: { backgroundColor: 'rgba(168, 90, 60, 0.12)', color: 'var(--terracotta)', border: '1px solid rgba(168, 90, 60, 0.2)' },
+    ochre: { backgroundColor: 'rgba(217, 168, 84, 0.15)', color: 'var(--muted-ochre)', border: '1px solid rgba(217, 168, 84, 0.2)' },
+    'dusty-rose': { backgroundColor: 'rgba(212, 165, 165, 0.15)', color: 'var(--dusty-rose)', border: '1px solid rgba(212, 165, 165, 0.2)' },
+    'sky-wash': { backgroundColor: 'rgba(184, 201, 212, 0.15)', color: '#6B8FA0', border: '1px solid rgba(184, 201, 212, 0.2)' },
+    neutral: { backgroundColor: 'rgba(232, 217, 197, 0.5)', color: 'var(--warm-ink)', border: '1px solid rgba(191, 179, 163, 0.3)' },
   };
-  return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${v[variant] || v.default}`}>{children}</span>;
+  return (
+    <span
+      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-label"
+      style={variantStyles[variant] || variantStyles.neutral}
+    >
+      {children}
+    </span>
+  );
 }
 
 // ─── Pipeline Kanban ─────────────────────────────────────────────────────────
 
 function PipelineKanban({ clients, onStageChange }: { clients: CrmClient[]; onStageChange: () => void }) {
   const stages = [
-    { id: 'lead', label: 'Lead', color: 'blue' },
-    { id: 'verified', label: 'Verified', color: 'purple' },
-    { id: 'booked', label: 'Booked', color: 'yellow' },
-    { id: 'repeat', label: 'Repeat', color: 'green' },
-    { id: 'at_risk', label: 'At Risk', color: 'red' },
-    { id: 'vip', label: 'VIP', color: 'purple' },
+    { id: 'lead', label: 'Lead', color: '#6B8FA0' },
+    { id: 'verified', label: 'Verified', color: '#D4A5A5' },
+    { id: 'booked', label: 'Booked', color: '#D9A854' },
+    { id: 'repeat', label: 'Repeat', color: '#8A9A7B' },
+    { id: 'at_risk', label: 'At Risk', color: '#A85A3C' },
+    { id: 'vip', label: 'VIP', color: '#D4A5A5' },
   ];
 
   const [draggedClient, setDraggedClient] = useState<string | null>(null);
@@ -101,6 +112,12 @@ function PipelineKanban({ clients, onStageChange }: { clients: CrmClient[]; onSt
     setDraggedClient(null);
   }
 
+  function getScoreStyle(score: number) {
+    if (score >= 80) return { bg: 'rgba(138, 154, 123, 0.15)', color: 'var(--sage)' };
+    if (score >= 50) return { bg: 'rgba(217, 168, 84, 0.15)', color: 'var(--muted-ochre)' };
+    return { bg: 'rgba(212, 165, 165, 0.15)', color: 'var(--dusty-rose)' };
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
       {stages.map(stage => {
@@ -113,31 +130,61 @@ function PipelineKanban({ clients, onStageChange }: { clients: CrmClient[]; onSt
             onDrop={() => handleDrop(stage.id)}
           >
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-semibold text-[var(--warm-ink)]">{stage.label}</h4>
-              <span className="text-xs text-[var(--soft-stone)] bg-[var(--warm-sand)] px-2 py-0.5 rounded-full">{stageClients.length}</span>
+              <h4 className="text-sm font-bold text-[var(--warm-ink)] font-label">{stage.label}</h4>
+              <ClayBadge variant="neutral">{stageClients.length}</ClayBadge>
             </div>
             <div className="space-y-2">
-              {stageClients.map(client => (
-                <div
-                  key={client.id}
-                  className="p-3 rounded-lg bg-[var(--warm-sand)] border border-[var(--soft-stone)]/30 cursor-grab active:cursor-grabbing hover:border-white/20 transition-all"
-                  draggable
-                  onDragStart={() => setDraggedClient(client.id)}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-[var(--dusty-rose)] flex items-center justify-center text-[10px] text-[var(--warm-ink)] font-bold">
-                      {client.name.charAt(0)}
+              {stageClients.map(client => {
+                const scoreStyle = getScoreStyle(client.reliabilityScore);
+                return (
+                  <div
+                    key={client.id}
+                    className="p-3.5 rounded-xl bg-white border border-[rgba(191,179,163,0.2)] clay-card--interactive clay-table-row"
+                    draggable
+                    onDragStart={() => setDraggedClient(client.id)}
+                    style={{
+                      cursor: 'grab',
+                      boxShadow: 'var(--shadow-soft)',
+                      transition: 'transform 200ms var(--ease-smooth), box-shadow 200ms var(--ease-smooth), border-color 200ms ease',
+                    }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-1px)';
+                      (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-lift)';
+                      (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(201, 123, 90, 0.3)';
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLDivElement).style.transform = '';
+                      (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-soft)';
+                      (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(191, 179, 163, 0.2)';
+                    }}
+                  >
+                    <div className="flex items-center gap-2.5 mb-2">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold"
+                        style={{
+                          background: `linear-gradient(135deg, var(--warm-sand) 0%, rgba(201,123,90,0.15) 100%)`,
+                          color: 'var(--clay)',
+                          boxShadow: '0 1px 3px rgba(180,130,90,0.1)',
+                        }}
+                      >
+                        {client.name.charAt(0)}
+                      </div>
+                      <span className="text-sm font-semibold text-[var(--warm-ink)] truncate" style={{ maxWidth: '120px' }}>
+                        {client.name}
+                      </span>
                     </div>
-                    <span className="text-sm font-medium text-[var(--warm-ink)] truncate">{client.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium font-label"
+                        style={scoreStyle}
+                      >
+                        {client.reliabilityScore}/100
+                      </span>
+                      <span className="text-xs text-[var(--soft-stone)]">{client.totalJobs} jobs</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={client.reliabilityScore >= 80 ? 'green' : client.reliabilityScore >= 50 ? 'yellow' : 'red'}>
-                      {client.reliabilityScore}/100
-                    </Badge>
-                    <span className="text-xs text-[var(--soft-stone)]">{client.totalJobs} jobs</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );
@@ -148,40 +195,59 @@ function PipelineKanban({ clients, onStageChange }: { clients: CrmClient[]; onSt
 
 // ─── Alerts Feed ──────────────────────────────────────────────────────────────
 
-function AlertsFeed({ alerts, onDismiss }: { alerts: Alert[]; onDismiss: () => void }) {
-  const typeConfig: Record<string, { icon: any; color: string }> = {
-    critical: { icon: FiAlertTriangle, color: 'red' },
-    warning: { icon: FiClock, color: 'yellow' },
-    opportunity: { icon: FiZap, color: 'green' },
-    info: { icon: FiEye, color: 'blue' },
+function AlertsFeed({ alerts, onDismiss }: { alerts: Alert[]; onDismiss: (id: string) => void }) {
+  const typeConfig: Record<string, { icon: React.ElementType; alertVariant: string }> = {
+    critical: { icon: FiAlertTriangle, alertVariant: 'critical' },
+    warning: { icon: FiClock, alertVariant: 'warning' },
+    opportunity: { icon: FiZap, alertVariant: 'opportunity' },
+    info: { icon: FiEye, alertVariant: 'info' },
   };
 
   return (
-    <Card className="p-6">
+    <Card hover={false} className="clay-rise">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-bold text-[var(--warm-ink)]">Revenue Alerts</h3>
-        <Badge variant="yellow">{alerts.filter(a => !a.dismissed).length} active</Badge>
+        <h3 className="text-base font-bold text-[var(--warm-ink)] clay-heading mb-0">Revenue Alerts</h3>
+        <ClayBadge variant="ochre">{alerts.filter(a => !a.dismissed).length} active</ClayBadge>
       </div>
       {alerts.length === 0 ? (
         <div className="text-center py-8">
-          <FiCheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-          <p className="text-[var(--soft-stone)]">All clear. No alerts.</p>
+          <div className="w-14 h-14 rounded-2xl bg-[rgba(138,154,123,0.12)] flex items-center justify-center mx-auto mb-3">
+            <FiCheckCircle className="w-7 h-7" style={{ color: 'var(--sage)' }} />
+          </div>
+          <p className="text-sm text-[var(--soft-stone)]">All clear. No alerts.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {alerts.filter(a => !a.dismissed).slice(0, 10).map(alert => {
             const config = typeConfig[alert.type] || typeConfig.info;
             const Icon = config.icon;
             return (
-              <div key={alert.id} className={`flex items-start gap-3 p-3 rounded-lg bg-${config.color}-500/10 border border-${config.color}-500/20`}>
-                <Icon className={`w-5 h-5 mt-0.5 text-${config.color}-400`} />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-[var(--warm-ink)]">{alert.title}</p>
+              <div
+                key={alert.id}
+                className={`clay-alert clay-alert--${config.alertVariant} flex items-start gap-3`}
+              >
+                <Icon className="w-5 h-5 mt-0.5 shrink-0" style={{ color: 'var(--clay)' }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-[var(--warm-ink)]">{alert.title}</p>
                   <p className="text-xs text-[var(--soft-stone)] mt-0.5">{alert.message}</p>
                 </div>
                 <button
                   onClick={() => onDismiss(alert.id)}
-                  className="p-1 rounded hover:bg-[var(--warm-sand)] text-[var(--soft-stone)] hover:text-[var(--warm-ink)]"
+                  className="p-2 rounded-xl clay-card--interactive shrink-0"
+                  style={{
+                    backgroundColor: 'rgba(232, 217, 197, 0.3)',
+                    color: 'var(--soft-stone)',
+                    transition: 'background-color 150ms ease, color 150ms ease',
+                  }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(201, 123, 90, 0.12)';
+                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--clay)';
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(232, 217, 197, 0.3)';
+                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--soft-stone)';
+                  }}
+                  aria-label="Dismiss alert"
                 >
                   <FiX className="w-4 h-4" />
                 </button>
@@ -194,10 +260,16 @@ function AlertsFeed({ alerts, onDismiss }: { alerts: Alert[]; onDismiss: () => v
   );
 }
 
-// ─── Main PipelineOS Dashboard ────────────────────────────────────────────────
+const navItems = [
+  { path: '/contact', label: 'Dashboard', icon: 'dashboard' },
+  { path: '/contact/clients', label: 'Clients', icon: 'groups' },
+  { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
+  { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
+  { path: '/contact/settings/modules', label: 'Settings', icon: 'settings' },
+];
 
 export default function PipelineOSDashboard() {
-  const [clients, setClients] = useState<CrmClient[]>( null);
+  const [clients, setClients] = useState<CrmClient[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -234,101 +306,97 @@ export default function PipelineOSDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-[var(--soft-stone)] text-sm">Loading PipelineOS...</p>
+      <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
+        <div className="flex items-center justify-center py-20">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-8 h-8 rounded-full border-2 border-[var(--clay)] border-t-transparent animate-spin" />
+            <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Loading PipelineOS...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 text-[var(--warm-ink)]">
-      {/* Header */}
-      <header className="border-b border-[var(--soft-stone)]/30 bg-gray-900/50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <FiBriefcase className="w-5 h-5 text-[var(--warm-ink)]" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold">PipelineOS</h1>
-              <p className="text-xs text-[var(--soft-stone)]">Trust-Aware Revenue Engine</p>
-            </div>
-          </div>
-          <Badge variant="green">Live</Badge>
-        </div>
-      </header>
+  const totalClients = clients.length;
+  const vipCount = clients.filter(c => c.stage === 'vip').length;
+  const atRiskCount = clients.filter(c => c.stage === 'at_risk').length;
+  const avgScore = clients.length > 0
+    ? Math.round(clients.reduce((s, c) => s + c.reliabilityScore, 0) / clients.length)
+    : 0;
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
+  const statCards = [
+    { label: 'Total Clients', value: totalClients, icon: FiUsers, color: 'var(--clay)', delay: 80 },
+    { label: 'VIP', value: vipCount, icon: FiStar, color: 'var(--dusty-rose)', delay: 160 },
+    { label: 'At Risk', value: atRiskCount, icon: FiAlertTriangle, color: 'var(--terracotta)', delay: 240 },
+    { label: 'Avg Score', value: `${avgScore}/100`, icon: FiTrendingUp, color: 'var(--sage)', delay: 320 },
+  ];
+
+  function getScoreBadgeStyle(score: number) {
+    if (score >= 80) return { bg: 'rgba(138, 154, 123, 0.15)', color: 'var(--sage)', border: '1px solid rgba(138, 154, 123, 0.2)' };
+    if (score >= 50) return { bg: 'rgba(217, 168, 84, 0.15)', color: 'var(--muted-ochre)', border: '1px solid rgba(217, 168, 84, 0.2)' };
+    return { bg: 'rgba(212, 165, 165, 0.15)', color: 'var(--dusty-rose)', border: '1px solid rgba(212, 165, 165, 0.2)' };
+  }
+
+  return (
+    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-7 clay-fade">
+          <div>
+            <h1 className="text-2xl font-bold text-[var(--warm-ink)] clay-heading">PipelineOS</h1>
+            <p className="text-sm mt-0.5" style={{ color: 'var(--soft-stone)' }}>
+              Trust-Aware Revenue Engine
+            </p>
+          </div>
+          <ClayBadge variant="sage">Live</ClayBadge>
+        </div>
+
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-[var(--terracotta)]/10 border border-red-500/30 text-[var(--terracotta)] text-sm">
+          <div className="clay-alert clay-alert--critical mb-6 clay-rise">
             {error}
           </div>
         )}
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Card className="p-5">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs text-[var(--soft-stone)] font-medium uppercase tracking-wider">Total Clients</p>
-                <p className="text-2xl font-bold text-[var(--warm-ink)] mt-1">{clients.length}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
+          {statCards.map((stat, i) => (
+            <Card key={stat.label} hover={false} className="clay-rise" style={{ animationDelay: `${stat.delay}ms` }}>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs text-[var(--soft-stone)] font-label">{stat.label}</p>
+                  <p className="text-3xl font-bold text-[var(--warm-ink)] stat-number mt-1">
+                    {stat.value}
+                  </p>
+                </div>
+                <div
+                  className="w-11 h-11 rounded-2xl flex items-center justify-center clay-stat-icon"
+                  style={{ backgroundColor: stat.color }}
+                >
+                  <stat.icon className="w-5 h-5 text-white" />
+                </div>
               </div>
-              <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 shadow-lg">
-                <FiUsers className="w-5 h-5 text-[var(--warm-ink)]" />
-              </div>
-            </div>
-          </Card>
-          <Card className="p-5">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs text-[var(--soft-stone)] font-medium uppercase tracking-wider">VIP</p>
-                <p className="text-2xl font-bold text-[var(--warm-ink)] mt-1">{clients.filter(c => c.stage === 'vip').length}</p>
-              </div>
-              <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-pink-400 shadow-lg">
-                <FiStar className="w-5 h-5 text-[var(--warm-ink)]" />
-              </div>
-            </div>
-          </Card>
-          <Card className="p-5">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs text-[var(--soft-stone)] font-medium uppercase tracking-wider">At Risk</p>
-                <p className="text-2xl font-bold text-[var(--warm-ink)] mt-1">{clients.filter(c => c.stage === 'at_risk').length}</p>
-              </div>
-              <div className="p-3 rounded-xl bg-gradient-to-br from-red-500 to-[var(--dusty-rose)] shadow-lg">
-                <FiAlertTriangle className="w-5 h-5 text-[var(--warm-ink)]" />
-              </div>
-            </div>
-          </Card>
-          <Card className="p-5">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs text-[var(--soft-stone)] font-medium uppercase tracking-wider">Avg Score</p>
-                <p className="text-2xl font-bold text-[var(--warm-ink)] mt-1">
-                  {clients.length > 0 ? Math.round(clients.reduce((s, c) => s + c.reliabilityScore, 0) / clients.length) : 0}/100
-                </p>
-              </div>
-              <div className="p-3 rounded-xl bg-gradient-to-br from-[var(--sage)] to-teal-400 shadow-lg">
-                <FiTrendingUp className="w-5 h-5 text-[var(--warm-ink)]" />
-              </div>
-            </div>
-          </Card>
+            </Card>
+          ))}
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-6 bg-gray-800/50 rounded-xl p-1 border border-[var(--soft-stone)]/30">
-          {(['kanban', 'clients', 'alerts'] as const).map((t) => (
+        <div className="flex gap-1 mb-6 clay-fade clay-delay-4">
+          {([
+            { key: 'kanban', label: 'Pipeline Kanban' },
+            { key: 'clients', label: 'Clients' },
+            { key: 'alerts', label: 'Alerts' },
+          ] as const).map(t => (
             <button
-              key={t}
-              onClick={() => setActiveTab(t)}
-              className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all capitalize cursor-pointer ${
-                activeTab === t ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-[var(--warm-ink)] shadow-lg' : 'text-[var(--soft-stone)] hover:text-[var(--warm-ink)] hover:bg-[var(--cream)]'
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className={`clay-tab flex-1 px-4 py-2.5 text-sm font-medium rounded-xl capitalize cursor-pointer font-label ${
+                activeTab === t.key
+                  ? 'clay-tab--active'
+                  : 'clay-tab--inactive'
               }`}
             >
-              {t === 'kanban' ? 'Pipeline Kanban' : t}
+              {t.label}
             </button>
           ))}
         </div>
@@ -344,34 +412,93 @@ export default function PipelineOSDashboard() {
           <AlertsFeed alerts={alerts} onDismiss={handleDismissAlert} />
         )}
         {activeTab === 'clients' && (
-          <Card className="p-6">
-            <h2 className="text-lg font-bold mb-4">Client Directory</h2>
-            <div className="space-y-3">
-              {clients.map(client => (
-                <div key={client.id} className="flex items-center gap-4 p-4 rounded-xl bg-[var(--cream)] border border-[var(--soft-stone)]/30">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-[var(--warm-ink)] font-bold text-sm">
-                    {client.name.charAt(0)}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-[var(--warm-ink)]">{client.name}</p>
-                    <div className="flex items-center gap-3 text-sm text-[var(--soft-stone)]">
-                      {client.phone && <span className="flex items-center gap-1"><FiPhone className="w-3 h-3" />{client.phone}</span>}
-                      {client.email && <span className="flex items-center gap-1"><FiMail className="w-3 h-3" />{client.email}</span>}
-                      {client.address && <span className="flex items-center gap-1"><FiMapPin className="w-3 h-3" />{client.address}</span>}
+          <Card hover={false} className="clay-rise clay-delay-5">
+            <h2 className="text-lg font-bold text-[var(--warm-ink)] clay-heading mb-5">Client Directory</h2>
+            {clients.length === 0 ? (
+              <EmptyState
+                icon="groups"
+                title="No Clients Yet"
+                description="Add your first client to start tracking deals and revenue."
+                actionLabel="Add Client"
+                onAction={loadAll}
+              />
+            ) : (
+              <div className="space-y-2.5">
+                {clients.map((client) => {
+                  const scoreStyle = getScoreBadgeStyle(client.reliabilityScore);
+                  return (
+                    <div
+                      key={client.id}
+                      className="flex items-center gap-4 p-4 rounded-xl bg-white border border-[rgba(191,179,163,0.2)] clay-card--interactive clay-table-row clay-rise"
+                      style={{
+                        boxShadow: 'var(--shadow-soft)',
+                        cursor: 'pointer',
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-1px)';
+                        (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-lift)';
+                        (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(201, 123, 90, 0.3)';
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLDivElement).style.transform = '';
+                        (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-soft)';
+                        (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(191, 179, 163, 0.2)';
+                      }}
+                    >
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                        style={{
+                          background: `linear-gradient(135deg, var(--warm-sand) 0%, rgba(201,123,90,0.15) 100%)`,
+                          color: 'var(--clay)',
+                          boxShadow: '0 2px 6px rgba(201,123,90,0.15)',
+                        }}
+                      >
+                        {client.name.charAt(0)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-[var(--warm-ink)] truncate">
+                          {client.name}
+                        </p>
+                        <div className="flex items-center gap-3 text-xs text-[var(--soft-stone)] mt-0.5">
+                          {client.phone && (
+                            <span className="flex items-center gap-1">
+                              <FiPhone className="w-3 h-3" />
+                              {client.phone}
+                            </span>
+                          )}
+                          {client.email && (
+                            <span className="flex items-center gap-1">
+                              <FiMail className="w-3 h-3" />
+                              {client.email}
+                            </span>
+                          )}
+                          {client.address && (
+                            <span className="flex items-center gap-1">
+                              <FiMapPin className="w-3 h-3" />
+                              {client.address}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-label"
+                          style={scoreStyle}
+                        >
+                          {client.reliabilityScore}/100
+                        </span>
+                        <p className="text-xs text-[var(--soft-stone)] mt-1">
+                          {client.stage} · {client.totalJobs} jobs
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <Badge variant={client.reliabilityScore >= 80 ? 'green' : client.reliabilityScore >= 50 ? 'yellow' : 'red'}>
-                      {client.reliabilityScore}/100
-                    </Badge>
-                    <p className="text-xs text-[var(--soft-stone)] mt-1">{client.stage} · {client.totalJobs} jobs</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </Card>
         )}
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

@@ -13,6 +13,7 @@ const navItems = [
   { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
   { path: '/contact/jobs', label: 'Jobs', icon: 'work' },
   { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
+  { path: '/contact/settings/modules', label: 'Settings', icon: 'settings' },
 ];
 
 const STAGES = [
@@ -167,9 +168,9 @@ export default function ContactDealsPage() {
     <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
       <div className="space-y-6">
         {/* Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 clay-heading">
           <div>
-            <h1 className="text-2xl font-bold font-headline text-[var(--warm-ink)]">Deals Pipeline</h1>
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Deals Pipeline</h1>
             <p className="text-sm text-[var(--soft-stone)] mt-0.5">
               Manage opportunities, forecast revenue, and track stage conversion.
             </p>
@@ -181,32 +182,32 @@ export default function ContactDealsPage() {
 
         {/* Stats Summary Bar */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card variant="clay" padding="sm" className="flex items-center gap-4">
+          <Card variant="flat" padding="sm" className="flex items-center gap-4 clay-rise">
             <div className="w-10 h-10 rounded-xl bg-[var(--warm-sand)] flex items-center justify-center text-[var(--clay)]">
               <span className="material-symbols-outlined">payments</span>
             </div>
             <div>
-              <div className="text-xs text-[var(--soft-stone)] font-medium">Total Pipeline Value</div>
+              <div className="text-xs text-[var(--soft-stone)] font-label">Total Pipeline Value</div>
               <div className="text-xl font-bold text-[var(--warm-ink)]">${totalPipelineValue.toLocaleString()}</div>
             </div>
           </Card>
 
-          <Card variant="clay" padding="sm" className="flex items-center gap-4">
+          <Card variant="flat" padding="sm" className="flex items-center gap-4 clay-rise clay-delay-1">
             <div className="w-10 h-10 rounded-xl bg-[var(--sage)]/20 flex items-center justify-center text-[var(--sage)]">
               <span className="material-symbols-outlined">trending_up</span>
             </div>
             <div>
-              <div className="text-xs text-[var(--soft-stone)] font-medium">Weighted Forecast</div>
+              <div className="text-xs text-[var(--soft-stone)] font-label">Weighted Forecast</div>
               <div className="text-xl font-bold text-[var(--warm-ink)]">${Math.round(weightedPipelineValue).toLocaleString()}</div>
             </div>
           </Card>
 
-          <Card variant="clay" padding="sm" className="flex items-center gap-4">
+          <Card variant="flat" padding="sm" className="flex items-center gap-4 clay-rise clay-delay-2">
             <div className="w-10 h-10 rounded-xl bg-[var(--ochre)]/20 flex items-center justify-center text-[var(--ochre)]">
               <span className="material-symbols-outlined">bar_chart</span>
             </div>
             <div>
-              <div className="text-xs text-[var(--soft-stone)] font-medium">Active Deals</div>
+              <div className="text-xs text-[var(--soft-stone)] font-label">Active Deals</div>
               <div className="text-xl font-bold text-[var(--warm-ink)]">{deals.filter(d => d.stage !== 'WON' && d.stage !== 'LOST').length}</div>
             </div>
           </Card>
@@ -230,12 +231,12 @@ export default function ContactDealsPage() {
               const stageTotal = stageDeals.reduce((sum, d) => sum + (d.value || 0), 0);
 
               return (
-                <div key={stage.id} className="min-w-[280px] w-[280px] flex-shrink-0 bg-[var(--warm-sand)]/20 rounded-2xl p-3 flex flex-col h-[calc(100vh-280px)] min-h-[500px] border border-[var(--warm-sand)]/50">
+                <div key={stage.id} className="min-w-[280px] w-[280px] flex-shrink-0 clay-kanban-column rounded-2xl p-3 flex flex-col h-[calc(100vh-280px)] min-h-[500px] clay-rise">
                   {/* Stage Header */}
                   <div className="flex justify-between items-center mb-3 px-1">
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: stage.color }} />
-                      <h3 className="font-bold text-sm text-[var(--warm-ink)]">{stage.label}</h3>
+                      <h3 className="font-bold text-sm text-[var(--warm-ink)] font-label">{stage.label}</h3>
                       <span className="text-xs bg-white px-2 py-0.5 rounded-full text-[var(--soft-stone)] font-medium shadow-xs">
                         {stageDeals.length}
                       </span>
@@ -248,7 +249,7 @@ export default function ContactDealsPage() {
                   {/* Stage Deals List */}
                   <div className="flex-1 overflow-y-auto space-y-3 pr-1 no-scrollbar">
                     {stageDeals.map(deal => (
-                      <Card key={deal.id} variant="flat" padding="sm" hover className="border border-[var(--warm-sand)] hover:border-[var(--clay)] transition-all">
+                      <Card key={deal.id} variant="default" padding="sm" hover className="border border-[var(--warm-sand)] hover:border-[var(--clay)] transition-all clay-card--interactive">
                         <div className="flex justify-between items-start mb-1.5">
                           <h4 className="font-semibold text-sm text-[var(--warm-ink)] line-clamp-1">{deal.title}</h4>
                           <span className="text-xs font-bold text-[var(--clay)]">${(deal.value || 0).toLocaleString()}</span>

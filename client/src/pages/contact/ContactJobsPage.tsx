@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { crmJobsService } from '../../services/crmJobs.service';
+import { Button } from '../../components/primitives';
 
 const navItems = [
   { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
@@ -342,18 +343,15 @@ setCurrentYear(now.getFullYear());
   return (
     <DashboardLayout osName="Contact OS" osIcon="C" osColor="#C97B5A" navItems={navItems}>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-[var(--warm-ink)]">Jobs</h1>
+        <div className="flex justify-between items-center clay-heading">
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Jobs</h1>
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setShowCreateModal(true)}
-              className="bg-[var(--clay)] text-white hover:bg-[var(--terracotta)] px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2"
-            >
+            <Button onClick={() => setShowCreateModal(true)} variant="primary">
               + New Job
-            </button>
-            <button 
+            </Button>
+            <button
               onClick={() => setFilters(prev => ({ ...prev, view: prev.view === 'list' ? 'calendar' : 'list' }))}
-              className="bg-[var(--warm-sand)]/20 text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]/30 px-3 py-1 rounded-full text-xs flex items-center gap-1"
+              className="clay-filter-chip clay-filter-chip--inactive text-xs"
             >
               {filters.view === 'list' ? 'Calendar' : 'List'}
             </button>
@@ -361,14 +359,14 @@ setCurrentYear(now.getFullYear());
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-[28px] p-4 shadow-sm">
+        <div className="bg-white rounded-[28px] p-4 shadow-sm clay-rise">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className="block text-xs text-[var(--soft-stone)] mb-1">Filter</label>
+              <label className="block text-xs text-[var(--soft-stone)] font-label mb-1">Filter</label>
               <select
                 value={filters.filter}
                 onChange={(e) => setFilters(prev => ({ ...prev, filter: e.target.value, page: 1 }))}
-                className="w-full px-3 py-2 rounded border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--clay)]"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm clay-field-input"
               >
                 <option value="all">All Jobs</option>
                 <option value="today">Today</option>
@@ -384,7 +382,7 @@ setCurrentYear(now.getFullYear());
               <select
                 value={filters.sort}
                 onChange={(e) => setFilters(prev => ({ ...prev, sort: e.target.value }))}
-                className="w-full px-3 py-2 rounded border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--clay)]"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm clay-field-input"
               >
                 <option value="date-desc">Date (Newest First)</option>
                 <option value="date-asc">Date (Oldest First)</option>
@@ -402,7 +400,7 @@ setCurrentYear(now.getFullYear());
                   placeholder="Search by client name, service type, or notes..."
                   value={filters.search}
                   onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                  className="w-full px-4 py-2 rounded pl-10 border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--clay)]"
+                  className="w-full px-4 py-2 rounded-lg pl-10 border border-[var(--soft-stone)]/30 bg-white text-sm clay-field-input"
                 />
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--soft-stone)]/50">
                   <span className="material-symbols-outlined">search</span>
@@ -425,10 +423,10 @@ setCurrentYear(now.getFullYear());
             ) : (
               <div className="space-y-4">
                 {jobs.map(job => (
-                  <div 
-                    key={job.id} 
+                  <div
+                    key={job.id}
                     onClick={() => handleJobClick(job.id)}
-                    className="cursor-pointer flex items-center justify-between p-4 rounded-xl border border-[var(--soft-stone)]/30 bg-white hover:border-[var(--clay)]/30 transition"
+                    className="cursor-pointer flex items-center justify-between p-4 rounded-xl border border-[var(--soft-stone)]/30 bg-white hover:border-[var(--clay)]/30 transition clay-card--interactive clay-table-row clay-rise"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3">
@@ -483,22 +481,22 @@ setCurrentYear(now.getFullYear());
                   <label className="block text-xs text-[var(--soft-stone)] mb-1">Client</label>
                   <div className="relative">
                     <input
-                      type="text"
-                      placeholder="Search clients..."
-                      value={clientSearch}
-                      onChange={(e) => {
-                        setClientSearch(e.target.value);
-                        // Find selected client
-                        const selectedClient = filteredClients.find(c => 
-                          c.name.toLowerCase() === e.target.value.toLowerCase() ||
-                          c.email.toLowerCase() === e.target.value.toLowerCase()
-                        );
-                        if (selectedClient) {
-                          setCreateJobForm(prev => ({ ...prev, clientId: selectedClient.id }));
-                        }
-                      }}
-                      className="w-full px-4 py-2 rounded pl-10 border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--clay)]"
-                    />
+                        type="text"
+                        placeholder="Search clients..."
+                        value={clientSearch}
+                        onChange={(e) => {
+                          setClientSearch(e.target.value);
+                          // Find selected client
+                          const selectedClient = filteredClients.find(c =>
+                            c.name.toLowerCase() === e.target.value.toLowerCase() ||
+                            c.email.toLowerCase() === e.target.value.toLowerCase()
+                          );
+                          if (selectedClient) {
+                            setCreateJobForm(prev => ({ ...prev, clientId: selectedClient.id }));
+                          }
+                        }}
+                        className="w-full px-4 py-2 rounded-lg pl-10 border border-[var(--soft-stone)]/30 bg-white text-sm clay-field-input"
+                      />
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--soft-stone)]/50">
                       <span className="material-symbols-outlined">person</span>
                     </div>
@@ -542,7 +540,7 @@ setCurrentYear(now.getFullYear());
                     placeholder="e.g., Standard Clean, Deep Clean, Haircut"
                     value={createJobForm.serviceType}
                     onChange={(e) => setCreateJobForm(prev => ({ ...prev, serviceType: e.target.value }))}
-                    className="w-full px-3 py-2 rounded border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--clay)]"
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm clay-field-input"
                   />
                 </div>
 
@@ -554,16 +552,16 @@ setCurrentYear(now.getFullYear());
                       type="date"
                       value={createJobForm.scheduledDate}
                       onChange={(e) => setCreateJobForm(prev => ({ ...prev, scheduledDate: e.target.value }))}
-                      className="w-full px-3 py-2 rounded border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--clay)]"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm clay-field-input"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-[var(--soft-stone)] mb-1">Time</label>
+                    <label className="block text-xs text-[var(--soft-stone)] font-label mb-1">Time</label>
                     <input
                       type="time"
                       value={createJobForm.scheduledTime}
                       onChange={(e) => setCreateJobForm(prev => ({ ...prev, scheduledTime: e.target.value }))}
-                      className="w-full px-3 py-2 rounded border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--clay)]"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm clay-field-input"
                     />
                   </div>
                 </div>
@@ -571,11 +569,11 @@ setCurrentYear(now.getFullYear());
                 {/* Duration and Price */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-[var(--soft-stone)] mb-1">Duration (min)</label>
+                    <label className="block text-xs text-[var(--soft-stone)] font-label mb-1">Duration (min)</label>
                     <select
                       value={createJobForm.durationMinutes}
                       onChange={(e) => setCreateJobForm(prev => ({ ...prev, durationMinutes: e.target.value }))}
-                      className="w-full px-3 py-2 rounded border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--clay)]"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm clay-field-input"
                     >
                       <option value="">Custom</option>
                       <option value="30">30 min</option>
@@ -587,13 +585,13 @@ setCurrentYear(now.getFullYear());
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs text-[var(--soft-stone)] mb-1">Price Estimate ($)</label>
+                    <label className="block text-xs text-[var(--soft-stone)] font-label mb-1">Price Estimate ($)</label>
                     <input
                       type="number"
                       placeholder="0.00"
                       value={createJobForm.priceEstimate}
                       onChange={(e) => setCreateJobForm(prev => ({ ...prev, priceEstimate: e.target.value }))}
-                      className="w-full px-3 py-2 rounded border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--clay)]"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm clay-field-input"
                     />
                   </div>
                 </div>
@@ -662,7 +660,7 @@ setCurrentYear(now.getFullYear());
                         type="date"
                         value={createJobForm.endDate}
                         onChange={(e) => setCreateJobForm(prev => ({ ...prev, endDate: e.target.value }))}
-                        className="w-full px-3 py-2 rounded border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--clay)]"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm clay-field-input"
                       />
                       <p className="text-[var(--soft-stone)] text-xs mt-1">
                         This will create approximately {createJobForm.endDate ? 
@@ -683,7 +681,7 @@ setCurrentYear(now.getFullYear());
                     placeholder="Add any special instructions or notes for the worker..."
                     value={createJobForm.notes}
                     onChange={(e) => setCreateJobForm(prev => ({ ...prev, notes: e.target.value }))}
-                    className="w-full px-3 py-2 rounded border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--clay)]"
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm clay-field-input"
                     rows="3"
                   />
                 </div>
@@ -711,7 +709,7 @@ setCurrentYear(now.getFullYear());
                         placeholder="25-100"
                         value={createJobForm.depositAmount || ''}
                         onChange={(e) => setCreateJobForm(prev => ({ ...prev, depositAmount: e.target.value }))}
-                        className="w-full px-3 py-2 rounded border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--clay)]"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm clay-field-input"
                       />
                       <p className="text-[var(--soft-stone)] text-xs mt-1">
                         Suggested range: $25-$100 for new or low-reliability clients
@@ -722,13 +720,9 @@ setCurrentYear(now.getFullYear());
 
                 {/* Submit Button */}
                 <div className="mt-6">
-                  <button
-                    type="submit"
-                    className="w-full bg-[var(--clay)] text-white hover:bg-[var(--terracotta)] px-4 py-3 rounded-full font-medium flex items-center justify-center gap-2"
-                    disabled={!createJobForm.clientId || !createJobForm.serviceType || !createJobForm.scheduledDate || !createJobForm.scheduledTime}
-                  >
+                  <Button variant="primary" type="submit" className="w-full" disabled={!createJobForm.clientId || !createJobForm.serviceType || !createJobForm.scheduledDate || !createJobForm.scheduledTime}>
                     Create Job
-                  </button>
+                  </Button>
                 </div>
               </form>
             </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { FiPlus, FiTrash2, FiSend, FiCheckCircle, FiClock, FiAlertCircle, FiEye, FiX } from 'react-icons/fi';
+import { Button } from '../../components/primitives';
 
 const CRM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
 
@@ -40,35 +41,37 @@ export default function InvoicesPage() {
   if (loading) return <div className="min-h-screen bg-[var(--cream)] flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--clay)]" /></div>;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-[var(--warm-ink)]">Invoices</h2>
-        <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-[var(--clay)] text-white rounded-xl text-sm font-medium flex items-center gap-2">
-          <FiPlus className="w-4 h-4" /> New Invoice
-        </button>
-      </div>
+    <div className="space-y-4 clay-fade">
+    <div className="flex items-center justify-between clay-heading">
+      <h2 className="text-lg font-bold" style={{ color: 'var(--warm-ink)' }}>Invoices</h2>
+      <Button onClick={() => setShowCreate(true)} icon="add">
+        New Invoice
+      </Button>
+    </div>
 
       {/* Filters */}
       <div className="flex gap-2">
         {['all', 'draft', 'sent', 'paid', 'overdue'].map(f => (
-          <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1.5 rounded-lg text-sm font-medium capitalize ${filter === f ? 'bg-[var(--clay)] text-white' : 'bg-white border border-[var(--soft-stone)]/30 text-[var(--warm-ink)]'}`}>{f}</button>
+          <button key={f} onClick={() => setFilter(f)} className={`clay-filter-chip px-3 py-1.5 rounded-lg text-sm font-medium capitalize capitalize ${
+            filter === f ? 'clay-filter-chip--active' : 'clay-filter-chip--inactive'
+          }`}>{f}</button>
         ))}
       </div>
 
       {invoices.length === 0 ? (
-        <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-12 text-center">
-          <p className="text-[var(--soft-stone)]">No invoices yet. <button onClick={() => setShowCreate(true)} className="text-[var(--clay)] hover:underline">Create your first invoice</button></p>
+        <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-12 text-center clay-scale-in">
+          <p className="text-[var(--soft-stone)]">No invoices yet. <button onClick={() => setShowCreate(true)} className="text-[var(--clay)] hover:underline clay-filter-chip--active" style={{ color: 'white', backgroundColor: 'var(--clay)', padding: '4px 12px', borderRadius: '9999px' }}>Create your first invoice</button></p>
         </div>
       ) : (
         <div className="space-y-3">
           {invoices.map(inv => (
-            <Link key={inv.id} to={`/contact/invoices/${inv.id}`} className="flex items-center justify-between p-4 rounded-xl border border-[var(--soft-stone)]/30 bg-white hover:border-[var(--clay)]/30 transition">
+            <Link key={inv.id} to={`/contact/invoices/${inv.id}`} className="flex items-center justify-between p-4 rounded-xl border border-[var(--soft-stone)]/30 bg-white hover:border-[var(--clay)]/30 transition clay-card--interactive clay-table-row">
               <div>
                 <p className="font-medium text-[var(--warm-ink)]">{inv.number}</p>
                 <p className="text-sm text-[var(--soft-stone)]">{inv.client?.name || 'Unknown'} · ${inv.subtotal?.toLocaleString() || 0}</p>
               </div>
               <div className="text-right">
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_COLORS[inv.status] || ''}`}>{inv.status}</span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize inline-flex items-center ${STATUS_COLORS[inv.status] || ''}`}>{inv.status}</span>
                 <p className="text-xs text-[var(--soft-stone)] mt-1">Due {new Date(inv.dateDue).toLocaleDateString()}</p>
               </div>
             </Link>
@@ -129,9 +132,9 @@ function CreateInvoiceModal({ onClose, onSave }: { onClose: () => void; onSave: 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
       <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl border border-[var(--soft-stone)]/30 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-[var(--warm-ink)]">Create Invoice</h3>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-[var(--warm-sand)]"><FiX className="w-5 h-5" /></button>
+        <div className="flex items-center justify-between mb-4 clay-heading">
+          <h3 className="text-lg font-bold" style={{ color: 'var(--warm-ink)' }}>Create Invoice</h3>
+          <button onClick={onClose} className="p-2 rounded-lg clay-card--interactive" style={{ backgroundColor: 'rgba(232, 217, 197, 0.3)', color: 'var(--soft-stone)' }}><FiX className="w-5 h-5" /></button>
         </div>
 
         <div className="space-y-4">
@@ -178,8 +181,8 @@ function CreateInvoiceModal({ onClose, onSave }: { onClose: () => void; onSave: 
           </div>
 
           <div className="flex gap-3 pt-4">
-            <button onClick={() => handleSave('draft')} disabled={saving || !selectedClient} className="flex-1 py-2 rounded-xl border border-[var(--soft-stone)]/30 text-sm font-medium text-[var(--warm-ink)] hover:bg-[var(--warm-sand)] disabled:opacity-50">Save as Draft</button>
-            <button onClick={() => handleSave('sent')} disabled={saving || !selectedClient} className="flex-1 py-2 rounded-xl bg-[var(--clay)] text-white text-sm font-medium hover:bg-[var(--terracotta)] disabled:opacity-50">Save & Send</button>
+            <Button variant="secondary" onClick={() => handleSave('draft')} disabled={saving || !selectedClient}>Save as Draft</Button>
+            <Button variant="primary" onClick={() => handleSave('sent')} disabled={saving || !selectedClient}>Save & Send</Button>
           </div>
         </div>
       </div>

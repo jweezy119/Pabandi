@@ -8,6 +8,7 @@ const navItems = [
   { path: '/contact/clients', label: 'Clients', icon: 'groups' },
   { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
   { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
+  { path: '/contact/settings/modules', label: 'Settings', icon: 'settings' },
 ];
 
 export default function ContactClientsPage() {
@@ -103,8 +104,8 @@ export default function ContactClientsPage() {
   return (
     <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold font-headline text-[var(--warm-ink)]">Clients</h1>
+        <div className="flex items-center justify-between clay-heading">
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Clients</h1>
           <Button onClick={() => { resetForm(); setShowAddModal(true); }} icon="add">
             Add Client
           </Button>
@@ -121,20 +122,20 @@ export default function ContactClientsPage() {
             onAction={() => { resetForm(); setShowAddModal(true); }} 
           />
         ) : (
-          <Card hover={false} className="p-0 overflow-hidden">
+          <Card hover={false} className="clay-rise p-0 overflow-hidden">
             <table className="w-full">
               <thead>
                 <tr className="bg-[var(--warm-sand)]">
-                  <th className="text-left p-4 text-sm font-semibold text-[var(--warm-ink)]">Name</th>
-                  <th className="text-left p-4 text-sm font-semibold text-[var(--warm-ink)]">Company</th>
-                  <th className="text-left p-4 text-sm font-semibold text-[var(--warm-ink)]">Contact</th>
-                  <th className="text-right p-4 text-sm font-semibold text-[var(--warm-ink)]">Lifetime Value</th>
-                  <th className="text-right p-4 text-sm font-semibold text-[var(--warm-ink)]">Actions</th>
+                  <th className="text-left p-4 text-sm font-semibold text-[var(--warm-ink)] font-label">Name</th>
+                  <th className="text-left p-4 text-sm font-semibold text-[var(--warm-ink)] font-label">Company</th>
+                  <th className="text-left p-4 text-sm font-semibold text-[var(--warm-ink)] font-label">Contact</th>
+                  <th className="text-right p-4 text-sm font-semibold text-[var(--warm-ink)] font-label">Lifetime Value</th>
+                  <th className="text-right p-4 text-sm font-semibold text-[var(--warm-ink)] font-label">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {clients.map((client) => (
-                  <tr key={client.id} className="border-t border-[rgba(191,179,163,0.2)] hover:bg-[var(--warm-sand)]/50 transition">
+                  <tr key={client.id} className="clay-table-row border-t border-[rgba(191,179,163,0.2)]">
                     <td className="p-4 font-medium text-[var(--warm-ink)]">
                       <Link to={`/contact/clients/${client.id}`} className="hover:text-[var(--clay)] transition">
                         {client.name}
@@ -149,10 +150,10 @@ export default function ContactClientsPage() {
                       ${(client.totalSpent || 0).toLocaleString()}
                     </td>
                     <td className="p-4 text-right">
-                      <button onClick={() => openEditModal(client)} className="p-2 text-[var(--soft-stone)] hover:text-[var(--clay)] transition" aria-label="Edit">
+                      <button onClick={() => openEditModal(client)} className="p-2 text-[var(--soft-stone)] hover:text-[var(--clay)] transition clay-card--interactive rounded-full" aria-label="Edit">
                         <span className="material-symbols-outlined text-[20px]">edit</span>
                       </button>
-                      <button onClick={() => setShowDeleteConfirm(client.id)} className="p-2 text-[var(--soft-stone)] hover:text-[var(--terracotta)] transition" aria-label="Delete">
+                      <button onClick={() => setShowDeleteConfirm(client.id)} className="p-2 text-[var(--soft-stone)] hover:text-[var(--terracotta)] transition clay-card--interactive rounded-full" aria-label="Delete">
                         <span className="material-symbols-outlined text-[20px]">delete</span>
                       </button>
                     </td>

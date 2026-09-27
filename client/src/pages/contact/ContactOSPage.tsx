@@ -1,84 +1,49 @@
 import { Helmet } from 'react-helmet-async';
 import DashboardLayout from '../../components/DashboardLayout';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { useBusinessSettings } from '../../hooks/useBusinessSettings';
+import { Card } from '../../components/primitives';
 
 const navItems = [
   { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
   { path: '/contact/clients', label: 'Clients', icon: 'groups' },
   { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
   { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
+  { path: '/contact/settings/modules', label: 'Settings', icon: 'settings' },
 ];
 
-const FUNNEL_STAGES = [
-  { name: 'Lead', color: 'var(--clay)' },
-  { name: 'Verified', color: 'var(--muted-ochre)' },
-  { name: 'Booked', color: 'var(--sage)' },
-  { name: 'Repeat', color: 'var(--sky-wash)' },
-  { name: 'VIP', color: 'var(--dusty-rose)' },
-  { name: 'At Risk', color: 'var(--terracotta)' },
-];
+function StatCard({ icon, value, label, color = 'clay', delay = 0 }: {
+  icon: string;
+  value: string;
+  label: string;
+  color?: string;
+  delay?: number;
+}) {
+  const colorMap: Record<string, string> = {
+    clay: 'var(--clay)',
+    sage: 'var(--sage)',
+    ochre: 'var(--muted-ochre)',
+    'sky-wash': 'var(--sky-wash)',
+    'dusty-rose': 'var(--dusty-rose)',
+  };
 
-function ClayCard({ children, className = '', hover = true, ...props }: any) {
   return (
-    <div
-      className={`rounded-[28px] bg-white transition-all duration-300 ${hover ? 'hover:-translate-y-0.5' : ''} ${className}`}
-      style={{ boxShadow: 'var(--shadow-soft)' }}
-      {...props}
-    >
-      <div className="p-4">{children}</div>
-    </div>
-  );
-}
-
-function StatCard({ icon, value, label, valueColor = 'warm-ink' }: { icon: string; value: string; label: string; valueColor?: string }) {
-  return (
-    <ClayCard className="p-5" hover={false}>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm mb-1" style={{ color: 'var(--soft-stone)' }}>{label}</p>
-          <p className="text-2xl font-bold" style={{ color: `var(--${valueColor})` }}>{value}</p>
+    <div className="clay-rise" style={{ animationDelay: `${delay}ms` }}>
+      <Card hover={false}>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="font-label" style={{ color: 'var(--soft-stone)' }}>{label}</p>
+            <p className="stat-number text-4xl mt-2" style={{ color: 'var(--warm-ink)' }}>{value}</p>
+          </div>
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center clay-stat-icon"
+            style={{ backgroundColor: colorMap[color] || colorMap.clay }}
+          >
+            <span className="material-symbols-outlined text-[20px] text-white">{icon}</span>
+          </div>
         </div>
-        <div className="w-11 h-11 rounded-xl bg-[var(--clay)] flex items-center justify-center">
-          <span className="material-symbols-outlined text-[20px]" style={{ color: 'var(--cream)' }}>{icon}</span>
-        </div>
-      </div>
-    </ClayCard>
-  );
-}
-
-function FirstRunWizard() {
-  const [step, setStep] = useState(1);
-  return (
-    <div className="max-w-xl mx-auto py-12">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-headline font-bold" style={{ color: 'var(--warm-ink)' }}>Welcome to Contact OS</h1>
-        <p className="mt-2" style={{ color: 'var(--soft-stone)' }}>Let's set up your CRM.</p>
-      </div>
-      
-      <ClayCard className="p-8">
-        {step === 1 && (
-          <div>
-            <h2 className="text-xl font-bold mb-4 font-headline" style={{ color: 'var(--warm-ink)' }}>1. Name your business</h2>
-            <input className="w-full rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] mb-6" placeholder="e.g. Acme Studio" />
-            <button onClick={() => setStep(2)} className="w-full rounded-xl bg-[var(--clay)] px-4 py-3 font-semibold text-[var(--warm-ink)] transition hover:bg-[var(--terracotta)]">Continue</button>
-          </div>
-        )}
-        {step === 2 && (
-          <div>
-            <h2 className="text-xl font-bold mb-4 font-headline" style={{ color: 'var(--warm-ink)' }}>2. Add your first client</h2>
-            <input className="w-full rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] mb-6" placeholder="Client Name" />
-            <button onClick={() => setStep(3)} className="w-full rounded-xl bg-[var(--clay)] px-4 py-3 font-semibold text-[var(--warm-ink)] transition hover:bg-[var(--terracotta)]">Continue</button>
-          </div>
-        )}
-        {step === 3 && (
-          <div>
-            <h2 className="text-xl font-bold mb-4 font-headline" style={{ color: 'var(--warm-ink)' }}>3. Draft your first invoice</h2>
-            <input className="w-full rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] mb-6" placeholder="Amount ($)" type="number" />
-            <button onClick={() => window.location.href='/contact'} className="w-full rounded-xl bg-[var(--sage)] px-4 py-3 font-semibold text-[var(--warm-ink)] transition hover:bg-opacity-80">Finish Setup</button>
-          </div>
-        )}
-      </ClayCard>
+      </Card>
     </div>
   );
 }
@@ -86,6 +51,15 @@ function FirstRunWizard() {
 export default function ContactOSPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { settings } = useBusinessSettings();
+
+  // Redirect new users to the setup wizard
+  useEffect(() => {
+    if (!settings.hasCompletedSetup && !settings.vertical) {
+      navigate('/contact/setup', { replace: true });
+    }
+  }, [settings.hasCompletedSetup, settings.vertical, navigate]);
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -109,26 +83,12 @@ export default function ContactOSPage() {
   }, []);
 
   const location = useLocation();
-  const showWizard = new URLSearchParams(location.search).get('wizard') === 'true';
-
-  if (showWizard) {
-    return (
-      <>
-        <Helmet>
-          <title>Welcome to Contact OS</title>
-        </Helmet>
-        <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
-          <FirstRunWizard />
-        </DashboardLayout>
-      </>
-    );
-  }
 
   if (loading) {
     return (
       <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="flex items-center justify-center py-20">
+          <div className="w-8 h-8 rounded-full border-2 border-[var(--clay)] border-t-transparent animate-spin" />
         </div>
       </DashboardLayout>
     );
@@ -140,51 +100,120 @@ export default function ContactOSPage() {
         <title>Contact OS — Every relationship, one trusted record</title>
       </Helmet>
       <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
-        <div className="space-y-6">
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link to="/contact/clients" className="block transition hover:-translate-y-0.5">
-              <StatCard icon="groups" value={leads.length.toString()} label="Total Leads" valueColor="warm-ink" />
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          {/* ── Greeting ─────────────────────────────────────────── */}
+          <div className="clay-fade mb-8">
+            <h1 className="text-3xl font-bold clay-heading">
+              Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}
+            </h1>
+            <p className="mt-1" style={{ color: 'var(--soft-stone)', fontSize: '15px' }}>
+              Here's your business at a glance.
+            </p>
+          </div>
+
+          {/* ── Stat cards ───────────────────────────────────────── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+            <Link to="/contact/clients" className="block">
+              <StatCard icon="groups" value={leads.length.toString()} label="Total Clients" color="clay" delay={160} />
             </Link>
-            <Link to="/contact/deals" className="block transition hover:-translate-y-0.5">
-              <StatCard icon="trending_up" value={leads.filter(l => l.stage === 'booked').length.toString()} label="Booked" valueColor="sage" />
+            <Link to="/contact/deals" className="block">
+              <StatCard icon="trending_up" value={leads.filter(l => l.stage === 'booked').length.toString()} label="Active Deals" color="sage" delay={240} />
             </Link>
-            <Link to="/contact/clients" className="block transition hover:-translate-y-0.5">
-              <StatCard icon="calendar_today" value={leads.filter(l => l.stage === 'repeat').length.toString()} label="Repeat" valueColor="sky-wash" />
+            <Link to="/contact/clients" className="block">
+              <StatCard icon="repeat" value={leads.filter(l => l.stage === 'repeat').length.toString()} label="Repeat Clients" color="sky-wash" delay={320} />
             </Link>
-            <Link to="/contact/clients" className="block transition hover:-translate-y-0.5">
-              <StatCard icon="star" value={leads.filter(l => l.stage === 'vip').length.toString()} label="VIP" valueColor="dusty-rose" />
+            <Link to="/contact/clients" className="block">
+              <StatCard icon="star" value={leads.filter(l => l.stage === 'vip').length.toString()} label="VIP" color="dusty-rose" delay={400} />
             </Link>
           </div>
 
-          {/* Clients List */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold">Clients</h2>
-              <Link to="/contact/clients" className="px-4 py-2 bg-primary/10 rounded-lg hover:bg-primary/20 text-sm font-medium">
-                View All
+          {/* ── Clients list ──────────────────────────────────────── */}
+          <div className="clay-rise clay-delay-5">
+            <div className="flex items-center justify-between mb-5 clay-heading" style={{ fontSize: '1.25rem' }}>
+              <h2 className="font-bold" style={{ color: 'var(--warm-ink)', fontFamily: 'var(--font-headline)' }}>
+                Recent Clients
+              </h2>
+              <Link
+                to="/contact/clients"
+                className="text-sm font-bold px-4 py-2 rounded-full transition-all duration-200 clay-filter-chip clay-filter-chip--active"
+                style={{
+                  color: 'white',
+                  backgroundColor: 'var(--clay)',
+                  boxShadow: 'var(--shadow-btn)',
+                }}
+              >
+                View All →
               </Link>
             </div>
 
             {leads.length === 0 ? (
-              <p className="text-center py-8 text-muted">No leads yet. Add your first lead to get started.</p>
-            ) : (
-              <div className="space-y-4">
-                {leads.map((lead) => (
-                  <Link key={lead.id} to={`/contact/clients/${lead.id}`} className="p-4 flex items-center justify-between rounded-xl hover:bg-[var(--warm-sand)]/50 transition cursor-pointer">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--warm-sand)' }}>
-                        <span className="material-symbols-outlined text-[20px]" style={{ color: 'var(--soft-stone)' }}>person</span>
-                      </div>
-                      <div>
-                        <p className="font-medium" style={{ color: 'var(--warm-ink)' }}>{lead.name}</p>
-                        <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>{lead.stage || 'lead'} • {lead.totalJobs || 0} jobs</p>
-                      </div>
-                    </div>
-                    <span className="font-medium" style={{ color: 'var(--terracotta)' }}>${(lead.totalSpent || 0).toLocaleString()}</span>
+              <Card hover={false} className="text-center">
+                <div className="py-12">
+                  <span className="material-symbols-outlined text-[48px] mb-4 block" style={{ color: 'var(--clay)' }}>
+                    person_add
+                  </span>
+                  <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--warm-ink)', fontFamily: 'var(--font-headline)' }}>
+                    Add your first client
+                  </h3>
+                  <p className="mb-6" style={{ color: 'var(--soft-stone)', fontSize: '14px', maxWidth: '320px', margin: '0 auto 24px' }}>
+                    Every great relationship starts here. Add a client to start tracking.
+                  </p>
+                  <Link
+                    to="/contact/clients"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-white transition-all duration-150"
+                    style={{
+                      backgroundColor: 'var(--clay)',
+                      boxShadow: 'var(--shadow-btn)',
+                    }}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">add</span>
+                    Add Client
                   </Link>
-                ))}
-              </div>
+                </div>
+              </Card>
+            ) : (
+              <Card hover={false} noPadding>
+                <div>
+                  {leads.map((lead, i) => (
+                    <Link
+                      key={lead.id}
+                      to={`/contact/clients/${lead.id}`}
+                      className="flex items-center justify-between px-7 transition-colors duration-200 clay-table-row"
+                      style={{
+                        height: 'var(--space-row-height)',
+                        borderBottom: i < leads.length - 1 ? '1px solid rgba(191, 179, 163, 0.15)' : 'none',
+                        borderRadius: '0',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(232, 217, 197, 0.3)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center"
+                          style={{
+                            background: 'linear-gradient(135deg, var(--warm-sand) 0%, rgba(201,123,90,0.15) 100%)',
+                          }}
+                        >
+                          <span className="text-sm font-bold" style={{ color: 'var(--clay)' }}>
+                            {lead.name?.charAt(0)?.toUpperCase() || '?'}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm" style={{ color: 'var(--warm-ink)' }}>
+                            {lead.name}
+                          </p>
+                          <p style={{ color: 'var(--soft-stone)', fontSize: '12px' }}>
+                            {lead.stage || 'lead'} • {lead.totalJobs || 0} jobs
+                          </p>
+                        </div>
+                      </div>
+                      <span className="stat-number text-sm" style={{ color: 'var(--terracotta)' }}>
+                        ${(lead.totalSpent || 0).toLocaleString()}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </Card>
             )}
           </div>
         </div>

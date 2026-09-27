@@ -13,6 +13,7 @@ const navItems = [
   { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
   { path: '/contact/jobs', label: 'Jobs', icon: 'work' },
   { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
+  { path: '/contact/settings/modules', label: 'Settings', icon: 'settings' },
 ];
 
 const TYPES = [
@@ -154,9 +155,9 @@ export default function ContactActivitiesPage() {
     <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
       <div className="space-y-6">
         {/* Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 clay-heading">
           <div>
-            <h1 className="text-2xl font-bold font-headline text-[var(--warm-ink)]">Activity & Task Stream</h1>
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Activity & Task Stream</h1>
             <p className="text-sm text-[var(--soft-stone)] mt-0.5">
               Track calls, emails, meetings, notes, and pending tasks across clients.
             </p>
@@ -172,10 +173,10 @@ export default function ContactActivitiesPage() {
             <button
               key={t.id}
               onClick={() => setSelectedType(t.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
+              className={`clay-filter-chip flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 ${
                 selectedType === t.id
-                  ? 'bg-[var(--warm-ink)] text-white shadow-xs'
-                  : 'bg-white text-[var(--soft-stone)] hover:bg-[var(--warm-sand)]/50'
+                  ? 'clay-filter-chip--active'
+                  : 'clay-filter-chip--inactive'
               }`}
             >
               <span className="material-symbols-outlined text-[16px]">{t.icon}</span>
@@ -198,7 +199,7 @@ export default function ContactActivitiesPage() {
         ) : (
           <div className="space-y-3">
             {filteredActivities.map(act => (
-              <Card key={act.id} variant="flat" padding="md" hover className="flex items-start gap-4 border border-[var(--warm-sand)]/60">
+              <Card key={act.id} variant="default" padding="md" hover className="flex items-start gap-4 border border-[var(--warm-sand)]/60 clay-card--interactive">
                 {/* Checkbox for Task or Icon for Activity */}
                 {act.type === 'TASK' ? (
                   <button
@@ -214,7 +215,7 @@ export default function ContactActivitiesPage() {
                     </span>
                   </button>
                 ) : (
-                  <div className="w-9 h-9 rounded-xl bg-[var(--warm-sand)]/60 flex items-center justify-center shrink-0 text-[var(--clay)]">
+                  <div className="w-9 h-9 rounded-xl clay-activity-icon flex items-center justify-center shrink-0">
                     <span className="material-symbols-outlined text-[20px]">{getTypeIcon(act.type)}</span>
                   </div>
                 )}

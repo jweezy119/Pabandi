@@ -1,20 +1,72 @@
-/* Warm Clay Dashboard — Shared Design Tokens */
+/* ═══════════════════════════════════════════════════════════════════
+   Warm Clay Futurism — Design System Tokens
+   "Like clay, not cardboard" — tactile, soft, alive.
+   ═══════════════════════════════════════════════════════════════════ */
 
 :root {
-  --clay: #C97B5A;
-  --terracotta: #A85A3C;
-  --warm-sand: #E8D9C5;
-  --cream: #F5EFE6;
-  --warm-ink: #2A2520;
-  --sage: #8A9A7B;
-  --dusty-rose: #D4A5A5;
+  /* ── Core palette ────────────────────────────────────────────── */
+  --clay:        #C97B5A;
+  --terracotta:  #A85A3C;
+  --warm-sand:   #E8D9C5;
+  --cream:       #F5EFE6;
+  --warm-ink:    #2A2520;
+  --sage:        #8A9A7B;
+  --dusty-rose:  #D4A5A5;
   --muted-ochre: #D9A854;
-  --soft-stone: #5A5348;
-  --sky-wash: #B8C9D4;
+  --soft-stone:  #5A5348;
+  --sky-wash:    #B8C9D4;
 
-  --shadow-soft: 0 4px 20px rgba(180, 130, 90, 0.12);
-  --shadow-lift: 0 8px 32px rgba(180, 130, 90, 0.18);
-  --radius-card: 28px;
-  --radius-pill: 999px;
-  --ease-clay: cubic-bezier(0.34, 1.4, 0.64, 1);
+  /* ── Shadows — warm-tinted, layered, never black ─────────────── */
+  --shadow-soft:
+    0 1px 2px rgba(180, 130, 90, 0.06),
+    0 4px 12px rgba(180, 130, 90, 0.08),
+    0 12px 32px rgba(180, 130, 90, 0.06);
+  --shadow-lift:
+    0 2px 4px rgba(180, 130, 90, 0.08),
+    0 8px 20px rgba(180, 130, 90, 0.10),
+    0 20px 48px rgba(180, 130, 90, 0.08);
+  --shadow-pressed:
+    0 1px 3px rgba(180, 130, 90, 0.10);
+  --shadow-btn:
+    0 2px 6px rgba(180, 130, 90, 0.15),
+    0 1px 2px rgba(180, 130, 90, 0.10);
+  --shadow-btn-hover:
+    0 4px 12px rgba(180, 130, 90, 0.20),
+    0 2px 4px rgba(180, 130, 90, 0.15);
+  --shadow-sidebar:
+    2px 0 16px rgba(180, 130, 90, 0.08);
+  --shadow-modal:
+    0 24px 80px rgba(42, 37, 32, 0.18),
+    0 8px 24px rgba(180, 130, 90, 0.12);
+
+  /* ── Radii — soft, never sharp ───────────────────────────────── */
+  --radius-card:  24px;
+  --radius-btn:   9999px;
+  --radius-input: 14px;
+  --radius-pill:  9999px;
+
+  /* ── Easing — springy for interactions, calm for entrances ──── */
+  --ease-clay:      cubic-bezier(0.34, 1.4, 0.64, 1);    /* buttons, toggles */
+  --ease-smooth:    cubic-bezier(0.25, 0.9, 0.35, 1);     /* cards, nav */
+  --ease-entrance:  cubic-bezier(0.22, 1.0, 0.36, 1);     /* page, fade-ins */
+
+  /* ── Atmosphere — subtle radial light from upper-left ────────── */
+  --atmosphere:
+    radial-gradient(
+      ellipse at top left,
+      #F5EFE6 0%,
+      #F0E8DC 60%,
+      #EBE1D2 100%
+    );
+
+  /* ── Typography ──────────────────────────────────────────────── */
+  --font-headline: 'Fraunces', serif;
+  --font-body:     'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-label:    'Space Grotesk', sans-serif;
+
+  /* ── Spacing ─────────────────────────────────────────────────── */
+  --space-card-padding: 28px;
+  --space-section-gap:  32px;
+  --space-row-height:   56px;
+  --space-sidebar-item: 12px 16px;
 }

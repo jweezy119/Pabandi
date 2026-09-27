@@ -12,6 +12,7 @@ const navItems = [
   { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
   { path: '/contact/jobs', label: 'Jobs', icon: 'work' },
   { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
+  { path: '/contact/settings/modules', label: 'Settings', icon: 'settings' },
 ];
 
 function Stat({ icon, value, label, color = 'terracotta' }: { icon: string; value: string; label: string; color?: string }) {
@@ -229,20 +230,20 @@ export default function ContactClientDetailPage() {
   return (
     <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
       <div className="space-y-6">
-        <Link to="/contact/clients" className="inline-flex items-center gap-2 text-sm text-[var(--clay)] font-medium hover:underline">
+        <Link to="/contact/clients" className="inline-flex items-center gap-2 text-sm text-[var(--clay)] font-medium hover:underline clay-fade">
           <span className="material-symbols-outlined text-[16px]">arrow_back</span>
           Back to Clients
         </Link>
 
         {/* Header section */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 clay-heading">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-[var(--clay)] text-white text-2xl font-bold shadow-md">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-[var(--clay)] text-white text-2xl font-bold shadow-md clay-stat-icon">
               {client.name.charAt(0)}
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold font-headline text-[var(--warm-ink)]">{client.name}</h1>
+                <h1 className="text-3xl font-bold" style={{ color: 'var(--warm-ink)' }}>{client.name}</h1>
                 <Chip label={client.status || 'ACTIVE'} variant="neutral" />
               </div>
               <p className="text-[var(--soft-stone)] text-sm">{client.email || 'No email provided'} · {client.phone || 'No phone'}</p>
@@ -255,15 +256,15 @@ export default function ContactClientDetailPage() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex gap-1 border-b border-[rgba(191,179,163,0.3)] pb-2 overflow-x-auto hide-scrollbar">
+        <div className="flex gap-1 border-b border-[rgba(191,179,163,0.3)] pb-2 overflow-x-auto hide-scrollbar clay-fade clay-delay-1">
           {TABS.map(tab => (
-            <button 
+            <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 font-bold text-sm rounded-full transition-all ${
-                activeTab === tab 
-                  ? 'bg-[var(--clay)] text-white shadow-xs' 
-                  : 'text-[var(--soft-stone)] hover:bg-[var(--warm-sand)] hover:text-[var(--warm-ink)]'
+              className={`clay-tab px-4 py-2 font-bold text-sm rounded-full ${
+                activeTab === tab
+                  ? 'clay-tab--active'
+                  : 'clay-tab--inactive'
               }`}
             >
               {tab}
@@ -275,8 +276,8 @@ export default function ContactClientDetailPage() {
         {activeTab === 'Overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              <Card hover={false}>
-                <h2 className="text-lg font-bold font-headline text-[var(--warm-ink)] mb-4">Contact Information</h2>
+              <Card hover={false} className="clay-rise">
+                <h2 className="text-lg font-bold clay-heading mb-4">Contact Information</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs font-semibold text-[var(--soft-stone)] uppercase tracking-wider mb-1">Email Address</p>
@@ -293,8 +294,8 @@ export default function ContactClientDetailPage() {
                 </div>
               </Card>
 
-              <Card hover={false}>
-                <h2 className="text-lg font-bold font-headline text-[var(--warm-ink)] mb-4">Financial Overview</h2>
+              <Card hover={false} className="clay-rise clay-delay-1">
+                <h2 className="text-lg font-bold clay-heading mb-4">Financial Overview</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <Stat icon="receipt_long" value={`$${totalBilled.toLocaleString()}`} label="Total Billed" color="ochre" />
                   <Stat icon="check_circle" value={`$${totalPaid.toLocaleString()}`} label="Paid to Date" color="sage" />
@@ -302,9 +303,9 @@ export default function ContactClientDetailPage() {
                 </div>
               </Card>
               
-              <Card hover={false}>
+              <Card hover={false} className="clay-rise clay-delay-2">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-bold font-headline text-[var(--warm-ink)]">Recent Activity</h2>
+                  <h2 className="text-lg font-bold clay-heading">Recent Activity</h2>
                   <Button variant="ghost" size="sm" onClick={() => setActiveTab('Activity')}>View All</Button>
                 </div>
                 {activities.length === 0 ? (
@@ -327,8 +328,8 @@ export default function ContactClientDetailPage() {
 
             {/* Right Column: Reliability & Next Action */}
             <div className="space-y-6">
-              <Card hover={false}>
-                <h2 className="text-lg font-bold font-headline text-[var(--warm-ink)] mb-4">Trust & Reliability Engine</h2>
+              <Card hover={false} className="clay-rise">
+                <h2 className="text-lg font-bold clay-heading mb-4">Trust & Reliability Engine</h2>
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between p-3.5 bg-[var(--warm-sand)]/50 rounded-2xl">
                     <div>
@@ -354,8 +355,8 @@ export default function ContactClientDetailPage() {
                 </div>
               </Card>
               
-              <Card hover={false}>
-                <h2 className="text-lg font-bold font-headline text-[var(--warm-ink)] mb-4">Next Recommended Action</h2>
+              <Card hover={false} className="clay-rise clay-delay-2">
+                <h2 className="text-lg font-bold clay-heading mb-4">Next Recommended Action</h2>
                 <div className="p-4 rounded-2xl bg-[var(--clay)]/10 border border-[var(--clay)]/30 space-y-2">
                   <div className="flex items-center gap-2 text-[var(--clay)] font-bold text-sm">
                     <span className="material-symbols-outlined text-[18px]">lightbulb</span>
@@ -373,9 +374,9 @@ export default function ContactClientDetailPage() {
 
         {/* Tab 2: Activity */}
         {activeTab === 'Activity' && (
-          <Card hover={false} className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold font-headline text-[var(--warm-ink)]">Activity & Task History</h2>
+          <Card hover={false} className="space-y-4 clay-rise">
+            <div className="flex justify-between items-center clay-heading">
+              <h2 className="text-xl font-bold" style={{ color: 'var(--warm-ink)' }}>Activity & Task History</h2>
               <Button icon="add" onClick={() => setShowActivityModal(true)}>Log Activity</Button>
             </div>
             {activities.length === 0 ? (
@@ -401,9 +402,9 @@ export default function ContactClientDetailPage() {
 
         {/* Tab 3: Deals */}
         {activeTab === 'Deals' && (
-          <Card hover={false} className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold font-headline text-[var(--warm-ink)]">Deals & Opportunities</h2>
+          <Card hover={false} className="space-y-4 clay-rise clay-delay-1">
+            <div className="flex justify-between items-center clay-heading">
+              <h2 className="text-xl font-bold" style={{ color: 'var(--warm-ink)' }}>Deals & Opportunities</h2>
               <Button icon="add" onClick={() => setShowDealModal(true)}>New Deal</Button>
             </div>
             {deals.length === 0 ? (
@@ -429,9 +430,9 @@ export default function ContactClientDetailPage() {
 
         {/* Tab 4: Invoices */}
         {activeTab === 'Invoices' && (
-          <Card hover={false} className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold font-headline text-[var(--warm-ink)]">Invoices & Billing</h2>
+          <Card hover={false} className="space-y-4 clay-rise clay-delay-2">
+            <div className="flex justify-between items-center clay-heading">
+              <h2 className="text-xl font-bold" style={{ color: 'var(--warm-ink)' }}>Invoices & Billing</h2>
               <Button icon="add" onClick={() => setShowInvoiceModal(true)}>Create Invoice</Button>
             </div>
             {invoices.length === 0 ? (
@@ -466,9 +467,9 @@ export default function ContactClientDetailPage() {
 
         {/* Tab 5: Jobs */}
         {activeTab === 'Jobs' && (
-          <Card hover={false} className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold font-headline text-[var(--warm-ink)]">Jobs & Service Orders</h2>
+          <Card hover={false} className="space-y-4 clay-rise clay-delay-3">
+            <div className="flex justify-between items-center clay-heading">
+              <h2 className="text-xl font-bold" style={{ color: 'var(--warm-ink)' }}>Jobs & Service Orders</h2>
               <Link to="/contact/jobs">
                 <Button icon="work">Manage All Jobs</Button>
               </Link>
@@ -497,8 +498,8 @@ export default function ContactClientDetailPage() {
 
         {/* Tab 6: Notes */}
         {activeTab === 'Notes' && (
-          <Card hover={false} className="space-y-4">
-            <h2 className="text-xl font-bold font-headline text-[var(--warm-ink)]">Internal Notes</h2>
+          <Card hover={false} className="space-y-4 clay-rise clay-delay-4">
+            <h2 className="text-xl font-bold clay-heading">Internal Notes</h2>
             <div className="p-4 rounded-2xl bg-[var(--warm-sand)]/40 border border-[var(--warm-sand)] text-sm text-[var(--warm-ink)]">
               {client.notes || 'No custom notes provided for this client.'}
             </div>
@@ -507,9 +508,9 @@ export default function ContactClientDetailPage() {
 
         {/* Tab 7: Files */}
         {activeTab === 'Files' && (
-          <Card hover={false} className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold font-headline text-[var(--warm-ink)]">Attachments & Documents</h2>
+          <Card hover={false} className="space-y-4 clay-rise clay-delay-5">
+            <div className="flex justify-between items-center clay-heading">
+              <h2 className="text-xl font-bold" style={{ color: 'var(--warm-ink)' }}>Attachments & Documents</h2>
               <Button icon="upload" onClick={() => setShowFileModal(true)}>Upload File</Button>
             </div>
             {files.length === 0 ? (
