@@ -17,13 +17,13 @@ type AlertSeed = Omit<Alert, 'id' | 'createdAt' | 'dismissed'>;
  * Generate alerts for a business based on client, job, and employee data.
  * This is the core rule engine of the trust-aware revenue system.
  */
-export async function generateAlerts(serviceBusinessId: string): Promise<AlertSeed[]> {
+export async function generateAlerts(businessId: string): Promise<AlertSeed[]> {
   const alerts: AlertSeed[] = [];
   const now = new Date();
 
   // ── Client-based alerts ─────────────────────────────────────────────────────
   const clients = await prisma.crmClient.findMany({
-    where: { serviceBusinessId },
+    where: { businessId },
     include: { jobs: true },
   });
 
@@ -90,7 +90,7 @@ export async function generateAlerts(serviceBusinessId: string): Promise<AlertSe
 
   // ── Job-based alerts ────────────────────────────────────────────────────────
   const jobs = await prisma.crmJob.findMany({
-    where: { serviceBusinessId },
+    where: { businessId },
   });
 
   for (const job of jobs) {
@@ -111,7 +111,7 @@ export async function generateAlerts(serviceBusinessId: string): Promise<AlertSe
 
   // ── Employee/Provider alerts ────────────────────────────────────────────────
   const employees = await prisma.crmEmployee.findMany({
-    where: { serviceBusinessId, isActive: true },
+    where: { businessId, isActive: true },
   });
 
   for (const emp of employees) {
@@ -139,13 +139,13 @@ export async function generateAlerts(serviceBusinessId: string): Promise<AlertSe
  * Get active (non-dismissed) alerts for a business.
  * Generates fresh alerts from current data and merges with stored ones.
  */
-export async function getActiveAlerts(serviceBusinessId: string): Promise<any[]> {
+export async function getActiveAlerts(businessId: string): Promise<any[]> {
   // Generate seeds from current data
-  const seeds = await generateAlerts(serviceBusinessId);
+  const seeds = await generateAlerts(businessId);
 
   // Upsert alerts — avoid duplicates by entityId + title key
   const existingAlerts = await prisma.crmAlert.findMany({
-    where: { serviceBusinessId, dismissed: false },
+    where: { businessId, dismissed: false },
   });
 
   const existingKeys = new Set(
@@ -157,7 +157,7 @@ export async function getActiveAlerts(serviceBusinessId: string): Promise<any[]>
   if (newSeeds.length > 0) {
     await prisma.crmAlert.createMany({
       data: newSeeds.map(s => ({
-        serviceBusinessId,
+        businessId,
         ...s,
       })),
     });
@@ -165,7 +165,7 @@ export async function getActiveAlerts(serviceBusinessId: string): Promise<any[]>
 
   // Return all active alerts
   return prisma.crmAlert.findMany({
-    where: { serviceBusinessId, dismissed: false },
+    where: { businessId, dismissed: false },
     orderBy: { createdAt: 'desc' },
   });
 }
@@ -173,9 +173,9 @@ export async function getActiveAlerts(serviceBusinessId: string): Promise<any[]>
 /**
  * Dismiss an alert by ID.
  */
-export async function dismissAlert(alertId: string, serviceBusinessId: string): Promise<any> {
+export async function dismissAlert(alertId: string, businessId: string): Promise<any> {
   return prisma.crmAlert.updateMany({
-    where: { id: alertId, serviceBusinessId },
+    where: { id: alertId, businessId },
     data: { dismissed: true, dismissedAt: new Date() },
   });
 }

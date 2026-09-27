@@ -47,7 +47,7 @@ function getBusinessId(req: AuthRequest): string {
 }
 
 async function getServiceBusinessId(businessId: string): Promise<string> {
-  const crmBusiness = await prisma.crmServiceBusiness.findUnique({ where: { businessId } });
+  const crmBusiness = await prisma.crmBusiness.findUnique({ where: { businessId } });
   if (!crmBusiness) {
     throw new CustomError('CRM business not found for this business', 404);
   }

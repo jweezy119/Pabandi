@@ -199,7 +199,7 @@ import LedgerOSPage from './pages/ledger/LedgerOSPage';
 import { PayInvoicePage } from './pages/PayInvoicePage';
 import LedgerInvoicesPage from './pages/ledger/LedgerInvoicesPage';
 import InvoicesPage from './pages/crm/InvoicesPage';
-import InvoiceDetailPage from './pages/crm/InvoiceDetailPage';
+import ContactInvoiceDetailPage from './pages/crm/ContactInvoiceDetailPage';
 import LedgerExpensesPage from './pages/ledger/LedgerExpensesPage';
 import LedgerAccountsPage from './pages/ledger/LedgerAccountsPage';
 import LedgerReportsPage from './pages/ledger/LedgerReportsPage';
@@ -275,7 +275,7 @@ function App() {
           <Route path="contact/deals/:id" element={<ContactDealDetailPage />} />
           <Route path="contact/activities" element={<ContactActivitiesPage />} />
           <Route path="contact/invoices" element={<InvoicesPage />} />
-          <Route path="contact/invoices/:id" element={<InvoiceDetailPage />} />
+          <Route path="contact/invoices/:id" element={<ContactInvoiceDetailPage />} />
           <Route path="contact/settings/modules" element={<ModulesSettingsPage />} />
           <Route path="contact/setup" element={<SetupWizardPage />} />
 

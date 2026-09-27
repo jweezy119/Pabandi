@@ -18,7 +18,7 @@ export async function getAlertsHandler(
       throw new CustomError('businessId is required', 400);
     }
 
-    const crmBusiness = await prisma.crmServiceBusiness.findUnique({
+    const crmBusiness = await prisma.crmBusiness.findUnique({
       where: { businessId: businessId as string },
     });
     if (!crmBusiness) {
@@ -44,7 +44,7 @@ export async function dismissAlertHandler(
       throw new CustomError('businessId is required', 400);
     }
 
-    const crmBusiness = await prisma.crmServiceBusiness.findUnique({
+    const crmBusiness = await prisma.crmBusiness.findUnique({
       where: { businessId: businessId as string },
     });
     if (!crmBusiness) {
@@ -72,7 +72,7 @@ export async function getClientStageHandler(
       throw new CustomError('businessId is required', 400);
     }
 
-    const crmBusiness = await prisma.crmServiceBusiness.findUnique({
+    const crmBusiness = await prisma.crmBusiness.findUnique({
       where: { businessId: businessId as string },
     });
     if (!crmBusiness) {
@@ -80,7 +80,7 @@ export async function getClientStageHandler(
     }
 
     const client = await prisma.crmClient.findFirst({
-      where: { id: clientId, serviceBusinessId: crmBusiness.id },
+      where: { id: clientId, businessId: crmBusiness.id },
       include: { jobs: true },
     });
     if (!client) {

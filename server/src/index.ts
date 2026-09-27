@@ -303,6 +303,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/seal`, './routes/seal.routes'],
   [`/api/${v}/billing`, './routes/billing.routes'],
   [`/api/${v}/jobs`, './routes/job.routes'],
+  [`/api/${v}/invoices`, './routes/invoice.routes'],
   [`/api/${v}/seed`, './routes/seed.routes'],
   [`/.well-known`, './routes/wellknown.routes'],
   [`/api/${v}/treasury/autonomous`, './routes/treasury.autonomous.routes'],
@@ -381,6 +382,17 @@ logger.info('✅ TrustCore event pipeline initialized');
 // Auto-start job cron service (checks for overdue jobs and no-shows every minute)
 import { jobCronService } from './services/jobCronService';
 jobCronService.start();
+
+import cron from 'node-cron';
+import { scanOverdueInvoices } from './services/invoice.service';
+// Daily scan for overdue invoices at midnight
+cron.schedule('0 0 * * *', async () => {
+  try {
+    await scanOverdueInvoices();
+  } catch (error) {
+    console.error('[InvoiceCron] Error scanning overdue invoices:', error);
+  }
+});
 logger.info('✅ Job cron service auto-started (checks every minute)');
 
 // Auto-start settlement service (runs every hour to settle agent credits on-chain)

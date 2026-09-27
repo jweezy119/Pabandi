@@ -202,13 +202,15 @@ export const PayInvoicePage: React.FC = () => {
         <Button
           variant="primary"
           onClick={handlePay}
-          disabled={!authenticated || paying || !invoice || invoice.status !== 'pending'}
+          disabled={!authenticated || paying || !invoice || invoice.status === 'paid'}
           style={styles.button}
         >
           {paying ? (
             <span>⏳ Processing...</span>
           ) : !authenticated ? (
             <span>🔗 Connect Wallet to Pay</span>
+          ) : invoice?.status === 'paid' ? (
+            <span>✅ Paid</span>
           ) : (
             <span>💎 Pay {invoice?.subtotal} {invoice?.currency}</span>
           )}

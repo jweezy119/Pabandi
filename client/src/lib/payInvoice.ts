@@ -79,6 +79,16 @@ export async function payInvoice(invoiceId: string): Promise<PaymentResult> {
     while (Date.now() - startTime < timeout) {
       const status = await connection.getSignatureStatus(signature);
       if (status.value?.confirmationStatus === 'confirmed') {
+        // Mark the invoice as paid on our backend to fire trust events
+        try {
+          await fetch(`${API_URL}/public/invoices/${invoiceId}/pay`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transactionHash: signature })
+          });
+        } catch (e) {
+          console.error("Failed to notify backend of payment", e);
+        }
         return { success: true, transactionHash: signature };
       }
       if (status.value?.err) {
