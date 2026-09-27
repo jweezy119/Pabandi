@@ -197,7 +197,17 @@ import { ContactAnalyticsPage } from './pages/crm/ContactAnalyticsPage';
 import { InviteAcceptPage } from './pages/auth/InviteAcceptPage';
 import { ContactJobsPage } from "./pages/crm/ContactJobsPage";
 import { ContactJobDetailPage } from "./pages/crm/ContactJobDetailPage";
-import ModulesSettingsPage from './pages/contact/settings/ModulesSettingsPage';
+import ModulesSettingsPage from './pages/crm/settings/ModulesSettingsPage';
+import { SettingsHubPage } from './pages/crm/settings/SettingsHubPage';
+import { BusinessProfilePage } from './pages/crm/settings/BusinessProfilePage';
+import { CustomFieldsPage } from './pages/crm/settings/CustomFieldsPage';
+import { PipelineSettingsPage } from './pages/crm/settings/PipelineSettingsPage';
+import { ServiceCatalogPage } from './pages/crm/settings/ServiceCatalogPage';
+import { PaymentSettingsPage } from './pages/crm/settings/PaymentSettingsPage';
+import { TrustSettingsPage } from './pages/crm/settings/TrustSettingsPage';
+import { NotificationsPage } from './pages/crm/settings/NotificationsPage';
+import { ApiKeysPage } from './pages/crm/settings/ApiKeysPage';
+import { WebhooksPage } from './pages/crm/settings/WebhooksPage';
 import SetupWizardPage from './pages/contact/SetupWizardPage';
 // LedgerOS
 import LedgerOSPage from './pages/ledger/LedgerOSPage';
@@ -286,7 +296,17 @@ function App() {
           <Route path="invite/accept" element={<InviteAcceptPage />} />
           <Route path="contact/invoices" element={<InvoicesPage />} />
           <Route path="contact/invoices/:id" element={<ContactInvoiceDetailPage />} />
+          <Route path="contact/settings" element={<SettingsHubPage />} />
+          <Route path="contact/settings/profile" element={<BusinessProfilePage />} />
           <Route path="contact/settings/modules" element={<ModulesSettingsPage />} />
+          <Route path="contact/settings/custom-fields" element={<CustomFieldsPage />} />
+          <Route path="contact/settings/pipeline" element={<PipelineSettingsPage />} />
+          <Route path="contact/settings/services" element={<ServiceCatalogPage />} />
+          <Route path="contact/settings/payment" element={<PaymentSettingsPage />} />
+          <Route path="contact/settings/trust" element={<TrustSettingsPage />} />
+          <Route path="contact/settings/notifications" element={<NotificationsPage />} />
+          <Route path="contact/settings/api-keys" element={<ApiKeysPage />} />
+          <Route path="contact/settings/webhooks" element={<WebhooksPage />} />
           <Route path="contact/setup" element={<SetupWizardPage />} />
 
           {/* LedgerOS - Finance & Accounting */}

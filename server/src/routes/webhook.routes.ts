@@ -1,37 +1,34 @@
-/**
- * webhook.routes.ts — admin webhook delivery endpoints.
- *
- *   POST /api/v1/webhooks/deliver/now  — force process webhook queue
- *   GET  /api/v1/webhooks/queue        — view pending webhooks
- */
-import { Router, Request, Response } from 'express';
-import { authenticate, authorize } from '../middleware/auth.middleware';
-import { prisma } from '../utils/database';
-import { webhookDeliveryService } from '../services/webhookDelivery.service';
+import { Router } from 'express';
+import { SettingsService } from '../services/settings.service';
 
 const router = Router();
 
-router.use(authenticate);
-router.use(authorize('ADMIN'));
-
-router.post('/deliver/now', async (_req: Request, res: Response) => {
+router.get('/', async (req, res) => {
   try {
-    const result = await webhookDeliveryService.processWebhookQueue();
-    res.json({ success: true, data: result });
-  } catch (e: any) {
-    res.status(500).json({ success: false, error: e.message });
+    const businessId = String(req.query.businessId);
+    const data = await SettingsService.getWebhooks(businessId);
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 
-router.get('/queue', async (_req: Request, res: Response) => {
+router.post('/', async (req, res) => {
   try {
-    const [pending, delivered] = await Promise.all([
-      prisma.webhookDelivery.count({ where: { status: 'QUEUED' } }),
-      prisma.webhookDelivery.count({ where: { status: 'DELIVERED' } }),
-    ]);
-    res.json({ success: true, data: { pending, delivered } });
-  } catch (e: any) {
-    res.status(500).json({ success: false, error: e.message });
+    const businessId = String(req.body.businessId);
+    const data = await SettingsService.createWebhook(businessId, req.body.data);
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/:id', async (req, res) => {
+  try {
+    const data = await SettingsService.deleteWebhook(req.params.id);
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 
