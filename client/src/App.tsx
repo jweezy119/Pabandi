@@ -191,6 +191,8 @@ import ContactDealsPage from './pages/contact/ContactDealsPage';
 import ContactActivitiesPage from './pages/contact/ContactActivitiesPage';
 import ContactJobsPage from "./pages/contact/ContactJobsPage";
 import ContactJobDetailPage from "./pages/contact/ContactJobDetailPage";
+import ModulesSettingsPage from './pages/contact/settings/ModulesSettingsPage';
+import SetupWizardPage from './pages/contact/SetupWizardPage';
 // LedgerOS
 import LedgerOSPage from './pages/ledger/LedgerOSPage';
 import { PayInvoicePage } from './pages/PayInvoicePage';
@@ -272,6 +274,8 @@ function App() {
           <Route path="contact/activities" element={<ContactActivitiesPage />} />
           <Route path="contact/invoices" element={<InvoicesPage />} />
           <Route path="contact/invoices/:id" element={<InvoiceDetailPage />} />
+          <Route path="contact/settings/modules" element={<ModulesSettingsPage />} />
+          <Route path="contact/setup" element={<SetupWizardPage />} />
 
           {/* LedgerOS - Finance & Accounting */}
           <Route path="ledger" element={<LedgerOSPage />} />

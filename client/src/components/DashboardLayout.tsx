@@ -9,11 +9,17 @@ export interface NavItem {
   end?: boolean;
 }
 
+export interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
 export interface DashboardLayoutProps {
   osName: string;
   osIcon: string;
   osColor: string;
   navItems: NavItem[];
+  navGroups?: NavGroup[];
   children: React.ReactNode;
 }
 
@@ -84,9 +90,17 @@ const colorKeys: Record<string, string> = {
   'sky-wash': 'sky-wash',
 };
 
-export default function DashboardLayout({ osName, osIcon, osColor, navItems, children }: DashboardLayoutProps) {
+export default function DashboardLayout({
+  osName,
+  osIcon,
+  osColor,
+  navItems,
+  navGroups = [],
+  children,
+}: DashboardLayoutProps) {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const colorKey = colorKeys[osColor] || 'clay';
   const colors = colorMap[colorKey] || colorMap.clay;
 
@@ -96,6 +110,15 @@ export default function DashboardLayout({ osName, osIcon, osColor, navItems, chi
       : location.pathname === item.path || location.pathname.startsWith(item.path + '/');
 
   const description = OS_DESCRIPTIONS[osName] || '';
+
+  function toggleGroup(label: string) {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  }
 
   return (
     <div className="min-h-screen flex" style={{ background: 'var(--atmosphere)' }}>
@@ -153,38 +176,121 @@ export default function DashboardLayout({ osName, osIcon, osColor, navItems, chi
           </button>
         </div>
 
-        {/* Navigation */}
+        {/* ─── Navigation with collapsible groups ─────────────────────── */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto" aria-label={`${osName} navigation`}>
-          {navItems.map((item) => {
-            const active = isActive(item);
+          {/* Standalone items (not in a group) */}
+          {navItems
+            .filter(item => !navGroups.some(g => g.items.some(i => i.path === item.path)))
+            .map(item => {
+              const active = isActive(item);
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`relative flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-200 ${
+                    active ? colors.active : `${colors.text} hover:text-[var(--warm-ink)]`
+                  }`}
+                  style={{
+                    backgroundColor: active ? colors.activeBg : 'transparent',
+                    transition: 'background-color 200ms ease, color 150ms ease',
+                  }}
+                  aria-current={active ? 'page' : undefined}
+                >
+                  {active && (
+                    <motion.div
+                      layoutId="nav-indicator"
+                      className="absolute left-0 w-1 h-5 rounded-r-full"
+                      style={{ backgroundColor: colors.indicator }}
+                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                  <span className="material-symbols-outlined text-[18px] flex-shrink-0" aria-hidden="true">
+                    {item.icon}
+                  </span>
+                  {item.label}
+                </Link>
+              );
+            })}
+
+          {/* Collapsible groups */}
+          {navGroups.map(group => {
+            const isExpanded = expandedGroups.has(group.label);
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setSidebarOpen(false)}
-                className={`relative flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-200 ${
-                  active ? colors.active : `${colors.text} hover:text-[var(--warm-ink)]`
-                }`}
-                style={{
-                  backgroundColor: active ? colors.activeBg : 'transparent',
-                  transition: 'background-color 200ms ease, color 150ms ease',
-                }}
-                aria-current={active ? 'page' : undefined}
-              >
-                {/* Active indicator dot */}
-                {active && (
-                  <motion.div
-                    layoutId="nav-indicator"
-                    className="absolute left-0 w-1 h-5 rounded-r-full"
-                    style={{ backgroundColor: colors.indicator }}
-                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                  />
-                )}
-                <span className="material-symbols-outlined text-[18px] flex-shrink-0" aria-hidden="true">
-                  {item.icon}
-                </span>
-                {item.label}
-              </Link>
+              <div key={group.label}>
+                {/* Group header — chevron + label */}
+                <div
+                  className="flex items-center justify-between px-4 py-2 rounded-2xl"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => toggleGroup(group.label)}
+                  role="button"
+                  aria-expanded={isExpanded}
+                  aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${group.label} section`}
+                >
+                  <div className="flex items-center gap-2">
+                    <motion.span
+                      animate={{ rotate: isExpanded ? 90 : 0 }}
+                      transition={{ duration: 0.25, ease: [0.25, 0.9, 0.35, 1] }}
+                      className="material-symbols-outlined text-[16px] flex-shrink-0"
+                      style={{ color: 'var(--soft-stone)' }}
+                    >
+                      chevron_right
+                    </motion.span>
+                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--warm-ink)', fontFamily: 'var(--font-label)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      {group.label}
+                    </span>
+                    <span className="text-[10px" style={{ color: 'var(--soft-stone)' }}>
+                      {group.items.length}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Group content — slides open/closed */}
+                <AnimatePresence initial={false}>
+                  {isExpanded && (
+                    <motion.div
+                      key={group.label}
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: [0.25, 0.9, 0.35, 1] }}
+                      style={{ overflow: 'hidden' }}
+                    >
+                      {group.items.map(item => {
+                        const active = isActive(item);
+                        return (
+                          <Link
+                            key={item.path}
+                            to={item.path}
+                            onClick={() => setSidebarOpen(false)}
+                            className={`relative flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-200 ml-6 ${
+                              active ? colors.active : `${colors.text} hover:text-[var(--warm-ink)]`
+                            }`}
+                            style={{
+                              backgroundColor: active ? colors.activeBg : 'transparent',
+                              transition: 'background-color 200ms ease, color 150ms ease',
+                            }}
+                            aria-current={active ? 'page' : undefined}
+                          >
+                            {active && (
+                              <motion.div
+                                layoutId="nav-indicator"
+                                className="absolute left-0 w-1 h-5 rounded-r-full"
+                                style={{ backgroundColor: colors.indicator }}
+                                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                              />
+                            )}
+                            <span className="material-symbols-outlined text-[18px] flex-shrink-0" aria-hidden="true">
+                              {item.icon}
+                            </span>
+                            {item.label}
+                          </Link>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             );
           })}
         </nav>
@@ -268,7 +374,9 @@ export default function DashboardLayout({ osName, osIcon, osColor, navItems, chi
               style={{ background: 'rgba(255,255,255,0.5)', boxShadow: '0 1px 3px rgba(180,130,90,0.06)' }}
             >
               <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--soft-stone)' }}>account_balance_wallet</span>
-              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--warm-ink)', fontFamily: 'var(--font-body)', fontVariantNumeric: 'tabular-nums' }}>$0.00</span>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--warm-ink)', fontFamily: 'var(--font-body)', fontVariantNumeric: 'tabular-nums' }}>
+                $0.00
+              </span>
             </div>
             <div
               className="flex items-center gap-2 px-3 py-1.5 rounded-xl"
@@ -288,7 +396,7 @@ export default function DashboardLayout({ osName, osIcon, osColor, navItems, chi
           </div>
         </header>
 
-        {/* Page content with entrance animation */}
+        {/* Page content */}
         <motion.div
           key={location.pathname}
           className="flex-1 overflow-auto p-5 lg:p-8"
@@ -323,7 +431,9 @@ export default function DashboardLayout({ osName, osIcon, osColor, navItems, chi
                     fontWeight: active ? 700 : 500,
                   }}
                 >
-                  <span className="material-symbols-outlined text-[20px]" aria-hidden="true">{item.icon}</span>
+                  <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+                    {item.icon}
+                  </span>
                   <span className="truncate max-w-full">{item.label}</span>
                   {active && (
                     <motion.span

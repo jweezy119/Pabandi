@@ -52,9 +52,9 @@ export function Modal({ isOpen, onClose, title, children, actionText, onAction, 
               borderTop: '1px solid rgba(255, 255, 255, 0.6)',
               padding: 'var(--space-card-padding)',
             }}
-            initial={{ opacity: 0, scale: 0.92, y: 12 }}
+            initial={{ opacity: 0, scale: 0.96, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 12 }}
+            exit={{ opacity: 0, scale: 0.96, y: 12 }}
             transition={{ duration: 0.3, ease: [0.34, 1.4, 0.64, 1] }}
           >
             <button

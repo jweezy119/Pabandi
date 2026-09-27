@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import { Link } from 'react-router-dom';
-import { Card, Button, Input, Modal, EmptyState } from '../../components/primitives';
+import { Card, Button, Input, Modal, EmptyState, ClaySkeletonCard } from '../../components/primitives';
 
 const navItems = [
   { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
@@ -112,7 +112,9 @@ export default function ContactClientsPage() {
         </div>
 
         {loading ? (
-          <div className="p-8 text-center text-[var(--soft-stone)]">Loading...</div>
+          <div className="p-8">
+            <ClaySkeletonCard />
+          </div>
         ) : clients.length === 0 ? (
           <EmptyState 
             icon="person_add" 
@@ -171,13 +173,13 @@ export default function ContactClientsPage() {
           title={showEditModal ? 'Edit Client' : 'New Client'}
         >
           <form onSubmit={showEditModal ? handleEditClient : handleAddClient} className="space-y-4">
-            <Input label="Full Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <Input label="Full Name" required value={form.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, name: e.target.value })} />
             <div className="grid grid-cols-2 gap-4">
-              <Input label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-              <Input label="Phone" type="text" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              <Input label="Email" type="email" value={form.email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, email: e.target.value })} />
+              <Input label="Phone" type="text" value={form.phone} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, phone: e.target.value })} />
             </div>
-            <Input label="Company (Optional)" type="text" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />
-            <Input label="Notes" textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+            <Input label="Company (Optional)" type="text" value={form.company} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, company: e.target.value })} />
+            <Input label="Notes" textarea rows={3} value={form.notes} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setForm({ ...form, notes: e.target.value })} />
             <div className="flex gap-3 pt-4 justify-end">
               <Button type="button" variant="ghost" onClick={() => { setShowAddModal(false); setShowEditModal(false); }}>Cancel</Button>
               <Button type="submit">{showEditModal ? 'Save Changes' : 'Create Client'}</Button>

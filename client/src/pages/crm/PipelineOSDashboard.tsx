@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FiUsers, FiTrendingUp, FiAlertTriangle, FiStar, FiZap, FiEye, FiCheckCircle, FiX, FiClock, FiPhone, FiMail, FiMapPin } from 'react-icons/fi';
 import { Card, EmptyState, ClayBadge } from '../../components/primitives';
 import DashboardLayout from '../../components/DashboardLayout';
@@ -388,98 +389,14 @@ export default function PipelineOSDashboard() {
         </div>
 
         {/* Tab Content */}
-        {activeTab === 'kanban' && (
-          <div className="space-y-6">
-            <PipelineKanban clients={clients} onStageChange={loadAll} />
-            <AlertsFeed alerts={alerts} onDismiss={handleDismissAlert} />
-          </div>
-        )}
-        {activeTab === 'alerts' && (
-          <AlertsFeed alerts={alerts} onDismiss={handleDismissAlert} />
-        )}
-        {activeTab === 'clients' && (
-          <Card hover={false} className="clay-rise clay-delay-5">
-            <h2 className="text-lg font-bold text-[var(--warm-ink)] clay-heading mb-5">Client Directory</h2>
-            {clients.length === 0 ? (
-              <EmptyState
-                icon="groups"
-                title="No Clients Yet"
-                description="Add your first client to start tracking deals and revenue."
-                actionLabel="Add Client"
-                onAction={loadAll}
-              />
-            ) : (
-              <div className="space-y-2.5">
-                {clients.map((client, i) => {
-                  return (
-                    <div
-                      key={client.id}
-                      className="flex items-center gap-4 p-4 rounded-xl bg-white border border-[rgba(191,179,163,0.2)] clay-card--interactive clay-table-row clay-rise"
-                      style={{ animationDelay: `${i * 60}ms`, boxShadow: 'var(--shadow-soft)', cursor: 'pointer' }}
-                      onMouseEnter={e => {
-                        (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-1px)';
-                        (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-lift)';
-                        (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(201, 123, 90, 0.3)';
-                      }}
-                      onMouseLeave={e => {
-                        (e.currentTarget as HTMLDivElement).style.transform = '';
-                        (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-soft)';
-                        (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(191, 179, 163, 0.2)';
-                      }}
-                    >
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                        style={{
-                          background: `linear-gradient(135deg, var(--warm-sand) 0%, rgba(201,123,90,0.15) 100%)`,
-                          color: 'var(--clay)',
-                          boxShadow: '0 2px 6px rgba(201,123,90,0.15)',
-                        }}
-                      >
-                        {client.name.charAt(0)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm text-[var(--warm-ink)] truncate">
-                          {client.name}
-                        </p>
-                        <div className="flex items-center gap-3 text-xs text-[var(--soft-stone)] mt-0.5">
-                          {client.phone && (
-                            <span className="flex items-center gap-1">
-                              <FiPhone className="w-3 h-3" />
-                              {client.phone}
-                            </span>
-                          )}
-                          {client.email && (
-                            <span className="flex items-center gap-1">
-                              <FiMail className="w-3 h-3" />
-                              {client.email}
-                            </span>
-                          )}
-                          {client.address && (
-                            <span className="flex items-center gap-1">
-                              <FiMapPin className="w-3 h-3" />
-                              {client.address}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <span
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-label clay-badge-clay"
-                          style={{ backgroundColor: 'rgba(138,154,123,0.15)', color: 'var(--sage)', border: '1px solid rgba(138,154,123,0.2)' }}
-                        >
-                          {client.reliabilityScore}/100
-                        </span>
-                        <p className="text-xs text-[var(--soft-stone)] mt-1">
-                          {client.stage} · {client.totalJobs} jobs
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </Card>
-        )}
+        <TabContent
+          activeTab={activeTab}
+          clients={clients}
+          alerts={alerts}
+          onStageChange={loadAll}
+          onDismissAlert={handleDismissAlert}
+          loadAll={loadAll}
+        />
       </div>
     </DashboardLayout>
   );

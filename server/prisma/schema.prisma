@@ -558,6 +558,14 @@ model BusinessSettings {
   houseRules                  String?  @db.Text
   cancellationPolicy          String?  @db.Text
   faqRules                    Json?
+  vertical                    String?
+  enabledModules              String[] @default([])
+  enabledFeatures             Json     @default("{}")
+  customFields                Json     @default("{}")
+  pipelineStages              Json     @default("[]")
+  dashboardLayout             Json     @default("[]")
+  trustSettings               Json     @default("{}")
+  hideAdvancedByDefault       Boolean  @default(true)
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
   business                    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
@@ -6613,6 +6621,8 @@ model CrmClient {
   notes       String?
   status      String   @default("ACTIVE") // ACTIVE | AT_RISK | VIP | INACTIVE
   isActive    Boolean  @default(true)
+  customData  Json     @default("{}")
+  reliabilityScore Float @default(750)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   passportId  String?  @unique
@@ -6705,10 +6715,14 @@ model CrmJob {
   scheduledDate DateTime
   scheduledTime String?
   duration      Int?     // Duration in minutes
+  durationMinutes Int?
   address       String?
   notes         String?
   price         Float    @default(0)
   status        String   @default("SCHEDULED") // SCHEDULED | IN_PROGRESS | COMPLETED | CANCELLED
+  escrowStatus  String   @default("NONE")
+  checkedInAt   DateTime?
+  checkedOutAt  DateTime?
   completedAt   DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
