@@ -1,7 +1,36 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FiUsers, FiTrendingUp, FiAlertTriangle, FiStar, FiZap, FiEye, FiCheckCircle, FiX, FiClock, FiPhone, FiMail, FiMapPin } from 'react-icons/fi';
 import { Card, EmptyState, ClayBadge } from '../../components/primitives';
 import DashboardLayout from '../../components/DashboardLayout';
+import LoadingState from './components/LoadingState';
+
+// ─── Count-up animation ────────────────────────────────────────────────────────
+
+function CountUpNumber({ end, duration = 800 }: { end: number | string; duration?: number }) {
+  const numericEnd = typeof end === 'string' ? parseInt(end, 10) || 0 : end;
+  const [value, setValue] = useState(0);
+  const rafRef = useRef<number>(0);
+  const startTime = useRef<number>(0);
+
+  useEffect(() => {
+    startTime.current = performance.now();
+    const tick = () => {
+      const elapsed = performance.now() - startTime.current;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease-out cubic: 1 - (1 - t)^3
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(numericEnd * eased));
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      }
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [numericEnd, duration]);
+
+  return <span style={{ fontVariantNumeric: 'tabular-nums' }}>{value}</span>;
+}
 
 // ─── API Helper ───────────────────────────────────────────────────────────────
 
@@ -51,14 +80,6 @@ interface Alert {
 
 // ─── Shared Components ────────────────────────────────────────────────────────
 
-function ClayCard({ children, className = '', hover = false, ...props }: any) {
-  return (
-    <Card hover={hover} className={className} {...props}>
-      {children}
-    </Card>
-  );
-}
-
 // ─── Pipeline Kanban ─────────────────────────────────────────────────────────
 
 function PipelineKanban({ clients, onStageChange }: { clients: CrmClient[]; onStageChange: () => void }) {
@@ -89,12 +110,6 @@ function PipelineKanban({ clients, onStageChange }: { clients: CrmClient[]; onSt
       alert(err.message);
     }
     setDraggedClient(null);
-  }
-
-  function getScoreBadgeStyle(score: number) {
-    if (score >= 80) return { bg: 'rgba(138, 154, 123, 0.15)', color: 'var(--sage)' };
-    if (score >= 50) return { bg: 'rgba(217, 168, 84, 0.15)', color: 'var(--muted-ochre)' };
-    return { bg: 'rgba(212, 165, 165, 0.15)', color: 'var(--dusty-rose)' };
   }
 
   function getScoreStyle(score: number) {
@@ -291,16 +306,7 @@ export default function PipelineOSDashboard() {
   }
 
   if (loading) {
-    return (
-      <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
-        <div className="flex items-center justify-center py-20">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-8 h-8 rounded-full border-2 border-[var(--clay)] border-t-transparent animate-spin" />
-            <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Loading PipelineOS...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
+    return <LoadingState />;
   }
 
   const totalClients = clients.length;
@@ -316,12 +322,6 @@ export default function PipelineOSDashboard() {
     { label: 'At Risk', value: atRiskCount, icon: FiAlertTriangle, color: 'var(--terracotta)', delay: 240 },
     { label: 'Avg Score', value: `${avgScore}/100`, icon: FiTrendingUp, color: 'var(--sage)', delay: 320 },
   ];
-
-  function getScoreBadgeStyle(score: number) {
-    if (score >= 80) return { bg: 'rgba(138, 154, 123, 0.15)', color: 'var(--sage)', border: '1px solid rgba(138, 154, 123, 0.2)' };
-    if (score >= 50) return { bg: 'rgba(217, 168, 84, 0.15)', color: 'var(--muted-ochre)', border: '1px solid rgba(217, 168, 84, 0.2)' };
-    return { bg: 'rgba(212, 165, 165, 0.15)', color: 'var(--dusty-rose)', border: '1px solid rgba(212, 165, 165, 0.2)' };
-  }
 
   return (
     <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
@@ -351,8 +351,8 @@ export default function PipelineOSDashboard() {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs text-[var(--soft-stone)] font-label">{stat.label}</p>
-                  <p className="text-3xl font-bold text-[var(--warm-ink)] stat-number mt-1">
-                    {stat.value}
+                  <p className="text-3xl font-bold text-[var(--warm-ink)] stat-number mt-1" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    <CountUpNumber end={stat.value} duration={800} />
                   </p>
                 </div>
                 <div
