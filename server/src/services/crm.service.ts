@@ -30,7 +30,7 @@ export async function enrollBusiness(data: {
   // Check if user already has a business (idempotent enroll)
   const existingBusiness = await prisma.business.findFirst({ where: { ownerId: user.id } });
   if (existingBusiness) {
-    const existingCrm = await prisma.crmServiceBusiness.findFirst({ where: { businessId: existingBusiness.id } });
+    const existingCrm = await prisma.crmBusiness.findFirst({ where: { businessId: existingBusiness.id } });
     if (existingCrm) {
       return { business: existingBusiness, crmBusiness: existingCrm };
     }
@@ -48,7 +48,7 @@ export async function enrollBusiness(data: {
     },
   });
 
-  const crmBusiness = await prisma.crmServiceBusiness.create({
+  const crmBusiness = await prisma.crmBusiness.create({
     data: {
       businessId: business.id,
       ownerId: user.id,
@@ -62,7 +62,7 @@ export async function enrollBusiness(data: {
 // ─── Employee Management ─────────────────────────────────────────────────────
 
 export async function addEmployee(
-  serviceBusinessId: string,
+  businessId: string,
   data: {
     name: string;
     email?: string;
@@ -79,15 +79,15 @@ export async function addEmployee(
   }
 
   const employee = await prisma.crmEmployee.create({
-    data: { serviceBusinessId, name, email: email || null, phone: phone || null, role, payRate, payType },
+    data: { businessId, name, email: email || null, phone: phone || null, role, payRate, payType },
   });
 
   return employee;
 }
 
-export async function getEmployees(serviceBusinessId: string) {
+export async function getEmployees(businessId: string) {
   return prisma.crmEmployee.findMany({
-    where: { serviceBusinessId },
+    where: { businessId },
     orderBy: { createdAt: 'desc' },
   });
 }
@@ -95,7 +95,7 @@ export async function getEmployees(serviceBusinessId: string) {
 // ─── Client Management ───────────────────────────────────────────────────────
 
 export async function addClient(
-  serviceBusinessId: string,
+  businessId: string,
   data: {
     name: string;
     email?: string;
@@ -111,15 +111,15 @@ export async function addClient(
   }
 
   const client = await prisma.crmClient.create({
-    data: { serviceBusinessId, name, email: email || null, phone: phone || null, address: address || null, notes: notes || null },
+    data: { businessId, name, email: email || null, phone: phone || null, address: address || null, notes: notes || null },
   });
 
   return client;
 }
 
-export async function getClients(serviceBusinessId: string) {
+export async function getClients(businessId: string) {
   const clients = await prisma.crmClient.findMany({
-    where: { serviceBusinessId },
+    where: { businessId },
     orderBy: { createdAt: 'desc' },
   });
 
@@ -139,9 +139,9 @@ export async function getClients(serviceBusinessId: string) {
   return clientsWithStage;
 }
 
-export async function getClient(serviceBusinessId: string, clientId: string) {
+export async function getClient(businessId: string, clientId: string) {
   const client = await prisma.crmClient.findFirst({
-    where: { id: clientId, serviceBusinessId },
+    where: { id: clientId, businessId },
     include: {
       jobs: true,
       invoices: true,
@@ -156,7 +156,7 @@ export async function getClient(serviceBusinessId: string, clientId: string) {
 }
 
 export async function updateClient(
-  serviceBusinessId: string,
+  businessId: string,
   clientId: string,
   data: {
     name?: string;
@@ -166,7 +166,7 @@ export async function updateClient(
     notes?: string;
   }
 ) {
-  const client = await prisma.crmClient.findFirst({ where: { id: clientId, serviceBusinessId } });
+  const client = await prisma.crmClient.findFirst({ where: { id: clientId, businessId } });
   if (!client) throw new CustomError('Client not found', 404);
 
   return prisma.crmClient.update({
@@ -175,8 +175,8 @@ export async function updateClient(
   });
 }
 
-export async function deleteClient(serviceBusinessId: string, clientId: string) {
-  const client = await prisma.crmClient.findFirst({ where: { id: clientId, serviceBusinessId } });
+export async function deleteClient(businessId: string, clientId: string) {
+  const client = await prisma.crmClient.findFirst({ where: { id: clientId, businessId } });
   if (!client) throw new CustomError('Client not found', 404);
 
   return prisma.crmClient.update({
@@ -188,7 +188,7 @@ export async function deleteClient(serviceBusinessId: string, clientId: string) 
 // ─── Job Management ──────────────────────────────────────────────────────────
 
 export async function createJob(
-  serviceBusinessId: string,
+  businessId: string,
   data: {
     clientId?: string;
     clientName?: string;
@@ -209,7 +209,7 @@ export async function createJob(
   }
 
   const jobData: any = {
-    serviceBusinessId,
+    businessId,
     clientName: clientName || 'Unknown',
     serviceType,
     scheduledDate: new Date(scheduledDate),
@@ -276,10 +276,10 @@ export async function updateJobStatus(jobId: string, status: string) {
 }
 
 export async function getJobs(
-  serviceBusinessId: string,
+  businessId: string,
   filters?: { status?: string; employeeId?: string; clientId?: string; dateFrom?: string; dateTo?: string }
 ) {
-  const where: any = { serviceBusinessId };
+  const where: any = { businessId };
 
   if (filters?.status) where.status = filters.status;
   if (filters?.clientId) where.clientId = filters.clientId;
@@ -299,7 +299,7 @@ export async function getJobs(
 // ─── Payroll Management ──────────────────────────────────────────────────────
 
 export async function recordPayroll(
-  serviceBusinessId: string,
+  businessId: string,
   data: {
     employeeId: string;
     periodStart: string;
@@ -315,7 +315,7 @@ export async function recordPayroll(
 
   return prisma.crmPayroll.create({
     data: {
-      serviceBusinessId,
+      businessId,
       employeeId,
       periodStart: new Date(periodStart),
       periodEnd: new Date(periodEnd),
@@ -330,8 +330,8 @@ export async function recordPayroll(
   });
 }
 
-export async function getPayrollHistory(serviceBusinessId: string, employeeId?: string) {
-  const where: any = { serviceBusinessId };
+export async function getPayrollHistory(businessId: string, employeeId?: string) {
+  const where: any = { businessId };
   if (employeeId) where.employeeId = employeeId;
 
   return prisma.crmPayroll.findMany({
@@ -344,7 +344,7 @@ export async function getPayrollHistory(serviceBusinessId: string, employeeId?: 
 // ─── Expense Management ──────────────────────────────────────────────────────
 
 export async function recordExpense(
-  serviceBusinessId: string,
+  businessId: string,
   data: {
     category: string;
     amount: number;
@@ -361,7 +361,7 @@ export async function recordExpense(
 
   return prisma.crmExpense.create({
     data: {
-      serviceBusinessId,
+      businessId,
       category,
       amount,
       description,
@@ -371,8 +371,8 @@ export async function recordExpense(
   });
 }
 
-export async function getExpenses(serviceBusinessId: string, filters?: { category?: string; dateFrom?: string; dateTo?: string }) {
-  const where: any = { serviceBusinessId };
+export async function getExpenses(businessId: string, filters?: { category?: string; dateFrom?: string; dateTo?: string }) {
+  const where: any = { businessId };
   if (filters?.category) where.category = filters.category;
   if (filters?.dateFrom) where.date = { ...where.date, gte: new Date(filters.dateFrom) };
   if (filters?.dateTo) where.date = { ...where.date, lte: new Date(filters.dateTo) };
@@ -385,20 +385,20 @@ export async function getExpenses(serviceBusinessId: string, filters?: { categor
 
 // ─── Dashboard Statistics ───────────────────────────────────────────────────
 
-export async function getDashboardStats(serviceBusinessId: string) {
+export async function getDashboardStats(businessId: string) {
   const now = new Date();
   const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-  const totalJobs = await prisma.crmJob.count({ where: { serviceBusinessId } });
+  const totalJobs = await prisma.crmJob.count({ where: { businessId } });
   const completedJobs = await prisma.crmJob.count({
-    where: { serviceBusinessId, status: 'COMPLETED' },
+    where: { businessId, status: 'COMPLETED' },
   });
-  const activeClients = await prisma.crmClient.count({ where: { serviceBusinessId } });
+  const activeClients = await prisma.crmClient.count({ where: { businessId } });
 
   const completedJobsThisMonth = await prisma.crmJob.findMany({
     where: {
-      serviceBusinessId,
+      businessId,
       status: 'COMPLETED',
       scheduledDate: { gte: firstDayOfMonth, lte: lastDayOfMonth },
     },
@@ -408,7 +408,7 @@ export async function getDashboardStats(serviceBusinessId: string) {
 
   const monthlyExpensesData = await prisma.crmExpense.findMany({
     where: {
-      serviceBusinessId,
+      businessId,
       date: { gte: firstDayOfMonth, lte: lastDayOfMonth },
     },
     select: { amount: true },
@@ -417,7 +417,7 @@ export async function getDashboardStats(serviceBusinessId: string) {
 
   const payrollCostsData = await prisma.crmPayroll.findMany({
     where: {
-      serviceBusinessId,
+      businessId,
       periodStart: { gte: firstDayOfMonth },
       periodEnd: { lte: lastDayOfMonth },
     },
@@ -426,8 +426,8 @@ export async function getDashboardStats(serviceBusinessId: string) {
   const payrollCosts = payrollCostsData.reduce((sum, p) => sum + p.netPay, 0);
 
   const employees = await prisma.crmEmployee.findMany({
-    where: { serviceBusinessId, isActive: true },
-    orderBy: { jobsCompleted: 'desc' },
+    where: { businessId, isActive: true },
+    // orderBy: { jobsCompleted: 'desc' },
     take: 5,
   });
 
@@ -510,9 +510,9 @@ export async function checkOutJob(
 
   const now = new Date();
   const checkedInAt = job.checkedInAt || new Date(); // Fallback to now if not set
-  const actualDurationMinutes = Math.max(0, (now.getTime() - checkedInAt.getTime()) / (1000 * 60));
+  const durationMinutes = Math.max(0, (now.getTime() - checkedInAt.getTime()) / (1000 * 60));
   const scheduledDurationMinutes = job.durationMinutes || 0;
-  const isLate = actualDurationMinutes > scheduledDurationMinutes + 15; // More than 15 min over scheduled time
+  const isLate = durationMinutes > scheduledDurationMinutes + 15; // More than 15 min over scheduled time
 
   // Update job with check-out timestamp, status, and actual duration
   const updatedJob = await prisma.crmJob.update({
@@ -520,7 +520,7 @@ export async function checkOutJob(
     data: {
       status: 'COMPLETE',
       checkedOutAt: new Date(),
-      actualDurationMinutes: Math.round(actualDurationMinutes)
+      durationMinutes: Math.round(durationMinutes)
     }
   });
 
@@ -533,7 +533,7 @@ export async function checkOutJob(
     jobId,
     clientId: job.clientId,
     workerId: userId,
-    actualDurationMinutes,
+    durationMinutes,
     scheduledDurationMinutes,
     timestamp: new Date()
   });
@@ -547,7 +547,7 @@ export async function checkOutJob(
   // Note: Auto-generating invoice and releasing deposit would be handled by separate services
   // that listen to the trust events or are called explicitly after check-out
 
-  return { updatedJob, isLate, actualDurationMinutes };
+  return { updatedJob, isLate, durationMinutes };
 }
 
 export async function handleNoShow(jobId: string) {
@@ -593,7 +593,7 @@ export async function handleNoShow(jobId: string) {
 // ─── Deal Management ─────────────────────────────────────────────────────────
 
 export async function createDeal(
-  serviceBusinessId: string,
+  businessId: string,
   data: {
     title: string;
     value?: number;
@@ -610,7 +610,7 @@ export async function createDeal(
 
   return prisma.crmDeal.create({
     data: {
-      serviceBusinessId,
+      businessId,
       title: data.title,
       value: data.value || 0,
       currency: data.currency || 'USD',
@@ -626,10 +626,10 @@ export async function createDeal(
 }
 
 export async function getDeals(
-  serviceBusinessId: string,
+  businessId: string,
   filters?: { stage?: string; clientId?: string }
 ) {
-  const where: any = { serviceBusinessId };
+  const where: any = { businessId };
   if (filters?.stage) where.stage = filters.stage;
   if (filters?.clientId) where.clientId = filters.clientId;
 
@@ -640,9 +640,9 @@ export async function getDeals(
   });
 }
 
-export async function getDeal(serviceBusinessId: string, dealId: string) {
+export async function getDeal(businessId: string, dealId: string) {
   const deal = await prisma.crmDeal.findFirst({
-    where: { id: dealId, serviceBusinessId },
+    where: { id: dealId, businessId },
     include: { client: true, activities: true },
   });
   if (!deal) throw new CustomError('Deal not found', 404);
@@ -650,7 +650,7 @@ export async function getDeal(serviceBusinessId: string, dealId: string) {
 }
 
 export async function updateDeal(
-  serviceBusinessId: string,
+  businessId: string,
   dealId: string,
   data: {
     title?: string;
@@ -662,7 +662,7 @@ export async function updateDeal(
     notes?: string;
   }
 ) {
-  const deal = await prisma.crmDeal.findFirst({ where: { id: dealId, serviceBusinessId } });
+  const deal = await prisma.crmDeal.findFirst({ where: { id: dealId, businessId } });
   if (!deal) throw new CustomError('Deal not found', 404);
 
   const updateData: any = { ...data };
@@ -678,8 +678,8 @@ export async function updateDeal(
   });
 }
 
-export async function deleteDeal(serviceBusinessId: string, dealId: string) {
-  const deal = await prisma.crmDeal.findFirst({ where: { id: dealId, serviceBusinessId } });
+export async function deleteDeal(businessId: string, dealId: string) {
+  const deal = await prisma.crmDeal.findFirst({ where: { id: dealId, businessId } });
   if (!deal) throw new CustomError('Deal not found', 404);
   return prisma.crmDeal.delete({ where: { id: dealId } });
 }
@@ -687,7 +687,7 @@ export async function deleteDeal(serviceBusinessId: string, dealId: string) {
 // ─── Activity Management ──────────────────────────────────────────────────────
 
 export async function createActivity(
-  serviceBusinessId: string,
+  businessId: string,
   data: {
     type: 'CALL' | 'EMAIL' | 'MEETING' | 'NOTE' | 'TASK';
     title: string;
@@ -702,7 +702,7 @@ export async function createActivity(
 
   return prisma.crmActivity.create({
     data: {
-      serviceBusinessId,
+      businessId,
       type: data.type || 'NOTE',
       title: data.title,
       description: data.description || null,
@@ -716,10 +716,10 @@ export async function createActivity(
 }
 
 export async function getActivities(
-  serviceBusinessId: string,
+  businessId: string,
   filters?: { clientId?: string; dealId?: string; type?: string }
 ) {
-  const where: any = { serviceBusinessId };
+  const where: any = { businessId };
   if (filters?.clientId) where.clientId = filters.clientId;
   if (filters?.dealId) where.dealId = filters.dealId;
   if (filters?.type) where.type = filters.type;
@@ -732,11 +732,11 @@ export async function getActivities(
 }
 
 export async function updateActivity(
-  serviceBusinessId: string,
+  businessId: string,
   activityId: string,
   data: { completed?: boolean; title?: string; description?: string }
 ) {
-  const act = await prisma.crmActivity.findFirst({ where: { id: activityId, serviceBusinessId } });
+  const act = await prisma.crmActivity.findFirst({ where: { id: activityId, businessId } });
   if (!act) throw new CustomError('Activity not found', 404);
 
   return prisma.crmActivity.update({
@@ -745,8 +745,8 @@ export async function updateActivity(
   });
 }
 
-export async function deleteActivity(serviceBusinessId: string, activityId: string) {
-  const act = await prisma.crmActivity.findFirst({ where: { id: activityId, serviceBusinessId } });
+export async function deleteActivity(businessId: string, activityId: string) {
+  const act = await prisma.crmActivity.findFirst({ where: { id: activityId, businessId } });
   if (!act) throw new CustomError('Activity not found', 404);
   return prisma.crmActivity.delete({ where: { id: activityId } });
 }
@@ -754,13 +754,13 @@ export async function deleteActivity(serviceBusinessId: string, activityId: stri
 // ─── File Management ──────────────────────────────────────────────────────────
 
 export async function addFile(
-  serviceBusinessId: string,
+  businessId: string,
   clientId: string,
   data: { fileName: string; fileUrl: string; fileSize?: string; fileType?: string }
 ) {
   return prisma.crmFile.create({
     data: {
-      serviceBusinessId,
+      businessId,
       clientId,
       fileName: data.fileName,
       fileUrl: data.fileUrl,
@@ -770,23 +770,23 @@ export async function addFile(
   });
 }
 
-export async function getFiles(serviceBusinessId: string, clientId: string) {
+export async function getFiles(businessId: string, clientId: string) {
   return prisma.crmFile.findMany({
-    where: { serviceBusinessId, clientId },
+    where: { businessId, clientId },
     orderBy: { createdAt: 'desc' },
   });
 }
 
-export async function deleteFile(serviceBusinessId: string, fileId: string) {
+export async function deleteFile(businessId: string, fileId: string) {
   return prisma.crmFile.deleteMany({
-    where: { id: fileId, serviceBusinessId },
+    where: { id: fileId, businessId },
   });
 }
 
 // ─── Invoice & Payment Management ────────────────────────────────────────────
 
 export async function createInvoice(
-  serviceBusinessId: string,
+  businessId: string,
   data: {
     clientId: string;
     lineItems: Array<{ description: string; amount: number; quantity?: number }>;
@@ -801,7 +801,7 @@ export async function createInvoice(
 
   const invoice = await prisma.invoice.create({
     data: {
-      businessId: serviceBusinessId,
+      businessId: businessId,
       clientId: data.clientId,
       number,
       dateDue: new Date(data.dateDue),
@@ -818,10 +818,10 @@ export async function createInvoice(
 }
 
 export async function getInvoices(
-  serviceBusinessId: string,
+  businessId: string,
   filters?: { clientId?: string; status?: string }
 ) {
-  const where: any = { businessId: serviceBusinessId };
+  const where: any = { businessId: businessId };
   if (filters?.clientId) where.clientId = filters.clientId;
   if (filters?.status) where.status = filters.status;
 
@@ -832,9 +832,9 @@ export async function getInvoices(
   });
 }
 
-export async function markInvoicePaid(serviceBusinessId: string, invoiceId: string) {
+export async function markInvoicePaid(businessId: string, invoiceId: string) {
   const invoice = await prisma.invoice.findFirst({
-    where: { id: invoiceId, businessId: serviceBusinessId },
+    where: { id: invoiceId, businessId: businessId },
     include: { client: true },
   });
   if (!invoice) throw new CustomError('Invoice not found', 404);
@@ -850,7 +850,7 @@ export async function markInvoicePaid(serviceBusinessId: string, invoiceId: stri
     try {
       await prisma.trustPassport.update({
         where: { id: invoice.client.passportId },
-        data: { paymentScore: { increment: 15 }, overallScore: { increment: 10 } },
+        data: { paymentScore: { increment: 15 }, },
       });
     } catch (e) {
       // Passport non-critical error swallow

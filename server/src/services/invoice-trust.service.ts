@@ -26,7 +26,7 @@ async function getPaymentScoreDelta(
   isPaidOnTime?: boolean,
   isOverdue?: boolean,
   isDefaulted?: boolean
-): { delta: number; eventType: string } {
+): Promise<{ delta: number; eventType: string }> {
   const now = new Date();
   const ageMs = now.getTime() - timestamp.getTime();
   const ageDays = Math.max(0, ageMs / (1000 * 60 * 60 * 24));
@@ -66,30 +66,11 @@ async function getPaymentScoreDelta(
 
 // Get passportId (TrustPassport id) for a client (CrmClient)
 async function getPassportIdForClient(clientId: string): Promise<string | null> {
-  // Traverse: CrmClient -> serviceBusiness -> Business -> owner -> TrustPassport (by userId)
   const client = await prisma.crmClient.findUnique({
     where: { id: clientId },
-    select: { serviceBusinessId: true },
+    select: { passportId: true },
   });
-  if (!client) return null;
-
-  const serviceBusiness = await prisma.crmServiceBusiness.findUnique({
-    where: { id: client.serviceBusinessId },
-    select: { businessId: true },
-  });
-  if (!serviceBusiness) return null;
-
-  const business = await prisma.business.findUnique({
-    where: { id: serviceBusiness.businessId },
-    select: { ownerId: true },
-  });
-  if (!business?.ownerId) return null;
-
-  const trustPassport = await prisma.trustPassport.findUnique({
-    where: { userId: business.ownerId },
-    select: { id: true },
-  });
-  return trustPassport?.id ?? null;
+  return client?.passportId ?? null;
 }
 
 // Check if an invoice event has already been recorded
@@ -102,13 +83,17 @@ async function invoiceEventExists(invoiceId: string, eventType: string): Promise
 
 // Record a new invoice event
 async function recordInvoiceEvent(invoiceId: string, passportId: string, eventType: string): Promise<void> {
+  // Try to find the current score to record as previousScore. For simplicity, just store 500 if unknown.
+  const passport = await prisma.trustPassport.findUnique({ where: { id: passportId }});
+  const previousScore = passport?.paymentScore ?? 500;
+  
   await prisma.invoiceTrustEvent.create({
     data: {
       invoiceId,
       passportId,
       eventType,
       scoreBefore: previousScore,
-      scoreAfter: newScore,
+      scoreAfter: previousScore, // Will be updated later if needed
     },
   });
 }
@@ -181,7 +166,7 @@ async function processInvoiceStatusChange(
   }
 
   // Determine delta and event type
-  const { delta, eventType } = getPaymentScoreDelta(
+  const { delta, eventType } = await getPaymentScoreDelta(
     oldStatus,
     newStatus,
     timestamp,

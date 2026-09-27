@@ -76,17 +76,16 @@ export class JobLifecycleService {
 
     const now = new Date();
     const checkedInAt = job.checkedInAt || new Date(); // Fallback to now if not set
-    const actualDurationMinutes = Math.max(0, (now.getTime() - checkedInAt.getTime()) / (1000 * 60));
+    const durationMinutes = Math.max(0, (now.getTime() - checkedInAt.getTime()) / (1000 * 60));
     const scheduledDurationMinutes = job.durationMinutes || 0;
-    const isLate = actualDurationMinutes > scheduledDurationMinutes + 15; // More than 15 min over scheduled time
+    const isLate = durationMinutes > scheduledDurationMinutes + 15; // More than 15 min over scheduled time
 
     // Update job with check-out timestamp, status, and actual duration
     const updatedJob = await prisma.crmJob.update({
       where: { id: jobId },
       data: {
-        status: 'COMPLETE',
-        checkedOutAt: new Date(),
-        actualDurationMinutes: Math.round(actualDurationMinutes)
+        status: 'COMPLETED',
+        checkedOutAt: new Date()
       }
     });
 
@@ -100,7 +99,7 @@ export class JobLifecycleService {
       jobId,
       clientId: job.clientId,
       workerId: userId, // Assuming userId is the worker
-      actualDurationMinutes,
+      durationMinutes,
       scheduledDurationMinutes,
       timestamp: new Date()
     });
@@ -118,7 +117,7 @@ export class JobLifecycleService {
       component: 'DELIVERY_WORKER',
       severity: deliveryDelta > 0 ? 'positive' : 'negative',
       weightUsed: 1.0, // No decay for immediate events
-      metadata: { jobId, action: 'check_out', isLate, actualDurationMinutes, scheduledDurationMinutes },
+      metadata: { jobId, action: 'check_out', isLate, durationMinutes, scheduledDurationMinutes },
       methodology: '1.0.0'
     });
 
@@ -128,7 +127,7 @@ export class JobLifecycleService {
     // Auto-release deposit from escrow (would call escrow service)
     // These would be implemented in separate services
 
-    return { updatedJob, isLate, actualDurationMinutes };
+    return { updatedJob, isLate, durationMinutes };
   }
 
   /**

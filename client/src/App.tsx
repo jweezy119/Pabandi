@@ -188,6 +188,7 @@ import ContactOSPage from './pages/contact/ContactOSPage';
 import ContactClientsPage from './pages/contact/ContactClientsPage';
 import ContactClientDetailPage from './pages/contact/ContactClientDetailPage';
 import ContactDealsPage from './pages/contact/ContactDealsPage';
+import ContactDealDetailPage from './pages/contact/ContactDealDetailPage';
 import ContactActivitiesPage from './pages/contact/ContactActivitiesPage';
 import ContactJobsPage from "./pages/contact/ContactJobsPage";
 import ContactJobDetailPage from "./pages/contact/ContactJobDetailPage";
@@ -271,6 +272,7 @@ function App() {
 <Route path="contact/jobs" element={<ContactJobsPage />} />
           <Route path="contact/jobs/:id" element={<ContactJobDetailPage />} />
           <Route path="contact/deals" element={<ContactDealsPage />} />
+          <Route path="contact/deals/:id" element={<ContactDealDetailPage />} />
           <Route path="contact/activities" element={<ContactActivitiesPage />} />
           <Route path="contact/invoices" element={<InvoicesPage />} />
           <Route path="contact/invoices/:id" element={<InvoiceDetailPage />} />

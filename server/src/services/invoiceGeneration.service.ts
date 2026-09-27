@@ -19,13 +19,9 @@ export class InvoiceGenerationService {
       throw new Error(`Job is not complete. Current status: ${job.status}`);
     }
 
-    // Get the business ID from the job's service business
-    const serviceBusiness = await prisma.crmServiceBusiness.findUnique({
-      where: { id: job.serviceBusinessId }
-    });
-
-    if (!serviceBusiness) {
-      throw new Error('Service business not found');
+    // Validate that the job has a businessId
+    if (!job.businessId) {
+      throw new Error('Business ID not found on job');
     }
 
     // Calculate the due date (today + 7 days as default)
@@ -36,7 +32,7 @@ export class InvoiceGenerationService {
     const lineItems = [
       {
         description: job.serviceType || 'Service',
-        amount: job.priceEstimate || 0
+        amount: job.price || 0
       }
     ];
 
@@ -45,10 +41,9 @@ export class InvoiceGenerationService {
 
     // Apply deposit if applicable
     let depositApplied = 0;
-    if (job.depositStatus === 'funded' && job.depositAmount) {
-      depositApplied = job.depositAmount;
-      // In a real implementation, we would also update the deposit status to 'released'
-      // and create a credit line item for the deposit
+    if (job.escrowStatus === 'FUNDED' && job.price > 0) {
+      // Assuming full price is escrowed when FUNDED
+      depositApplied = job.price;
     }
 
     const finalAmount = Math.max(0, subtotal - depositApplied);
@@ -56,11 +51,11 @@ export class InvoiceGenerationService {
     // Create the invoice
     const invoice = await prisma.invoice.create({
       data: {
-        businessId: serviceBusiness.id,
+        businessId: job.businessId,
         clientId: job.clientId,
         // Optionally add jobId relation if we add it to the Invoice model
         // jobId: job.id,
-        number: await this.generateInvoiceNumber(serviceBusiness.id),
+        number: await this.generateInvoiceNumber(job.businessId),
         dateDue: dueDate,
         status: 'SENT', // Start as sent (ready to be paid)
         lineItems: JSON.stringify(lineItems),
@@ -70,12 +65,11 @@ export class InvoiceGenerationService {
       }
     });
 
-    // Update the deposit status to 'released' if it was funded
-    if (job.depositStatus === 'funded') {
+    if (job.escrowStatus === 'FUNDED') {
       await prisma.crmJob.update({
         where: { id: jobId },
         data: {
-          depositStatus: 'released'
+          escrowStatus: 'RELEASED'
         }
       });
     }
