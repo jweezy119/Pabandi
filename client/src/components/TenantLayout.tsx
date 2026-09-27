@@ -53,7 +53,7 @@ export default function TenantLayout() {
           <div className="rounded-xl bg-gradient-to-br from-emerald-500/10 to-purple-500/10 border border-emerald-500/20 p-4">
             <div className="text-xs text-slate-400 mb-1">Need help?</div>
             <div className="text-sm text-white font-medium">Contact Support</div>
-            <div className="text-xs text-emerald-400 mt-1">support@pabandi.com</div>
+            <div className="text-xs text-emerald-400 mt-1">jay@pabandi.com</div>
           </div>
         </div>
       </aside>

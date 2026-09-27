@@ -311,7 +311,7 @@ export default function DashboardLayout({
               Contact Support
             </div>
             <div className="mt-0.5" style={{ fontSize: '12px', color: 'var(--clay)' }}>
-              support@pabandi.com
+              jay@pabandi.com
             </div>
           </div>
         </div>
