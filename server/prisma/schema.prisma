@@ -264,6 +264,10 @@ model Business {
   fiatPayments           FiatPayment[]
   solanaEscrows          SolanaEscrow[]
   bookingPabRecords      BookingRecord[]
+  bookings               Booking[]
+  availability           BusinessAvailability[]
+  blackoutDates          BlackoutDate[]
+  bookingReviews         BookingReview[]
   telegramBot            TelegramBot?
   channelMessages        ChannelMessage[]
   smsLogs                SMSLog[]
@@ -349,6 +353,72 @@ model BusinessHours {
 
   @@unique([businessId, dayOfWeek])
   @@index([businessId])
+}
+
+model BusinessAvailability {
+  id            String   @id @default(cuid())
+  businessId    String
+  dayOfWeek     Int      // 0-6, Sunday-Saturday
+  startTime     String   // "09:00"
+  endTime       String   // "17:00"
+  slotMinutes   Int      @default(60)
+  bufferMinutes Int      @default(15)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, dayOfWeek])
+}
+
+model BlackoutDate {
+  id          String   @id @default(cuid())
+  businessId  String
+  date        DateTime
+  reason      String?
+  createdAt   DateTime @default(now())
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, date])
+}
+
+model Booking {
+  id              String   @id @default(cuid())
+  businessId      String
+  clientId        String?
+  slotStart       DateTime
+  slotEnd         DateTime
+  serviceType     String
+  depositAmount   Float?
+  depositStatus   String?  // null | required | funded | refunded | forfeited
+  status          String   @default("pending") // pending | confirmed | attended | no_show | cancelled
+  paymentRef      String?
+  paidVia         String?
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client          CrmClient? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  job             CrmJob?  @relation(fields: [id], references: [bookingId])
+  review          BookingReview?
+
+  @@index([businessId, slotStart])
+}
+
+model BookingReview {
+  id                  String   @id @default(cuid())
+  bookingId           String   @unique
+  businessId          String
+  clientPassportId    String
+  rating              Int      // 1-5
+  title               String?
+  body                String?
+  verified            Boolean  @default(true)  // always true — only real attenders can review
+  createdAt           DateTime @default(now())
+  booking             Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  business            Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, rating])
 }
 
 model Table {
@@ -6653,6 +6723,7 @@ model CrmClient {
 
   business   CrmBusiness   @relation(fields: [businessId], references: [id], onDelete: Cascade)
   jobs       CrmJob[]
+  bookings   Booking[]
   invoices   Invoice[]
   deals      CrmDeal[]
   activities CrmActivity[]
@@ -6756,12 +6827,15 @@ model CrmJob {
   client     CrmClient    @relation(fields: [clientId], references: [id], onDelete: Cascade)
   employeeId String?
   employee   CrmEmployee? @relation("JobAssignments", fields: [employeeId], references: [id], onDelete: SetNull)
+  bookingId  String?      @unique
+  booking    Booking?
 
   @@index([businessId])
   @@index([status])
   @@index([scheduledDate])
   @@index([clientId])
   @@index([employeeId])
+  @@index([bookingId])
 }
 
 model CrmPayroll {

@@ -85,7 +85,7 @@ import RentPayment from './pages/RentPayment';
 import MaintenanceRequest from './pages/MaintenanceRequest';
 import LeaseView from './pages/LeaseView';
 import OnboardingWizard from './pages/onboarding/OnboardingWizard';
-import CustomerBookingPage from './pages/booking/CustomerBookingPage';
+import { PublicBookingPage } from './pages/public/BookingPage';
 import BusinessDashboard from './pages/dashboard/BusinessDashboard';
 import TrustStakingPortal from './components/TrustStaking';
 import PaymentHistory from './pages/PaymentHistory';
@@ -166,6 +166,7 @@ import ServiceBusinessDashboard from './pages/crm/ServiceBusinessDashboard';
 import ProfitDashboardPage from './pages/ProfitDashboardPage';
 import { ShariaTransparencyPage } from './pages/ShariaTransparencyPage';
 import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
+import { PublicBookingPage } from './pages/public/BookingPage';
 import { PublicPassportPage } from './pages/PublicPassportPage';
 import { TrustProfilePage } from './pages/public/TrustProfilePage';
 import { PassportDashboardPage } from './pages/PassportDashboardPage';
@@ -223,6 +224,8 @@ import { TrustSettingsPage } from './pages/crm/settings/TrustSettingsPage';
 import { NotificationsPage } from './pages/crm/settings/NotificationsPage';
 import { ApiKeysPage } from './pages/crm/settings/ApiKeysPage';
 import { WebhooksPage } from './pages/crm/settings/WebhooksPage';
+import AvailabilitySettingsPage from './pages/contact/settings/AvailabilitySettingsPage';
+import BookingsPage from './pages/contact/BookingsPage';
 import SetupWizardPage from './pages/contact/SetupWizardPage';
 // LedgerOS
 import LedgerOSPage from './pages/ledger/LedgerOSPage';
@@ -337,6 +340,8 @@ function AnimatedAppRoutes() {
           <Route path="contact/settings/notifications" element={<NotificationsPage />} />
           <Route path="contact/settings/api-keys" element={<ApiKeysPage />} />
           <Route path="contact/settings/webhooks" element={<WebhooksPage />} />
+          <Route path="contact/settings/availability" element={<AvailabilitySettingsPage />} />
+          <Route path="contact/bookings" element={<BookingsPage />} />
           <Route path="contact/setup" element={<SetupWizardPage />} />
 
           {/* LedgerOS - Finance & Accounting */}
@@ -503,7 +508,7 @@ function AnimatedAppRoutes() {
             <Route path="demo-checkout" element={<DemoCheckoutPage />} />
             <Route path="s/:sellerId" element={<UniversalCheckoutPage />} />
             <Route path="t/pay/:sellerId" element={<TapPayPage />} />
-            <Route path="b/:slug" element={<CustomerBookingPage />} />
+            <Route path="b/:slug" element={<PublicBookingPage />} />
             <Route path="onboarding" element={<OnboardingWizard />} />
             <Route path="dashboard" element={<BusinessDashboard />} />
             <Route path="web3" element={<Web3Page />} />
