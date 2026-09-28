@@ -17,12 +17,12 @@ type JobCreateData = {
 
 export async function createJob(businessId: string, data: JobCreateData) {
   const { clientId, serviceType, scheduledDate, scheduledTime, durationMinutes, address, notes, price, employeeId } = data;
-  if (!serviceType || !scheduledDate || !scheduledTime) throw new CustomError('serviceType, scheduledDate, and scheduledTime are required', 400);
+  if (!serviceType || !scheduledDate || !scheduledTime || !clientId) throw new CustomError('clientId, serviceType, scheduledDate, and scheduledTime are required', 400);
 
   const job = await prisma.crmJob.create({
     data: {
       businessId,
-      clientId: clientId || null,
+      clientId,
       serviceType,
       scheduledDate: new Date(scheduledDate),
       scheduledTime,
@@ -31,15 +31,10 @@ export async function createJob(businessId: string, data: JobCreateData) {
       address: address || null,
       notes: notes || null,
       status: 'SCHEDULED',
+      employeeId: employeeId || null,
     },
-    include: { client: true },
+    include: { client: true, employee: true },
   });
-
-  if (employeeId) {
-    await prisma.crmJobAssignment.create({
-      data: { jobId: job.id, employeeId },
-    });
-  }
 
   return job;
 }
@@ -55,12 +50,12 @@ export async function getJobs(businessId: string, filters?: JobFilter) {
   const where: Record<string, unknown> = { businessId };
   if (filters?.status) where.status = filters.status;
   if (filters?.clientId) where.clientId = filters.clientId;
-  if (filters?.dateFrom) where.scheduledDate = { ...where.scheduledDate, gte: new Date(filters.dateFrom) };
-  if (filters?.dateTo) where.scheduledDate = { ...where.scheduledDate, lte: new Date(filters.dateTo) };
+  if (filters?.dateFrom) where.scheduledDate = { ...(where.scheduledDate as any), gte: new Date(filters.dateFrom) };
+  if (filters?.dateTo) where.scheduledDate = { ...(where.scheduledDate as any), lte: new Date(filters.dateTo) };
 
   return prisma.crmJob.findMany({
     where,
-    include: { client: true, assignments: { include: { employee: true } } },
+    include: { client: true, employee: true },
     orderBy: { scheduledDate: 'asc' },
   });
 }
@@ -68,7 +63,7 @@ export async function getJobs(businessId: string, filters?: JobFilter) {
 export async function getJob(businessId: string, jobId: string) {
   const job = await prisma.crmJob.findFirst({
     where: { id: jobId, businessId },
-    include: { client: true, assignments: { include: { employee: true } } },
+    include: { client: true, employee: true },
   });
   if (!job) throw new CustomError('Job not found', 404);
   return job;

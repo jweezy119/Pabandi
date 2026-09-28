@@ -15,6 +15,9 @@ export default defineConfig(({ mode }) => {
   },
   server: {
     port: 3000,
+    watch: {
+      ignored: ['**/node_modules/**', '**/dist/**', '**/.git/**']
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
