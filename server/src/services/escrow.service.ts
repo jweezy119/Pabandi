@@ -1,4 +1,5 @@
 import { logger } from '../utils/logger';
+import { trustCore } from '../trust/trust-core';
 
 export type EscrowCheckoutEnvironment = 'sandbox' | 'production';
 
@@ -91,4 +92,16 @@ export const escrowService = {
       return { status: 'error' };
     }
   },
+
+  async fundEscrow(passportId: string, amount: number, escrowId: string, invoiceId?: string) {
+    await trustCore.emit('escrow.funded', { passportId, amount, escrowId, invoiceId });
+  },
+
+  async releaseEscrow(passportId: string, amount: number, escrowId: string) {
+    await trustCore.emit('escrow.released', { passportId, amount, escrowId });
+  },
+
+  async disputeEscrow(passportId: string, reason: string, escrowId: string) {
+    await trustCore.emit('escrow.disputed', { passportId, reason, escrowId });
+  }
 };

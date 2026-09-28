@@ -1,5 +1,5 @@
 import { prisma } from '../utils/database';
-import { invoiceGenerationService } from '../invoiceGeneration.service';
+import { invoiceGenerationService } from './invoiceGeneration.service';
 import { CustomError } from '../middleware/errorHandler';
 import { eventBus } from './event-bus.service';
 import { getClientStage } from './reliability.service';
@@ -115,6 +115,10 @@ export async function addClient(
     data: { businessId, name, email: email || null, phone: phone || null, address: address || null, notes: notes || null },
   });
 
+  if (client.passportId) {
+    await trustCore.emit('client.created', { passportId: client.passportId, clientId: client.id });
+  }
+
   return client;
 }
 
@@ -170,10 +174,16 @@ export async function updateClient(
   const client = await prisma.crmClient.findFirst({ where: { id: clientId, businessId } });
   if (!client) throw new CustomError('Client not found', 404);
 
-  return prisma.crmClient.update({
+  const updated = await prisma.crmClient.update({
     where: { id: clientId },
     data,
   });
+
+  if (updated.passportId) {
+    await trustCore.emit('client.updated', { passportId: updated.passportId, clientId: updated.id });
+  }
+
+  return updated;
 }
 
 export async function deleteClient(businessId: string, clientId: string) {

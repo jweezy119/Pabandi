@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
-import { trustCore } from '../services/trust-core.service';
+import { trustCore } from '../trust/trust-core';
 
 const router = Router();
 

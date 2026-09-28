@@ -1,6 +1,6 @@
 import { prisma } from '../utils/database';
 import { CustomError } from '../middleware/errorHandler';
-import { trustCore } from './trust-core.service';
+import { trustCore } from '../trust/trust-core';
 
 type InvoiceLineItem = {
   service: string;

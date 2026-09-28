@@ -2,7 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { prisma } from '../utils/database';
-import { trustCore } from '../services/trust-core.service';
+import { trustCore } from '../trust/trust-core';
 
 const server = new McpServer({
   name: 'pabandi-mcp',

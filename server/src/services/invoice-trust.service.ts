@@ -2,7 +2,7 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { eventBus } from './event-bus.service';
 import { trustAuditWriter } from './trustAuditWriter';
-import { trustCore } from './trust-core.service';
+import { trustCore } from '../trust/trust-core';
 
 // Helper to compute decay factor for a paymentScore event
 function paymentScoreDecayFactor(ageDays: number): number {
