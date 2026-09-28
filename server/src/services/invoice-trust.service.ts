@@ -2,6 +2,7 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { eventBus } from './event-bus.service';
 import { trustAuditWriter } from './trustAuditWriter';
+import { trustCore } from './trust-core.service';
 
 // Helper to compute decay factor for a paymentScore event
 function paymentScoreDecayFactor(ageDays: number): number {
@@ -200,6 +201,17 @@ async function processInvoiceStatusChange(
   // Update paymentScore (only for events that affect score)
   if (delta !== 0) {
     await updatePaymentScore(passportId, delta, eventType, timestamp);
+  }
+
+  // Explicitly emit for trustCore log (per Cycle 12 requirements)
+  if (eventType === 'invoice.paid_on_time' || eventType === 'invoice.paid_late') {
+    // We need to fetch the subtotal for the amount
+    const invoice = await prisma.invoice.findUnique({ where: { id: invoiceId }, select: { subtotal: true } });
+    await trustCore.emit(eventType, {
+      passportId: passportId,
+      invoiceId: invoiceId,
+      amount: invoice?.subtotal || 0,
+    });
   }
 }
 

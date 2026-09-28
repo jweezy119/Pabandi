@@ -17,7 +17,14 @@ export function InvoiceList({ invoices }: { invoices: any[] }) {
       {invoices.map(inv => (
         <Link key={inv.id} to={`/contact/invoices/${inv.id}`} className="flex items-center justify-between p-4 rounded-xl border border-[var(--soft-stone)]/30 bg-white hover:border-[var(--clay)]/30 transition clay-card--interactive clay-table-row">
           <div>
-            <p className="font-medium text-[var(--warm-ink)]">{inv.number}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-medium text-[var(--warm-ink)]">{inv.number}</p>
+              {inv.client?.paymentScore !== undefined && (
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[rgba(180,130,90,0.1)] text-[var(--clay)]">
+                  {inv.client.paymentScore}
+                </span>
+              )}
+            </div>
             <p className="text-sm text-[var(--soft-stone)]">{inv.client?.name || 'Unknown'} · ${inv.subtotal?.toLocaleString() || 0}</p>
           </div>
           <div className="text-right">

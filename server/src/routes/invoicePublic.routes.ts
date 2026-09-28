@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { trustCore } from '../services/trust-core.service';
 
 const router = Router();
 
@@ -61,6 +62,17 @@ router.post('/:invoiceId/pay', async (req, res) => {
     // We import from invoice.service dynamically to avoid circular dependencies if any
     const { payPublicInvoice } = await import('../services/invoice.service');
     const updated = await payPublicInvoice(invoiceId, transactionHash);
+
+    if (updated.client?.passportId) {
+      const isLate = new Date() > new Date(updated.dateDue);
+      const eventName = isLate ? 'invoice.paid_late' : 'invoice.paid_on_time';
+      await trustCore.emit(eventName, {
+        passportId: updated.client.passportId,
+        invoiceId: updated.id,
+        amount: updated.subtotal,
+      });
+    }
+
     res.json(updated);
   } catch (err: any) {
     logger.error(`[InvoicePublic] Error paying invoice: ${err.message}`);
