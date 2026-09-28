@@ -1,17 +1,24 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useInRouterContext } from 'react-router-dom';
 import { MessageCircle, X, Search, FileText } from 'lucide-react';
 import { ClayButton } from './clay/ClayButton';
 import { ClayCard } from './clay/ClayCard';
 import api from '../services/api';
 
+function safeNavigate(to: string, navigate: ReturnType<typeof useNavigate> | null, inRouter: boolean) {
+  if (inRouter && navigate) {
+    navigate(to);
+  } else {
+    window.location.assign(to);
+  }
+}
+
 export function SupportWidget() {
-  console.log('SupportWidget');
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [articles, setArticles] = useState<any[]>([]);
   const navigate = useNavigate();
-
+  const inRouter = useInRouterContext();
 
   useEffect(() => {
     if (query.length > 2) {
@@ -68,7 +75,7 @@ export function SupportWidget() {
               {articles.map(article => (
                 <div 
                   key={article.id} 
-                  onClick={() => { setIsOpen(false); navigate(`/support/kb/${article.slug}`); }}
+                  onClick={() => { setIsOpen(false); safeNavigate(`/support/kb/${article.slug}`, navigate, inRouter); }}
                   className="flex items-start gap-2 p-2 hover:bg-slate-800 rounded-lg cursor-pointer transition-colors"
                 >
                   <FileText className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
@@ -83,7 +90,7 @@ export function SupportWidget() {
             <ClayButton 
               variant="primary" 
               className="w-full justify-center"
-              onClick={() => { setIsOpen(false); navigate('/support/tickets'); }}
+              onClick={() => { setIsOpen(false); safeNavigate('/support/tickets', navigate, inRouter); }}
             >
               Open Support Ticket
             </ClayButton>
