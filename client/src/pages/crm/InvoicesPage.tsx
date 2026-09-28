@@ -59,7 +59,7 @@ export default function InvoicesPage() {
 
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {['all', 'draft', 'sent', 'paid', 'overdue'].map(f => (
             <button key={f} onClick={() => setFilter(f)} className={`clay-filter-chip px-3 py-1.5 rounded-lg text-sm font-medium capitalize ${
               filter === f ? 'clay-filter-chip--active' : 'clay-filter-chip--inactive'

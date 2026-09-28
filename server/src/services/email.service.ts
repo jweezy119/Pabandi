@@ -187,4 +187,124 @@ export const emailService = {
 
     return { status, errorMessage };
   },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Transactional Emails (Nodemailer)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async sendInvoiceSent(client: any, invoice: any, business: any) {
+    this.sendNodemailerTemplate(client.email, `Invoice ${invoice.number} from ${business.name}`, 'invoice-sent', {
+      businessName: business.name,
+      clientName: client.name,
+      amount: invoice.subtotal,
+      invoiceNumber: invoice.number,
+      dueDate: new Date(invoice.dateDue).toLocaleDateString(),
+      payUrl: `${process.env.APP_URL || 'http://localhost:5173'}/pay/${invoice.id}`
+    });
+  },
+
+  async sendInvoiceReminder(client: any, invoice: any, business: any) {
+    this.sendNodemailerTemplate(client.email, `Reminder: Invoice ${invoice.number} is due`, 'invoice-reminder', {
+      businessName: business.name,
+      clientName: client.name,
+      amount: invoice.subtotal,
+      invoiceNumber: invoice.number,
+      dueDate: new Date(invoice.dateDue).toLocaleDateString(),
+      payUrl: `${process.env.APP_URL || 'http://localhost:5173'}/pay/${invoice.id}`
+    });
+  },
+
+  async sendPaymentReceived(business: any, invoice: any, client: any) {
+    this.sendNodemailerTemplate(business.email || 'business@example.com', `Payment Received: Invoice ${invoice.number}`, 'payment-received', {
+      businessName: business.name,
+      clientName: client.name,
+      amount: invoice.subtotal,
+      invoiceNumber: invoice.number,
+    });
+  },
+
+  async sendPaymentClaimed(business: any, invoice: any, client: any) {
+    this.sendNodemailerTemplate(business.email || 'business@example.com', `Client Claims Paid: Verify Invoice ${invoice.number}`, 'payment-claimed', {
+      businessName: business.name,
+      clientName: client.name,
+      amount: invoice.subtotal,
+      invoiceNumber: invoice.number,
+      verifyUrl: `${process.env.APP_URL || 'http://localhost:5173'}/contact/invoices`
+    });
+  },
+
+  async sendWelcome(user: any) {
+    this.sendNodemailerTemplate(user.email, 'Welcome to Pabandi', 'welcome', {
+      userName: user.name || 'there',
+    });
+  },
+
+  async sendTrustScoreChanged(user: any, field: string, oldScore: number, newScore: number) {
+    this.sendNodemailerTemplate(user.email, 'Your Trust Score updated', 'trust-score-changed', {
+      userName: user.name || 'there',
+      field,
+      oldScore,
+      newScore,
+      change: newScore > oldScore ? `increased by ${newScore - oldScore}` : `decreased by ${oldScore - newScore}`,
+      profileUrl: `${process.env.APP_URL || 'http://localhost:5173'}/contact/settings/profile`
+    });
+  },
+
+  async sendNodemailerTemplate(to: string, subject: string, templateName: string, data: any) {
+    // Non-blocking
+    setTimeout(async () => {
+      try {
+        const nodemailer = await import('nodemailer');
+        const fs = await import('fs');
+        const path = await import('path');
+        
+        const isConfigured = !!process.env.EMAIL_HOST;
+        if (!isConfigured) {
+          logger.warn(`Email not configured. Would have sent: ${subject} to ${to}`);
+          return;
+        }
+
+        const transporter = nodemailer.createTransport({
+          host: process.env.EMAIL_HOST || 'smtp.example.com',
+          port: parseInt(process.env.EMAIL_PORT || '587', 10),
+          secure: process.env.EMAIL_PORT === '465',
+          auth: {
+            user: process.env.EMAIL_USER || 'test',
+            pass: process.env.EMAIL_PASSWORD || 'test',
+          },
+        });
+
+        let base = '';
+        try {
+          base = fs.readFileSync(path.join(__dirname, '../templates/emails/base.html'), 'utf-8');
+        } catch {
+          base = '{{content}}'; // fallback
+        }
+        
+        let content = '';
+        try {
+          content = fs.readFileSync(path.join(__dirname, `../templates/emails/${templateName}.html`), 'utf-8');
+        } catch {
+          content = JSON.stringify(data);
+        }
+
+        let rendered = content;
+        for (const [key, value] of Object.entries(data)) {
+          rendered = rendered.replace(new RegExp(`{{${key}}}`, 'g'), String(value));
+        }
+
+        const html = base.replace('{{content}}', rendered);
+
+        await transporter.sendMail({
+          from: process.env.EMAIL_FROM || '"Pabandi" <hello@pabandi.com>',
+          to,
+          subject,
+          html,
+        });
+        logger.info(`[email] Sent ${templateName} to ${to}`);
+      } catch (err: any) {
+        logger.error(`[email] Failed to send nodemailer email to ${to}: ${err.message}`);
+      }
+    }, 0);
+  }
 };

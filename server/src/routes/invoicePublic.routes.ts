@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { trustCore } from '../trust/trust-core';
+import { emailService } from '../services/email.service';
 
 const router = Router();
 
@@ -98,6 +99,11 @@ router.post('/:invoiceId/claim-paid', async (req, res) => {
       where: { id: invoiceId },
       data: { status: 'payment_claimed' },
     });
+
+    const business = await prisma.business.findUnique({ where: { id: invoice.businessId } });
+    if (business) {
+      emailService.sendPaymentClaimed(business, updated, invoice.client);
+    }
 
     if (invoice.client?.passportId) {
       await trustCore.emit('invoice.payment_claimed', {

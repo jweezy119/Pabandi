@@ -6514,6 +6514,8 @@ model Invoice {
   paidAt     DateTime?
   paymentLink String?
   transactionHash String? @unique
+  reminderCount   Int @default(0)
+  lastReminderAt  DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   trustEvents InvoiceTrustEvent[]

@@ -137,7 +137,7 @@ export function TrustProfilePage() {
         </div>
 
         {/* Scores */}
-        <div style={{ display: 'flex', justifyContent: 'space-around', padding: '16px 0', borderTop: '1px solid #F0ECE6', borderBottom: '1px solid #F0ECE6' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '16px', padding: '16px 0', borderTop: '1px solid #F0ECE6', borderBottom: '1px solid #F0ECE6' }}>
           <ScoreRing score={profile.paymentScore} label="Payment" sampleSize={profile.paymentSampleSize} />
           <ScoreRing score={profile.showUpScore} label="Show-Up" sampleSize={profile.showUpSampleSize} />
           <ScoreRing score={profile.deliveryScore} label="Delivery" sampleSize={profile.deliverySampleSize} />

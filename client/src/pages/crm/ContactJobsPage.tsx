@@ -70,7 +70,7 @@ export function ContactJobsPage({ businessId }: { businessId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-semibold text-white">Jobs</h2>
         <div className="flex items-center gap-4">
           <div className="flex bg-white/5 rounded-lg p-1">

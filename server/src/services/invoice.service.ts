@@ -1,6 +1,7 @@
 import { prisma } from '../utils/database';
 import { CustomError } from '../middleware/errorHandler';
 import { trustCore } from '../trust/trust-core';
+import { emailService } from './email.service';
 
 type InvoiceLineItem = {
   service: string;
@@ -144,6 +145,11 @@ export async function sendInvoice(businessId: string, invoiceId: string) {
     });
   }
 
+  const business = await prisma.business.findUnique({ where: { id: businessId } });
+  if (business) {
+    emailService.sendInvoiceSent(updated.client, updated, business);
+  }
+
   return updated;
 }
 
@@ -187,6 +193,11 @@ export async function markInvoicePaid(businessId: string, invoiceId: string, tra
     });
   }
 
+  const business = await prisma.business.findUnique({ where: { id: businessId } });
+  if (business) {
+    emailService.sendPaymentReceived(business, updated, updated.client);
+  }
+
   return updated;
 }
 
@@ -212,6 +223,36 @@ export async function scanOverdueInvoices() {
         passportId: inv.client.passportId,
         amount: inv.subtotal
       });
+    }
+  }
+
+  // Handle invoice reminders (max 3 reminders, 1 per 3 days)
+  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+  const invoicesToRemind = await prisma.invoice.findMany({
+    where: {
+      status: { in: ['sent', 'overdue'] },
+      dateDue: { lt: now },
+      reminderCount: { lt: 3 },
+      OR: [
+        { lastReminderAt: null },
+        { lastReminderAt: { lt: threeDaysAgo } }
+      ]
+    },
+    include: { client: true }
+  });
+
+  for (const inv of invoicesToRemind) {
+    await prisma.invoice.update({
+      where: { id: inv.id },
+      data: {
+        reminderCount: inv.reminderCount + 1,
+        lastReminderAt: now
+      }
+    });
+
+    const business = await prisma.business.findUnique({ where: { id: inv.businessId } });
+    if (business) {
+      emailService.sendInvoiceReminder(inv.client, inv, business);
     }
   }
 }

@@ -12,6 +12,7 @@ import { encrypt } from '../utils/encryption';
 import { osintService } from '../services/osint.service';
 import { odooService } from '../services/odoo.service';
 import { notificationService } from '../services/notification.service';
+import { emailService } from '../services/email.service';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -354,6 +355,8 @@ export const register = async (
         businessName: req.body.businessName
       }).catch(err => logger.error('Failed async Odoo sync:', err));
     }
+
+    emailService.sendWelcome(user);
 
     res.status(201).json({
       success: true,

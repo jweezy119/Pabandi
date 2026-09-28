@@ -347,9 +347,23 @@ export default function DashboardLayout({
       </aside>
 
       {/* ─── Main content ─────────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className="flex-1 flex flex-col min-w-0 pb-16 lg:pb-0">
         {/* Mobile header */}
-
+        <div className="lg:hidden flex items-center justify-between p-4 bg-[var(--warm-sand)] border-b border-[rgba(191,179,163,0.2)]">
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-lg ${colors.icon} flex items-center justify-center text-white font-bold text-sm`}>
+              {osIcon}
+            </div>
+            <h1 className="text-base font-bold text-[var(--warm-ink)]">{osName}</h1>
+          </div>
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 -mr-2 text-[var(--soft-stone)] hover:bg-[rgba(232,217,197,0.5)] rounded-lg touch-target"
+            aria-label="Open sidebar"
+          >
+            <span className="material-symbols-outlined">menu</span>
+          </button>
+        </div>
 
         {/* Page content */}
         <motion.div

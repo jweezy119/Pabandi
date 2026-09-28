@@ -395,9 +395,16 @@ a[role="button"]:not(:disabled):active {
 /* ── Touch-friendly tap targets on mobile ──────────────────────── */
 @media (max-width: 767px) {
   .mobile-tap,
-  .touch-target {
+  .touch-target,
+  button, 
+  .btn,
+  a[role="button"] {
     min-height: 44px;
     min-width: 44px;
+  }
+  
+  body {
+    font-size: 14px;
   }
 }
 

@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { emailService } from '../services/email.service';
 
 const prisma = new PrismaClient();
 
@@ -72,6 +73,13 @@ class TrustCore {
       where: { id: passportId },
       data: { [update.field]: next },
     });
+
+    if (Math.abs(next - current) >= 20) {
+      const client = await prisma.crmClient.findUnique({ where: { passportId } });
+      if (client && client.email) {
+        emailService.sendTrustScoreChanged(client, update.field, current, next);
+      }
+    }
   }
 
   async calculateScore(wallet: string): Promise<number> {

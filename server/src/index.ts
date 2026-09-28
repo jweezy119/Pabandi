@@ -399,8 +399,8 @@ jobCronService.start();
 
 import cron from 'node-cron';
 import { scanOverdueInvoices } from './services/invoice.service';
-// Daily scan for overdue invoices at midnight
-cron.schedule('0 0 * * *', async () => {
+// Daily scan for overdue invoices at 9am local
+cron.schedule('0 9 * * *', async () => {
   try {
     await scanOverdueInvoices();
   } catch (error) {
