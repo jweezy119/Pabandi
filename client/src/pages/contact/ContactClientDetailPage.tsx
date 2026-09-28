@@ -8,14 +8,7 @@ import { Modal } from '../../components/primitives/Modal';
 import { Input } from '../../components/primitives/Input';
 import { TrustPanel } from '../../components/TrustPanel';
 
-const navItems = [
-  { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/contact/clients', label: 'Clients', icon: 'groups' },
-  { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
-  { path: '/contact/jobs', label: 'Jobs', icon: 'work' },
-  { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
-  { path: '/contact/settings/modules', label: 'Settings', icon: 'settings' },
-];
+
 
 const TABS = ['Command Center', 'Files'];
 
@@ -86,14 +79,14 @@ export default function ContactClientDetailPage() {
     }
   }
 
-  if (loading) return <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}><div className="p-8 text-center text-[var(--soft-stone)]">Loading...</div></DashboardLayout>;
-  if (!client) return <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}><EmptyState icon="person_off" title="Not Found" description="Client does not exist." actionLabel="Go Back" onAction={() => window.location.href = '/contact/clients'} /></DashboardLayout>;
+  if (loading) return <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" ><div className="p-8 text-center text-[var(--soft-stone)]">Loading...</div></DashboardLayout>;
+  if (!client) return <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" ><EmptyState icon="person_off" title="Not Found" description="Client does not exist." actionLabel="Go Back" onAction={() => window.location.href = '/contact/clients'} /></DashboardLayout>;
 
   const totalBilled = invoices.reduce((s, inv) => s + (inv.subtotal || 0), 0);
   const outstanding = invoices.filter(i => i.status === 'sent' || i.status === 'overdue' || i.status === 'draft').reduce((s, inv) => s + (inv.subtotal || 0), 0);
 
   return (
-    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
+    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" >
       <div className="space-y-6">
         <Link to="/contact/clients" className="inline-flex items-center gap-2 text-sm text-[var(--clay)] font-medium hover:underline clay-fade">
           <span className="material-symbols-outlined text-[16px]">arrow_back</span>

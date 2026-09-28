@@ -3,9 +3,7 @@ import DashboardLayout from '../../../components/DashboardLayout';
 import { Card } from '../../../components/primitives/Card';
 import { Button } from '../../../components/primitives/Button';
 
-const navItems = [
-  { path: '/contact/settings', label: 'Back to Settings', icon: 'arrow_back' },
-];
+
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
 const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` });
@@ -64,7 +62,7 @@ export function NotificationsPage() {
   const notifs = getNotifs();
 
   return (
-    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
+    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" >
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between clay-heading pb-2">
           <div>

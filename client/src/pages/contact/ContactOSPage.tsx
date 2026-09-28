@@ -5,13 +5,7 @@ import { useState, useEffect } from 'react';
 import { useBusinessSettings } from '../../hooks/useBusinessSettings';
 import { Card } from '../../components/primitives';
 
-const navItems = [
-  { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/contact/clients', label: 'Clients', icon: 'groups' },
-  { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
-  { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
-  { path: '/contact/settings/modules', label: 'Settings', icon: 'settings' },
-];
+
 
 function StatCard({ icon, value, label, color = 'clay', delay = 0 }: {
   icon: string;
@@ -86,7 +80,7 @@ export default function ContactOSPage() {
 
   if (loading) {
     return (
-      <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
+      <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" >
         <div className="flex items-center justify-center py-20">
           <div className="w-8 h-8 rounded-full border-2 border-[var(--clay)] border-t-transparent animate-spin" />
         </div>
@@ -99,7 +93,7 @@ export default function ContactOSPage() {
       <Helmet>
         <title>Contact OS — Every relationship, one trusted record</title>
       </Helmet>
-      <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
+      <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" >
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           {/* ── Greeting ─────────────────────────────────────────── */}
           <div className="clay-fade mb-8">

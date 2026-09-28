@@ -4,14 +4,7 @@ import { Button, Modal, EmptyState, ClaySkeletonCard } from '../../components/pr
 import ClientListTable from '../crm/components/ClientListTable';
 import ClientFormModal from '../crm/components/ClientFormModal';
 
-const navItems = [
-  { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/contact/clients', label: 'Clients', icon: 'groups' },
-  { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
-  { path: '/contact/jobs', label: 'Jobs', icon: 'work' },
-  { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
-  { path: '/contact/settings/modules', label: 'Settings', icon: 'settings' },
-];
+
 
 export default function ContactClientsPage() {
   const [clients, setClients] = useState<any[]>([]);
@@ -96,7 +89,7 @@ export default function ContactClientsPage() {
   }
 
   return (
-    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
+    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" >
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 clay-heading">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Clients</h1>

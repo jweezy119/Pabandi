@@ -6,15 +6,7 @@ import { ActivityFeed } from './components/ActivityFeed';
 import { ActivityFormModal } from './components/ActivityFormModal';
 import { TaskFormModal } from './components/TaskFormModal';
 
-const navItems = [
-  { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/contact/clients', label: 'Clients', icon: 'groups' },
-  { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
-  { path: '/contact/jobs', label: 'Jobs', icon: 'work' },
-  { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
-  { path: '/contact/tasks', label: 'Tasks', icon: 'check_box' },
-  { path: '/contact/settings/modules', label: 'Settings', icon: 'settings' },
-];
+
 
 const TYPES = [
   { id: 'ALL', label: 'All', icon: 'list' },
@@ -109,7 +101,7 @@ export function ContactActivitiesPage() {
   const filtered = selectedType === 'ALL' ? activities : activities.filter(a => a.type === selectedType);
 
   return (
-    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
+    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" >
       <div className="space-y-6">
         <div className="flex justify-between items-center clay-heading">
           <div>

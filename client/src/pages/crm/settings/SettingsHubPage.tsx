@@ -3,16 +3,7 @@ import DashboardLayout from '../../../components/DashboardLayout';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../../components/primitives/Card';
 
-const navItems = [
-  { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/contact/clients', label: 'Clients', icon: 'groups' },
-  { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
-  { path: '/contact/jobs', label: 'Jobs', icon: 'work' },
-  { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
-  { path: '/contact/team', label: 'Team', icon: 'badge' },
-  { path: '/contact/reports', label: 'Reports', icon: 'analytics' },
-  { path: '/contact/settings', label: 'Settings', icon: 'settings' },
-];
+
 
 export function SettingsHubPage() {
   const navigate = useNavigate();
@@ -31,7 +22,7 @@ export function SettingsHubPage() {
   ];
 
   return (
-    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
+    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" >
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="clay-heading pb-2">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Settings Hub</h1>

@@ -4,13 +4,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { crmJobsService } from '../../services/crmJobs.service';
 import { Button } from '../../components/primitives';
 
-const navItems = [
-  { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/contact/leads', label: 'Leads', icon: 'person_add' },
-  { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
-  { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
-  { path: '/contact/jobs', label: 'Jobs', icon: 'work' },
-];
+
 
 // Reused Clay primitives from booking/BookingOSPage.tsx
 function ClayCard({ children, className = '', hover = true, ...props }: any) {
@@ -334,14 +328,14 @@ setCurrentYear(now.getFullYear());
 
   if (loading) {
     return (
-      <DashboardLayout osName="Contact OS" osIcon="C" osColor="#C97B5A" navItems={navItems}>
+      <DashboardLayout osName="Contact OS" osIcon="C" osColor="#C97B5A" >
         <div className="p-8 text-center" style={{ color: 'var(--soft-stone)' }}>Loading...</div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout osName="Contact OS" osIcon="C" osColor="#C97B5A" navItems={navItems}>
+    <DashboardLayout osName="Contact OS" osIcon="C" osColor="#C97B5A" >
       <div className="space-y-6">
         <div className="flex justify-between items-center clay-heading">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Jobs</h1>

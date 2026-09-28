@@ -72,14 +72,7 @@ const MODULES = [
   }
 ];
 
-const navItems = [
-  { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/contact/clients', label: 'Clients', icon: 'groups' },
-  { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
-  { path: '/contact/jobs', label: 'Jobs', icon: 'work' },
-  { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
-  { path: '/contact/settings/modules', label: 'Settings', icon: 'settings' }
-];
+
 
 export default function ModulesSettingsPage() {
   const { settings, toggleModule, toggleFeature } = useBusinessSettings();
@@ -106,7 +99,7 @@ export default function ModulesSettingsPage() {
       <Helmet>
         <title>Module Settings — Contact OS</title>
       </Helmet>
-      <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
+      <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" >
         <div className="max-w-3xl mx-auto space-y-8 py-4 clay-fade">
           <div className="clay-heading">
             <h1 className="text-3xl font-bold" style={{ color: 'var(--warm-ink)' }}>Clay Modularity</h1>

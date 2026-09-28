@@ -18,7 +18,7 @@ export interface DashboardLayoutProps {
   osName: string;
   osIcon: string;
   osColor: string;
-  navItems: NavItem[];
+  navItems?: NavItem[];
   navGroups?: NavGroup[];
   children: React.ReactNode;
 }
@@ -90,14 +90,43 @@ const colorKeys: Record<string, string> = {
   'sky-wash': 'sky-wash',
 };
 
+import { useBusinessSettings } from '../hooks/useBusinessSettings';
+
+function buildNavFromSettings(settings: any, osName: string, defaultNav?: NavItem[]): NavItem[] {
+  const map: Record<string, any[]> = {
+    'Contact OS': [
+      { path: '/contact', label: 'Dashboard', icon: 'dashboard', feature: null, end: true },
+      { path: '/contact/clients', label: 'Clients', icon: 'groups', feature: 'clients' },
+      { path: '/contact/companies', label: 'Companies', icon: 'building', feature: 'companies' },
+      { path: '/contact/deals', label: 'Deals', icon: 'handshake', feature: 'deals' },
+      { path: '/contact/jobs', label: 'Jobs', icon: 'work', feature: 'jobs' },
+      { path: '/contact/activities', label: 'Activities', icon: 'notifications', feature: 'activities' },
+      { path: '/contact/tasks', label: 'Tasks', icon: 'check', feature: 'tasks' },
+      { path: '/contact/invoices', label: 'Invoices', icon: 'file', feature: 'invoices' },
+      { path: '/contact/team', label: 'Team', icon: 'users', feature: 'team' },
+      { path: '/contact/settings/modules', label: 'Settings', icon: 'settings', feature: null },
+    ],
+  };
+
+  if (map[osName]) {
+    const enabled = settings.enabledFeatures['contact'] ?? [];
+    return map[osName].filter(item => 
+      item.feature === null || enabled.includes(item.feature)
+    );
+  }
+  return defaultNav || [];
+}
+
 export default function DashboardLayout({
   osName,
   osIcon,
   osColor,
-  navItems,
+  navItems: defaultNavItems,
   navGroups = [],
   children,
 }: DashboardLayoutProps) {
+  const { settings } = useBusinessSettings();
+  const navItems = buildNavFromSettings(settings, osName, defaultNavItems);
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());

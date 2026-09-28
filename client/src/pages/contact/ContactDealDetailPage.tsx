@@ -5,14 +5,7 @@ import { Button, Chip, EmptyState } from '../../components/primitives';
 import ClientTimeline from '../crm/components/ClientTimeline';
 import { TrustPanel } from '../../components/TrustPanel';
 
-const navItems = [
-  { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/contact/clients', label: 'Clients', icon: 'groups' },
-  { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
-  { path: '/contact/jobs', label: 'Jobs', icon: 'work' },
-  { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
-  { path: '/contact/settings/modules', label: 'Settings', icon: 'settings' },
-];
+
 
 export default function ContactDealDetailPage() {
   const { id } = useParams();
@@ -59,11 +52,11 @@ export default function ContactDealDetailPage() {
     }
   }
 
-  if (loading) return <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}><div className="p-8 text-center text-[var(--soft-stone)]">Loading...</div></DashboardLayout>;
-  if (!deal) return <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}><EmptyState icon="handshake" title="Deal Not Found" description="This deal does not exist." actionLabel="Go Back" onAction={() => window.location.href = '/contact/deals'} /></DashboardLayout>;
+  if (loading) return <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" ><div className="p-8 text-center text-[var(--soft-stone)]">Loading...</div></DashboardLayout>;
+  if (!deal) return <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" ><EmptyState icon="handshake" title="Deal Not Found" description="This deal does not exist." actionLabel="Go Back" onAction={() => window.location.href = '/contact/deals'} /></DashboardLayout>;
 
   return (
-    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
+    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" >
       <div className="space-y-6">
         <Link to="/contact/deals" className="inline-flex items-center gap-2 text-sm text-[var(--clay)] font-medium hover:underline clay-fade">
           <span className="material-symbols-outlined text-[16px]">arrow_back</span>

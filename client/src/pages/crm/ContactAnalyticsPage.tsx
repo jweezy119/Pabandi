@@ -3,16 +3,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { ReportWidgetGrid } from './components/ReportWidgetGrid';
 import { DateRangePicker } from './components/DateRangePicker';
 
-const navItems = [
-  { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/contact/clients', label: 'Clients', icon: 'groups' },
-  { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
-  { path: '/contact/jobs', label: 'Jobs', icon: 'work' },
-  { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
-  { path: '/contact/team', label: 'Team', icon: 'badge' },
-  { path: '/contact/reports', label: 'Reports', icon: 'analytics' },
-  { path: '/contact/settings/modules', label: 'Settings', icon: 'settings' },
-];
+
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
 const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` });
@@ -66,7 +57,7 @@ export function ContactAnalyticsPage() {
   };
 
   return (
-    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
+    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" >
       <div className="space-y-6 max-w-6xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 clay-heading pb-2">
           <div>

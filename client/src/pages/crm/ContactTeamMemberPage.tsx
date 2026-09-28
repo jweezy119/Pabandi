@@ -7,16 +7,7 @@ import { TeamMemberForm } from './components/TeamMemberForm';
 import { usePermissions } from '../../hooks/usePermissions';
 import { TrustPanel } from '../../components/TrustPanel';
 
-const navItems = [
-  { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/contact/clients', label: 'Clients', icon: 'groups' },
-  { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
-  { path: '/contact/jobs', label: 'Jobs', icon: 'work' },
-  { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
-  { path: '/contact/tasks', label: 'Tasks', icon: 'check_box' },
-  { path: '/contact/team', label: 'Team', icon: 'badge' },
-  { path: '/contact/settings/modules', label: 'Settings', icon: 'settings' },
-];
+
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
 const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` });
@@ -79,7 +70,7 @@ export function ContactTeamMemberPage() {
   if (loading) return <div>Loading...</div>;
   if (!hasPermission('VIEWER')) {
     return (
-      <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
+      <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" >
         <div className="p-12 text-center text-[var(--rose)]">Access Denied</div>
       </DashboardLayout>
     );
@@ -87,7 +78,7 @@ export function ContactTeamMemberPage() {
   if (!member) return <div>Member not found</div>;
 
   return (
-    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
+    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" >
       <div className="space-y-6">
         <Button variant="ghost" icon="arrow_back" onClick={() => navigate('/contact/team')}>
           Back to Team

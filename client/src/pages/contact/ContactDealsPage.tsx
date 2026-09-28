@@ -7,14 +7,7 @@ import DealKanbanBoard from '../crm/components/DealKanbanBoard';
 import DealListTable from '../crm/components/DealListTable';
 import DealFormModal from '../crm/components/DealFormModal';
 
-const navItems = [
-  { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/contact/clients', label: 'Clients', icon: 'groups' },
-  { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
-  { path: '/contact/jobs', label: 'Jobs', icon: 'work' },
-  { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
-  { path: '/contact/settings/modules', label: 'Settings', icon: 'settings' },
-];
+
 
 const STAGES = [
   { id: 'LEAD', label: 'Lead', color: '#8A9A7B' },
@@ -102,7 +95,7 @@ export default function ContactDealsPage() {
   }
 
   return (
-    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
+    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" >
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 clay-heading">
           <div>

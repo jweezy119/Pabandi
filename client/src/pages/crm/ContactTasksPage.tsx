@@ -7,15 +7,7 @@ import { TaskBoard } from './components/TaskBoard';
 import { TaskCalendar } from './components/TaskCalendar';
 import { TaskFormModal } from './components/TaskFormModal';
 
-const navItems = [
-  { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/contact/clients', label: 'Clients', icon: 'groups' },
-  { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
-  { path: '/contact/jobs', label: 'Jobs', icon: 'work' },
-  { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
-  { path: '/contact/tasks', label: 'Tasks', icon: 'check_box' },
-  { path: '/contact/settings/modules', label: 'Settings', icon: 'settings' },
-];
+
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
 const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` });
@@ -103,7 +95,7 @@ export function ContactTasksPage() {
   };
 
   return (
-    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
+    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" >
       <div className="space-y-6">
         <div className="flex justify-between items-center clay-heading">
           <div>
