@@ -8,7 +8,8 @@ import { Modal } from '../../components/primitives/Modal';
 import { Input } from '../../components/primitives/Input';
 import { TrustPanel } from '../../components/TrustPanel';
 
-
+import { TrustPanel } from '../../components/TrustPanel';
+import { InlineEdit } from '../../components/primitives/InlineEdit';
 
 const TABS = ['Command Center', 'Files'];
 
@@ -60,6 +61,18 @@ export default function ContactClientDetailPage() {
     }
   }
 
+  const handleClientUpdate = async (field: string, value: any) => {
+    const token = localStorage.getItem('token');
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+    const res = await fetch(`${baseUrl}/api/v1/crm/clients/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ [field]: value }),
+    });
+    if (!res.ok) throw new Error('Failed to update');
+    setClient((prev: any) => ({ ...prev, [field]: value }));
+  };
+
   async function handleCreateActivity(e: React.FormEvent) {
     e.preventDefault();
     try {
@@ -100,10 +113,16 @@ export default function ContactClientDetailPage() {
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold" style={{ color: 'var(--warm-ink)' }}>{client.name}</h1>
+                <h1 className="text-3xl font-bold" style={{ color: 'var(--warm-ink)' }}>
+                  <InlineEdit value={client.name} onSave={(val) => handleClientUpdate('name', val)} />
+                </h1>
                 <Chip label={client.status || 'ACTIVE'} variant="neutral" />
               </div>
-              <p className="text-[var(--soft-stone)] text-sm">{client.email || 'No email'} · {client.phone || 'No phone'}</p>
+              <p className="text-[var(--soft-stone)] text-sm flex gap-2">
+                <InlineEdit value={client.email || ''} onSave={(val) => handleClientUpdate('email', val)} placeholder="Add email" />
+                ·
+                <InlineEdit value={client.phone || ''} onSave={(val) => handleClientUpdate('phone', val)} placeholder="Add phone" />
+              </p>
             </div>
           </div>
           <div className="flex gap-2">

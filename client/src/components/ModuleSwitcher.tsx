@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const modules = [
   { id: 'contact', label: 'ContactOS', path: '/contact', icon: 'contacts', color: 'var(--clay)' },
-  { id: 'booking', label: 'BookingOS', path: '/property', icon: 'book_online', color: 'var(--sage)' },
+  { id: 'booking', label: 'BookingOS', path: '/booking', icon: 'book_online', color: 'var(--sage)' },
   { id: 'property', label: 'PropertyOS', path: '/property', icon: 'real_estate_agent', color: 'var(--sky-wash)' },
   { id: 'freight', label: 'FreightOS', path: '/freight', icon: 'local_shipping', color: 'var(--muted-ochre)' },
   { id: 'ledger', label: 'LedgerOS', path: '/ledger', icon: 'account_balance', color: 'var(--dusty-rose)' },
@@ -22,6 +22,8 @@ export function ModuleSwitcher() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-[rgba(0,0,0,0.05)] transition-colors"
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
       >
         <span className="material-symbols-outlined text-[18px]" style={{ color: currentModule.color }}>
           {currentModule.icon}
@@ -29,9 +31,13 @@ export function ModuleSwitcher() {
         <span className="font-semibold text-sm text-[var(--warm-ink)] hidden sm:block">
           {currentModule.label}
         </span>
-        <span className="material-symbols-outlined text-[16px] text-[var(--soft-stone)]">
+        <motion.span
+          className="material-symbols-outlined text-[16px] text-[var(--soft-stone)]"
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.2, ease: [0.25, 0.9, 0.35, 1] }}
+        >
           expand_more
-        </span>
+        </motion.span>
       </button>
 
       <AnimatePresence>
@@ -49,17 +55,37 @@ export function ModuleSwitcher() {
               initial={{ opacity: 0, y: -8, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.95 }}
-              transition={{ duration: 0.15 }}
+              transition={{ duration: 0.2, ease: [0.25, 0.9, 0.35, 1] }}
             >
-              <div className="py-1">
-                {modules.map(m => (
-                  <button
+              <motion.div
+                className="py-1"
+                initial={false}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ staggerChildren: 0.05 }}
+              >
+                {modules.map((m, index) => (
+                  <motion.button
                     key={m.id}
                     onClick={() => {
                       navigate(m.path);
                       setIsOpen(false);
                     }}
                     className="w-full flex items-center gap-3 px-4 py-2 hover:bg-[rgba(0,0,0,0.03)] transition-colors text-left"
+                    variants={{
+                      hidden: { opacity: 0, x: -10 },
+                      show: {
+                        opacity: 1,
+                        x: 0,
+                        transition: {
+                          type: 'spring',
+                          stiffness: 380,
+                          damping: 30,
+                          delay: index * 0.05,
+                        },
+                      },
+                    }}
+                    whileHover={{ x: 4 }}
+                    whileTap={{ scale: 0.98 }}
                   >
                     <span className="material-symbols-outlined text-[18px]" style={{ color: m.color }}>
                       {m.icon}
@@ -67,9 +93,9 @@ export function ModuleSwitcher() {
                     <span className="text-sm font-medium text-[var(--warm-ink)]">
                       {m.label}
                     </span>
-                  </button>
+                  </motion.button>
                 ))}
-              </div>
+              </motion.div>
             </motion.div>
           </>
         )}

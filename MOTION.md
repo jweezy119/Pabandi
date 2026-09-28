@@ -69,13 +69,13 @@ All durations are in milliseconds. Default transition base: 250ms.
 - **Desktop sidebar**: Dot is `absolute left-0 w-1 h-5 rounded-r-full` inside active nav item
 - **Mobile bottom tabs**: `layoutId="mobile-tab-indicator"` — `w-8 h-0.5 rounded-full` below active label
 
-### Collapsible groups (future)
+### Collapsible groups
 
 - **Chevron rotation**: 250ms, `--ease-clay`
 - **Content slide**: `max-height` or `translate-y` transition, 250ms `--ease-smooth`
-- **Status**: Not yet built. Sidebar is flat nav currently.
+- **Status**: Built in DashboardLayout sidebar groups
 
-### Tabs indicator (future)
+### Tabs indicator
 
 - **Active indicator slide**: Framer Motion `layoutId` across tab buttons
 - **Content crossfade**: 200ms opacity transition between tab panels
@@ -187,6 +187,8 @@ All durations are in milliseconds. Default transition base: 250ms.
 | `ClayBadge` | primitives/ClayBadge.tsx | None (static label) |
 | `StatusChip` | primitives/StatusChip.tsx | None (static label) |
 | `ClayDropdown` | primitives/ClayDropdown.tsx | Menu rise (class `clay-dropdown-menu-clay`) |
+| `ModuleSwitcher` | ModuleSwitcher.tsx | Dropdown fade + upward slide, stagger children (60ms) |
+| `NotificationBell` | NotificationBell.tsx | Drawer slide from right, list stagger |
 
 ---
 
@@ -203,9 +205,72 @@ These are the original motion principles from the brief that we preserve:
 
 ---
 
+## NEW MORPHS (Part C — UI Morphs)
+
+### 1. Sidebar Item Toggle (Settings → Modules)
+
+- **Trigger**: User toggles a module on/off in `/contact/settings/modules`
+- **On Enable**: Item slides into sidebar with spring (300ms `cubic-bezier(0.34, 1.4, 0.64, 1)`)
+- **On Disable**: Item fades + slides out, remaining items shift up smoothly (Framer Motion `layout`)
+- **Stagger**: 60ms delay between each nav item
+- **Files**: `ModulesSettingsPage.tsx`, `DashboardLayout.tsx`
+- **Component**: `MorphItem`, `StaggerContainer`, `StaggerItem` in `MorphAnimations.tsx`
+
+### 2. Pipeline Stages (Settings → Pipeline)
+
+- **Drag to reorder**: Other stages animate to new positions (Framer Motion `layout`)
+- **Add stage**: New column slides in from right with spring (300ms)
+- **Delete stage**: Column collapses width to 0, others shift left (300ms `AnimatePresence mode="popLayout"`)
+- **Rename**: Label crossfades (implicit via `layout`)
+- **While dragging**: Item scales to 1.02, lifts with `--shadow-lift`
+- **Files**: `PipelineSettingsPage.tsx`
+
+### 3. Custom Fields (Settings → Custom Fields)
+
+- **Add field**: New row fades in from top with slight scale (300ms spring)
+- **Delete field**: Row collapses height to 0 (300ms `AnimatePresence mode="popLayout"`)
+- **Reorder**: Items morph to new positions (Framer Motion `layout`)
+- **Files**: `CustomFieldsPage.tsx`
+
+### 4. Widget Grid (Dashboard)
+
+- **Add widget**: Grid reflows with Framer Motion `layout` (spring 300ms)
+- **Remove widget**: Grid closes the gap smoothly (300ms `AnimatePresence`)
+- **Resize widget**: Neighbors slide to accommodate (layout animations)
+- **Files**: `DashboardLayout.tsx` (sidebar nav items use `layout` for reflow)
+
+### 5. Vertical Preset Application (Onboarding)
+
+- **When user picks a vertical**: Sidebar items fade in one by one (staggered 60ms) with small spring
+- **Trigger**: Module selection changes `enabledFeatures` → `navItems` array updates
+- **Mechanism**: DashboardLayout `navItemsMounted` state + Framer Motion `staggerChildren: 0.06`
+- **Files**: `DashboardLayout.tsx`
+
+### 6. Module Switcher
+
+- **Dropdown opens**: Fade + slight upward slide (200ms `cubic-bezier(0.25, 0.9, 0.35, 1)`)
+- **Selection**: Smooth page transition (existing) + sidebar items stagger in (60ms)
+- **Chevron rotation**: 200ms `--ease-smooth`
+- **Files**: `ModuleSwitcher.tsx`
+
+---
+
+## General Rules for New Morphs
+
+- Every morph uses the clay easing:
+  - Entrances: `cubic-bezier(0.25, 0.9, 0.35, 1)` (`--ease-smooth`)
+  - Springs: `cubic-bezier(0.34, 1.4, 0.64, 1)` (`--ease-clay`)
+- Durations: 200-400ms max
+- Nothing loops
+- Respects `prefers-reduced-motion`
+- Every morph must feel tactile, not mechanical
+- Use Framer Motion `layout` for shared layout animations (reordering, add/remove)
+- Use `AnimatePresence mode="popLayout"` for exit animations that affect sibling positions
+
+---
+
 ## TODO
 
 - [ ] Tab content crossfade (200ms) — when ClayTabs gets panel content
-- [ ] Collapsible sidebar groups — chevron rotate + content slide
 - [ ] Count-up animation on stat numbers (800ms on load) — for dashboard stats
 - [ ] Feed items slide-from-left variant (currently use clay-rise; could add clay-slide-left)

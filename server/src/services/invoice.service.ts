@@ -2,6 +2,7 @@ import { prisma } from '../utils/database';
 import { CustomError } from '../middleware/errorHandler';
 import { trustCore } from '../trust/trust-core';
 import { emailService } from './email.service';
+import { notifyInvoicePaid, notifyInvoiceOverdue } from './notification.service';
 
 type InvoiceLineItem = {
   service: string;
@@ -196,6 +197,7 @@ export async function markInvoicePaid(businessId: string, invoiceId: string, tra
   const business = await prisma.business.findUnique({ where: { id: businessId } });
   if (business) {
     emailService.sendPaymentReceived(business, updated, updated.client);
+    await notifyInvoicePaid(business.ownerId || '', updated.id, updated.number, updated.subtotal);
   }
 
   return updated;
@@ -223,6 +225,11 @@ export async function scanOverdueInvoices() {
         passportId: inv.client.passportId,
         amount: inv.subtotal
       });
+    }
+
+    const business = await prisma.business.findUnique({ where: { id: inv.businessId } });
+    if (business) {
+      await notifyInvoiceOverdue(business.ownerId || '', inv.id, inv.number, inv.subtotal);
     }
   }
 

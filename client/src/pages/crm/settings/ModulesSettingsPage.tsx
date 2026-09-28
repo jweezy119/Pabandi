@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import DashboardLayout from '../../../components/DashboardLayout';
 import { Card, Button, Chip } from '../../../components/primitives';
 import { useBusinessSettings } from '../../../hooks/useBusinessSettings';
+import { MorphItem, StaggerContainer, StaggerItem } from '../../../components/animations/MorphAnimations';
 
 const MODULES = [
   {
@@ -114,61 +115,71 @@ export default function ModulesSettingsPage() {
             </div>
           )}
 
-          {MODULES.map(mod => {
+          <StaggerContainer staggerDelay={0.06} className="space-y-6">
+          {MODULES.map((mod, modIndex) => {
             const isModuleEnabled = settings.enabledModules.includes(mod.id);
             const isContact = mod.id === 'contact';
 
             return (
-              <Card key={mod.id} hover={false} className={`p-6 ${!isModuleEnabled && !isContact ? 'opacity-70' : ''} clay-rise`}>
-                <div className="flex items-center justify-between mb-6 clay-heading">
-          <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white clay-stat-icon" style={{ backgroundColor: `var(--${mod.accentColor})` }}>
-                      <span className="material-symbols-outlined">{mod.icon}</span>
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold" style={{ color: 'var(--warm-ink)' }}>{mod.name.toUpperCase()}</h2>
-                      <p className="text-sm text-[var(--soft-stone)]">{mod.description}</p>
-                    </div>
-                  </div>
-                  {!isContact && (
-                    <Button variant={isModuleEnabled ? 'secondary' : 'primary'} onClick={() => handleToggleModule(mod.id, mod.name)}>
-                      {isModuleEnabled ? 'Disable' : 'Enable'}
-                    </Button>
-                  )}
-                </div>
-
-                {mod.subFeatures.length > 0 && (
-                  <div className="space-y-4 pt-4 border-t border-[rgba(191,179,163,0.3)]">
-                    {mod.subFeatures.map((feat, i) => {
-                      const isFeatEnabled = settings.enabledFeatures[mod.id]?.includes(feat.id);
-                      return (
-                        <div key={feat.id} className={`flex items-center justify-between p-3 rounded-xl transition-all clay-card--interactive clay-table-row clay-rise`} style={{ animationDelay: `${i * 40}ms`, boxShadow: isFeatEnabled ? 'var(--shadow-soft)' : 'none' }}>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-[var(--warm-ink)] text-sm">{feat.name}</span>
-                              {feat.defaultOn && <Chip label="Always On" variant="neutral" size="sm" />}
-                            </div>
-                            <p className="text-xs text-[var(--soft-stone)] mt-1">{feat.description}</p>
-                          </div>
-
-                          <div
-                            className={`clay-toggle-track w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${
-                              isFeatEnabled ? 'bg-[var(--clay)]' : 'bg-[var(--soft-stone)]/30'
-                            }`}
-                            onClick={() => handleToggleFeature(mod.id, feat.id, feat.name)}
-                          >
-                            <div className={`clay-toggle-thumb w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform ${
-                              isFeatEnabled ? 'translate-x-6' : 'translate-x-0'
-                            }`} />
-                          </div>
+              <StaggerItem key={mod.id} className="w-full">
+                <MorphItem isVisible={isContact || isModuleEnabled} index={modIndex}>
+                  <Card hover={false} className={`p-6 ${!isModuleEnabled && !isContact ? 'opacity-70' : ''}`}>
+                    <div className="flex items-center justify-between mb-6 clay-heading">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white clay-stat-icon" style={{ backgroundColor: `var(--${mod.accentColor})` }}>
+                          <span className="material-symbols-outlined">{mod.icon}</span>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </Card>
+                        <div>
+                          <h2 className="text-xl font-bold" style={{ color: 'var(--warm-ink)' }}>{mod.name.toUpperCase()}</h2>
+                          <p className="text-sm text-[var(--soft-stone)]">{mod.description}</p>
+                        </div>
+                      </div>
+                      {!isContact && (
+                        <Button variant={isModuleEnabled ? 'secondary' : 'primary'} onClick={() => handleToggleModule(mod.id, mod.name)}>
+                          {isModuleEnabled ? 'Disable' : 'Enable'}
+                        </Button>
+                      )}
+                    </div>
+
+                    {mod.subFeatures.length > 0 && (
+                      <StaggerContainer staggerDelay={0.04} className="space-y-3 pt-4 border-t border-[rgba(191,179,163,0.3)]">
+                        {mod.subFeatures.map((feat, i) => {
+                          const isFeatEnabled = settings.enabledFeatures[mod.id]?.includes(feat.id);
+                          return (
+                            <StaggerItem key={feat.id} className="w-full">
+                              <MorphItem isVisible={isFeatEnabled || !feat.defaultOn} index={i} direction="horizontal">
+                                <div className={`flex items-center justify-between p-3 rounded-xl transition-all clay-card--interactive clay-table-row`} style={{ boxShadow: isFeatEnabled ? 'var(--shadow-soft)' : 'none' }}>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-bold text-[var(--warm-ink)] text-sm">{feat.name}</span>
+                                      {feat.defaultOn && <Chip label="Always On" variant="neutral" size="sm" />}
+                                    </div>
+                                    <p className="text-xs text-[var(--soft-stone)] mt-1">{feat.description}</p>
+                                  </div>
+
+                                  <div
+                                    className={`clay-toggle-track w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${
+                                      isFeatEnabled ? 'bg-[var(--clay)]' : 'bg-[var(--soft-stone)]/30'
+                                    }`}
+                                    onClick={() => handleToggleFeature(mod.id, feat.id, feat.name)}
+                                  >
+                                    <div className={`clay-toggle-thumb w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform ${
+                                      isFeatEnabled ? 'translate-x-6' : 'translate-x-0'
+                                    }`} />
+                                  </div>
+                                </div>
+                              </MorphItem>
+                            </StaggerItem>
+                          );
+                        })}
+                      </StaggerContainer>
+                    )}
+                  </Card>
+                </MorphItem>
+              </StaggerItem>
             );
           })}
+        </StaggerContainer>
         </div>
       </DashboardLayout>
     </>

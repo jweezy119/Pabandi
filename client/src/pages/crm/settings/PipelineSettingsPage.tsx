@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../../../components/DashboardLayout';
 import { Card } from '../../../components/primitives/Card';
 import { Button } from '../../../components/primitives/Button';
+import { motion, AnimatePresence } from 'framer-motion';
 
 
 
@@ -63,7 +64,8 @@ export function PipelineSettingsPage() {
   };
 
   const addStage = () => {
-    setStages([...getStages(), { id: Math.random().toString(36).substring(7), name: 'NEW STAGE', probability: 0, color: 'var(--soft-stone)' }]);
+    const newStage = { id: Math.random().toString(36).substring(7), name: 'NEW STAGE', probability: 0, color: 'var(--soft-stone)' };
+    setStages([...getStages(), newStage]);
   };
 
   const updateStage = (index: number, data: any) => {
@@ -115,49 +117,58 @@ export function PipelineSettingsPage() {
           </div>
         </div>
 
-        <Card padding="lg" className="space-y-4">
-          <div className="space-y-3">
-            {stages.map((stage: any, idx: number) => (
-              <div 
-                key={stage.id} 
-                className="flex gap-4 items-center bg-[var(--warm-sand)]/20 p-3 rounded-lg border border-[var(--warm-sand)] cursor-move transition-all"
-                draggable
-                onDragStart={(e) => onDragStart(e, idx)}
-                onDragOver={onDragOver}
-                onDrop={(e) => onDrop(e, idx)}
-              >
-                <span className="material-symbols-outlined text-[var(--soft-stone)]">drag_indicator</span>
-                <input 
-                  type="color"
-                  className="w-8 h-8 rounded border-none cursor-pointer"
-                  value={stage.color?.startsWith('#') ? stage.color : '#aaaaaa'}
-                  onChange={e => updateStage(idx, { color: e.target.value })}
-                  title="Choose Color (Note: CSS vars may not show correct initial color in picker)"
-                />
-                <input 
-                  className="flex-1 px-3 py-2 border rounded-lg font-bold uppercase tracking-wide" 
-                  value={stage.name}
-                  onChange={e => updateStage(idx, { name: e.target.value })}
-                  placeholder="Stage Name"
-                />
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="number"
-                    className="w-20 px-3 py-2 border rounded-lg text-center" 
-                    value={stage.probability}
-                    onChange={e => updateStage(idx, { probability: parseInt(e.target.value, 10) || 0 })}
-                    min="0" max="100"
+<Card padding="lg" className="space-y-4">
+          <AnimatePresence mode="popLayout">
+            <motion.div
+              layout
+              className="space-y-3"
+              key={JSON.stringify(getStages().map(s => s.id))}
+            >
+              {getStages().map((stage: any, idx: number) => (
+                <motion.div
+                  key={stage.id}
+                  layout
+                  className="flex gap-4 items-center bg-[var(--warm-sand)]/20 p-3 rounded-lg border border-[var(--warm-sand)] cursor-move transition-all"
+                  draggable
+                  onDragStart={(e) => onDragStart(e, idx)}
+                  onDragOver={onDragOver}
+                  onDrop={(e) => onDrop(e, idx)}
+                  whileDrag={{ scale: 1.02, boxShadow: 'var(--shadow-lift)', zIndex: 100 }}
+                  dragElastic={0.2}
+                >
+                  <span className="material-symbols-outlined text-[var(--soft-stone)]">drag_indicator</span>
+                  <input
+                    type="color"
+                    className="w-8 h-8 rounded border-none cursor-pointer"
+                    value={stage.color?.startsWith('#') ? stage.color : '#aaaaaa'}
+                    onChange={e => updateStage(idx, { color: e.target.value })}
+                    title="Choose Color (Note: CSS vars may not show correct initial color in picker)"
                   />
-                  <span className="text-sm text-[var(--soft-stone)]">%</span>
-                </div>
-                <Button variant="ghost" onClick={() => removeStage(idx)}>
-                  <span className="material-symbols-outlined text-[var(--rose)]">delete</span>
-                </Button>
-              </div>
-            ))}
-          </div>
+                  <input
+                    className="flex-1 px-3 py-2 border rounded-lg font-bold uppercase tracking-wide"
+                    value={stage.name}
+                    onChange={e => updateStage(idx, { name: e.target.value })}
+                    placeholder="Stage Name"
+                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      className="w-20 px-3 py-2 border rounded-lg text-center"
+                      value={stage.probability}
+                      onChange={e => updateStage(idx, { probability: parseInt(e.target.value, 10) || 0 })}
+                      min="0" max="100"
+                    />
+                    <span className="text-sm text-[var(--soft-stone)]">%</span>
+                  </div>
+                  <Button variant="ghost" onClick={() => removeStage(idx)} whileTap={{ scale: 0.95 }}>
+                    <span className="material-symbols-outlined text-[var(--rose)]">delete</span>
+                  </Button>
+                </motion.div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
           <div className="pt-4">
-            <Button variant="ghost" icon="add" onClick={addStage}>Add Stage</Button>
+            <Button variant="ghost" icon="add" onClick={addStage} whileTap={{ scale: 0.95 }}>Add Stage</Button>
           </div>
         </Card>
       </div>

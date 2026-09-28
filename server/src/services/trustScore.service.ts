@@ -3,6 +3,7 @@ import { logger } from '../utils/logger';
 import { trustAuditWriter } from './trustAuditWriter';
 import { webhookService } from './webhook.service';
 import { courtListenerService } from './osint/courtListener.service';
+import { notifyTrustScoreChanged } from './notification.service';
 
 export interface TrustInputs {
   reliability: { completed: number; noShows: number; cancellations: number };
@@ -271,6 +272,11 @@ export class TrustScoreService {
     });
 
     logger.info(`[TrustScoreService] User ${userId} score updated from ${previousScore} to ${newScore}`);
+
+    // Notify if score change > 20
+    if (Math.abs(newScore - previousScore) > 20) {
+      await notifyTrustScoreChanged(userId, previousScore, newScore, newScore - previousScore);
+    }
 
     // 6. Auto-Issuance Triggers for Open Badges v3
     try {

@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { notifySupportReply } from './notification.service';
 
 const prisma = new PrismaClient();
 
@@ -48,7 +49,8 @@ export class SupportService {
   }
 
   static async replyToTicket(ticketId: string, authorId: string, body: string, isInternal = false) {
-    return prisma.supportReply.create({
+    const ticket = await prisma.supportTicket.findUnique({ where: { id: ticketId }, include: { user: true } });
+    const reply = await prisma.supportReply.create({
       data: {
         ticketId,
         authorId,
@@ -56,6 +58,12 @@ export class SupportService {
         isInternal
       }
     });
+
+    if (ticket && ticket.userId && !isInternal) {
+      await notifySupportReply(ticket.userId, ticketId, ticket.subject);
+    }
+
+    return reply;
   }
 
   static async resolveTicket(ticketId: string) {

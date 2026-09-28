@@ -4,8 +4,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { Button, Chip, EmptyState } from '../../components/primitives';
 import ClientTimeline from '../crm/components/ClientTimeline';
 import { TrustPanel } from '../../components/TrustPanel';
-
-
+import { InlineEdit } from '../../components/primitives/InlineEdit';
 
 export default function ContactDealDetailPage() {
   const { id } = useParams();
@@ -55,6 +54,18 @@ export default function ContactDealDetailPage() {
   if (loading) return <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" ><div className="p-8 text-center text-[var(--soft-stone)]">Loading...</div></DashboardLayout>;
   if (!deal) return <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" ><EmptyState icon="handshake" title="Deal Not Found" description="This deal does not exist." actionLabel="Go Back" onAction={() => window.location.href = '/contact/deals'} /></DashboardLayout>;
 
+  const handleDealUpdate = async (field: string, value: any) => {
+    const token = localStorage.getItem('token');
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+    const res = await fetch(`${baseUrl}/api/v1/crm/deals/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ [field]: value }),
+    });
+    if (!res.ok) throw new Error('Failed to update');
+    setDeal((prev: any) => ({ ...prev, [field]: value }));
+  };
+
   return (
     <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" >
       <div className="space-y-6">
@@ -66,8 +77,17 @@ export default function ContactDealDetailPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 clay-heading">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold" style={{ color: 'var(--warm-ink)' }}>{deal.title}</h1>
-              <Chip label={deal.stage} variant={deal.stage === 'WON' ? 'success' : deal.stage === 'LOST' ? 'danger' : 'neutral'} />
+              <h1 className="text-3xl font-bold" style={{ color: 'var(--warm-ink)' }}>
+                <InlineEdit value={deal.title} onSave={(v) => handleDealUpdate('title', v)} />
+              </h1>
+              <div className="relative">
+                <InlineEdit 
+                  value={deal.stage} 
+                  type="select" 
+                  options={['LEAD', 'QUALIFIED', 'PROPOSAL', 'WON', 'LOST'].map(s => ({label: s, value: s}))}
+                  onSave={(v) => handleDealUpdate('stage', v)} 
+                />
+              </div>
             </div>
             {deal.client && (
               <p className="text-[var(--soft-stone)] text-sm flex items-center gap-1 mt-1">
@@ -78,7 +98,10 @@ export default function ContactDealDetailPage() {
             )}
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-[var(--clay)]">${(deal.value || 0).toLocaleString()}</div>
+            <div className="text-2xl font-bold text-[var(--clay)] flex items-center justify-end gap-1">
+              $
+              <InlineEdit type="number" value={deal.value || 0} onSave={(v) => handleDealUpdate('value', Number(v))} />
+            </div>
             <div className="text-sm text-[var(--soft-stone)]">Probability: {deal.probability}%</div>
           </div>
         </div>

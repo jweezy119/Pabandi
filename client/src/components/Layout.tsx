@@ -1,6 +1,7 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { PageTransition } from './PageTransition';
 import GlobalAIConciergeWidget from './GlobalAIConciergeWidget';
+import { NotificationBell } from './NotificationBell';
 import { useAuthStore } from '../store/authStore';
 import { useEffect, useState, useRef } from 'react';
 
@@ -369,6 +370,7 @@ export default function Layout() {
                 <Link to={isOwnerOrAdmin ? '/dashboard' : '/profile'} className="md:hidden w-9 h-9 rounded-full bg-white/10 flex items-center justify-center touch-target">
                   <span className="material-symbols-outlined text-[18px]">person</span>
                 </Link>
+                <NotificationBell />
                 <Dropdown label={initials} current={false}>
                   <DropdownItem to="/dashboard">Dashboard</DropdownItem>
                   <DropdownItem to="/wallet">Wallet</DropdownItem>

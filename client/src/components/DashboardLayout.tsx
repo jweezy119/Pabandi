@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -130,8 +130,10 @@ export default function DashboardLayout({
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [navItemsMounted, setNavItemsMounted] = useState(false);
   const colorKey = colorKeys[osColor] || 'clay';
   const colors = colorMap[colorKey] || colorMap.clay;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const isActive = (item: NavItem) =>
     item.end
@@ -148,6 +150,15 @@ export default function DashboardLayout({
       return next;
     });
   }
+
+  // Staggered entrance animation for nav items when they change
+  useEffect(() => {
+    if (!reducedMotion) {
+      setNavItemsMounted(true);
+    } else {
+      setNavItemsMounted(true);
+    }
+  }, [navItems.length, osName, reducedMotion]);
 
   return (
     <div className="h-full flex" style={{ background: 'var(--atmosphere)' }}>
@@ -208,39 +219,62 @@ export default function DashboardLayout({
         {/* ─── Navigation with collapsible groups ─────────────────────── */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto" aria-label={`${osName} navigation`}>
           {/* Standalone items (not in a group) */}
-          {navItems
-            .filter(item => !navGroups.some(g => g.items.some(i => i.path === item.path)))
-            .map(item => {
-              const active = isActive(item);
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`relative flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-200 ${
-                    active ? colors.active : `${colors.text} hover:text-[var(--warm-ink)]`
-                  }`}
-                  style={{
-                    backgroundColor: active ? colors.activeBg : 'transparent',
-                    transition: 'background-color 200ms ease, color 150ms ease',
-                  }}
-                  aria-current={active ? 'page' : undefined}
-                >
-                  {active && (
-                    <motion.div
-                      layoutId="nav-indicator"
-                      className="absolute left-0 w-1 h-5 rounded-r-full"
-                      style={{ backgroundColor: colors.indicator }}
-                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                    />
-                  )}
-                  <span className="material-symbols-outlined text-[18px] flex-shrink-0" aria-hidden="true">
-                    {item.icon}
-                  </span>
-                  {item.label}
-                </Link>
-              );
-            })}
+          <motion.div
+            layout
+            initial={false}
+            animate={{ opacity: navItemsMounted ? 1 : 0, y: navItemsMounted ? 0 : 20 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 30, staggerChildren: 0.06 }}
+            className="space-y-1"
+          >
+            {navItems
+              .filter(item => !navGroups.some(g => g.items.some(i => i.path === item.path)))
+              .map((item, index) => {
+                const active = isActive(item);
+                return (
+                  <motion.link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`relative flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-200 ${
+                      active ? colors.active : `${colors.text} hover:text-[var(--warm-ink)]`
+                    }`}
+                    style={{
+                      backgroundColor: active ? colors.activeBg : 'transparent',
+                      transition: 'background-color 200ms ease, color 150ms ease',
+                    }}
+                    aria-current={active ? 'page' : undefined}
+                    variants={{
+                      hidden: { opacity: 0, x: -20 },
+                      show: {
+                        opacity: 1,
+                        x: 0,
+                        transition: {
+                          type: 'spring',
+                          stiffness: 380,
+                          damping: 30,
+                          delay: index * 0.06,
+                        },
+                      },
+                    }}
+                    whileHover={{ x: 4 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {active && (
+                      <motion.div
+                        layoutId="nav-indicator"
+                        className="absolute left-0 w-1 h-5 rounded-r-full"
+                        style={{ backgroundColor: colors.indicator }}
+                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                    <span className="material-symbols-outlined text-[18px] flex-shrink-0" aria-hidden="true">
+                      {item.icon}
+                    </span>
+                    {item.label}
+                  </motion.link>
+                );
+              })}
+          </motion.div>
 
           {/* Collapsible groups */}
           {navGroups.map(group => {
@@ -248,77 +282,109 @@ export default function DashboardLayout({
             return (
               <div key={group.label}>
                 {/* Group header — chevron + label */}
-                <div
-                  className="flex items-center justify-between px-4 py-2 rounded-2xl"
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => toggleGroup(group.label)}
-                  role="button"
-                  aria-expanded={isExpanded}
-                  aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${group.label} section`}
+                <motion.div
+                  layout
+                  initial={false}
+                  animate={{ opacity: navItemsMounted ? 1 : 0, y: navItemsMounted ? 0 : 20 }}
+                  transition={{ type: 'spring', stiffness: 380, damping: 30, staggerChildren: 0.06 }}
+                  className="space-y-1"
                 >
-                  <div className="flex items-center gap-2">
-                    <motion.span
-                      animate={{ rotate: isExpanded ? 90 : 0 }}
-                      transition={{ duration: 0.25, ease: [0.25, 0.9, 0.35, 1] }}
-                      className="material-symbols-outlined text-[16px] flex-shrink-0"
-                      style={{ color: 'var(--soft-stone)' }}
-                    >
-                      chevron_right
-                    </motion.span>
-                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--warm-ink)', fontFamily: 'var(--font-label)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      {group.label}
-                    </span>
-                    <span className="text-[10px" style={{ color: 'var(--soft-stone)' }}>
-                      {group.items.length}
-                    </span>
+                  <div
+                    className="flex items-center justify-between px-4 py-2 rounded-2xl"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => toggleGroup(group.label)}
+                    role="button"
+                    aria-expanded={isExpanded}
+                    aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${group.label} section`}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <motion.span
+                        animate={{ rotate: isExpanded ? 90 : 0 }}
+                        transition={{ duration: 0.25, ease: [0.25, 0.9, 0.35, 1] }}
+                        className="material-symbols-outlined text-[16px] flex-shrink-0"
+                        style={{ color: 'var(--soft-stone)' }}
+                      >
+                        chevron_right
+                      </motion.span>
+                      <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--warm-ink)', fontFamily: 'var(--font-label)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        {group.label}
+                      </span>
+                      <span className="text-[10px" style={{ color: 'var(--soft-stone)' }}>
+                        {group.items.length}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Group content — slides open/closed */}
-                <AnimatePresence initial={false}>
-                  {isExpanded && (
-                    <motion.div
-                      key={group.label}
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25, ease: [0.25, 0.9, 0.35, 1] }}
-                      style={{ overflow: 'hidden' }}
-                    >
-                      {group.items.map(item => {
-                        const active = isActive(item);
-                        return (
-                          <Link
-                            key={item.path}
-                            to={item.path}
-                            onClick={() => setSidebarOpen(false)}
-                            className={`relative flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-200 ml-6 ${
-                              active ? colors.active : `${colors.text} hover:text-[var(--warm-ink)]`
-                            }`}
-                            style={{
-                              backgroundColor: active ? colors.activeBg : 'transparent',
-                              transition: 'background-color 200ms ease, color 150ms ease',
-                            }}
-                            aria-current={active ? 'page' : undefined}
-                          >
-                            {active && (
-                              <motion.div
-                                layoutId="nav-indicator"
-                                className="absolute left-0 w-1 h-5 rounded-r-full"
-                                style={{ backgroundColor: colors.indicator }}
-                                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                              />
-                            )}
-                            <span className="material-symbols-outlined text-[18px] flex-shrink-0" aria-hidden="true">
-                              {item.icon}
-                            </span>
-                            {item.label}
-                          </Link>
-                        );
-                      })}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                  {/* Group content — slides open/closed */}
+                  <AnimatePresence initial={false}>
+                    {isExpanded && (
+                      <motion.div
+                        key={group.label}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: [0.25, 0.9, 0.35, 1] }}
+                        style={{ overflow: 'hidden' }}
+                      >
+                        <motion.div
+                          layout
+                          initial={false}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ staggerChildren: 0.04 }}
+                          className="ml-6 space-y-1"
+                        >
+                          {group.items.map((item, index) => {
+                            const active = isActive(item);
+                            return (
+                              <motion.link
+                                key={item.path}
+                                to={item.path}
+                                onClick={() => setSidebarOpen(false)}
+                                className={`relative flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-200 ${
+                                  active ? colors.active : `${colors.text} hover:text-[var(--warm-ink)]`
+                                }`}
+                                style={{
+                                  backgroundColor: active ? colors.activeBg : 'transparent',
+                                  transition: 'background-color 200ms ease, color 150ms ease',
+                                }}
+                                aria-current={active ? 'page' : undefined}
+                                variants={{
+                                  hidden: { opacity: 0, x: -20 },
+                                  show: {
+                                    opacity: 1,
+                                    x: 0,
+                                    transition: {
+                                      type: 'spring',
+                                      stiffness: 380,
+                                      damping: 30,
+                                      delay: index * 0.04,
+                                    },
+                                  },
+                                }}
+                                whileHover={{ x: 4 }}
+                                whileTap={{ scale: 0.98 }}
+                              >
+                                {active && (
+                                  <motion.div
+                                    layoutId="nav-indicator"
+                                    className="absolute left-0 w-1 h-5 rounded-r-full"
+                                    style={{ backgroundColor: colors.indicator }}
+                                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                                  />
+                                )}
+                                <span className="material-symbols-outlined text-[18px] flex-shrink-0" aria-hidden="true">
+                                  {item.icon}
+                                </span>
+                                {item.label}
+                              </motion.link>
+                            );
+                          })}
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
               </div>
             );
           })}

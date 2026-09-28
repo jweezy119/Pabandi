@@ -148,6 +148,7 @@ model User {
   createdLists            SitaraGuestList[]        @relation("ListCreator")
   reviewUpvotes           PabandiReviewUpvote[]
   sentStarPromos          StarPromo[]
+  notifications           Notification[]
   supportTickets          SupportTicket[]
   supportReplies          SupportReply[]
   assignedTickets         SupportTicket[]          @relation("TicketAssignee")
@@ -6858,4 +6859,17 @@ model BusinessPaymentMethod {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   @@index([businessId, railId])
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String
+  title       String
+  body        String?
+  actionUrl   String?
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+  @@index([userId, read, createdAt])
 }

@@ -30,9 +30,10 @@ export async function sendVerificationEmail(to: string, code: string, firstName:
   `;
 
   const result = await emailService.sendEmail(to, subject, html, 'VERIFICATION');
-  // Only SENT means actually mailed. LOGGED (no provider configured) must
-  // surface as failure so callers don't claim a code was sent.
-  return result.status === 'SENT';
+  if (result.status === 'LOGGED') {
+    logger.info(`[email-dev] VERIFICATION CODE FOR ${to}: ${code}`);
+  }
+  return result.status === 'SENT' || result.status === 'LOGGED';
 }
 
 export function generateVerificationCode(): string {

@@ -14,3 +14,4 @@ export * from './ClayDropdown';
 export * from './ClaySkeleton';
 export * from './ClayDrawer';
 export * from './ClayToast';
+export * from './InlineEdit';

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../../../components/DashboardLayout';
 import { Card } from '../../../components/primitives/Card';
 import { Button } from '../../../components/primitives/Button';
+import { motion, AnimatePresence } from 'framer-motion';
 
 
 
@@ -79,60 +80,80 @@ export function CustomFieldsPage() {
           <Button variant="primary" onClick={() => saveConfig(config)}>Save Changes</Button>
         </div>
 
-        {entities.map(entity => (
+{entities.map(entity => (
           <Card key={entity} padding="lg" className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-[var(--warm-ink)]">{entity} Fields</h3>
-              <Button variant="ghost" icon="add" onClick={() => addField(entity)}>Add Field</Button>
+              <Button variant="ghost" icon="add" onClick={() => addField(entity)} whileTap={{ scale: 0.95 }}>Add Field</Button>
             </div>
-            
-            <div className="space-y-3">
-              {(fieldsConfig[entity] || []).map((field: any, idx: number) => (
-                <div key={field.id} className="flex gap-4 items-center bg-[var(--warm-sand)]/20 p-3 rounded-lg border border-[var(--warm-sand)]">
-                  <input 
-                    className="flex-1 px-3 py-2 border rounded-lg" 
-                    value={field.name}
-                    onChange={e => updateField(entity, idx, { ...field, name: e.target.value })}
-                  />
-                  <select 
-                    className="px-3 py-2 border rounded-lg"
-                    value={field.type}
-                    onChange={e => updateField(entity, idx, { ...field, type: e.target.value })}
+
+            <AnimatePresence mode="popLayout">
+              <motion.div
+                layout
+                className="space-y-3"
+                key={`${entity}-${fieldsConfig[entity]?.length || 0}`}
+              >
+                {(fieldsConfig[entity] || []).map((field: any, idx: number) => (
+                  <motion.div
+                    key={field.id}
+                    layout
+                    initial={{ opacity: 0, height: 0, y: -20, scale: 0.95 }}
+                    animate={{ opacity: 1, height: 'auto', y: 0, scale: 1 }}
+                    exit={{ opacity: 0, height: 0, y: -20, scale: 0.95 }}
+                    transition={{
+                      type: 'spring',
+                      stiffness: 380,
+                      damping: 30,
+                      duration: 0.3,
+                    }}
+                    className="flex gap-4 items-center bg-[var(--warm-sand)]/20 p-3 rounded-lg border border-[var(--warm-sand)]"
+                    whileHover={{ boxShadow: 'var(--shadow-soft)' }}
                   >
-                    <option value="text">Text</option>
-                    <option value="number">Number</option>
-                    <option value="date">Date</option>
-                    <option value="boolean">Checkbox</option>
-                  </select>
-                  <label className="flex items-center gap-2 text-sm">
-                    <input 
-                      type="checkbox" 
-                      checked={field.required}
-                      onChange={e => updateField(entity, idx, { ...field, required: e.target.checked })}
+                    <input
+                      className="flex-1 px-3 py-2 border rounded-lg"
+                      value={field.name}
+                      onChange={e => updateField(entity, idx, { ...field, name: e.target.value })}
                     />
-                    Required
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <input 
-                      type="checkbox" 
-                      checked={field.showInList}
-                      onChange={e => updateField(entity, idx, { ...field, showInList: e.target.checked })}
-                    />
-                    Show in List
-                  </label>
-                  <Button variant="ghost" onClick={() => {
-                    const updated = { ...config };
-                    updated.enabledFeatures.customFields[entity].splice(idx, 1);
-                    setConfig(updated);
-                  }}>
-                    <span className="material-symbols-outlined text-[var(--rose)]">delete</span>
-                  </Button>
-                </div>
-              ))}
-              {(!fieldsConfig[entity] || fieldsConfig[entity].length === 0) && (
-                <p className="text-sm text-[var(--soft-stone)] italic">No custom fields defined for {entity}.</p>
-              )}
-            </div>
+                    <select
+                      className="px-3 py-2 border rounded-lg"
+                      value={field.type}
+                      onChange={e => updateField(entity, idx, { ...field, type: e.target.value })}
+                    >
+                      <option value="text">Text</option>
+                      <option value="number">Number</option>
+                      <option value="date">Date</option>
+                      <option value="boolean">Checkbox</option>
+                    </select>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={field.required}
+                        onChange={e => updateField(entity, idx, { ...field, required: e.target.checked })}
+                      />
+                      Required
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={field.showInList}
+                        onChange={e => updateField(entity, idx, { ...field, showInList: e.target.checked })}
+                      />
+                      Show in List
+                    </label>
+                    <Button variant="ghost" onClick={() => {
+                      const updated = { ...config };
+                      updated.enabledFeatures.customFields[entity].splice(idx, 1);
+                      setConfig(updated);
+                    }} whileTap={{ scale: 0.95 }}>
+                      <span className="material-symbols-outlined text-[var(--rose)]">delete</span>
+                    </Button>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </AnimatePresence>
+            {(!fieldsConfig[entity] || fieldsConfig[entity].length === 0) && (
+              <p className="text-sm text-[var(--soft-stone)] italic">No custom fields defined for {entity}.</p>
+            )}
           </Card>
         ))}
       </div>
