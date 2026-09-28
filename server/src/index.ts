@@ -17,27 +17,8 @@ try { dotenv.config({ path: '.env.contracts' }); } catch (err) { logger.warn('.e
 
 const app = express();
 
-const ALLOWED_ORIGINS = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'https://pabandi.com',
-  'https://www.pabandi.com',
-  'https://pabandi-42c5b.web.app',
-];
+app.use(cors({ origin: true, credentials: true }));
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
 const httpServer = createServer(app);
 
 // DISABLED: Firebase Admin (spawns background processes)
@@ -370,6 +351,8 @@ const routeMap: [string, string][] = [
   [`/api/${v}/telegram`, './routes/telegram.routes'],
   [`/api/${v}/sms`, './routes/sms.routes'],
   [`/api/${v}/channels`, './routes/channel.routes'],
+  [`/api/${v}/trust-profile`, './routes/trustProfile.routes'],
+  [`/api/${v}/badge`, './routes/badge.routes'],
 ];
 
 try {

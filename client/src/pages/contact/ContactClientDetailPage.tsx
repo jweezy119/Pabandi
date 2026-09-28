@@ -106,7 +106,16 @@ export default function ContactClientDetailPage() {
               <p className="text-[var(--soft-stone)] text-sm">{client.email || 'No email'} · {client.phone || 'No phone'}</p>
             </div>
           </div>
-          <Button variant="primary" icon="add" onClick={() => setShowActivityModal(true)}>Log Activity</Button>
+          <div className="flex gap-2">
+            {client.passportId && (
+              <Button variant="ghost" icon="share" onClick={() => {
+                const url = `${window.location.origin}/trust/profile/${client.passportId}`;
+                navigator.clipboard.writeText(url);
+                alert('Trust profile link copied!');
+              }}>Share Trust Profile</Button>
+            )}
+            <Button variant="primary" icon="add" onClick={() => setShowActivityModal(true)}>Log Activity</Button>
+          </div>
         </div>
 
         <div className="flex gap-1 border-b border-[rgba(191,179,163,0.3)] pb-2 overflow-x-auto hide-scrollbar clay-fade clay-delay-1">

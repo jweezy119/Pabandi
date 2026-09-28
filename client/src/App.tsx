@@ -167,6 +167,7 @@ import ProfitDashboardPage from './pages/ProfitDashboardPage';
 import { ShariaTransparencyPage } from './pages/ShariaTransparencyPage';
 import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
 import { PublicPassportPage } from './pages/PublicPassportPage';
+import { TrustProfilePage } from './pages/public/TrustProfilePage';
 import { PassportDashboardPage } from './pages/PassportDashboardPage';
 import EconomyDashboardPage from './pages/EconomyDashboardPage';
 import BusinessAnalyticsPage from './pages/BusinessAnalyticsPage';
@@ -434,6 +435,7 @@ function AnimatedAppRoutes() {
             <Route path="passport" element={<TrustPassportPage />} />
             <Route path="passport/dashboard" element={<PassportDashboardPage />} />
             <Route path="passport/:sellerId" element={<PublicPassportPage />} />
+            <Route path="trust/profile/:passportId" element={<TrustProfilePage />} />
             <Route path="trust/:handle" element={<TrustPassportPage />} />
             <Route path="trust" element={<PassportDirectoryPage />} />
             <Route path="trust/pulse" element={<TrustPulsePage />} />

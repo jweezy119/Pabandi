@@ -189,6 +189,114 @@ function ModuleIcon({ type, className = '' }: { type: string; className?: string
   return <span className={className}>{icons[type] || '◈'}</span>;
 }
 
+function TrustedBySection() {
+  const [totalBusinesses, setTotalBusinesses] = useState(0);
+  const [samples, setSamples] = useState<{ id: string; initial: string; category: string; avgScore: number }[]>([]);
+
+  useEffect(() => {
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+    fetch(`${baseUrl}/api/v1/trust-profile/stats/count`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setTotalBusinesses(data.data.totalBusinesses);
+          setSamples(data.data.samples);
+        }
+      })
+      .catch(() => { /* graceful degradation */ });
+  }, []);
+
+  const tierColor = (score: number) =>
+    score >= 700 ? '#2D6A4F' : score >= 450 ? '#B08D57' : '#BFB3A3';
+
+  const tierBg = (score: number) =>
+    score >= 700 ? '#D8F3DC' : score >= 450 ? '#FFF3E0' : '#F0ECE6';
+
+  return (
+    <section className="trust-social-proof" aria-labelledby="social-proof-title" style={{
+      padding: '4rem 0',
+    }}>
+      <div className="container" style={{ textAlign: 'center' }}>
+        <ScrollReveal>
+          <h2 id="social-proof-title" className="section-title">
+            Trusted by {totalBusinesses > 0 ? totalBusinesses.toLocaleString() : '—'} businesses
+          </h2>
+        </ScrollReveal>
+        <ScrollReveal delay={100}>
+          <p className="section-subtitle" style={{ marginBottom: '2rem' }}>
+            Real businesses building real trust on the Pabandi network
+          </p>
+        </ScrollReveal>
+
+        {samples.length > 0 && (
+          <ScrollReveal delay={200}>
+            <div style={{
+              display: 'flex', gap: '12px', justifyContent: 'center',
+              flexWrap: 'wrap', marginBottom: '2rem',
+            }}>
+              {samples.map((s) => (
+                <a
+                  key={s.id}
+                  href={`/trust/profile/${s.id}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 16px', borderRadius: 14,
+                    background: '#fff',
+                    boxShadow: '0 2px 8px rgba(58,50,43,0.06)',
+                    textDecoration: 'none', transition: 'transform 0.2s, box-shadow 0.2s',
+                    border: '1px solid #F0ECE6',
+                  }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(58,50,43,0.12)';
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(58,50,43,0.06)';
+                  }}
+                >
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10,
+                    background: 'linear-gradient(135deg, #C4A882, #A85A3C)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff', fontWeight: 700, fontSize: 15,
+                  }}>
+                    {s.initial}
+                  </div>
+                  <div style={{ textAlign: 'left' }}>
+                    <p style={{ margin: 0, fontSize: 12, color: '#7A736E' }}>
+                      {s.category.replace(/_/g, ' ')}
+                    </p>
+                    <p style={{
+                      margin: 0, fontSize: 13, fontWeight: 700,
+                      color: tierColor(s.avgScore),
+                      background: tierBg(s.avgScore),
+                      padding: '1px 8px', borderRadius: 8, display: 'inline-block',
+                    }}>
+                      {s.avgScore}
+                    </p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </ScrollReveal>
+        )}
+
+        <ScrollReveal delay={300}>
+          {samples.length > 0 && (
+            <a href={`/trust/profile/${samples[0].id}`} className="module-link" style={{
+              fontSize: '15px', fontWeight: 600,
+              color: 'var(--clay)',
+            }}>
+              See how trust works →
+            </a>
+          )}
+        </ScrollReveal>
+      </div>
+    </section>
+  );
+}
+
 export default function LandingPage() {
   const [scrollY, setScrollY] = useState(0);
   const [pageTint, setPageTint] = useState<string | null>(null);
@@ -387,6 +495,11 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        <WaveDivider />
+
+        {/* Social Proof */}
+        <TrustedBySection />
 
         <WaveDivider />
 
