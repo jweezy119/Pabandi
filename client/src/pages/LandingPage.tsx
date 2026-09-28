@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { ClayGlobe } from '../components/ClayGlobe';
 
 const MODULES = [
@@ -284,12 +285,12 @@ function TrustedBySection() {
 
         <ScrollReveal delay={300}>
           {samples.length > 0 && (
-            <a href={`/trust/profile/${samples[0].id}`} className="module-link" style={{
+            <Link to={`/trust/profile/${samples[0].id}`} className="module-link" style={{
               fontSize: '15px', fontWeight: 600,
               color: 'var(--clay)',
             }}>
               See how trust works →
-            </a>
+            </Link>
           )}
         </ScrollReveal>
       </div>
@@ -298,6 +299,7 @@ function TrustedBySection() {
 }
 
 export default function LandingPage() {
+  const navigate = useNavigate();
   const [scrollY, setScrollY] = useState(0);
   const [pageTint, setPageTint] = useState<string | null>(null);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
@@ -323,7 +325,7 @@ export default function LandingPage() {
     
     // Navigate after animation
     setTimeout(() => {
-      window.location.href = path;
+      navigate(path);
     }, 600);
   };
 
@@ -341,23 +343,23 @@ export default function LandingPage() {
       {/* Header */}
       <header className="header">
         <div className="container">
-          <a href="/" className="logo">
+          <Link to="/" className="logo">
             <span className="logo-mark">◈</span>
             <span>PabandiOS</span>
-          </a>
+          </Link>
           <nav className="nav-list" aria-label="Main">
-            <a href="/contact">CRM</a>
-            <a href="/booking">Booking</a>
-            <a href="/property">Property</a>
-            <a href="/freight">Freight</a>
-            <a href="/ledger">Ledger</a>
+            <Link to="/contact">CRM</Link>
+            <Link to="/booking">Booking</Link>
+            <Link to="/property">Property</Link>
+            <Link to="/freight">Freight</Link>
+            <Link to="/ledger">Ledger</Link>
           </nav>
-          <a href="/signup?module=contact" className="cta-nav">Get Started</a>
+          <Link to="/signup?module=contact" className="cta-nav">Get Started</Link>
         </div>
       </header>
 
       <main>
-        {/* Hero */}
+{/* Hero */}
         <section className="hero" aria-labelledby="hero-title">
           <div className="container">
             <div className="hero-inner">
@@ -371,21 +373,20 @@ export default function LandingPage() {
                   Post your business. Get your CRM. Add your payment method. Get paid.
                 </p>
                 <div className="hero-actions">
-                  <MagneticButton className="btn btn-primary" onClick={() => window.location.href = '/signup?module=contact'}>
+                  <MagneticButton className="btn btn-primary" onClick={() => navigate('/signup?module=contact')}>
                     Get Your Free CRM
                   </MagneticButton>
-                  <a href="/signup" className="btn btn-secondary">
+                  <Link to="/signup" className="btn btn-secondary">
                     Post Your Business
-                  </a>
+                  </Link>
                 </div>
               </div>
-
-            </div>
               <div className="hero-visual">
                 <div className="clay-earth">
                   <ClayGlobe />
                 </div>
               </div>
+            </div>
           </div>
         </section>
 
@@ -419,7 +420,7 @@ export default function LandingPage() {
                     <h3 className="module-name">{mod.name}</h3>
                     <p className="module-tagline">{mod.tagline}</p>
                     <p className="module-desc">{mod.description}</p>
-                    <a href={mod.path} className="module-link">Explore {mod.name} →</a>
+                    <Link to={mod.path} className="module-link">Explore {mod.name} →</Link>
                   </article>
                 </ScrollReveal>
               ))}
@@ -513,7 +514,7 @@ export default function LandingPage() {
               <p className="section-subtitle">Set up your business in five minutes. No crypto knowledge required.</p>
             </ScrollReveal>
             <ScrollReveal delay={300}>
-              <MagneticButton className="btn btn-large btn-primary">
+              <MagneticButton className="btn btn-large btn-primary" onClick={() => navigate('/signup?module=contact')}>
                 Start Free
               </MagneticButton>
             </ScrollReveal>
@@ -530,10 +531,10 @@ export default function LandingPage() {
           </div>
           <p className="footer-tagline">BookingOS · FreightOS · PropertyOS · Contact OS · LedgerOS — Powered by TrustOS</p>
           <nav className="footer-nav" aria-label="Footer">
-            <a href="/about">About</a>
-            <a href="/contact">Contact</a>
-            <a href="/privacy">Privacy</a>
-            <a href="/terms">Terms</a>
+            <Link to="/about">About</Link>
+            <Link to="/contact">Contact</Link>
+            <Link to="/privacy">Privacy</Link>
+            <Link to="/terms">Terms</Link>
           </nav>
           <p className="footer-copy">© 2026 Pabandi. The trust layer for the informal economy.</p>
         </div>
