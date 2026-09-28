@@ -109,7 +109,7 @@ export default function ContactInvoiceDetailPage() {
   return (
     <div className="space-y-6 max-w-3xl mx-auto pb-12 clay-fade">
       {invoice.client && (
-        <TrustPanel score={(invoice.client as any).reliabilityScore || 85} entityType="Client" entityName={(invoice.client as any).name} />
+        <TrustPanel passportId={(invoice.client as any).passportId} />
       )}
       <div className="flex items-center justify-between mb-4 clay-heading">
         <h2 className="text-xl font-bold text-[var(--warm-ink)]">Invoice {invoice.number}</h2>

@@ -97,7 +97,7 @@ export function ContactTeamMemberPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
-            <TrustPanel score={member.reliabilityScore || 85} entityType="Team Member" entityName={member.name} />
+            <TrustPanel passportId={member.passportId} />
             <div className="bg-white p-6 rounded-2xl border border-[var(--warm-sand)] flex justify-between">
               <div>
                 <div className="text-sm font-semibold text-[var(--soft-stone)] uppercase tracking-wider mb-1">Reliability Score</div>

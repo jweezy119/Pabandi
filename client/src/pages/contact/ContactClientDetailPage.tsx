@@ -120,7 +120,7 @@ export default function ContactClientDetailPage() {
         {activeTab === 'Command Center' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              <TrustPanel score={client.trustScore || 85} entityType="Client" entityName={client.name} />
+              <TrustPanel passportId={client.passportId} />
               <ClientTimeline activities={activities} deals={deals} invoices={invoices} jobs={jobs} notes={client.notes} files={files} />
             </div>
             <div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useBusinessSettings } from '../../hooks/useBusinessSettings';
 import DashboardLayout from '../../components/DashboardLayout';
 import { Button, Modal, EmptyState } from '../../components/primitives';
 import { Input } from '../../components/primitives/Input';
@@ -9,7 +10,7 @@ import DealFormModal from '../crm/components/DealFormModal';
 
 
 
-const STAGES = [
+const DEFAULT_STAGES = [
   { id: 'LEAD', label: 'Lead', color: '#8A9A7B' },
   { id: 'QUALIFIED', label: 'Qualified', color: '#D9A854' },
   { id: 'PROPOSAL', label: 'Proposal', color: '#C97B5A' },
@@ -19,6 +20,11 @@ const STAGES = [
 ];
 
 export default function ContactDealsPage() {
+  const { settings } = useBusinessSettings();
+  const stages = settings.pipelineStages?.length > 0 
+    ? settings.pipelineStages 
+    : DEFAULT_STAGES;
+
   const [deals, setDeals] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,9 +124,9 @@ export default function ContactDealsPage() {
         ) : deals.length === 0 ? (
           <EmptyState icon="handshake" title="No Deals" description="Create your first deal opportunity." actionLabel="Create Deal" onAction={() => setIsCreateOpen(true)} />
         ) : viewMode === 'kanban' ? (
-          <DealKanbanBoard STAGES={STAGES} deals={deals} onUpdateStage={handleUpdateStage} />
+          <DealKanbanBoard STAGES={stages} deals={deals} onUpdateStage={handleUpdateStage} />
         ) : (
-          <DealListTable STAGES={STAGES} deals={deals} onUpdateStage={handleUpdateStage} />
+          <DealListTable STAGES={stages} deals={deals} onUpdateStage={handleUpdateStage} />
         )}
 
         <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Create New Deal">

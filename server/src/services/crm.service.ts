@@ -103,6 +103,7 @@ export async function addClient(
     phone?: string;
     address?: string;
     notes?: string;
+    customData?: any;
   }
 ) {
   const { name, email, phone, address, notes } = data;
@@ -112,7 +113,7 @@ export async function addClient(
   }
 
   const client = await prisma.crmClient.create({
-    data: { businessId, name, email: email || null, phone: phone || null, address: address || null, notes: notes || null },
+    data: { businessId, name, email: email || null, phone: phone || null, address: address || null, notes: notes || null, customData: data.customData ?? {} },
   });
 
   if (client.passportId) {
@@ -169,6 +170,7 @@ export async function updateClient(
     phone?: string;
     address?: string;
     notes?: string;
+    customData?: any;
   }
 ) {
   const client = await prisma.crmClient.findFirst({ where: { id: clientId, businessId } });

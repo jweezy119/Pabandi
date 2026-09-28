@@ -1,5 +1,15 @@
 import { Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { useBusinessSettings } from './hooks/useBusinessSettings';
+
+function FeatureGate({ feature, children }: { feature: string; children: React.ReactNode }) {
+  const { settings } = useBusinessSettings();
+  const enabled = settings.enabledFeatures?.contact ?? [];
+  if (!enabled.includes(feature)) {
+    return <Navigate to="/contact" replace />;
+  }
+  return <>{children}</>;
+}
 import { AppShell } from './components/AppShell';
 import DashboardPage from './pages/DashboardPage';
 import BusinessPage from './pages/BusinessPage';
@@ -301,20 +311,20 @@ function AnimatedAppRoutes() {
 
           {/* Contact OS - CRM & Sales */}
           <Route path="contact" element={<ContactOSPage />} />
-          <Route path="contact/clients" element={<ContactClientsPage />} />
-          <Route path="contact/clients/:id" element={<ContactClientDetailPage />} />
-<Route path="contact/jobs" element={<ContactJobsPage businessId={user?.businessId || 'default'} />} />
-          <Route path="contact/jobs/:id" element={<ContactJobDetailPage />} />
-          <Route path="contact/deals" element={<ContactDealsPage />} />
-          <Route path="contact/deals/:id" element={<ContactDealDetailPage />} />
-          <Route path="contact/activities" element={<ContactActivitiesPage />} />
-          <Route path="contact/tasks" element={<ContactTasksPage />} />
-          <Route path="contact/team" element={<ContactTeamPage />} />
-          <Route path="contact/team/:id" element={<ContactTeamMemberPage />} />
+          <Route path="contact/clients" element={<FeatureGate feature="clients"><ContactClientsPage /></FeatureGate>} />
+          <Route path="contact/clients/:id" element={<FeatureGate feature="clients"><ContactClientDetailPage /></FeatureGate>} />
+          <Route path="contact/jobs" element={<FeatureGate feature="jobs"><ContactJobsPage businessId={user?.businessId || 'default'} /></FeatureGate>} />
+          <Route path="contact/jobs/:id" element={<FeatureGate feature="jobs"><ContactJobDetailPage /></FeatureGate>} />
+          <Route path="contact/deals" element={<FeatureGate feature="deals"><ContactDealsPage /></FeatureGate>} />
+          <Route path="contact/deals/:id" element={<FeatureGate feature="deals"><ContactDealDetailPage /></FeatureGate>} />
+          <Route path="contact/activities" element={<FeatureGate feature="activities"><ContactActivitiesPage /></FeatureGate>} />
+          <Route path="contact/tasks" element={<FeatureGate feature="tasks"><ContactTasksPage /></FeatureGate>} />
+          <Route path="contact/team" element={<FeatureGate feature="team"><ContactTeamPage /></FeatureGate>} />
+          <Route path="contact/team/:id" element={<FeatureGate feature="team"><ContactTeamMemberPage /></FeatureGate>} />
           <Route path="contact/reports" element={<ContactAnalyticsPage />} />
           <Route path="invite/accept" element={<InviteAcceptPage />} />
-          <Route path="contact/invoices" element={<InvoicesPage />} />
-          <Route path="contact/invoices/:id" element={<ContactInvoiceDetailPage />} />
+          <Route path="contact/invoices" element={<FeatureGate feature="invoices"><InvoicesPage /></FeatureGate>} />
+          <Route path="contact/invoices/:id" element={<FeatureGate feature="invoices"><ContactInvoiceDetailPage /></FeatureGate>} />
           <Route path="contact/settings" element={<SettingsHubPage />} />
           <Route path="contact/settings/profile" element={<BusinessProfilePage />} />
           <Route path="contact/settings/modules" element={<ModulesSettingsPage />} />

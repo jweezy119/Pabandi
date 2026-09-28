@@ -110,8 +110,8 @@ export async function addClientHandler(
 ) {
   try {
     const businessId = getBusinessId(req);
-    const { name, email, phone, address, notes } = req.body;
-    const client = await addClient(businessId, { name, email, phone, address, notes });
+    const { name, email, phone, address, notes, customData } = req.body;
+    const client = await addClient(businessId, { name, email, phone, address, notes, customData });
     res.status(201).json({ success: true, data: client });
   } catch (error) {
     next(error);
@@ -155,8 +155,8 @@ export async function updateClientHandler(
   try {
     const businessId = getBusinessId(req);
     const { id } = req.params;
-    const { name, email, phone, address, notes } = req.body;
-    const client = await updateClient(businessId, id, { name, email, phone, address, notes });
+    const { name, email, phone, address, notes, customData } = req.body;
+    const client = await updateClient(businessId, id, { name, email, phone, address, notes, customData });
     res.json({ success: true, data: client });
   } catch (error) {
     next(error);
