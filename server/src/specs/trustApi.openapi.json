@@ -1,0 +1,154 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Pabandi Trust API v1",
+    "version": "1.0.0",
+    "description": "Public trust verification API for third-party trust checks",
+    "contact": { "name": "Pabandi", "email": "jay@pabandi.com" },
+    "license": { "name": "Proprietary" }
+  },
+  "servers": [
+    { "url": "https://pabandi.onrender.com/api/v1/trust/v1", "description": "Production" },
+    { "url": "http://localhost:5000/api/v1/trust/v1", "description": "Development" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "description": "API key with pk_ prefix. Also accepts Authorization: Bearer pk_xxx"
+      }
+    },
+    "schemas": {
+      "Passport": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "handle": { "type": "string" },
+          "displayName": { "type": "string" },
+          "category": { "type": "string" },
+          "visibility": { "type": "string" },
+          "scores": {
+            "type": "object",
+            "properties": {
+              "payment": { "type": "integer", "minimum": 0, "maximum": 1000 },
+              "showUp": { "type": "integer", "minimum": 0, "maximum": 1000 },
+              "delivery": { "type": "integer", "minimum": 0, "maximum": 1000 }
+            }
+          },
+          "sampleSizes": {
+            "type": "object",
+            "properties": {
+              "payment": { "type": "integer" },
+              "showUp": { "type": "integer" },
+              "delivery": { "type": "integer" }
+            }
+          },
+          "verifiedIdentity": { "type": "boolean" },
+          "verifiedAt": { "type": "string", "format": "date-time" },
+          "verifiedLocationCount": { "type": "integer" },
+          "verifiedEventCount": { "type": "integer" },
+          "badges": { "type": "array", "items": { "type": "string" } },
+          "memberSince": { "type": "string", "format": "date-time" }
+        },
+      "ScoreResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "handle": { "type": "string" },
+          "displayName": { "type": "string" },
+          "score": { "type": "integer", "minimum": 0, "maximum": 1000 },
+          "context": { "type": "string" },
+          "confidence": { "type": "integer", "minimum": 0, "maximum": 100 }
+        }
+      },
+      "BulkCheckResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Passport" }
+          },
+          "notFound": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "error": { "type": "string" }
+              }
+            }
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "requested": { "type": "integer" },
+              "found": { "type": "integer" },
+              "notFound": { "type": "integer" }
+            }
+          }
+        },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "error": { "type": "string" }
+        }
+      }
+    },
+    "paths": {
+      "/passport/{id}": {
+        "get": {
+          "summary": "Get public trust profile",
+          "security": [{ "ApiKeyAuth": [] }],
+          "parameters": [
+            { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          ],
+          "responses": {
+            "200": { "description": "Public trust profile", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Passport" } } } },
+            "404": { "description": "Not found or private", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+            "429": { "description": "Rate limited", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+          }
+        },
+      "/score/{id}": {
+        "get": {
+          "summary": "Get scoped trust score",
+          "security": [{ "ApiKeyAuth": [] }],
+          "parameters": [
+            { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+            { "name": "context", "in": "query", "schema": { "type": "string", "enum": ["payment", "showUp", "delivery"] } }
+          ],
+          "responses": {
+            "200": { "description": "Scoped trust score", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ScoreResponse" } } } },
+            "404": { "description": "Not found or private", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+            "429": { "description": "Rate limited", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+          }
+        },
+      "/bulk-check": {
+        "post": {
+          "summary": "Batch trust lookup",
+          "security": [{ "ApiKeyAuth": [] }],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ids": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 100 }
+                  },
+                  "required": ["ids"]
+                }
+              }
+            },
+          "responses": {
+            "200": { "description": "Batch results", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BulkCheckResponse" } } } },
+            "400": { "description": "Invalid request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+            "429": { "description": "Rate limited", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+          }
+        }
+      }
+    }
+  }
+}

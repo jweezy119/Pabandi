@@ -211,6 +211,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/admin/api-clients`, './routes/apiClients.routes'],
   [`/api/${v}/api-keys`, './routes/apiKey.routes'],
   [`/api/${v}/trust`, './routes/trust.routes'],
+  [`/api/${v}/trust/v1`, './routes/trustApi.v1.routes'],
   [`/api/${v}/monetization`, './routes/monetization.routes'],
   [`/api/${v}/linkedin/seed`, './routes/linkedinSeed.routes'],
   [`/api/${v}/linkedin`, './routes/linkedin.routes'],
