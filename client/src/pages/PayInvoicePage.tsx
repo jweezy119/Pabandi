@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { usePrivy } from '@privy-io/react-auth';
+import { useParams } from 'react-router-dom';
 import { Badge, Button, tokens } from '../design-system';
-import { payInvoice, InvoiceData } from '../lib/payInvoice';
 
 const WARM_CLAY = {
   clay: '#C97B5A',
@@ -11,23 +9,16 @@ const WARM_CLAY = {
   softStone: '#BFB3A3',
   sage: '#8A9A7B',
   dustyRose: '#D4A5A5',
-  mutedOchre: '#D9A854',
-  skyWash: '#B8C9D4',
-  terracotta: '#A85A3C',
   warmSand: '#E8D9C5',
 };
 
 export const PayInvoicePage: React.FC = () => {
   const { invoiceId } = useParams<{ invoiceId: string }>();
-  const navigate = useNavigate();
-  const { authenticated } = usePrivy();
-
-  const [invoice, setInvoice] = useState<InvoiceData | null>(null);
+  const [invoice, setInvoice] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [paying, setPaying] = useState(false);
-  const [result, setResult] = useState<{ success: boolean; txHash?: string; error?: string } | null>(null);
+  const [claiming, setClaiming] = useState(false);
+  const [result, setResult] = useState<{ success: boolean; error?: string } | null>(null);
 
-  // Fetch invoice details
   useEffect(() => {
     const fetchInvoice = async () => {
       try {
@@ -47,41 +38,54 @@ export const PayInvoicePage: React.FC = () => {
     fetchInvoice();
   }, [invoiceId]);
 
-  const handlePay = async () => {
+  const handlePayClick = () => {
+    if (invoice?.paymentLink) {
+      window.open(invoice.paymentLink, '_blank');
+    } else {
+      alert("No payment method configured for this business.");
+    }
+  };
+
+  const handleClaimPaid = async () => {
     if (!invoiceId) return;
-    setPaying(true);
+    setClaiming(true);
     setResult(null);
     try {
-      const paymentResult = await payInvoice(invoiceId);
-      setResult(paymentResult);
-      if (paymentResult.success && paymentResult.transactionHash) {
-        setTimeout(() => navigate(`/payment/success?tx=${paymentResult.transactionHash}`), 2000);
+      const response = await fetch(`/api/v1/public/invoices/${invoiceId}/claim-paid`, {
+        method: 'POST'
+      });
+      if (response.ok) {
+        setInvoice({ ...invoice, status: 'payment_claimed' });
+        setResult({ success: true });
+      } else {
+        const err = await response.json();
+        setResult({ success: false, error: err.error || 'Failed to claim payment.' });
       }
     } catch {
-      setResult({ success: false, error: 'Payment failed.' });
+      setResult({ success: false, error: 'Network error.' });
     } finally {
-      setPaying(false);
+      setClaiming(false);
     }
   };
 
   const styles: Record<string, React.CSSProperties> = {
     page: {
       minHeight: '100vh',
-      background: `linear-gradient(135deg, ${WARM_CLAY.cream} 0%, ${WARM_CLAY.warmSand} 50%, ${WARM_CLAY.skyWash} 100%)`,
+      background: WARM_CLAY.cream,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: tokens.space.lg,
-      fontFamily: "'Georgia', 'Times New Roman', serif",
+      fontFamily: "'Inter', sans-serif",
     },
     card: {
-      background: WARM_CLAY.cream,
+      background: '#fff',
       borderRadius: tokens.radius.xl,
       padding: tokens.space.xl,
       maxWidth: '520px',
       width: '100%',
-      boxShadow: `0 8px 32px rgba(201, 123, 90, 0.15)`,
-      border: `1px solid ${WARM_CLAY.softStone}`,
+      boxShadow: `0 8px 32px rgba(42, 37, 32, 0.05)`,
+      border: `1px solid ${WARM_CLAY.warmSand}`,
     },
     header: {
       textAlign: 'center' as const,
@@ -93,13 +97,8 @@ export const PayInvoicePage: React.FC = () => {
       color: WARM_CLAY.warmInk,
       margin: 0,
     },
-    subtitle: {
-      color: WARM_CLAY.clay,
-      fontSize: '0.95rem',
-      marginTop: tokens.space.sm,
-    },
     invoiceInfo: {
-      background: WARM_CLAY.warmSand,
+      background: WARM_CLAY.cream,
       borderRadius: tokens.radius.lg,
       padding: tokens.space.lg,
       marginBottom: tokens.space.lg,
@@ -108,30 +107,21 @@ export const PayInvoicePage: React.FC = () => {
       display: 'flex',
       justifyContent: 'space-between',
       padding: `${tokens.space.sm} 0`,
-      borderBottom: `1px solid ${WARM_CLAY.softStone}`,
+      borderBottom: `1px solid ${WARM_CLAY.warmSand}`,
     },
     label: {
-      color: WARM_CLAY.warmInk,
+      color: WARM_CLAY.softStone,
       fontWeight: 500,
     },
     value: {
       color: WARM_CLAY.warmInk,
       fontWeight: 600,
     },
-    button: {
-      width: '100%',
-      background: `linear-gradient(135deg, ${WARM_CLAY.clay} 0%, ${WARM_CLAY.terracotta} 100%)`,
-      color: '#fff',
-      border: 'none',
-      borderRadius: tokens.radius.lg,
-      padding: tokens.space.md,
-      fontSize: '1.1rem',
-      fontWeight: 600,
-      cursor: paying ? 'not-allowed' : 'pointer',
-      opacity: paying ? 0.7 : 1,
-      transition: 'all 0.3s ease',
-      fontFamily: "'Georgia', serif",
-      marginTop: tokens.space.sm,
+    actions: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: tokens.space.md,
+      marginTop: tokens.space.xl,
     },
     statusBox: {
       background: result?.success ? WARM_CLAY.sage : WARM_CLAY.dustyRose,
@@ -141,44 +131,21 @@ export const PayInvoicePage: React.FC = () => {
       marginTop: tokens.space.md,
       textAlign: 'center' as const,
     },
-    statusText: {
-      fontSize: '0.9rem',
-    },
-    walletBadge: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: tokens.space.sm,
-      background: WARM_CLAY.skyWash,
-      color: WARM_CLAY.warmInk,
-      borderRadius: tokens.radius.md,
-      padding: `${tokens.space.sm} ${tokens.space.md}`,
-      fontSize: '0.85rem',
-      marginBottom: tokens.space.md,
-    },
-    loading: {
-      textAlign: 'center' as const,
-      padding: tokens.space.xl,
-      color: WARM_CLAY.warmInk,
-    },
   };
 
   if (loading) {
-    return <div style={styles.loading}>Loading invoice...</div>;
+    return <div style={{ ...styles.page, justifyContent: 'center' }}>Loading invoice...</div>;
   }
+
+  const isPaid = invoice?.status === 'paid';
+  const isClaimed = invoice?.status === 'payment_claimed';
 
   return (
     <div style={styles.page}>
       <div style={styles.card}>
         <div style={styles.header}>
-          <h1 style={styles.title}>Pay Invoice</h1>
-          <p style={styles.subtitle}>Secure USDC payment on Solana</p>
+          <h1 style={styles.title}>Invoice</h1>
         </div>
-
-        {!authenticated && (
-          <div style={styles.walletBadge}>
-            🔒 Please connect your wallet to pay
-          </div>
-        )}
 
         {invoice && (
           <div style={styles.invoiceInfo}>
@@ -190,41 +157,46 @@ export const PayInvoicePage: React.FC = () => {
               <span style={styles.label}>Business</span>
               <span style={styles.value}>{invoice.business.name}</span>
             </div>
-            <div style={styles.invoiceRow}>
-              <span style={styles.label}>Amount</span>
-              <span style={{ ...styles.value, color: WARM_CLAY.clay, fontSize: '1.3rem', fontWeight: 700 }}>
+            <div style={{ ...styles.invoiceRow, borderBottom: 'none', paddingTop: tokens.space.md }}>
+              <span style={styles.label}>Amount Due</span>
+              <span style={{ color: WARM_CLAY.clay, fontSize: '1.5rem', fontWeight: 700 }}>
                 {invoice.subtotal} {invoice.currency}
               </span>
             </div>
           </div>
         )}
 
-        <Button
-          variant="primary"
-          onClick={handlePay}
-          disabled={!authenticated || paying || !invoice || invoice.status === 'paid'}
-          style={styles.button}
-        >
-          {paying ? (
-            <span>⏳ Processing...</span>
-          ) : !authenticated ? (
-            <span>🔗 Connect Wallet to Pay</span>
-          ) : invoice?.status === 'paid' ? (
-            <span>✅ Paid</span>
-          ) : (
-            <span>💎 Pay {invoice?.subtotal} {invoice?.currency}</span>
-          )}
-        </Button>
-
-        {result && (
-          <div style={styles.statusBox}>
-            <div style={styles.statusText}>
-              {result.success ? (
-                <>✅ Payment successful! TX: {result.txHash?.slice(0, 16)}...</>
-              ) : (
-                <>❌ {result.error}</>
-              )}
+        <div style={styles.actions}>
+          {isPaid ? (
+            <div style={{ textAlign: 'center', padding: '1rem', background: WARM_CLAY.sage, color: 'white', borderRadius: '8px' }}>
+              ✅ This invoice has been paid
             </div>
+          ) : isClaimed ? (
+            <div style={{ textAlign: 'center', padding: '1rem', background: WARM_CLAY.warmSand, color: WARM_CLAY.warmInk, borderRadius: '8px' }}>
+              ⏳ Payment claimed. Awaiting verification from business.
+            </div>
+          ) : (
+            <>
+              {invoice?.paymentLink ? (
+                <Button variant="primary" onClick={handlePayClick} style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}>
+                  Pay {invoice.subtotal} {invoice.currency}
+                </Button>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '1rem', background: WARM_CLAY.warmSand, color: WARM_CLAY.warmInk, borderRadius: '8px' }}>
+                  Contact the business for payment instructions.
+                </div>
+              )}
+              
+              <Button variant="outline" onClick={handleClaimPaid} disabled={claiming} style={{ width: '100%', padding: '1rem' }}>
+                {claiming ? '⏳ Updating...' : "I've Paid"}
+              </Button>
+            </>
+          )}
+        </div>
+
+        {result && !result.success && (
+          <div style={styles.statusBox}>
+            ❌ {result.error}
           </div>
         )}
       </div>

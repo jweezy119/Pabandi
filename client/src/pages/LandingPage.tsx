@@ -61,9 +61,9 @@ const TRUST_SIGNALS = [
 ];
 
 const HOW_IT_WORKS = [
-  { step: '1', title: 'Query', desc: 'Tell us what you need — service, freight, property, or help.' },
-  { step: '2', title: 'Verify', desc: 'TrustOS scores the counterparty. Escrow protects your funds.' },
-  { step: '3', title: 'Escrow', desc: 'Service delivered? Funds released. Disputed? Arbitration kicks in.' },
+  { step: '1', title: 'Add your business', desc: 'Post your business and get your free CRM.' },
+  { step: '2', title: 'Paste your payment link', desc: 'Square, Solana, PayPal — whatever you use.' },
+  { step: '3', title: 'Send invoices. Get paid. Build trust.', desc: 'Your clients pay you directly. We build your trust profile.' },
 ];
 
 function useScrollReveal() {
@@ -368,7 +368,7 @@ export default function LandingPage() {
                   <span className="word hero-accent">Secured.</span>
                 </h1>
                 <p className="hero-subtitle">
-                  Five modules. One shared trust engine. Built for businesses that need to be reliable.
+                  Post your business. Get your CRM. Add your payment method. Get paid.
                 </p>
                 <div className="hero-actions">
                   <MagneticButton className="btn btn-primary" onClick={() => window.location.href = '/signup?module=contact'}>

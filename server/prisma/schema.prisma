@@ -6512,6 +6512,7 @@ model Invoice {
   notes      String?
   sentAt     DateTime?
   paidAt     DateTime?
+  paymentLink String?
   transactionHash String? @unique
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
@@ -6843,4 +6844,16 @@ model KbArticle {
   published Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model BusinessPaymentMethod {
+  id          String   @id @default(cuid())
+  businessId  String
+  railId      String   // 'solana' | 'square' | 'paypal' | 'safepay' | 'bank'
+  displayName String   // "Business Square account"
+  target      String   // wallet address, payment link URL, or bank details
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([businessId, railId])
 }

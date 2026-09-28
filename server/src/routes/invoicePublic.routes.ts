@@ -39,12 +39,13 @@ router.get('/:invoiceId', async (req, res) => {
       lineItems: invoice.lineItems,
       notes: invoice.notes,
       paidAt: invoice.paidAt,
+      paymentLink: invoice.paymentLink,
       transactionHash: metadata.transactionHash,
       requireEscrow: metadata.requireEscrow,
       business: {
-        name: invoice.business.name,
-        logoUrl: invoice.business.logoUrl,
-        solanaAddress: invoice.business.solanaAddress,
+        name: invoice.business?.name,
+        logoUrl: (invoice.business as any)?.logoUrl,
+        solanaAddress: (invoice.business as any)?.solanaAddress,
       },
       clientName: invoice.client?.name,
     });
@@ -77,6 +78,39 @@ router.post('/:invoiceId/pay', async (req, res) => {
   } catch (err: any) {
     logger.error(`[InvoicePublic] Error paying invoice: ${err.message}`);
     res.status(err.statusCode || 500).json({ error: err.message });
+  }
+});
+
+router.post('/:invoiceId/claim-paid', async (req, res) => {
+  try {
+    const { invoiceId } = req.params;
+    
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: invoiceId },
+      include: { client: true }
+    });
+
+    if (!invoice) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+
+    const updated = await prisma.invoice.update({
+      where: { id: invoiceId },
+      data: { status: 'payment_claimed' },
+    });
+
+    if (invoice.client?.passportId) {
+      await trustCore.emit('invoice.payment_claimed', {
+        passportId: invoice.client.passportId,
+        invoiceId: invoice.id,
+        amount: invoice.subtotal,
+      });
+    }
+
+    res.json(updated);
+  } catch (err: any) {
+    logger.error(`[InvoicePublic] Error claiming paid: ${err.message}`);
+    res.status(500).json({ error: err.message });
   }
 });
 

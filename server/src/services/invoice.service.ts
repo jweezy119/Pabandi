@@ -107,13 +107,32 @@ export async function updateInvoice(businessId: string, invoiceId: string, data:
   });
 }
 
+import { paymentRails } from '../payments/rails';
+
 export async function sendInvoice(businessId: string, invoiceId: string) {
   const invoice = await prisma.invoice.findFirst({ where: { id: invoiceId, businessId }, include: { client: true } });
   if (!invoice) throw new CustomError('Invoice not found', 404);
 
+  // Look up default payment method
+  const defaultMethod = await prisma.businessPaymentMethod.findFirst({
+    where: { businessId, isDefault: true }
+  });
+
+  let paymentLink = null;
+  if (defaultMethod) {
+    const rail = paymentRails[defaultMethod.railId];
+    if (rail) {
+      paymentLink = rail.getPaymentUrl(defaultMethod.target, {
+        amount: invoice.subtotal,
+        number: invoice.number,
+        currency: 'USD'
+      });
+    }
+  }
+
   const updated = await prisma.invoice.update({
     where: { id: invoiceId },
-    data: { status: 'sent', sentAt: new Date() },
+    data: { status: 'sent', sentAt: new Date(), paymentLink },
     include: { client: true }
   });
 
