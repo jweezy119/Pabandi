@@ -20,10 +20,23 @@ router.get('/contacts', async (req, res) => {
 router.post('/contacts', async (req, res) => {
   try {
     const { name, email, phone, source, value, notes } = req.body;
+    let finalPassportId = '';
+    if (name) {
+      const handle = name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.random().toString(36).substring(2, 6);
+      const passport = await prisma.trustPassport.create({
+        data: {
+          handle,
+          displayName: name,
+        }
+      });
+      finalPassportId = passport.id;
+    }
+
     const lead = await prisma.crmClient.create({
       data: {
         name, email, phone, notes: notes || null,
         businessId: 'default',
+        passportId: finalPassportId || null,
         customData: { source, value: value ? Number(value) : null, stage: 'new', ownerId: 'system' }
       },
     });
@@ -99,13 +112,25 @@ router.get('/leads', async (req, res) => {
 router.post('/leads', async (req, res) => {
   try {
     const { name, email, phone, source, value, businessId, ownerId, passportId } = req.body;
+    let finalPassportId = passportId;
+    if (!finalPassportId && name) {
+      const handle = name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.random().toString(36).substring(2, 6);
+      const passport = await prisma.trustPassport.create({
+        data: {
+          handle,
+          displayName: name,
+        }
+      });
+      finalPassportId = passport.id;
+    }
+
     const lead = await prisma.crmClient.create({
       data: {
         name,
         email,
         phone,
         businessId: businessId || 'default',
-        passportId: passportId || null,
+        passportId: finalPassportId || null,
         customData: { source, value, ownerId: ownerId || 'system', stage: 'new' },
       },
     });

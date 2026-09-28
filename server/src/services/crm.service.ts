@@ -114,8 +114,25 @@ export async function addClient(
     throw new CustomError('name is required', 400);
   }
 
+  const handle = name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.random().toString(36).substring(2, 6);
+  const passport = await prisma.trustPassport.create({
+    data: {
+      handle,
+      displayName: name,
+    }
+  });
+
   const client = await prisma.crmClient.create({
-    data: { businessId, name, email: email || null, phone: phone || null, address: address || null, notes: notes || null, customData: data.customData ?? {} },
+    data: { 
+      businessId, 
+      name, 
+      email: email || null, 
+      phone: phone || null, 
+      address: address || null, 
+      notes: notes || null, 
+      customData: data.customData ?? {},
+      passportId: passport.id
+    },
   });
 
   if (client.passportId) {

@@ -109,7 +109,7 @@ export default function ContactClientDetailPage() {
           <div className="flex gap-2">
             {client.passportId && (
               <Button variant="ghost" icon="share" onClick={() => {
-                const url = `${window.location.origin}/trust/profile/${client.passportId}`;
+                const url = `${window.location.origin}/trust/${client.passportId}`;
                 navigator.clipboard.writeText(url);
                 alert('Trust profile link copied!');
               }}>Share Trust Profile</Button>

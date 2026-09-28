@@ -237,7 +237,7 @@ function TrustedBySection() {
               {samples.map((s) => (
                 <a
                   key={s.id}
-                  href={`/trust/profile/${s.id}`}
+                  href={`/trust/${s.id}`}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 10,
                     padding: '10px 16px', borderRadius: 14,
