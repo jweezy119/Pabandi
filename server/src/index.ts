@@ -277,6 +277,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/bookings/public`, './routes/bookings.routes'],
   [`/api/${v}/booking-availability`, './routes/bookingAvailability.routes'],
   [`/api/${v}/embed`, './routes/embed.routes'],
+  [`/api/${v}/service-area`, './routes/serviceArea.routes'],
   [`/api/${v}/core-bookings`, './routes/coreBooking.routes'],
   [`/api/${v}/promoters`, './routes/promoter.routes'],
   [`/api/${v}/guest-list`, './routes/guestList.routes'],

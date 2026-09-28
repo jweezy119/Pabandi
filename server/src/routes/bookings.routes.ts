@@ -3,6 +3,7 @@ import { prisma } from '../utils/database';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { trustCore } from '../trust/trust-core';
 import { paymentRails } from '../payments/rails';
+import { geoService } from '../services/geo.service';
 
 const router = Router();
 
@@ -10,7 +11,7 @@ const router = Router();
 // Public - create a booking from the public booking page
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { businessId, slotStart, slotEnd, serviceType, customerName, customerEmail, customerPhone, notes, customFields, depositAmount } = req.body;
+    const { businessId, slotStart, slotEnd, serviceType, customerName, customerEmail, customerPhone, notes, customFields, depositAmount, clientAddress, clientLat, clientLng } = req.body;
 
     if (!businessId || !slotStart || !slotEnd || !serviceType || !customerName || !customerEmail) {
       return res.status(400).json({ success: false, error: 'Missing required fields' });
@@ -47,6 +48,61 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       return res.status(409).json({ success: false, error: 'Slot no longer available' });
     }
 
+    // Geocode client address if provided
+    let distanceMiles: number | null = null;
+    let driveMinutes: number | null = null;
+    let travelFee = 0;
+    let depositReason: string | null = null;
+    let finalClientLat = clientLat ? parseFloat(clientLat) : null;
+    let finalClientLng = clientLng ? parseFloat(clientLng) : null;
+    let finalClientAddress = clientAddress || null;
+
+    if (clientAddress && business.serviceLat && business.serviceLng) {
+      try {
+        const geoResult = await geoService.geocodeAddress(clientAddress);
+        finalClientLat = geoResult.lat;
+        finalClientLng = geoResult.lng;
+        finalClientAddress = geoResult.formatted;
+
+        const distanceCheck = await geoService.isWithinRadius(
+          business.serviceLat!,
+          business.serviceLng!,
+          geoResult.lat,
+          geoResult.lng,
+          business.serviceRadiusMiles || 25
+        );
+
+        distanceMiles = distanceCheck.distanceMiles;
+        driveMinutes = distanceCheck.driveMinutes;
+
+        // Check if outside service radius
+        if (!distanceCheck.withinRadius) {
+          return res.status(400).json({
+            success: false,
+            error: `SERVICE_AREA_EXCEEDED`,
+            message: `Sorry, ${business.name} serves up to ${business.serviceRadiusMiles || 25} miles. Your address is ${distanceCheck.distanceMiles.toFixed(1)} miles away.`,
+            distanceMiles: distanceCheck.distanceMiles,
+            maxRadiusMiles: business.serviceRadiusMiles || 25,
+          });
+        }
+
+        // Calculate travel fee if enabled and distance > base radius (e.g., 10 miles)
+        if (business.travelFeeEnabled && distanceMiles > 10) {
+          const extraMiles = distanceMiles - 10;
+          travelFee = Math.round(extraMiles * (business.travelFeePerMile || 0.5) * 100) / 100;
+        }
+
+        // Travel-adjusted deposit
+        if (distanceMiles > 30) {
+          depositReason = 'distance_50';
+        } else if (distanceMiles > 15) {
+          depositReason = 'distance_20';
+        }
+      } catch (geoError) {
+        console.error('Geocoding error:', geoError);
+      }
+    }
+
     // Create booking
     const booking = await prisma.booking.create({
       data: {
@@ -58,6 +114,13 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         depositStatus: depositAmount && depositAmount > 0 ? 'required' : null,
         status: 'pending',
         metadata: { customerName, customerEmail, customerPhone, notes, customFields },
+        clientAddress: finalClientAddress,
+        clientLat: finalClientLat,
+        clientLng: finalClientLng,
+        distanceMiles,
+        driveMinutes,
+        travelFee,
+        depositReason,
       },
     });
 
@@ -67,11 +130,16 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       businessId,
       serviceType,
       slotStart: booking.slotStart,
+      distanceMiles,
+      driveMinutes,
+      travelFee,
     });
 
     // If deposit required, generate payment link
     let paymentUrl: string | null = null;
-    if (depositAmount && depositAmount > 0) {
+    const totalDeposit = (depositAmount || 0) + travelFee;
+
+    if (totalDeposit > 0) {
       const defaultMethod = await prisma.businessPaymentMethod.findFirst({
         where: { businessId, isDefault: true },
       });
@@ -80,7 +148,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         const rail = paymentRails[defaultMethod.railId];
         if (rail) {
           paymentUrl = rail.getPaymentUrl(defaultMethod.target, {
-            amount: depositAmount,
+            amount: totalDeposit,
             reference: `deposit-${booking.id}`,
             currency: business.currency || 'USD',
           });
@@ -190,18 +258,18 @@ router.post('/:id/confirm', async (req: Request, res: Response) => {
       });
     }
 
-    // Update booking
+    // Update booking with location data
     const updated = await prisma.booking.update({
       where: { id: booking.id },
       data: {
         clientId: client.id,
-        depositStatus: booking.depositAmount && booking.depositAmount > 0 ? 'funded' : null,
+        depositStatus: (booking.depositAmount || 0) + (booking.travelFee || 0) > 0 ? 'funded' : null,
         status: 'confirmed',
         paymentRef: paymentRef || transactionHash,
       },
     });
 
-    // Create CrmJob
+    // Create CrmJob with location data
     const job = await prisma.crmJob.create({
       data: {
         businessId: booking.businessId,
@@ -210,7 +278,7 @@ router.post('/:id/confirm', async (req: Request, res: Response) => {
         scheduledDate: booking.slotStart,
         scheduledTime: booking.slotStart.toTimeString().slice(0, 5),
         durationMinutes: Math.round((booking.slotEnd.getTime() - booking.slotStart.getTime()) / 60000),
-        address: metadata?.customFields?.address,
+        address: booking.clientAddress || metadata?.customFields?.address,
         notes: metadata?.notes,
         price: 0,
         status: 'SCHEDULED',
@@ -224,13 +292,16 @@ router.post('/:id/confirm', async (req: Request, res: Response) => {
       data: { status: 'confirmed' },
     });
 
-    // Fire trust event: deposit.paid
-    if (booking.depositAmount && booking.depositAmount > 0) {
+    // Fire trust event: deposit.paid (including travel fee)
+    const totalDeposit = (booking.depositAmount || 0) + (booking.travelFee || 0);
+    if (totalDeposit > 0) {
       await trustCore.emit('deposit.paid', {
         bookingId: booking.id,
         businessId: booking.businessId,
         clientId: client.id,
-        amount: booking.depositAmount,
+        amount: totalDeposit,
+        travelFee: booking.travelFee || 0,
+        distanceMiles: booking.distanceMiles,
       });
     }
 
@@ -240,6 +311,8 @@ router.post('/:id/confirm', async (req: Request, res: Response) => {
       jobId: job.id,
       businessId: booking.businessId,
       clientId: client.id,
+      distanceMiles: booking.distanceMiles,
+      driveMinutes: booking.driveMinutes,
     });
 
     res.json({

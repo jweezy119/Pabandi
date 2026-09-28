@@ -225,6 +225,7 @@ import { NotificationsPage } from './pages/crm/settings/NotificationsPage';
 import { ApiKeysPage } from './pages/crm/settings/ApiKeysPage';
 import { WebhooksPage } from './pages/crm/settings/WebhooksPage';
 import AvailabilitySettingsPage from './pages/contact/settings/AvailabilitySettingsPage';
+import ServiceAreaSettingsPage from './pages/contact/settings/ServiceAreaSettingsPage';
 import BookingsPage from './pages/contact/BookingsPage';
 import SetupWizardPage from './pages/contact/SetupWizardPage';
 // LedgerOS
@@ -341,6 +342,7 @@ function AnimatedAppRoutes() {
           <Route path="contact/settings/api-keys" element={<ApiKeysPage />} />
           <Route path="contact/settings/webhooks" element={<WebhooksPage />} />
           <Route path="contact/settings/availability" element={<AvailabilitySettingsPage />} />
+          <Route path="contact/settings/service-area" element={<ServiceAreaSettingsPage />} />
           <Route path="contact/bookings" element={<BookingsPage />} />
           <Route path="contact/setup" element={<SetupWizardPage />} />
 

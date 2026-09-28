@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CalendarIcon, ClockIcon, ShieldCheckIcon, StarIcon, MapPinIcon, PhoneIcon, MailIcon, CheckCircleIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, ClockIcon, ShieldCheckIcon, StarIcon, MapPinIcon, PhoneIcon, MailIcon, CheckCircleIcon, ExclamationCircleIcon, MapPinIcon as MapPinIcon2 } from '@heroicons/react/24/outline';
 import apiClient from '@/services/api';
 import { Button, Surface, tokens } from '@/design-system';
 import { Input } from '@/components/primitives/Input';
@@ -353,6 +353,20 @@ export const PublicBookingPage: React.FC = () => {
             </div>
             <h2 className="text-2xl font-bold text-[var(--warm-ink)] mb-2">Complete Payment</h2>
             <p className="text-[var(--soft-stone)] mb-6">A deposit is required to secure your booking. You'll be redirected to complete payment.</p>
+
+            {business && selectedSlot && bookingId && (
+              <PaymentMapPreview
+                businessName={business.name}
+                businessLat={business.serviceLat || 0}
+                businessLng={business.serviceLng || 0}
+                clientLat={formData.clientLat ? parseFloat(formData.clientLat) : 0}
+                clientLng={formData.clientLng ? parseFloat(formData.clientLng) : 0}
+                clientAddress={formData.clientAddress}
+                distanceMiles={formData.distanceMiles}
+                driveMinutes={formData.driveMinutes}
+              />
+            )}
+
             <Button
               variant="primary"
               className="w-full"
@@ -370,5 +384,90 @@ export const PublicBookingPage: React.FC = () => {
     </div>
   );
 };
+
+function PaymentMapPreview({
+  businessName,
+  businessLat,
+  businessLng,
+  clientLat,
+  clientLng,
+  clientAddress,
+  distanceMiles,
+  driveMinutes,
+}: {
+  businessName: string;
+  businessLat: number;
+  businessLng: number;
+  clientLat: number;
+  clientLng: number;
+  clientAddress: string;
+  distanceMiles?: number;
+  driveMinutes?: number;
+}) {
+  const [mapUrl, setMapUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!businessLat || !businessLng || !clientLat || !clientLng) return;
+    const fetchMap = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({
+          apiKey: import.meta.env.VITE_GEOAPIFY_KEY || '',
+          center: `lonlat:${businessLng},${businessLat}`,
+          zoom: '12',
+          width: '400',
+          height: '250',
+          format: 'png',
+          marker: `lonlat:${businessLng},${businessLat};color:C97B5B;icon:building|lonlat:${clientLng},${clientLat};color:3B82F6;icon:home`,
+        });
+        setMapUrl(`https://api.geoapify.com/v1/staticmap?${params}`);
+      } catch (e) {
+        console.error('Failed to load map', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMap();
+  }, [businessLat, businessLng, clientLat, clientLng]);
+
+  return (
+    <div className="mb-6 p-4 rounded-xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)]">
+      <h3 className="font-semibold text-[var(--warm-ink)] mb-3 flex items-center gap-2">
+        <MapPinIcon2 className="w-5 h-5 text-[var(--clay)]" />
+        Route Overview
+      </h3>
+      <div className="relative rounded-lg overflow-hidden border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)]">
+        {mapUrl ? (
+          <img src={mapUrl} alt="Route map" className="w-full h-40 object-cover" />
+        ) : (
+          <div className="w-full h-40 flex flex-col items-center justify-center text-[var(--soft-stone)]">
+            <span className="material-symbols-outlined text-[24px] mb-2 opacity-50">map</span>
+            {loading ? 'Loading map...' : 'Map preview unavailable'}
+          </div>
+        )}
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+            <div className="animate-spin w-6 h-6 border-2 border-[var(--clay)] border-t-transparent rounded-full" />
+          </div>
+        )}
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+        <div className="p-2 rounded-lg bg-white/50">
+          <p className="text-xs text-[var(--soft-stone)]">Distance</p>
+          <p className="font-semibold text-[var(--warm-ink)]">{distanceMiles?.toFixed(1) || '—'} mi</p>
+        </div>
+        <div className="p-2 rounded-lg bg-white/50">
+          <p className="text-xs text-[var(--soft-stone)]">Drive Time</p>
+          <p className="font-semibold text-[var(--warm-ink)]">{driveMinutes || '—'} min</p>
+        </div>
+        <div className="p-2 rounded-lg bg-white/50">
+          <p className="text-xs text-[var(--soft-stone)]">Travel Fee</p>
+          <p className="font-semibold text-[var(--terracotta)]">${(distanceMiles && distanceMiles > 10 ? (distanceMiles - 10) * 0.5 : 0).toFixed(2)}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default PublicBookingPage;

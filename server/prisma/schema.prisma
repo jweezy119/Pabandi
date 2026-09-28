@@ -229,6 +229,14 @@ model Business {
   checkInTime            String?
   checkOutTime           String?
   channexPropertyId      String?                  @unique
+  // Service area
+  serviceAddress         String?
+  serviceLat             Float?
+  serviceLng             Float?
+  serviceRadiusMiles     Float?    @default(25)
+  travelFeeEnabled       Boolean   @default(false)
+  travelFeePerMile       Float?    @default(0.50)
+  maxTravelMinutes       Int?      @default(45)
   owner                  User?                    @relation(fields: [ownerId], references: [id])
   businessHours          BusinessHours[]
   settings               BusinessSettings?
@@ -382,6 +390,36 @@ model BlackoutDate {
   @@index([businessId, date])
 }
 
+model CacheEntry {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([expiresAt])
+}
+
+model LocationAttestation {
+  id              String         @id @default(cuid())
+  passportId      String
+  jobId           String
+  geoHash         String         // SHA-256 of (jobId + lat + lng + timestamp)
+  lat             Float
+  lng             Float
+  distanceMeters  Float
+  timestamp       DateTime       @default(now())
+  txHash          String?
+  verified        Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  passport        TrustPassport  @relation(fields: [passportId], references: [id], onDelete: Cascade)
+
+  @@index([passportId])
+  @@index([jobId])
+  @@index([timestamp])
+}
+
 model Booking {
   id              String   @id @default(cuid())
   businessId      String
@@ -401,6 +439,14 @@ model Booking {
   client          CrmClient? @relation(fields: [clientId], references: [id], onDelete: SetNull)
   job             CrmJob?  @relation(fields: [id], references: [bookingId])
   review          BookingReview?
+
+  clientAddress   String?
+  clientLat       Float?
+  clientLng       Float?
+  distanceMiles   Float?
+  driveMinutes    Int?
+  travelFee       Float? @default(0)
+  depositReason   String?
 
   @@index([businessId, slotStart])
 }
@@ -3946,54 +3992,58 @@ model CommunityGrant {
 
 // ── Trust Passport (public, portable provider trust identity) ───────────────
 model TrustPassport {
-  id            String     @id @default(cuid())
-  handle        String     @unique // shareable slug, e.g. "apex-builders"
-  agentId       String? // Web3Agent.id if linked
-  providerRef   String? // string key used across deposits/bonds/BC (landlordId/beneficiaryId/subjectId)
-  category      String     @default("FREELANCER") // FREELANCER | BUILDER | FLEET | HOA | PROPERTY_MANAGER
-  displayName   String
-  bio           String?
-  walletAddress String?
-  visibility    String     @default("PUBLIC") // PUBLIC | PRIVATE
-  claimsCount   Int        @default(0) // times requested/verified
-  riskScore     Int?
-  riskBand      String?
-  lastCheckedAt DateTime?
-  userId        String?    @unique
-  score         Float?
-  level         String?
-  verified      Boolean?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  crmClient     CrmClient? @relation("CrmClientTrustPassport")
+  id                    String     @id @default(cuid())
+  handle                String     @unique // shareable slug, e.g. "apex-builders"
+  agentId               String? // Web3Agent.id if linked
+  providerRef           String? // string key used across deposits/bonds/BC (landlordId/beneficiaryId/subjectId)
+  category              String     @default("FREELANCER") // FREELANCER | BUILDER | FLEET | HOA | PROPERTY_MANAGER
+  displayName           String
+  bio                   String?
+  walletAddress         String?
+  visibility            String     @default("PUBLIC") // PUBLIC | PRIVATE
+  claimsCount           Int        @default(0) // times requested/verified
+  riskScore             Int?
+  riskBand              String?
+  lastCheckedAt         DateTime?
+  userId                String?    @unique
+  score                 Float?
+  level                 String?
+  verified              Boolean?
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  crmClient             CrmClient? @relation("CrmClientTrustPassport")
 
   // Scoped scores — each 0-1000, each earned within its own context
-  showUpScore   Int? @default(500)
-  paymentScore  Int? @default(500)
-  deliveryScore Int? @default(500)
-  tenancyScore  Int? @default(500)
-  freightScore  Int? @default(500)
+  showUpScore           Int? @default(500)
+  paymentScore          Int? @default(500)
+  deliveryScore         Int? @default(500)
+  tenancyScore          Int? @default(500)
+  freightScore          Int? @default(500)
 
   // Confidence indicators
-  showUpSampleSize   Int @default(0)
-  paymentSampleSize  Int @default(0)
-  deliverySampleSize Int @default(0)
-  tenancySampleSize  Int @default(0)
-  freightSampleSize  Int @default(0)
+  showUpSampleSize      Int @default(0)
+  paymentSampleSize     Int @default(0)
+  deliverySampleSize    Int @default(0)
+  tenancySampleSize     Int @default(0)
+  freightSampleSize     Int @default(0)
 
   // Character-level flags — the only things that transfer globally
-  verifiedIdentity     Boolean   @default(false)
-  verifiedAt           DateTime?
-  fraudFlag            Boolean   @default(false)
-  fraudFlaggedAt       DateTime?
-  escrowTheftFlag      Boolean   @default(false)
-  chargebackFraudCount Int       @default(0)
+  verifiedIdentity      Boolean   @default(false)
+  verifiedAt            DateTime?
+  fraudFlag             Boolean   @default(false)
+  fraudFlaggedAt        DateTime?
+  escrowTheftFlag       Boolean   @default(false)
+  chargebackFraudCount  Int       @default(0)
+
+  // Location verification
+  verifiedLocationCount Int       @default(0)
 
   // Relations
-  gigHistory         PassportGigHistory[]
-  endorsements       SkillEndorsement[]
-  vector             PassportVector?
-  invoiceTrustEvents InvoiceTrustEvent[]
+  gigHistory            PassportGigHistory[]
+  endorsements          SkillEndorsement[]
+  vector                PassportVector?
+  invoiceTrustEvents    InvoiceTrustEvent[]
+  locationAttestations  LocationAttestation[]
 
   @@index([handle])
   @@index([agentId])
@@ -6829,6 +6879,12 @@ model CrmJob {
   employee   CrmEmployee? @relation("JobAssignments", fields: [employeeId], references: [id], onDelete: SetNull)
   bookingId  String?      @unique
   booking    Booking?
+
+  // Location verification
+  checkinLat         Float?
+  checkinLng         Float?
+  checkinDistanceM   Float?
+  locationVerified   Boolean  @default(false)
 
   @@index([businessId])
   @@index([status])
