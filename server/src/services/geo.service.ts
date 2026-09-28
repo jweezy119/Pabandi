@@ -1,5 +1,14 @@
 import { prisma } from '../utils/database';
 
+export const geoService = {
+  geocodeAddress,
+  reverseGeocode,
+  calculateDistance,
+  isWithinRadius,
+  getStaticMapUrl,
+  autocompleteAddress,
+};
+
 const GEOAPIFY_API_KEY = process.env.GEOAPIFY_API_KEY || '';
 const GEOAPIFY_BASE = 'https://api.geoapify.com/v1';
 

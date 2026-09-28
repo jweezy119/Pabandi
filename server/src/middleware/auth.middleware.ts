@@ -21,6 +21,7 @@ export interface AuthRequest extends Request {
     firstName?: string;
     lastName?: string;
     phone?: string;
+    businessId?: string;
   };
 }
 

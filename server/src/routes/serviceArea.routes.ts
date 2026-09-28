@@ -21,6 +21,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
       select: {
         id: true,
         name: true,
+        ownerId: true,
         serviceAddress: true,
         serviceLat: true,
         serviceLng: true,
@@ -132,13 +133,27 @@ router.post('/autocomplete', async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ success: false, error: 'input required' });
     }
 
-    const business = await prisma.business.findUnique({
-      where: { id: businessId || req.user?.businessId },
-      select: { serviceLat: true, serviceLng: true },
-    });
+    let bias: { lat: number; lng: number } | undefined;
+    if (businessId) {
+      const business = await prisma.business.findUnique({
+        where: { id: businessId },
+        select: { serviceLat: true, serviceLng: true },
+      });
+      if (business?.serviceLat && business?.serviceLng) {
+        bias = { lat: business.serviceLat, lng: business.serviceLng };
+      }
+    } else if (req.user?.businessId) {
+      const business = await prisma.business.findUnique({
+        where: { id: req.user.businessId },
+        select: { serviceLat: true, serviceLng: true },
+      });
+      if (business?.serviceLat && business?.serviceLng) {
+        bias = { lat: business.serviceLat, lng: business.serviceLng };
+      }
+    }
 
     const results = await geoService.autocompleteAddress(input, {
-      bias: business?.serviceLat && business?.serviceLng ? { lat: business.serviceLat, lng: business.serviceLng } : undefined,
+      bias,
       limit: 5,
     });
 
