@@ -1,4 +1,5 @@
 import { prisma } from '../utils/database';
+import { logger } from '../utils/logger';
 import { invoiceGenerationService } from './invoiceGeneration.service';
 import { CustomError } from '../middleware/errorHandler';
 import { eventBus } from './event-bus.service';
@@ -31,7 +32,7 @@ export async function enrollBusiness(data: {
   // Check if user already has a business (idempotent enroll)
   const existingBusiness = await prisma.business.findFirst({ where: { ownerId: user.id } });
   if (existingBusiness) {
-    const existingCrm = await prisma.crmBusiness.findFirst({ where: { businessId: existingBusiness.id } });
+    const existingCrm = await prisma.crmBusiness.findFirst({ where: { ownerEmail: user.email } });
     if (existingCrm) {
       return { business: existingBusiness, crmBusiness: existingCrm };
     }
@@ -51,8 +52,9 @@ export async function enrollBusiness(data: {
 
   const crmBusiness = await prisma.crmBusiness.create({
     data: {
-      businessId: business.id,
-      ownerId: user.id,
+      businessName: business.name,
+      ownerEmail: user.email,
+      ownerName: user.firstName,
       serviceType,
     },
   });
@@ -243,8 +245,9 @@ export async function createJob(
   });
 
   if (employeeId) {
-    await prisma.crmJobAssignment.create({
-      data: { jobId: job.id, employeeId },
+    await prisma.crmJob.update({
+      where: { id: job.id },
+      data: { employeeId },
     });
   }
 
@@ -252,9 +255,9 @@ export async function createJob(
 }
 
 export async function assignEmployee(jobId: string, employeeId: string) {
-  await prisma.crmJobAssignment.deleteMany({ where: { jobId } });
-  return prisma.crmJobAssignment.create({
-    data: { jobId, employeeId },
+  return prisma.crmJob.update({
+    where: { id: jobId },
+    data: { employeeId },
   });
 }
 
@@ -303,7 +306,7 @@ export async function getJobs(
     where,
     include: {
       client: true,
-      assignments: { include: { employee: true } },
+      employee: true,
     },
     orderBy: { scheduledDate: 'asc' },
   });
@@ -337,7 +340,6 @@ export async function recordPayroll(
       grossPay,
       deductions,
       netPay,
-      status: 'PENDING',
     },
     include: { employee: true },
   });
