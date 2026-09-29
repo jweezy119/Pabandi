@@ -30,7 +30,7 @@ export class NotificationService {
    * Server-side automation handles the actual delivery.
    */
   async triggerReservationConfirmation(reservationId: string): Promise<void> {
-    await fetch(`/api/v1/notifications/confirm/${reservationId}`, {
+    await fetch(`/notifications/confirm/${reservationId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     }).catch(() => {});
@@ -41,7 +41,7 @@ export class NotificationService {
    * Server-side automation handles the actual delivery.
    */
   async triggerReservationReminder(reservationId: string): Promise<void> {
-    await fetch(`/api/v1/notifications/remind/${reservationId}`, {
+    await fetch(`/notifications/remind/${reservationId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     }).catch(() => {});
@@ -52,7 +52,7 @@ export class NotificationService {
    * Server-side automation handles the actual delivery.
    */
   async triggerReviewRequest(reservationId: string): Promise<void> {
-    await fetch(`/api/v1/notifications/review/${reservationId}`, {
+    await fetch(`/notifications/review/${reservationId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     }).catch(() => {});
@@ -63,7 +63,7 @@ export class NotificationService {
    */
   async sendEmail(to: string, subject: string, html: string): Promise<boolean> {
     try {
-      await fetch('/api/v1/notifications/email', {
+      await fetch('/notifications/email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to, subject, html }),
@@ -79,7 +79,7 @@ export class NotificationService {
    */
   async sendSMS(to: string, message: string): Promise<boolean> {
     try {
-      await fetch('/api/v1/sms/send', {
+      await fetch('/notifications/sms/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to, message }),

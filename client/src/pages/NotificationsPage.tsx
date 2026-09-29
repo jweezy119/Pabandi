@@ -61,7 +61,7 @@ export const NotificationsPage: React.FC = () => {
   const loadNotifications = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiClient.get(`/api/v1/notifications?page=${page}&limit=20&filter=${tab}`);
+      const res = await apiClient.get(`/notifications?page=${page}&limit=20&filter=${tab}`);
       if (res.data.success) {
         setNotifications(res.data.data);
         setTotalPages(res.data.pagination.totalPages);
@@ -76,7 +76,7 @@ export const NotificationsPage: React.FC = () => {
 
   const loadUnreadCount = useCallback(async () => {
     try {
-      const res = await apiClient.get('/api/v1/notifications/unread-count');
+      const res = await apiClient.get('/notifications/unread-count');
       if (res.data.success) {
         setUnreadCount(res.data.count);
       }
@@ -92,7 +92,7 @@ export const NotificationsPage: React.FC = () => {
 
   const markAsRead = async (id: string) => {
     try {
-      await apiClient.patch(`/api/v1/notifications/${id}/read`);
+      await apiClient.patch(`/notifications/${id}/read`);
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (e) {
@@ -102,7 +102,7 @@ export const NotificationsPage: React.FC = () => {
 
   const markAllRead = async () => {
     try {
-      await apiClient.post('/api/v1/notifications/read-all');
+      await apiClient.post('/notifications/read-all');
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
     } catch (e) {

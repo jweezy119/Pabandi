@@ -48,7 +48,7 @@ export function NotificationBell() {
 
   const fetchNotifications = async () => {
     try {
-      const res = await apiClient.get('/api/v1/notifications?limit=20');
+      const res = await apiClient.get('/notifications?limit=20');
       if (res.data.success) {
         setNotifications(res.data.data);
       }
@@ -59,7 +59,7 @@ export function NotificationBell() {
 
   const fetchUnreadCount = async () => {
     try {
-      const res = await apiClient.get('/api/v1/notifications/unread-count');
+      const res = await apiClient.get('/notifications/unread-count');
       if (res.data.success) {
         setUnreadCount(res.data.count);
       }
@@ -76,7 +76,7 @@ export function NotificationBell() {
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.read) {
       try {
-        await apiClient.patch(`/api/v1/notifications/${notification.id}/read`);
+        await apiClient.patch(`/notifications/${notification.id}/read`);
         setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n));
         setUnreadCount(prev => Math.max(0, prev - 1));
       } catch (e) {
@@ -91,7 +91,7 @@ export function NotificationBell() {
 
   const markAllRead = async () => {
     try {
-      await apiClient.post('/api/v1/notifications/read-all');
+      await apiClient.post('/notifications/read-all');
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
       toast.success('All notifications marked as read');
