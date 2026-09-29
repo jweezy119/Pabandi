@@ -13,6 +13,7 @@ import {
   createPayLioPayment,
   verifyPayLioPayment,
 } from '../services/payment.service';
+import { markInvoicePaid } from '../services/invoice.service';
 import crypto from 'crypto';
 
 // Create a new crypto payment request
@@ -194,6 +195,20 @@ export const verifyPayment = async (
           txSignature: txSig || invoiceId || null,
         },
       });
+
+      if (invoiceId) {
+        try {
+          const invoice = await prisma.invoice.findFirst({
+            where: { id: invoiceId },
+            select: { businessId: true },
+          });
+          if (invoice) {
+            await markInvoicePaid(invoice.businessId, invoiceId, txSig || invoiceId);
+          }
+        } catch (err: any) {
+          logger.error(`[Payment] Failed to mark invoice paid: ${err.message}`);
+        }
+      }
     }
 
     res.json({

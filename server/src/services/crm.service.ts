@@ -5,6 +5,7 @@ import { CustomError } from '../middleware/errorHandler';
 import { eventBus } from './event-bus.service';
 import { getClientStage } from './reliability.service';
 import { trustCore } from '../trust/trust-core';
+import { emailService } from './email.service';
 
 // ─── Enroll Business ─────────────────────────────────────────────────────────
 
@@ -137,6 +138,10 @@ export async function addClient(
 
   if (client.passportId) {
     await trustCore.emit('client.created', { passportId: client.passportId, clientId: client.id });
+  }
+
+  if (client.email) {
+    try { await emailService.sendWelcome({ email: client.email, name: client.name }); } catch {}
   }
 
   return client;

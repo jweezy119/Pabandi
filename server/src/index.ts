@@ -614,6 +614,14 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
   //     });
   //   });
   // }, 5000);
+
+  // Booking reminder cron
+  try {
+    const { startReminderCron } = require('./services/reminderCron.service');
+    startReminderCron();
+  } catch (err) {
+    logger.warn('Reminder cron skipped: ' + (err as Error).message);
+  }
 });
 
 // Graceful shutdown
