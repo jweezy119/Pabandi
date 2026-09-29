@@ -56,16 +56,42 @@ router.get('/:handle/request', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/migrate', async (req: Request, res: Response) => {
+router.get('/me', authenticate, async (req: Request, res: Response) => {
   try {
-    const stmts = [
-      `CREATE TABLE IF NOT EXISTS "TrustPassport" ("id" TEXT NOT NULL PRIMARY KEY, "handle" TEXT NOT NULL, "agentId" TEXT, "providerRef" TEXT, "category" TEXT NOT NULL DEFAULT 'FREELANCER', "displayName" TEXT NOT NULL, "bio" TEXT, "walletAddress" TEXT, "visibility" TEXT NOT NULL DEFAULT 'PUBLIC', "claimsCount" INTEGER NOT NULL DEFAULT 0, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
-      `CREATE UNIQUE INDEX IF NOT EXISTS "TrustPassport_handle_key" ON "TrustPassport"("handle")`,
-      `CREATE INDEX IF NOT EXISTS "TrustPassport_agentId_idx" ON "TrustPassport"("agentId")`,
-      `CREATE INDEX IF NOT EXISTS "TrustPassport_providerRef_idx" ON "TrustPassport"("providerRef")`,
-    ];
-    for (const s of stmts) await prisma.$executeRawUnsafe(s);
-    res.json({ success: true, message: 'TrustPassport table migrated' });
+    const userId = (req as any).user?.id;
+    const passport = await prisma.trustPassport.findFirst({ where: { userId } });
+    if (!passport) return res.json({ success: true, data: null });
+    res.json({ success: true, data: passport });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+router.get('/user/:userId', authenticate, async (req: Request, res: Response) => {
+  try {
+    const targetUserId = req.params.userId;
+    const passport = await prisma.trustPassport.findFirst({ where: { userId: targetUserId } });
+    if (!passport) return res.status(404).json({ success: false, error: 'Passport not found' });
+    if (passport.visibility === 'PRIVATE') {
+      return res.status(403).json({ success: false, error: 'Passport is private' });
+    }
+    res.json({ success: true, data: passport });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+router.put('/privacy', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const { visibility, privacySettings } = req.body ?? {};
+    const passport = await prisma.trustPassport.findFirst({ where: { userId } });
+    if (!passport) return res.status(404).json({ success: false, error: 'Passport not found' });
+    const updated = await prisma.trustPassport.update({
+      where: { id: passport.id },
+      data: { visibility, privacySettings },
+    });
+    res.json({ success: true, data: updated });
   } catch (e: any) {
     res.status(500).json({ success: false, error: e.message });
   }

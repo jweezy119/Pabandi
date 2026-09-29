@@ -4006,7 +4006,8 @@ model TrustPassport {
   displayName           String
   bio                   String?
   walletAddress         String?
-  visibility            String     @default("PUBLIC") // PUBLIC | PRIVATE
+  visibility            String     @default("PUBLIC") // PUBLIC | PRIVATE | MODULE_ONLY
+  privacySettings       Json? // { shareTrustScores: boolean, shareProfile: boolean, shareHistory: boolean, allowedModules: string[] }
   claimsCount           Int        @default(0) // times requested/verified
   riskScore             Int?
   riskBand              String?
