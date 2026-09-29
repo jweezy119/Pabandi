@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 
 const navItems = [
-  { path: '/ledger', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/ledger/invoices', label: 'Invoices', icon: 'receipt' },
-  { path: '/ledger/expenses', label: 'Expenses', icon: 'money_off' },
-  { path: '/ledger/accounts', label: 'Accounts', icon: 'account_balance' },
-  { path: '/ledger/reports', label: 'Reports', icon: 'bar_chart' },
+  { path: '/capital', label: 'Dashboard', icon: 'dashboard', end: true },
+  { path: '/capital/invoices', label: 'Invoices', icon: 'receipt' },
+  { path: '/capital/expenses', label: 'Expenses', icon: 'money_off' },
+  { path: '/capital/accounts', label: 'Accounts', icon: 'account_balance' },
+  { path: '/capital/reports', label: 'Reports', icon: 'bar_chart' },
 ];
 
 export default function LedgerReportsPage() {
@@ -29,7 +29,7 @@ export default function LedgerReportsPage() {
   ];
 
   return (
-    <DashboardLayout osName="LedgerOS" osIcon="L" osColor="sky-wash" navItems={navItems}>
+    <DashboardLayout osName="CapitalOS" osIcon="L" osColor="sky-wash" navItems={navItems}>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Financial Reports</h1>
         <div className="flex gap-2 flex-wrap">

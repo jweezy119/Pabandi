@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const MotionLink = motion(Link);
+
 export interface NavItem {
   path: string;
   label: string;
@@ -73,7 +75,7 @@ const OS_DESCRIPTIONS: Record<string, string> = {
   'PropertyOS': 'Property management platform',
   'BookingOS': 'Booking & discovery platform',
   'Contact OS': 'CRM & sales pipeline',
-  'LedgerOS': 'Finance & accounting',
+  'CapitalOS': 'Finance & accounting',
 };
 
 const colorKeys: Record<string, string> = {
@@ -231,7 +233,7 @@ export default function DashboardLayout({
               .map((item, index) => {
                 const active = isActive(item);
                 return (
-                  <motion.link
+                  <MotionLink
                     key={item.path}
                     to={item.path}
                     onClick={() => setSidebarOpen(false)}
@@ -271,7 +273,7 @@ export default function DashboardLayout({
                       {item.icon}
                     </span>
                     {item.label}
-                  </motion.link>
+                  </MotionLink>
                 );
               })}
           </motion.div>
@@ -337,7 +339,7 @@ export default function DashboardLayout({
                           {group.items.map((item, index) => {
                             const active = isActive(item);
                             return (
-                              <motion.link
+                              <MotionLink
                                 key={item.path}
                                 to={item.path}
                                 onClick={() => setSidebarOpen(false)}
@@ -377,7 +379,7 @@ export default function DashboardLayout({
                                   {item.icon}
                                 </span>
                                 {item.label}
-                              </motion.link>
+                              </MotionLink>
                             );
                           })}
                         </motion.div>

@@ -1,5 +1,5 @@
 export interface ModuleDefinition {
-  id: string;                    // "contact", "booking", "freight", "property", "ledger"
+  id: string;                    // "contact", "booking", "freight", "property", "capital"
   name: string;                  // "ContactOS"
   description: string;
   icon: string;                  // icon name
@@ -74,12 +74,12 @@ export const MODULES: ModuleDefinition[] = [
     subFeatures: []
   },
   {
-    id: 'ledger',
-    name: 'LedgerOS',
+    id: 'capital',
+    name: 'CapitalOS',
     description: 'Finance & accounting',
     icon: 'account_balance',
     accentColor: 'dusty-rose',
-    route: '/ledger',
+    route: '/capital',
     isDefault: false,
     verticals: ['all'],
     subFeatures: []

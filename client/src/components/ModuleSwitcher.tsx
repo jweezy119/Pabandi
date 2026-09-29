@@ -7,7 +7,7 @@ const modules = [
   { id: 'booking', label: 'BookingOS', path: '/booking', icon: 'book_online', color: 'var(--sage)' },
   { id: 'property', label: 'PropertyOS', path: '/property', icon: 'real_estate_agent', color: 'var(--sky-wash)' },
   { id: 'freight', label: 'FreightOS', path: '/freight', icon: 'local_shipping', color: 'var(--muted-ochre)' },
-  { id: 'ledger', label: 'LedgerOS', path: '/ledger', icon: 'account_balance', color: 'var(--dusty-rose)' },
+  { id: 'capital', label: 'CapitalOS', path: '/capital', icon: 'account_balance', color: 'var(--dusty-rose)' },
 ];
 
 export function ModuleSwitcher() {

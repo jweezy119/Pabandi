@@ -44,14 +44,14 @@ const MODULES = [
     path: '/contact',
   },
   {
-    id: 'ledger',
-    name: 'LedgerOS',
+    id: 'capital',
+    name: 'CapitalOS',
     tagline: 'Track with clarity',
     description: 'Send invoices, record expenses, see profit in real time.',
     icon: 'coin',
     colorClass: 'module-icon-ledger',
     tint: '#B8C9D4',
-    path: '/ledger',
+    path: '/capital',
   },
 ];
 
@@ -352,7 +352,7 @@ export default function LandingPage() {
             <Link to="/booking">Booking</Link>
             <Link to="/property">Property</Link>
             <Link to="/freight">Freight</Link>
-            <Link to="/ledger">Ledger</Link>
+            <Link to="/capital">Capital</Link>
           </nav>
           <Link to="/signup?module=contact" className="cta-nav">Get Started</Link>
         </div>
@@ -529,7 +529,7 @@ export default function LandingPage() {
             <span className="logo-mark">◈</span>
             <span>PabandiOS</span>
           </div>
-          <p className="footer-tagline">BookingOS · FreightOS · PropertyOS · Contact OS · LedgerOS — Powered by TrustOS</p>
+          <p className="footer-tagline">BookingOS · FreightOS · PropertyOS · Contact OS · CapitalOS — Powered by TrustOS</p>
           <nav className="footer-nav" aria-label="Footer">
             <Link to="/about">About</Link>
             <Link to="/contact">Contact</Link>

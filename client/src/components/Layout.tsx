@@ -248,10 +248,10 @@ export default function Layout() {
   const handleLogout = () => { logout(); navigate('/'); };
 
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password' || location.pathname.startsWith('/reset-password');
-  // /booking, /freight, /property, /contact, /ledger bring their own chrome
+  // /booking, /freight, /property, /contact, /capital bring their own chrome
   // (DashboardLayout sidebar). Rendering the main header/footer/nav on top
   // stacks two top bars and two bottom bars — so stand down here.
-  const isStandalone = /^\/(booking|freight|property|contact|ledger|sitara)(\/|$)/.test(location.pathname);
+  const isStandalone = /^\/(booking|freight|property|contact|capital|sitara)(\/|$)/.test(location.pathname);
   const [searchOpen, setSearchOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : '';
@@ -320,12 +320,12 @@ export default function Layout() {
 
           <nav className="hidden md:flex items-center gap-2 font-headline text-sm">
             <DesktopNavLink to="/" current={location.pathname === '/'}>Home</DesktopNavLink>
-            <Dropdown label="PabandiOS Suite" current={['/booking', '/freight', '/property', '/contact', '/ledger'].some((p) => location.pathname.startsWith(p))}>
+            <Dropdown label="PabandiOS Suite" current={['/booking', '/freight', '/property', '/contact', '/capital'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/contact">Contact OS</DropdownItem>
               <DropdownItem to="/booking">BookingOS</DropdownItem>
               <DropdownItem to="/property">PropertyOS</DropdownItem>
               <DropdownItem to="/freight">FreightOS</DropdownItem>
-              <DropdownItem to="/ledger">LedgerOS</DropdownItem>
+              <DropdownItem to="/capital">CapitalOS</DropdownItem>
             </Dropdown>
             <Dropdown label="Marketplace" current={['/live-selling', '/hospitality', '/freelance', '/gigs', '/agent-dashboard', '/profiles'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/live-selling">Live Selling</DropdownItem>
@@ -411,7 +411,7 @@ export default function Layout() {
             <MobileTab to="/booking" icon="event" label="Booking" current={location.pathname.startsWith('/booking')} />
             <MobileTab to="/property" icon="apartment" label="Property" current={location.pathname.startsWith('/property')} />
             <MobileTab to="/freight" icon="local_shipping" label="Freight" current={location.pathname.startsWith('/freight')} />
-            <MobileTab to="/ledger" icon="account_balance" label="Ledger" current={location.pathname.startsWith('/ledger')} />
+            <MobileTab to="/capital" icon="account_balance" label="Capital" current={location.pathname.startsWith('/capital')} />
             <button
               onClick={() => setMoreOpen(true)}
               className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-2xl transition-all touch-target ${moreOpen ? 'text-primary bg-primary-container/30 scale-[1.05]' : 'text-on-surface-variant hover:text-primary active:scale-95'}`}
@@ -434,7 +434,7 @@ export default function Layout() {
                 <Link to="/booking" className="block text-on-surface-variant hover:text-primary py-1">BookingOS</Link>
                 <Link to="/property" className="block text-on-surface-variant hover:text-primary py-1">PropertyOS</Link>
                 <Link to="/freight" className="block text-on-surface-variant hover:text-primary py-1">FreightOS</Link>
-                <Link to="/ledger" className="block text-on-surface-variant hover:text-primary py-1">LedgerOS</Link>
+                <Link to="/capital" className="block text-on-surface-variant hover:text-primary py-1">CapitalOS</Link>
               </div>
               <div>
                 <p className="font-headline font-semibold text-sm text-on-surface mb-3">Marketplace</p>

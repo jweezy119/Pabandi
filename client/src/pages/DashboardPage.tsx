@@ -9,7 +9,7 @@ const modules = [
   { id: 'contact', title: 'ContactOS', desc: 'CRM & Pipeline', path: '/contact', icon: 'contacts', color: 'var(--clay)' },
   { id: 'booking', title: 'BookingOS', desc: 'Schedules & Services', path: '/property', icon: 'book_online', color: 'var(--sage)' },
   { id: 'freight', title: 'FreightOS', desc: 'Logistics & Dispatch', path: '/freight', icon: 'local_shipping', color: 'var(--muted-ochre)' },
-  { id: 'ledger', title: 'LedgerOS', desc: 'Finance & Invoices', path: '/ledger', icon: 'account_balance', color: 'var(--dusty-rose)' },
+  { id: 'capital', title: 'CapitalOS', desc: 'Finance & Invoices', path: '/capital', icon: 'account_balance', color: 'var(--dusty-rose)' },
 ];
 
 export default function DashboardPage() {

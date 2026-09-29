@@ -268,7 +268,7 @@ const routeMap: [string, string][] = [
 [`/api/${v}/promo`, './routes/promo.routes'],
   [`/api/${v}/rewards`, './routes/partnerRewards.routes'],
   [`/api/${v}/freight`, './routes/freight.routes'],
-[`/api/${v}/ledger`, './routes.ledger.routes'],
+  [`/api/${v}/capital`, './routes.ledger.routes'],
   [`/api/${v}/maps`, './routes/maps.routes'],
   [`/api/${v}/promotions`, './routes/promotions.routes'],
   [`/api/${v}/nightlife`, './routes/nightlife.routes'],

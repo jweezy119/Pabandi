@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 
 const navItems = [
-  { path: '/ledger', label: 'Overview', icon: 'dashboard', end: true },
-  { path: '/ledger/invoices', label: 'Invoices', icon: 'receipt' },
-  { path: '/ledger/expenses', label: 'Expenses', icon: 'money_off' },
-  { path: '/ledger/accounts', label: 'Accounts', icon: 'account_balance' },
-  { path: '/ledger/reports', label: 'Reports', icon: 'bar_chart' },
+  { path: '/capital', label: 'Overview', icon: 'dashboard', end: true },
+  { path: '/capital/invoices', label: 'Invoices', icon: 'receipt' },
+  { path: '/capital/expenses', label: 'Expenses', icon: 'money_off' },
+  { path: '/capital/accounts', label: 'Accounts', icon: 'account_balance' },
+  { path: '/capital/reports', label: 'Reports', icon: 'bar_chart' },
 ];
 
 export default function LedgerInvoicesPage() {
@@ -17,7 +17,7 @@ export default function LedgerInvoicesPage() {
   useEffect(() => {
     async function fetchInvoices() {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/ledger/invoices`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/capital/invoices`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
         if (res.ok) {
@@ -51,7 +51,7 @@ export default function LedgerInvoicesPage() {
   const filtered = invoices.filter((inv) => filter === 'all' || inv.status?.toLowerCase() === filter);
 
   return (
-    <DashboardLayout osName="LedgerOS" osIcon="L" osColor="sky-wash" navItems={navItems}>
+    <DashboardLayout osName="CapitalOS" osIcon="L" osColor="sky-wash" navItems={navItems}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Invoices</h1>

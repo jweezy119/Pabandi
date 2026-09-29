@@ -39,7 +39,7 @@ export function useKeyboardShortcuts() {
         navigate('/property');
         sequence = '';
       } else if (sequence === 'gl') {
-        navigate('/ledger');
+        navigate('/capital');
         sequence = '';
       }
     };

@@ -224,8 +224,8 @@ import { NotificationsPage } from './pages/crm/settings/NotificationsPage';
 import { ApiKeysPage } from './pages/crm/settings/ApiKeysPage';
 import { WebhooksPage } from './pages/crm/settings/WebhooksPage';
 import SetupWizardPage from './pages/contact/SetupWizardPage';
-// LedgerOS
-import LedgerOSPage from './pages/ledger/LedgerOSPage';
+// CapitalOS
+import CapitalOSPage from './pages/ledger/LedgerOSPage';
 import { PayInvoicePage } from './pages/PayInvoicePage';
 import LedgerInvoicesPage from './pages/ledger/LedgerInvoicesPage';
 import InvoicesPage from './pages/crm/InvoicesPage';
@@ -339,12 +339,12 @@ function AnimatedAppRoutes() {
           <Route path="contact/settings/webhooks" element={<WebhooksPage />} />
           <Route path="contact/setup" element={<SetupWizardPage />} />
 
-          {/* LedgerOS - Finance & Accounting */}
-          <Route path="ledger" element={<LedgerOSPage />} />
-          <Route path="ledger/invoices" element={<LedgerInvoicesPage />} />
-          <Route path="ledger/expenses" element={<LedgerExpensesPage />} />
-          <Route path="ledger/accounts" element={<LedgerAccountsPage />} />
-          <Route path="ledger/reports" element={<LedgerReportsPage />} />
+          {/* CapitalOS - Finance & Accounting */}
+          <Route path="capital" element={<CapitalOSPage />} />
+          <Route path="capital/invoices" element={<LedgerInvoicesPage />} />
+          <Route path="capital/expenses" element={<LedgerExpensesPage />} />
+          <Route path="capital/accounts" element={<LedgerAccountsPage />} />
+          <Route path="capital/reports" element={<LedgerReportsPage />} />
         </Route>
 
         {/* Redirects from old routes */}
@@ -354,6 +354,7 @@ function AnimatedAppRoutes() {
           <Route path="sitara/*" element={<Navigate to="/booking" replace />} />
           <Route path="pipeline/*" element={<Navigate to="/contact" replace />} />
           <Route path="discovery" element={<Navigate to="/booking" replace />} />
+          <Route path="/ledger/*" element={<Navigate to="/capital" replace />} />
 
           {/* Other standalone pages (Builder, Buyer, COD, Protocol) */}
           <Route path="builder" element={<BuilderDashboard />} />

@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 
 const navItems = [
-  { path: '/ledger', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/ledger/invoices', label: 'Invoices', icon: 'receipt' },
-  { path: '/ledger/expenses', label: 'Expenses', icon: 'money_off' },
-  { path: '/ledger/accounts', label: 'Accounts', icon: 'account_balance' },
-  { path: '/ledger/reports', label: 'Reports', icon: 'bar_chart' },
+  { path: '/capital', label: 'Dashboard', icon: 'dashboard', end: true },
+  { path: '/capital/invoices', label: 'Invoices', icon: 'receipt' },
+  { path: '/capital/expenses', label: 'Expenses', icon: 'money_off' },
+  { path: '/capital/accounts', label: 'Accounts', icon: 'account_balance' },
+  { path: '/capital/reports', label: 'Reports', icon: 'bar_chart' },
 ];
 
 export default function LedgerExpensesPage() {
@@ -39,12 +39,12 @@ export default function LedgerExpensesPage() {
   const filtered = expenses.filter((e) => filter === 'all' || e.category.toLowerCase() === filter);
 
   return (
-    <DashboardLayout osName="LedgerOS" osIcon="L" osColor="sky-wash" navItems={navItems}>
+    <DashboardLayout osName="CapitalOS" osIcon="L" osColor="sky-wash" navItems={navItems}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Expenses</h1>
           <Link
-            to="/ledger/expenses/new"
+            to="/capital/expenses/new"
             className="px-5 py-2.5 rounded-full font-medium transition hover:-translate-y-0.5"
             style={{ background: 'var(--clay)', color: 'white', boxShadow: 'var(--shadow-soft)' }}
           >

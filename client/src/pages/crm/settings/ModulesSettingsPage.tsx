@@ -61,12 +61,12 @@ const MODULES = [
     subFeatures: []
   },
   {
-    id: 'ledger',
-    name: 'LedgerOS',
+    id: 'capital',
+    name: 'CapitalOS',
     description: 'Finance & accounting',
     icon: 'account_balance',
     accentColor: 'dusty-rose',
-    route: '/ledger',
+    route: '/capital',
     isDefault: false,
     verticals: ['all'],
     subFeatures: []
