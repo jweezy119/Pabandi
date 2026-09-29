@@ -19,6 +19,7 @@ export default function PropertyOSPage() {
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<any[]>([]);
   const [loadingClients, setLoadingClients] = useState(true);
+  const [clientSearch, setClientSearch] = useState('');
 
   useEffect(() => { loadData(); }, [period]);
 
@@ -36,6 +37,11 @@ export default function PropertyOSPage() {
     };
     fetchClients();
   }, []);
+
+  const filteredClients = clients.filter(c => 
+    c.name?.toLowerCase().includes(clientSearch.toLowerCase()) ||
+    c.email?.toLowerCase().includes(clientSearch.toLowerCase())
+  );
 
   const loadData = async () => {
     try {
@@ -124,15 +130,25 @@ export default function PropertyOSPage() {
             <h2 className="text-lg font-bold text-[var(--warm-ink)]">Tenants & Clients</h2>
             <Link to="/contact/clients" className="text-sm font-medium" style={{ color: 'var(--dusty-rose)' }}>View all →</Link>
           </div>
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Search clients..."
+              value={clientSearch}
+              onChange={(e) => setClientSearch(e.target.value)}
+              className="w-full px-4 py-2 rounded-full text-sm focus:outline-none"
+              style={{ background: 'var(--warm-sand)', border: '1px solid rgba(191,179,163,0.3)', color: 'var(--warm-ink)' }}
+            />
+          </div>
           {loadingClients ? (
             <div className="p-8 text-center text-[var(--soft-stone)]">Loading clients...</div>
-          ) : clients.length === 0 ? (
+          ) : filteredClients.length === 0 ? (
             <div className="p-8 text-center text-[var(--soft-stone)] rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)]">
-              <p>No clients yet. Add your first client in ContactOS.</p>
+              <p>{clientSearch ? 'No matching clients.' : 'No clients yet. Add your first client in ContactOS.'}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {clients.slice(0, 6).map((client: any) => (
+              {filteredClients.slice(0, 6).map((client: any) => (
                 <Link key={client.id} to={`/contact/clients/${client.id}`} className="block">
                   <div className="p-4 rounded-xl bg-white border border-[rgba(191,179,163,0.2)] hover:border-[var(--dusty-rose)]/40 transition">
                     <div className="flex items-center gap-3">

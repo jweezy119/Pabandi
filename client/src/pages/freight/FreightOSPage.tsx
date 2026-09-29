@@ -52,6 +52,7 @@ export default function FreightOSPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [loadingClients, setLoadingClients] = useState(true);
   const [avgTrust, setAvgTrust] = useState<number | null>(null);
+  const [clientSearch, setClientSearch] = useState('');
 
   useEffect(() => { loadLoads(); }, []);
 
@@ -74,6 +75,11 @@ export default function FreightOSPage() {
     };
     fetchClients();
   }, []);
+
+  const filteredClients = clients.filter(c => 
+    c.name?.toLowerCase().includes(clientSearch.toLowerCase()) ||
+    c.email?.toLowerCase().includes(clientSearch.toLowerCase())
+  );
 
   const loadLoads = async () => {
     try {
@@ -159,17 +165,27 @@ export default function FreightOSPage() {
             <h2 className="text-lg font-bold" style={{ color: 'var(--warm-ink)' }}>Your Clients</h2>
             <Link to="/contact/clients" className="text-sm font-medium" style={{ color: 'var(--clay)' }}>View all →</Link>
           </div>
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Search clients..."
+              value={clientSearch}
+              onChange={(e) => setClientSearch(e.target.value)}
+              className="w-full px-4 py-2 rounded-full text-sm focus:outline-none"
+              style={{ background: 'var(--warm-sand)', border: '1px solid rgba(191,179,163,0.3)', color: 'var(--warm-ink)' }}
+            />
+          </div>
           {loadingClients ? (
             <ClayCard className="p-8 text-center" hover={false}>
               <p style={{ color: 'var(--soft-stone)' }}>Loading clients...</p>
             </ClayCard>
-          ) : clients.length === 0 ? (
+          ) : filteredClients.length === 0 ? (
             <ClayCard className="p-8 text-center" hover={false}>
-              <p style={{ color: 'var(--soft-stone)' }}>No clients yet. Add your first client in ContactOS.</p>
+              <p style={{ color: 'var(--soft-stone)' }}>{clientSearch ? 'No matching clients.' : 'No clients yet. Add your first client in ContactOS.'}</p>
             </ClayCard>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {clients.slice(0, 6).map((client: any) => (
+              {filteredClients.slice(0, 6).map((client: any) => (
                 <Link key={client.id} to={`/contact/clients/${client.id}`} className="block">
                   <ClayCard className="p-4" hover={true}>
                     <div className="flex items-center gap-3">

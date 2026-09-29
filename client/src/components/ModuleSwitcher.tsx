@@ -1,21 +1,25 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuthStore } from '../store/authStore';
 
-const modules = [
-  { id: 'contact', label: 'ContactOS', path: '/contact', icon: 'contacts', color: 'var(--clay)' },
-  { id: 'booking', label: 'BookingOS', path: '/booking', icon: 'book_online', color: 'var(--sage)' },
-  { id: 'property', label: 'PropertyOS', path: '/property', icon: 'real_estate_agent', color: 'var(--sky-wash)' },
-  { id: 'freight', label: 'FreightOS', path: '/freight', icon: 'local_shipping', color: 'var(--muted-ochre)' },
-  { id: 'capital', label: 'CapitalOS', path: '/capital', icon: 'account_balance', color: 'var(--dusty-rose)' },
+const ALL_MODULES = [
+  { id: 'contact', label: 'ContactOS', path: '/contact', icon: 'contacts', color: 'var(--clay)', modes: ['BUSINESS', 'CUSTOMER'] },
+  { id: 'booking', label: 'BookingOS', path: '/booking', icon: 'book_online', color: 'var(--sage)', modes: ['BUSINESS', 'CUSTOMER'] },
+  { id: 'property', label: 'PropertyOS', path: '/property', icon: 'real_estate_agent', color: 'var(--sky-wash)', modes: ['BUSINESS', 'CUSTOMER'] },
+  { id: 'freight', label: 'FreightOS', path: '/freight', icon: 'local_shipping', color: 'var(--muted-ochre)', modes: ['BUSINESS', 'CUSTOMER'] },
+  { id: 'capital', label: 'CapitalOS', path: '/capital', icon: 'account_balance', color: 'var(--dusty-rose)', modes: ['BUSINESS', 'CUSTOMER'] },
 ];
 
 export function ModuleSwitcher() {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuthStore();
 
-  const currentModule = modules.find(m => location.pathname.startsWith(m.path)) || { label: 'Dashboard', icon: 'dashboard', color: 'var(--warm-ink)' };
+  const activeMode = user?.activeMode || 'BUSINESS';
+  const modules = ALL_MODULES.filter(m => m.modes.includes(activeMode));
+  const currentModule = modules.find(m => location.pathname.startsWith(m.path)) || modules[0];
 
   return (
     <div className="relative">
