@@ -37,21 +37,13 @@ import {
   markInvoicePaid,
 } from '../services/crm.service';
 
-// Helper to extract businessId from request (query or body)
+// Helper to extract businessId from request (query, body, or JWT)
 function getBusinessId(req: AuthRequest): string {
-  const businessId = req.body?.businessId || req.query?.businessId;
+  const businessId = req.body?.businessId || req.query?.businessId || req.user?.businessId;
   if (!businessId) {
     throw new CustomError('businessId is required', 400);
   }
   return businessId as string;
-}
-
-async function getServiceBusinessId(businessId: string): Promise<string> {
-  const crmBusiness = await prisma.crmBusiness.findUnique({ where: { businessId } });
-  if (!crmBusiness) {
-    throw new CustomError('CRM business not found for this business', 404);
-  }
-  return crmBusiness.id;
 }
 
 // ─── Enroll Business ─────────────────────────────────────────────────────────

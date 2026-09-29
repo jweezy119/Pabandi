@@ -3,10 +3,12 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { Button, Modal, EmptyState, ClaySkeletonCard } from '../../components/primitives';
 import ClientListTable from '../crm/components/ClientListTable';
 import ClientFormModal from '../crm/components/ClientFormModal';
+import { useAuthStore } from '../../store/authStore';
 
 
 
 export default function ContactClientsPage() {
+  const { user } = useAuthStore();
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFormModal, setShowFormModal] = useState(false);
@@ -58,15 +60,28 @@ export default function ContactClientsPage() {
       ? `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients/${form.id}`
       : `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`;
     
+    const businessId = (user as any)?.business?.id || user?.businessId;
+    const payload = {
+      ...form,
+      ...(businessId ? { businessId } : {}),
+    };
+    
     try {
-      await fetch(url, {
+      const res = await fetch(url, {
         method: isEdit ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
+      
+      if (!res.ok) {
+        const err = await res.json();
+        console.error('Failed to save client:', err);
+        return;
+      }
+      
       setShowFormModal(false);
       setSelectedClient(null);
       fetchClients();

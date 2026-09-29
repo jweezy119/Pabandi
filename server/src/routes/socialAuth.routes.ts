@@ -31,7 +31,7 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
         const email = profile.emails?.[0]?.value;
         if (!email) return done(null, false, { message: 'No email from GitHub' });
 
-        let user = await prisma.user.findUnique({ where: { email } });
+        let user = await prisma.user.findUnique({ where: { email }, include: { business: true } });
         if (!user) {
           user = await prisma.user.create({
             data: {
@@ -47,11 +47,13 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
               verificationTier: 'BASIC',
               gracePeriodUntil: new Date(Date.now() + 48 * 60 * 60 * 1000),
             } as any,
+            include: { business: true },
           });
         } else if (!user.githubId) {
           user = await prisma.user.update({
             where: { id: user.id },
             data: { githubId: profile.id },
+            include: { business: true },
           });
         }
         return done(null, user);
@@ -80,7 +82,7 @@ router.get('/github/callback',
   (req: any, res: Response) => {
     const user = req.user as any;
     const token = jwt.sign(
-      { userId: user.id, email: user.email, activeMode: user.activeMode || 'CUSTOMER' },
+      { id: user.id, email: user.email, businessId: user.businessId || user.business?.id, activeMode: user.activeMode || 'CUSTOMER' },
       JWT_SECRET!,
       { expiresIn: '7d' }
     );
@@ -105,7 +107,7 @@ if (process.env.TWITTER_API_KEY && process.env.TWITTER_API_SECRET) {
         const email = profile.emails?.[0]?.value;
         if (!email) return done(null, false, { message: 'No email from Twitter' });
 
-        let user = await prisma.user.findUnique({ where: { email } });
+        let user = await prisma.user.findUnique({ where: { email }, include: { business: true } });
         if (!user) {
           user = await prisma.user.create({
             data: {
@@ -121,11 +123,13 @@ if (process.env.TWITTER_API_KEY && process.env.TWITTER_API_SECRET) {
               verificationTier: 'BASIC',
               gracePeriodUntil: new Date(Date.now() + 48 * 60 * 60 * 1000),
             } as any,
+            include: { business: true },
           });
         } else if (!user.twitterId) {
           user = await prisma.user.update({
             where: { id: user.id },
             data: { twitterId: profile.id },
+            include: { business: true },
           });
         }
         return done(null, user);
@@ -143,7 +147,7 @@ router.get('/twitter/callback',
   (req: any, res: Response) => {
     const user = req.user as any;
     const token = jwt.sign(
-      { userId: user.id, email: user.email, activeMode: user.activeMode || 'CUSTOMER' },
+      { id: user.id, email: user.email, businessId: user.businessId || user.business?.id, activeMode: user.activeMode || 'CUSTOMER' },
       JWT_SECRET!,
       { expiresIn: '7d' }
     );

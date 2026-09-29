@@ -146,7 +146,7 @@ router.get('/github/callback', async (req: Request, res: Response) => {
 
     // Find or create user by email — link GitHub ID so all sign-in methods share one account
     logger.info('Looking up user in DB', { email: primaryEmail });
-    let user = await prisma.user.findUnique({ where: { email: primaryEmail } });
+    let user = await prisma.user.findUnique({ where: { email: primaryEmail }, include: { business: true } });
     logger.info('User lookup result', { found: !!user, userId: user?.id });
 
     if (!user) {
@@ -161,13 +161,14 @@ router.get('/github/callback', async (req: Request, res: Response) => {
           lastName: nameParts.slice(1).join(' ') || '',
           githubId: profile.id.toString(),
           isEmailVerified: emailVerified,
-          passwordHash: '', // OAuth users don't need password
+          passwordHash: '',
           role: 'CUSTOMER',
           reliabilityScore: 750,
           trustScore: 50.0,
           verificationTier: 'BASIC',
           gracePeriodUntil: new Date(Date.now() + 48 * 60 * 60 * 1000),
         },
+        include: { business: true },
       });
       logger.info('User created', { userId: user.id });
     } else if (!user.githubId) {
@@ -175,13 +176,14 @@ router.get('/github/callback', async (req: Request, res: Response) => {
       user = await prisma.user.update({
         where: { id: user.id },
         data: { githubId: profile.id.toString() },
+        include: { business: true },
       });
       logger.info('Linked GitHub ID to existing user', { userId: user.id, githubId: profile.id.toString() });
     }
 
     // Generate JWT (include names + activeMode so the callback can seed the session)
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, firstName: (user as any).firstName || '', lastName: (user as any).lastName || '', activeMode: (user as any).activeMode || 'CUSTOMER' },
+      { id: user.id, email: user.email, role: user.role, firstName: (user as any).firstName || '', lastName: (user as any).lastName || '', businessId: (user as any).businessId || (user as any).business?.id, activeMode: (user as any).activeMode || 'CUSTOMER' },
       JWT_SECRET!,
       { expiresIn: '7d' }
     );

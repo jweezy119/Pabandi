@@ -151,7 +151,7 @@ export const register = async (
 
       // Generate tokens
       const token = jwt.sign(
-        { id: updatedUser.id, email: updatedUser.email, role: updatedUser.role, activeMode: updatedUser.activeMode || 'CUSTOMER' } as JwtPayload,
+        { id: updatedUser.id, email: updatedUser.email, role: updatedUser.role, businessId: (updatedUser as any).businessId || (updatedUser as any).business?.id, activeMode: updatedUser.activeMode || 'CUSTOMER' } as JwtPayload,
         JWT_SECRET as Secret,
         { expiresIn: JWT_EXPIRES_IN as any }
       );
@@ -334,7 +334,7 @@ export const register = async (
 
     // Generate tokens
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, activeMode: user.activeMode || 'CUSTOMER' } as JwtPayload,
+      { id: user.id, email: user.email, role: user.role, businessId: (user as any).businessId || (user as any).business?.id, activeMode: user.activeMode || 'CUSTOMER' } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
@@ -433,7 +433,7 @@ export const login = async (
 
     // Generate tokens
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, activeMode: user.activeMode || 'CUSTOMER' } as JwtPayload,
+      { id: user.id, email: user.email, role: user.role, businessId: (user as any).businessId || (user as any).business?.id, activeMode: user.activeMode || 'CUSTOMER' } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
@@ -676,7 +676,7 @@ export const verifyLoginCode = async (
 
     // Generate tokens
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, activeMode: user.activeMode || 'CUSTOMER' } as JwtPayload,
+      { id: user.id, email: user.email, role: user.role, businessId: (user as any).businessId || (user as any).business?.id, activeMode: user.activeMode || 'CUSTOMER' } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
@@ -1052,9 +1052,9 @@ export const verifyWallet = async (req: Request, res: Response, next: NextFuncti
     });
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { id: user.id, email: user.email, role: user.role, businessId: (user as any).businessId || (user as any).business?.id, activeMode: user.activeMode || 'CUSTOMER' } as JwtPayload,
       JWT_SECRET as Secret,
-      { expiresIn: JWT_EXPIRES_IN as any },
+      { expiresIn: JWT_EXPIRES_IN as any }
     );
 
     const refreshToken = jwt.sign(
@@ -1157,7 +1157,7 @@ export const toggleUserMode = async (req: AuthRequest, res: Response, next: Next
     });
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, activeMode: user.activeMode } as JwtPayload,
+      { id: user.id, email: user.email, role: user.role, businessId: (user as any).businessId || (user as any).business?.id, activeMode: user.activeMode } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
