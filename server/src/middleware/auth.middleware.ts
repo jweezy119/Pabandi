@@ -1,14 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { CustomError } from './errorHandler';
+import { tenantContext } from '../lib/prisma';
 
-// Extend Express globally so passport + our auth middleware agree on the type
 declare global {
   namespace Express {
     interface User {
       id: string;
       email: string;
       role: string;
+      businessId?: string;
     }
   }
 }
@@ -51,10 +52,16 @@ export const authenticate = (
       firstName?: string;
       lastName?: string;
       phone?: string;
+      businessId?: string;
     };
 
     req.user = decoded;
-    next();
+
+    if (decoded.businessId) {
+      tenantContext.run({ businessId: decoded.businessId }, () => next());
+    } else {
+      next();
+    }
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
       next(new CustomError('Invalid token', 401));
