@@ -447,6 +447,10 @@ export const trustPassportService = {
   getPublic: (handle: string) => apiClient.get(`/trust-passport/${handle}`),
   getRequestContext: (handle: string) => apiClient.get(`/trust-passport/${handle}/request`),
   list: (params?: any) => apiClient.get('/trust-passport/directory', { params }),
+  getMyPassport: () => apiClient.get('/trust-passport/me'),
+  getPassportByUserId: (userId: string) => apiClient.get(`/trust-passport/user/${userId}`),
+  updatePrivacy: (data: { visibility?: string; privacySettings?: any }) =>
+    apiClient.put('/trust-passport/privacy', data),
 };
 
 export const treasuryService = {
@@ -986,15 +990,6 @@ export const teamService = {
   updateRole: (memberId: string, role: string) =>
     apiClient.patch(`/team/members/${memberId}/role`, { role }),
   remove: (memberId: string) => apiClient.delete(`/team/members/${memberId}`),
-};
-
-// Trust Passport service
-export const trustPassportService = {
-  getMyPassport: () => apiClient.get('/trust-passport/me'),
-  getPassportByUserId: (userId: string) => apiClient.get(`/trust-passport/user/${userId}`),
-  getPublicPassport: (handle: string) => apiClient.get(`/trust-passport/${handle}`),
-  updatePrivacy: (data: { visibility?: string; privacySettings?: any }) =>
-    apiClient.put('/trust-passport/privacy', data),
 };
 
 // Webhook service

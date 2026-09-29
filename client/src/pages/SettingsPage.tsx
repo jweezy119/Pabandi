@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Surface, Button, Badge, tokens } from '../design-system';
 import { useAuthStore } from '../store/authStore';
+import { trustPassportService } from '../services/api';
 
 interface NotificationPreference {
   id: string;
@@ -19,7 +20,7 @@ interface SecuritySetting {
 
 export const SettingsPage: React.FC = () => {
   const { user } = useAuthStore();
-  const [tab, setTab] = useState<'profile' | 'notifications' | 'security' | 'billing' | 'ai'>('profile');
+  const [tab, setTab] = useState<'profile' | 'notifications' | 'security' | 'billing' | 'ai' | 'privacy'>('profile');
   const [profile, setProfile] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -41,6 +42,16 @@ export const SettingsPage: React.FC = () => {
     { id: '4', label: 'Login Alerts', description: 'Get notified of new logins', status: 'active' },
   ]);
   const [saved, setSaved] = useState(false);
+  const [privacy, setPrivacy] = useState({
+    visibility: 'PUBLIC',
+    privacySettings: {
+      shareTrustScores: true,
+      shareProfile: true,
+      shareHistory: true,
+      allowedModules: ['contact', 'booking', 'freight', 'property', 'capital'],
+    },
+  });
+  const [privacyLoading, setPrivacyLoading] = useState(false);
 
   const saveProfile = () => {
     setSaved(true);
@@ -64,7 +75,7 @@ export const SettingsPage: React.FC = () => {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          {(['profile', 'notifications', 'security', 'billing', 'ai'] as const).map(t => (
+          {(['profile', 'notifications', 'security', 'billing', 'ai', 'privacy'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-4 py-2 rounded-lg text-sm font-semibold capitalize whitespace-nowrap ${tab === t ? 'bg-[var(--clay)]/20 text-[var(--clay)] border border-[var(--clay)]/30' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] border border-[rgba(191,179,163,0.2)]'}`}>
               {t === 'ai' ? '🤖 AI' : t}
@@ -258,6 +269,100 @@ export const SettingsPage: React.FC = () => {
                   <div className="text-lg font-bold text-[var(--dusty-rose)]">8</div>
                   <div className="text-xs" style={{ color: tokens.color.textDim }}>AI Chats</div>
                 </div>
+              </div>
+            </Surface>
+          </div>
+        )}
+
+        {/* Privacy Tab */}
+        {tab === 'privacy' && (
+          <div className="space-y-4">
+            <Surface className="p-4 md:p-6">
+              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">🔐 Trust Passport Privacy</h3>
+              <p className="text-xs text-[var(--soft-stone)] mb-4">Control how your trust profile is shared across Pabandi modules (ContactOS, BookingOS, FreightOS, PropertyOS, CapitalOS).</p>
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-[var(--warm-sand)]">
+                  <div className="font-semibold text-[var(--warm-ink)] text-sm mb-1">Profile Visibility</div>
+                  <div className="text-xs text-[var(--soft-stone)] mb-2">Choose who can see your trust passport</div>
+                  <select
+                    value={privacy.visibility}
+                    onChange={e => setPrivacy({ ...privacy, visibility: e.target.value })}
+                    className="w-full bg-white border border-[rgba(191,179,163,0.2)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none"
+                  >
+                    <option value="PUBLIC">Public — all modules can see</option>
+                    <option value="MODULE_ONLY">Module Only — only Pabandi modules</option>
+                    <option value="PRIVATE">Private — only you</option>
+                  </select>
+                </div>
+                <div className="p-4 rounded-xl bg-[var(--warm-sand)]">
+                  <div className="font-semibold text-[var(--warm-ink)] text-sm mb-1">Share Trust Scores</div>
+                  <div className="text-xs text-[var(--soft-stone)] mb-2">Allow other modules to see your reliability and trust scores</div>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`w-12 h-6 rounded-full cursor-pointer transition-all ${privacy.privacySettings.shareTrustScores ? 'bg-[var(--sage)]' : 'bg-[var(--warm-sand)]'}`}
+                      onClick={() => setPrivacy({
+                        ...privacy,
+                        privacySettings: { ...privacy.privacySettings, shareTrustScores: !privacy.privacySettings.shareTrustScores }
+                      })}
+                    >
+                      <div className={`w-5 h-5 rounded-full bg-white shadow transition-all ${privacy.privacySettings.shareTrustScores ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                    </div>
+                    <span className="text-xs text-[var(--warm-ink)]">{privacy.privacySettings.shareTrustScores ? 'Enabled' : 'Disabled'}</span>
+                  </div>
+                </div>
+                <div className="p-4 rounded-xl bg-[var(--warm-sand)]">
+                  <div className="font-semibold text-[var(--warm-ink)] text-sm mb-1">Share Profile Info</div>
+                  <div className="text-xs text-[var(--soft-stone)] mb-2">Allow other modules to see your name, bio, and contact info</div>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`w-12 h-6 rounded-full cursor-pointer transition-all ${privacy.privacySettings.shareProfile ? 'bg-[var(--sage)]' : 'bg-[var(--warm-sand)]'}`}
+                      onClick={() => setPrivacy({
+                        ...privacy,
+                        privacySettings: { ...privacy.privacySettings, shareProfile: !privacy.privacySettings.shareProfile }
+                      })}
+                    >
+                      <div className={`w-5 h-5 rounded-full bg-white shadow transition-all ${privacy.privacySettings.shareProfile ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                    </div>
+                    <span className="text-xs text-[var(--warm-ink)]">{privacy.privacySettings.shareProfile ? 'Enabled' : 'Disabled'}</span>
+                  </div>
+                </div>
+                <div className="p-4 rounded-xl bg-[var(--warm-sand)]">
+                  <div className="font-semibold text-[var(--warm-ink)] text-sm mb-1">Share Deal History</div>
+                  <div className="text-xs text-[var(--soft-stone)] mb-2">Allow other modules to see your booking, deal, and transaction history</div>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`w-12 h-6 rounded-full cursor-pointer transition-all ${privacy.privacySettings.shareHistory ? 'bg-[var(--sage)]' : 'bg-[var(--warm-sand)]'}`}
+                      onClick={() => setPrivacy({
+                        ...privacy,
+                        privacySettings: { ...privacy.privacySettings, shareHistory: !privacy.privacySettings.shareHistory }
+                      })}
+                    >
+                      <div className={`w-5 h-5 rounded-full bg-white shadow transition-all ${privacy.privacySettings.shareHistory ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                    </div>
+                    <span className="text-xs text-[var(--warm-ink)]">{privacy.privacySettings.shareHistory ? 'Enabled' : 'Disabled'}</span>
+                  </div>
+                </div>
+                <Button
+                  onClick={async () => {
+                    setPrivacyLoading(true);
+                    try {
+                      await trustPassportService.updatePrivacy({
+                        visibility: privacy.visibility,
+                        privacySettings: privacy.privacySettings,
+                      });
+                      setSaved(true);
+                      setTimeout(() => setSaved(false), 2000);
+                    } catch (err) {
+                      console.error('Failed to save privacy settings:', err);
+                    } finally {
+                      setPrivacyLoading(false);
+                    }
+                  }}
+                  disabled={privacyLoading}
+                  className="w-full"
+                >
+                  {privacyLoading ? 'Saving...' : 'Save Privacy Settings'}
+                </Button>
               </div>
             </Surface>
           </div>
