@@ -11,6 +11,8 @@ export default function CheckoutSuccessPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [clientTrustScore, setClientTrustScore] = useState<number | null>(null);
+  const [clientName, setClientName] = useState<string | null>(null);
 
   useEffect(() => {
     const sessionId = searchParams.get('sessionId');
@@ -30,6 +32,17 @@ export default function CheckoutSuccessPage() {
           if (!cancelled && response.data?.success) {
             const s = response.data.data?.status;
             if (s) setStatus(s);
+            const invoiceId = response.data.data?.invoiceId;
+            if (invoiceId) {
+              try {
+                const invRes = await api.get(`/crm/invoices/${invoiceId}`);
+                if (!cancelled && invRes.data?.success) {
+                  const inv = invRes.data.data;
+                  if (inv?.client?.reliabilityScore) setClientTrustScore(inv.client.reliabilityScore);
+                  if (inv?.client?.name) setClientName(inv.client.name);
+                }
+              } catch {}
+            }
           }
         } catch (err: any) {
           if (!cancelled) setError(err?.response?.data?.message || 'Unable to verify checkout status');
@@ -114,6 +127,12 @@ export default function CheckoutSuccessPage() {
                 <span className={`font-bold ${isPaid ? 'text-[var(--sage)]' : isCancelled ? 'text-[var(--terracotta)]' : 'text-zinc-300'}`}>{status || 'UNKNOWN'}
                 </span>
               </div>
+              {clientTrustScore !== null && (
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-400">Client Trust Score</span>
+                  <span className="font-bold text-[var(--sage)]">{clientTrustScore}/100</span>
+                </div>
+              )}
             </div>
 
             {isPaid && (

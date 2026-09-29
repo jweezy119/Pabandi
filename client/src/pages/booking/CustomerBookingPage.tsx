@@ -45,6 +45,8 @@ export default function CustomerBookingPage() {
   const [customer, setCustomer] = useState({ name: '', email: '', phone: '', address: '' });
   const [submitting, setSubmitting] = useState(false);
   const [bookingReference, setBookingReference] = useState('');
+  const [clientTrustScore, setClientTrustScore] = useState<number | null>(null);
+  const [loadingTrust, setLoadingTrust] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -123,6 +125,20 @@ export default function CustomerBookingPage() {
       if (data.success) {
         setBookingReference(data.data.bookingReference);
         setStep(5);
+        if (customer.email) {
+          setLoadingTrust(true);
+          fetch(`/api/v1/crm/clients?email=${encodeURIComponent(customer.email)}`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+          })
+            .then(r => r.json())
+            .then(res => {
+              const list = res.data || [];
+              const match = list.find((c: any) => c.email === customer.email);
+              if (match?.reliabilityScore) setClientTrustScore(match.reliabilityScore);
+            })
+            .catch(() => {})
+            .finally(() => setLoadingTrust(false));
+        }
       }
     } catch {
       setError('Failed to create booking');
@@ -338,6 +354,14 @@ export default function CustomerBookingPage() {
               <div style={{ fontSize: 13, color: '#64748b' }}>Booking Reference</div>
               <div style={{ fontSize: 24, fontWeight: 800, color: '#818cf8', letterSpacing: 2 }}>{bookingReference}</div>
             </div>
+            {loadingTrust ? (
+              <p style={{ color: '#64748b', fontSize: 13 }}>Checking your trust profile...</p>
+            ) : clientTrustScore !== null ? (
+              <div style={{ background: '#0f172a', borderRadius: 16, padding: 16, border: '1px solid rgba(255,255,255,0.08)', marginBottom: 24, display: 'inline-block' }}>
+                <div style={{ fontSize: 13, color: '#64748b' }}>Your Trust Score</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: '#818cf8' }}>{clientTrustScore}/100</div>
+              </div>
+            ) : null}
             <div>
               <p style={{ color: '#64748b', fontSize: 13 }}>
                 {business.name} will see your booking. See you on {selectedDate} at {selectedTime}!
