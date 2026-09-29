@@ -92,6 +92,9 @@ model User {
   pabEarned               Float                    @default(0)
   usdcBalance             Float                    @default(0)
   activeMode              UserMode                 @default(CUSTOMER)
+  preferredMode           String                   @default("business") // "business" | "personal"
+  authMethods             UserAuthMethod[]
+  memberships             BusinessMember[]
   pakistanPayments        PakistanPayment[]
   referredById            String?
   business                Business?
@@ -280,11 +283,41 @@ model Business {
   telegramBot            TelegramBot?
   channelMessages        ChannelMessage[]
   smsLogs                SMSLog[]
+  members                BusinessMember[]
 
   @@index([ownerId])
   @@index([city])
   @@index([category])
   @@map("Business")
+}
+
+model UserAuthMethod {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider    String   // "email" | "github" | "google" | "wallet" | "privy"
+  providerId  String   // the external identifier
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  lastUsedAt  DateTime?
+
+  @@unique([provider, providerId])
+  @@index([userId])
+}
+
+model BusinessMember {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  role        String   // "owner" | "admin" | "member" | "viewer"
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, businessId])
+  @@index([userId])
+  @@index([businessId])
 }
 
 // Sitara guest lists — any business or promoter runs a list for a night:
