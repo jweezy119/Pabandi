@@ -147,6 +147,20 @@ export async function addClient(
   return client;
 }
 
+export async function findOrCreateClient(businessId: string, data: { name: string; email?: string; phone?: string; address?: string }) {
+  if (!data.email) {
+    return addClient(businessId, data);
+  }
+
+  const existing = await prisma.crmClient.findFirst({
+    where: { businessId, email: data.email },
+  });
+
+  if (existing) return existing;
+
+  return addClient(businessId, data);
+}
+
 export async function getClients(businessId: string) {
   const clients = await prisma.crmClient.findMany({
     where: { businessId },

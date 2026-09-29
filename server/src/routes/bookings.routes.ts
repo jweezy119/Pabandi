@@ -4,6 +4,7 @@ import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { trustCore } from '../trust/trust-core';
 import { paymentRails } from '../payments/rails';
 import { geoService } from '../services/geo.service';
+import { findOrCreateClient } from '../services/crm.service';
 
 const router = Router();
 
@@ -123,6 +124,25 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         depositReason,
       },
     });
+
+    // Link booking to ContactOS client (find or create)
+    let linkedClientId: string | null = null;
+    if (customerEmail) {
+      try {
+        const client = await findOrCreateClient(businessId, {
+          name: customerName || 'Guest',
+          email: customerEmail,
+          phone: customerPhone,
+        });
+        linkedClientId = client.id;
+        await prisma.booking.update({
+          where: { id: booking.id },
+          data: { clientId: client.id },
+        });
+      } catch (clientError) {
+        console.warn('[Booking] Failed to link client:', clientError);
+      }
+    }
 
     // Fire trust event: booking.created
     await trustCore.emit('booking.created', {
