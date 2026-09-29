@@ -7,6 +7,7 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import { logger } from '../utils/logger';
+import { uploadSecurity } from '../middleware/uploadSecurity';
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -320,7 +321,7 @@ router.get('/financials/summary', async (req: any, res: Response) => {
 // ── Photos ──────────────────────────────────────────────────────────────────────
 
 // POST /api/v1/property-manager/photos/upload — multipart file upload
-router.post('/photos/upload', upload.single('photo'), async (req: any, res: Response) => {
+router.post('/photos/upload', upload.single('photo'), uploadSecurity, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });

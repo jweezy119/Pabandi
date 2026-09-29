@@ -1,10 +1,10 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { apiKeyAuth, logApiUsage } from '../middleware/apiKey.middleware';
 import { CustomError } from '../middleware/errorHandler';
 import * as fs from 'fs';
 import * as path from 'path';
-import { TRUST_API_OPENAPI_SPEC } from '../specs/trustApi.openapi';
+import * as specModule from '../specs/trustApi.openapi.json';
 
 const router = Router();
 
@@ -26,7 +26,7 @@ const TIER_RATE_LIMITS: Record<string, number> = {
   ENTERPRISE: 100_000,
 };
 
-function trustApiKeyAuth(req: Request, res: Response, next: Function) {
+function trustApiKeyAuth(req: Request, res: Response, next: NextFunction) {
   const apiKey = req.headers['x-api-key'] as string | undefined;
   if (!apiKey) {
     const authHeader = req.headers.authorization;
@@ -40,7 +40,7 @@ function trustApiKeyAuth(req: Request, res: Response, next: Function) {
   apiKeyAuth(req, res, next);
 }
 
-function trustRateLimit(req: Request, res: Response, next: Function) {
+function trustRateLimit(req: Request, res: Response, next: NextFunction) {
   const client = (req as any).apiClient;
   if (!client) return next();
 
