@@ -145,12 +145,13 @@ export const register = async (
           appointmentScore: true,
           createdAt: true,
           business: true,
+          activeMode: true,
         },
       });
 
       // Generate tokens
       const token = jwt.sign(
-        { id: updatedUser.id, email: updatedUser.email, role: updatedUser.role } as JwtPayload,
+        { id: updatedUser.id, email: updatedUser.email, role: updatedUser.role, activeMode: updatedUser.activeMode || 'CUSTOMER' } as JwtPayload,
         JWT_SECRET as Secret,
         { expiresIn: JWT_EXPIRES_IN as any }
       );
@@ -284,9 +285,10 @@ export const register = async (
         commerceScore: true,
         hospitalityScore: true,
         freelanceScore: true,
-        appointmentScore: true,
+         appointmentScore: true,
         createdAt: true,
         business: true,
+        activeMode: true,
       },
     });
 
@@ -332,7 +334,7 @@ export const register = async (
 
     // Generate tokens
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role } as JwtPayload,
+      { id: user.id, email: user.email, role: user.role, activeMode: user.activeMode || 'CUSTOMER' } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
@@ -380,14 +382,6 @@ export const login = async (
 ) => {
   try {
     const { email, password } = req.body;
-
-    const demoAdminEmail = process.env.DEMO_ADMIN_EMAIL;
-    const demoAdminPassword = process.env.DEMO_ADMIN_PASSWORD;
-    if (demoAdminEmail && email === demoAdminEmail && password === demoAdminPassword) {
-      const token = jwt.sign({ id: 'admin', email, role: 'ADMIN' } as JwtPayload, JWT_SECRET as Secret, { expiresIn: JWT_EXPIRES_IN as any });
-      const refreshToken = jwt.sign({ id: 'admin' } as any, JWT_REFRESH_SECRET as Secret, { expiresIn: JWT_REFRESH_EXPIRES_IN as any });
-      return res.json({ success: true, token, refreshToken, data: { user: { id: 'admin', email, role: 'ADMIN' } } });
-    }
 
     logger.info(`Login controller received email: '${email}'`);
 
@@ -439,7 +433,7 @@ export const login = async (
 
     // Generate tokens
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role } as JwtPayload,
+      { id: user.id, email: user.email, role: user.role, activeMode: user.activeMode || 'CUSTOMER' } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
@@ -503,6 +497,7 @@ export const refreshToken = async (
         id: true,
         email: true,
         role: true,
+        activeMode: true,
       },
     });
 
@@ -511,7 +506,7 @@ export const refreshToken = async (
     }
 
     const newToken = jwt.sign(
-      { id: user.id, email: user.email, role: user.role } as JwtPayload,
+      { id: user.id, email: user.email, role: user.role, activeMode: user.activeMode || 'CUSTOMER' } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
@@ -681,7 +676,7 @@ export const verifyLoginCode = async (
 
     // Generate tokens
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role } as JwtPayload,
+      { id: user.id, email: user.email, role: user.role, activeMode: user.activeMode || 'CUSTOMER' } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
@@ -1137,6 +1132,37 @@ export const getProfileChangeStatus = async (req: AuthRequest, res: Response, ne
         requests 
       }
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const toggleUserMode = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { mode } = req.body as { mode?: 'CUSTOMER' | 'BUSINESS' };
+    if (!mode || !['CUSTOMER', 'BUSINESS'].includes(mode)) {
+      return res.status(400).json({ success: false, message: 'mode must be CUSTOMER or BUSINESS' });
+    }
+
+    const user = await prisma.user.update({
+      where: { id: req.user!.id },
+      data: { activeMode: mode },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        activeMode: true,
+        business: true,
+      },
+    });
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role, activeMode: user.activeMode } as JwtPayload,
+      JWT_SECRET as Secret,
+      { expiresIn: JWT_EXPIRES_IN as any }
+    );
+
+    res.json({ success: true, data: { user, token } });
   } catch (error) {
     next(error);
   }

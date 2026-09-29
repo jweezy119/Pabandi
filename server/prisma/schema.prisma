@@ -91,6 +91,7 @@ model User {
   pabStaked               Float                    @default(0)
   pabEarned               Float                    @default(0)
   usdcBalance             Float                    @default(0)
+  activeMode              UserMode                 @default(CUSTOMER)
   pakistanPayments        PakistanPayment[]
   referredById            String?
   business                Business?
@@ -925,6 +926,11 @@ enum UserRole {
   CUSTOMER
   ADMIN
   FREELANCER
+}
+
+enum UserMode {
+  CUSTOMER
+  BUSINESS
 }
 
 enum KycStatus {

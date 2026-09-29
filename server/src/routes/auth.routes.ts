@@ -17,6 +17,7 @@ import {
   getProfileChangeStatus,
   requestLoginCode,
   verifyLoginCode,
+  toggleUserMode,
 } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/auth.middleware';
 
@@ -46,5 +47,6 @@ router.get('/trust-attestation', authenticate, getTrustAttestation);
 router.put('/profile', authenticate, updateProfile);
 router.post('/request-change', authenticate, requestProfileChange);
 router.get('/change-status', authenticate, getProfileChangeStatus);
+router.post('/mode', authenticate, toggleUserMode);
 
 export default router;

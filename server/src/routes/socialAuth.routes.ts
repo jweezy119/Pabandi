@@ -4,9 +4,15 @@ import { Strategy as GitHubStrategy } from 'passport-github2';
 import { Strategy as TwitterStrategy } from 'passport-twitter';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
+import { logger } from '../utils/logger';
 
 const prisma = new PrismaClient();
 const router = Router();
+
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  logger.error('JWT_SECRET is not configured');
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GITHUB OAUTH — No business verification required
@@ -34,8 +40,18 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
               lastName: profile.displayName?.split(' ').slice(1).join(' ') || '',
               githubId: profile.id,
               isEmailVerified: true,
-              password: '', // OAuth users don't need password
+              passwordHash: '',
+              role: 'CUSTOMER',
+              reliabilityScore: 750,
+              trustScore: 50.0,
+              verificationTier: 'BASIC',
+              gracePeriodUntil: new Date(Date.now() + 48 * 60 * 60 * 1000),
             } as any,
+          });
+        } else if (!user.githubId) {
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: { githubId: profile.id },
           });
         }
         return done(null, user);
@@ -64,8 +80,8 @@ router.get('/github/callback',
   (req: any, res: Response) => {
     const user = req.user as any;
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET || 'fallback',
+      { userId: user.id, email: user.email, activeMode: user.activeMode || 'CUSTOMER' },
+      JWT_SECRET!,
       { expiresIn: '7d' }
     );
     res.redirect(`${process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://pabandi.com'}/auth/callback?token=${token}`);
@@ -98,8 +114,18 @@ if (process.env.TWITTER_API_KEY && process.env.TWITTER_API_SECRET) {
               lastName: profile.displayName?.split(' ').slice(1).join(' ') || '',
               twitterId: profile.id,
               isEmailVerified: true,
-              password: '',
+              passwordHash: '',
+              role: 'CUSTOMER',
+              reliabilityScore: 750,
+              trustScore: 50.0,
+              verificationTier: 'BASIC',
+              gracePeriodUntil: new Date(Date.now() + 48 * 60 * 60 * 1000),
             } as any,
+          });
+        } else if (!user.twitterId) {
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: { twitterId: profile.id },
           });
         }
         return done(null, user);
@@ -117,8 +143,8 @@ router.get('/twitter/callback',
   (req: any, res: Response) => {
     const user = req.user as any;
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET || 'fallback',
+      { userId: user.id, email: user.email, activeMode: user.activeMode || 'CUSTOMER' },
+      JWT_SECRET!,
       { expiresIn: '7d' }
     );
     res.redirect(`${process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://pabandi.com'}/auth/callback?token=${token}`);

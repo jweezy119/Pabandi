@@ -53,6 +53,7 @@ export const authenticate = (
       lastName?: string;
       phone?: string;
       businessId?: string;
+      activeMode?: string;
     };
 
     req.user = decoded;
