@@ -3,4 +3,5 @@
 <p>You have a new invoice for <strong>${{amount}}</strong> from {{businessName}}.</p>
 <p><strong>Invoice Number:</strong> {{invoiceNumber}}</p>
 <p><strong>Due Date:</strong> {{dueDate}}</p>
+{{#if trustScore}}<p><strong>Your Trust Score:</strong> {{trustScore}}/100</p>{{/if}}
 <a href="{{payUrl}}" class="btn">View and Pay Invoice</a>

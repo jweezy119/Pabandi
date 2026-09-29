@@ -80,7 +80,8 @@ export const emailService = {
       amount: String(invoice.subtotal),
       invoiceNumber: invoice.number,
       dueDate: new Date(invoice.dateDue).toLocaleDateString(),
-      payUrl: `${process.env.APP_URL || 'http://localhost:5173'}/pay/${invoice.id}`
+      payUrl: `${process.env.APP_URL || 'http://localhost:5173'}/pay/${invoice.id}`,
+      trustScore: client.reliabilityScore || null,
     });
     return sendEmail({ to: client.email, subject: `Invoice ${invoice.number} from ${business.name}`, html });
   },
@@ -103,6 +104,7 @@ export const emailService = {
       clientName: client.name,
       amount: String(invoice.subtotal),
       invoiceNumber: invoice.number,
+      clientTrustScore: client.reliabilityScore || null,
     });
     return sendEmail({ to: business.email || 'business@example.com', subject: `Payment Received: Invoice ${invoice.number}`, html });
   },

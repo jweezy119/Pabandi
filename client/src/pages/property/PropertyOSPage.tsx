@@ -17,8 +17,25 @@ export default function PropertyOSPage() {
   const [collectionRate, setCollectionRate] = useState<any>(null);
   const [topProperties, setTopProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clients, setClients] = useState<any[]>([]);
+  const [loadingClients, setLoadingClients] = useState(true);
 
   useEffect(() => { loadData(); }, [period]);
+
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setClients(data.data || []);
+        }
+      } catch (e) { console.error(e); } finally { setLoadingClients(false); }
+    };
+    fetchClients();
+  }, []);
 
   const loadData = async () => {
     try {
@@ -96,6 +113,39 @@ export default function PropertyOSPage() {
                   </div>
                   <span className="px-3 py-1 rounded-full bg-[var(--dusty-rose)]/20 text-[var(--dusty-rose)] text-sm">{prop.status}</span>
                 </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Shared ContactOS Clients */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-[var(--warm-ink)]">Tenants & Clients</h2>
+            <Link to="/contact/clients" className="text-sm font-medium" style={{ color: 'var(--dusty-rose)' }}>View all →</Link>
+          </div>
+          {loadingClients ? (
+            <div className="p-8 text-center text-[var(--soft-stone)]">Loading clients...</div>
+          ) : clients.length === 0 ? (
+            <div className="p-8 text-center text-[var(--soft-stone)] rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)]">
+              <p>No clients yet. Add your first client in ContactOS.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {clients.slice(0, 6).map((client: any) => (
+                <Link key={client.id} to={`/contact/clients/${client.id}`} className="block">
+                  <div className="p-4 rounded-xl bg-white border border-[rgba(191,179,163,0.2)] hover:border-[var(--dusty-rose)]/40 transition">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: 'var(--warm-sand)', color: 'var(--warm-ink)' }}>
+                        {client.name?.charAt(0) || 'C'}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm text-[var(--warm-ink)]">{client.name}</p>
+                        <p className="text-xs text-[var(--soft-stone)]">{client.email || 'No email'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
               ))}
             </div>
           )}

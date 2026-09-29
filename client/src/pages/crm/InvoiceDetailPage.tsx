@@ -65,6 +65,9 @@ export default function InvoiceDetailPage() {
           <div>
             <p className="text-xs text-[var(--soft-stone)]">Client</p>
             <p className="font-medium text-[var(--warm-ink)]">{invoice.client?.name || 'Unknown'}</p>
+            {invoice.client?.reliabilityScore && (
+              <p className="text-xs text-[var(--sage)]">Trust Score: {invoice.client.reliabilityScore}/100</p>
+            )}
           </div>
           <div>
             <p className="text-xs text-[var(--soft-stone)]">Amount</p>

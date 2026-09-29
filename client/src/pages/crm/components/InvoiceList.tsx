@@ -19,6 +19,11 @@ export function InvoiceList({ invoices }: { invoices: any[] }) {
           <div>
             <div className="flex items-center gap-2">
               <p className="font-medium text-[var(--warm-ink)]">{inv.number}</p>
+              {inv.client?.reliabilityScore && (
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[rgba(138,154,123,0.1)] text-[var(--sage)]">
+                  Trust {inv.client.reliabilityScore}
+                </span>
+              )}
               {inv.client?.paymentScore !== undefined && (
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[rgba(180,130,90,0.1)] text-[var(--clay)]">
                   {inv.client.paymentScore}

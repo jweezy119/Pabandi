@@ -49,8 +49,31 @@ function ClayStat({ icon, value, label, color = 'sage' }: { icon: string; value:
 export default function FreightOSPage() {
   const [loads, setLoads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clients, setClients] = useState<any[]>([]);
+  const [loadingClients, setLoadingClients] = useState(true);
+  const [avgTrust, setAvgTrust] = useState<number | null>(null);
 
   useEffect(() => { loadLoads(); }, []);
+
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const list = data.data || [];
+          setClients(list);
+          if (list.length > 0) {
+            const avg = list.reduce((s: number, c: any) => s + (c.reliabilityScore || 0), 0) / list.length;
+            setAvgTrust(Math.round(avg));
+          }
+        }
+      } catch (e) { console.error(e); } finally { setLoadingClients(false); }
+    };
+    fetchClients();
+  }, []);
 
   const loadLoads = async () => {
     try {
@@ -82,7 +105,7 @@ export default function FreightOSPage() {
           <ClayStat icon="local_shipping" value={String(loads.length)} label="Active Loads" color="sage" />
           <ClayStat icon="check_circle" value="0" label="Completed" color="terracotta" />
           <ClayStat icon="account_balance_wallet" value="$0" label="Total Spent" color="ochre" />
-          <ClayStat icon="shield" value="50" label="Trust Score" color="dusty-rose" />
+          <ClayStat icon="shield" value={avgTrust !== null ? String(avgTrust) : '50'} label="Avg Trust Score" color="dusty-rose" />
         </div>
 
         {/* Recent Loads */}
@@ -129,6 +152,41 @@ export default function FreightOSPage() {
             </div>
           )}
         </ClayCard>
+
+        {/* Shared ContactOS Clients */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold" style={{ color: 'var(--warm-ink)' }}>Your Clients</h2>
+            <Link to="/contact/clients" className="text-sm font-medium" style={{ color: 'var(--clay)' }}>View all →</Link>
+          </div>
+          {loadingClients ? (
+            <ClayCard className="p-8 text-center" hover={false}>
+              <p style={{ color: 'var(--soft-stone)' }}>Loading clients...</p>
+            </ClayCard>
+          ) : clients.length === 0 ? (
+            <ClayCard className="p-8 text-center" hover={false}>
+              <p style={{ color: 'var(--soft-stone)' }}>No clients yet. Add your first client in ContactOS.</p>
+            </ClayCard>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {clients.slice(0, 6).map((client: any) => (
+                <Link key={client.id} to={`/contact/clients/${client.id}`} className="block">
+                  <ClayCard className="p-4" hover={true}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: 'var(--warm-sand)', color: 'var(--warm-ink)' }}>
+                        {client.name?.charAt(0) || 'C'}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm" style={{ color: 'var(--warm-ink)' }}>{client.name}</p>
+                        <p className="text-xs" style={{ color: 'var(--soft-stone)' }}>{client.email || 'No email'}</p>
+                      </div>
+                    </div>
+                  </ClayCard>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Footer */}
         <footer className="pt-8 text-center" style={{ borderTop: '1px solid rgba(191,179,163,0.3)' }}>

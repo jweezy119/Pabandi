@@ -19,6 +19,7 @@ export function UserMenu() {
     const newMode = user?.activeMode === 'BUSINESS' ? 'CUSTOMER' : 'BUSINESS';
     await toggleMode(newMode);
     setIsOpen(false);
+    navigate(newMode === 'BUSINESS' ? '/dashboard' : '/');
   };
 
   const menuItems = [

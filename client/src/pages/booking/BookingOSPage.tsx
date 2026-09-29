@@ -1,6 +1,6 @@
 import DashboardLayout from '../../components/DashboardLayout';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const NAV_ITEMS = [
   { path: '/booking', label: 'Discovery', icon: 'explore', end: true },
@@ -104,6 +104,23 @@ function BusinessCard({ business }: { business: typeof BUSINESSES[0] }) {
 export default function BookingOSPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [clients, setClients] = useState<any[]>([]);
+  const [loadingClients, setLoadingClients] = useState(true);
+
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setClients(data.data || []);
+        }
+      } catch (e) { console.error(e); } finally { setLoadingClients(false); }
+    };
+    fetchClients();
+  }, []);
 
   return (
     <DashboardLayout osName="BookingOS" osIcon="◈" osColor="terracotta" navItems={NAV_ITEMS}>
@@ -161,6 +178,39 @@ export default function BookingOSPage() {
               <BusinessCard key={business.id} business={business} />
             ))}
           </div>
+        </div>
+
+        {/* Shared ContactOS Clients */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold" style={{ color: 'var(--warm-ink)' }}>Your Clients</h2>
+            <Link to="/contact/clients" className="text-sm font-medium" style={{ color: 'var(--clay)' }}>View all →</Link>
+          </div>
+          {loadingClients ? (
+            <div className="p-8 text-center" style={{ color: 'var(--soft-stone)' }}>Loading clients...</div>
+          ) : clients.length === 0 ? (
+            <ClayCard className="p-8 text-center" hover={false}>
+              <p style={{ color: 'var(--soft-stone)' }}>No clients yet. Add your first client in ContactOS.</p>
+            </ClayCard>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {clients.slice(0, 6).map((client: any) => (
+                <Link key={client.id} to={`/contact/clients/${client.id}`} className="block">
+                  <ClayCard className="p-4" hover={true}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: 'var(--warm-sand)', color: 'var(--warm-ink)' }}>
+                        {client.name?.charAt(0) || 'C'}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm" style={{ color: 'var(--warm-ink)' }}>{client.name}</p>
+                        <p className="text-xs" style={{ color: 'var(--soft-stone)' }}>{client.email || 'No email'}</p>
+                      </div>
+                    </div>
+                  </ClayCard>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>
