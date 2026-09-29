@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { findOrCreateUser, getActiveBusinessId } from '../services/identity.service';
 
 const router = Router();
 
@@ -146,44 +147,26 @@ router.get('/github/callback', async (req: Request, res: Response) => {
 
     // Find or create user by email — link GitHub ID so all sign-in methods share one account
     logger.info('Looking up user in DB', { email: primaryEmail });
-    let user = await prisma.user.findUnique({ where: { email: primaryEmail }, include: { business: true } });
-    logger.info('User lookup result', { found: !!user, userId: user?.id });
+    const user = await findOrCreateUser({
+      provider: 'github',
+      providerId: profile.id.toString(),
+      email: primaryEmail,
+      metadata: { login: profile.login, name: profile.name, avatarUrl: profile.avatar_url },
+    });
+    logger.info('User lookup result', { found: !!user, userId: user.id });
 
-    if (!user) {
-      logger.info('Creating new user', { email: primaryEmail });
-      const displayName = profile.name || profile.login;
-      const nameParts = displayName.split(' ');
-      
-      user = await prisma.user.create({
-        data: {
-          email: primaryEmail,
-          firstName: nameParts[0] || profile.login,
-          lastName: nameParts.slice(1).join(' ') || '',
-          githubId: profile.id.toString(),
-          isEmailVerified: emailVerified,
-          passwordHash: '',
-          role: 'CUSTOMER',
-          reliabilityScore: 750,
-          trustScore: 50.0,
-          verificationTier: 'BASIC',
-          gracePeriodUntil: new Date(Date.now() + 48 * 60 * 60 * 1000),
-        },
-        include: { business: true },
-      });
-      logger.info('User created', { userId: user.id });
-    } else if (!user.githubId) {
-      // Link GitHub ID to existing account
-      user = await prisma.user.update({
+    // Ensure GitHub ID is linked
+    if (!user.githubId) {
+      await prisma.user.update({
         where: { id: user.id },
         data: { githubId: profile.id.toString() },
-        include: { business: true },
       });
       logger.info('Linked GitHub ID to existing user', { userId: user.id, githubId: profile.id.toString() });
     }
 
-    // Generate JWT (include names + activeMode so the callback can seed the session)
+    // Generate JWT
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, firstName: (user as any).firstName || '', lastName: (user as any).lastName || '', businessId: (user as any).businessId || (user as any).business?.id, activeMode: (user as any).activeMode || 'CUSTOMER' },
+      { id: user.id, email: user.email, role: user.role, firstName: user.firstName || '', lastName: user.lastName || '', activeBusinessId: getActiveBusinessId(user), mode: user.preferredMode || 'personal' },
       JWT_SECRET!,
       { expiresIn: '7d' }
     );

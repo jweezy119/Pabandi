@@ -13,6 +13,7 @@ import { osintService } from '../services/osint.service';
 import { odooService } from '../services/odoo.service';
 import { notificationService } from '../services/notification.service';
 import { emailService } from '../services/email.service';
+import { findOrCreateUser, getActiveBusinessId } from '../services/identity.service';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -149,12 +150,12 @@ export const register = async (
         },
       });
 
-      // Generate tokens
-      const token = jwt.sign(
-        { id: updatedUser.id, email: updatedUser.email, role: updatedUser.role, businessId: (updatedUser as any).businessId || (updatedUser as any).business?.id, activeMode: updatedUser.activeMode || 'CUSTOMER' } as JwtPayload,
-        JWT_SECRET as Secret,
-        { expiresIn: JWT_EXPIRES_IN as any }
-      );
+    // Generate tokens
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role, activeBusinessId: getActiveBusinessId(user), mode: user.preferredMode || 'business' } as JwtPayload,
+      JWT_SECRET as Secret,
+      { expiresIn: JWT_EXPIRES_IN as any }
+    );
 
       const refreshToken = jwt.sign(
         { id: updatedUser.id } as JwtPayload,
@@ -176,27 +177,36 @@ export const register = async (
     }
 
     // Standard registration flow (without code)
-    // Check if user already exists
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email },
-          ...(phone ? [{ phone }] : []),
-        ],
-      },
+    // Use unified identity to find or create user
+    const foundUser = await findOrCreateUser({
+      provider: 'email',
+      providerId: email,
+      email,
     });
 
-    if (existingUser) {
-      throw new CustomError('User with this email or phone already exists', 409);
+    // If user already has auth methods beyond this registration, reject duplicate
+    const existingAuth = await prisma.userAuthMethod.findFirst({
+      where: { userId: foundUser.id, provider: 'email' },
+    });
+    if (existingAuth && existingAuth.providerId !== email) {
+      // User exists with a different email auth method — this shouldn't happen often
     }
 
-    // Enforce password complexity
+    // If user already exists with same email, reject
+    if (foundUser.email === email && foundUser.createdAt !== foundUser.updatedAt) {
+      // Quick heuristic: if user was created earlier, they might be existing
+      // Safer: check if there are other auth methods
+      const authCount = await prisma.userAuthMethod.count({ where: { userId: foundUser.id } });
+      if (authCount > 1) {
+        throw new CustomError('User with this email already exists', 409);
+      }
+    }
+
+    // Hash password
     const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])(?=.*[a-z]).{8,}$/;
     if (!passwordRegex.test(password)) {
       throw new CustomError('Password must be at least 8 characters long, and contain at least one uppercase letter, one lowercase letter, one number, and one special character (!@#$&*)', 400);
     }
-
-    // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
 
     // Resolve role to enum (defaults to CUSTOMER)
@@ -227,9 +237,9 @@ export const register = async (
     const encryptedSecret = encrypt(bs58.encode(newWallet.secretKey));
 
     // Create user immediately with BASIC tier
-    const user = await prisma.user.create({
+    const user = await prisma.user.update({
+      where: { id: foundUser.id },
       data: {
-        email,
         passwordHash,
         firstName,
         lastName,
@@ -379,7 +389,7 @@ export const login = async (
   req: Request<{}, {}, LoginBody>,
   res: Response,
   next: NextFunction
-) => {
+  ) => {
   try {
     const { email, password } = req.body;
 
@@ -388,7 +398,7 @@ export const login = async (
     // Find user
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { business: true }
+      include: { business: true, memberships: true },
     });
 
     if (!user) {
@@ -431,9 +441,18 @@ export const login = async (
       });
     }
 
+    // Ensure auth method exists and update lastUsedAt
+    await findOrCreateUser({
+      provider: 'email',
+      providerId: user.email,
+      email: user.email,
+    });
+
+    const activeBusinessId = getActiveBusinessId(user);
+
     // Generate tokens
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, businessId: (user as any).businessId || (user as any).business?.id, activeMode: user.activeMode || 'CUSTOMER' } as JwtPayload,
+      { id: user.id, email: user.email, role: user.role, activeBusinessId, mode: user.preferredMode || 'business' } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
@@ -498,6 +517,7 @@ export const refreshToken = async (
         email: true,
         role: true,
         activeMode: true,
+        preferredMode: true,
       },
     });
 
@@ -506,7 +526,7 @@ export const refreshToken = async (
     }
 
     const newToken = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, activeMode: user.activeMode || 'CUSTOMER' } as JwtPayload,
+      { id: user.id, email: user.email, role: user.role, activeBusinessId: getActiveBusinessId(user), mode: user.preferredMode || 'business' } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );

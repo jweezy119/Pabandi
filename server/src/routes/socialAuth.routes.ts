@@ -5,6 +5,7 @@ import { Strategy as TwitterStrategy } from 'passport-twitter';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../utils/logger';
+import { findOrCreateUser, getActiveBusinessId } from '../services/identity.service';
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -82,7 +83,7 @@ router.get('/github/callback',
   (req: any, res: Response) => {
     const user = req.user as any;
     const token = jwt.sign(
-      { id: user.id, email: user.email, businessId: user.businessId || user.business?.id, activeMode: user.activeMode || 'CUSTOMER' },
+      { id: user.id, email: user.email, activeBusinessId: getActiveBusinessId(user), mode: user.preferredMode || 'personal' },
       JWT_SECRET!,
       { expiresIn: '7d' }
     );
@@ -107,26 +108,16 @@ if (process.env.TWITTER_API_KEY && process.env.TWITTER_API_SECRET) {
         const email = profile.emails?.[0]?.value;
         if (!email) return done(null, false, { message: 'No email from Twitter' });
 
-        let user = await prisma.user.findUnique({ where: { email }, include: { business: true } });
-        if (!user) {
-          user = await prisma.user.create({
-            data: {
-              email,
-              firstName: profile.displayName?.split(' ')[0] || profile.username,
-              lastName: profile.displayName?.split(' ').slice(1).join(' ') || '',
-              twitterId: profile.id,
-              isEmailVerified: true,
-              passwordHash: '',
-              role: 'CUSTOMER',
-              reliabilityScore: 750,
-              trustScore: 50.0,
-              verificationTier: 'BASIC',
-              gracePeriodUntil: new Date(Date.now() + 48 * 60 * 60 * 1000),
-            } as any,
-            include: { business: true },
-          });
-        } else if (!user.twitterId) {
-          user = await prisma.user.update({
+        const user = await findOrCreateUser({
+          provider: 'twitter',
+          providerId: profile.id,
+          email,
+          metadata: { username: profile.username, displayName: profile.displayName },
+        });
+
+        // Ensure Twitter ID is linked
+        if (!user.twitterId) {
+          await prisma.user.update({
             where: { id: user.id },
             data: { twitterId: profile.id },
             include: { business: true },
@@ -147,7 +138,7 @@ router.get('/twitter/callback',
   (req: any, res: Response) => {
     const user = req.user as any;
     const token = jwt.sign(
-      { id: user.id, email: user.email, businessId: user.businessId || user.business?.id, activeMode: user.activeMode || 'CUSTOMER' },
+      { id: user.id, email: user.email, activeBusinessId: getActiveBusinessId(user), mode: user.preferredMode || 'personal' },
       JWT_SECRET!,
       { expiresIn: '7d' }
     );
