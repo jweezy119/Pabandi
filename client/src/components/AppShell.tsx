@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ModuleSwitcher } from './ModuleSwitcher';
 import { UserMenu } from './UserMenu';
 import { SupportWidget } from './SupportWidget';
+import { ModeToggle } from './ModeToggle';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -23,6 +24,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="flex items-center gap-3">
+          <ModeToggle />
           <UserMenu />
         </div>
       </header>

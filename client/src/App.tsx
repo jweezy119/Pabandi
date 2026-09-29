@@ -28,6 +28,11 @@ import PlaceholderPage from './pages/PlaceholderPage';
 import ReservationsPage from './pages/ReservationsPage';
 import NewReservationPage from './pages/NewReservationPage';
 import { CheckoutSessionPage } from './pages/CheckoutSessionPage';
+import PersonalDashboardPage from './pages/me/PersonalDashboardPage';
+import PersonalPassportPage from './pages/me/PersonalPassportPage';
+import PersonalBookingsPage from './pages/me/PersonalBookingsPage';
+import PersonalRewardsPage from './pages/me/PersonalRewardsPage';
+import PersonalWalletPage from './pages/me/PersonalWalletPage';
 import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
 import CheckoutCancelPage from './pages/CheckoutCancelPage';
 import BookingPage from './pages/BookingPage';
@@ -548,6 +553,11 @@ function AnimatedAppRoutes() {
             <Route path="city/:slug" element={<CityLandingPage />} />
             <Route path="admin" element={isAuthenticated && user?.role === 'ADMIN' ? <AdminDashboardPage /> : <Navigate to="/admin/setup" />} />
             <Route path="admin/setup" element={<AdminSetupPage />} />
+            <Route path="me" element={<PersonalDashboardPage />} />
+            <Route path="me/passport" element={<PersonalPassportPage />} />
+            <Route path="me/bookings" element={<PersonalBookingsPage />} />
+            <Route path="me/rewards" element={<PersonalRewardsPage />} />
+            <Route path="me/wallet" element={<PersonalWalletPage />} />
           </Route>
       </Routes>
     </AnimatePresence>
