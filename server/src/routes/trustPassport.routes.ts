@@ -59,8 +59,18 @@ router.get('/:handle/request', async (req: Request, res: Response) => {
 router.get('/me', authenticate, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
-    const passport = await prisma.trustPassport.findFirst({ where: { userId } });
-    if (!passport) return res.json({ success: true, data: null });
+    let passport = await prisma.trustPassport.findFirst({ where: { userId } });
+    if (!passport) {
+      const handle = `user-${userId.slice(0, 8)}`;
+      passport = await prisma.trustPassport.create({
+        data: {
+          userId,
+          handle,
+          displayName: (req as any).user?.firstName || 'User',
+          visibility: 'PRIVATE',
+        },
+      });
+    }
     res.json({ success: true, data: passport });
   } catch (e: any) {
     res.status(500).json({ success: false, error: e.message });
