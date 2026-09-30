@@ -34,6 +34,8 @@ import {
   createInvoiceHandler,
   getInvoicesHandler,
   markInvoicePaidHandler,
+  importClientsHandler,
+  importDealsHandler,
 } from '../controllers/crm.controller';
 import * as crmService from '../services/crm.service';
 import {
@@ -425,5 +427,11 @@ router.post('/alerts/:id/dismiss', dismissAlertHandler);
 
 // GET /api/v1/crm/clients/:id/stage — Get client lifecycle stage
 router.get('/clients/:id/stage', getClientStageHandler);
+
+// POST /api/v1/crm/import/clients — Bulk import clients from CSV
+router.post('/import/clients', importClientsHandler);
+
+// POST /api/v1/crm/import/deals — Bulk import deals from CSV
+router.post('/import/deals', importDealsHandler);
 
 export default router;

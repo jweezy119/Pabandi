@@ -7,6 +7,8 @@ import PipelineForecastWidget from '../crm/components/PipelineForecastWidget';
 import DealKanbanBoard from '../crm/components/DealKanbanBoard';
 import DealListTable from '../crm/components/DealListTable';
 import DealFormModal from '../crm/components/DealFormModal';
+import CSVImportModal from '../crm/components/CSVImportModal';
+import { Upload } from 'lucide-react';
 
 
 
@@ -33,6 +35,7 @@ export default function ContactDealsPage() {
   const [selectedDealForLost, setSelectedDealForLost] = useState<any>(null);
   const [lostReason, setLostReason] = useState('');
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     fetchDealsAndClients();
@@ -76,6 +79,23 @@ export default function ContactDealsPage() {
     }
   }
 
+  async function handleImportDeals(csvData: string) {
+    const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/import/deals`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({ csvData }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      fetchDealsAndClients();
+      return data.data;
+    }
+    throw new Error(data.error || 'Import failed');
+  }
+
   async function handleUpdateStage(dealId: string, newStage: string) {
     if (newStage === 'LOST') {
       setSelectedDealForLost(deals.find(d => d.id === dealId));
@@ -113,6 +133,7 @@ export default function ContactDealsPage() {
               <button onClick={() => setViewMode('kanban')} className={`px-3 py-1 rounded-lg text-sm font-bold ${viewMode === 'kanban' ? 'bg-white shadow-sm text-[var(--warm-ink)]' : 'text-[var(--soft-stone)]'}`}>Kanban</button>
               <button onClick={() => setViewMode('table')} className={`px-3 py-1 rounded-lg text-sm font-bold ${viewMode === 'table' ? 'bg-white shadow-sm text-[var(--warm-ink)]' : 'text-[var(--soft-stone)]'}`}>Table</button>
             </div>
+            <Button variant="ghost" icon="upload" onClick={() => setShowImportModal(true)}>Import CSV</Button>
             <Button variant="primary" icon="add" onClick={() => setIsCreateOpen(true)}>New Deal</Button>
           </div>
         </div>
@@ -128,6 +149,15 @@ export default function ContactDealsPage() {
         ) : (
           <DealListTable STAGES={stages} deals={deals} onUpdateStage={handleUpdateStage} />
         )}
+
+        <CSVImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onImport={handleImportDeals}
+          title="Import Deals from CSV"
+          expectedFields={['title', 'value', 'stage', 'probability', 'expectedCloseDate', 'client', 'notes']}
+          templateHeaders={['title', 'value', 'stage', 'probability', 'expectedCloseDate', 'client', 'notes']}
+        />
 
         <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Create New Deal">
           <DealFormModal clients={clients} onClose={() => setIsCreateOpen(false)} onSave={handleCreateDeal} />

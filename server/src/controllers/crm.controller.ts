@@ -519,3 +519,166 @@ export async function markInvoicePaidHandler(req: AuthRequest, res: Response, ne
   }
 }
 
+function parseCSV(text: string): string[][] {
+  const rows: string[][] = [];
+  let current: string[] = [];
+  let inQuotes = false;
+  let field = '';
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if (inQuotes) {
+      if (char === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else { inQuotes = false; }
+      } else { field += char; }
+    } else {
+      if (char === '"') { inQuotes = true; }
+      else if (char === ',') { current.push(field); field = ''; }
+      else if (char === '\n' || char === '\r') {
+        if (char === '\r' && text[i + 1] === '\n') i++;
+        current.push(field); field = '';
+        if (current.some(c => c.trim() !== '')) rows.push(current);
+        current = [];
+      } else { field += char; }
+    }
+  }
+  current.push(field);
+  if (current.some(c => c.trim() !== '')) rows.push(current);
+  return rows;
+}
+
+const CLIENT_FIELD_MAP: Record<string, string> = {
+  name: 'name', fullname: 'name', 'full name': 'name', contact: 'name',
+  email: 'email', 'email address': 'email', e_mail: 'email',
+  phone: 'phone', 'phone number': 'phone', mobile: 'phone', cell: 'phone',
+  company: 'company', organization: 'company', business: 'company',
+  address: 'address', street: 'address',
+  notes: 'notes', note: 'notes', comments: 'notes',
+  status: 'status', 'client status': 'status',
+  city: 'city', state: 'state', zip: 'zip', 'zip code': 'zip',
+  country: 'country', source: 'source', 'lead source': 'source',
+  tag: 'tags', tags: 'tags',
+};
+
+const DEAL_FIELD_MAP: Record<string, string> = {
+  title: 'title', name: 'title', deal: 'title', 'deal name': 'title',
+  value: 'value', amount: 'value', price: 'value', dealvalue: 'value',
+  stage: 'stage', status: 'stage', 'deal stage': 'stage',
+  probability: 'probability', prob: 'probability',
+  'expected close date': 'expectedCloseDate', closedate: 'expectedCloseDate', 'close date': 'expectedCloseDate',
+  client: 'clientId', 'client name': 'clientId', contact: 'clientId',
+  notes: 'notes', description: 'notes', 'deal notes': 'notes',
+  currency: 'currency',
+};
+
+export async function importClientsHandler(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const businessId = getBusinessId(req);
+    const csvText = req.body.csvData as string;
+    if (!csvText) throw new CustomError('No CSV data provided', 400);
+
+    const rows = parseCSV(csvText);
+    if (rows.length < 2) throw new CustomError('CSV must have a header row and at least one data row', 400);
+
+    const headers = rows[0].map(h => h.toLowerCase().trim());
+    const dataRows = rows.slice(1);
+
+    const results = { imported: 0, skipped: 0, errors: [] as string[] };
+
+    for (let i = 0; i < dataRows.length; i++) {
+      const row = dataRows[i];
+      const record: Record<string, unknown> = {};
+
+      for (let j = 0; j < headers.length; j++) {
+        const field = CLIENT_FIELD_MAP[headers[j]];
+        if (field) record[field] = row[j]?.trim() || '';
+      }
+
+      if (!record.name) { results.skipped++; results.errors.push(`Row ${i + 2}: missing name`); continue; }
+      if (record.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(record.email as string)) {
+        results.skipped++; results.errors.push(`Row ${i + 2}: invalid email`); continue;
+      }
+
+      const existing = await prisma.crmClient.findFirst({ where: { businessId, name: record.name as string } });
+      if (existing) { results.skipped++; results.errors.push(`Row ${i + 2}: duplicate name "${record.name}"`); continue; }
+
+      await prisma.crmClient.create({
+        data: {
+          businessId,
+          name: record.name as string,
+          email: (record.email as string) || null,
+          phone: (record.phone as string) || null,
+          address: (record.address as string) || null,
+          notes: (record.notes as string) || null,
+          status: 'ACTIVE',
+          isActive: true,
+        },
+      });
+      results.imported++;
+    }
+
+    res.json({ success: true, data: results });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function importDealsHandler(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const businessId = getBusinessId(req);
+    const csvText = req.body.csvData as string;
+    if (!csvText) throw new CustomError('No CSV data provided', 400);
+
+    const rows = parseCSV(csvText);
+    if (rows.length < 2) throw new CustomError('CSV must have a header row and at least one data row', 400);
+
+    const headers = rows[0].map(h => h.toLowerCase().trim());
+    const dataRows = rows.slice(1);
+    const clients = await prisma.crmClient.findMany({ where: { businessId }, select: { id: true, name: true } });
+    const clientMap = new Map(clients.map(c => [c.name.toLowerCase(), c.id]));
+
+    const results = { imported: 0, skipped: 0, errors: [] as string[] };
+
+    for (let i = 0; i < dataRows.length; i++) {
+      const row = dataRows[i];
+      const record: Record<string, unknown> = {};
+
+      for (let j = 0; j < headers.length; j++) {
+        const field = DEAL_FIELD_MAP[headers[j]];
+        if (field) record[field] = row[j]?.trim() || '';
+      }
+
+      if (!record.title) { results.skipped++; results.errors.push(`Row ${i + 2}: missing title`); continue; }
+
+      let clientId: string | null = null;
+      if (record.clientId) {
+        clientId = clientMap.get((record.clientId as string).toLowerCase()) || null;
+      }
+
+      const stage = (record.stage as string || 'LEAD').toUpperCase();
+      const validStages = ['LEAD', 'QUALIFIED', 'PROPOSAL', 'NEGOTIATION', 'WON', 'LOST'];
+
+      await prisma.crmDeal.create({
+        data: {
+          businessId,
+          title: record.title as string,
+          value: parseFloat(record.value as string) || 0,
+          currency: (record.currency as string) || 'USD',
+          stage: validStages.includes(stage) ? stage : 'LEAD',
+          probability: parseInt(record.probability as string) || 20,
+          expectedCloseDate: record.expectedCloseDate ? new Date(record.expectedCloseDate as string) : null,
+          notes: (record.notes as string) || null,
+          clientId,
+          ownerName: req.user?.firstName || 'Unknown',
+        },
+      });
+      results.imported++;
+    }
+
+    res.json({ success: true, data: results });
+  } catch (error) {
+    next(error);
+  }
+}
+

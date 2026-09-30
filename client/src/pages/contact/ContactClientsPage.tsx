@@ -3,7 +3,9 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { Button, Modal, EmptyState, ClaySkeletonCard } from '../../components/primitives';
 import ClientListTable from '../crm/components/ClientListTable';
 import ClientFormModal from '../crm/components/ClientFormModal';
+import CSVImportModal from '../crm/components/CSVImportModal';
 import { useAuthStore } from '../../store/authStore';
+import { Upload } from 'lucide-react';
 
 
 
@@ -15,6 +17,7 @@ export default function ContactClientsPage() {
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [customFields, setCustomFields] = useState<any[]>([]);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     fetchClients();
@@ -90,6 +93,23 @@ export default function ContactClientsPage() {
     }
   }
 
+  async function handleImportClients(csvData: string) {
+    const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/import/clients`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({ csvData }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      fetchClients();
+      return data.data;
+    }
+    throw new Error(data.error || 'Import failed');
+  }
+
   async function handleDeleteClient(id: string) {
     try {
       await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients/${id}`, {
@@ -108,9 +128,14 @@ export default function ContactClientsPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 clay-heading">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Clients</h1>
-          <Button onClick={() => { setSelectedClient(null); setShowFormModal(true); }} icon="add">
-            Add Client
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setShowImportModal(true)} variant="ghost" icon="upload">
+              Import CSV
+            </Button>
+            <Button onClick={() => { setSelectedClient(null); setShowFormModal(true); }} icon="add">
+              Add Client
+            </Button>
+          </div>
         </div>
 
         {loading ? (
@@ -146,6 +171,16 @@ export default function ContactClientsPage() {
             customFields={customFields}
           />
         </Modal>
+
+        {/* CSV Import Modal */}
+        <CSVImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onImport={handleImportClients}
+          title="Import Clients from CSV"
+          expectedFields={['name', 'email', 'phone', 'company', 'address', 'notes', 'status']}
+          templateHeaders={['name', 'email', 'phone', 'company', 'address', 'notes', 'status']}
+        />
 
         {/* Delete Confirmation Modal */}
         <Modal
