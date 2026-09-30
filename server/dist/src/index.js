@@ -609,6 +609,30 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
     logger_1.logger.info(`🔑 Google OAuth: ${process.env.GOOGLE_CLIENT_ID ? '✅ configured' : '❌ not configured'}`);
     // Routes are registered lazily via lazyRoute() at module load — no startup loading needed
     logger_1.logger.info('✅ Server ready (routes will lazy-load on first request)');
+    // ── A background failure must never take the API down ────────────────────
+    // Node 15+ terminates the process on an unhandled rejection by default, so one
+    // broken cron query or webhook callback used to kill every request the service
+    // was serving. Log loudly and keep serving; the health check still reports the
+    // process is alive, and the failing job is visible in the logs.
+    process.on('unhandledRejection', (reason) => {
+        logger_1.logger.error('Unhandled promise rejection (process kept alive):', reason?.message ?? reason);
+    });
+    process.on('uncaughtException', (err) => {
+        logger_1.logger.error('Uncaught exception (process kept alive):', err?.message ?? err);
+    });
+    // ── Agent onboarding tables ──────────────────────────────────────────────
+    // Agent signup/auth/passport/discovery all read "AgentMarketplace", which has
+    // no Prisma migration. Create it if this database doesn't have it, so a
+    // missing table can never turn every agent call into a missing-relation error.
+    setImmediate(async () => {
+        try {
+            const { ensureAgentTables } = await Promise.resolve().then(() => __importStar(require('./utils/agentTableBootstrap')));
+            await ensureAgentTables();
+        }
+        catch (err) {
+            logger_1.logger.warn(`Agent table bootstrap skipped: ${err?.message ?? err}`);
+        }
+    });
     // ── Auto-seed offline real businesses on cold start ─────────────────────
     // Ensures discovery always has geo-located data without manual seed calls.
     // Uses no external network — bundled real business coordinates. Safe in

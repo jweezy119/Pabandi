@@ -9,7 +9,8 @@ services:
     dockerContext: .
     autoDeploy: true
     buildCommand: echo "Build handled by Dockerfile"
-    preDeployCommand: node scripts/ensure-agent-tables.cjs
+    # NB: preDeploy runs from the repo root, not /app/server.
+    preDeployCommand: cd server && node scripts/ensure-agent-tables.cjs
     envVars:
       - key: NODE_ENV
         value: production
@@ -41,6 +42,14 @@ services:
         generateValue: true
       - key: COURTLISTENER_API_KEYS
         value: ""
+      # Required in production: every PTP attestation (issue + verify) is signed
+      # with it, and protocol/ptp.spec.ts throws at import time without it, which
+      # takes down every route that touches trust.
+      - key: PTP_SIGNING_SECRET
+        sync: false
+      # 64-char hex. Required by utils/encryption.ts for wallet secrets.
+      - key: ENCRYPTION_KEY
+        sync: false
       # x402 settlement. sync:false keeps whatever is set in the Render dashboard.
       - key: PABANDI_PAYOUT_ADDRESS
         sync: false

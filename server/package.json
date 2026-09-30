@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "ts-node --transpileOnly src/index.ts",
     "gcp-build": "prisma generate && tsc",
-    "compile": "prisma generate && (tsc --noEmitOnError false || true) && node -e \"const fs=require('fs');fs.rmSync('dist/src/public',{recursive:true,force:true});fs.cpSync('src/public','dist/src/public',{recursive:true})\"",
+    "compile": "prisma generate && (tsc --noEmitOnError false || true) && node -e \"const fs=require('fs');fs.rmSync('dist/src/public',{recursive:true,force:true});fs.cpSync('src/public','dist/src/public',{recursive:true});fs.rmSync('dist/sql',{recursive:true,force:true});fs.cpSync('sql','dist/sql',{recursive:true})\"",
     "zk:build": "ts-node src/zk/buildZk.ts",
     "start": "node dist/src/index.js",
     "prestart": "prisma generate",
@@ -26,7 +26,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "sync:agent-docs": "tsx scripts/sync-agent-docs.ts",
-    "compile:strict": "prisma generate && tsc && node -e \"const fs=require('fs');fs.rmSync('dist/src/public',{recursive:true,force:true});fs.cpSync('src/public','dist/src/public',{recursive:true})\"",
+    "compile:strict": "prisma generate && tsc && node -e \"const fs=require('fs');fs.rmSync('dist/src/public',{recursive:true,force:true});fs.cpSync('src/public','dist/src/public',{recursive:true});fs.rmSync('dist/sql',{recursive:true,force:true});fs.cpSync('sql','dist/sql',{recursive:true})\"",
     "check:runtime-deps": "tsx scripts/check-runtime-deps.ts"
   },
   "dependencies": {
