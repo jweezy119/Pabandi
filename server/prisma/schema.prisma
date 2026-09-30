@@ -459,6 +459,51 @@ model SlotLock {
   @@index([expiresAt])
 }
 
+model AgentMessage {
+  id               String   @id @default(cuid())
+  senderAgentId    String
+  recipientAgentId String
+  message          String
+  context          Json     @default("{}")
+  status           String   @default("delivered")
+  createdAt        DateTime @default(now())
+
+  @@index([senderAgentId, createdAt])
+  @@index([recipientAgentId, createdAt])
+}
+
+model AgentTask {
+  id               String    @id @default(cuid())
+  title            String
+  description      String?
+  priority         String    @default("medium")
+  status           String    @default("open")
+  createdByAgentId String
+  assignedAgentId  String?
+  dueAt            DateTime?
+  completedAt      DateTime?
+  result           Json?
+  metadata         Json      @default("{}")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([createdByAgentId, status])
+  @@index([assignedAgentId, status])
+}
+
+model AgentConsent {
+  id        String   @id @default(cuid())
+  userId    String
+  agentId   String
+  scopes    Json
+  status    String   @default("active")
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId, status])
+  @@index([agentId, status])
+}
+
 model CacheEntry {
   id        String   @id @default(cuid())
   key       String   @unique

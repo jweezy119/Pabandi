@@ -10,33 +10,21 @@ import toast from 'react-hot-toast';
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
 
 interface ValuesPreferences {
-  shariaCompliance?: boolean;
   profitSharing?: boolean;
   ethicalSourcing?: boolean;
   communityFirst?: boolean;
   environmentalConsciousness?: boolean;
   inclusiveServing?: boolean;
-  halalOnly?: boolean;
-  zakatEligible?: boolean;
-  prayerTimeAwareness?: boolean;
-  culturalSensitivity?: string;
+  transparency?: boolean;
   customValues?: string[];
 }
 
 const VALUE_OPTIONS = [
   {
-    id: 'shariaCompliance',
-    icon: Shield,
-    title: 'Faith-Aligned Finance',
-    description: 'Prefer profit-sharing and ethical financial arrangements. No interest-based transactions.',
-    category: 'financial',
-    color: 'var(--sage)',
-  },
-  {
     id: 'profitSharing',
     icon: Handshake,
     title: 'Profit Sharing',
-    description: 'Open to Mudarabah-style arrangements where profits and risks are shared fairly.',
+    description: 'Open to profit-sharing arrangements where profits and risks are shared fairly.',
     category: 'financial',
     color: 'var(--clay)',
   },
@@ -68,33 +56,17 @@ const VALUE_OPTIONS = [
     id: 'inclusiveServing',
     icon: Heart,
     title: 'Inclusive Service',
-    description: 'Welcome all customers regardless of background, faith, or identity.',
+    description: 'Welcome all customers regardless of background or identity.',
     category: 'values',
     color: 'var(--dusty-rose)',
   },
   {
-    id: 'halalOnly',
+    id: 'transparency',
     icon: Shield,
-    title: 'Faith-Based Preferences',
-    description: 'Filter for businesses that align with your faith-based requirements.',
-    category: 'faith',
-    color: 'var(--sage)',
-  },
-  {
-    id: 'zakatEligible',
-    icon: Sparkles,
-    title: 'Charitable Giving',
-    description: 'Track and allocate a portion of spending to charitable causes.',
-    category: 'faith',
-    color: 'var(--muted-ochre)',
-  },
-  {
-    id: 'prayerTimeAwareness',
-    icon: Heart,
-    title: 'Respect for Observances',
-    description: 'Businesses are mindful of prayer times and religious observances.',
-    category: 'faith',
-    color: 'var(--dusty-rose)',
+    title: 'Radical Transparency',
+    description: 'Prefer businesses that are open about pricing, processes, and policies.',
+    category: 'values',
+    color: 'var(--sky-wash)',
   },
 ];
 
@@ -179,7 +151,6 @@ export default function ValuesPreferencesPage() {
 
   const financialValues = VALUE_OPTIONS.filter(v => v.category === 'financial');
   const valuesOptions = VALUE_OPTIONS.filter(v => v.category === 'values');
-  const faithOptions = VALUE_OPTIONS.filter(v => v.category === 'faith');
 
   return (
     <div className="min-h-screen bg-[var(--cream)]">
@@ -233,24 +204,6 @@ export default function ValuesPreferencesPage() {
             </h2>
             <div className="space-y-3">
               {valuesOptions.map(option => (
-                <ValueToggle
-                  key={option.id}
-                  option={option}
-                  enabled={Boolean(preferences[option.id as keyof ValuesPreferences])}
-                  onToggle={() => toggleValue(option.id as keyof ValuesPreferences)}
-                  saving={saving}
-                />
-              ))}
-            </div>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-bold text-[var(--warm-ink)] font-headline mb-4 flex items-center gap-2">
-              <Shield size={18} className="text-[var(--sage)]" />
-              Faith & Observance
-            </h2>
-            <div className="space-y-3">
-              {faithOptions.map(option => (
                 <ValueToggle
                   key={option.id}
                   option={option}
