@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { getAttestationsForPassport } from '../services/onchain-attestation.service';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -12,7 +13,6 @@ router.get('/:passportId', async (req: Request, res: Response) => {
     const passport = await prisma.trustPassport.findUnique({
       where: { id: passportId },
       select: {
-        // Public-safe fields only — NO email, phone, address, financial details
         id: true,
         handle: true,
         displayName: true,
@@ -36,6 +36,9 @@ router.get('/:passportId', async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, error: 'Profile not found or private' });
     }
 
+    const attestations = await getAttestationsForPassport(passportId);
+    const latestExplorerUrl = attestations[0]?.explorerUrl || null;
+
     return res.json({
       success: true,
       data: {
@@ -51,6 +54,17 @@ router.get('/:passportId', async (req: Request, res: Response) => {
         verifiedIdentity: passport.verifiedIdentity,
         totalEvents: passport._count.invoiceTrustEvents,
         memberSince: passport.createdAt.toISOString(),
+        onchain: {
+          verifiedCount: attestations.length,
+          latestExplorerUrl,
+          attestations: attestations.map(a => ({
+            eventType: a.eventType,
+            referenceId: a.referenceId,
+            txSignature: a.txSignature,
+            explorerUrl: a.explorerUrl,
+            createdAt: a.createdAt,
+          })),
+        },
       },
     });
   } catch (err) {

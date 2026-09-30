@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { emailService } from '../services/email.service';
+import { writeAttestation } from '../services/onchain-attestation.service';
 
 const prisma = new PrismaClient();
 
@@ -27,18 +28,63 @@ class TrustCore {
         finalInvoiceId = fallback?.id || '';
       }
 
+      const passportId = payload.passportId || payload.clientPassportId || '';
+
       // Persist to the audit table
       await prisma.invoiceTrustEvent.create({
         data: {
           invoiceId: finalInvoiceId,
-          passportId: payload.passportId || payload.clientPassportId || '',
+          passportId,
           eventType,
         },
       });
 
       // Update the scoped score if applicable
-      if (payload.passportId) {
-        await this.updateScopedScore(eventType, payload.passportId);
+      if (passportId) {
+        await this.updateScopedScore(eventType, passportId);
+      }
+
+      // Fire-and-forget onchain attestation for key trust events
+      const attestationEventTypes = new Set([
+        'invoice.paid_on_time',
+        'invoice.paid_late',
+        'delivery.on_time',
+        'delivery.missed',
+        'booking.attended',
+        'booking.no_show',
+        'escrow.released',
+        'escrow.disputed',
+      ]);
+
+      if (passportId && attestationEventTypes.has(eventType)) {
+        const referenceId =
+          payload.invoiceId || payload.jobId || payload.dealId || payload.bookingId || finalInvoiceId;
+
+        writeAttestation({
+          passportId,
+          eventType,
+          referenceId,
+          metadata: { amount: payload.amount },
+        }).then(async result => {
+          if (result.signature) {
+            try {
+              await prisma.onchainAttestation.create({
+                data: {
+                  passportId,
+                  eventType,
+                  referenceId,
+                  txSignature: result.signature,
+                  hash: result.hash,
+                  explorerUrl: result.explorerUrl,
+                },
+              });
+            } catch (dbErr) {
+              console.error('[TrustCore] attestation DB write failed:', dbErr);
+            }
+          }
+        }).catch(err => {
+          console.error('[TrustCore] attestation write failed:', err);
+        });
       }
     } catch (err) {
       console.error(`[TrustCore] emit failed for ${eventType}:`, err);

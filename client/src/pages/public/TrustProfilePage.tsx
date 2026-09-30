@@ -58,19 +58,23 @@ function ScoreRing({ score, label, sampleSize }: { score: number; label: string;
 export function TrustProfilePage() {
   const { passportId } = useParams<{ passportId: string }>();
   const [profile, setProfile] = useState<TrustProfile | null>(null);
+  const [attestations, setAttestations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (!passportId) return;
     const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-    fetch(`${baseUrl}/api/v1/trust-profile/${passportId}`)
-      .then(res => {
+    Promise.all([
+      fetch(`${baseUrl}/api/v1/trust-profile/${passportId}`).then(res => {
         if (!res.ok) throw new Error('Profile not found');
         return res.json();
-      })
-      .then(data => setProfile(data.data))
-      .catch(() => setError('Trust profile not found or is private.'))
+      }),
+      fetch(`${baseUrl}/api/v1/trust/${passportId}/attestations`).then(res => res.ok ? res.json() : { success: true, data: { attestations: [] } }),
+    ]).then(([profileData, attestationsData]) => {
+      setProfile(profileData.data);
+      setAttestations(attationsData.data?.attestations || []);
+    }).catch(() => setError('Trust profile not found or is private.'))
       .finally(() => setLoading(false));
   }, [passportId]);
 
@@ -155,7 +159,56 @@ export function TrustProfilePage() {
             </p>
             <p style={{ fontSize: '12px', color: '#7A736E', margin: '2px 0 0' }}>ID Verified</p>
           </div>
+          {attestations.length > 0 && (
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: '24px', fontWeight: 700, color: '#14b8a6', margin: 0 }}>{attestations.length}</p>
+              <p style={{ fontSize: '12px', color: '#7A736E', margin: '2px 0 0' }}>Onchain Verified</p>
+            </div>
+          )}
         </div>
+
+        {/* Onchain attestations */}
+        {attestations.length > 0 && (
+          <div style={{
+            background: '#F0FDFA', borderRadius: 12, padding: '12px 16px',
+            display: 'flex', alignItems: 'center', gap: 12, marginTop: 12,
+            border: '1px solid #99F6E4',
+          }}>
+            <span style={{ fontSize: 24 }}>⛓️</span>
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: 0, fontWeight: 600, fontSize: '14px', color: '#0F766E' }}>Verified on Solana</p>
+              <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#7A736E' }}>
+                {attestations.length} trust event{attestations.length !== 1 ? 's' : ''} attested on-chain
+              </p>
+            </div>
+            {attestations[0]?.explorerUrl && (
+              <a
+                href={attestations[0].explorerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  padding: '4px 12px', borderRadius: 8, background: '#14b8a6', color: '#fff',
+                  fontWeight: 700, fontSize: '11px', textDecoration: 'none',
+                }}
+              >
+                View on Solscan
+              </a>
+            )}
+            <button
+              onClick={() => {
+                const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+                window.open(`${baseUrl}/api/v1/trust/${passportId}/attestations/export`, '_blank');
+              }}
+              style={{
+                padding: '4px 12px', borderRadius: 8, background: 'transparent',
+                color: '#0F766E', fontWeight: 700, fontSize: '11px', border: '1px solid #5EEAD4',
+                cursor: 'pointer',
+              }}
+            >
+              Export JSON
+            </button>
+          </div>
+        )}
 
         {/* Badge */}
         <div style={{

@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { apiLimiter } from '../middleware/rateLimit.middleware';
+import { getAttestationsForPassport } from '../services/onchain-attestation.service';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'pabandi-fallback-secret-2026';
@@ -112,6 +113,136 @@ router.get('/credential/:passportId', apiLimiter, async (req: Request, res: Resp
     });
   } catch (error: any) {
     logger.error(`[Trust] credential error: ${error.message}`);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/v1/trust/public/:userId
+ * Public trust profile for a user.
+ */
+router.get('/public/:userId', apiLimiter, async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.userId;
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'userId is required' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, firstName: true, lastName: true, email: true, trustScore: true, reliabilityScore: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const passport = await prisma.trustPassport.findFirst({ where: { userId } });
+
+    return res.json({
+      success: true,
+      data: {
+        user: {
+          id: user.id,
+          name: `${user.firstName} ${user.lastName}`.trim(),
+          email: user.email,
+          trustScore: user.trustScore,
+          reliabilityScore: user.reliabilityScore,
+        },
+        passport: passport
+          ? {
+              id: passport.id,
+              handle: passport.handle,
+              displayName: passport.displayName,
+              category: passport.category,
+              scores: publicScores(passport),
+              claimsCount: passport.claimsCount,
+              verifiedIdentity: passport.verifiedIdentity,
+            }
+          : null,
+      },
+    });
+  } catch (error: any) {
+    logger.error(`[Trust] public error: ${error.message}`);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/v1/trust/:passportId/attestations
+ * List onchain attestations for a passport.
+ */
+router.get('/:passportId/attestations', apiLimiter, async (req: Request, res: Response) => {
+  try {
+    const passportId = req.params.passportId;
+    if (!passportId) {
+      return res.status(400).json({ success: false, error: 'passportId is required' });
+    }
+
+    const passport = await prisma.trustPassport.findUnique({ where: { id: passportId } });
+    if (!passport || passport.visibility !== 'PUBLIC') {
+      return res.status(404).json({ success: false, error: 'Passport not found or private' });
+    }
+
+    const attestations = await getAttestationsForPassport(passportId);
+
+    return res.json({
+      success: true,
+      data: {
+        passportId,
+        count: attestations.length,
+        attestations: attestations.map(a => ({
+          eventType: a.eventType,
+          referenceId: a.referenceId,
+          txSignature: a.txSignature,
+          explorerUrl: a.explorerUrl,
+          createdAt: a.createdAt,
+        })),
+      },
+    });
+  } catch (error: any) {
+    logger.error(`[Trust] attestations error: ${error.message}`);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/v1/trust/:passportId/attestations/export
+ * Export attestations as JSON download.
+ */
+router.get('/:passportId/attestations/export', apiLimiter, async (req: Request, res: Response) => {
+  try {
+    const passportId = req.params.passportId;
+    if (!passportId) {
+      return res.status(400).json({ success: false, error: 'passportId is required' });
+    }
+
+    const passport = await prisma.trustPassport.findUnique({ where: { id: passportId } });
+    if (!passport || passport.visibility !== 'PUBLIC') {
+      return res.status(404).json({ success: false, error: 'Passport not found or private' });
+    }
+
+    const attestations = await getAttestationsForPassport(passportId);
+
+    const exportData = {
+      passportId,
+      handle: passport.handle,
+      displayName: passport.displayName,
+      exportedAt: new Date().toISOString(),
+      attestations: attestations.map(a => ({
+        eventType: a.eventType,
+        referenceId: a.referenceId,
+        txSignature: a.txSignature,
+        explorerUrl: a.explorerUrl,
+        createdAt: a.createdAt,
+      })),
+    };
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename=attestations-${passport.handle || passportId}.json`);
+    res.send(JSON.stringify(exportData, null, 2));
+  } catch (error: any) {
+    logger.error(`[Trust] export error: ${error.message}`);
     return res.status(500).json({ success: false, error: error.message });
   }
 });

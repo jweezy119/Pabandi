@@ -4090,6 +4090,20 @@ model TrustPassport {
   @@index([providerRef])
 }
 
+model OnchainAttestation {
+  id           String   @id @default(cuid())
+  passportId   String
+  eventType    String
+  referenceId  String
+  txSignature  String   @unique
+  hash         String
+  explorerUrl  String
+  createdAt    DateTime @default(now())
+
+  @@index([passportId])
+  @@index([eventType])
+}
+
 // ── Best Fit Engine (Behavioral Biometrics & Pattern Matching) ─────────────
 
 model PassportGigHistory {
