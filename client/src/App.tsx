@@ -262,6 +262,9 @@ import LedgerReportsPage from './pages/ledger/LedgerReportsPage';
 import ProtocolDashboardPage from './pages/ProtocolDashboardPage';
 import ProfileEditorPage from './pages/me/ProfileEditorPage';
 import PublicProfilePage from './pages/public/PublicProfilePage';
+import FluidBookingPage from './pages/booking/FluidBookingPage';
+import BusinessVerificationPage from './pages/crm/BusinessVerificationPage';
+import QuickPostPage from './pages/crm/QuickPostPage';
 
 // Support
 import SupportHomePage from './pages/support/SupportHomePage';
@@ -563,6 +566,7 @@ function AnimatedAppRoutes() {
             <Route path="promotions" element={<PromotionsPage />} />
             <Route path="daraz-scanner" element={<DarazScannerPage />} />
             <Route path="u/:username" element={<PublicProfilePage />} />
+            <Route path="book/:businessSlug" element={<FluidBookingPage />} />
             <Route path="user/:id" element={<PublicCustomerProfilePage />} />
             <Route path="verify-email" element={<VerifyEmailPage />} />
             <Route path="passport/dietary" element={<DietaryPassportPage />} />
@@ -585,6 +589,8 @@ function AnimatedAppRoutes() {
             <Route path="me/rewards" element={<PersonalGuard><PersonalRewardsPage /></PersonalGuard>} />
             <Route path="me/wallet" element={<PersonalGuard><PersonalWalletPage /></PersonalGuard>} />
             <Route path="me/profile" element={<PersonalGuard><ProfileEditorPage /></PersonalGuard>} />
+            <Route path="me/verification" element={<PersonalGuard><BusinessVerificationPage /></PersonalGuard>} />
+            <Route path="me/quick-post" element={<PersonalGuard><QuickPostPage /></PersonalGuard>} />
           </Route>
       </Routes>
     </AnimatePresence>
