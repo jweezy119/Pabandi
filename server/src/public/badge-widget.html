@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pabandi Trust Badge</title>
+  <style>
+    :root {
+      --bg: transparent;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #6366f1;
+      --success: #10b981;
+      --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background: var(--bg);
+      display: inline-block;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .badge:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .badge-icon {
+      width: 20px; height: 20px; border-radius: 50%;
+      display: grid; place-items: center; font-size: 11px; font-weight: 800; color: white;
+    }
+    .badge-icon.profile { background: linear-gradient(135deg, #6366f1, #a855f7); }
+    .badge-icon.review { background: linear-gradient(135deg, #10b981, #059669); }
+    .badge-icon.escrow { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .badge-icon.passport { background: linear-gradient(135deg, #6366f1, #ec4899); }
+    .badge-count { font-weight: 700; color: var(--accent); }
+    .badge-label { color: var(--muted); font-weight: 500; }
+  </style>
+</head>
+<body>
+  <div id="pabandi-badge"></div>
+
+  <script>
+    (function() {
+      const params = new URLSearchParams(location.search);
+      const type = params.get('type') || 'profile';
+      const identifier = params.get('identifier') || '';
+      const baseUrl = params.get('base') || (location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? 'http://localhost:4000' : 'https://pabandi.onrender.com');
+      const container = document.getElementById('pabandi-badge');
+
+      async function loadBadge() {
+        if (!identifier) {
+          container.innerHTML = '<span class="badge">Pabandi</span>';
+          return;
+        }
+
+        try {
+          const res = await fetch(`${baseUrl}/api/v1/trust/resolve/${encodeURIComponent(identifier)}`);
+          const json = await res.json();
+          if (!json.success || !json.data) throw new Error('Not found');
+
+          const data = json.data;
+          let html = '<a class="badge" href="' + baseUrl + '/trust/' + (data.handle || identifier) + '" target="_blank" rel="noopener">';
+
+          if (type === 'profile') {
+            html += '<span class="badge-icon profile">P</span>';
+            html += '<span>' + (data.displayName || 'Pabandi User') + '</span>';
+          } else if (type === 'review') {
+            html += '<span class="badge-icon review">★</span>';
+            html += '<span class="badge-count">' + (data.claimsCount || 0) + '</span>';
+            html += '<span class="badge-label">verified reviews</span>';
+          } else if (type === 'escrow') {
+            html += '<span class="badge-icon escrow">E</span>';
+            html += '<span class="badge-count">' + (data.escrowCount || 0) + '</span>';
+            html += '<span class="badge-label">escrow transactions</span>';
+          } else if (type === 'passport') {
+            html += '<span class="badge-icon passport">T</span>';
+            const avg = Math.round(((data.scores?.payment || 500) + (data.scores?.showUp || 500) + (data.scores?.delivery || 500)) / 3);
+            html += '<span class="badge-count">' + avg + '</span>';
+            html += '<span class="badge-label">trust score</span>';
+          }
+
+          html += '</a>';
+          container.innerHTML = html;
+        } catch (e) {
+          container.innerHTML = '<span class="badge">Pabandi Verified</span>';
+        }
+      }
+
+      loadBadge();
+    })();
+  </script>
+</body>
+</html>

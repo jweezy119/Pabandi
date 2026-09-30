@@ -44,13 +44,64 @@ const LIVE_SALE_CODE = `app.post('/live-sale/checkout', async (req, res) => {
   }
 })`;
 
+const TRUST_API_CODE = `// Quickstart: Resolve a trust score by email or wallet
+const response = await fetch('https://api.pabandi.com/api/v1/trust/resolve/user@example.com', {
+  headers: { 'Authorization': 'Bearer YOUR_API_KEY' }
+});
+const { data } = await response.json();
+console.log(data.scores.payment, data.scores.showUp);`;
+
+const PYTHON_SDK = `pip install pabandi-sdk
+
+from pabandi import TrustClient
+
+client = TrustClient(api_key="YOUR_KEY")
+
+# Resolve trust score
+score = client.trust.resolve("user@example.com")
+print(score.payment, score.show_up)
+
+# Create escrow
+escrow = client.escrow.create(
+    reference_id="order-123",
+    template="freelance",
+    parties=[{"partyId": "buyer-1", "role": "buyer"}],
+    amount=500,
+    currency="USDC",
+    conditions=[{"type": "milestone", "verify": {"milestoneId": "m1"}}],
+    deadline="2026-12-31"
+)`;
+
+const PLAYGROUND_CODE = `// Try it right here — no auth needed for public endpoints
+const identifier = prompt('Enter email, wallet, or handle:');
+if (!identifier) throw new Error('identifier required');
+
+const res = await fetch(\`/api/v1/trust/resolve/\${encodeURIComponent(identifier)}\`);
+const json = await res.json();
+console.log(json);`;
+
 export default function DeveloperPortalPage() {
   const [copied, setCopied] = useState(false);
+  const [playgroundOutput, setPlaygroundOutput] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'overview' | 'quickstart' | 'sdks' | 'playground'>('overview');
 
   const handleCopy = () => {
     navigator.clipboard.writeText(LIVE_SALE_CODE);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const runPlayground = async () => {
+    const identifier = prompt('Enter email, wallet, or handle:');
+    if (!identifier) return;
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+      const res = await fetch(`${baseUrl}/api/v1/trust/resolve/${encodeURIComponent(identifier)}`);
+      const json = await res.json();
+      setPlaygroundOutput(JSON.stringify(json, null, 2));
+    } catch (e: any) {
+      setPlaygroundOutput(`Error: ${e.message}`);
+    }
   };
 
   return (
@@ -78,73 +129,160 @@ export default function DeveloperPortalPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-3xl px-4 pb-16 sm:px-6 lg:px-8">
-        <Stack>
-          <p className="text-lg leading-relaxed text-[var(--warm-ink)]/90">
-            Pabandi is the WhatsApp-native commerce escrow layer with a portable reliability API.
-            Integrate escrow-backed bookings, trust verification, and checkout into live selling,
-            marketplaces, rentals, clinic bookings, and hospitality—without rebuilding trust from
-            scratch.
-          </p>
-
-          <Callout accent="#334155">
-            <p className="text-base leading-relaxed text-[var(--warm-ink)]/80">
-              <strong className="text-[var(--warm-ink)]">The problem today:</strong> Manual deposits, late
-              cash, and informal trust still dominate local commerce. WhatsApp is where the
-              conversation happens—commitment, protection, and verification should happen there too.
-            </p>
-          </Callout>
-
-          <Callout accent="#818cf8">
-            <p className="text-base leading-relaxed text-[var(--warm-ink)]/80">
-              <strong className="text-[var(--warm-ink)]">The Pabandi answer:</strong> The Passport is the
-              portable trust ID; the escrow layer is the guarantee. Buyers and sellers transact on
-              WhatsApp with verified commitment, deposit protection, and $PAB rewards.
-            </p>
-          </Callout>
-        </Stack>
+      {/* Tabs */}
+      <section className="mx-auto max-w-5xl px-4 pb-4 sm:px-6 lg:px-8">
+        <div className="flex gap-2 overflow-x-auto">
+          {(['overview', 'quickstart', 'sdks', 'playground'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold capitalize whitespace-nowrap ${activeTab === tab ? 'bg-[var(--clay)]/20 text-[var(--clay)] border border-[var(--clay)]/30' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] border border-[rgba(191,179,163,0.2)]'}`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </section>
 
-      <Section
-        title="Use Cases"
-        description="Trust and escrow primitives for local commerce, whether the transaction starts on WhatsApp, a storefront, or a booking widget."
-      >
-        {[
-          {
-            icon: '🛍️',
-            title: 'Live Selling',
-            desc: 'Verify buyer score before allowing pay-on-delivery on Instagram/TikTok live drops.',
-          },
-          {
-            icon: '🗓️',
-            title: 'Booking Platforms',
-            desc: 'Flag high-risk appointments before confirmation for salons, clinics, and drivers.',
-          },
-          {
-            icon: '🤝',
-            title: 'Marketplaces',
-            desc: 'Weight bids by seller reliability. OLX-style local platforms can reduce fraud.',
-          },
-          {
-            icon: '💻',
-            title: 'Freelance Tools',
-            desc: 'Port reputation from Pabandi into gig platforms. Better rates for better history.',
-          },
-          {
-            icon: '🔐',
-            title: 'Gated Access',
-            desc: 'Require minimum score for premium or vetted community access.',
-          },
-        ].map((item) => (
-          <Surface key={item.title}>
-            <div className="text-3xl">{item.icon}</div>
-            <h3 className="text-lg font-semibold text-[var(--warm-ink)]">{item.title}</h3>
-            <p className="text-sm leading-relaxed text-[var(--warm-ink)]/80">{item.desc}</p>
-          </Surface>
-        ))}
-      </Section>
+      {/* Overview Tab */}
+      {activeTab === 'overview' && (
+        <section className="mx-auto max-w-3xl px-4 pb-16 sm:px-6 lg:px-8">
+          <Stack>
+            <p className="text-lg leading-relaxed text-[var(--warm-ink)]/90">
+              Pabandi is the WhatsApp-native commerce escrow layer with a portable reliability API.
+              Integrate escrow-backed bookings, trust verification, and checkout into live selling,
+              marketplaces, rentals, clinic bookings, and hospitality—without rebuilding trust from
+              scratch.
+            </p>
 
-      <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
+            <Callout accent="#334155">
+              <p className="text-base leading-relaxed text-[var(--warm-ink)]/80">
+                <strong className="text-[var(--warm-ink)]">The problem today:</strong> Manual deposits, late
+                cash, and informal trust still dominate local commerce. WhatsApp is where the
+                conversation happens—commitment, protection, and verification should happen there too.
+              </p>
+            </Callout>
+
+            <Callout accent="#818cf8">
+              <p className="text-base leading-relaxed text-[var(--warm-ink)]/80">
+                <strong className="text-[var(--warm-ink)]">The Pabandi answer:</strong> The Passport is the
+                portable trust ID; the escrow layer is the guarantee. Buyers and sellers transact on
+                WhatsApp with verified commitment, deposit protection, and $PAB rewards.
+              </p>
+            </Callout>
+          </Stack>
+        </section>
+      )}
+
+      {/* Quickstart Tab */}
+      {activeTab === 'quickstart' && (
+        <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl">
+            <h2 className="text-center text-3xl font-bold tracking-tight text-[var(--warm-ink)]">
+              Quickstart
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-center text-[var(--warm-ink)]/80">
+              Get started in 5 minutes. Sign up for an API key, install the SDK, and make your first trust lookup.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-10 max-w-3xl space-y-4">
+            <Surface className="p-6">
+              <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-2">1. Get your API key</h3>
+              <p className="text-sm text-[var(--soft-stone)] mb-3">Email jay@pabandi.com to request a free API key for beta partners.</p>
+              <CodeBlock code={`export PABANDI_API_KEY="pab_live_..."`} language="bash" />
+            </Surface>
+
+            <Surface className="p-6">
+              <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-2">2. Resolve a trust score</h3>
+              <p className="text-sm text-[var(--soft-stone)] mb-3">Call the trust resolver with any identifier: email, wallet, or GitHub handle.</p>
+              <CodeBlock code={TRUST_API_CODE} language="javascript" />
+            </Surface>
+
+            <Surface className="p-6">
+              <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-2">3. Create an escrow</h3>
+              <p className="text-sm text-[var(--soft-stone)] mb-3">Generalize escrow for any transaction type.</p>
+              <CodeBlock code={`POST /api/v1/escrow
+{
+  "referenceId": "order-123",
+  "template": "freelance",
+  "parties": [{"partyId": "buyer-1", "role": "buyer"}],
+  "amount": 500,
+  "currency": "USDC",
+  "conditions": [{"type": "milestone", "verify": {"milestoneId": "m1"}}]
+}`} language="json" />
+            </Surface>
+          </div>
+        </section>
+      )}
+
+      {/* SDKs Tab */}
+      {activeTab === 'sdks' && (
+        <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl">
+            <h2 className="text-center text-3xl font-bold tracking-tight text-[var(--warm-ink)]">
+              SDKs
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-center text-[var(--warm-ink)]/80">
+              Official libraries for JavaScript and Python. Go SDK coming soon.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-10 max-w-3xl space-y-4">
+            <Surface className="p-6">
+              <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-2">JavaScript / TypeScript</h3>
+              <CodeBlock code={`npm install @pabandi/trust
+
+import { TrustClient } from '@pabandi/trust';
+
+const client = new TrustClient({ apiKey: process.env.PABANDI_API_KEY });
+const score = await client.trust.resolve('user@example.com');`} language="javascript" />
+            </Surface>
+
+            <Surface className="p-6">
+              <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-2">Python</h3>
+              <CodeBlock code={PYTHON_SDK} language="python" />
+            </Surface>
+
+            <Surface className="p-6">
+              <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-2">cURL</h3>
+              <CodeBlock code={`curl -H "Authorization: Bearer YOUR_KEY" \\
+  https://api.pabandi.com/api/v1/trust/resolve/user@example.com`} language="bash" />
+            </Surface>
+          </div>
+        </section>
+      )}
+
+      {/* Playground Tab */}
+      {activeTab === 'playground' && (
+        <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl">
+            <h2 className="text-center text-3xl font-bold tracking-tight text-[var(--warm-ink)]">
+              Playground
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-center text-[var(--warm-ink)]/80">
+              Test the Trust API without authentication. Try resolving a public profile.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-10 max-w-3xl">
+            <Surface className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Button onClick={runPlayground}>Run Example</Button>
+                <span className="text-xs text-[var(--soft-stone)]">No API key required for public endpoints</span>
+              </div>
+              {playgroundOutput && (
+                <div className="rounded-xl bg-[var(--warm-sand)] p-4">
+                  <pre className="text-xs text-[var(--warm-ink)] whitespace-pre-wrap">{playgroundOutput}</pre>
+                </div>
+              )}
+            </Surface>
+          </div>
+        </section>
+      )}
+
+      {/* Live Sale Integration Example */}
+      <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl">
           <h2 className="text-center text-3xl font-bold tracking-tight text-[var(--warm-ink)]">
             Live-Sale Integration Example

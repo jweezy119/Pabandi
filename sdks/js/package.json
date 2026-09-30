@@ -1,0 +1,26 @@
+{
+  "name": "@pabandi/trust",
+  "version": "0.1.0",
+  "description": "Pabandi Trust API SDK — resolve trust scores, create escrows, and verify passports",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "test": "vitest run"
+  },
+  "keywords": ["pabandi", "trust", "escrow", "reputation", "verifiable-credentials"],
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "tsup": "^8.0.0",
+    "vitest": "^2.0.0"
+  }
+}

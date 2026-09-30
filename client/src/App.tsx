@@ -83,6 +83,8 @@ import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { AdminSetupPage } from './pages/AdminSetupPage';
 import DietaryPassportPage from './pages/DietaryPassportPage';
 import DeveloperPortalPage from './pages/DeveloperPortalPage';
+import PartnerDirectoryPage from './pages/PartnerDirectoryPage';
+import GrantsPage from './pages/GrantsPage';
 import { TrustPulsePage } from './pages/TrustPulsePage';
 import { CommunityJuryPage } from './pages/CommunityJuryPage';
 import { WaitlistPage } from './pages/WaitlistPage';
@@ -549,6 +551,9 @@ function AnimatedAppRoutes() {
             <Route path="forgot-password" element={<ForgotPasswordPage />} />
             <Route path="reset-password/:token" element={<ResetPasswordPage />} />
             <Route path="developer" element={<DeveloperPortalPage />} />
+            <Route path="developers" element={<Navigate to="/developer" replace />} />
+            <Route path="partners" element={<PartnerDirectoryPage />} />
+            <Route path="grants" element={<GrantsPage />} />
             <Route path="promo" element={<PromoPage />} />
             <Route path="promotions" element={<PromotionsPage />} />
             <Route path="daraz-scanner" element={<DarazScannerPage />} />
