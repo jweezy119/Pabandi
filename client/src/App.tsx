@@ -10,6 +10,22 @@ function FeatureGate({ feature, children }: { feature: string; children: React.R
   }
   return <>{children}</>;
 }
+
+function BusinessGuard({ children }: { children: React.ReactNode }) {
+  const { user } = useAuthStore();
+  if (!user?.activeBusinessId) {
+    return <Navigate to="/onboard" replace />;
+  }
+  return <>{children}</>;
+}
+
+function PersonalGuard({ children }: { children: React.ReactNode }) {
+  const { user } = useAuthStore();
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+}
 import { AppShell } from './components/AppShell';
 import DashboardPage from './pages/DashboardPage';
 import BusinessPage from './pages/BusinessPage';
@@ -315,30 +331,30 @@ function AnimatedAppRoutes() {
           <Route path="booking/flow" element={<BookingFlowPage />} />
           <Route path="pay/:invoiceId" element={<PayInvoicePage />} />
 
-          {/* Contact OS - CRM & Sales */}
-          <Route path="contact" element={<ContactOSPage />} />
-          <Route path="contact/clients" element={<FeatureGate feature="clients"><ContactClientsPage /></FeatureGate>} />
-          <Route path="contact/clients/:id" element={<FeatureGate feature="clients"><ContactClientDetailPage /></FeatureGate>} />
-          <Route path="contact/jobs" element={<FeatureGate feature="jobs"><ContactJobsPage businessId={user?.businessId || 'default'} /></FeatureGate>} />
-          <Route path="contact/jobs/:id" element={<FeatureGate feature="jobs"><ContactJobDetailPage /></FeatureGate>} />
-          <Route path="contact/deals" element={<FeatureGate feature="deals"><ContactDealsPage /></FeatureGate>} />
-          <Route path="contact/deals/:id" element={<FeatureGate feature="deals"><ContactDealDetailPage /></FeatureGate>} />
-          <Route path="contact/activities" element={<FeatureGate feature="activities"><ContactActivitiesPage /></FeatureGate>} />
-          <Route path="contact/tasks" element={<FeatureGate feature="tasks"><ContactTasksPage /></FeatureGate>} />
-          <Route path="contact/team" element={<FeatureGate feature="team"><ContactTeamPage /></FeatureGate>} />
-          <Route path="contact/team/:id" element={<FeatureGate feature="team"><ContactTeamMemberPage /></FeatureGate>} />
-          <Route path="contact/reports" element={<ContactAnalyticsPage />} />
-          <Route path="invite/accept" element={<InviteAcceptPage />} />
-          <Route path="contact/invoices" element={<FeatureGate feature="invoices"><InvoicesPage /></FeatureGate>} />
-          <Route path="contact/invoices/:id" element={<FeatureGate feature="invoices"><ContactInvoiceDetailPage /></FeatureGate>} />
-          <Route path="contact/settings" element={<SettingsHubPage />} />
-          <Route path="contact/settings/profile" element={<BusinessProfilePage />} />
-          <Route path="contact/settings/modules" element={<ModulesSettingsPage />} />
-          <Route path="contact/settings/custom-fields" element={<CustomFieldsPage />} />
-          <Route path="contact/settings/pipeline" element={<PipelineSettingsPage />} />
-          <Route path="contact/settings/services" element={<ServiceCatalogPage />} />
-          <Route path="contact/settings/payment" element={<PaymentSettingsPage />} />
-          <Route path="contact/settings/trust" element={<TrustSettingsPage />} />
+           {/* Contact OS - CRM & Sales */}
+           <Route path="contact" element={<BusinessGuard><ContactOSPage /></BusinessGuard>} />
+           <Route path="contact/clients" element={<BusinessGuard><FeatureGate feature="clients"><ContactClientsPage /></FeatureGate></BusinessGuard>} />
+           <Route path="contact/clients/:id" element={<BusinessGuard><FeatureGate feature="clients"><ContactClientDetailPage /></FeatureGate></BusinessGuard>} />
+           <Route path="contact/jobs" element={<BusinessGuard><FeatureGate feature="jobs"><ContactJobsPage businessId={user?.businessId || 'default'} /></FeatureGate></BusinessGuard>} />
+           <Route path="contact/jobs/:id" element={<BusinessGuard><FeatureGate feature="jobs"><ContactJobDetailPage /></FeatureGate></BusinessGuard>} />
+           <Route path="contact/deals" element={<BusinessGuard><FeatureGate feature="deals"><ContactDealsPage /></FeatureGate></BusinessGuard>} />
+           <Route path="contact/deals/:id" element={<BusinessGuard><FeatureGate feature="deals"><ContactDealDetailPage /></FeatureGate></BusinessGuard>} />
+           <Route path="contact/activities" element={<BusinessGuard><FeatureGate feature="activities"><ContactActivitiesPage /></FeatureGate></BusinessGuard>} />
+           <Route path="contact/tasks" element={<BusinessGuard><FeatureGate feature="tasks"><ContactTasksPage /></FeatureGate></BusinessGuard>} />
+           <Route path="contact/team" element={<BusinessGuard><FeatureGate feature="team"><ContactTeamPage /></FeatureGate></BusinessGuard>} />
+           <Route path="contact/team/:id" element={<BusinessGuard><FeatureGate feature="team"><ContactTeamMemberPage /></FeatureGate></BusinessGuard>} />
+           <Route path="contact/reports" element={<BusinessGuard><ContactAnalyticsPage /></BusinessGuard>} />
+           <Route path="invite/accept" element={<InviteAcceptPage />} />
+           <Route path="contact/invoices" element={<BusinessGuard><FeatureGate feature="invoices"><InvoicesPage /></FeatureGate></BusinessGuard>} />
+           <Route path="contact/invoices/:id" element={<BusinessGuard><FeatureGate feature="invoices"><ContactInvoiceDetailPage /></FeatureGate></BusinessGuard>} />
+           <Route path="contact/settings" element={<BusinessGuard><SettingsHubPage /></BusinessGuard>} />
+           <Route path="contact/settings/profile" element={<BusinessGuard><BusinessProfilePage /></BusinessGuard>} />
+           <Route path="contact/settings/modules" element={<BusinessGuard><ModulesSettingsPage /></BusinessGuard>} />
+           <Route path="contact/settings/custom-fields" element={<BusinessGuard><CustomFieldsPage /></BusinessGuard>} />
+           <Route path="contact/settings/pipeline" element={<BusinessGuard><PipelineSettingsPage /></BusinessGuard>} />
+           <Route path="contact/settings/services" element={<BusinessGuard><ServiceCatalogPage /></BusinessGuard>} />
+           <Route path="contact/settings/payment" element={<BusinessGuard><PaymentSettingsPage /></BusinessGuard>} />
+           <Route path="contact/settings/trust" element={<BusinessGuard><TrustSettingsPage /></BusinessGuard>} />
           <Route path="contact/settings/notifications" element={<NotificationsPage />} />
           <Route path="contact/settings/api-keys" element={<ApiKeysPage />} />
           <Route path="contact/settings/webhooks" element={<WebhooksPage />} />
@@ -495,7 +511,7 @@ function AnimatedAppRoutes() {
             <Route path="business/:id/book" element={<BookingPage />} />
             <Route path="business/activate/:id" element={<BusinessActivationPage />} />
             <Route path="business/crm" element={isAuthenticated ? <BusinessCrmPage /> : <Navigate to="/login" />} />
-            <Route path="crm" element={isAuthenticated ? <ServiceBusinessDashboard /> : <Navigate to="/login" />} />
+            <Route path="crm" element={<BusinessGuard>{isAuthenticated ? <ServiceBusinessDashboard /> : <Navigate to="/login" />}</BusinessGuard>} />
             <Route path="post-business" element={<PostBusinessPage />} />
             <Route path="business/settings" element={isAuthenticated ? <BusinessSettingsPage /> : <Navigate to="/login" />} />
             <Route path="business/analytics" element={isAuthenticated ? <BusinessAnalyticsPage /> : <Navigate to="/login" />} />
@@ -553,11 +569,11 @@ function AnimatedAppRoutes() {
             <Route path="city/:slug" element={<CityLandingPage />} />
             <Route path="admin" element={isAuthenticated && user?.role === 'ADMIN' ? <AdminDashboardPage /> : <Navigate to="/admin/setup" />} />
             <Route path="admin/setup" element={<AdminSetupPage />} />
-            <Route path="me" element={<PersonalDashboardPage />} />
-            <Route path="me/passport" element={<PersonalPassportPage />} />
-            <Route path="me/bookings" element={<PersonalBookingsPage />} />
-            <Route path="me/rewards" element={<PersonalRewardsPage />} />
-            <Route path="me/wallet" element={<PersonalWalletPage />} />
+            <Route path="me" element={<PersonalGuard><PersonalDashboardPage /></PersonalGuard>} />
+            <Route path="me/passport" element={<PersonalGuard><PersonalPassportPage /></PersonalGuard>} />
+            <Route path="me/bookings" element={<PersonalGuard><PersonalBookingsPage /></PersonalGuard>} />
+            <Route path="me/rewards" element={<PersonalGuard><PersonalRewardsPage /></PersonalGuard>} />
+            <Route path="me/wallet" element={<PersonalGuard><PersonalWalletPage /></PersonalGuard>} />
           </Route>
       </Routes>
     </AnimatePresence>
