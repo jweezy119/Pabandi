@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { oauthService } from '../services/oauth.service';
 import { logger } from '../utils/logger';
 import { authenticate } from '../middleware/auth.middleware';
+import { prisma } from '../utils/database';
+import crypto from 'crypto';
 
 const router = Router();
 
@@ -108,6 +110,55 @@ router.get('/userinfo', async (req: Request, res: Response) => {
   } catch (error: any) {
     logger.error(`[OAuth] UserInfo Error: ${error.message}`);
     return res.status(401).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/v1/oauth/clients
+ * Register a new OAuth client (requires authentication).
+ * Allows third-party platforms to self-register for "Sign in with Pabandi".
+ */
+router.post('/clients', authenticate, async (req: any, res: Response) => {
+  try {
+    const { name, redirectUris, webhookUrl, webhookSecret, logoUrl } = req.body;
+    if (!name || !redirectUris || !Array.isArray(redirectUris) || redirectUris.length === 0) {
+      return res.status(400).json({ success: false, error: 'name and redirectUris[] are required' });
+    }
+
+    const clientId = `pab_${crypto.randomBytes(16).toString('hex')}`;
+    const clientSecret = crypto.randomBytes(32).toString('hex');
+
+    const client = await prisma.oAuthClient.create({
+      data: {
+        clientId,
+        clientSecret,
+        name,
+        redirectUris,
+        webhookUrl,
+        webhookSecret,
+        logoUrl,
+        isActive: true,
+      },
+    });
+
+    logger.info(`[OAuth] New client registered: ${client.name} (${client.clientId}) by user ${req.user.id}`);
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        clientId: client.clientId,
+        clientSecret: client.clientSecret,
+        name: client.name,
+        redirectUris: client.redirectUris,
+        webhookUrl: client.webhookUrl,
+        logoUrl: client.logoUrl,
+        createdAt: client.createdAt,
+      },
+      message: 'Store the clientSecret securely — it will not be shown again.',
+    });
+  } catch (error: any) {
+    logger.error(`[OAuth] Client registration error: ${error.message}`);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
