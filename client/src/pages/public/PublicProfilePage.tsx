@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { userProfileService } from '../../services/api';
 import {
   MapPin, Globe, ExternalLink, Check, Star, Shield,
-  ArrowLeft, Share2, Copy, Linkedin
+  ArrowLeft, Share2, Copy
 } from 'lucide-react';
 
 interface SocialLink {

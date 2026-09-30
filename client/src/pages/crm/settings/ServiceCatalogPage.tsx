@@ -44,7 +44,7 @@ interface Service {
   tags: string[];
 }
 
-export default function ServiceCatalogPage() {
+export function ServiceCatalogPage() {
   const { user } = useAuthStore();
   const businessId = (user as any)?.business?.id || localStorage.getItem('businessId') || '';
   const [services, setServices] = useState<Service[]>([]);
