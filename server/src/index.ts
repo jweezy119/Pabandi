@@ -396,7 +396,13 @@ const routeMap: [string, string][] = [
   [`/api/${v}/fluid-booking`, './routes/fluidBooking.routes'],
   [`/api/${v}/values`, './routes/values.routes'],
   [`/api/${v}/agent-comm`, './routes/agentCommunication.routes'],
-  [`/.well-known`, './routes/agentDiscovery.routes'],
+  [`/api/${v}/agents`, './routes/agentSignup.routes'],
+  [`/api/${v}/agent-passport`, './routes/agentPassport.routes'],
+  [`/api/${v}/predictive`, './routes/predictive.routes'],
+  [`/api/${v}/realestate`, './routes/realestate.routes'],
+  [`/api/${v}/pabandi`, './routes/pabandiTools.routes'],
+  // agentDiscovery.routes declares absolute /.well-known/* paths, so it mounts at root
+  ['/', './routes/agentDiscovery.routes'],
 ];
 
 try {
@@ -412,8 +418,8 @@ for (const [routePath, importPath] of routeMap) {
 
 
 // MCP endpoint with rate limiting
-import { RateLimit } from 'express-rate-limit';
-const mcpLimiter = RateLimit({
+import { rateLimit } from 'express-rate-limit';
+const mcpLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 30,
   standardHeaders: true,

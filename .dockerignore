@@ -1,7 +1,44 @@
-node_modules
-build
-.cache
-*.tsbuildinfo
+# Docker build context is the repo root (render.yaml dockerContext: .).
+# Keep secrets out, keep the context small, and never ship a stale build artifact.
+
+# --- secrets ---
 .env
 .env.*
+**/.env
+**/.env.*
+*.pem
+**/*.pem
+
+# --- repo hygiene ---
 .git
+.github
+**/node_modules
+**/dist
+**/build
+**/.next
+**/.cache
+**/*.tsbuildinfo
+**/logs
+**/uploads
+**/*.log
+
+# --- credentials and media that must never reach an image ---
+*.csv
+*.mp4
+*.zip
+*.deb
+*.pptx
+*.pdf
+brag-output-*
+foundation-sites/
+OpenWA/
+Pabandi_ui/
+strix/
+globe-gen/
+promo-video/
+videos/
+video-ads/
+marketing-bot/
+OpenMontage/
+.idea/
+.vscode/

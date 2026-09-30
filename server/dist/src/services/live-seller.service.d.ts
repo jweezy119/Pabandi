@@ -55,10 +55,10 @@ export declare class LiveSellerService {
     private prisma;
     constructor(prisma: PrismaClient);
     listForBusiness(businessId: string): Promise<{
-        scope: string | null;
-        id: string;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        id: string;
         businessId: string;
+        scope: string | null;
         isActive: boolean;
         accessToken: string;
         refreshToken: string | null;
@@ -72,10 +72,10 @@ export declare class LiveSellerService {
         revokedAt: Date | null;
     }[]>;
     connect(businessId: string, input: LiveSellerIntegrationInput): Promise<{
-        scope: string | null;
-        id: string;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        id: string;
         businessId: string;
+        scope: string | null;
         isActive: boolean;
         accessToken: string;
         refreshToken: string | null;
@@ -89,10 +89,10 @@ export declare class LiveSellerService {
         revokedAt: Date | null;
     }>;
     disconnect(businessId: string, platform: LiveSellerPlatform): Promise<{
-        scope: string | null;
-        id: string;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        id: string;
         businessId: string;
+        scope: string | null;
         isActive: boolean;
         accessToken: string;
         refreshToken: string | null;

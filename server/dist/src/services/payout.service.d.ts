@@ -19,32 +19,32 @@ export declare class PayoutService {
      *  method: BANK (simulated/local), CONNECT (real Stripe transfer), LOCAL (real P2P off-ramp intent to mobile wallet/bank), CASHAPP (Cash App balance).
      *  destinationRef / mobile optional for LOCAL (JazzCash/Easypaisa/Raast account). */
     request(userId: string, amountUsdc: number, method?: 'BANK' | 'CONNECT' | 'LOCAL' | 'CASHAPP', destinationRef?: string): Promise<{
-        method: string;
         id: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
         status: string;
+        method: string;
         txHash: string | null;
         amountUsdc: number;
-        destinationRef: string | null;
         feeUsdc: number;
         netUsdc: number;
+        destinationRef: string | null;
         offrampIntentId: string | null;
     }>;
     /** Payout history for a user. */
     history(userId: string): Promise<{
-        method: string;
         id: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
         status: string;
+        method: string;
         txHash: string | null;
         amountUsdc: number;
-        destinationRef: string | null;
         feeUsdc: number;
         netUsdc: number;
+        destinationRef: string | null;
         offrampIntentId: string | null;
     }[]>;
 }

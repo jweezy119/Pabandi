@@ -1,84 +1,146 @@
-export type TeamMemberInvite = {
-    email: string;
-    firstName?: string;
-    lastName?: string;
-    role: 'OWNER' | 'ADMIN' | 'MANAGER' | 'AGENT' | 'MEMBER' | 'VIEWER';
-};
 export declare class TeamService {
-    /**
-     * List all team members for a manager
-     */
-    listMembers(managerId: string): Promise<({
-        user: {
-            email: string;
+    static getTeamMembers(businessId: string): Promise<{
+        email: string | null;
+        phone: string | null;
+        id: string;
+        createdAt: Date;
+        role: string;
+        name: string;
+        reliabilityScore: number;
+        updatedAt: Date;
+        businessId: string;
+        isActive: boolean;
+        deliveryScore: number;
+        payRate: number;
+        payType: string;
+        hireDate: Date;
+        inviteToken: string | null;
+        inviteStatus: string;
+    }[]>;
+    static getTeamMember(id: string, businessId: string): Promise<({
+        jobs: {
             id: string;
-            firstName: string;
-            lastName: string;
-            profilePictureUrl: string | null;
-        } | null;
+            createdAt: Date;
+            updatedAt: Date;
+            businessId: string;
+            status: string;
+            clientId: string;
+            reminderSentAt: Date | null;
+            notes: string | null;
+            address: string | null;
+            completedAt: Date | null;
+            serviceType: string;
+            bookingId: string | null;
+            price: number;
+            duration: number | null;
+            scheduledDate: Date;
+            escrowStatus: string;
+            scheduledTime: string | null;
+            durationMinutes: number | null;
+            checkedInAt: Date | null;
+            checkedOutAt: Date | null;
+            employeeId: string | null;
+            checkinLat: number | null;
+            checkinLng: number | null;
+            checkinDistanceM: number | null;
+            locationVerified: boolean;
+        }[];
     } & {
+        email: string | null;
+        phone: string | null;
+        id: string;
+        createdAt: Date;
+        role: string;
+        name: string;
+        reliabilityScore: number;
+        updatedAt: Date;
+        businessId: string;
+        isActive: boolean;
+        deliveryScore: number;
+        payRate: number;
+        payType: string;
+        hireDate: Date;
+        inviteToken: string | null;
+        inviteStatus: string;
+    }) | null>;
+    static inviteMember(data: {
+        businessId: string;
+        name: string;
         email: string;
         role: string;
+        payRate?: number;
+        payType?: string;
+    }): Promise<{
+        email: string | null;
+        phone: string | null;
         id: string;
-        firstName: string | null;
-        lastName: string | null;
         createdAt: Date;
-        updatedAt: Date;
-        userId: string | null;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
-        isActive: boolean;
-        managerId: string;
-        joinedAt: Date | null;
-        permissions: import("@prisma/client/runtime/library").JsonValue | null;
-        invitedAt: Date;
-        lastActiveAt: Date | null;
-    })[]>;
-    /**
-     * Invite a new team member
-     */
-    invite(managerId: string, input: TeamMemberInvite): Promise<{
-        email: string;
         role: string;
-        id: string;
-        firstName: string | null;
-        lastName: string | null;
-        createdAt: Date;
+        name: string;
+        reliabilityScore: number;
         updatedAt: Date;
-        userId: string | null;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        businessId: string;
         isActive: boolean;
-        managerId: string;
-        joinedAt: Date | null;
-        permissions: import("@prisma/client/runtime/library").JsonValue | null;
-        invitedAt: Date;
-        lastActiveAt: Date | null;
+        deliveryScore: number;
+        payRate: number;
+        payType: string;
+        hireDate: Date;
+        inviteToken: string | null;
+        inviteStatus: string;
     }>;
-    /**
-     * Update team member role
-     */
-    updateRole(managerId: string, memberId: string, role: string): Promise<{
-        email: string;
-        role: string;
+    static updateMember(id: string, businessId: string, data: any): Promise<{
+        email: string | null;
+        phone: string | null;
         id: string;
-        firstName: string | null;
-        lastName: string | null;
         createdAt: Date;
+        role: string;
+        name: string;
+        reliabilityScore: number;
         updatedAt: Date;
-        userId: string | null;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        businessId: string;
         isActive: boolean;
-        managerId: string;
-        joinedAt: Date | null;
-        permissions: import("@prisma/client/runtime/library").JsonValue | null;
-        invitedAt: Date;
-        lastActiveAt: Date | null;
+        deliveryScore: number;
+        payRate: number;
+        payType: string;
+        hireDate: Date;
+        inviteToken: string | null;
+        inviteStatus: string;
     }>;
-    /**
-     * Remove team member
-     */
-    remove(managerId: string, memberId: string): Promise<{
-        success: boolean;
+    static removeMember(id: string, businessId: string): Promise<{
+        email: string | null;
+        phone: string | null;
+        id: string;
+        createdAt: Date;
+        role: string;
+        name: string;
+        reliabilityScore: number;
+        updatedAt: Date;
+        businessId: string;
+        isActive: boolean;
+        deliveryScore: number;
+        payRate: number;
+        payType: string;
+        hireDate: Date;
+        inviteToken: string | null;
+        inviteStatus: string;
+    }>;
+    static acceptInvite(token: string): Promise<{
+        email: string | null;
+        phone: string | null;
+        id: string;
+        createdAt: Date;
+        role: string;
+        name: string;
+        reliabilityScore: number;
+        updatedAt: Date;
+        businessId: string;
+        isActive: boolean;
+        deliveryScore: number;
+        payRate: number;
+        payType: string;
+        hireDate: Date;
+        inviteToken: string | null;
+        inviteStatus: string;
     }>;
 }
-export declare const teamService: TeamService;
 //# sourceMappingURL=team.service.d.ts.map

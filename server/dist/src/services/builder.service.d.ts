@@ -4,10 +4,10 @@ export declare class BuilderService {
         licenseNumber?: string;
     }): Promise<{
         id: string;
+        userId: string;
+        createdAt: Date;
         companyName: string;
         trustScore: number;
-        createdAt: Date;
-        userId: string;
         verified: boolean;
         licenseNumber: string | null;
         totalProjects: number;
@@ -22,26 +22,26 @@ export declare class BuilderService {
             };
         } & {
             id: string;
-            trustScore: number;
             createdAt: Date;
             name: string;
+            trustScore: number;
+            location: string;
             status: string;
             description: string | null;
             startDate: Date;
-            location: string;
             totalUnits: number;
+            builderId: string;
             soldUnits: number;
             bookedUnits: number;
             expectedCompletion: Date;
             actualCompletion: Date | null;
-            builderId: string;
         })[];
     } & {
         id: string;
+        userId: string;
+        createdAt: Date;
         companyName: string;
         trustScore: number;
-        createdAt: Date;
-        userId: string;
         verified: boolean;
         licenseNumber: string | null;
         totalProjects: number;
@@ -57,19 +57,19 @@ export declare class BuilderService {
         expectedCompletion: Date;
     }): Promise<{
         id: string;
-        trustScore: number;
         createdAt: Date;
         name: string;
+        trustScore: number;
+        location: string;
         status: string;
         description: string | null;
         startDate: Date;
-        location: string;
         totalUnits: number;
+        builderId: string;
         soldUnits: number;
         bookedUnits: number;
         expectedCompletion: Date;
         actualCompletion: Date | null;
-        builderId: string;
     }>;
     getProjects(builderId: string): Promise<({
         _count: {
@@ -78,19 +78,19 @@ export declare class BuilderService {
         };
     } & {
         id: string;
-        trustScore: number;
         createdAt: Date;
         name: string;
+        trustScore: number;
+        location: string;
         status: string;
         description: string | null;
         startDate: Date;
-        location: string;
         totalUnits: number;
+        builderId: string;
         soldUnits: number;
         bookedUnits: number;
         expectedCompletion: Date;
         actualCompletion: Date | null;
-        builderId: string;
     })[]>;
     getProjectDetail(projectId: string): Promise<({
         units: ({
@@ -103,8 +103,8 @@ export declare class BuilderService {
             } & {
                 phone: string | null;
                 id: string;
-                createdAt: Date;
                 userId: string;
+                createdAt: Date;
                 address: string | null;
                 verified: boolean;
                 cnic: string | null;
@@ -112,25 +112,25 @@ export declare class BuilderService {
         } & {
             id: string;
             createdAt: Date;
-            type: string;
             status: string;
+            type: string;
             price: number;
             unitNumber: string;
             projectId: string;
-            size: number;
             buyerId: string | null;
+            size: number;
             floor: number | null;
         })[];
         milestones: {
             id: string;
             createdAt: Date;
             status: string;
-            description: string | null;
             title: string;
-            completedAt: Date | null;
-            photos: string[];
-            projectId: string;
+            description: string | null;
             dueDate: Date;
+            completedAt: Date | null;
+            projectId: string;
+            photos: string[];
         }[];
         builder: {
             user: {
@@ -140,10 +140,10 @@ export declare class BuilderService {
             };
         } & {
             id: string;
+            userId: string;
+            createdAt: Date;
             companyName: string;
             trustScore: number;
-            createdAt: Date;
-            userId: string;
             verified: boolean;
             licenseNumber: string | null;
             totalProjects: number;
@@ -152,19 +152,19 @@ export declare class BuilderService {
         };
     } & {
         id: string;
-        trustScore: number;
         createdAt: Date;
         name: string;
+        trustScore: number;
+        location: string;
         status: string;
         description: string | null;
         startDate: Date;
-        location: string;
         totalUnits: number;
+        builderId: string;
         soldUnits: number;
         bookedUnits: number;
         expectedCompletion: Date;
         actualCompletion: Date | null;
-        builderId: string;
     }) | null>;
     addUnit(projectId: string, data: {
         unitNumber: string;
@@ -175,37 +175,37 @@ export declare class BuilderService {
     }): Promise<{
         id: string;
         createdAt: Date;
-        type: string;
         status: string;
+        type: string;
         price: number;
         unitNumber: string;
         projectId: string;
-        size: number;
         buyerId: string | null;
+        size: number;
         floor: number | null;
     }>;
     bookUnit(unitId: string, buyerId: string): Promise<{
         id: string;
         createdAt: Date;
-        type: string;
         status: string;
+        type: string;
         price: number;
         unitNumber: string;
         projectId: string;
-        size: number;
         buyerId: string | null;
+        size: number;
         floor: number | null;
     }>;
     sellUnit(unitId: string, buyerId: string): Promise<{
         id: string;
         createdAt: Date;
-        type: string;
         status: string;
+        type: string;
         price: number;
         unitNumber: string;
         projectId: string;
-        size: number;
         buyerId: string | null;
+        size: number;
         floor: number | null;
     }>;
     addMilestone(projectId: string, data: {
@@ -216,23 +216,23 @@ export declare class BuilderService {
         id: string;
         createdAt: Date;
         status: string;
-        description: string | null;
         title: string;
-        completedAt: Date | null;
-        photos: string[];
-        projectId: string;
+        description: string | null;
         dueDate: Date;
+        completedAt: Date | null;
+        projectId: string;
+        photos: string[];
     }>;
     completeMilestone(milestoneId: string): Promise<{
         id: string;
         createdAt: Date;
         status: string;
-        description: string | null;
         title: string;
-        completedAt: Date | null;
-        photos: string[];
-        projectId: string;
+        description: string | null;
         dueDate: Date;
+        completedAt: Date | null;
+        projectId: string;
+        photos: string[];
     }>;
     getBuyers(builderId: string): Promise<({
         user: {
@@ -243,32 +243,32 @@ export declare class BuilderService {
         units: {
             id: string;
             createdAt: Date;
-            type: string;
             status: string;
+            type: string;
             price: number;
             unitNumber: string;
             projectId: string;
-            size: number;
             buyerId: string | null;
+            size: number;
             floor: number | null;
         }[];
         installments: {
-            method: string | null;
             id: string;
             createdAt: Date;
             status: string;
+            method: string | null;
             txHash: string | null;
             amount: number;
-            paidAt: Date | null;
-            unitId: string;
             dueDate: Date;
+            unitId: string;
+            paidAt: Date | null;
             buyerId: string;
         }[];
     } & {
         phone: string | null;
         id: string;
-        createdAt: Date;
         userId: string;
+        createdAt: Date;
         address: string | null;
         verified: boolean;
         cnic: string | null;
@@ -281,13 +281,13 @@ export declare class BuilderService {
         } & {
             id: string;
             createdAt: Date;
-            type: string;
             status: string;
+            type: string;
             price: number;
             unitNumber: string;
             projectId: string;
-            size: number;
             buyerId: string | null;
+            size: number;
             floor: number | null;
         };
         buyer: {
@@ -299,22 +299,22 @@ export declare class BuilderService {
         } & {
             phone: string | null;
             id: string;
-            createdAt: Date;
             userId: string;
+            createdAt: Date;
             address: string | null;
             verified: boolean;
             cnic: string | null;
         };
     } & {
-        method: string | null;
         id: string;
         createdAt: Date;
         status: string;
+        method: string | null;
         txHash: string | null;
         amount: number;
-        paidAt: Date | null;
-        unitId: string;
         dueDate: Date;
+        unitId: string;
+        paidAt: Date | null;
         buyerId: string;
     })[]>;
     sendReminder(installmentId: string): Promise<{
@@ -342,13 +342,13 @@ export declare class BuilderService {
         units: {
             id: string;
             createdAt: Date;
-            type: string;
             status: string;
+            type: string;
             price: number;
             unitNumber: string;
             projectId: string;
-            size: number;
             buyerId: string | null;
+            size: number;
             floor: number | null;
         }[];
         builder: {
@@ -358,10 +358,10 @@ export declare class BuilderService {
             };
         } & {
             id: string;
+            userId: string;
+            createdAt: Date;
             companyName: string;
             trustScore: number;
-            createdAt: Date;
-            userId: string;
             verified: boolean;
             licenseNumber: string | null;
             totalProjects: number;
@@ -370,19 +370,19 @@ export declare class BuilderService {
         };
     } & {
         id: string;
-        trustScore: number;
         createdAt: Date;
         name: string;
+        trustScore: number;
+        location: string;
         status: string;
         description: string | null;
         startDate: Date;
-        location: string;
         totalUnits: number;
+        builderId: string;
         soldUnits: number;
         bookedUnits: number;
         expectedCompletion: Date;
         actualCompletion: Date | null;
-        builderId: string;
     })[]>;
 }
 export declare const builderService: BuilderService;

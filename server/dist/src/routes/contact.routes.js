@@ -2,11 +2,21 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const database_1 = require("../utils/database");
+const auth_middleware_1 = require("../middleware/auth.middleware");
 const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authenticate);
+function getBusinessId(req) {
+    const businessId = req.body?.businessId || req.query?.businessId;
+    if (!businessId)
+        throw new Error('businessId is required');
+    return businessId;
+}
 // ── CONTACTS (unified view of all contacts/leads/deals) ──
 router.get('/contacts', async (req, res) => {
     try {
-        const leads = await database_1.prisma.contactLead.findMany({
+        const businessId = getBusinessId(req);
+        const leads = await database_1.prisma.crmClient.findMany({
+            where: { businessId },
             orderBy: { createdAt: 'desc' },
             include: { deals: true, activities: true },
         });
@@ -19,12 +29,24 @@ router.get('/contacts', async (req, res) => {
 router.post('/contacts', async (req, res) => {
     try {
         const { name, email, phone, source, value, notes } = req.body;
-        const lead = await database_1.prisma.contactLead.create({
+        let finalPassportId = '';
+        if (name) {
+            const handle = name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.random().toString(36).substring(2, 6);
+            const passport = await database_1.prisma.trustPassport.create({
+                data: {
+                    handle,
+                    displayName: name,
+                }
+            });
+            finalPassportId = passport.id;
+        }
+        const businessId = getBusinessId(req);
+        const lead = await database_1.prisma.crmClient.create({
             data: {
-                name, email, phone, source, value: value ? Number(value) : null,
-                notes: notes || null,
-                businessId: 'default', ownerId: 'system', passportId: '',
-                stage: 'new',
+                name, email, phone, notes: notes || null,
+                businessId,
+                passportId: finalPassportId || null,
+                customData: { source, value: value ? Number(value) : null, stage: 'new', ownerId: 'system' }
             },
         });
         res.status(201).json({ success: true, data: lead });
@@ -35,10 +57,21 @@ router.post('/contacts', async (req, res) => {
 });
 router.put('/contacts/:id', async (req, res) => {
     try {
+        const businessId = getBusinessId(req);
         const { name, email, phone, stage, value, company, notes } = req.body;
-        const lead = await database_1.prisma.contactLead.update({
-            where: { id: req.params.id },
-            data: { name, email, phone, stage, value, company, notes },
+        const existing = await database_1.prisma.crmClient.findUnique({ where: { id: req.params.id, businessId } });
+        if (!existing)
+            return res.status(404).json({ success: false, error: 'Contact not found' });
+        const customData = existing?.customData || {};
+        if (stage !== undefined)
+            customData.stage = stage;
+        if (value !== undefined)
+            customData.value = value;
+        if (company !== undefined)
+            customData.company = company;
+        const lead = await database_1.prisma.crmClient.update({
+            where: { id: req.params.id, businessId },
+            data: { name, email, phone, notes, customData },
         });
         res.json({ success: true, data: lead });
     }
@@ -48,7 +81,8 @@ router.put('/contacts/:id', async (req, res) => {
 });
 router.delete('/contacts/:id', async (req, res) => {
     try {
-        await database_1.prisma.contactLead.delete({ where: { id: req.params.id } });
+        const businessId = getBusinessId(req);
+        const deleted = await database_1.prisma.crmClient.delete({ where: { id: req.params.id, businessId } });
         res.json({ success: true, message: 'Contact deleted' });
     }
     catch (err) {
@@ -57,8 +91,9 @@ router.delete('/contacts/:id', async (req, res) => {
 });
 router.get('/contacts/:id/activities', async (req, res) => {
     try {
-        const activities = await database_1.prisma.contactActivity.findMany({
-            where: { leadId: req.params.id },
+        const businessId = getBusinessId(req);
+        const activities = await database_1.prisma.crmActivity.findMany({
+            where: { clientId: req.params.id, businessId },
             orderBy: { createdAt: 'desc' },
         });
         res.json({ success: true, data: activities });
@@ -69,8 +104,9 @@ router.get('/contacts/:id/activities', async (req, res) => {
 });
 router.get('/contacts/:id/deals', async (req, res) => {
     try {
-        const deals = await database_1.prisma.contactDeal.findMany({
-            where: { leadId: req.params.id },
+        const businessId = getBusinessId(req);
+        const deals = await database_1.prisma.crmDeal.findMany({
+            where: { clientId: req.params.id, businessId },
             orderBy: { createdAt: 'desc' },
         });
         res.json({ success: true, data: deals });
@@ -81,7 +117,9 @@ router.get('/contacts/:id/deals', async (req, res) => {
 });
 router.get('/leads', async (req, res) => {
     try {
-        const leads = await database_1.prisma.contactLead.findMany({
+        const businessId = getBusinessId(req);
+        const leads = await database_1.prisma.crmClient.findMany({
+            where: { businessId },
             orderBy: { createdAt: 'desc' },
         });
         res.json({ success: true, data: leads });
@@ -92,18 +130,27 @@ router.get('/leads', async (req, res) => {
 });
 router.post('/leads', async (req, res) => {
     try {
-        const { name, email, phone, source, value, businessId, ownerId, passportId } = req.body;
-        const lead = await database_1.prisma.contactLead.create({
+        const businessId = getBusinessId(req);
+        const { name, email, phone, source, value, ownerId, passportId } = req.body;
+        let finalPassportId = passportId;
+        if (!finalPassportId && name) {
+            const handle = name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.random().toString(36).substring(2, 6);
+            const passport = await database_1.prisma.trustPassport.create({
+                data: {
+                    handle,
+                    displayName: name,
+                }
+            });
+            finalPassportId = passport.id;
+        }
+        const lead = await database_1.prisma.crmClient.create({
             data: {
                 name,
                 email,
                 phone,
-                source,
-                value,
-                businessId: businessId || 'default',
-                ownerId: ownerId || 'system',
-                passportId: passportId || '',
-                stage: 'new',
+                businessId,
+                passportId: finalPassportId || null,
+                customData: { source, value, ownerId: ownerId || 'system', stage: 'new' },
             },
         });
         res.json({ success: true, data: lead });
@@ -114,8 +161,9 @@ router.post('/leads', async (req, res) => {
 });
 router.get('/leads/:id', async (req, res) => {
     try {
-        const lead = await database_1.prisma.contactLead.findUnique({
-            where: { id: req.params.id },
+        const businessId = getBusinessId(req);
+        const lead = await database_1.prisma.crmClient.findUnique({
+            where: { id: req.params.id, businessId },
             include: { deals: true, activities: true },
         });
         if (!lead)
@@ -128,10 +176,16 @@ router.get('/leads/:id', async (req, res) => {
 });
 router.put('/leads/:id/stage', async (req, res) => {
     try {
+        const businessId = getBusinessId(req);
         const { stage } = req.body;
-        const lead = await database_1.prisma.contactLead.update({
-            where: { id: req.params.id },
-            data: { stage },
+        const existing = await database_1.prisma.crmClient.findUnique({ where: { id: req.params.id, businessId } });
+        if (!existing)
+            return res.status(404).json({ success: false, error: 'Lead not found' });
+        const customData = existing?.customData || {};
+        customData.stage = stage;
+        const lead = await database_1.prisma.crmClient.update({
+            where: { id: req.params.id, businessId },
+            data: { customData },
         });
         res.json({ success: true, data: lead });
     }
@@ -142,7 +196,9 @@ router.put('/leads/:id/stage', async (req, res) => {
 // ── DEALS ────────────────────────────────────────────
 router.get('/deals', async (req, res) => {
     try {
-        const deals = await database_1.prisma.contactDeal.findMany({
+        const businessId = getBusinessId(req);
+        const deals = await database_1.prisma.crmDeal.findMany({
+            where: { businessId },
             orderBy: { createdAt: 'desc' },
         });
         res.json({ success: true, data: deals });
@@ -154,14 +210,15 @@ router.get('/deals', async (req, res) => {
 router.post('/deals', async (req, res) => {
     try {
         const { leadId, title, amount, stage, closeDate, escrowId } = req.body;
-        const deal = await database_1.prisma.contactDeal.create({
+        const deal = await database_1.prisma.crmDeal.create({
             data: {
-                leadId,
+                clientId: leadId,
+                businessId: 'default',
                 title,
-                amount,
-                stage: stage || 'open',
-                closeDate: closeDate ? new Date(closeDate) : null,
-                escrowId,
+                value: amount,
+                stage: stage || 'LEAD',
+                expectedCloseDate: closeDate ? new Date(closeDate) : null,
+                notes: escrowId ? `escrowId: ${escrowId}` : null,
             },
         });
         res.json({ success: true, data: deal });
@@ -173,13 +230,16 @@ router.post('/deals', async (req, res) => {
 // ── ACTIVITIES ───────────────────────────────────────
 router.post('/activities', async (req, res) => {
     try {
+        const businessId = getBusinessId(req);
         const { leadId, type, content, dueAt } = req.body;
-        const activity = await database_1.prisma.contactActivity.create({
+        const activity = await database_1.prisma.crmActivity.create({
             data: {
-                leadId,
-                type,
-                content,
-                dueAt: dueAt ? new Date(dueAt) : null,
+                clientId: leadId,
+                businessId,
+                type: type || 'NOTE',
+                title: type || 'NOTE',
+                description: content,
+                dueDate: dueAt ? new Date(dueAt) : null,
             },
         });
         res.json({ success: true, data: activity });
@@ -191,9 +251,10 @@ router.post('/activities', async (req, res) => {
 // ── STATS ────────────────────────────────────────────
 router.get('/stats', async (req, res) => {
     try {
-        const leads = await database_1.prisma.contactLead.count();
-        const deals = await database_1.prisma.contactDeal.count();
-        const activities = await database_1.prisma.contactActivity.count();
+        const businessId = getBusinessId(req);
+        const leads = await database_1.prisma.crmClient.count({ where: { businessId } });
+        const deals = await database_1.prisma.crmDeal.count({ where: { businessId } });
+        const activities = await database_1.prisma.crmActivity.count({ where: { businessId } });
         res.json({ success: true, data: { leads, deals, activities } });
     }
     catch (err) {

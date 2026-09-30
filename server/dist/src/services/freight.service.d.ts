@@ -4,9 +4,11 @@ export declare class FreightLoadService {
         createdAt: Date;
         updatedAt: Date;
         status: string;
-        description: string | null;
         title: string;
+        description: string | null;
+        distanceMiles: number | null;
         budgetUsd: number;
+        shipperId: string;
         cargoType: string;
         weightLbs: number;
         dimensions: string | null;
@@ -25,9 +27,7 @@ export declare class FreightLoadService {
         destLng: number | null;
         pickupDate: Date;
         deliveryDate: Date;
-        distanceMiles: number | null;
         acceptedBidId: string | null;
-        shipperId: string;
     }>;
     getLoads(filters?: {
         status?: string;
@@ -50,9 +50,11 @@ export declare class FreightLoadService {
         createdAt: Date;
         updatedAt: Date;
         status: string;
-        description: string | null;
         title: string;
+        description: string | null;
+        distanceMiles: number | null;
         budgetUsd: number;
+        shipperId: string;
         cargoType: string;
         weightLbs: number;
         dimensions: string | null;
@@ -71,23 +73,21 @@ export declare class FreightLoadService {
         destLng: number | null;
         pickupDate: Date;
         deliveryDate: Date;
-        distanceMiles: number | null;
         acceptedBidId: string | null;
-        shipperId: string;
     })[]>;
     getLoadDetail(loadId: string): Promise<({
         documents: {
             id: string;
             description: string | null;
-            mimeType: string | null;
+            documentType: string;
             fileName: string;
             fileUrl: string;
             fileSize: number | null;
+            uploadedAt: Date;
+            mimeType: string | null;
             loadId: string | null;
             carrierId: string | null;
-            documentType: string;
             uploadedById: string;
-            uploadedAt: Date;
         }[];
         bids: ({
             carrier: {
@@ -102,10 +102,10 @@ export declare class FreightLoadService {
             status: string;
             notes: string | null;
             currency: string;
-            amountUsd: number;
-            deliveryDays: number;
             loadId: string;
             carrierId: string;
+            amountUsd: number;
+            deliveryDays: number;
         })[];
         shipper: {
             email: string;
@@ -117,9 +117,9 @@ export declare class FreightLoadService {
         tracking: {
             id: string;
             createdAt: Date;
+            location: string | null;
             status: string;
             notes: string | null;
-            location: string | null;
             loadId: string;
         }[];
     } & {
@@ -127,9 +127,11 @@ export declare class FreightLoadService {
         createdAt: Date;
         updatedAt: Date;
         status: string;
-        description: string | null;
         title: string;
+        description: string | null;
+        distanceMiles: number | null;
         budgetUsd: number;
+        shipperId: string;
         cargoType: string;
         weightLbs: number;
         dimensions: string | null;
@@ -148,18 +150,18 @@ export declare class FreightLoadService {
         destLng: number | null;
         pickupDate: Date;
         deliveryDate: Date;
-        distanceMiles: number | null;
         acceptedBidId: string | null;
-        shipperId: string;
     }) | null>;
     updateLoadStatus(loadId: string, status: string): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
         status: string;
-        description: string | null;
         title: string;
+        description: string | null;
+        distanceMiles: number | null;
         budgetUsd: number;
+        shipperId: string;
         cargoType: string;
         weightLbs: number;
         dimensions: string | null;
@@ -178,18 +180,18 @@ export declare class FreightLoadService {
         destLng: number | null;
         pickupDate: Date;
         deliveryDate: Date;
-        distanceMiles: number | null;
         acceptedBidId: string | null;
-        shipperId: string;
     }>;
     deleteLoad(loadId: string): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
         status: string;
-        description: string | null;
         title: string;
+        description: string | null;
+        distanceMiles: number | null;
         budgetUsd: number;
+        shipperId: string;
         cargoType: string;
         weightLbs: number;
         dimensions: string | null;
@@ -208,18 +210,16 @@ export declare class FreightLoadService {
         destLng: number | null;
         pickupDate: Date;
         deliveryDate: Date;
-        distanceMiles: number | null;
         acceptedBidId: string | null;
-        shipperId: string;
     }>;
 }
 export declare class FreightCarrierService {
     registerCarrier(data: any): Promise<{
         id: string;
-        companyName: string;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
+        createdAt: Date;
+        companyName: string;
+        updatedAt: Date;
         rating: number;
         verified: boolean;
         dotNumber: string | null;
@@ -246,10 +246,10 @@ export declare class FreightCarrierService {
         };
     } & {
         id: string;
-        companyName: string;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
+        createdAt: Date;
+        companyName: string;
+        updatedAt: Date;
         rating: number;
         verified: boolean;
         dotNumber: string | null;
@@ -273,9 +273,9 @@ export declare class FreightCarrierService {
             id: string;
             updatedAt: Date;
             preferredRegions: string[];
-            carrierId: string;
             availableFrom: Date | null;
             availableTo: Date | null;
+            carrierId: string;
             isAvailable: boolean;
             maxDistance: number | null;
             lastLocation: string | null;
@@ -297,10 +297,10 @@ export declare class FreightCarrierService {
         }[];
     } & {
         id: string;
-        companyName: string;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
+        createdAt: Date;
+        companyName: string;
+        updatedAt: Date;
         rating: number;
         verified: boolean;
         dotNumber: string | null;
@@ -315,10 +315,10 @@ export declare class FreightCarrierService {
     }) | null>;
     rateCarrier(carrierId: string, rating: number, review?: string): Promise<{
         id: string;
-        companyName: string;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
+        createdAt: Date;
+        companyName: string;
+        updatedAt: Date;
         rating: number;
         verified: boolean;
         dotNumber: string | null;
@@ -335,10 +335,10 @@ export declare class FreightCarrierService {
 export declare class FreightMatchingService {
     matchLoadToCarrier(loadId: string): Promise<{
         id: string;
-        companyName: string;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
+        createdAt: Date;
+        companyName: string;
+        updatedAt: Date;
         rating: number;
         verified: boolean;
         dotNumber: string | null;
@@ -358,10 +358,10 @@ export declare class FreightMatchingService {
         status: string;
         notes: string | null;
         currency: string;
-        amountUsd: number;
-        deliveryDays: number;
         loadId: string;
         carrierId: string;
+        amountUsd: number;
+        deliveryDays: number;
     }>;
     getMatchingHistory(shipperId: string): Promise<({
         bids: {
@@ -371,19 +371,21 @@ export declare class FreightMatchingService {
             status: string;
             notes: string | null;
             currency: string;
-            amountUsd: number;
-            deliveryDays: number;
             loadId: string;
             carrierId: string;
+            amountUsd: number;
+            deliveryDays: number;
         }[];
     } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
         status: string;
-        description: string | null;
         title: string;
+        description: string | null;
+        distanceMiles: number | null;
         budgetUsd: number;
+        shipperId: string;
         cargoType: string;
         weightLbs: number;
         dimensions: string | null;
@@ -402,9 +404,7 @@ export declare class FreightMatchingService {
         destLng: number | null;
         pickupDate: Date;
         deliveryDate: Date;
-        distanceMiles: number | null;
         acceptedBidId: string | null;
-        shipperId: string;
     })[]>;
 }
 export declare class FreightRateService {
@@ -420,11 +420,11 @@ export declare class FreightRateService {
     getRateHistory(shipperId: string): Promise<{
         id: string;
         createdAt: Date;
+        distanceMiles: number | null;
         budgetUsd: number;
         weightLbs: number;
         originCity: string;
         destCity: string;
-        distanceMiles: number | null;
     }[]>;
 }
 export declare const freightLoad: FreightLoadService;

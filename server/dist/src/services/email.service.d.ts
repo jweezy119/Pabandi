@@ -1,27 +1,102 @@
-export declare function sendVerificationEmail(to: string, code: string, firstName: string): Promise<boolean>;
-export declare function generateVerificationCode(): string;
-/** True when a real mail provider is configured; otherwise codes are only logged. */
-export declare function isEmailConfigured(): boolean;
+export declare function sendEmail({ to, subject, html }: {
+    to: any;
+    subject: any;
+    html: any;
+}): Promise<{
+    id: string;
+} | {
+    skipped: boolean;
+    error?: undefined;
+} | {
+    error: any;
+    skipped?: undefined;
+}>;
 export declare const emailService: {
-    /**
-     * Send booking confirmation email
-     */
-    sendBookingConfirmation(booking: any): Promise<void>;
-    /**
-     * Send guest list confirmation email
-     */
-    sendGuestListConfirmation(entry: any): Promise<void>;
-    /**
-     * Send promoter commission notification
-     */
-    sendPromoterCommissionNotification(promoter: any, amount: number, bookingId: string): Promise<void>;
-    /**
-     * Core email sending function
-     * Uses Resend if API key is set, otherwise logs to console
-     */
-    sendEmail(to: string, subject: string, html: string, type: string): Promise<{
-        status: string;
-        errorMessage: string | null;
+    sendBookingConfirmation(data: {
+        to: string;
+        businessName: string;
+        date: string;
+        time: string;
+        guests: number;
+        confirmationCode?: string;
+    }): Promise<{
+        id: string;
+    } | {
+        skipped: boolean;
+        error?: undefined;
+    } | {
+        error: any;
+        skipped?: undefined;
+    }>;
+    sendBookingReminder(data: {
+        to: string;
+        businessName: string;
+        date: string;
+        time: string;
+        guests: number;
+        confirmationCode?: string;
+    }): Promise<{
+        id: string;
+    } | {
+        skipped: boolean;
+        error?: undefined;
+    } | {
+        error: any;
+        skipped?: undefined;
+    }>;
+    sendInvoiceSent(client: any, invoice: any, business: any): Promise<{
+        id: string;
+    } | {
+        skipped: boolean;
+        error?: undefined;
+    } | {
+        error: any;
+        skipped?: undefined;
+    }>;
+    sendInvoiceReminder(client: any, invoice: any, business: any): Promise<{
+        id: string;
+    } | {
+        skipped: boolean;
+        error?: undefined;
+    } | {
+        error: any;
+        skipped?: undefined;
+    }>;
+    sendPaymentReceived(business: any, invoice: any, client: any): Promise<{
+        id: string;
+    } | {
+        skipped: boolean;
+        error?: undefined;
+    } | {
+        error: any;
+        skipped?: undefined;
+    }>;
+    sendPaymentClaimed(business: any, invoice: any, client: any): Promise<{
+        id: string;
+    } | {
+        skipped: boolean;
+        error?: undefined;
+    } | {
+        error: any;
+        skipped?: undefined;
+    }>;
+    sendWelcome(user: any): Promise<{
+        id: string;
+    } | {
+        skipped: boolean;
+        error?: undefined;
+    } | {
+        error: any;
+        skipped?: undefined;
+    }>;
+    sendTrustScoreChanged(user: any, field: string, oldScore: number, newScore: number): Promise<{
+        id: string;
+    } | {
+        skipped: boolean;
+        error?: undefined;
+    } | {
+        error: any;
+        skipped?: undefined;
     }>;
 };
 //# sourceMappingURL=email.service.d.ts.map

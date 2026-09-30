@@ -32,20 +32,34 @@ const X402_PRICE_USDC: Record<string, number> = {
   pabandi_create_booking: 0.25,
 };
 
-function requireX402(toolName: string, req?: Request): void {
+async function requireX402(toolName: string, req?: Request): Promise<void> {
   const price = X402_PRICE_USDC[toolName];
   if (!price) return;
-  const paymentProof = (req as any)?.headers?.['x-payment'];
+  const paymentProof = (req as any)?.headers?.['x-payment'] as string | undefined;
+
+  const requirements = {
+    x402: true,
+    scheme: 'x402',
+    price: `${price} USDC`,
+    network: 'solana',
+    recipient: process.env.SOLANA_USDC_ADDRESS || 'PABANDI_USDC_WALLET',
+    tool: toolName,
+    paymentMethods: ['solana-usdc', 'x402'],
+  };
+
   if (!paymentProof) {
-    throw new Error(JSON.stringify({
-      x402: true,
-      scheme: 'x402',
-      price: `${price} USDC`,
-      network: 'solana',
-      recipient: process.env.SOLANA_USDC_ADDRESS || 'PABANDI_USDC_WALLET',
-      tool: toolName,
-      paymentMethods: ['solana-usdc', 'x402'],
-    }));
+    throw new Error(JSON.stringify(requirements));
+  }
+
+  const { verifyX402Payment } = await import('../services/x402.service');
+  const result = await verifyX402Payment({
+    paymentHeader: paymentProof,
+    resource: `mcp:${toolName}`,
+    amount: price,
+  });
+
+  if (!result.valid) {
+    throw new Error(JSON.stringify({ ...requirements, invalidReason: result.reason }));
   }
 }
 
@@ -168,8 +182,12 @@ async function callPlatformHttp(def: any, args: any, req?: Request): Promise<any
 // ── Per-tool proxy handlers ───────────────────────────────────────────────────
 function buildPlatformToolDef(t: any) {
   const shortSlug = t.short.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^pabandi_/, '');
+  // mcpName is the stable, published identifier. `shortSlug` is only the
+  // fallback for entries that predate mcpName — never the primary name.
+  const toolName = t.mcpName || `pabandi_${shortSlug}`;
   return {
-    name: `pabandi_${shortSlug}`,
+    name: toolName,
+    legacyName: t.mcpName ? `pabandi_${shortSlug}` : undefined,
     description: (t.exclusiveNote ? t.description + ` [${t.access}] ${t.exclusiveNote}` : t.description) + ' This MCP tool makes a real HTTP call to the canonical Pabandi endpoint and returns the actual platform response.',
     inputSchema: {
       type: 'object',
@@ -181,7 +199,7 @@ function buildPlatformToolDef(t: any) {
     access: t.access,
     endpoints: t.endpoints,
     registryName: t.name,
-    handler: async (args: any, req?: Request) => callPlatformHttp({ name: `pabandi_${shortSlug}`, registryName: t.name, access: t.access, endpoints: t.endpoints }, args, req),
+    handler: async (args: any, req?: Request) => callPlatformHttp({ name: toolName, registryName: t.name, access: t.access, endpoints: t.endpoints }, args, req),
   };
 }
 
@@ -189,17 +207,31 @@ const PLATFORM_TOOL_DEFS = pabandiToolsRegistry
   .filter((t: any) => t.category !== 'sdk')
   .map((t: any) => buildPlatformToolDef(t));
 
-const OWNER_TOOL_DEFS = pabandiToolsRegistry
-  .filter((t: any) => t.access === 'owner' || t.access === 'verified' || t.access === 'exclusive')
-  .map((t: any) => buildPlatformToolDef(t));
+// Gated tools are already included above — building them twice produced
+// duplicate entries in tools/list, which makes an agent pick at random.
+const OWNER_TOOL_DEFS: any[] = [];
 
-export const TOOLS = [
-  ...ENGINE_TOOLS,
-  discoverPlatformTool,
-  platformAccessTool,
-  ...PLATFORM_TOOL_DEFS,
-  ...OWNER_TOOL_DEFS,
-];
+export const TOOLS = (() => {
+  const all = [
+    ...ENGINE_TOOLS,
+    discoverPlatformTool,
+    platformAccessTool,
+    ...PLATFORM_TOOL_DEFS,
+    ...OWNER_TOOL_DEFS,
+  ];
+  // Duplicate names in tools/list make an agent pick at random — first wins,
+  // and the shadowed one is reported so the registry can be de-conflicted.
+  const seen = new Set<string>();
+  const unique = all.filter((t: any) => {
+    if (seen.has(t.name)) {
+      logger.warn(`[mcp] duplicate tool name suppressed: ${t.name} (registry: ${t.registryName ?? 'engine'})`);
+      return false;
+    }
+    seen.add(t.name);
+    return true;
+  });
+  return unique;
+})();
 
 // ── Dispatch ──────────────────────────────────────────────────────────────────
 async function dispatch(method: string, params: any, id: any, req?: Request): Promise<any> {
@@ -235,8 +267,12 @@ async function dispatch(method: string, params: any, id: any, req?: Request): Pr
   }
 }
 
-async function callTool(name: string, args: any, req?: Request): Promise<any> {
-  requireX402(name, req);
+async function callTool(toolName: string, args: any, req?: Request): Promise<any> {
+  // Back-compat: tool names were once derived from marketing `short` labels.
+  const legacy = TOOLS.find((t: any) => t.legacyName === toolName) as any;
+  const name = legacy ? legacy.name : toolName;
+
+  await requireX402(name, req);
 
   // Engine-backed tools
   if (ENGINE_TOOLS.some((t) => t.name === name)) {

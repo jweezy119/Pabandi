@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.escrowService = exports.ESCROW_ENV = exports.ESCROW_API_BASE = void 0;
 const logger_1 = require("../utils/logger");
+const trust_core_1 = require("../trust/trust-core");
 exports.ESCROW_API_BASE = process.env.ESCROW_API_BASE || 'https://api.escrow.com';
 exports.ESCROW_ENV = process.env.NODE_ENV === 'production'
     ? 'production'
@@ -63,5 +64,14 @@ exports.escrowService = {
             return { status: 'error' };
         }
     },
+    async fundEscrow(passportId, amount, escrowId, invoiceId) {
+        await trust_core_1.trustCore.emit('escrow.funded', { passportId, amount, escrowId, invoiceId });
+    },
+    async releaseEscrow(passportId, amount, escrowId) {
+        await trust_core_1.trustCore.emit('escrow.released', { passportId, amount, escrowId });
+    },
+    async disputeEscrow(passportId, reason, escrowId) {
+        await trust_core_1.trustCore.emit('escrow.disputed', { passportId, reason, escrowId });
+    }
 };
 //# sourceMappingURL=escrow.service.js.map

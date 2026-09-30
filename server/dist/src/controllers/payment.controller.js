@@ -42,6 +42,7 @@ const errorHandler_1 = require("../middleware/errorHandler");
 const logger_1 = require("../utils/logger");
 const client_1 = require("@prisma/client");
 const payment_service_1 = require("../services/payment.service");
+const invoice_service_1 = require("../services/invoice.service");
 const crypto_1 = __importDefault(require("crypto"));
 // Create a new crypto payment request
 const createPaymentRequest = async (req, res, next) => {
@@ -193,6 +194,20 @@ const verifyPayment = async (req, res, next) => {
                     txSignature: txSig || invoiceId || null,
                 },
             });
+            if (invoiceId) {
+                try {
+                    const invoice = await database_1.prisma.invoice.findFirst({
+                        where: { id: invoiceId },
+                        select: { businessId: true },
+                    });
+                    if (invoice) {
+                        await (0, invoice_service_1.markInvoicePaid)(invoice.businessId, invoiceId, txSig || invoiceId);
+                    }
+                }
+                catch (err) {
+                    logger_1.logger.error(`[Payment] Failed to mark invoice paid: ${err.message}`);
+                }
+            }
         }
         res.json({
             success: true,

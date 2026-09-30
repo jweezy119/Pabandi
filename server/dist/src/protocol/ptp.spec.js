@@ -94,7 +94,11 @@ exports.PTP_RISK_BANDS = {
     },
 };
 // Signing secret — in production, load from KMS/HSM, never hardcode.
-const PTP_SIGNING_SECRET = process.env.PTP_SIGNING_SECRET || 'dev-ptp-signing-secret-change-me';
+const PTP_SIGNING_SECRET = process.env.PTP_SIGNING_SECRET;
+if (!PTP_SIGNING_SECRET && process.env.NODE_ENV === 'production') {
+    throw new Error('PTP_SIGNING_SECRET must be set in production');
+}
+const PTP_SIGNING_KEY = PTP_SIGNING_SECRET || '';
 const PTP_PUBLIC_KEY_ID = 'ptp-pabandi-2024';
 /**
  * The PTP Engine issues and verifies portable trust attestations.
@@ -302,7 +306,7 @@ class PTPEngine {
             capabilities: attestation.capabilities ?? null,
             ownerUserId: attestation.ownerUserId ?? null,
         };
-        return crypto_1.default.createHmac('sha512', PTP_SIGNING_SECRET).update(JSON.stringify(body)).digest('hex');
+        return crypto_1.default.createHmac('sha512', PTP_SIGNING_KEY).update(JSON.stringify(body)).digest('hex');
     }
     signAgentAttestation(att) {
         const body = {
@@ -319,10 +323,10 @@ class PTPEngine {
             issuer: att.issuer,
             publicKeyId: att.publicKeyId,
         };
-        return crypto_1.default.createHmac('sha512', PTP_SIGNING_SECRET).update(JSON.stringify(body)).digest('hex');
+        return crypto_1.default.createHmac('sha512', PTP_SIGNING_KEY).update(JSON.stringify(body)).digest('hex');
     }
     getPublicKeyPEM() {
-        const pubKeyHash = crypto_1.default.createHash('sha256').update(PTP_SIGNING_SECRET).digest('base64');
+        const pubKeyHash = crypto_1.default.createHash('sha256').update(PTP_SIGNING_KEY).digest('base64');
         return `-----BEGIN PTP PUBLIC KEY-----\nVersion: PTP/1.0\nKeyID: ${PTP_PUBLIC_KEY_ID}\nKey: ${pubKeyHash}\n-----END PTP PUBLIC KEY-----`;
     }
 }

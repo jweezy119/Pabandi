@@ -42,8 +42,14 @@ const passport_github2_1 = require("passport-github2");
 const passport_twitter_1 = require("passport-twitter");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const client_1 = require("@prisma/client");
+const logger_1 = require("../utils/logger");
+const identity_service_1 = require("../services/identity.service");
 const prisma = new client_1.PrismaClient();
 const router = (0, express_1.Router)();
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    logger_1.logger.error('JWT_SECRET is not configured');
+}
 // ═══════════════════════════════════════════════════════════════════════════════
 // GITHUB OAUTH — No business verification required
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -58,17 +64,17 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
             const email = profile.emails?.[0]?.value;
             if (!email)
                 return done(null, false, { message: 'No email from GitHub' });
-            let user = await prisma.user.findUnique({ where: { email } });
-            if (!user) {
-                user = await prisma.user.create({
-                    data: {
-                        email,
-                        firstName: profile.displayName?.split(' ')[0] || profile.username,
-                        lastName: profile.displayName?.split(' ').slice(1).join(' ') || '',
-                        githubId: profile.id,
-                        isEmailVerified: true,
-                        password: '', // OAuth users don't need password
-                    },
+            const user = await (0, identity_service_1.findOrCreateUser)({
+                provider: 'github',
+                providerId: profile.id,
+                email,
+                metadata: { login: profile.username, name: profile.displayName, avatarUrl: profile.photos?.[0]?.value },
+            });
+            if (!user.githubId) {
+                await prisma.user.update({
+                    where: { id: user.id },
+                    data: { githubId: profile.id },
+                    include: { business: true },
                 });
             }
             return done(null, user);
@@ -92,7 +98,7 @@ router.get('/github/callback', (req, res, next) => {
     passport_1.default.authenticate('github', { failureRedirect: '/login?error=github' })(req, res, next);
 }, (req, res) => {
     const user = req.user;
-    const token = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email }, process.env.JWT_SECRET || 'fallback', { expiresIn: '7d' });
+    const token = jsonwebtoken_1.default.sign({ id: user.id, email: user.email, activeBusinessId: (0, identity_service_1.getActiveBusinessId)(user), mode: user.preferredMode || 'personal' }, JWT_SECRET, { expiresIn: '7d' });
     res.redirect(`${process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://pabandi.com'}/auth/callback?token=${token}`);
 });
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -109,17 +115,18 @@ if (process.env.TWITTER_API_KEY && process.env.TWITTER_API_SECRET) {
             const email = profile.emails?.[0]?.value;
             if (!email)
                 return done(null, false, { message: 'No email from Twitter' });
-            let user = await prisma.user.findUnique({ where: { email } });
-            if (!user) {
-                user = await prisma.user.create({
-                    data: {
-                        email,
-                        firstName: profile.displayName?.split(' ')[0] || profile.username,
-                        lastName: profile.displayName?.split(' ').slice(1).join(' ') || '',
-                        twitterId: profile.id,
-                        isEmailVerified: true,
-                        password: '',
-                    },
+            const user = await (0, identity_service_1.findOrCreateUser)({
+                provider: 'twitter',
+                providerId: profile.id,
+                email,
+                metadata: { username: profile.username, displayName: profile.displayName },
+            });
+            // Ensure Twitter ID is linked
+            if (!user.twitterId) {
+                await prisma.user.update({
+                    where: { id: user.id },
+                    data: { twitterId: profile.id },
+                    include: { business: true },
                 });
             }
             return done(null, user);
@@ -132,7 +139,7 @@ if (process.env.TWITTER_API_KEY && process.env.TWITTER_API_SECRET) {
 router.get('/twitter', passport_1.default.authenticate('twitter'));
 router.get('/twitter/callback', passport_1.default.authenticate('twitter', { failureRedirect: '/login?error=twitter' }), (req, res) => {
     const user = req.user;
-    const token = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email }, process.env.JWT_SECRET || 'fallback', { expiresIn: '7d' });
+    const token = jsonwebtoken_1.default.sign({ id: user.id, email: user.email, activeBusinessId: (0, identity_service_1.getActiveBusinessId)(user), mode: user.preferredMode || 'personal' }, JWT_SECRET, { expiresIn: '7d' });
     res.redirect(`${process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://pabandi.com'}/auth/callback?token=${token}`);
 });
 // ═══════════════════════════════════════════════════════════════════════════════

@@ -6,6 +6,8 @@ const logger_1 = require("../utils/logger");
 const trustAuditWriter_1 = require("./trustAuditWriter");
 const webhook_service_1 = require("./webhook.service");
 const courtListener_service_1 = require("./osint/courtListener.service");
+const notification_service_1 = require("./notification.service");
+const pab_staking_service_1 = require("./pab-staking.service");
 class TrustScoreService {
     /**
      * Adaptive Bayesian-inspired scoring logic.
@@ -201,13 +203,16 @@ class TrustScoreService {
         // 2. Calculate New Score
         const previousScore = user.trustScore;
         const { score: newScore, verticalScores, weights } = this.calculateCompositeScore(inputs);
+        // 2a. Apply staking trust boost
+        const stakingInfo = await pab_staking_service_1.pabStakingService.getUserStaking(userId);
+        const stakedScore = Math.min(100, newScore + stakingInfo.trustBoost);
         // If score didn't change and it's not a severe event, we might skip logging to save space,
         // but for the demo we log it so the user sees the timeline.
         // 3. Queue Audit Log
         await trustAuditWriter_1.trustAuditWriter.enqueue({
             userId,
             previousScore,
-            newScore,
+            newScore: stakedScore,
             changeReason: event.reason,
             component: event.component,
             severity: event.severity,
@@ -215,7 +220,9 @@ class TrustScoreService {
             methodology: '1.0.0',
             metadata: {
                 ...(event.osintData || {}),
-                ...(litigation ? { litigation } : {})
+                ...(litigation ? { litigation } : {}),
+                stakingBoost: stakingInfo.trustBoost,
+                stakedScore,
             }
         });
         // 4. Determine Verification Tier
@@ -230,7 +237,7 @@ class TrustScoreService {
         await database_1.prisma.user.update({
             where: { id: userId },
             data: {
-                trustScore: newScore,
+                trustScore: stakedScore,
                 verificationTier: newTier,
                 commerceScore: verticalScores.commerceScore,
                 hospitalityScore: verticalScores.hospitalityScore,
@@ -238,7 +245,11 @@ class TrustScoreService {
                 appointmentScore: verticalScores.appointmentScore,
             }
         });
-        logger_1.logger.info(`[TrustScoreService] User ${userId} score updated from ${previousScore} to ${newScore}`);
+        logger_1.logger.info(`[TrustScoreService] User ${userId} score updated from ${previousScore} to ${stakedScore} (base=${newScore}, boost=${stakingInfo.trustBoost})`);
+        // Notify if score change > 20
+        if (Math.abs(newScore - previousScore) > 20) {
+            await (0, notification_service_1.notifyTrustScoreChanged)(userId, previousScore, newScore, newScore - previousScore);
+        }
         // 6. Auto-Issuance Triggers for Open Badges v3
         try {
             const { VCService } = require('./vc.service');

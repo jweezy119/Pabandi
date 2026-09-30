@@ -26,17 +26,17 @@ export declare const nightlifeTokenomicsService: {
             createdAt: Date;
             updatedAt: Date;
             type: string | null;
-            amount: number;
-            agentId: string;
             tier: string | null;
             amountPab: number;
+            stakedAt: Date | null;
+            unstakedAt: Date | null;
+            amount: number;
+            agentId: string;
             slashedPab: number;
             vault: string | null;
             indexed: boolean;
             txStatus: string | null;
             benefits: string[];
-            stakedAt: Date | null;
-            unstakedAt: Date | null;
         };
         tierConfig: {
             minStake: number;

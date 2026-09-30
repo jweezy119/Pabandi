@@ -14,7 +14,7 @@ async function getAlertsHandler(req, res, next) {
         if (!businessId) {
             throw new errorHandler_1.CustomError('businessId is required', 400);
         }
-        const crmBusiness = await database_1.prisma.crmServiceBusiness.findUnique({
+        const crmBusiness = await database_1.prisma.crmBusiness.findUnique({
             where: { businessId: businessId },
         });
         if (!crmBusiness) {
@@ -34,7 +34,7 @@ async function dismissAlertHandler(req, res, next) {
         if (!businessId) {
             throw new errorHandler_1.CustomError('businessId is required', 400);
         }
-        const crmBusiness = await database_1.prisma.crmServiceBusiness.findUnique({
+        const crmBusiness = await database_1.prisma.crmBusiness.findUnique({
             where: { businessId: businessId },
         });
         if (!crmBusiness) {
@@ -55,14 +55,14 @@ async function getClientStageHandler(req, res, next) {
         if (!businessId) {
             throw new errorHandler_1.CustomError('businessId is required', 400);
         }
-        const crmBusiness = await database_1.prisma.crmServiceBusiness.findUnique({
+        const crmBusiness = await database_1.prisma.crmBusiness.findUnique({
             where: { businessId: businessId },
         });
         if (!crmBusiness) {
             throw new errorHandler_1.CustomError('CRM business not found for this business', 404);
         }
         const client = await database_1.prisma.crmClient.findFirst({
-            where: { id: clientId, serviceBusinessId: crmBusiness.id },
+            where: { id: clientId, businessId: crmBusiness.id },
             include: { jobs: true },
         });
         if (!client) {

@@ -25,5 +25,6 @@ router.get('/trust-attestation', auth_middleware_1.authenticate, auth_controller
 router.put('/profile', auth_middleware_1.authenticate, auth_controller_1.updateProfile);
 router.post('/request-change', auth_middleware_1.authenticate, auth_controller_1.requestProfileChange);
 router.get('/change-status', auth_middleware_1.authenticate, auth_controller_1.getProfileChangeStatus);
+router.post('/mode', auth_middleware_1.authenticate, auth_controller_1.toggleUserMode);
 exports.default = router;
 //# sourceMappingURL=auth.routes.js.map

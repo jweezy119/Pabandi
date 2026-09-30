@@ -1,31 +1,40 @@
 import { Request, Response, NextFunction } from 'express';
+import { verifyX402Payment } from '../services/x402.service';
 
 /**
  * x402 Payment Middleware
- * Returns HTTP 402 with price info if no payment proof provided
+ * Verifies the X-PAYMENT proof with the facilitator, returning HTTP 402 with
+ * price info when it is absent or invalid.
  */
 export function x402Middleware(priceUsdc: number, description?: string) {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const paymentProof = req.headers['x-payment'] as string;
+    const paymentProof = req.headers['x-payment'] as string | undefined;
+
+    const paymentRequirements = () => ({
+      error: 'Payment required',
+      scheme: 'x402',
+      price: `${priceUsdc} USDC`,
+      network: 'solana',
+      recipient: process.env.SOLANA_USDC_ADDRESS || 'PABANDI_USDC_WALLET',
+      description: description || 'API access',
+      paymentMethods: ['solana-usdc', 'x402'],
+    });
 
     if (!paymentProof) {
-      return res.status(402).json({
-        error: 'Payment required',
-        scheme: 'x402',
-        price: `${priceUsdc} USDC`,
-        network: 'solana',
-        recipient: process.env.SOLANA_USDC_ADDRESS || 'PABANDI_USDC_WALLET',
-        description: description || 'API access',
-        paymentMethods: ['solana-usdc', 'x402'],
-      });
+      return res.status(402).json(paymentRequirements());
     }
 
-    // In production: verify payment on-chain
-    // const verified = await verifySolanaPayment(paymentProof, priceUsdc);
-    // if (!verified) {
-    //   return res.status(402).json({ error: 'Payment verification failed' });
-    // }
+    const result = await verifyX402Payment({
+      paymentHeader: paymentProof,
+      resource: req.originalUrl,
+      amount: priceUsdc,
+    });
 
+    if (!result.valid) {
+      return res.status(402).json({ ...paymentRequirements(), invalidReason: result.reason });
+    }
+
+    (req as any).x402 = { amount: priceUsdc, transactionHash: result.transactionHash };
     next();
   };
 }

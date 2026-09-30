@@ -2,14 +2,14 @@ export declare const inventoryService: {
     createProduct(data: any): Promise<{
         id: string;
         createdAt: Date;
-        updatedAt: Date;
         name: string;
+        updatedAt: Date;
         category: string | null;
         vendorId: string | null;
         venueId: string | null;
-        quantity: number;
-        unitPrice: number;
         sku: string;
+        unitPrice: number;
+        quantity: number;
         minStock: number;
     }>;
     getProducts(venueId: string): Promise<({
@@ -26,27 +26,27 @@ export declare const inventoryService: {
     } & {
         id: string;
         createdAt: Date;
-        updatedAt: Date;
         name: string;
+        updatedAt: Date;
         category: string | null;
         vendorId: string | null;
         venueId: string | null;
-        quantity: number;
-        unitPrice: number;
         sku: string;
+        unitPrice: number;
+        quantity: number;
         minStock: number;
     })[]>;
     updateStock(productId: string, quantity: number, reason: string): Promise<{
         id: string;
         createdAt: Date;
-        updatedAt: Date;
         name: string;
+        updatedAt: Date;
         category: string | null;
         vendorId: string | null;
         venueId: string | null;
-        quantity: number;
-        unitPrice: number;
         sku: string;
+        unitPrice: number;
+        quantity: number;
         minStock: number;
     } | null>;
     triggerLowStockAlert(productId: string): Promise<void>;
@@ -64,14 +64,14 @@ export declare const inventoryService: {
         products: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             category: string | null;
             vendorId: string | null;
             venueId: string | null;
-            quantity: number;
-            unitPrice: number;
             sku: string;
+            unitPrice: number;
+            quantity: number;
             minStock: number;
         }[];
         purchaseOrders: {
@@ -80,9 +80,9 @@ export declare const inventoryService: {
             updatedAt: Date;
             status: string;
             totalAmount: number;
+            items: import("@prisma/client/runtime/library").JsonValue | null;
             submittedAt: Date | null;
             vendorId: string | null;
-            items: import("@prisma/client/runtime/library").JsonValue | null;
             receivedAt: Date | null;
             poNumber: string | null;
         }[];
@@ -102,9 +102,9 @@ export declare const inventoryService: {
         updatedAt: Date;
         status: string;
         totalAmount: number;
+        items: import("@prisma/client/runtime/library").JsonValue | null;
         submittedAt: Date | null;
         vendorId: string | null;
-        items: import("@prisma/client/runtime/library").JsonValue | null;
         receivedAt: Date | null;
         poNumber: string | null;
     }>;
@@ -114,9 +114,9 @@ export declare const inventoryService: {
         updatedAt: Date;
         status: string;
         totalAmount: number;
+        items: import("@prisma/client/runtime/library").JsonValue | null;
         submittedAt: Date | null;
         vendorId: string | null;
-        items: import("@prisma/client/runtime/library").JsonValue | null;
         receivedAt: Date | null;
         poNumber: string | null;
     }>;
@@ -126,9 +126,9 @@ export declare const inventoryService: {
         updatedAt: Date;
         status: string;
         totalAmount: number;
+        items: import("@prisma/client/runtime/library").JsonValue | null;
         submittedAt: Date | null;
         vendorId: string | null;
-        items: import("@prisma/client/runtime/library").JsonValue | null;
         receivedAt: Date | null;
         poNumber: string | null;
     } | null>;
@@ -136,17 +136,17 @@ export declare const inventoryService: {
         id: string;
         createdAt: Date;
         reason: string | null;
-        productId: string | null;
         venueId: string | null;
         quantity: number;
+        productId: string | null;
     } | null>;
     getWasteReport(venueId: string, startDate: Date, endDate: Date): Promise<{
         id: string;
         createdAt: Date;
         reason: string | null;
-        productId: string | null;
         venueId: string | null;
         quantity: number;
+        productId: string | null;
     }[]>;
     getInventoryValue(venueId: string): Promise<{
         totalValue: number;
@@ -158,14 +158,14 @@ export declare const inventoryService: {
         products: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             category: string | null;
             vendorId: string | null;
             venueId: string | null;
-            quantity: number;
-            unitPrice: number;
             sku: string;
+            unitPrice: number;
+            quantity: number;
             minStock: number;
         }[];
         value: {
@@ -179,17 +179,17 @@ export declare const inventoryService: {
             createdAt: Date;
             type: string;
             amount: number;
-            productId: string | null;
             referenceId: string | null;
             quantity: number;
+            productId: string | null;
         }[];
         wasteReport: {
             id: string;
             createdAt: Date;
             reason: string | null;
-            productId: string | null;
             venueId: string | null;
             quantity: number;
+            productId: string | null;
         }[];
     }>;
 };

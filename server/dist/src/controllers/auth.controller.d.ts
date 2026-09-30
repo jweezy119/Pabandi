@@ -25,7 +25,7 @@ interface AuthRequest extends Request {
     };
 }
 export declare const register: (req: Request<{}, {}, RegisterBody>, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
-export declare const login: (req: Request<{}, {}, LoginBody>, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const login: (req: Request<{}, {}, LoginBody>, res: Response, next: NextFunction) => Promise<void>;
 export declare const refreshToken: (req: Request, res: Response, next: NextFunction) => Promise<void>;
 export declare const verifyEmail: (req: AuthRequest, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
 export declare const requestLoginCode: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
@@ -39,7 +39,8 @@ export declare const getTrustAttestation: (req: AuthRequest, res: Response, next
 export declare const updateProfile: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>;
 export declare const getNonce: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
 export declare const verifyWallet: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
-export declare const requestProfileChange: (req: Request, res: Response, next: NextFunction) => Promise<void>;
-export declare const getProfileChangeStatus: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const requestProfileChange: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>;
+export declare const getProfileChangeStatus: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>;
+export declare const toggleUserMode: (req: AuthRequest, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
 export {};
 //# sourceMappingURL=auth.controller.d.ts.map

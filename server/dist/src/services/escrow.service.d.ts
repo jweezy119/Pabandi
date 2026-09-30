@@ -16,5 +16,8 @@ export declare const escrowService: {
         itemTitle: string;
         reference: string;
     }): Promise<EscrowCreateTransactionResponse>;
+    fundEscrow(passportId: string, amount: number, escrowId: string, invoiceId?: string): Promise<void>;
+    releaseEscrow(passportId: string, amount: number, escrowId: string): Promise<void>;
+    disputeEscrow(passportId: string, reason: string, escrowId: string): Promise<void>;
 };
 //# sourceMappingURL=escrow.service.d.ts.map

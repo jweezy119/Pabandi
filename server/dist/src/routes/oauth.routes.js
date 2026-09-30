@@ -1,9 +1,14 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const oauth_service_1 = require("../services/oauth.service");
 const logger_1 = require("../utils/logger");
 const auth_middleware_1 = require("../middleware/auth.middleware");
+const database_1 = require("../utils/database");
+const crypto_1 = __importDefault(require("crypto"));
 const router = (0, express_1.Router)();
 /**
  * GET /api/v1/oauth/authorize
@@ -96,6 +101,51 @@ router.get('/userinfo', async (req, res) => {
     catch (error) {
         logger_1.logger.error(`[OAuth] UserInfo Error: ${error.message}`);
         return res.status(401).json({ error: error.message });
+    }
+});
+/**
+ * POST /api/v1/oauth/clients
+ * Register a new OAuth client (requires authentication).
+ * Allows third-party platforms to self-register for "Sign in with Pabandi".
+ */
+router.post('/clients', auth_middleware_1.authenticate, async (req, res) => {
+    try {
+        const { name, redirectUris, webhookUrl, webhookSecret, logoUrl } = req.body;
+        if (!name || !redirectUris || !Array.isArray(redirectUris) || redirectUris.length === 0) {
+            return res.status(400).json({ success: false, error: 'name and redirectUris[] are required' });
+        }
+        const clientId = `pab_${crypto_1.default.randomBytes(16).toString('hex')}`;
+        const clientSecret = crypto_1.default.randomBytes(32).toString('hex');
+        const client = await database_1.prisma.oAuthClient.create({
+            data: {
+                clientId,
+                clientSecret,
+                name,
+                redirectUris,
+                webhookUrl,
+                webhookSecret,
+                logoUrl,
+                isActive: true,
+            },
+        });
+        logger_1.logger.info(`[OAuth] New client registered: ${client.name} (${client.clientId}) by user ${req.user.id}`);
+        return res.status(201).json({
+            success: true,
+            data: {
+                clientId: client.clientId,
+                clientSecret: client.clientSecret,
+                name: client.name,
+                redirectUris: client.redirectUris,
+                webhookUrl: client.webhookUrl,
+                logoUrl: client.logoUrl,
+                createdAt: client.createdAt,
+            },
+            message: 'Store the clientSecret securely — it will not be shown again.',
+        });
+    }
+    catch (error) {
+        logger_1.logger.error(`[OAuth] Client registration error: ${error.message}`);
+        return res.status(500).json({ success: false, error: error.message });
     }
 });
 exports.default = router;

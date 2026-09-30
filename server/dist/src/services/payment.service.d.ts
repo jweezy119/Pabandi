@@ -119,10 +119,10 @@ export declare function getEscrowDetails(escrowId: string): Promise<({
     status: string;
     amount: number;
     releasedAt: Date | null;
+    payerId: string;
+    payeeId: string;
     paymentId: string | null;
     releasedBy: string | null;
     refundReason: string | null;
-    payerId: string;
-    payeeId: string;
 }) | null>;
 //# sourceMappingURL=payment.service.d.ts.map

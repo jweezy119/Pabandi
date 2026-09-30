@@ -10,6 +10,7 @@ const logger_1 = require("../utils/logger");
 const ai_payment_verifier_service_1 = require("../services/ai.payment.verifier.service");
 const booking_service_1 = require("../services/booking.service");
 const multer_1 = __importDefault(require("multer"));
+const uploadSecurity_1 = require("../middleware/uploadSecurity");
 const router = (0, express_1.Router)();
 const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 /**
@@ -17,7 +18,7 @@ const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage()
  * Upload a Raast payment screenshot for AI verification.
  * Body: multipart/form-data with 'screenshot' file, 'reference', 'amount'
  */
-router.post('/verify', auth_middleware_1.authenticate, upload.single('screenshot'), async (req, res, next) => {
+router.post('/verify', auth_middleware_1.authenticate, upload.single('screenshot'), uploadSecurity_1.uploadSecurity, async (req, res, next) => {
     try {
         const { reference, amount } = req.body;
         if (!reference || !amount) {

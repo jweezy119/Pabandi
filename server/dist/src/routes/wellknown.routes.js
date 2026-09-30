@@ -1,7 +1,12 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const ptp_spec_1 = require("../protocol/ptp.spec");
+const crypto_1 = __importDefault(require("crypto"));
+const JWT_SECRET = process.env.JWT_SECRET || 'pabandi-fallback-secret-2026';
 const router = (0, express_1.Router)();
 /**
  * GET /.well-known/ptp.json
@@ -71,6 +76,27 @@ router.get('/agents.json', (req, res) => {
     };
     res.setHeader('Content-Type', 'application/json');
     res.json(agentsDoc);
+});
+/**
+ * GET /.well-known/pabandi-keys.json
+ * Public key for verifying Pabandi VC JWTs.
+ */
+router.get('/pabandi-keys.json', (_req, res) => {
+    const publicKeyPem = crypto_1.default.createPublicKey(JWT_SECRET).export({ type: 'spki', format: 'pem' }).toString();
+    const jwks = {
+        keys: [
+            {
+                kty: 'EC',
+                crv: 'secp256k1',
+                x: Buffer.from(publicKeyPem).toString('base64url'),
+                alg: 'ES256',
+                use: 'sig',
+                kid: 'pabandi-1',
+            },
+        ],
+    };
+    res.setHeader('Content-Type', 'application/json');
+    res.json(jwks);
 });
 exports.default = router;
 //# sourceMappingURL=wellknown.routes.js.map

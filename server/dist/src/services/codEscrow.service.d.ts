@@ -10,8 +10,8 @@ export declare class CODEscrowService {
         status: string;
         description: string;
         amount: number;
-        buyerId: string;
         sellerId: string;
+        buyerId: string;
         shippingAddress: string | null;
         trackingNumber: string | null;
     }>;
@@ -22,8 +22,8 @@ export declare class CODEscrowService {
         status: string;
         description: string;
         amount: number;
-        buyerId: string;
         sellerId: string;
+        buyerId: string;
         shippingAddress: string | null;
         trackingNumber: string | null;
     }>;
@@ -34,8 +34,8 @@ export declare class CODEscrowService {
         status: string;
         description: string;
         amount: number;
-        buyerId: string;
         sellerId: string;
+        buyerId: string;
         shippingAddress: string | null;
         trackingNumber: string | null;
     }>;
@@ -46,8 +46,8 @@ export declare class CODEscrowService {
         status: string;
         description: string;
         amount: number;
-        buyerId: string;
         sellerId: string;
+        buyerId: string;
         shippingAddress: string | null;
         trackingNumber: string | null;
     }>;
@@ -58,8 +58,8 @@ export declare class CODEscrowService {
         status: string;
         description: string;
         amount: number;
-        buyerId: string;
         sellerId: string;
+        buyerId: string;
         shippingAddress: string | null;
         trackingNumber: string | null;
     }>;
@@ -70,8 +70,8 @@ export declare class CODEscrowService {
         status: string;
         description: string;
         amount: number;
-        buyerId: string;
         sellerId: string;
+        buyerId: string;
         shippingAddress: string | null;
         trackingNumber: string | null;
     }>;
@@ -82,19 +82,19 @@ export declare class CODEscrowService {
         status: string;
         description: string;
         amount: number;
-        buyerId: string;
         sellerId: string;
+        buyerId: string;
         shippingAddress: string | null;
         trackingNumber: string | null;
     }>;
     getEscrowHistory(userId: string): Promise<({
-        buyer: {
+        seller: {
             email: string;
             id: string;
             firstName: string;
             lastName: string;
         };
-        seller: {
+        buyer: {
             email: string;
             id: string;
             firstName: string;
@@ -107,19 +107,19 @@ export declare class CODEscrowService {
         status: string;
         description: string;
         amount: number;
-        buyerId: string;
         sellerId: string;
+        buyerId: string;
         shippingAddress: string | null;
         trackingNumber: string | null;
     })[]>;
     getEscrowById(escrowId: string): Promise<({
-        buyer: {
+        seller: {
             email: string;
             id: string;
             firstName: string;
             lastName: string;
         };
-        seller: {
+        buyer: {
             email: string;
             id: string;
             firstName: string;
@@ -132,8 +132,8 @@ export declare class CODEscrowService {
         status: string;
         description: string;
         amount: number;
-        buyerId: string;
         sellerId: string;
+        buyerId: string;
         shippingAddress: string | null;
         trackingNumber: string | null;
     }) | null>;

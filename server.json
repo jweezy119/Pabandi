@@ -17,31 +17,93 @@
   "tools": [
     {
       "name": "pabandi_verify_passport",
-      "description": "Verify a Pabandi PTP attestation. Input a base64-encoded attestation and optionally require a capability. Returns valid, granted capabilities, risk band, expiry."
+      "description": "Verify a PTP trust attestation (offline-verifiable HMAC signature)"
     },
     {
       "name": "pabandi_discover",
-      "description": "Return the Pabandi Trust Protocol discovery document."
+      "description": "PTP protocol discovery document"
     },
     {
       "name": "pabandi_get_ledger",
-      "description": "Public audit lookup of a passport issuance charge by idempotency key."
+      "description": "Public audit lookup of a passport issuance charge by idempotency key"
     },
     {
       "name": "pabandi_issue_passport",
-      "description": "Issue a scoped Agent Capability Passport. Metered at 1.0 USDC per issue via x402."
+      "description": "See /api/v1/pabandi/tools",
+      "payment": "x402"
     },
     {
-      "name": "pabandi_verify_property",
-      "description": "Verify property documents and landlord/tenant trust scores against PLRA and SBCA databases."
+      "name": "pabandi_discover_platform",
+      "description": "Full platform capability manifest"
     },
     {
-      "name": "pabandi_initiate_escrow",
-      "description": "Initiate a Solana escrow for conditional payment. Requires x402 payment of 0.5 USDC."
+      "name": "pabandi_platform_access",
+      "description": "Grant or inspect an exclusive platform access credential"
     },
     {
-      "name": "pabandi_create_booking",
-      "description": "Create a booking with AI trust scoring and escrow protection. Requires AP2 mandates (intent, cart, payment) and x402 payment of 0.25 USDC."
+      "name": "pabandi_platform_discovery",
+      "description": "Pabandi platform discovery"
+    },
+    {
+      "name": "pabandi_verify_trust_attestation",
+      "description": "Verify a portable trust attestation"
+    },
+    {
+      "name": "pabandi_search_services",
+      "description": "Search the Pabandi business directory"
+    },
+    {
+      "name": "pabandi_get_business",
+      "description": "Look up a single business by id"
+    },
+    {
+      "name": "pabandi_list_properties",
+      "description": "Browse verified stay listings"
+    },
+    {
+      "name": "pabandi_book_stay",
+      "description": "Book a stay with guest deposit escrow Gated to businesses with an attested open-finance settlement rail OR PTP Band A/B, so every booked stay has a real, verified payout path. This is what makes the hospitality vertical trustworthy to guests and exclusive to quality hosts.",
+      "access": "verified"
+    },
+    {
+      "name": "pabandi_connect_finance",
+      "description": "Link an open-finance settlement rail",
+      "access": "owner"
+    },
+    {
+      "name": "pabandi_list_finance",
+      "description": "List a business's verified settlement rails",
+      "access": "owner"
+    },
+    {
+      "name": "pabandi_start_escrow",
+      "description": "Initialize a booking deposit escrow Exclusive: real-chain escrow writes are gated behind a verified PTP trust band (A/B) or an exclusive platform grant, so only trusted counterparties open real money on chain. Verified-only stays use the simulated escrow path. This is the premium moat — the real rail, gated.",
+      "access": "exclusive"
+    },
+    {
+      "name": "pabandi_finance_quote",
+      "description": "Quote a payout / offramp",
+      "access": "owner"
+    },
+    {
+      "name": "pabandi_predict_booking",
+      "description": "Forecast booking no-show / completion",
+      "access": "owner"
+    },
+    {
+      "name": "pabandi_predict_demand",
+      "description": "Hourly demand forecast for a business",
+      "access": "owner"
+    },
+    {
+      "name": "pabandi_recommend_slots",
+      "description": "Recommend optimal booking slots",
+      "access": "owner"
+    },
+    {
+      "name": "pabandi_zk_realestate_proof",
+      "description": "Issue a ZK proof of escrow split (real-estate / hospitality) Proves the escrow split is correct without revealing the valuation — the privacy + verifiability moat for real-estate/hospitality deals. Upgrades to a succinct on-chain-verifiable SNARK when Barretenberg is in the pipeline.",
+      "access": "owner"
     }
   ],
   "payment": {
@@ -51,6 +113,10 @@
   },
   "authorization": {
     "scheme": "ap2",
-    "mandates": ["intent", "cart", "payment"]
+    "mandates": [
+      "intent",
+      "cart",
+      "payment"
+    ]
   }
 }

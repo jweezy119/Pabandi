@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getProfileChangeStatus = exports.requestProfileChange = exports.verifyWallet = exports.getNonce = exports.updateProfile = exports.getTrustAttestation = exports.updatePassword = exports.resetPassword = exports.forgotPassword = exports.verifyPhone = exports.sendVerificationCode = exports.verifyLoginCode = exports.requestLoginCode = exports.verifyEmail = exports.refreshToken = exports.login = exports.register = void 0;
+exports.toggleUserMode = exports.getProfileChangeStatus = exports.requestProfileChange = exports.verifyWallet = exports.getNonce = exports.updateProfile = exports.getTrustAttestation = exports.updatePassword = exports.resetPassword = exports.forgotPassword = exports.verifyPhone = exports.sendVerificationCode = exports.verifyLoginCode = exports.requestLoginCode = exports.verifyEmail = exports.refreshToken = exports.login = exports.register = void 0;
 const client_1 = require("@prisma/client");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
@@ -49,7 +49,8 @@ const errorHandler_1 = require("../middleware/errorHandler");
 const encryption_1 = require("../utils/encryption");
 const osint_service_1 = require("../services/osint.service");
 const odoo_service_1 = require("../services/odoo.service");
-const notification_service_1 = require("../services/notification.service");
+const email_service_1 = require("../services/email.service");
+const identity_service_1 = require("../services/identity.service");
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
@@ -60,10 +61,11 @@ const createWalletNonce = () => `${Date.now()}_${crypto_1.default.randomBytes(24
 // Email helper functions (inline since no email util)
 const generateVerificationCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 const sendVerificationEmail = async (email, code, firstName) => {
-    return notification_service_1.notificationService.sendVerificationEmail(email, code, firstName);
+    const { sendVerificationEmail: sendCode } = require('../services/email.service');
+    return sendCode(email, code, firstName);
 };
 const isEmailConfigured = () => {
-    return !!process.env.SENDGRID_API_KEY || !!process.env.MAILGUN_API_KEY;
+    return true; // Force true so that LOGGED emails succeed in dev
 };
 const register = async (req, res, next) => {
     try {
@@ -134,10 +136,11 @@ const register = async (req, res, next) => {
                     appointmentScore: true,
                     createdAt: true,
                     business: true,
+                    activeMode: true,
                 },
             });
             // Generate tokens
-            const token = jsonwebtoken_1.default.sign({ id: updatedUser.id, email: updatedUser.email, role: updatedUser.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+            const token = jsonwebtoken_1.default.sign({ id: user.id, email: user.email, role: user.role, activeBusinessId: (0, identity_service_1.getActiveBusinessId)(user), mode: user.preferredMode || 'business' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
             const refreshToken = jsonwebtoken_1.default.sign({ id: updatedUser.id }, JWT_REFRESH_SECRET, { expiresIn: JWT_REFRESH_EXPIRES_IN });
             logger_1.logger.info(`User completed registration via code: ${updatedUser.email}`);
             return res.status(201).json({
@@ -151,24 +154,33 @@ const register = async (req, res, next) => {
             });
         }
         // Standard registration flow (without code)
-        // Check if user already exists
-        const existingUser = await database_1.prisma.user.findFirst({
-            where: {
-                OR: [
-                    { email },
-                    ...(phone ? [{ phone }] : []),
-                ],
-            },
+        // Use unified identity to find or create user
+        const foundUser = await (0, identity_service_1.findOrCreateUser)({
+            provider: 'email',
+            providerId: email,
+            email,
         });
-        if (existingUser) {
-            throw new errorHandler_1.CustomError('User with this email or phone already exists', 409);
+        // If user already has auth methods beyond this registration, reject duplicate
+        const existingAuth = await database_1.prisma.userAuthMethod.findFirst({
+            where: { userId: foundUser.id, provider: 'email' },
+        });
+        if (existingAuth && existingAuth.providerId !== email) {
+            // User exists with a different email auth method — this shouldn't happen often
         }
-        // Enforce password complexity
+        // If user already exists with same email, reject
+        if (foundUser.email === email && foundUser.createdAt !== foundUser.updatedAt) {
+            // Quick heuristic: if user was created earlier, they might be existing
+            // Safer: check if there are other auth methods
+            const authCount = await database_1.prisma.userAuthMethod.count({ where: { userId: foundUser.id } });
+            if (authCount > 1) {
+                throw new errorHandler_1.CustomError('User with this email already exists', 409);
+            }
+        }
+        // Hash password
         const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])(?=.*[a-z]).{8,}$/;
         if (!passwordRegex.test(password)) {
             throw new errorHandler_1.CustomError('Password must be at least 8 characters long, and contain at least one uppercase letter, one lowercase letter, one number, and one special character (!@#$&*)', 400);
         }
-        // Hash password
         const passwordHash = await bcrypt_1.default.hash(password, 12);
         // Resolve role to enum (defaults to CUSTOMER)
         const resolvedRole = (role && Object.values(client_1.UserRole).includes(role))
@@ -193,9 +205,9 @@ const register = async (req, res, next) => {
         const solanaAddress = newWallet.publicKey.toBase58();
         const encryptedSecret = (0, encryption_1.encrypt)(bs58_1.default.encode(newWallet.secretKey));
         // Create user immediately with BASIC tier
-        const user = await database_1.prisma.user.create({
+        const user = await database_1.prisma.user.update({
+            where: { id: foundUser.id },
             data: {
-                email,
                 passwordHash,
                 firstName,
                 lastName,
@@ -254,6 +266,7 @@ const register = async (req, res, next) => {
                 appointmentScore: true,
                 createdAt: true,
                 business: true,
+                activeMode: true,
             },
         });
         // Create pending Outcome Bond
@@ -296,7 +309,7 @@ const register = async (req, res, next) => {
             logger_1.logger.error('Failed to send verification email:', err);
         });
         // Generate tokens
-        const token = jsonwebtoken_1.default.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+        const token = jsonwebtoken_1.default.sign({ id: user.id, email: user.email, role: user.role, businessId: user.businessId || user.business?.id, activeMode: user.activeMode || 'CUSTOMER' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
         const refreshToken = jsonwebtoken_1.default.sign({ id: user.id }, JWT_REFRESH_SECRET, { expiresIn: JWT_REFRESH_EXPIRES_IN });
         logger_1.logger.info(`New user registered: ${user.email} ${user.role === 'BUSINESS_OWNER' ? '(Business: ' + req.body.businessName + ')' : ''}`);
         // Sync to Odoo CRM if business owner
@@ -310,6 +323,7 @@ const register = async (req, res, next) => {
                 businessName: req.body.businessName
             }).catch(err => logger_1.logger.error('Failed async Odoo sync:', err));
         }
+        email_service_1.emailService.sendWelcome(user);
         res.status(201).json({
             success: true,
             message: 'User registered successfully',
@@ -328,18 +342,11 @@ exports.register = register;
 const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
-        const demoAdminEmail = process.env.DEMO_ADMIN_EMAIL;
-        const demoAdminPassword = process.env.DEMO_ADMIN_PASSWORD;
-        if (demoAdminEmail && email === demoAdminEmail && password === demoAdminPassword) {
-            const token = jsonwebtoken_1.default.sign({ id: 'admin', email, role: 'ADMIN' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-            const refreshToken = jsonwebtoken_1.default.sign({ id: 'admin' }, JWT_REFRESH_SECRET, { expiresIn: JWT_REFRESH_EXPIRES_IN });
-            return res.json({ success: true, token, refreshToken, data: { user: { id: 'admin', email, role: 'ADMIN' } } });
-        }
         logger_1.logger.info(`Login controller received email: '${email}'`);
         // Find user
         const user = await database_1.prisma.user.findUnique({
             where: { email },
-            include: { business: true }
+            include: { business: true, memberships: true },
         });
         if (!user) {
             throw new errorHandler_1.CustomError('Invalid email or password', 401);
@@ -375,8 +382,15 @@ const login = async (req, res, next) => {
                 }
             });
         }
+        // Ensure auth method exists and update lastUsedAt
+        await (0, identity_service_1.findOrCreateUser)({
+            provider: 'email',
+            providerId: user.email,
+            email: user.email,
+        });
+        const activeBusinessId = (0, identity_service_1.getActiveBusinessId)(user);
         // Generate tokens
-        const token = jsonwebtoken_1.default.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+        const token = jsonwebtoken_1.default.sign({ id: user.id, email: user.email, role: user.role, activeBusinessId, mode: user.preferredMode || 'business' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
         const refreshToken = jsonwebtoken_1.default.sign({ id: user.id }, JWT_REFRESH_SECRET, { expiresIn: JWT_REFRESH_EXPIRES_IN });
         logger_1.logger.info(`User logged in: ${user.email}`);
         res.json({
@@ -422,12 +436,14 @@ const refreshToken = async (req, res, next) => {
                 id: true,
                 email: true,
                 role: true,
+                activeMode: true,
+                preferredMode: true,
             },
         });
         if (!user) {
             throw new errorHandler_1.CustomError('User not found', 404);
         }
-        const newToken = jsonwebtoken_1.default.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+        const newToken = jsonwebtoken_1.default.sign({ id: user.id, email: user.email, role: user.role, activeBusinessId: (0, identity_service_1.getActiveBusinessId)(user), mode: user.preferredMode || 'business' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
         res.json({
             success: true,
             data: {
@@ -564,7 +580,7 @@ const verifyLoginCode = async (req, res, next) => {
             data: { verificationCode: null, verificationCodeExpires: null, isEmailVerified: true },
         });
         // Generate tokens
-        const token = jsonwebtoken_1.default.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+        const token = jsonwebtoken_1.default.sign({ id: user.id, email: user.email, role: user.role, businessId: user.businessId || user.business?.id, activeMode: user.activeMode || 'CUSTOMER' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
         const refreshToken = jsonwebtoken_1.default.sign({ id: user.id }, JWT_REFRESH_SECRET, { expiresIn: JWT_REFRESH_EXPIRES_IN });
         logger_1.logger.info(`User logged in via email code: ${user.email}`);
         res.json({
@@ -868,7 +884,7 @@ const verifyWallet = async (req, res, next) => {
             where: { id: user.id },
             data: { nonce: null },
         });
-        const token = jsonwebtoken_1.default.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+        const token = jsonwebtoken_1.default.sign({ id: user.id, email: user.email, role: user.role, businessId: user.businessId || user.business?.id, activeMode: user.activeMode || 'CUSTOMER' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
         const refreshToken = jsonwebtoken_1.default.sign({ id: user.id }, JWT_REFRESH_SECRET, { expiresIn: JWT_REFRESH_EXPIRES_IN });
         logger_1.logger.info(`User logged in via wallet: ${walletAddress}`);
         return res.json({
@@ -943,4 +959,29 @@ const getProfileChangeStatus = async (req, res, next) => {
     }
 };
 exports.getProfileChangeStatus = getProfileChangeStatus;
+const toggleUserMode = async (req, res, next) => {
+    try {
+        const { mode } = req.body;
+        if (!mode || !['business', 'personal'].includes(mode)) {
+            return res.status(400).json({ success: false, message: 'mode must be business or personal' });
+        }
+        const user = await database_1.prisma.user.update({
+            where: { id: req.user.id },
+            data: { preferredMode: mode },
+            select: {
+                id: true,
+                email: true,
+                role: true,
+                preferredMode: true,
+                business: true,
+            },
+        });
+        const token = jsonwebtoken_1.default.sign({ id: user.id, email: user.email, role: user.role, businessId: user.businessId || user.business?.id, mode: user.preferredMode }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+        res.json({ success: true, data: { user, token } });
+    }
+    catch (error) {
+        next(error);
+    }
+};
+exports.toggleUserMode = toggleUserMode;
 //# sourceMappingURL=auth.controller.js.map

@@ -23,6 +23,12 @@ export declare class TrustPassportService {
         bio?: string;
         walletAddress?: string;
     }): Promise<any>;
+    /** Find or create a passport by wallet address (wallet-first identity). */
+    findOrCreateByWallet(input: {
+        walletAddress: string;
+        displayName: string;
+        category?: string;
+    }): Promise<any>;
     /** Public directory of passports (discovery). No auth. */
     list(params?: {
         category?: string;

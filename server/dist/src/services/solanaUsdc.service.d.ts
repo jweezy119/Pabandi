@@ -28,14 +28,14 @@ export declare class SolanaUsdcService {
     }): Promise<{
         id: string;
         createdAt: Date;
-        type: string;
         status: string;
+        type: string;
         txHash: string;
-        referenceId: string | null;
         agentId: string | null;
         amountUsdc: number;
-        toWallet: string;
+        referenceId: string | null;
         fromWallet: string;
+        toWallet: string;
         blockTime: Date | null;
     }>;
     /**

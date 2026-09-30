@@ -6,9 +6,9 @@ export declare class DisputeService {
      */
     createDispute(reservationId: string, reportedById: string, userId: string, description: string, evidenceUrls: string[], stakedAmount?: number): Promise<{
         id: string;
+        userId: string | null;
         createdAt: Date;
         updatedAt: Date;
-        userId: string | null;
         type: import(".prisma/client").$Enums.DisputeType;
         description: string | null;
         reservationId: string | null;
@@ -38,9 +38,9 @@ export declare class DisputeService {
         stakedAmount?: number;
     }): Promise<{
         id: string;
+        userId: string | null;
         createdAt: Date;
         updatedAt: Date;
-        userId: string | null;
         type: import(".prisma/client").$Enums.DisputeType;
         description: string | null;
         reservationId: string | null;
@@ -64,9 +64,9 @@ export declare class DisputeService {
         id: string;
         createdAt: Date;
         reason: string | null;
+        disputeId: string;
         jurorId: string;
         voteForId: string;
-        disputeId: string;
     }>;
     /**
      * Resolves the dispute if a threshold is met.

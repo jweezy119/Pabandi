@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.courtListenerLimiter = exports.strictApiLimiter = exports.apiLimiter = void 0;
+exports.courtListenerLimiter = exports.writeLimiter = exports.strictApiLimiter = exports.apiLimiter = void 0;
 exports.courtListenerDailyLimiter = courtListenerDailyLimiter;
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 // General API Rate Limiter
@@ -29,6 +29,22 @@ exports.strictApiLimiter = (0, express_rate_limit_1.default)({
     },
     standardHeaders: true,
     legacyHeaders: false,
+});
+// Write Limiter for financial/trust write endpoints
+// 10 requests per minute per authenticated user
+exports.writeLimiter = (0, express_rate_limit_1.default)({
+    windowMs: 60 * 1000, // 1 minute
+    max: 10,
+    message: {
+        success: false,
+        error: 'Too many write requests. Please slow down.',
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => {
+        const userId = req.user?.id;
+        return userId ? `write-user-${userId}` : `write-ip-${req.ip}`;
+    },
 });
 // CourtListener screening rate limiter.
 // CourtListener API limits:

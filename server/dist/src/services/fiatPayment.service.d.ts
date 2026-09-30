@@ -57,11 +57,11 @@ export declare function getFiatPaymentStatus(reference: string): Promise<{
         status: string;
         amount: number;
         releasedAt: Date | null;
+        payerId: string;
+        payeeId: string;
         paymentId: string | null;
         releasedBy: string | null;
         refundReason: string | null;
-        payerId: string;
-        payeeId: string;
     } | null;
     payer: {
         email: string;
@@ -76,23 +76,23 @@ export declare function getFiatPaymentStatus(reference: string): Promise<{
         lastName: string;
     };
 } & {
-    method: string;
     id: string;
     createdAt: Date;
     updatedAt: Date;
     businessId: string | null;
     status: string;
+    method: string;
     currency: string;
     amount: number;
-    instructions: string | null;
-    escrowId: string | null;
+    confirmedAt: Date | null;
+    rejectionReason: string | null;
     reference: string;
     payerId: string | null;
+    escrowId: string | null;
     payeeId: string;
     paymentUrl: string | null;
-    confirmedAt: Date | null;
+    instructions: string | null;
     confirmedBy: string | null;
-    rejectionReason: string | null;
 }>;
 export declare function confirmFiatPayment(reference: string, confirmedBy: string): Promise<{
     success: boolean;
@@ -119,23 +119,23 @@ export declare function listPendingFiatPayments(businessId: string): Promise<({
         lastName: string;
     } | null;
 } & {
-    method: string;
     id: string;
     createdAt: Date;
     updatedAt: Date;
     businessId: string | null;
     status: string;
+    method: string;
     currency: string;
     amount: number;
-    instructions: string | null;
-    escrowId: string | null;
+    confirmedAt: Date | null;
+    rejectionReason: string | null;
     reference: string;
     payerId: string | null;
+    escrowId: string | null;
     payeeId: string;
     paymentUrl: string | null;
-    confirmedAt: Date | null;
+    instructions: string | null;
     confirmedBy: string | null;
-    rejectionReason: string | null;
 })[]>;
 export declare function listUserFiatPayments(userId: string): Promise<({
     business: {
@@ -149,11 +149,11 @@ export declare function listUserFiatPayments(userId: string): Promise<({
         status: string;
         amount: number;
         releasedAt: Date | null;
+        payerId: string;
+        payeeId: string;
         paymentId: string | null;
         releasedBy: string | null;
         refundReason: string | null;
-        payerId: string;
-        payeeId: string;
     } | null;
     payer: {
         email: string;
@@ -168,23 +168,23 @@ export declare function listUserFiatPayments(userId: string): Promise<({
         lastName: string;
     };
 } & {
-    method: string;
     id: string;
     createdAt: Date;
     updatedAt: Date;
     businessId: string | null;
     status: string;
+    method: string;
     currency: string;
     amount: number;
-    instructions: string | null;
-    escrowId: string | null;
+    confirmedAt: Date | null;
+    rejectionReason: string | null;
     reference: string;
     payerId: string | null;
+    escrowId: string | null;
     payeeId: string;
     paymentUrl: string | null;
-    confirmedAt: Date | null;
+    instructions: string | null;
     confirmedBy: string | null;
-    rejectionReason: string | null;
 })[]>;
 export declare function getAvailableFiatMethods(): FiatMethodInfo[];
 export declare const fiatPaymentService: {

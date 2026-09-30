@@ -67,16 +67,15 @@ class JobLifecycleService {
         }
         const now = new Date();
         const checkedInAt = job.checkedInAt || new Date(); // Fallback to now if not set
-        const actualDurationMinutes = Math.max(0, (now.getTime() - checkedInAt.getTime()) / (1000 * 60));
+        const durationMinutes = Math.max(0, (now.getTime() - checkedInAt.getTime()) / (1000 * 60));
         const scheduledDurationMinutes = job.durationMinutes || 0;
-        const isLate = actualDurationMinutes > scheduledDurationMinutes + 15; // More than 15 min over scheduled time
+        const isLate = durationMinutes > scheduledDurationMinutes + 15; // More than 15 min over scheduled time
         // Update job with check-out timestamp, status, and actual duration
         const updatedJob = await database_1.prisma.crmJob.update({
             where: { id: jobId },
             data: {
-                status: 'COMPLETE',
-                checkedOutAt: new Date(),
-                actualDurationMinutes: Math.round(actualDurationMinutes)
+                status: 'COMPLETED',
+                checkedOutAt: new Date()
             }
         });
         // Determine if job was on time or late based on scheduled vs actual time
@@ -88,7 +87,7 @@ class JobLifecycleService {
             jobId,
             clientId: job.clientId,
             workerId: userId, // Assuming userId is the worker
-            actualDurationMinutes,
+            durationMinutes,
             scheduledDurationMinutes,
             timestamp: new Date()
         });
@@ -104,14 +103,14 @@ class JobLifecycleService {
             component: 'DELIVERY_WORKER',
             severity: deliveryDelta > 0 ? 'positive' : 'negative',
             weightUsed: 1.0, // No decay for immediate events
-            metadata: { jobId, action: 'check_out', isLate, actualDurationMinutes, scheduledDurationMinutes },
+            metadata: { jobId, action: 'check_out', isLate, durationMinutes, scheduledDurationMinutes },
             methodology: '1.0.0'
         });
         logger_1.logger.info(`[JobLifecycle] Job ${jobId} checked out${isLate ? ' (late)' : ''}`);
         // Auto-generate invoice (would call invoice generation service)
         // Auto-release deposit from escrow (would call escrow service)
         // These would be implemented in separate services
-        return { updatedJob, isLate, actualDurationMinutes };
+        return { updatedJob, isLate, durationMinutes };
     }
     /**
      * Handle no-show detection (called by cron job)

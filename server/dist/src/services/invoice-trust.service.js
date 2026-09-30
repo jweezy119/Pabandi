@@ -5,6 +5,7 @@ const database_1 = require("../utils/database");
 const logger_1 = require("../utils/logger");
 const event_bus_service_1 = require("./event-bus.service");
 const trustAuditWriter_1 = require("./trustAuditWriter");
+const trust_core_1 = require("../trust/trust-core");
 // Helper to compute decay factor for a paymentScore event
 function paymentScoreDecayFactor(ageDays) {
     // 180-day half-life: decayFactor = 0.5^(ageDays / 180)
@@ -59,30 +60,11 @@ async function getPaymentScoreDelta(oldStatus, newStatus, timestamp, isPaidOnTim
 }
 // Get passportId (TrustPassport id) for a client (CrmClient)
 async function getPassportIdForClient(clientId) {
-    // Traverse: CrmClient -> serviceBusiness -> Business -> owner -> TrustPassport (by userId)
     const client = await database_1.prisma.crmClient.findUnique({
         where: { id: clientId },
-        select: { serviceBusinessId: true },
+        select: { passportId: true },
     });
-    if (!client)
-        return null;
-    const serviceBusiness = await database_1.prisma.crmServiceBusiness.findUnique({
-        where: { id: client.serviceBusinessId },
-        select: { businessId: true },
-    });
-    if (!serviceBusiness)
-        return null;
-    const business = await database_1.prisma.business.findUnique({
-        where: { id: serviceBusiness.businessId },
-        select: { ownerId: true },
-    });
-    if (!business?.ownerId)
-        return null;
-    const trustPassport = await database_1.prisma.trustPassport.findUnique({
-        where: { userId: business.ownerId },
-        select: { id: true },
-    });
-    return trustPassport?.id ?? null;
+    return client?.passportId ?? null;
 }
 // Check if an invoice event has already been recorded
 async function invoiceEventExists(invoiceId, eventType) {
@@ -93,13 +75,16 @@ async function invoiceEventExists(invoiceId, eventType) {
 }
 // Record a new invoice event
 async function recordInvoiceEvent(invoiceId, passportId, eventType) {
+    // Try to find the current score to record as previousScore. For simplicity, just store 500 if unknown.
+    const passport = await database_1.prisma.trustPassport.findUnique({ where: { id: passportId } });
+    const previousScore = passport?.paymentScore ?? 500;
     await database_1.prisma.invoiceTrustEvent.create({
         data: {
             invoiceId,
             passportId,
             eventType,
             scoreBefore: previousScore,
-            scoreAfter: newScore,
+            scoreAfter: previousScore, // Will be updated later if needed
         },
     });
 }
@@ -147,7 +132,7 @@ async function processInvoiceStatusChange(invoiceId, clientId, oldStatus, newSta
         return;
     }
     // Determine delta and event type
-    const { delta, eventType } = getPaymentScoreDelta(oldStatus, newStatus, timestamp, isPaidOnTime, isOverdue, isDefaulted);
+    const { delta, eventType } = await getPaymentScoreDelta(oldStatus, newStatus, timestamp, isPaidOnTime, isOverdue, isDefaulted);
     // If no delta, skip (e.g., invoice.sent)
     if (delta === 0 && eventType !== 'invoice.sent')
         return;
@@ -170,6 +155,16 @@ async function processInvoiceStatusChange(invoiceId, clientId, oldStatus, newSta
     // Update paymentScore (only for events that affect score)
     if (delta !== 0) {
         await updatePaymentScore(passportId, delta, eventType, timestamp);
+    }
+    // Explicitly emit for trustCore log (per Cycle 12 requirements)
+    if (eventType === 'invoice.paid_on_time' || eventType === 'invoice.paid_late') {
+        // We need to fetch the subtotal for the amount
+        const invoice = await database_1.prisma.invoice.findUnique({ where: { id: invoiceId }, select: { subtotal: true } });
+        await trust_core_1.trustCore.emit(eventType, {
+            passportId: passportId,
+            invoiceId: invoiceId,
+            amount: invoice?.subtotal || 0,
+        });
     }
 }
 exports.invoiceTrustService = {

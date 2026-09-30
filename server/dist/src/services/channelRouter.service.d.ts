@@ -42,9 +42,9 @@ export declare class ChannelRouterService {
         status: string;
         customerId: string;
         externalId: string | null;
+        sentAt: Date | null;
         direction: string;
         content: string;
-        sentAt: Date | null;
         deliveredAt: Date | null;
         channel: string;
         failedAt: Date | null;

@@ -1,65 +1,77 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.teamService = exports.TeamService = void 0;
-const database_1 = require("../utils/database");
-const logger_1 = require("../utils/logger");
+exports.TeamService = void 0;
+const client_1 = require("@prisma/client");
+const crypto_1 = __importDefault(require("crypto"));
+const prisma = new client_1.PrismaClient();
 class TeamService {
-    /**
-     * List all team members for a manager
-     */
-    async listMembers(managerId) {
-        return database_1.prisma.teamMember.findMany({
-            where: { managerId },
-            include: { user: { select: { id: true, email: true, firstName: true, lastName: true, profilePictureUrl: true } } },
-            orderBy: { createdAt: 'desc' },
-        });
-    }
-    /**
-     * Invite a new team member
-     */
-    async invite(managerId, input) {
-        const existing = await database_1.prisma.teamMember.findFirst({ where: { managerId, email: input.email } });
-        if (existing) {
-            throw new Error('Team member already invited');
-        }
-        const member = await database_1.prisma.teamMember.create({
-            data: {
-                managerId,
-                email: input.email,
-                firstName: input.firstName,
-                lastName: input.lastName,
-                role: input.role,
+    static async getTeamMembers(businessId) {
+        return prisma.crmEmployee.findMany({
+            where: { businessId },
+            include: {
+                jobs: { select: { id: true, title: true, status: true, deliveryScore: true } }
             },
-        });
-        // TODO: send invitation email
-        logger_1.logger.info(`[Team] Invited ${input.email} to team ${managerId} as ${input.role}`);
-        return member;
-    }
-    /**
-     * Update team member role
-     */
-    async updateRole(managerId, memberId, role) {
-        const member = await database_1.prisma.teamMember.findFirst({ where: { id: memberId, managerId } });
-        if (!member) {
-            throw new Error('Team member not found');
-        }
-        return database_1.prisma.teamMember.update({
-            where: { id: memberId },
-            data: { role },
+            orderBy: { createdAt: 'desc' }
         });
     }
-    /**
-     * Remove team member
-     */
-    async remove(managerId, memberId) {
-        const member = await database_1.prisma.teamMember.findFirst({ where: { id: memberId, managerId } });
-        if (!member) {
-            throw new Error('Team member not found');
-        }
-        await database_1.prisma.teamMember.delete({ where: { id: memberId } });
-        return { success: true };
+    static async getTeamMember(id, businessId) {
+        return prisma.crmEmployee.findFirst({
+            where: { id, businessId },
+            include: {
+                jobs: true
+            }
+        });
+    }
+    static async inviteMember(data) {
+        const token = crypto_1.default.randomBytes(32).toString('hex');
+        return prisma.crmEmployee.create({
+            data: {
+                businessId: data.businessId,
+                name: data.name,
+                email: data.email,
+                role: data.role,
+                payRate: data.payRate || 0,
+                payType: data.payType || 'HOURLY',
+                inviteToken: token,
+                inviteStatus: 'PENDING',
+                isActive: true,
+                reliabilityScore: 100,
+                deliveryScore: 100
+            }
+        });
+    }
+    static async updateMember(id, businessId, data) {
+        return prisma.crmEmployee.update({
+            where: { id },
+            data: {
+                ...data
+            }
+        });
+    }
+    static async removeMember(id, businessId) {
+        // Soft delete
+        return prisma.crmEmployee.update({
+            where: { id },
+            data: {
+                isActive: false
+            }
+        });
+    }
+    static async acceptInvite(token) {
+        const member = await prisma.crmEmployee.findUnique({ where: { inviteToken: token } });
+        if (!member)
+            throw new Error('Invalid or expired invite token');
+        return prisma.crmEmployee.update({
+            where: { id: member.id },
+            data: {
+                inviteStatus: 'ACCEPTED',
+                inviteToken: null // One-time use
+            }
+        });
     }
 }
 exports.TeamService = TeamService;
-exports.teamService = new TeamService();
 //# sourceMappingURL=team.service.js.map

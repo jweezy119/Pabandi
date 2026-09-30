@@ -29,13 +29,13 @@ export declare class RenterEquityService {
             createdAt: Date;
             updatedAt: Date;
             status: string;
-            settledAt: Date | null;
             propertyId: string | null;
+            expectedApy: number;
             simulated: boolean;
             tenantId: string;
-            expectedApy: number;
-            pool: string;
+            settledAt: Date | null;
             landlordId: string;
+            pool: string;
             rentAmountUSD: number;
             holdingDays: number;
             totalYieldUSD: number | null;

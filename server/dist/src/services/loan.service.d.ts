@@ -15,19 +15,19 @@ export declare class LoanService {
      */
     requestLoan(userId: string, usdcAmount: number): Promise<{
         id: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
         status: import(".prisma/client").$Enums.LoanStatus;
         txHash: string | null;
-        feePct: number;
         dueDate: Date;
-        band: string | null;
         principalUsdc: number;
         collateralPab: number;
         flatFeeUsdc: number;
         loanType: string;
+        band: string | null;
         reputationCapUsdc: number;
+        feePct: number;
     }>;
     /**
      * Quote a REPUTATION-backed (collateral-FREE) loan priced off the Trust Passport band.
@@ -46,19 +46,19 @@ export declare class LoanService {
     }>;
     requestReputationLoan(userId: string, usdcAmount: number): Promise<{
         id: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
         status: import(".prisma/client").$Enums.LoanStatus;
         txHash: string | null;
-        feePct: number;
         dueDate: Date;
-        band: string | null;
         principalUsdc: number;
         collateralPab: number;
         flatFeeUsdc: number;
         loanType: string;
+        band: string | null;
         reputationCapUsdc: number;
+        feePct: number;
     }>;
     /**
      * Repay the loan + flat fee to unlock PAB

@@ -19,13 +19,13 @@ export declare const promotionsService: {
         updatedAt: Date;
         businessId: string;
         isActive: boolean;
-        description: string;
         title: string;
+        description: string;
         value: number;
-        categories: string[];
-        minPurchase: number | null;
         startsAt: Date;
         endsAt: Date;
+        categories: string[];
+        minPurchase: number | null;
         totalRedeemed: number;
         promotionType: string;
         maxDiscount: number | null;
@@ -51,13 +51,13 @@ export declare const promotionsService: {
         updatedAt: Date;
         businessId: string;
         isActive: boolean;
-        description: string;
         title: string;
+        description: string;
         value: number;
-        categories: string[];
-        minPurchase: number | null;
         startsAt: Date;
         endsAt: Date;
+        categories: string[];
+        minPurchase: number | null;
         totalRedeemed: number;
         promotionType: string;
         maxDiscount: number | null;
@@ -70,16 +70,17 @@ export declare const promotionsService: {
         business: {
             email: string | null;
             phone: string | null;
-            state: string;
             id: string;
+            createdAt: Date;
+            name: string;
             reliabilityScore: number | null;
             trustScore: number;
-            createdAt: Date;
             updatedAt: Date;
             bountyPaid: boolean;
+            valuesPreferences: import("@prisma/client/runtime/library").JsonValue;
             referredById: string | null;
             deviceFingerprint: string | null;
-            name: string;
+            state: string;
             isActive: boolean;
             logoUrl: string | null;
             depositAmount: number | null;
@@ -121,6 +122,14 @@ export declare const promotionsService: {
             checkInTime: string | null;
             checkOutTime: string | null;
             channexPropertyId: string | null;
+            serviceAddress: string | null;
+            serviceLat: number | null;
+            serviceLng: number | null;
+            serviceRadiusMiles: number | null;
+            travelFeeEnabled: boolean;
+            travelFeePerMile: number | null;
+            maxTravelMinutes: number | null;
+            maxConcurrentBookings: number;
         };
     } & {
         id: string;
@@ -128,13 +137,13 @@ export declare const promotionsService: {
         updatedAt: Date;
         businessId: string;
         isActive: boolean;
-        description: string;
         title: string;
+        description: string;
         value: number;
-        categories: string[];
-        minPurchase: number | null;
         startsAt: Date;
         endsAt: Date;
+        categories: string[];
+        minPurchase: number | null;
         totalRedeemed: number;
         promotionType: string;
         maxDiscount: number | null;
@@ -145,28 +154,28 @@ export declare const promotionsService: {
     }) | null>;
     redeemPromotion(userId: string, promotionId: string): Promise<{
         id: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
         status: string;
-        purchaseAmount: number | null;
         redemptionCode: string;
+        purchaseAmount: number | null;
+        promotionId: string;
         discountAmount: number;
         purchaseDate: Date | null;
-        promotionId: string;
     }>;
     usePromotion(userId: string, code: string, purchaseAmount: number): Promise<{
         redemption: {
             id: string;
+            userId: string;
             createdAt: Date;
             updatedAt: Date;
-            userId: string;
             status: string;
-            purchaseAmount: number | null;
             redemptionCode: string;
+            purchaseAmount: number | null;
+            promotionId: string;
             discountAmount: number;
             purchaseDate: Date | null;
-            promotionId: string;
         };
         discount: number;
     }>;
@@ -175,16 +184,17 @@ export declare const promotionsService: {
             business: {
                 email: string | null;
                 phone: string | null;
-                state: string;
                 id: string;
+                createdAt: Date;
+                name: string;
                 reliabilityScore: number | null;
                 trustScore: number;
-                createdAt: Date;
                 updatedAt: Date;
                 bountyPaid: boolean;
+                valuesPreferences: import("@prisma/client/runtime/library").JsonValue;
                 referredById: string | null;
                 deviceFingerprint: string | null;
-                name: string;
+                state: string;
                 isActive: boolean;
                 logoUrl: string | null;
                 depositAmount: number | null;
@@ -226,6 +236,14 @@ export declare const promotionsService: {
                 checkInTime: string | null;
                 checkOutTime: string | null;
                 channexPropertyId: string | null;
+                serviceAddress: string | null;
+                serviceLat: number | null;
+                serviceLng: number | null;
+                serviceRadiusMiles: number | null;
+                travelFeeEnabled: boolean;
+                travelFeePerMile: number | null;
+                maxTravelMinutes: number | null;
+                maxConcurrentBookings: number;
             };
         } & {
             id: string;
@@ -233,13 +251,13 @@ export declare const promotionsService: {
             updatedAt: Date;
             businessId: string;
             isActive: boolean;
-            description: string;
             title: string;
+            description: string;
             value: number;
-            categories: string[];
-            minPurchase: number | null;
             startsAt: Date;
             endsAt: Date;
+            categories: string[];
+            minPurchase: number | null;
             totalRedeemed: number;
             promotionType: string;
             maxDiscount: number | null;
@@ -250,15 +268,15 @@ export declare const promotionsService: {
         };
     } & {
         id: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
         status: string;
-        purchaseAmount: number | null;
         redemptionCode: string;
+        purchaseAmount: number | null;
+        promotionId: string;
         discountAmount: number;
         purchaseDate: Date | null;
-        promotionId: string;
     })[]>;
     createLoyaltyProgram(data: {
         businessId: string;
@@ -271,8 +289,8 @@ export declare const promotionsService: {
     }): Promise<{
         id: string;
         createdAt: Date;
-        updatedAt: Date;
         name: string;
+        updatedAt: Date;
         businessId: string;
         isActive: boolean;
         description: string;
@@ -283,36 +301,36 @@ export declare const promotionsService: {
     }>;
     enrollInProgram(userId: string, programId: string): Promise<{
         id: string;
-        updatedAt: Date;
         userId: string;
+        updatedAt: Date;
         totalSpent: number;
         currentTier: string;
+        joinedAt: Date;
         programId: string;
         pointsBalance: number;
         lifetimePoints: number;
         totalVisits: number;
-        joinedAt: Date;
         lastVisitAt: Date | null;
     }>;
     recordVisit(userId: string, businessId: string, purchaseAmount: number): Promise<{
         id: string;
-        updatedAt: Date;
         userId: string;
+        updatedAt: Date;
         totalSpent: number;
         currentTier: string;
+        joinedAt: Date;
         programId: string;
         pointsBalance: number;
         lifetimePoints: number;
         totalVisits: number;
-        joinedAt: Date;
         lastVisitAt: Date | null;
     } | null>;
     getMembership(userId: string, businessId: string): Promise<({
         program: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             businessId: string;
             isActive: boolean;
             description: string;
@@ -323,28 +341,28 @@ export declare const promotionsService: {
         };
     } & {
         id: string;
-        updatedAt: Date;
         userId: string;
+        updatedAt: Date;
         totalSpent: number;
         currentTier: string;
+        joinedAt: Date;
         programId: string;
         pointsBalance: number;
         lifetimePoints: number;
         totalVisits: number;
-        joinedAt: Date;
         lastVisitAt: Date | null;
     }) | null>;
     redeemPoints(userId: string, businessId: string, points: number): Promise<{
         id: string;
-        updatedAt: Date;
         userId: string;
+        updatedAt: Date;
         totalSpent: number;
         currentTier: string;
+        joinedAt: Date;
         programId: string;
         pointsBalance: number;
         lifetimePoints: number;
         totalVisits: number;
-        joinedAt: Date;
         lastVisitAt: Date | null;
     }>;
     getVendorAnalytics(businessId: string): Promise<{
@@ -361,16 +379,16 @@ export declare const promotionsService: {
             };
         } & {
             id: string;
+            userId: string;
             createdAt: Date;
             updatedAt: Date;
-            userId: string;
             businessId: string;
             totalSpent: number;
-            segment: string;
             totalPurchases: number;
             lastPurchaseAt: Date | null;
             averageOrder: number;
             isVIP: boolean;
+            segment: string;
         })[];
     }>;
     getAvailableForUser(userId: string): Promise<({
@@ -385,13 +403,13 @@ export declare const promotionsService: {
         updatedAt: Date;
         businessId: string;
         isActive: boolean;
-        description: string;
         title: string;
+        description: string;
         value: number;
-        categories: string[];
-        minPurchase: number | null;
         startsAt: Date;
         endsAt: Date;
+        categories: string[];
+        minPurchase: number | null;
         totalRedeemed: number;
         promotionType: string;
         maxDiscount: number | null;

@@ -1,9 +1,43 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const database_1 = require("../utils/database");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const crm_controller_1 = require("../controllers/crm.controller");
+const crmService = __importStar(require("../services/crm.service"));
 const revenue_controller_1 = require("../controllers/revenue.controller");
 const invoice_trust_service_1 = require("../services/invoice-trust.service");
 const router = (0, express_1.Router)();
@@ -54,6 +88,27 @@ router.get('/employees', crm_controller_1.getEmployeesHandler);
 router.post('/clients', crm_controller_1.addClientHandler);
 // GET /api/v1/crm/clients — List clients
 router.get('/clients', crm_controller_1.getClientsHandler);
+// GET /api/v1/crm/clients/:id — Get client details
+router.get('/clients/:id', crm_controller_1.getClientHandler);
+// PATCH /api/v1/crm/clients/:id — Update client details
+router.patch('/clients/:id', crm_controller_1.updateClientHandler);
+// DELETE /api/v1/crm/clients/:id — Delete a client
+router.delete('/clients/:id', crm_controller_1.deleteClientHandler);
+// ── Deal Management ─────────────────────────────────────────────────────────
+router.post('/deals', crm_controller_1.createDealHandler);
+router.get('/deals', crm_controller_1.getDealsHandler);
+router.get('/deals/:id', crm_controller_1.getDealHandler);
+router.patch('/deals/:id', crm_controller_1.updateDealHandler);
+router.delete('/deals/:id', crm_controller_1.deleteDealHandler);
+// ── Activity Management ──────────────────────────────────────────────────────
+router.post('/activities', crm_controller_1.createActivityHandler);
+router.get('/activities', crm_controller_1.getActivitiesHandler);
+router.patch('/activities/:id', crm_controller_1.updateActivityHandler);
+router.delete('/activities/:id', crm_controller_1.deleteActivityHandler);
+// ── File Management ──────────────────────────────────────────────────────────
+router.post('/files', crm_controller_1.addFileHandler);
+router.get('/files', crm_controller_1.getFilesHandler);
+router.delete('/files/:id', crm_controller_1.deleteFileHandler);
 // ── Job Management ──────────────────────────────────────────────────────────
 // POST /api/v1/crm/jobs — Create a service job
 router.post('/jobs', crm_controller_1.createJobHandler);
@@ -166,6 +221,8 @@ router.post('/jobs/:id/checkin', async (req, res) => {
     try {
         const { id: jobId } = req.params;
         const { latitude, longitude } = req.body;
+        if (!req.user)
+            return res.status(401).json({ success: false, error: 'Unauthorized' });
         const job = await crmService.checkInJob(jobId, req.user.id, latitude, longitude);
         res.json({ success: true, data: job });
     }
@@ -177,6 +234,8 @@ router.post('/jobs/:id/checkin', async (req, res) => {
 router.post('/jobs/:id/checkout', async (req, res) => {
     try {
         const { id: jobId } = req.params;
+        if (!req.user)
+            return res.status(401).json({ success: false, error: 'Unauthorized' });
         const result = await crmService.checkOutJob(jobId, req.user.id);
         res.json({ success: true, data: result });
     }
@@ -227,6 +286,81 @@ router.get('/clients/:id/invoices', async (req, res) => {
 // ── Dashboard ───────────────────────────────────────────────────────────────
 // GET /api/v1/crm/dashboard — Get dashboard statistics
 router.get('/dashboard', crm_controller_1.getDashboardStatsHandler);
+// GET /api/v1/crm/dashboard/:businessId/calendar — Get calendar data for dashboard
+router.get('/dashboard/:businessId/calendar', auth_middleware_1.authenticate, async (req, res) => {
+    try {
+        const { businessId } = req.params;
+        const { range = 'week' } = req.query;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        let startDate;
+        let endDate;
+        if (range === 'week') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - today.getDay());
+            endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+        }
+        else if (range === 'month') {
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        }
+        else {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+            endDate = new Date(today);
+            endDate.setDate(today.getDate() + 7);
+        }
+        const jobs = await database_1.prisma.crmJob.findMany({
+            where: {
+                businessId,
+                scheduledDate: {
+                    gte: startDate,
+                    lte: endDate,
+                },
+            },
+            include: {
+                client: {
+                    select: {
+                        name: true,
+                    },
+                },
+            },
+            orderBy: {
+                scheduledDate: 'asc',
+            },
+        });
+        const days = [];
+        const currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+            const dateStr = currentDate.toISOString().split('T')[0];
+            const dayJobs = jobs.filter(job => {
+                const jobDate = new Date(job.scheduledDate);
+                return jobDate.toISOString().split('T')[0] === dateStr;
+            });
+            days.push({
+                date: dateStr,
+                day: currentDate.toLocaleDateString('en-US', { weekday: 'short' }),
+                bookings: dayJobs.map(job => ({
+                    id: job.id,
+                    customerName: job.client?.name || 'Unknown',
+                    time: job.scheduledTime || 'TBD',
+                    status: job.status,
+                    serviceType: job.serviceType,
+                })),
+            });
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+        return res.json({
+            success: true,
+            data: days,
+        });
+    }
+    catch (error) {
+        console.error('[CRM] Calendar error:', error);
+        return res.status(500).json({ success: false, error: error.message });
+    }
+});
 // ── Trust-Aware Revenue Engine ──────────────────────────────────────────────
 // GET /api/v1/crm/alerts — Get active trust & revenue alerts
 router.get('/alerts', revenue_controller_1.getAlertsHandler);
@@ -234,5 +368,9 @@ router.get('/alerts', revenue_controller_1.getAlertsHandler);
 router.post('/alerts/:id/dismiss', revenue_controller_1.dismissAlertHandler);
 // GET /api/v1/crm/clients/:id/stage — Get client lifecycle stage
 router.get('/clients/:id/stage', revenue_controller_1.getClientStageHandler);
+// POST /api/v1/crm/import/clients — Bulk import clients from CSV
+router.post('/import/clients', crm_controller_1.importClientsHandler);
+// POST /api/v1/crm/import/deals — Bulk import deals from CSV
+router.post('/import/deals', crm_controller_1.importDealsHandler);
 exports.default = router;
 //# sourceMappingURL=crm.routes.js.map

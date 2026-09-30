@@ -57,6 +57,7 @@ catch (err) {
     logger_1.logger.warn('.env.contracts not loaded');
 }
 const app = (0, express_1.default)();
+app.use((0, cors_1.default)({ origin: true, credentials: true }));
 const httpServer = (0, http_1.createServer)(app);
 // DISABLED: Firebase Admin (spawns background processes)
 // try { initFirebaseAdmin(); } catch (err) { logger.warn('Firebase init skipped: ' + (err as Error).message); }
@@ -106,18 +107,29 @@ app.use((0, helmet_1.default)({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "https:"],
             connectSrc: ["'self'", "https:"],
-            frameAncestors: ["'self'", "https://*.myshopify.com", "https://admin.shopify.com"],
+            frameAncestors: ["'self'"],
             objectSrc: ["'none'"],
+            baseUri: ["'self'"],
+            formAction: ["'self'"],
             upgradeInsecureRequests: [],
         },
     },
     crossOriginEmbedderPolicy: false,
-    frameguard: false, // Must be disabled so we don't send X-Frame-Options: SAMEORIGIN
+    frameguard: { action: 'sameorigin' },
     hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    permissionsPolicy: {
+        features: {
+            camera: ["'none'"],
+            microphone: ["'none'"],
+            geolocation: ["'self'"],
+            payment: ["'self'"],
+        },
+    },
 }));
 app.use((0, compression_1.default)());
 const corsOrigins = [
@@ -145,6 +157,9 @@ app.use(express_1.default.json({
     verify: (req, _res, buf) => { req.rawBody = buf; },
 }));
 app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
+// Request ID middleware
+const requestId_middleware_1 = require("./middleware/requestId.middleware");
+app.use(requestId_middleware_1.requestIdMiddleware);
 // Request logging
 app.use((req, _res, next) => {
     logger_1.logger.info(`${req.method} ${req.path}`);
@@ -152,8 +167,22 @@ app.use((req, _res, next) => {
 });
 // Rate limiting
 app.use('/api/', rateLimiter_1.rateLimiter);
-// DISABLED: Audit logging (runs on every request, memory overhead)
-// app.use('/api/', auditLog);
+// Audit logging for all mutating operations
+app.use('/api/', (req, res, next) => {
+    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+        const auditLog = {
+            timestamp: new Date().toISOString(),
+            method: req.method,
+            path: req.path,
+            userId: req.user?.id || null,
+            ip: req.ip,
+            userAgent: req.get('user-agent'),
+            requestId: req.requestId,
+        };
+        logger_1.logger.info(`[AUDIT] ${JSON.stringify(auditLog)}`);
+    }
+    next();
+});
 // Firebase App Check Middleware for API routes — disabled to reduce startup memory (imports firebase-admin)
 app.use('/api/', (_req, _res, next) => next());
 // Health check endpoints
@@ -223,6 +252,8 @@ const routeMap = [
     [`/api/${v}/admin/api-clients`, './routes/apiClients.routes'],
     [`/api/${v}/api-keys`, './routes/apiKey.routes'],
     [`/api/${v}/trust`, './routes/trust.routes'],
+    [`/api/${v}/profile`, './routes/profile.routes'],
+    [`/api/${v}/trust/v1`, './routes/trustApi.v1.routes'],
     [`/api/${v}/monetization`, './routes/monetization.routes'],
     [`/api/${v}/linkedin/seed`, './routes/linkedinSeed.routes'],
     [`/api/${v}/linkedin`, './routes/linkedin.routes'],
@@ -262,21 +293,34 @@ const routeMap = [
     [`/api/${v}/property`, './routes/property.routes'],
     [`/api/${v}/public/property`, './routes/public.property.routes'],
     [`/api/${v}/crm`, './routes/crm.routes'],
+    [`/api/${v}/crm/activities`, './routes/activity.routes'],
+    [`/api/${v}/crm/tasks`, './routes/task.routes'],
     [`/api/${v}/crm-advanced`, './routes/crmAdvanced.routes'],
     [`/api/${v}/team`, './routes/team.routes'],
+    [`/api/${v}/reports`, './routes/reports.routes'],
+    [`/api/${v}/settings`, './routes/settings.routes'],
+    [`/api/${v}/payment-methods`, './routes/paymentMethods.routes'],
+    [`/api/${v}/support`, './routes/support.routes'],
+    [`/api/${v}/kb`, './routes/kb.routes'],
+    [`/api/${v}/api-keys`, './routes/apiKey.routes'],
+    [`/api/${v}/webhooks`, './routes/webhook.routes'],
     [`/api/${v}/documents`, './routes/document.routes'],
     [`/api/${v}/tenant`, './routes/tenant.routes'],
     [`/api/${v}/contact`, './routes.contact.routes'],
     [`/api/${v}/promo`, './routes/promo.routes'],
     [`/api/${v}/rewards`, './routes/partnerRewards.routes'],
     [`/api/${v}/freight`, './routes/freight.routes'],
-    [`/api/${v}/ledger`, './routes.ledger.routes'],
+    [`/api/${v}/capital`, './routes.ledger.routes'],
     [`/api/${v}/maps`, './routes/maps.routes'],
     [`/api/${v}/promotions`, './routes/promotions.routes'],
     [`/api/${v}/nightlife`, './routes/nightlife.routes'],
     [`/api/${v}/venues`, './routes/venues.routes'],
     [`/api/${v}/venue`, './routes/venue.routes'],
     [`/api/${v}/bookings`, './routes/bottleBooking.routes'],
+    [`/api/${v}/bookings/public`, './routes/bookings.routes'],
+    [`/api/${v}/booking-availability`, './routes/bookingAvailability.routes'],
+    [`/api/${v}/embed`, './routes/embed.routes'],
+    [`/api/${v}/service-area`, './routes/serviceArea.routes'],
     [`/api/${v}/core-bookings`, './routes/coreBooking.routes'],
     [`/api/${v}/promoters`, './routes/promoter.routes'],
     [`/api/${v}/guest-list`, './routes/guestList.routes'],
@@ -314,10 +358,13 @@ const routeMap = [
     [`/api/${v}/agent-marketplace`, './routes/agentMarketplace.routes'],
     [`/api/${v}/agent-learning`, './routes/agentLearning.routes'],
     [`/api/${v}/trust-passport`, './routes/trustPassport.routes'],
+    [`/api/${v}/trust`, './routes/trust.routes'],
+    [`/api/${v}/passport`, './routes/passport.routes'],
     [`/api/${v}/osint`, './routes/osint.routes'],
     [`/api/${v}/seal`, './routes/seal.routes'],
     [`/api/${v}/billing`, './routes/billing.routes'],
-    [`/api/${v}/jobs`, './routes/jobs.routes'],
+    [`/api/${v}/jobs`, './routes/job.routes'],
+    [`/api/${v}/invoices`, './routes/invoice.routes'],
     [`/api/${v}/seed`, './routes/seed.routes'],
     [`/.well-known`, './routes/wellknown.routes'],
     [`/api/${v}/treasury/autonomous`, './routes/treasury.autonomous.routes'],
@@ -354,6 +401,20 @@ const routeMap = [
     [`/api/${v}/telegram`, './routes/telegram.routes'],
     [`/api/${v}/sms`, './routes/sms.routes'],
     [`/api/${v}/channels`, './routes/channel.routes'],
+    [`/api/${v}/trust-profile`, './routes/trustProfile.routes'],
+    [`/api/${v}/badge`, './routes/badge.routes'],
+    [`/api/${v}/user`, './routes/userProfile.routes'],
+    [`/api/${v}/business-verification`, './routes/businessVerification.routes'],
+    [`/api/${v}/fluid-booking`, './routes/fluidBooking.routes'],
+    [`/api/${v}/values`, './routes/values.routes'],
+    [`/api/${v}/agent-comm`, './routes/agentCommunication.routes'],
+    [`/api/${v}/agents`, './routes/agentSignup.routes'],
+    [`/api/${v}/agent-passport`, './routes/agentPassport.routes'],
+    [`/api/${v}/predictive`, './routes/predictive.routes'],
+    [`/api/${v}/realestate`, './routes/realestate.routes'],
+    [`/api/${v}/pabandi`, './routes/pabandiTools.routes'],
+    // agentDiscovery.routes declares absolute /.well-known/* paths, so it mounts at root
+    ['/', './routes/agentDiscovery.routes'],
 ];
 try {
     const invoicePublicRouter = require('./routes/invoicePublic.routes');
@@ -366,8 +427,16 @@ catch {
 for (const [routePath, importPath] of routeMap) {
     lazyRoute(routePath, importPath);
 }
-// Lazy-load MCP handler
-app.post('/mcp', async (req, res) => {
+// MCP endpoint with rate limiting
+const express_rate_limit_1 = require("express-rate-limit");
+const mcpLimiter = (0, express_rate_limit_1.rateLimit)({
+    windowMs: 1 * 60 * 1000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, error: 'MCP rate limit exceeded. Max 30 requests per minute.' },
+});
+app.post('/mcp', mcpLimiter, async (req, res) => {
     try {
         const { mcpHandler } = await Promise.resolve().then(() => __importStar(require('./mcp/pabandiMcpServer')));
         mcpHandler(req, res);
@@ -393,6 +462,17 @@ logger_1.logger.info('✅ TrustCore event pipeline initialized');
 // Auto-start job cron service (checks for overdue jobs and no-shows every minute)
 const jobCronService_1 = require("./services/jobCronService");
 jobCronService_1.jobCronService.start();
+const node_cron_1 = __importDefault(require("node-cron"));
+const invoice_service_1 = require("./services/invoice.service");
+// Daily scan for overdue invoices at 9am local
+node_cron_1.default.schedule('0 9 * * *', async () => {
+    try {
+        await (0, invoice_service_1.scanOverdueInvoices)();
+    }
+    catch (error) {
+        console.error('[InvoiceCron] Error scanning overdue invoices:', error);
+    }
+});
 logger_1.logger.info('✅ Job cron service auto-started (checks every minute)');
 // Auto-start settlement service (runs every hour to settle agent credits on-chain)
 const settlement_service_1 = require("./services/settlement.service");
@@ -404,6 +484,17 @@ const invoiceTrustCron_1 = require("./utils/invoiceTrustCron");
 compounding_service_1.compoundingService.startPeriodicCompounding();
 (0, invoiceTrustCron_1.startInvoiceTrustCron)();
 logger_1.logger.info('✅ Compounding service auto-started (hourly fee reinvestment)');
+// Monthly referral payout cron (1st of every month at midnight)
+const referral_fee_share_service_1 = require("./services/referral-fee-share.service");
+node_cron_1.default.schedule('0 0 1 * *', async () => {
+    try {
+        await referral_fee_share_service_1.referralFeeShareService.processMonthlyPayouts();
+    }
+    catch (error) {
+        console.error('[ReferralCron] Error processing monthly payouts:', error);
+    }
+});
+logger_1.logger.info('✅ Referral payout cron auto-started (monthly on the 1st)');
 // Auto-start DEX auto-trader (continuous trading for LP fees)
 // TEMPORARILY DISABLED — focusing on core product first
 // import { startAutoTrader } from './services/autoTrader.service';
@@ -580,6 +671,14 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
     //     });
     //   });
     // }, 5000);
+    // Booking reminder cron
+    try {
+        const { startReminderCron } = require('./services/reminderCron.service');
+        startReminderCron();
+    }
+    catch (err) {
+        logger_1.logger.warn('Reminder cron skipped: ' + err.message);
+    }
 });
 // Graceful shutdown
 process.on('SIGTERM', async () => {

@@ -18,19 +18,19 @@ export declare class EvolutionService {
     getUserStatus(userId: string): Promise<{
         connected: boolean;
         messages: {
-            id: string;
-            createdAt: Date;
-            userId: string | null;
             metadata: import("@prisma/client/runtime/library").JsonValue | null;
-            type: import(".prisma/client").$Enums.WhatsAppType;
+            id: string;
+            userId: string | null;
+            createdAt: Date;
             status: import(".prisma/client").$Enums.WhatsAppStatus;
+            type: import(".prisma/client").$Enums.WhatsAppType;
             externalId: string | null;
+            sentAt: Date | null;
+            readAt: Date | null;
             direction: import(".prisma/client").$Enums.WhatsAppDirection;
             content: string;
-            mediaUrl: string | null;
-            sentAt: Date | null;
             deliveredAt: Date | null;
-            readAt: Date | null;
+            mediaUrl: string | null;
         }[];
     }>;
 }

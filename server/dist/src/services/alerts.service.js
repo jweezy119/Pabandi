@@ -8,12 +8,12 @@ const database_1 = require("../utils/database");
  * Generate alerts for a business based on client, job, and employee data.
  * This is the core rule engine of the trust-aware revenue system.
  */
-async function generateAlerts(serviceBusinessId) {
+async function generateAlerts(businessId) {
     const alerts = [];
     const now = new Date();
     // ── Client-based alerts ─────────────────────────────────────────────────────
     const clients = await database_1.prisma.crmClient.findMany({
-        where: { serviceBusinessId },
+        where: { businessId },
         include: { jobs: true },
     });
     for (const client of clients) {
@@ -74,7 +74,7 @@ async function generateAlerts(serviceBusinessId) {
     }
     // ── Job-based alerts ────────────────────────────────────────────────────────
     const jobs = await database_1.prisma.crmJob.findMany({
-        where: { serviceBusinessId },
+        where: { businessId },
     });
     for (const job of jobs) {
         // Job escrow held > 30 days → WARNING
@@ -93,7 +93,7 @@ async function generateAlerts(serviceBusinessId) {
     }
     // ── Employee/Provider alerts ────────────────────────────────────────────────
     const employees = await database_1.prisma.crmEmployee.findMany({
-        where: { serviceBusinessId, isActive: true },
+        where: { businessId, isActive: true },
     });
     for (const emp of employees) {
         // Provider no bookings 14+ days → INFO
@@ -117,12 +117,12 @@ async function generateAlerts(serviceBusinessId) {
  * Get active (non-dismissed) alerts for a business.
  * Generates fresh alerts from current data and merges with stored ones.
  */
-async function getActiveAlerts(serviceBusinessId) {
+async function getActiveAlerts(businessId) {
     // Generate seeds from current data
-    const seeds = await generateAlerts(serviceBusinessId);
+    const seeds = await generateAlerts(businessId);
     // Upsert alerts — avoid duplicates by entityId + title key
     const existingAlerts = await database_1.prisma.crmAlert.findMany({
-        where: { serviceBusinessId, dismissed: false },
+        where: { businessId, dismissed: false },
     });
     const existingKeys = new Set(existingAlerts.map(a => `${a.entityId}:${a.title}`));
     // Insert only new alerts that don't already exist
@@ -130,23 +130,23 @@ async function getActiveAlerts(serviceBusinessId) {
     if (newSeeds.length > 0) {
         await database_1.prisma.crmAlert.createMany({
             data: newSeeds.map(s => ({
-                serviceBusinessId,
+                businessId,
                 ...s,
             })),
         });
     }
     // Return all active alerts
     return database_1.prisma.crmAlert.findMany({
-        where: { serviceBusinessId, dismissed: false },
+        where: { businessId, dismissed: false },
         orderBy: { createdAt: 'desc' },
     });
 }
 /**
  * Dismiss an alert by ID.
  */
-async function dismissAlert(alertId, serviceBusinessId) {
+async function dismissAlert(alertId, businessId) {
     return database_1.prisma.crmAlert.updateMany({
-        where: { id: alertId, serviceBusinessId },
+        where: { id: alertId, businessId },
         data: { dismissed: true, dismissedAt: new Date() },
     });
 }

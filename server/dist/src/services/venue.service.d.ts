@@ -18,13 +18,13 @@ export declare const venueService: {
         events: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             description: string | null;
             date: Date;
-            venueId: string;
             startTime: string;
             endTime: string;
+            venueId: string;
             lineup: import("@prisma/client/runtime/library").JsonValue | null;
             coverChargeMultiplier: number;
             ticketPrice: number | null;
@@ -33,9 +33,9 @@ export declare const venueService: {
         }[];
         reviews: {
             id: string;
+            userId: string;
             createdAt: Date;
             updatedAt: Date;
-            userId: string;
             isActive: boolean;
             rating: number;
             text: string | null;
@@ -46,21 +46,21 @@ export declare const venueService: {
             includes: string[];
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             isActive: boolean;
             description: string;
+            maxGuests: number;
             venueId: string;
             bottleType: string;
             basePrice: number;
             minSpend: number;
-            maxGuests: number;
         }[];
         tableTypes: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             isActive: boolean;
             venueId: string;
             basePrice: number;
@@ -71,26 +71,26 @@ export declare const venueService: {
         coverCharges: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             isActive: boolean;
             type: string;
             description: string | null;
             amount: number;
-            venueId: string;
             startTime: string;
             endTime: string;
+            venueId: string;
             daysOfWeek: number[];
             gender: string | null;
             guestListIncluded: boolean;
         }[];
     } & {
         phone: string | null;
-        state: string;
         id: string;
         createdAt: Date;
-        updatedAt: Date;
         name: string;
+        updatedAt: Date;
+        state: string;
         hours: import("@prisma/client/runtime/library").JsonValue;
         isActive: boolean;
         type: string;
@@ -100,14 +100,14 @@ export declare const venueService: {
         website: string | null;
         rating: number;
         instagram: string | null;
-        zip: string;
-        amenities: string[];
         capacity: number;
         openTime: string | null;
         closeTime: string | null;
-        featured: boolean;
         lat: number;
         lng: number;
+        amenities: string[];
+        featured: boolean;
+        zip: string;
         musicGenres: string[];
         dressCode: string | null;
         images: string[];
@@ -122,13 +122,13 @@ export declare const venueService: {
         events: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             description: string | null;
             date: Date;
-            venueId: string;
             startTime: string;
             endTime: string;
+            venueId: string;
             lineup: import("@prisma/client/runtime/library").JsonValue | null;
             coverChargeMultiplier: number;
             ticketPrice: number | null;
@@ -144,9 +144,9 @@ export declare const venueService: {
             };
         } & {
             id: string;
+            userId: string;
             createdAt: Date;
             updatedAt: Date;
-            userId: string;
             isActive: boolean;
             rating: number;
             text: string | null;
@@ -157,21 +157,21 @@ export declare const venueService: {
             includes: string[];
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             isActive: boolean;
             description: string;
+            maxGuests: number;
             venueId: string;
             bottleType: string;
             basePrice: number;
             minSpend: number;
-            maxGuests: number;
         }[];
         tableTypes: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             isActive: boolean;
             venueId: string;
             basePrice: number;
@@ -182,26 +182,26 @@ export declare const venueService: {
         coverCharges: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             isActive: boolean;
             type: string;
             description: string | null;
             amount: number;
-            venueId: string;
             startTime: string;
             endTime: string;
+            venueId: string;
             daysOfWeek: number[];
             gender: string | null;
             guestListIncluded: boolean;
         }[];
     } & {
         phone: string | null;
-        state: string;
         id: string;
         createdAt: Date;
-        updatedAt: Date;
         name: string;
+        updatedAt: Date;
+        state: string;
         hours: import("@prisma/client/runtime/library").JsonValue;
         isActive: boolean;
         type: string;
@@ -211,14 +211,14 @@ export declare const venueService: {
         website: string | null;
         rating: number;
         instagram: string | null;
-        zip: string;
-        amenities: string[];
         capacity: number;
         openTime: string | null;
         closeTime: string | null;
-        featured: boolean;
         lat: number;
         lng: number;
+        amenities: string[];
+        featured: boolean;
+        zip: string;
         musicGenres: string[];
         dressCode: string | null;
         images: string[];
@@ -250,13 +250,13 @@ export declare const venueService: {
         events: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             description: string | null;
             date: Date;
-            venueId: string;
             startTime: string;
             endTime: string;
+            venueId: string;
             lineup: import("@prisma/client/runtime/library").JsonValue | null;
             coverChargeMultiplier: number;
             ticketPrice: number | null;
@@ -267,21 +267,21 @@ export declare const venueService: {
             includes: string[];
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             isActive: boolean;
             description: string;
+            maxGuests: number;
             venueId: string;
             bottleType: string;
             basePrice: number;
             minSpend: number;
-            maxGuests: number;
         }[];
         tableTypes: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             isActive: boolean;
             venueId: string;
             basePrice: number;
@@ -291,11 +291,11 @@ export declare const venueService: {
         }[];
     } & {
         phone: string | null;
-        state: string;
         id: string;
         createdAt: Date;
-        updatedAt: Date;
         name: string;
+        updatedAt: Date;
+        state: string;
         hours: import("@prisma/client/runtime/library").JsonValue;
         isActive: boolean;
         type: string;
@@ -305,14 +305,14 @@ export declare const venueService: {
         website: string | null;
         rating: number;
         instagram: string | null;
-        zip: string;
-        amenities: string[];
         capacity: number;
         openTime: string | null;
         closeTime: string | null;
-        featured: boolean;
         lat: number;
         lng: number;
+        amenities: string[];
+        featured: boolean;
+        zip: string;
         musicGenres: string[];
         dressCode: string | null;
         images: string[];
@@ -329,11 +329,11 @@ export declare const venueService: {
      */
     createVenue(data: any): Promise<{
         phone: string | null;
-        state: string;
         id: string;
         createdAt: Date;
-        updatedAt: Date;
         name: string;
+        updatedAt: Date;
+        state: string;
         hours: import("@prisma/client/runtime/library").JsonValue;
         isActive: boolean;
         type: string;
@@ -343,14 +343,14 @@ export declare const venueService: {
         website: string | null;
         rating: number;
         instagram: string | null;
-        zip: string;
-        amenities: string[];
         capacity: number;
         openTime: string | null;
         closeTime: string | null;
-        featured: boolean;
         lat: number;
         lng: number;
+        amenities: string[];
+        featured: boolean;
+        zip: string;
         musicGenres: string[];
         dressCode: string | null;
         images: string[];
@@ -363,11 +363,11 @@ export declare const venueService: {
      */
     updateVenue(id: string, data: any): Promise<{
         phone: string | null;
-        state: string;
         id: string;
         createdAt: Date;
-        updatedAt: Date;
         name: string;
+        updatedAt: Date;
+        state: string;
         hours: import("@prisma/client/runtime/library").JsonValue;
         isActive: boolean;
         type: string;
@@ -377,14 +377,14 @@ export declare const venueService: {
         website: string | null;
         rating: number;
         instagram: string | null;
-        zip: string;
-        amenities: string[];
         capacity: number;
         openTime: string | null;
         closeTime: string | null;
-        featured: boolean;
         lat: number;
         lng: number;
+        amenities: string[];
+        featured: boolean;
+        zip: string;
         musicGenres: string[];
         dressCode: string | null;
         images: string[];

@@ -42,22 +42,22 @@ export declare class AgentEconomyService {
         budget: number;
         posterId: string;
     }): Promise<{
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         status: string;
+        title: string;
         description: string;
         category: string;
-        title: string;
-        deadline: Date;
-        budgetUsd: number;
         requirements: string;
+        budgetUsd: number;
+        escrowId: string | null;
+        deadline: Date;
+        posterId: string;
         budgetPab: number;
         selectedBidId: string | null;
-        escrowId: string | null;
         complexity: string;
-        posterId: string;
     }>;
     private fundProject;
     placeBid(params: {
@@ -68,28 +68,28 @@ export declare class AgentEconomyService {
     }): Promise<{
         id: string;
         status: string;
+        submittedAt: Date;
+        projectId: string;
+        bidderId: string;
         proposedAmount: number;
         proposedPab: number;
         timelineHours: number;
         approach: string;
         isWinning: boolean;
-        submittedAt: Date;
         acceptedAt: Date | null;
-        projectId: string;
-        bidderId: string;
     }>;
     acceptBid(bidId: string): Promise<{
         id: string;
         status: string;
+        submittedAt: Date;
+        projectId: string;
+        bidderId: string;
         proposedAmount: number;
         proposedPab: number;
         timelineHours: number;
         approach: string;
         isWinning: boolean;
-        submittedAt: Date;
         acceptedAt: Date | null;
-        projectId: string;
-        bidderId: string;
     }>;
     completeProject(projectId: string): Promise<{
         workerPayment: number;

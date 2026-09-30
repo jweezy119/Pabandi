@@ -4,26 +4,26 @@ exports.pipelineTrust = exports.PipelineTrustService = void 0;
 const database_1 = require("../utils/database");
 const event_bus_service_1 = require("./event-bus.service");
 class PipelineTrustService {
-    async enrichLeadWithTrust(leadId) {
-        const lead = await database_1.prisma.contactLead.findUnique({ where: { id: leadId } });
-        if (!lead)
+    async enrichLeadWithTrust(clientId) {
+        const client = await database_1.prisma.crmClient.findUnique({ where: { id: clientId } });
+        if (!client)
             return null;
         const wallet = await database_1.prisma.walletPassport.findUnique({
-            where: { holderId: lead.passportId || '' },
+            where: { holderId: client.passportId || '' },
         });
         return {
-            ...lead,
+            ...client,
             trustScore: wallet?.score || 0,
             trustLevel: wallet?.level || 'bronze',
             verified: wallet?.verified || false,
         };
     }
-    async getLeadRiskScore(leadId) {
-        const lead = await database_1.prisma.contactLead.findUnique({ where: { id: leadId } });
-        if (!lead)
+    async getLeadRiskScore(clientId) {
+        const client = await database_1.prisma.crmClient.findUnique({ where: { id: clientId } });
+        if (!client)
             return 'high';
         const wallet = await database_1.prisma.walletPassport.findUnique({
-            where: { holderId: lead.passportId || '' },
+            where: { holderId: client.passportId || '' },
         });
         const score = wallet?.score || 0;
         if (score >= 70)
@@ -32,12 +32,12 @@ class PipelineTrustService {
             return 'medium';
         return 'high';
     }
-    async suggestTerms(leadId) {
-        const lead = await database_1.prisma.contactLead.findUnique({ where: { id: leadId } });
-        if (!lead)
+    async suggestTerms(clientId) {
+        const client = await database_1.prisma.crmClient.findUnique({ where: { id: clientId } });
+        if (!client)
             return { terms: 'prepayment', deposit: 100 };
         const wallet = await database_1.prisma.walletPassport.findUnique({
-            where: { holderId: lead.passportId || '' },
+            where: { holderId: client.passportId || '' },
         });
         const score = wallet?.score || 0;
         if (score >= 80)
@@ -47,20 +47,20 @@ class PipelineTrustService {
         return { terms: 'prepayment', deposit: 100 };
     }
     async flagHighRiskLeads(businessId) {
-        const leads = await database_1.prisma.contactLead.findMany({ where: { businessId } });
+        const clients = await database_1.prisma.crmClient.findMany({ where: { businessId } });
         const highRisk = [];
-        for (const lead of leads) {
-            const risk = await this.getLeadRiskScore(lead.id);
+        for (const client of clients) {
+            const risk = await this.getLeadRiskScore(client.id);
             if (risk === 'high')
-                highRisk.push(lead);
+                highRisk.push(client);
         }
         return highRisk;
     }
     async updateScoreFromDeal(dealId) {
-        const deal = await database_1.prisma.contactDeal.findUnique({ where: { id: dealId } });
+        const deal = await database_1.prisma.crmDeal.findUnique({ where: { id: dealId } });
         if (!deal)
             return null;
-        event_bus_service_1.eventBus.emitEvent('pipeline.deal.closed', { dealId, leadId: deal.leadId });
+        event_bus_service_1.eventBus.emitEvent('pipeline.deal.closed', { dealId, clientId: deal.clientId });
         return { success: true, message: 'Score update triggered' };
     }
 }

@@ -43,6 +43,8 @@ exports.createBookingWithDeposit = createBookingWithDeposit;
 exports.confirmPaymentAndCreateEscrow = confirmPaymentAndCreateEscrow;
 exports.releaseEscrowToBusiness = releaseEscrowToBusiness;
 exports.getBookingDetails = getBookingDetails;
+const database_1 = require("../utils/database");
+const email_service_1 = require("./email.service");
 var BusinessCategory;
 (function (BusinessCategory) {
     BusinessCategory["RESTAURANT"] = "RESTAURANT";
@@ -301,20 +303,14 @@ class BookingService {
         }
     }
     async sendBookingConfirmation(data) {
-        const apiKey = process.env.RESEND_API_KEY;
-        if (!apiKey) {
-            console.log(`[BookingService] RESEND_API_KEY not set — booking confirmation email logged to console only.\n` +
-                `  To: ${data.to}\n  Business: ${data.businessName}\n  Date: ${data.date}\n  Time: ${data.time}\n  Guests: ${data.guests}`);
-            return true;
-        }
         try {
-            const axios = (await Promise.resolve().then(() => __importStar(require('axios')))).default;
-            await axios.post(`${RESEND_BASE}/emails`, {
-                from: 'BookingOS <bookings@pabandi.com>',
-                to: [data.to],
-                subject: `Booking confirmed: ${data.businessName}`,
-                html: `<div style="font-family: system-ui, sans-serif; padding: 20px;"><h1 style="color: #1a1a1a;">Booking Confirmed</h1><p>Your reservation at <strong>${data.businessName}</strong> is confirmed.</p><table style="margin: 16px 0;"><tr><td><strong>Date:</strong></td><td>${data.date}</td></tr><tr><td><strong>Time:</strong></td><td>${data.time}</td></tr><tr><td><strong>Guests:</strong></td><td>${data.guests}</td></tr></table><p style="color: #666; font-size: 12px;">Powered by BookingOS</p></div>`,
-            }, { headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' }, timeout: REQUEST_TIMEOUT });
+            await email_service_1.emailService.sendBookingConfirmation({
+                to: data.to,
+                businessName: data.businessName,
+                date: data.date,
+                time: data.time,
+                guests: data.guests,
+            });
             return true;
         }
         catch (err) {
@@ -381,10 +377,37 @@ async function createBookingWithDeposit(data) {
     };
 }
 async function confirmPaymentAndCreateEscrow(bookingReference, paymentData) {
-    console.log('[BookingService] confirmPaymentAndCreateEscrow called (stub)', bookingReference, paymentData);
+    console.log('[BookingService] confirmPaymentAndCreateEscrow called', bookingReference, paymentData);
+    let booking = null;
+    try {
+        booking = await database_1.prisma.booking.findFirst({
+            where: { reference: bookingReference },
+            include: { business: true, customer: true },
+        });
+    }
+    catch { }
+    if (booking) {
+        const to = booking.customer?.email || booking.customerEmail || '';
+        const businessName = booking.business?.name || 'BookingOS';
+        if (to) {
+            try {
+                await email_service_1.emailService.sendBookingConfirmation({
+                    to,
+                    businessName,
+                    date: new Date(booking.reservationDate).toLocaleDateString(),
+                    time: booking.reservationTime,
+                    guests: booking.numberOfGuests,
+                    confirmationCode: booking.reference,
+                });
+            }
+            catch (err) {
+                console.warn('[BookingService] booking confirmation email failed:', err?.message || err);
+            }
+        }
+    }
     return {
         success: true,
-        message: 'Payment confirmed (stub)',
+        message: 'Payment confirmed',
         escrowId: null,
     };
 }

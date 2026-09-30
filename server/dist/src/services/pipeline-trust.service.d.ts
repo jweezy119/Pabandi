@@ -1,11 +1,44 @@
 export declare class PipelineTrustService {
-    enrichLeadWithTrust(leadId: string): Promise<any>;
-    getLeadRiskScore(leadId: string): Promise<"high" | "low" | "medium">;
-    suggestTerms(leadId: string): Promise<{
+    enrichLeadWithTrust(clientId: string): Promise<{
+        trustScore: number;
+        trustLevel: string;
+        verified: boolean;
+        email: string | null;
+        phone: string | null;
+        id: string;
+        createdAt: Date;
+        name: string;
+        reliabilityScore: number;
+        updatedAt: Date;
+        businessId: string;
+        status: string;
+        isActive: boolean;
+        notes: string | null;
+        address: string | null;
+        passportId: string | null;
+        customData: import("@prisma/client/runtime/library").JsonValue;
+    } | null>;
+    getLeadRiskScore(clientId: string): Promise<"medium" | "high" | "low">;
+    suggestTerms(clientId: string): Promise<{
         terms: string;
         deposit: number;
     }>;
-    flagHighRiskLeads(businessId: string): Promise<any[]>;
+    flagHighRiskLeads(businessId: string): Promise<{
+        email: string | null;
+        phone: string | null;
+        id: string;
+        createdAt: Date;
+        name: string;
+        reliabilityScore: number;
+        updatedAt: Date;
+        businessId: string;
+        status: string;
+        isActive: boolean;
+        notes: string | null;
+        address: string | null;
+        passportId: string | null;
+        customData: import("@prisma/client/runtime/library").JsonValue;
+    }[]>;
     updateScoreFromDeal(dealId: string): Promise<{
         success: boolean;
         message: string;

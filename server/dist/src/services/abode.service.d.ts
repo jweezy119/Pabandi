@@ -15,8 +15,8 @@ export declare class AbodeRevenueService {
     getTopProperties(managerId: string): Promise<{
         id: string;
         status: string;
-        address: string | null;
         title: string;
+        address: string | null;
         _count: {
             units: number;
         };
@@ -28,20 +28,20 @@ export declare class AbodeTenantService {
         email: string;
         phone: string | null;
         id: string;
+        createdAt: Date;
         firstName: string | null;
         lastName: string | null;
-        createdAt: Date;
         updatedAt: Date;
-        managerId: string;
         status: string;
+        managerId: string;
         riskBand: string | null;
         notes: string | null;
-        balancePab: number;
         propertyId: string | null;
         depositHeld: number;
         totalStays: number;
         totalDisputes: number;
         balanceUsdc: number;
+        balancePab: number;
         lastStayAt: Date | null;
     }[]>;
     getTenantDetail(tenantId: string): Promise<{
@@ -49,8 +49,8 @@ export declare class AbodeTenantService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            managerId: string;
             status: string;
+            managerId: string;
             depositAmount: number;
             notes: string | null;
             propertyId: string | null;
@@ -74,13 +74,13 @@ export declare class AbodeTenantService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            managerId: string;
             status: string;
+            managerId: string;
+            title: string;
             notes: string | null;
             description: string | null;
-            title: string;
-            priority: string;
             resolvedAt: Date | null;
+            priority: string;
             propertyId: string | null;
             unitId: string | null;
             tenantEmail: string | null;
@@ -105,48 +105,48 @@ export declare class AbodeTenantService {
         email: string;
         phone: string | null;
         id: string;
+        createdAt: Date;
         firstName: string | null;
         lastName: string | null;
-        createdAt: Date;
         updatedAt: Date;
-        managerId: string;
         status: string;
+        managerId: string;
         riskBand: string | null;
         notes: string | null;
-        balancePab: number;
         propertyId: string | null;
         depositHeld: number;
         totalStays: number;
         totalDisputes: number;
         balanceUsdc: number;
+        balancePab: number;
         lastStayAt: Date | null;
     } | null>;
     updateTenantRisk(tenantId: string, riskBand: string): Promise<{
         email: string;
         phone: string | null;
         id: string;
+        createdAt: Date;
         firstName: string | null;
         lastName: string | null;
-        createdAt: Date;
         updatedAt: Date;
-        managerId: string;
         status: string;
+        managerId: string;
         riskBand: string | null;
         notes: string | null;
-        balancePab: number;
         propertyId: string | null;
         depositHeld: number;
         totalStays: number;
         totalDisputes: number;
         balanceUsdc: number;
+        balancePab: number;
         lastStayAt: Date | null;
     }>;
 }
 export declare class AbodeLeaseService {
     getLeases(managerId: string, status?: string): Promise<({
         property: {
-            address: string | null;
             title: string;
+            address: string | null;
         } | null;
         unit: {
             unitNumber: string;
@@ -155,8 +155,8 @@ export declare class AbodeLeaseService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        managerId: string;
         status: string;
+        managerId: string;
         depositAmount: number;
         notes: string | null;
         propertyId: string | null;
@@ -180,8 +180,8 @@ export declare class AbodeLeaseService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        managerId: string;
         status: string;
+        managerId: string;
         depositAmount: number;
         notes: string | null;
         propertyId: string | null;
@@ -208,8 +208,8 @@ export declare class AbodeLeaseService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        managerId: string;
         status: string;
+        managerId: string;
         depositAmount: number;
         notes: string | null;
         propertyId: string | null;
@@ -233,8 +233,8 @@ export declare class AbodeLeaseService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        managerId: string;
         status: string;
+        managerId: string;
         depositAmount: number;
         notes: string | null;
         propertyId: string | null;
@@ -265,13 +265,13 @@ export declare class AbodeMaintenanceService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        managerId: string;
         status: string;
+        managerId: string;
+        title: string;
         notes: string | null;
         description: string | null;
-        title: string;
-        priority: string;
         resolvedAt: Date | null;
+        priority: string;
         propertyId: string | null;
         unitId: string | null;
         tenantEmail: string | null;
@@ -292,13 +292,13 @@ export declare class AbodeMaintenanceService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        managerId: string;
         status: string;
+        managerId: string;
+        title: string;
         notes: string | null;
         description: string | null;
-        title: string;
-        priority: string;
         resolvedAt: Date | null;
+        priority: string;
         propertyId: string | null;
         unitId: string | null;
         tenantEmail: string | null;
@@ -312,13 +312,13 @@ export declare class AbodeMaintenanceService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        managerId: string;
         status: string;
+        managerId: string;
+        title: string;
         notes: string | null;
         description: string | null;
-        title: string;
-        priority: string;
         resolvedAt: Date | null;
+        priority: string;
         propertyId: string | null;
         unitId: string | null;
         tenantEmail: string | null;
@@ -332,13 +332,13 @@ export declare class AbodeMaintenanceService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        managerId: string;
         status: string;
+        managerId: string;
+        title: string;
         notes: string | null;
         description: string | null;
-        title: string;
-        priority: string;
         resolvedAt: Date | null;
+        priority: string;
         propertyId: string | null;
         unitId: string | null;
         tenantEmail: string | null;
@@ -353,20 +353,20 @@ export declare class AbodeCommunicationService {
     sendMessage(propertyId: string, senderEmail: string, recipientEmail: string, body: string): Promise<{
         id: string;
         createdAt: Date;
-        subject: string | null;
         body: string;
-        readAt: Date | null;
-        attachments: import("@prisma/client/runtime/library").JsonValue | null;
+        subject: string | null;
         propertyId: string;
-        unitId: string | null;
-        conversationId: string;
         senderId: string | null;
+        unitId: string | null;
+        mimeType: string;
+        conversationId: string;
         senderEmail: string | null;
         senderName: string | null;
         recipientId: string | null;
         recipientEmail: string | null;
-        mimeType: string;
         isRead: boolean;
+        readAt: Date | null;
+        attachments: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     broadcastToTenants(propertyId: string, message: string): Promise<{
         success: boolean;
@@ -375,20 +375,20 @@ export declare class AbodeCommunicationService {
     getMessageHistory(conversationId: string): Promise<{
         id: string;
         createdAt: Date;
-        subject: string | null;
         body: string;
-        readAt: Date | null;
-        attachments: import("@prisma/client/runtime/library").JsonValue | null;
+        subject: string | null;
         propertyId: string;
-        unitId: string | null;
-        conversationId: string;
         senderId: string | null;
+        unitId: string | null;
+        mimeType: string;
+        conversationId: string;
         senderEmail: string | null;
         senderName: string | null;
         recipientId: string | null;
         recipientEmail: string | null;
-        mimeType: string;
         isRead: boolean;
+        readAt: Date | null;
+        attachments: import("@prisma/client/runtime/library").JsonValue | null;
     }[]>;
 }
 export declare const abodeRevenue: AbodeRevenueService;

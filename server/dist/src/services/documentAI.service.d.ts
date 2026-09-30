@@ -14,38 +14,38 @@ export declare class DocumentAIService {
      */
     analyzeDocument(managerId: string, fileName: string, textContent: string, documentType: string, fileUrl?: string): Promise<{
         model: string | null;
+        provider: string;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         id: string;
         createdAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         managerId: string;
         confidence: number | null;
-        provider: string;
         latencyMs: number | null;
-        tokensUsed: number | null;
+        documentType: string;
         fileName: string;
         fileUrl: string | null;
-        documentType: string;
         textContent: string | null;
         analysis: import("@prisma/client/runtime/library").JsonValue;
+        tokensUsed: number | null;
     }>;
     /**
      * Get analysis history for a manager
      */
     getHistory(managerId: string, limit?: number): Promise<{
         model: string | null;
+        provider: string;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         id: string;
         createdAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         managerId: string;
         confidence: number | null;
-        provider: string;
         latencyMs: number | null;
-        tokensUsed: number | null;
+        documentType: string;
         fileName: string;
         fileUrl: string | null;
-        documentType: string;
         textContent: string | null;
         analysis: import("@prisma/client/runtime/library").JsonValue;
+        tokensUsed: number | null;
     }[]>;
 }
 export declare const documentAIService: DocumentAIService;

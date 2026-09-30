@@ -9,7 +9,7 @@ services:
     dockerContext: .
     autoDeploy: true
     buildCommand: echo "Build handled by Dockerfile"
-    preDeployCommand: echo "No pre-deploy migrations needed"
+    preDeployCommand: node scripts/ensure-agent-tables.cjs
     envVars:
       - key: NODE_ENV
         value: production
@@ -41,3 +41,14 @@ services:
         generateValue: true
       - key: COURTLISTENER_API_KEYS
         value: ""
+      # x402 settlement. sync:false keeps whatever is set in the Render dashboard.
+      - key: PABANDI_PAYOUT_ADDRESS
+        sync: false
+      - key: X402_FACILITATOR_URL
+        value: https://x402.org/facilitator
+      # Leave unset in production. Only set to "true" to accept unpaid calls locally.
+      - key: X402_ALLOW_UNVERIFIED
+        sync: false
+      # Starter $PAB granted to a newly registered agent principal (0 = must be funded).
+      - key: AGENT_SIGNUP_PAB_GRANT
+        value: "0"

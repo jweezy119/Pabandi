@@ -5,6 +5,7 @@ declare global {
             id: string;
             email: string;
             role: string;
+            businessId?: string;
         }
     }
 }
@@ -16,6 +17,7 @@ export interface AuthRequest extends Request {
         firstName?: string;
         lastName?: string;
         phone?: string;
+        businessId?: string;
     };
 }
 export declare const authenticate: (req: AuthRequest, res: Response, next: NextFunction) => void;

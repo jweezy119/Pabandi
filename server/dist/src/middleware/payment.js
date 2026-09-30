@@ -2,29 +2,36 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.x402Middleware = x402Middleware;
 exports.ap2Middleware = ap2Middleware;
+const x402_service_1 = require("../services/x402.service");
 /**
  * x402 Payment Middleware
- * Returns HTTP 402 with price info if no payment proof provided
+ * Verifies the X-PAYMENT proof with the facilitator, returning HTTP 402 with
+ * price info when it is absent or invalid.
  */
 function x402Middleware(priceUsdc, description) {
     return async (req, res, next) => {
         const paymentProof = req.headers['x-payment'];
+        const paymentRequirements = () => ({
+            error: 'Payment required',
+            scheme: 'x402',
+            price: `${priceUsdc} USDC`,
+            network: 'solana',
+            recipient: process.env.SOLANA_USDC_ADDRESS || 'PABANDI_USDC_WALLET',
+            description: description || 'API access',
+            paymentMethods: ['solana-usdc', 'x402'],
+        });
         if (!paymentProof) {
-            return res.status(402).json({
-                error: 'Payment required',
-                scheme: 'x402',
-                price: `${priceUsdc} USDC`,
-                network: 'solana',
-                recipient: process.env.SOLANA_USDC_ADDRESS || 'PABANDI_USDC_WALLET',
-                description: description || 'API access',
-                paymentMethods: ['solana-usdc', 'x402'],
-            });
+            return res.status(402).json(paymentRequirements());
         }
-        // In production: verify payment on-chain
-        // const verified = await verifySolanaPayment(paymentProof, priceUsdc);
-        // if (!verified) {
-        //   return res.status(402).json({ error: 'Payment verification failed' });
-        // }
+        const result = await (0, x402_service_1.verifyX402Payment)({
+            paymentHeader: paymentProof,
+            resource: req.originalUrl,
+            amount: priceUsdc,
+        });
+        if (!result.valid) {
+            return res.status(402).json({ ...paymentRequirements(), invalidReason: result.reason });
+        }
+        req.x402 = { amount: priceUsdc, transactionHash: result.transactionHash };
         next();
     };
 }

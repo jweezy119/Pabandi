@@ -15,6 +15,7 @@
  */
 import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/auth.middleware';
+import crypto from 'crypto';
 import { ptpEngine } from '../protocol/ptp.spec';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
@@ -23,11 +24,49 @@ import { PAB_FEE_PER_PASSPORT } from '../config/tokenomics';
 
 const router = Router();
 
+/**
+ * Resolves the passport owner from EITHER a logged-in user session OR an agent
+ * API key from POST /api/v1/agents/register. Agent keys resolve through
+ * AgentMarketplace.ownerEmail -> User, so a one-curl signup can issue its own
+ * first passport without a browser.
+ */
+async function resolveOwnerUserId(req: Request): Promise<string | null> {
+  const sessionUserId = (req as any).user?.id;
+  if (sessionUserId) return sessionUserId;
+
+  const header = req.headers['x-api-key'] as string | undefined
+    || (req.headers.authorization?.startsWith('Bearer ')
+      ? req.headers.authorization.slice(7).trim()
+      : undefined);
+  if (!header) return null;
+
+  const keyHash = crypto.createHash('sha256').update(header).digest('hex');
+  const agents = (await prisma.$queryRaw`
+    SELECT "ownerEmail" FROM "AgentMarketplace"
+    WHERE "apiKeyHash" = ${keyHash} AND status = 'active'
+    LIMIT 1
+  `) as Array<{ ownerEmail: string }>;
+
+  if (agents.length === 0) return null;
+
+  const owner = await prisma.user.findUnique({
+    where: { email: agents[0].ownerEmail },
+    select: { id: true },
+  });
+  return owner?.id ?? null;
+}
+
 // Issue an Agent Capability Passport for the authenticated user's agent.
-router.post('/issue', authenticate, async (req: Request, res: Response) => {
+router.post('/issue', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
-    if (!userId) return res.status(401).json({ success: false, error: 'unauthenticated' });
+    const userId = await resolveOwnerUserId(req);
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'unauthenticated',
+        hint: 'Pass a session cookie or an agent API key (x-api-key / Authorization: Bearer pab_…). Register: POST /api/v1/agents/register',
+      });
+    }
     const { agentId, capabilities, idempotencyKey } = req.body ?? {};
     if (!agentId || !Array.isArray(capabilities) || capabilities.length === 0) {
       return res.status(400).json({ success: false, error: 'agentId + non-empty capabilities[] required' });

@@ -34,32 +34,32 @@ export declare class RewardEngine {
     issueRewards(params: IssueRewardsParams): Promise<{
         customerReward: {
             id: string;
-            createdAt: Date;
             userId: string;
-            type: string;
+            createdAt: Date;
             status: string;
+            type: string;
             amount: number;
-            userType: string;
-            usdValue: number;
+            settledAt: Date | null;
             referenceId: string | null;
             referenceType: string | null;
             claimedAt: Date | null;
-            settledAt: Date | null;
+            userType: string;
+            usdValue: number;
             vestingEnd: Date | null;
         };
         businessReward: {
             id: string;
-            createdAt: Date;
             userId: string;
-            type: string;
+            createdAt: Date;
             status: string;
+            type: string;
             amount: number;
-            userType: string;
-            usdValue: number;
+            settledAt: Date | null;
             referenceId: string | null;
             referenceType: string | null;
             claimedAt: Date | null;
-            settledAt: Date | null;
+            userType: string;
+            usdValue: number;
             vestingEnd: Date | null;
         };
         rewards: RewardCalculation;
@@ -77,14 +77,14 @@ export declare class RewardEngine {
      */
     updateBalance(userId: string, userType: string, amountDelta: number): Promise<{
         id: string;
-        updatedAt: Date;
         userId: string;
-        stakedAmount: number;
-        userType: string;
+        updatedAt: Date;
         totalEarned: number;
+        stakedAmount: number;
+        currentTier: string;
+        userType: string;
         totalClaimed: number;
         totalVesting: number;
-        currentTier: string;
     }>;
     /**
      * Seed default reward tiers

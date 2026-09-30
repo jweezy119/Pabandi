@@ -8,6 +8,7 @@ export interface ApiKeyRequest extends Request {
         callsUsed: number;
         callsLimit: number;
         businessId: string | null;
+        isAgent?: boolean;
     };
     requestStartTime?: number;
 }

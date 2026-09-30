@@ -13,10 +13,10 @@ export declare class DaoService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        expiresAt: Date;
         status: string;
-        description: string;
+        expiresAt: Date;
         title: string;
+        description: string;
         proposerId: string;
         forVotes: number;
         againstVotes: number;
@@ -30,9 +30,9 @@ export declare class DaoService {
         id: string;
         createdAt: Date;
         voterId: string;
-        weight: number;
-        vote: string;
         proposalId: string;
+        vote: string;
+        weight: number;
     }>;
     /**
      * Evaluate a proposal to see if it passed or failed.

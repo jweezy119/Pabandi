@@ -1,211 +1,139 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.emailService = void 0;
-exports.sendVerificationEmail = sendVerificationEmail;
-exports.generateVerificationCode = generateVerificationCode;
-exports.isEmailConfigured = isEmailConfigured;
-const database_1 = require("../utils/database");
-const logger_1 = require("../utils/logger");
-const FROM_EMAIL = 'jay@pabandi.com';
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-// ═══════════════════════════════════════════════════════════════════════════
-// Legacy exports (backward compatibility)
-// ═══════════════════════════════════════════════════════════════════════════
-async function sendVerificationEmail(to, code, firstName) {
-    const subject = 'Verify your Pabandi account';
-    const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 40px 20px;">
-      <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: #6366f1; font-size: 28px; margin: 0;">🛡️ Pabandi</h1>
-      </div>
-      <div style="background: #f9fafb; border-radius: 12px; padding: 30px; text-align: center;">
-        <h2 style="color: #1f2937; margin: 0 0 10px;">Welcome, ${firstName}!</h2>
-        <p style="color: #6b7280; margin: 0 0 25px;">Use this code to verify your email address:</p>
-        <div style="background: white; border: 2px dashed #6366f1; border-radius: 8px; padding: 15px; margin: 0 0 25px;">
-          <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #6366f1;">${code}</span>
-        </div>
-        <p style="color: #9ca3af; font-size: 14px; margin: 0;">This code expires in 15 minutes.</p>
-      </div>
-      <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 20px;">
-        If you didn't create a Pabandi account, you can safely ignore this email.
-      </p>
-    </div>
-  `;
-    const result = await exports.emailService.sendEmail(to, subject, html, 'VERIFICATION');
-    // Only SENT means actually mailed. LOGGED (no provider configured) must
-    // surface as failure so callers don't claim a code was sent.
-    return result.status === 'SENT';
+exports.sendEmail = sendEmail;
+const resend_1 = require("resend");
+// Constructed lazily: `new Resend('')` throws, and this module is imported
+// during server boot, so an unset RESEND_API_KEY used to take the whole API
+// down instead of just failing sends.
+let client = null;
+function getClient() {
+    if (!client)
+        client = new resend_1.Resend(process.env.RESEND_API_KEY || '');
+    return client;
 }
-function generateVerificationCode() {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+const FROM = process.env.EMAIL_FROM || 'noreply@pabandi.com';
+async function sendEmail({ to, subject, html }) {
+    if (!process.env.RESEND_API_KEY) {
+        console.log('[email] no API key, skipping send to', to);
+        return { skipped: true };
+    }
+    try {
+        const result = await getClient().emails.send({ from: FROM, to, subject, html });
+        console.log('[email] sent', result.id);
+        return result;
+    }
+    catch (err) {
+        console.error('[email] failed', err);
+        return { error: err.message };
+    }
 }
-/** True when a real mail provider is configured; otherwise codes are only logged. */
-function isEmailConfigured() {
-    return !!RESEND_API_KEY;
+const fs = require('fs');
+const path = require('path');
+const TEMPLATE_DIR = path.join(__dirname, '../templates/emails');
+function renderTemplate(templateName, data) {
+    let base = '';
+    try {
+        base = fs.readFileSync(path.join(TEMPLATE_DIR, 'base.html'), 'utf-8');
+    }
+    catch {
+        base = '<!DOCTYPE html><html><body>{{content}}</body></html>';
+    }
+    let content = '';
+    try {
+        content = fs.readFileSync(path.join(TEMPLATE_DIR, `${templateName}.html`), 'utf-8');
+    }
+    catch {
+        content = JSON.stringify(data);
+    }
+    let rendered = content;
+    for (const [key, value] of Object.entries(data)) {
+        rendered = rendered.replace(new RegExp(`{{${key}}}`, 'g'), String(value));
+    }
+    return base.replace('{{content}}', rendered);
 }
-// ═══════════════════════════════════════════════════════════════════════════
-// Email Service (new nightlife booking functions)
-// ═══════════════════════════════════════════════════════════════════════════
 exports.emailService = {
-    /**
-     * Send booking confirmation email
-     */
-    async sendBookingConfirmation(booking) {
-        const { user, venue, tableType, bottlePackage } = booking;
-        const subject = `🍾 Booking Confirmed - ${venue?.name || 'Venue'}`;
-        const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h1 style="color: #6366f1; margin-bottom: 20px;">🛡️ Pabandi</h1>
-        <h2 style="color: #1f2937;">Booking Confirmed!</h2>
-        <div style="background: #f9fafb; border-radius: 12px; padding: 20px; margin: 20px 0;">
-          <p><strong>Confirmation Code:</strong> ${booking.confirmationCode}</p>
-          <p><strong>Venue:</strong> ${venue?.name || 'N/A'}</p>
-          <p><strong>Date:</strong> ${new Date(booking.date).toLocaleDateString()}</p>
-          <p><strong>Arrival Time:</strong> ${booking.arrivalTime}</p>
-          <p><strong>Table:</strong> ${tableType?.name || 'N/A'}</p>
-          <p><strong>Bottle Package:</strong> ${bottlePackage?.name || 'N/A'}</p>
-          <p><strong>Guests:</strong> ${booking.guestCount}</p>
-          <p><strong>Total Price:</strong> $${booking.totalPrice?.toFixed(2)}</p>
-          ${booking.specialRequests ? `<p><strong>Special Requests:</strong> ${booking.specialRequests}</p>` : ''}
-        </div>
-        <p style="color: #6b7280; font-size: 14px;">Present this confirmation at the venue entrance.</p>
-      </div>
-    `;
-        await this.sendEmail(user?.email, subject, html, 'BOOKING_CONFIRMATION');
-    },
-    /**
-     * Send guest list confirmation email
-     */
-    async sendGuestListConfirmation(entry) {
-        const { venue, email } = entry;
-        const subject = `✅ Guest List Confirmed - ${venue?.name || 'Venue'}`;
-        const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h1 style="color: #6366f1; margin-bottom: 20px;">🛡️ Pabandi</h1>
-        <h2 style="color: #1f2937;">You're on the Guest List!</h2>
-        <div style="background: #f9fafb; border-radius: 12px; padding: 20px; margin: 20px 0;">
-          <p><strong>Confirmation Code:</strong> ${entry.confirmationCode}</p>
-          <p><strong>Venue:</strong> ${venue?.name || 'N/A'}</p>
-          <p><strong>Date:</strong> ${new Date(entry.date).toLocaleDateString()}</p>
-          <p><strong>Party Size:</strong> ${entry.partySize}</p>
-          <p><strong>Guests:</strong> ${entry.guestNames?.join(', ') || 'N/A'}</p>
-        </div>
-        <p style="color: #6b7280; font-size: 14px;">Show this confirmation at the door for priority entry.</p>
-      </div>
-    `;
-        const toEmail = email || entry.userId;
-        await this.sendEmail(toEmail, subject, html, 'GUEST_LIST_CONFIRMATION');
-    },
-    /**
-     * Send promoter commission notification
-     */
-    async sendPromoterCommissionNotification(promoter, amount, bookingId) {
-        const subject = `💰 Commission Earned - $${amount.toFixed(2)}`;
-        const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h1 style="color: #6366f1; margin-bottom: 20px;">🛡️ Pabandi</h1>
-        <h2 style="color: #1f2937;">Commission Earned!</h2>
-        <div style="background: #f9fafb; border-radius: 12px; padding: 20px; margin: 20px 0;">
-          <p><strong>Amount:</strong> $${amount.toFixed(2)}</p>
-          <p><strong>Booking ID:</strong> ${bookingId}</p>
-          <p style="color: #6b7280; font-size: 14px;">Keep up the great work! Your commission has been credited to your wallet.</p>
-        </div>
-      </div>
-    `;
-        // Use promoter's userId to find email
-        const user = await database_1.prisma.user.findUnique({
-            where: { id: promoter.userId },
-            select: { email: true },
+    async sendBookingConfirmation(data) {
+        const html = renderTemplate('booking-confirmed', {
+            businessName: data.businessName,
+            date: data.date,
+            time: data.time,
+            guests: String(data.guests),
+            confirmationCode: data.confirmationCode || '',
+            clientName: data.to,
         });
-        if (user?.email) {
-            await this.sendEmail(user.email, subject, html, 'PROMOTER_COMMISSION');
-        }
+        return sendEmail({ to: data.to, subject: `Booking confirmed: ${data.businessName}`, html });
     },
-    /**
-     * Core email sending function
-     * Uses Resend if API key is set, otherwise logs to console
-     */
-    async sendEmail(to, subject, html, type) {
-        let status = 'PENDING';
-        let errorMessage = null;
-        try {
-            if (RESEND_API_KEY) {
-                // Lazy-load Resend
-                const { Resend } = await Promise.resolve().then(() => __importStar(require('resend')));
-                const resend = new Resend(RESEND_API_KEY);
-                await resend.emails.send({
-                    from: `Pabandi <${FROM_EMAIL}>`,
-                    to,
-                    subject,
-                    html,
-                });
-                status = 'SENT';
-                logger_1.logger.info(`[email] ${type} sent to ${to}`);
-            }
-            else {
-                // Log to console if Resend not configured
-                logger_1.logger.info(`[email] RESEND_API_KEY not set — logging email instead`);
-                logger_1.logger.info(`[email] TO: ${to}`);
-                logger_1.logger.info(`[email] SUBJECT: ${subject}`);
-                logger_1.logger.info(`[email] TYPE: ${type}`);
-                status = 'LOGGED';
-            }
-        }
-        catch (err) {
-            status = 'FAILED';
-            errorMessage = err.message;
-            logger_1.logger.error(`[email] Failed to send ${type} to ${to}: ${err.message}`);
-        }
-        // Create EmailLog record
-        try {
-            await database_1.prisma.emailLog.create({
-                data: {
-                    toEmail: to,
-                    subject,
-                    body: html.substring(0, 1000), // Truncate for storage
-                    type,
-                    status,
-                    errorMessage,
-                },
-            });
-        }
-        catch (logErr) {
-            logger_1.logger.error(`[email] Failed to create email log: ${logErr.message}`);
-        }
-        return { status, errorMessage };
+    async sendBookingReminder(data) {
+        const html = renderTemplate('booking-reminder', {
+            businessName: data.businessName,
+            date: data.date,
+            time: data.time,
+            guests: String(data.guests),
+            confirmationCode: data.confirmationCode || '',
+            clientName: data.to,
+        });
+        return sendEmail({ to: data.to, subject: `Reminder: Your booking at ${data.businessName} tomorrow`, html });
+    },
+    async sendInvoiceSent(client, invoice, business) {
+        const html = renderTemplate('invoice-sent', {
+            businessName: business.name,
+            clientName: client.name,
+            amount: String(invoice.subtotal),
+            invoiceNumber: invoice.number,
+            dueDate: new Date(invoice.dateDue).toLocaleDateString(),
+            payUrl: `${process.env.APP_URL || 'http://localhost:5173'}/pay/${invoice.id}`,
+            trustScore: client.reliabilityScore || null,
+        });
+        return sendEmail({ to: client.email, subject: `Invoice ${invoice.number} from ${business.name}`, html });
+    },
+    async sendInvoiceReminder(client, invoice, business) {
+        const html = renderTemplate('invoice-reminder', {
+            businessName: business.name,
+            clientName: client.name,
+            amount: String(invoice.subtotal),
+            invoiceNumber: invoice.number,
+            dueDate: new Date(invoice.dateDue).toLocaleDateString(),
+            payUrl: `${process.env.APP_URL || 'http://localhost:5173'}/pay/${invoice.id}`
+        });
+        return sendEmail({ to: client.email, subject: `Reminder: Invoice ${invoice.number} is due`, html });
+    },
+    async sendPaymentReceived(business, invoice, client) {
+        const html = renderTemplate('payment-received', {
+            businessName: business.name,
+            clientName: client.name,
+            amount: String(invoice.subtotal),
+            invoiceNumber: invoice.number,
+            clientTrustScore: client.reliabilityScore || null,
+        });
+        return sendEmail({ to: business.email || 'business@example.com', subject: `Payment Received: Invoice ${invoice.number}`, html });
+    },
+    async sendPaymentClaimed(business, invoice, client) {
+        const html = renderTemplate('payment-claimed', {
+            businessName: business.name,
+            clientName: client.name,
+            amount: String(invoice.subtotal),
+            invoiceNumber: invoice.number,
+            verifyUrl: `${process.env.APP_URL || 'http://localhost:5173'}/contact/invoices`
+        });
+        return sendEmail({ to: business.email || 'business@example.com', subject: `Client Claims Paid: Verify Invoice ${invoice.number}`, html });
+    },
+    async sendWelcome(user) {
+        const html = renderTemplate('welcome', {
+            userName: user.name || 'there',
+        });
+        return sendEmail({ to: user.email, subject: 'Welcome to Pabandi', html });
+    },
+    async sendTrustScoreChanged(user, field, oldScore, newScore) {
+        const html = renderTemplate('trust-score-changed', {
+            userName: user.name || 'there',
+            field,
+            oldScore: String(oldScore),
+            newScore: String(newScore),
+            change: newScore > oldScore ? `increased by ${newScore - oldScore}` : `decreased by ${oldScore - newScore}`,
+            profileUrl: `${process.env.APP_URL || 'http://localhost:5173'}/contact/settings/profile`
+        });
+        return sendEmail({ to: user.email, subject: 'Your Trust Score updated', html });
     },
 };
 //# sourceMappingURL=email.service.js.map

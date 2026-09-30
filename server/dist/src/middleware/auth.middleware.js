@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.authorize = exports.optionalAuthenticate = exports.authenticate = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const errorHandler_1 = require("./errorHandler");
+const prisma_1 = require("../lib/prisma");
 const authenticate = (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
@@ -19,7 +20,12 @@ const authenticate = (req, res, next) => {
         }
         const decoded = jsonwebtoken_1.default.verify(token, secret);
         req.user = decoded;
-        next();
+        if (decoded.businessId) {
+            prisma_1.tenantContext.run({ businessId: decoded.businessId }, () => next());
+        }
+        else {
+            next();
+        }
     }
     catch (error) {
         if (error instanceof jsonwebtoken_1.default.JsonWebTokenError) {

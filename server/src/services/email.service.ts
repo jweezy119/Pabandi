@@ -2,7 +2,14 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY || '');
+// Constructed lazily: `new Resend('')` throws, and this module is imported
+// during server boot, so an unset RESEND_API_KEY used to take the whole API
+// down instead of just failing sends.
+let client: Resend | null = null;
+function getClient(): Resend {
+  if (!client) client = new Resend(process.env.RESEND_API_KEY || '');
+  return client;
+}
 const FROM = process.env.EMAIL_FROM || 'noreply@pabandi.com';
 
 export async function sendEmail({ to, subject, html }) {
@@ -11,7 +18,7 @@ export async function sendEmail({ to, subject, html }) {
     return { skipped: true };
   }
   try {
-    const result = await resend.emails.send({ from: FROM, to, subject, html });
+    const result = await getClient().emails.send({ from: FROM, to, subject, html });
     console.log('[email] sent', result.id);
     return result;
   } catch (err) {

@@ -11,22 +11,22 @@ export declare class AgentMarketplace {
         publicKey?: string;
         reputation?: number;
     }): Promise<{
-        id: string;
-        walletAddress: string;
-        createdAt: Date;
-        updatedAt: Date;
-        name: string;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        id: string;
+        createdAt: Date;
+        name: string;
+        updatedAt: Date;
+        walletAddress: string;
         isActive: boolean;
         description: string;
         slug: string;
-        balancePab: number;
-        capabilities: string[];
-        balanceUsdc: number;
-        publicKey: string;
-        reputation: number;
         totalEarned: number;
         totalSpent: number;
+        balanceUsdc: number;
+        balancePab: number;
+        capabilities: string[];
+        publicKey: string;
+        reputation: number;
         projectsCompleted: number;
         projectsFailed: number;
     }>;
@@ -43,22 +43,22 @@ export declare class AgentMarketplace {
         category: string;
         complexity: string;
     }): Promise<{
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         status: string;
+        title: string;
         description: string;
         category: string;
-        title: string;
-        deadline: Date;
-        budgetUsd: number;
         requirements: string;
+        budgetUsd: number;
+        escrowId: string | null;
+        deadline: Date;
+        posterId: string;
         budgetPab: number;
         selectedBidId: string | null;
-        escrowId: string | null;
         complexity: string;
-        posterId: string;
     }>;
     /**
      * Place a bid on a project
@@ -72,15 +72,15 @@ export declare class AgentMarketplace {
     }): Promise<{
         id: string;
         status: string;
+        submittedAt: Date;
+        projectId: string;
+        bidderId: string;
         proposedAmount: number;
         proposedPab: number;
         timelineHours: number;
         approach: string;
         isWinning: boolean;
-        submittedAt: Date;
         acceptedAt: Date | null;
-        projectId: string;
-        bidderId: string;
     }>;
     /**
      * Accept a bid and fund escrow
@@ -91,43 +91,43 @@ export declare class AgentMarketplace {
             status: string;
             totalAmount: number;
             refundedAt: Date | null;
+            releasedAt: Date | null;
             projectId: string;
+            fundedAt: Date;
             releaseAmount: number;
             platformFee: number;
-            fundedAt: Date;
-            releasedAt: Date | null;
         };
         bid: {
             project: {
+                metadata: import("@prisma/client/runtime/library").JsonValue | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
-                metadata: import("@prisma/client/runtime/library").JsonValue | null;
                 status: string;
+                title: string;
                 description: string;
                 category: string;
-                title: string;
-                deadline: Date;
-                budgetUsd: number;
                 requirements: string;
+                budgetUsd: number;
+                escrowId: string | null;
+                deadline: Date;
+                posterId: string;
                 budgetPab: number;
                 selectedBidId: string | null;
-                escrowId: string | null;
                 complexity: string;
-                posterId: string;
             };
         } & {
             id: string;
             status: string;
+            submittedAt: Date;
+            projectId: string;
+            bidderId: string;
             proposedAmount: number;
             proposedPab: number;
             timelineHours: number;
             approach: string;
             isWinning: boolean;
-            submittedAt: Date;
             acceptedAt: Date | null;
-            projectId: string;
-            bidderId: string;
         };
     }>;
     /**
@@ -164,9 +164,9 @@ export declare class AgentMarketplace {
         id: string;
         name: string;
         slug: string;
+        totalEarned: number;
         capabilities: string[];
         reputation: number;
-        totalEarned: number;
         projectsCompleted: number;
     }[]>;
 }

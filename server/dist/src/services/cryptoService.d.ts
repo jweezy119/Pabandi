@@ -23,14 +23,14 @@ export declare class CryptoService {
     rewardGoogleReview(userId: string, _businessId: string, _googleReviewId: string): Promise<void>;
     connectSolanaWallet(userId: string, address: string): Promise<{
         id: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
         usdcBalance: number;
-        userId: string;
         address: string | null;
         currency: string;
-        encryptedSecret: string | null;
         balance: number;
+        encryptedSecret: string | null;
         totalStaked: number;
         lockedPab: number;
         airdropClaimed: boolean;

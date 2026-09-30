@@ -11,14 +11,14 @@ export declare const promoterService: {
     registerPromoter(userId: string, data: RegisterPromoterData): Promise<{
         phone: string | null;
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        name: string;
         userId: string;
+        createdAt: Date;
+        name: string;
+        updatedAt: Date;
+        bio: string | null;
         isActive: boolean;
         instagram: string | null;
         verified: boolean;
-        bio: string | null;
     }>;
     /**
      * Get promoter by user ID
@@ -26,17 +26,17 @@ export declare const promoterService: {
     getPromoterByUserId(userId: string): Promise<({
         reviews: {
             id: string;
+            userId: string;
             createdAt: Date;
             updatedAt: Date;
-            userId: string;
             rating: number;
             comment: string | null;
             promoterId: string;
         }[];
         promoCodes: {
-            code: string;
             id: string;
             createdAt: Date;
+            code: string;
             isActive: boolean;
             type: string;
             value: number;
@@ -49,14 +49,14 @@ export declare const promoterService: {
     } & {
         phone: string | null;
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        name: string;
         userId: string;
+        createdAt: Date;
+        name: string;
+        updatedAt: Date;
+        bio: string | null;
         isActive: boolean;
         instagram: string | null;
         verified: boolean;
-        bio: string | null;
     }) | null>;
     /**
      * Get promoter stats (total bookings, commission, conversion rate)
@@ -95,9 +95,9 @@ export declare const promoterService: {
      * Generate a unique referral code for a promoter
      */
     generateReferralCode(promoterId: string): Promise<{
-        code: string;
         id: string;
         createdAt: Date;
+        code: string;
         isActive: boolean;
         type: string;
         value: number;
@@ -150,24 +150,24 @@ export declare const promoterService: {
         } & {
             promoCode: string | null;
             id: string;
+            userId: string;
             createdAt: Date;
             updatedAt: Date;
-            userId: string;
             status: string;
             specialRequests: string | null;
             depositAmount: number;
             depositPaid: boolean;
-            guestCount: number;
             date: Date;
-            venueId: string;
-            promoterId: string | null;
             confirmationCode: string;
+            venueId: string;
             tableTypeId: string;
             bottlePackageId: string;
+            guestCount: number;
             arrivalTime: string;
             totalPrice: number;
             coverChargeAmount: number;
             guestListId: string | null;
+            promoterId: string | null;
         })[];
         pagination: {
             total: number;

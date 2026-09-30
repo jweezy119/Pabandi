@@ -20,21 +20,21 @@ export declare const bottleBookingService: {
             includes: string[];
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             isActive: boolean;
             description: string;
+            maxGuests: number;
             venueId: string;
             bottleType: string;
             basePrice: number;
             minSpend: number;
-            maxGuests: number;
         };
         tableType: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             isActive: boolean;
             venueId: string;
             basePrice: number;
@@ -44,11 +44,11 @@ export declare const bottleBookingService: {
         };
         venue: {
             phone: string | null;
-            state: string;
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
+            state: string;
             hours: import("@prisma/client/runtime/library").JsonValue;
             isActive: boolean;
             type: string;
@@ -58,14 +58,14 @@ export declare const bottleBookingService: {
             website: string | null;
             rating: number;
             instagram: string | null;
-            zip: string;
-            amenities: string[];
             capacity: number;
             openTime: string | null;
             closeTime: string | null;
-            featured: boolean;
             lat: number;
             lng: number;
+            amenities: string[];
+            featured: boolean;
+            zip: string;
             musicGenres: string[];
             dressCode: string | null;
             images: string[];
@@ -76,24 +76,24 @@ export declare const bottleBookingService: {
     } & {
         promoCode: string | null;
         id: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
         status: string;
         specialRequests: string | null;
         depositAmount: number;
         depositPaid: boolean;
-        guestCount: number;
         date: Date;
-        venueId: string;
-        promoterId: string | null;
         confirmationCode: string;
+        venueId: string;
         tableTypeId: string;
         bottlePackageId: string;
+        guestCount: number;
         arrivalTime: string;
         totalPrice: number;
         coverChargeAmount: number;
         guestListId: string | null;
+        promoterId: string | null;
     }>;
     /**
      * Calculate dynamic pricing multiplier
@@ -107,21 +107,21 @@ export declare const bottleBookingService: {
             includes: string[];
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             isActive: boolean;
             description: string;
+            maxGuests: number;
             venueId: string;
             bottleType: string;
             basePrice: number;
             minSpend: number;
-            maxGuests: number;
         };
         tableType: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             isActive: boolean;
             venueId: string;
             basePrice: number;
@@ -131,11 +131,11 @@ export declare const bottleBookingService: {
         };
         venue: {
             phone: string | null;
-            state: string;
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
+            state: string;
             hours: import("@prisma/client/runtime/library").JsonValue;
             isActive: boolean;
             type: string;
@@ -145,14 +145,14 @@ export declare const bottleBookingService: {
             website: string | null;
             rating: number;
             instagram: string | null;
-            zip: string;
-            amenities: string[];
             capacity: number;
             openTime: string | null;
             closeTime: string | null;
-            featured: boolean;
             lat: number;
             lng: number;
+            amenities: string[];
+            featured: boolean;
+            zip: string;
             musicGenres: string[];
             dressCode: string | null;
             images: string[];
@@ -163,24 +163,24 @@ export declare const bottleBookingService: {
     } & {
         promoCode: string | null;
         id: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
         status: string;
         specialRequests: string | null;
         depositAmount: number;
         depositPaid: boolean;
-        guestCount: number;
         date: Date;
-        venueId: string;
-        promoterId: string | null;
         confirmationCode: string;
+        venueId: string;
         tableTypeId: string;
         bottlePackageId: string;
+        guestCount: number;
         arrivalTime: string;
         totalPrice: number;
         coverChargeAmount: number;
         guestListId: string | null;
+        promoterId: string | null;
     }>;
     /**
      * Cancel a booking
@@ -190,21 +190,21 @@ export declare const bottleBookingService: {
             includes: string[];
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             isActive: boolean;
             description: string;
+            maxGuests: number;
             venueId: string;
             bottleType: string;
             basePrice: number;
             minSpend: number;
-            maxGuests: number;
         };
         tableType: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             isActive: boolean;
             venueId: string;
             basePrice: number;
@@ -214,11 +214,11 @@ export declare const bottleBookingService: {
         };
         venue: {
             phone: string | null;
-            state: string;
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
+            state: string;
             hours: import("@prisma/client/runtime/library").JsonValue;
             isActive: boolean;
             type: string;
@@ -228,14 +228,14 @@ export declare const bottleBookingService: {
             website: string | null;
             rating: number;
             instagram: string | null;
-            zip: string;
-            amenities: string[];
             capacity: number;
             openTime: string | null;
             closeTime: string | null;
-            featured: boolean;
             lat: number;
             lng: number;
+            amenities: string[];
+            featured: boolean;
+            zip: string;
             musicGenres: string[];
             dressCode: string | null;
             images: string[];
@@ -246,24 +246,24 @@ export declare const bottleBookingService: {
     } & {
         promoCode: string | null;
         id: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
         status: string;
         specialRequests: string | null;
         depositAmount: number;
         depositPaid: boolean;
-        guestCount: number;
         date: Date;
-        venueId: string;
-        promoterId: string | null;
         confirmationCode: string;
+        venueId: string;
         tableTypeId: string;
         bottlePackageId: string;
+        guestCount: number;
         arrivalTime: string;
         totalPrice: number;
         coverChargeAmount: number;
         guestListId: string | null;
+        promoterId: string | null;
     }>;
     /**
      * Get all bookings for a user
@@ -290,24 +290,24 @@ export declare const bottleBookingService: {
     } & {
         promoCode: string | null;
         id: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
         status: string;
         specialRequests: string | null;
         depositAmount: number;
         depositPaid: boolean;
-        guestCount: number;
         date: Date;
-        venueId: string;
-        promoterId: string | null;
         confirmationCode: string;
+        venueId: string;
         tableTypeId: string;
         bottlePackageId: string;
+        guestCount: number;
         arrivalTime: string;
         totalPrice: number;
         coverChargeAmount: number;
         guestListId: string | null;
+        promoterId: string | null;
     })[]>;
     /**
      * Get a single booking by ID
@@ -317,21 +317,21 @@ export declare const bottleBookingService: {
             includes: string[];
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             isActive: boolean;
             description: string;
+            maxGuests: number;
             venueId: string;
             bottleType: string;
             basePrice: number;
             minSpend: number;
-            maxGuests: number;
         };
         tableType: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             isActive: boolean;
             venueId: string;
             basePrice: number;
@@ -343,41 +343,41 @@ export declare const bottleBookingService: {
             email: string | null;
             phone: string | null;
             id: string;
+            userId: string;
             createdAt: Date;
             updatedAt: Date;
-            userId: string;
             status: string;
             noShowProbability: number;
             depositAmount: number;
             depositStatus: string;
             date: Date;
+            confirmationCode: string;
             partySize: number;
             venueId: string;
-            eventId: string | null;
             promoterId: string | null;
+            eventId: string | null;
             guestNames: string[];
-            confirmationCode: string;
             rewarded: boolean;
         } | null;
         promoter: {
             phone: string | null;
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string;
             userId: string;
+            createdAt: Date;
+            name: string;
+            updatedAt: Date;
+            bio: string | null;
             isActive: boolean;
             instagram: string | null;
             verified: boolean;
-            bio: string | null;
         } | null;
         venue: {
             phone: string | null;
-            state: string;
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
+            state: string;
             hours: import("@prisma/client/runtime/library").JsonValue;
             isActive: boolean;
             type: string;
@@ -387,14 +387,14 @@ export declare const bottleBookingService: {
             website: string | null;
             rating: number;
             instagram: string | null;
-            zip: string;
-            amenities: string[];
             capacity: number;
             openTime: string | null;
             closeTime: string | null;
-            featured: boolean;
             lat: number;
             lng: number;
+            amenities: string[];
+            featured: boolean;
+            zip: string;
             musicGenres: string[];
             dressCode: string | null;
             images: string[];
@@ -405,24 +405,24 @@ export declare const bottleBookingService: {
     } & {
         promoCode: string | null;
         id: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
         status: string;
         specialRequests: string | null;
         depositAmount: number;
         depositPaid: boolean;
-        guestCount: number;
         date: Date;
-        venueId: string;
-        promoterId: string | null;
         confirmationCode: string;
+        venueId: string;
         tableTypeId: string;
         bottlePackageId: string;
+        guestCount: number;
         arrivalTime: string;
         totalPrice: number;
         coverChargeAmount: number;
         guestListId: string | null;
+        promoterId: string | null;
     }) | null>;
     /**
      * Check in a booking (mark as arrived/completed)
@@ -432,21 +432,21 @@ export declare const bottleBookingService: {
             includes: string[];
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             isActive: boolean;
             description: string;
+            maxGuests: number;
             venueId: string;
             bottleType: string;
             basePrice: number;
             minSpend: number;
-            maxGuests: number;
         };
         tableType: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
             isActive: boolean;
             venueId: string;
             basePrice: number;
@@ -456,11 +456,11 @@ export declare const bottleBookingService: {
         };
         venue: {
             phone: string | null;
-            state: string;
             id: string;
             createdAt: Date;
-            updatedAt: Date;
             name: string;
+            updatedAt: Date;
+            state: string;
             hours: import("@prisma/client/runtime/library").JsonValue;
             isActive: boolean;
             type: string;
@@ -470,14 +470,14 @@ export declare const bottleBookingService: {
             website: string | null;
             rating: number;
             instagram: string | null;
-            zip: string;
-            amenities: string[];
             capacity: number;
             openTime: string | null;
             closeTime: string | null;
-            featured: boolean;
             lat: number;
             lng: number;
+            amenities: string[];
+            featured: boolean;
+            zip: string;
             musicGenres: string[];
             dressCode: string | null;
             images: string[];
@@ -488,24 +488,24 @@ export declare const bottleBookingService: {
     } & {
         promoCode: string | null;
         id: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
         status: string;
         specialRequests: string | null;
         depositAmount: number;
         depositPaid: boolean;
-        guestCount: number;
         date: Date;
-        venueId: string;
-        promoterId: string | null;
         confirmationCode: string;
+        venueId: string;
         tableTypeId: string;
         bottlePackageId: string;
+        guestCount: number;
         arrivalTime: string;
         totalPrice: number;
         coverChargeAmount: number;
         guestListId: string | null;
+        promoterId: string | null;
     }>;
     /**
      * Credit promoter commission

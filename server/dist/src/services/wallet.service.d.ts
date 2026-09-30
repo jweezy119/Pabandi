@@ -3,14 +3,14 @@ export declare const walletService: {
         success: boolean;
         wallet: {
             id: string;
+            userId: string;
             createdAt: Date;
             updatedAt: Date;
             usdcBalance: number;
-            userId: string;
             address: string | null;
             currency: string;
-            encryptedSecret: string | null;
             balance: number;
+            encryptedSecret: string | null;
             totalStaked: number;
             lockedPab: number;
             airdropClaimed: boolean;
@@ -50,14 +50,14 @@ export declare const walletService: {
             };
         } & {
             id: string;
+            userId: string;
             createdAt: Date;
             updatedAt: Date;
             usdcBalance: number;
-            userId: string;
             address: string | null;
             currency: string;
-            encryptedSecret: string | null;
             balance: number;
+            encryptedSecret: string | null;
             totalStaked: number;
             lockedPab: number;
             airdropClaimed: boolean;
@@ -74,14 +74,14 @@ export declare const walletService: {
         success: boolean;
         wallet: {
             id: string;
+            userId: string;
             createdAt: Date;
             updatedAt: Date;
             usdcBalance: number;
-            userId: string;
             address: string | null;
             currency: string;
-            encryptedSecret: string | null;
             balance: number;
+            encryptedSecret: string | null;
             totalStaked: number;
             lockedPab: number;
             airdropClaimed: boolean;

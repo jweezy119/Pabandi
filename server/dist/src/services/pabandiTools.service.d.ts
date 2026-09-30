@@ -1,6 +1,9 @@
 export type ToolAccess = 'public' | 'owner' | 'verified' | 'exclusive';
 export interface PabandiTool {
     name: string;
+    /** Stable public MCP tool name. Never derive this from `short` — those are
+     *  marketing labels and renaming one would silently rename a published tool. */
+    mcpName?: string;
     short: string;
     description: string;
     access: ToolAccess;
@@ -25,6 +28,9 @@ export declare function pabandiPlatformDoc(): {
     tools: {
         accessLabel: string;
         name: string;
+        /** Stable public MCP tool name. Never derive this from `short` — those are
+         *  marketing labels and renaming one would silently rename a published tool. */
+        mcpName?: string;
         short: string;
         description: string;
         access: ToolAccess;

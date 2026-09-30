@@ -45,6 +45,7 @@ const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const crypto_1 = __importDefault(require("crypto"));
 const logger_1 = require("../utils/logger");
+const uploadSecurity_1 = require("../middleware/uploadSecurity");
 const prisma = new client_1.PrismaClient();
 const router = (0, express_1.Router)();
 // Configure multer for property photo uploads
@@ -359,7 +360,7 @@ router.get('/financials/summary', async (req, res) => {
 });
 // ── Photos ──────────────────────────────────────────────────────────────────────
 // POST /api/v1/property-manager/photos/upload — multipart file upload
-router.post('/photos/upload', upload.single('photo'), async (req, res) => {
+router.post('/photos/upload', upload.single('photo'), uploadSecurity_1.uploadSecurity, async (req, res) => {
     try {
         const userId = req.user?.id;
         if (!userId)

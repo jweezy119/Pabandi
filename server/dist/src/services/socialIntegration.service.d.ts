@@ -2,34 +2,34 @@ export declare const socialIntegrationService: {
     connectSocialAccount(userId: string, platform: string, data: any): Promise<{
         id: string;
         userId: string;
+        username: string | null;
         accessToken: string;
         refreshToken: string | null;
+        profileUrl: string | null;
         platform: string;
         connectedAt: Date;
-        username: string | null;
-        profileUrl: string | null;
         followerCount: number | null;
     }>;
     getSocialAccounts(userId: string): Promise<{
         id: string;
         userId: string;
+        username: string | null;
         accessToken: string;
         refreshToken: string | null;
+        profileUrl: string | null;
         platform: string;
         connectedAt: Date;
-        username: string | null;
-        profileUrl: string | null;
         followerCount: number | null;
     }[]>;
     disconnectSocialAccount(userId: string, platform: string): Promise<{
         id: string;
         userId: string;
+        username: string | null;
         accessToken: string;
         refreshToken: string | null;
+        profileUrl: string | null;
         platform: string;
         connectedAt: Date;
-        username: string | null;
-        profileUrl: string | null;
         followerCount: number | null;
     }>;
     shareToSocial(userId: string, platform: string, content: any): Promise<{

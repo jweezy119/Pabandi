@@ -8,10 +8,17 @@ ENV NODE_ENV=production
 
 # ---- Server ----
 WORKDIR /app/server
+# Dev dependencies are needed for the TypeScript build (NODE_ENV=production makes
+# npm skip them by default); pruned again after the build.
 COPY server/package*.json ./
-RUN npm install --omit=dev
+RUN npm install --include=dev
 COPY server/ .
-# dist/ is prebuilt and committed in git — no compile step needed
+# Compile the server here, never ship a committed dist/ — a stale prebuilt
+# dist silently deploys code that predates the source it was built from.
+RUN npm run compile && test -f dist/src/index.js
+# Fails the build if src imports a package that package.json does not declare.
+RUN npm run check:runtime-deps
+RUN npm prune --omit=dev
 
 # ---- Client ----
 WORKDIR /app/client

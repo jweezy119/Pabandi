@@ -32,6 +32,9 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * Agent Capability Passport (ACP) routes — the AI-agent trust standard.
@@ -49,17 +52,52 @@ Object.defineProperty(exports, "__esModule", { value: true });
  *   - verifiers never pay, so verify() stays offline and always works
  */
 const express_1 = require("express");
-const auth_middleware_1 = require("../middleware/auth.middleware");
+const crypto_1 = __importDefault(require("crypto"));
 const ptp_spec_1 = require("../protocol/ptp.spec");
 const database_1 = require("../utils/database");
 const passportEconomy_service_1 = require("../services/passportEconomy.service");
 const router = (0, express_1.Router)();
+/**
+ * Resolves the passport owner from EITHER a logged-in user session OR an agent
+ * API key from POST /api/v1/agents/register. Agent keys resolve through
+ * AgentMarketplace.ownerEmail -> User, so a one-curl signup can issue its own
+ * first passport without a browser.
+ */
+async function resolveOwnerUserId(req) {
+    const sessionUserId = req.user?.id;
+    if (sessionUserId)
+        return sessionUserId;
+    const header = req.headers['x-api-key']
+        || (req.headers.authorization?.startsWith('Bearer ')
+            ? req.headers.authorization.slice(7).trim()
+            : undefined);
+    if (!header)
+        return null;
+    const keyHash = crypto_1.default.createHash('sha256').update(header).digest('hex');
+    const agents = (await database_1.prisma.$queryRaw `
+    SELECT "ownerEmail" FROM "AgentMarketplace"
+    WHERE "apiKeyHash" = ${keyHash} AND status = 'active'
+    LIMIT 1
+  `);
+    if (agents.length === 0)
+        return null;
+    const owner = await database_1.prisma.user.findUnique({
+        where: { email: agents[0].ownerEmail },
+        select: { id: true },
+    });
+    return owner?.id ?? null;
+}
 // Issue an Agent Capability Passport for the authenticated user's agent.
-router.post('/issue', auth_middleware_1.authenticate, async (req, res) => {
+router.post('/issue', async (req, res) => {
     try {
-        const userId = req.user?.id;
-        if (!userId)
-            return res.status(401).json({ success: false, error: 'unauthenticated' });
+        const userId = await resolveOwnerUserId(req);
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                error: 'unauthenticated',
+                hint: 'Pass a session cookie or an agent API key (x-api-key / Authorization: Bearer pab_…). Register: POST /api/v1/agents/register',
+            });
+        }
         const { agentId, capabilities, idempotencyKey } = req.body ?? {};
         if (!agentId || !Array.isArray(capabilities) || capabilities.length === 0) {
             return res.status(400).json({ success: false, error: 'agentId + non-empty capabilities[] required' });

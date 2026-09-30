@@ -18,11 +18,32 @@ const redactPII = (data) => {
     }
     return result;
 };
+const getRequestId = (req) => {
+    if (!req)
+        return undefined;
+    return req.requestId || req.headers?.['x-request-id'];
+};
 exports.logger = {
-    info: (msg, ...meta) => console.log(`[INFO]`, redactPII(msg), ...meta.map(redactPII)),
-    error: (msg, ...meta) => console.error(`[ERROR]`, redactPII(msg), ...meta.map(redactPII)),
-    warn: (msg, ...meta) => console.warn(`[WARN]`, redactPII(msg), ...meta.map(redactPII)),
-    debug: (msg, ...meta) => console.debug(`[DEBUG]`, redactPII(msg), ...meta.map(redactPII)),
+    info: (msg, ...meta) => {
+        const reqId = getRequestId();
+        const prefix = reqId ? `[${reqId}]` : '';
+        console.log(`${prefix} [INFO]`, redactPII(msg), ...meta.map(redactPII));
+    },
+    error: (msg, ...meta) => {
+        const reqId = getRequestId();
+        const prefix = reqId ? `[${reqId}]` : '';
+        console.error(`${prefix} [ERROR]`, redactPII(msg), ...meta.map(redactPII));
+    },
+    warn: (msg, ...meta) => {
+        const reqId = getRequestId();
+        const prefix = reqId ? `[${reqId}]` : '';
+        console.warn(`${prefix} [WARN]`, redactPII(msg), ...meta.map(redactPII));
+    },
+    debug: (msg, ...meta) => {
+        const reqId = getRequestId();
+        const prefix = reqId ? `[${reqId}]` : '';
+        console.debug(`${prefix} [DEBUG]`, redactPII(msg), ...meta.map(redactPII));
+    },
     add: () => { }
 };
 //# sourceMappingURL=logger.js.map

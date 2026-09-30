@@ -26,6 +26,7 @@ export declare const hospitalityService: {
         updatedAt: Date;
         businessId: string;
         isActive: boolean;
+        title: string;
         ownerId: string | null;
         description: string | null;
         category: import(".prisma/client").$Enums.BusinessCategory;
@@ -37,11 +38,10 @@ export declare const hospitalityService: {
         longitude: number | null;
         currency: string;
         slug: string | null;
-        title: string;
+        pricePerNight: number;
+        maxGuests: number;
         bedrooms: number;
         amenities: string[];
-        maxGuests: number;
-        pricePerNight: number;
         financeConnectionId: string | null;
     }>;
     listProperties(filter?: {
@@ -50,17 +50,17 @@ export declare const hospitalityService: {
         businessId?: string;
     }): Promise<({
         business: {
-            trustScore: number;
             name: string;
+            trustScore: number;
             city: string;
         };
         financeConnection: {
+            provider: string;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             businessId: string;
             status: string;
-            provider: string;
             accountRef: string;
             attestation: import("@prisma/client/runtime/library").JsonValue | null;
             lastVerified: Date | null;
@@ -71,6 +71,7 @@ export declare const hospitalityService: {
         updatedAt: Date;
         businessId: string;
         isActive: boolean;
+        title: string;
         ownerId: string | null;
         description: string | null;
         category: import(".prisma/client").$Enums.BusinessCategory;
@@ -82,11 +83,10 @@ export declare const hospitalityService: {
         longitude: number | null;
         currency: string;
         slug: string | null;
-        title: string;
+        pricePerNight: number;
+        maxGuests: number;
         bedrooms: number;
         amenities: string[];
-        maxGuests: number;
-        pricePerNight: number;
         financeConnectionId: string | null;
     })[]>;
     bookStay(input: {
@@ -109,14 +109,14 @@ export declare const hospitalityService: {
             depositAmount: number;
             depositStatus: import(".prisma/client").$Enums.DepositStatus;
             totalAmount: number;
+            guests: number;
             reservationId: string;
+            pricePerNight: number;
             propertyId: string;
+            guestUserId: string;
             checkIn: Date;
             checkOut: Date;
-            guests: number;
-            pricePerNight: number;
             escrowTxHash: string | null;
-            guestUserId: string;
         };
         reservation: {
             id: string;
@@ -124,6 +124,8 @@ export declare const hospitalityService: {
             updatedAt: Date;
             businessId: string;
             status: import(".prisma/client").$Enums.ReservationStatus;
+            channexBookingId: string | null;
+            solanaAttestationId: string | null;
             customerId: string;
             tableId: string | null;
             reservationDate: Date;
@@ -148,14 +150,12 @@ export declare const hospitalityService: {
             notes: string | null;
             cancelledAt: Date | null;
             cryptoDepositTxHash: string | null;
-            channexBookingId: string | null;
             rewardEarned: number | null;
             googleReviewId: string | null;
             depositStatus: import(".prisma/client").$Enums.DepositStatus;
             conciergeDetails: import("@prisma/client/runtime/library").JsonValue | null;
             isConcierge: boolean;
             totalAmount: number | null;
-            solanaAttestationId: string | null;
             checkInLat: number | null;
             checkInLng: number | null;
             checkInMethod: string | null;
@@ -176,23 +176,23 @@ export declare const hospitalityService: {
         provider: OpenFinanceProvider["provider"];
         accountRef: string;
     }): Promise<{
+        provider: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         businessId: string;
         status: string;
-        provider: string;
         accountRef: string;
         attestation: import("@prisma/client/runtime/library").JsonValue | null;
         lastVerified: Date | null;
     }>;
     getFinance(businessId: string): Promise<{
+        provider: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         businessId: string;
         status: string;
-        provider: string;
         accountRef: string;
         attestation: import("@prisma/client/runtime/library").JsonValue | null;
         lastVerified: Date | null;
@@ -203,6 +203,7 @@ export declare const hospitalityService: {
         updatedAt: Date;
         businessId: string;
         isActive: boolean;
+        title: string;
         ownerId: string | null;
         description: string | null;
         category: import(".prisma/client").$Enums.BusinessCategory;
@@ -214,11 +215,10 @@ export declare const hospitalityService: {
         longitude: number | null;
         currency: string;
         slug: string | null;
-        title: string;
+        pricePerNight: number;
+        maxGuests: number;
         bedrooms: number;
         amenities: string[];
-        maxGuests: number;
-        pricePerNight: number;
         financeConnectionId: string | null;
     }>;
 };

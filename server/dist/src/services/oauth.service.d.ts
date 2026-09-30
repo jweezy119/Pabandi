@@ -5,8 +5,8 @@ export declare class OAuthService {
     validateClientAndRedirect(clientId: string, redirectUri: string): Promise<{
         id: string;
         createdAt: Date;
-        updatedAt: Date;
         name: string;
+        updatedAt: Date;
         isActive: boolean;
         clientId: string;
         clientSecret: string;

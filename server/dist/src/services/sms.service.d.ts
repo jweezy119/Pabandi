@@ -28,16 +28,16 @@ export declare class SMSService {
     getSMSLogs(businessId: string, limit?: number, offset?: number): Promise<{
         message: string;
         error: string | null;
+        provider: string;
         id: string;
         createdAt: Date;
         businessId: string;
         status: string;
         externalId: string | null;
-        sentAt: Date | null;
-        deliveredAt: Date | null;
         to: string;
-        provider: string;
+        sentAt: Date | null;
         cost: number | null;
+        deliveredAt: Date | null;
     }[]>;
     private sendViaVonage;
     private loadVonageClient;

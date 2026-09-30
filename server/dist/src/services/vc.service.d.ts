@@ -2,9 +2,9 @@ import { CredentialType } from '@prisma/client';
 export declare class VCService {
     private readonly issuerDid;
     issueTrustCredential(userId: string, credentialType: CredentialType): Promise<{
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         id: string;
         userId: string;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         expiresAt: Date;
         credentialType: import(".prisma/client").$Enums.CredentialType;
         isRevoked: boolean;
@@ -15,9 +15,9 @@ export declare class VCService {
         subject: import("@prisma/client/runtime/library").JsonValue;
     }>;
     issuePropertyCredential(userId: string, propertyId: string, credentialType: CredentialType, claims: any): Promise<{
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         id: string;
         userId: string;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         expiresAt: Date;
         credentialType: import(".prisma/client").$Enums.CredentialType;
         isRevoked: boolean;

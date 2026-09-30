@@ -15,10 +15,10 @@ declare class WebhookService {
      */
     dispatchToOAuthClients(userId: string, eventName: string, payload: any): Promise<void>;
     create(managerId: string, url: string, events: string[], secret?: string): Promise<{
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         isActive: boolean;
         url: string;
         secret: string | null;
@@ -28,10 +28,10 @@ declare class WebhookService {
         managerId: string;
     }>;
     list(managerId: string): Promise<{
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         isActive: boolean;
         url: string;
         secret: string | null;
@@ -45,10 +45,10 @@ declare class WebhookService {
         events?: string[];
         isActive?: boolean;
     }): Promise<{
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         isActive: boolean;
         url: string;
         secret: string | null;

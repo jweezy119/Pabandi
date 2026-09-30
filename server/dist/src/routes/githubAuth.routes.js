@@ -7,6 +7,7 @@ const express_1 = require("express");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const database_1 = require("../utils/database");
 const logger_1 = require("../utils/logger");
+const identity_service_1 = require("../services/identity.service");
 const router = (0, express_1.Router)();
 // Lightweight GitHub OAuth — no Passport required
 // Uses direct OAuth 2.0 flow with fetch()
@@ -14,7 +15,10 @@ const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 const API_URL = process.env.API_URL || 'https://pabandi.onrender.com';
 const CLIENT_URL = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://pabandi.com';
-const JWT_SECRET = process.env.JWT_SECRET || 'insecure-dev-secret';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    logger_1.logger.error('JWT_SECRET is not configured');
+}
 const CALLBACK_URL = `${API_URL}/api/v1/auth/social/github/callback`;
 // Step 1: Redirect user to GitHub for authorization
 router.get('/github', (req, res) => {
@@ -121,33 +125,25 @@ router.get('/github/callback', async (req, res) => {
             return res.redirect(`${CLIENT_URL}/login?error=github&message=${encodeURIComponent('GitHub returned no email address. Add and verify an email at github.com/settings/emails, then try again.')}`);
         }
         logger_1.logger.info('Primary email found', { email: primaryEmail });
-        // Find or create user
+        // Find or create user by email — link GitHub ID so all sign-in methods share one account
         logger_1.logger.info('Looking up user in DB', { email: primaryEmail });
-        let user = await database_1.prisma.user.findUnique({ where: { email: primaryEmail } });
-        logger_1.logger.info('User lookup result', { found: !!user, userId: user?.id });
-        if (!user) {
-            logger_1.logger.info('Creating new user', { email: primaryEmail });
-            const displayName = profile.name || profile.login;
-            const nameParts = displayName.split(' ');
-            user = await database_1.prisma.user.create({
-                data: {
-                    email: primaryEmail,
-                    firstName: nameParts[0] || profile.login,
-                    lastName: nameParts.slice(1).join(' ') || '',
-                    githubId: profile.id.toString(),
-                    isEmailVerified: emailVerified,
-                    passwordHash: '', // OAuth users don't need password
-                    role: 'CUSTOMER',
-                    reliabilityScore: 750,
-                    trustScore: 50.0,
-                    verificationTier: 'BASIC',
-                    gracePeriodUntil: new Date(Date.now() + 48 * 60 * 60 * 1000),
-                },
+        const user = await (0, identity_service_1.findOrCreateUser)({
+            provider: 'github',
+            providerId: profile.id.toString(),
+            email: primaryEmail,
+            metadata: { login: profile.login, name: profile.name, avatarUrl: profile.avatar_url },
+        });
+        logger_1.logger.info('User lookup result', { found: !!user, userId: user.id });
+        // Ensure GitHub ID is linked
+        if (!user.githubId) {
+            await database_1.prisma.user.update({
+                where: { id: user.id },
+                data: { githubId: profile.id.toString() },
             });
-            logger_1.logger.info('User created', { userId: user.id });
+            logger_1.logger.info('Linked GitHub ID to existing user', { userId: user.id, githubId: profile.id.toString() });
         }
-        // Generate JWT (include names so the callback can seed the session)
-        const token = jsonwebtoken_1.default.sign({ id: user.id, email: user.email, role: user.role, firstName: user.firstName || '', lastName: user.lastName || '' }, JWT_SECRET, { expiresIn: '7d' });
+        // Generate JWT
+        const token = jsonwebtoken_1.default.sign({ id: user.id, email: user.email, role: user.role, firstName: user.firstName || '', lastName: user.lastName || '', activeBusinessId: (0, identity_service_1.getActiveBusinessId)(user), mode: user.preferredMode || 'personal' }, JWT_SECRET, { expiresIn: '7d' });
         // Redirect to frontend with token
         const roleParam = state ? JSON.parse(Buffer.from(state, 'base64').toString()).role : 'customer';
         res.redirect(`${CLIENT_URL}/auth/callback?token=${token}&role=${roleParam}`);

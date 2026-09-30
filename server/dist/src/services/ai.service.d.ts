@@ -29,20 +29,30 @@ export declare const findBusinessByPublicPhone: (phoneNumber: string) => Promise
         houseRules: string | null;
         cancellationPolicy: string | null;
         faqRules: import("@prisma/client/runtime/library").JsonValue | null;
+        vertical: string | null;
+        enabledModules: string[];
+        enabledFeatures: import("@prisma/client/runtime/library").JsonValue;
+        customFields: import("@prisma/client/runtime/library").JsonValue;
+        pipelineStages: import("@prisma/client/runtime/library").JsonValue;
+        dashboardLayout: import("@prisma/client/runtime/library").JsonValue;
+        dashboardTheme: import("@prisma/client/runtime/library").JsonValue;
+        trustSettings: import("@prisma/client/runtime/library").JsonValue;
+        hideAdvancedByDefault: boolean;
     } | null;
 } & {
     email: string | null;
     phone: string | null;
-    state: string;
     id: string;
+    createdAt: Date;
+    name: string;
     reliabilityScore: number | null;
     trustScore: number;
-    createdAt: Date;
     updatedAt: Date;
     bountyPaid: boolean;
+    valuesPreferences: import("@prisma/client/runtime/library").JsonValue;
     referredById: string | null;
     deviceFingerprint: string | null;
-    name: string;
+    state: string;
     isActive: boolean;
     logoUrl: string | null;
     depositAmount: number | null;
@@ -84,6 +94,14 @@ export declare const findBusinessByPublicPhone: (phoneNumber: string) => Promise
     checkInTime: string | null;
     checkOutTime: string | null;
     channexPropertyId: string | null;
+    serviceAddress: string | null;
+    serviceLat: number | null;
+    serviceLng: number | null;
+    serviceRadiusMiles: number | null;
+    travelFeeEnabled: boolean;
+    travelFeePerMile: number | null;
+    maxTravelMinutes: number | null;
+    maxConcurrentBookings: number;
 }) | null>;
 export declare const processWhatsAppMessage: (customerPhone: string, businessPhone: string, message: string, user: any | null) => Promise<void>;
 //# sourceMappingURL=ai.service.d.ts.map

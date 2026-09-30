@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 /**
  * x402 Payment Middleware
- * Returns HTTP 402 with price info if no payment proof provided
+ * Verifies the X-PAYMENT proof with the facilitator, returning HTTP 402 with
+ * price info when it is absent or invalid.
  */
 export declare function x402Middleware(priceUsdc: number, description?: string): (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
 /**

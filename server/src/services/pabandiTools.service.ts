@@ -24,6 +24,9 @@ export type ToolAccess = 'public' | 'owner' | 'verified' | 'exclusive';
 
 export interface PabandiTool {
   name: string;
+  /** Stable public MCP tool name. Never derive this from `short` — those are
+   *  marketing labels and renaming one would silently rename a published tool. */
+  mcpName?: string;
   short: string;            // one-line, LLM-friendly capability label
   description: string;      // plain-language + what it's for
   access: ToolAccess;       // exclusivity gating
@@ -39,6 +42,7 @@ export const pabandiToolsRegistry: PabandiTool[] = [
   // ── Discovery / Trust (the anchor: portable, offline-verifiable) ─────────────
   {
     name: 'pabandi:discover',
+    mcpName: 'pabandi_platform_discovery',
     short: 'Pabandi platform discovery',
     description: 'Return the Pabandi Platform discovery doc: every tool on the platform, the OpenAPI/spec URL, the PTP verification endpoint, the public key, and the SDK access info. This is the entry point any third-party app, LLM, or agent uses to learn what Pabandi can do and how to call it.',
     access: 'public',
@@ -49,6 +53,7 @@ export const pabandiToolsRegistry: PabandiTool[] = [
   },
   {
     name: 'pabandi:verify_passport',
+    mcpName: 'pabandi_verify_trust_attestation',
     short: 'Verify a portable trust attestation',
     description: 'Verify a Pabandi PTP attestation (business, individual, agent, or trust rail). Re-executes the HMAC-SHA512 signature over a fixed subset of fields and returns valid + the verified claims. Offline-verifiable: any party can check a signed attestation without calling Pabandi. This is the trust primitive every third-party action gates on.',
     access: 'public',
@@ -62,6 +67,7 @@ export const pabandiToolsRegistry: PabandiTool[] = [
   // ── Search ──────────────────────────────────────────────────────────────────
   {
     name: 'search:list',
+    mcpName: 'pabandi_search_services',
     short: 'Search the Pabandi business directory',
     description: 'Search verified businesses and services by name, category, city, or location. Every listing is tied to a Pabandi Passport trust score. Uses Postgres contains + OpenStreetMap Nominatim (no paid geo API). Returns real, deduped results — never empty.',
     access: 'public',
@@ -72,6 +78,7 @@ export const pabandiToolsRegistry: PabandiTool[] = [
   },
   {
     name: 'search:profile',
+    mcpName: 'pabandi_get_business',
     short: 'Look up a single business by id',
     description: 'Resolve a business profile by id (public). Returns the sanitized public view (name, category, address, rating, trustScore, phone, email, coverImageUrl). Owner PII is gated — use pabandi:verify_owner for full PII.',
     access: 'public',
@@ -84,6 +91,7 @@ export const pabandiToolsRegistry: PabandiTool[] = [
   // ── Hospitality ─────────────────────────────────────────────────────────────
   {
     name: 'hospitality:list-properties',
+    mcpName: 'pabandi_list_properties',
     short: 'Browse verified stay listings',
     description: 'List open short-term rentals / stays (Airbnb-style) by city or category. Each property is tied to a business + its open-finance settlement rail if connected. This is the hospitality inventory surface.',
     access: 'public',
@@ -94,6 +102,7 @@ export const pabandiToolsRegistry: PabandiTool[] = [
   },
   {
     name: 'hospitality:book',
+    mcpName: 'pabandi_book_stay',
     short: 'Book a stay with guest deposit escrow',
     description: 'Create a confirmed stay reservation for a property: links the existing Reservation model + a StayBooking, then holds the guest deposit in escrow (EscrowEvent + TreasuryPosition with kind:hospitality, Solana commitment, PTP attestation). The guest deposit is the trust anchor — released to the business on check-in, refunded on cancellation. This is the hospitality money rail.',
     access: 'verified',
@@ -106,6 +115,7 @@ export const pabandiToolsRegistry: PabandiTool[] = [
   },
   {
     name: 'hospitality:connect-finance',
+    mcpName: 'pabandi_connect_finance',
     short: 'Link an open-finance settlement rail',
     description: 'Register a verifiable, masked settlement connection for a business: RAAST (Pakistan), Stripe Treasury, Open Banking, Solana wallet, or PayPal. The account reference is masked (never raw), and a PTP attestation is produced so the business can prove it has a real payout path without exposing the account. This is the open-finance connectivity primitive — the trust badge on a listing.',
     access: 'owner',
@@ -117,6 +127,7 @@ export const pabandiToolsRegistry: PabandiTool[] = [
   },
   {
     name: 'hospitality:list-finance',
+    mcpName: 'pabandi_list_finance',
     short: 'List a business\'s verified settlement rails',
     description: 'Return a business\'s connected open-finance connections (verified + pending). Used by third parties to confirm a business has a real payout path before booking or partnering.',
     access: 'owner',
@@ -129,22 +140,24 @@ export const pabandiToolsRegistry: PabandiTool[] = [
   // ── Financing / Escrow ──────────────────────────────────────────────────────
   {
     name: 'escrow:init',
+    mcpName: 'pabandi_start_escrow',
     short: 'Initialize a booking deposit escrow',
     description: 'Initialize a milestone-based or native SOL/BSC escrow for a booking: business deposits, guest/host holds collateral, release on completion. This is the real-chain escrow rail (Solana + BSC Hardhat contracts). GATED to exclusive platform access — real chain writes require verified ownership + settlement rail.',
     access: 'exclusive',
     category: 'escrow',
-    endpoints: [{ method: 'POST', path: '/escrow/sign-init-tx' }],
+    endpoints: [{ method: 'POST', path: '/api/v1/escrow' }],
     inputs: { reservationId: 'reservation id', businessAddress: 'business wallet address', payoutAddress: 'freelancer/guest payout address', amount: 'value in smallest unit', chain: 'SOL | BSC' },
     output: 'escrow session id + signing tx / instruction + terms',
     exclusiveNote: 'Exclusive: real-chain escrow writes are gated behind a verified PTP trust band (A/B) or an exclusive platform grant, so only trusted counterparties open real money on chain. Verified-only stays use the simulated escrow path. This is the premium moat — the real rail, gated.',
   },
   {
     name: 'finance:quote',
+    mcpName: 'pabandi_finance_quote',
     short: 'Quote a payout / offramp',
     description: 'Quote an offramp/payout from the platform rails (RAAST, Stripe, Solana). Returns estimated fees, execution window, and the rail to use. Feeds the hospitality payout flow.',
     access: 'owner',
     category: 'financing',
-    endpoints: [{ method: 'GET', path: '/payouts/quote' }],
+    endpoints: [{ method: 'GET', path: '/api/v1/payouts/quote' }],
     inputs: { amountUsdc: 'payout amount in USDc' },
     output: 'quote {rail, fee, net, window}',
   },
@@ -152,6 +165,7 @@ export const pabandiToolsRegistry: PabandiTool[] = [
   // ── Predictive ──────────────────────────────────────────────────────────────
   {
     name: 'predictive:booking',
+    mcpName: 'pabandi_predict_booking',
     short: 'Forecast booking no-show / completion',
     description: 'Forward-predict the no-show and completion probability for a PROSPECTIVE booking (before it is created). Blends real customer + business history (Beta-binomial shrinkage), lead-time, and day-of-week. Returns predictedNoShow, predictedCompletion, confidence, and the top factors. This is the predictive intelligence the trust rail uses.',
     access: 'owner',
@@ -162,6 +176,7 @@ export const pabandiToolsRegistry: PabandiTool[] = [
   },
   {
     name: 'predictive:demand',
+    mcpName: 'pabandi_predict_demand',
     short: 'Hourly demand forecast for a business',
     description: 'Return 24 hourly demand buckets for a business (from completed reservation history). Used to surface busy windows and optimize pricing/staffing. Owner-gated.',
     access: 'owner',
@@ -172,6 +187,7 @@ export const pabandiToolsRegistry: PabandiTool[] = [
   },
   {
     name: 'predictive:slots',
+    mcpName: 'pabandi_recommend_slots',
     short: 'Recommend optimal booking slots',
     description: 'Recommend the best upcoming slots for a guest at a business: each candidate scored by predictedCompletion, lightly load-balanced away from peak hours. Returns top 3 slots with predicted completion + demand. Owner-gated.',
     access: 'owner',
@@ -184,6 +200,7 @@ export const pabandiToolsRegistry: PabandiTool[] = [
   // ── ZK ──────────────────────────────────────────────────────────────────────
   {
     name: 'zk:realestate',
+    mcpName: 'pabandi_zk_realestate_proof',
     short: 'Issue a ZK proof of escrow split (real-estate / hospitality)',
     description: 'Generate a zero-knowledge proof that an escrow split (deposit = price - commission, fee = deposit*rate, binding commitment to the valuation) is valid, WITHOUT revealing the private price/valuation/secret. Packs into a PTP attestation so the proof is verifiable offline by any third party. Real Noir circuit (compiled at startup); constraint-execution proof when no SNARK prover is available; upgrades to a succinct signature when the Barretenberg pipeline lands.',
     access: 'owner',
@@ -198,11 +215,12 @@ export const pabandiToolsRegistry: PabandiTool[] = [
   // ── SDK / packaging ─────────────────────────────────────────────────────────
   {
     name: 'pabandi:sdk',
+    mcpName: 'pabandi_platform_sdk_access',
     short: 'Pabandi platform SDK access',
     description: 'Return SDK access info (base URL, auth model, how to call each tool group, the OpenAPI/spec URL, the PTP verify endpoint, the MCP endpoint). This is the "package" landing a third-party app or agent uses to integrate Pabandi.',
     access: 'public',
     category: 'sdk',
-    endpoints: [{ method: 'GET', path: '/api/v1/pabandi' }, { method: 'GET', path: '/api/docs.json' }],
+    endpoints: [{ method: 'GET', path: '/api/v1/pabandi' }, { method: 'GET', path: '/api/v1/pabandi/spec' }],
     inputs: {},
     output: 'PabandiSdkInfo {baseUrl, auth, mcpEndpoint, specUrl, ptp, toolsUrl, sdk, status}',
   },

@@ -7,17 +7,27 @@ export declare class JobLifecycleService {
         createdAt: Date;
         updatedAt: Date;
         businessId: string;
-        clientId: string;
         status: string;
+        clientId: string;
+        reminderSentAt: Date | null;
         notes: string | null;
         address: string | null;
+        completedAt: Date | null;
+        serviceType: string;
+        bookingId: string | null;
         price: number;
         duration: number | null;
-        serviceType: string;
         scheduledDate: Date;
+        escrowStatus: string;
         scheduledTime: string | null;
-        completedAt: Date | null;
+        durationMinutes: number | null;
+        checkedInAt: Date | null;
+        checkedOutAt: Date | null;
         employeeId: string | null;
+        checkinLat: number | null;
+        checkinLng: number | null;
+        checkinDistanceM: number | null;
+        locationVerified: boolean;
     }>;
     /**
      * Check out from a job
@@ -28,20 +38,30 @@ export declare class JobLifecycleService {
             createdAt: Date;
             updatedAt: Date;
             businessId: string;
-            clientId: string;
             status: string;
+            clientId: string;
+            reminderSentAt: Date | null;
             notes: string | null;
             address: string | null;
+            completedAt: Date | null;
+            serviceType: string;
+            bookingId: string | null;
             price: number;
             duration: number | null;
-            serviceType: string;
             scheduledDate: Date;
+            escrowStatus: string;
             scheduledTime: string | null;
-            completedAt: Date | null;
+            durationMinutes: number | null;
+            checkedInAt: Date | null;
+            checkedOutAt: Date | null;
             employeeId: string | null;
+            checkinLat: number | null;
+            checkinLng: number | null;
+            checkinDistanceM: number | null;
+            locationVerified: boolean;
         };
         isLate: boolean;
-        actualDurationMinutes: number;
+        durationMinutes: number;
     }>;
     /**
      * Handle no-show detection (called by cron job)

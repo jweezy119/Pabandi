@@ -16,6 +16,7 @@ const passport_tiktok_auth_1 = require("passport-tiktok-auth");
 const database_1 = require("./database");
 const client_1 = require("@prisma/client");
 const logger_1 = require("./logger");
+const identity_service_1 = require("../services/identity.service");
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || '';
@@ -48,30 +49,22 @@ function configurePassport() {
                     return done(new Error('No email from Google profile'));
                 const profilePictureUrl = profile.photos?.[0]?.value;
                 const role = req.query?.state === 'business' ? client_1.UserRole.BUSINESS_OWNER : client_1.UserRole.CUSTOMER;
-                let user = await database_1.prisma.user.findUnique({ where: { email } });
-                if (!user) {
-                    user = await database_1.prisma.user.create({
-                        data: {
-                            email,
-                            passwordHash: '',
-                            firstName: profile.name?.givenName || profile.displayName || 'User',
-                            lastName: profile.name?.familyName || '',
-                            role,
-                            googleId: profile.id,
-                            profilePictureUrl,
-                            isEmailVerified: true,
-                        },
+                const user = await (0, identity_service_1.findOrCreateUser)({
+                    provider: 'google',
+                    providerId: profile.id,
+                    email,
+                    metadata: { name: profile.displayName, avatar: profilePictureUrl, role: role === client_1.UserRole.BUSINESS_OWNER ? 'business' : 'personal' },
+                });
+                if (user.role !== role) {
+                    await database_1.prisma.user.update({
+                        where: { id: user.id },
+                        data: { role },
                     });
-                    logger_1.logger.info(`New Google OAuth user created: ${email} (${role})`);
                 }
-                else {
-                    user = await database_1.prisma.user.update({
-                        where: { email },
-                        data: {
-                            googleId: profile.id,
-                            isEmailVerified: true,
-                            profilePictureUrl: user.profilePictureUrl || profilePictureUrl
-                        },
+                if (!user.googleId) {
+                    await database_1.prisma.user.update({
+                        where: { id: user.id },
+                        data: { googleId: profile.id, isEmailVerified: true, profilePictureUrl: user.profilePictureUrl || profilePictureUrl },
                     });
                 }
                 return done(null, user);
@@ -94,24 +87,15 @@ function configurePassport() {
                     return done(new Error('No email from GitHub profile'));
                 const profilePictureUrl = profile.photos?.[0]?.value;
                 const role = 'CUSTOMER';
-                let user = await database_1.prisma.user.findUnique({ where: { email } });
-                if (!user) {
-                    user = await database_1.prisma.user.create({
-                        data: {
-                            email,
-                            passwordHash: '',
-                            firstName: profile.displayName?.split(' ')[0] || profile.username || 'GitHub',
-                            lastName: profile.displayName?.split(' ').slice(1).join(' ') || '',
-                            role,
-                            githubId: profile.id,
-                            profilePictureUrl,
-                            isEmailVerified: true,
-                        },
-                    });
-                }
-                else {
-                    user = await database_1.prisma.user.update({
-                        where: { email },
+                const user = await (0, identity_service_1.findOrCreateUser)({
+                    provider: 'github',
+                    providerId: profile.id,
+                    email,
+                    metadata: { login: profile.username, name: profile.displayName, avatar: profilePictureUrl },
+                });
+                if (!user.githubId) {
+                    await database_1.prisma.user.update({
+                        where: { id: user.id },
                         data: { githubId: profile.id, isEmailVerified: true, profilePictureUrl: user.profilePictureUrl || profilePictureUrl },
                     });
                 }

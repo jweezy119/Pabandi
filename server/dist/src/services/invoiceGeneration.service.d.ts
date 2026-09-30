@@ -8,15 +8,19 @@ export declare class InvoiceGenerationService {
         createdAt: Date;
         updatedAt: Date;
         businessId: string;
-        clientId: string;
         status: string;
+        clientId: string;
         notes: string | null;
         sentAt: Date | null;
+        transactionHash: string | null;
+        paidAt: Date | null;
         dateIssued: Date;
         dateDue: Date;
         lineItems: import("@prisma/client/runtime/library").JsonValue;
         subtotal: number;
-        paidAt: Date | null;
+        paymentLink: string | null;
+        reminderCount: number;
+        lastReminderAt: Date | null;
     }>;
     /**
      * Generate a new invoice number

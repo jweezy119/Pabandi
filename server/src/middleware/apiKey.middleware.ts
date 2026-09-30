@@ -13,6 +13,7 @@ export interface ApiKeyRequest extends Request {
     callsUsed: number;
     callsLimit: number;
     businessId: string | null;
+    isAgent?: boolean;
   };
   requestStartTime?: number;
 }
@@ -68,6 +69,31 @@ export const apiKeyAuth = async (
     });
 
     if (!client) {
+      // Agent keys issued by POST /api/v1/agents/register are stored on
+      // AgentMarketplace, not ApiClient. Accept them here so the one-curl
+      // signup checklist actually authenticates.
+      const agents = (await prisma.$queryRaw`
+        SELECT id, name, "ownerEmail", status
+        FROM "AgentMarketplace"
+        WHERE "apiKeyHash" = ${keyHash} AND status = 'active'
+        LIMIT 1
+      `) as Array<{ id: string; name: string; ownerEmail: string; status: string }>;
+
+      if (agents.length > 0) {
+        const agent = agents[0];
+        req.apiClient = {
+          id: agent.id,
+          name: agent.name,
+          email: agent.ownerEmail,
+          tier: 'STARTER',
+          callsUsed: 0,
+          callsLimit: TIER_LIMITS.STARTER,
+          businessId: null,
+          isAgent: true,
+        };
+        return next();
+      }
+
       return next(new CustomError('Invalid API key', 401));
     }
 
@@ -114,6 +140,8 @@ export const logApiUsage = (
 ) => {
   res.on('finish', () => {
     if (!req.apiClient) return;
+    // Agent signup keys are not ApiClient rows — skip ApiUsageLog bookkeeping.
+    if (req.apiClient.isAgent) return;
 
     const latencyMs = Date.now() - (req.requestStartTime ?? Date.now());
     const clientId = req.apiClient.id;
