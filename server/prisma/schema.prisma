@@ -258,6 +258,7 @@ model Business {
   travelFeeEnabled       Boolean   @default(false)
   travelFeePerMile       Float?    @default(0.50)
   maxTravelMinutes       Int?      @default(45)
+  maxConcurrentBookings  Int       @default(1)
   owner                  User?                    @relation(fields: [ownerId], references: [id])
   businessHours          BusinessHours[]
   settings               BusinessSettings?
@@ -441,6 +442,19 @@ model BlackoutDate {
   business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId, date])
+}
+
+model SlotLock {
+  lockKey    String   @id
+  businessId String
+  slotStart  DateTime
+  slotEnd    DateTime
+  sessionId  String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([businessId, slotStart])
+  @@index([expiresAt])
 }
 
 model CacheEntry {

@@ -60,7 +60,7 @@ router.get('/:businessSlug', async (req: Request, res: Response) => {
 router.get('/:businessId/slots', async (req: Request, res: Response) => {
   try {
     const { businessId } = req.params;
-    const { startDate, endDate, serviceType, duration } = req.query;
+    const { startDate, endDate, serviceId, duration, guests } = req.query;
 
     if (!startDate || !endDate) {
       return res.status(400).json({ success: false, error: 'startDate and endDate required' });
@@ -69,22 +69,39 @@ router.get('/:businessId/slots', async (req: Request, res: Response) => {
     const start = new Date(startDate as string);
     const end = new Date(endDate as string);
 
-    // Get business availability
+    const business = await prisma.business.findUnique({
+      where: { id: businessId },
+      select: { id: true, name: true, maxConcurrentBookings: true },
+    });
+
+    if (!business) {
+      return res.status(404).json({ success: false, error: 'Business not found' });
+    }
+
+    let serviceDuration = duration ? parseInt(duration as string) : 60;
+    let serviceInfo: { name: string; price: number; duration: number } | null = null;
+
+    if (serviceId) {
+      const service = await prisma.businessService.findUnique({
+        where: { id: serviceId as string },
+        select: { name: true, price: true, duration: true, maxBookingsPerDay: true },
+      });
+      if (service) {
+        serviceDuration = service.duration;
+        serviceInfo = service;
+      }
+    }
+
     const availability = await prisma.businessAvailability.findMany({
       where: { businessId, isActive: true },
     });
 
-    // Get blackout dates
     const blackoutDates = await prisma.blackoutDate.findMany({
-      where: {
-        businessId,
-        date: { gte: start, lte: end },
-      },
+      where: { businessId, date: { gte: start, lte: end } },
     });
 
     const blackoutSet = new Set(blackoutDates.map(d => d.date.toISOString().split('T')[0]));
 
-    // Get existing bookings in range
     const existingBookings = await prisma.booking.findMany({
       where: {
         businessId,
@@ -93,7 +110,6 @@ router.get('/:businessId/slots', async (req: Request, res: Response) => {
       },
     });
 
-    // Get existing jobs (from ContactOS) in range
     const existingJobs = await prisma.crmJob.findMany({
       where: {
         businessId,
@@ -102,24 +118,22 @@ router.get('/:businessId/slots', async (req: Request, res: Response) => {
       },
     });
 
-    // Build occupied slots map
-    const occupiedSlots = new Map<string, Set<string>>();
+    const slotCapacity = new Map<string, number>();
+    const maxConcurrent = business.maxConcurrentBookings || 1;
+
     [...existingBookings, ...existingJobs].forEach(item => {
       const slotKey = item.slotStart.toISOString();
-      if (!occupiedSlots.has(slotKey)) {
-        occupiedSlots.set(slotKey, new Set());
-      }
+      slotCapacity.set(slotKey, (slotCapacity.get(slotKey) || 0) + 1);
     });
 
-    // Generate available slots
     const slots: Array<{
       date: string;
       startTime: string;
       endTime: string;
       available: boolean;
+      remainingCapacity: number;
+      service?: { name: string; price: number; duration: number };
     }> = [];
-
-    const serviceDuration = duration ? parseInt(duration as string) : 60;
 
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split('T')[0];
@@ -146,13 +160,16 @@ router.get('/:businessId/slots', async (req: Request, res: Response) => {
         if (slotEnd > endTime) break;
 
         const slotKey = current.toISOString();
-        const isOccupied = occupiedSlots.has(slotKey);
+        const currentCapacity = slotCapacity.get(slotKey) || 0;
+        const remainingCapacity = Math.max(0, maxConcurrent - currentCapacity);
 
         slots.push({
           date: dateStr,
           startTime: current.toTimeString().slice(0, 5),
           endTime: slotEnd.toTimeString().slice(0, 5),
-          available: !isOccupied,
+          available: remainingCapacity > 0,
+          remainingCapacity,
+          service: serviceInfo || undefined,
         });
 
         current = new Date(current.getTime() + (slotMinutes + bufferMinutes) * 60000);
@@ -162,6 +179,64 @@ router.get('/:businessId/slots', async (req: Request, res: Response) => {
     res.json({ success: true, data: slots });
   } catch (e: any) {
     console.error('Get slots error:', e);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ── POST /api/v1/booking-availability/lock-slot ──
+// Temporarily hold a slot during checkout
+router.post('/lock-slot', async (req: Request, res: Response) => {
+  try {
+    const { businessId, slotStart, slotEnd, sessionId } = req.body;
+
+    if (!businessId || !slotStart || !slotEnd || !sessionId) {
+      return res.status(400).json({ success: false, error: 'businessId, slotStart, slotEnd, sessionId required' });
+    }
+
+    const lockKey = `${businessId}:${new Date(slotStart).toISOString()}`;
+
+    const existing = await prisma.booking.findFirst({
+      where: {
+        businessId,
+        slotStart: new Date(slotStart),
+        status: { in: ['pending', 'confirmed'] },
+      },
+    });
+
+    if (existing) {
+      return res.status(409).json({ success: false, error: 'Slot no longer available' });
+    }
+
+    const lock = await prisma.slotLock.upsert({
+      where: { lockKey },
+      create: {
+        lockKey,
+        businessId,
+        slotStart: new Date(slotStart),
+        slotEnd: new Date(slotEnd),
+        sessionId,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      },
+      update: {
+        sessionId,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      },
+    });
+
+    res.json({ success: true, data: lock });
+  } catch (e: any) {
+    console.error('Lock slot error:', e);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ── DELETE /api/v1/booking-availability/lock-slot/:lockKey ──
+// Release a slot lock
+router.delete('/lock-slot/:lockKey', async (req: Request, res: Response) => {
+  try {
+    await prisma.slotLock.delete({ where: { lockKey: req.params.lockKey } });
+    res.json({ success: true });
+  } catch (e: any) {
     res.status(500).json({ success: false, error: e.message });
   }
 });
