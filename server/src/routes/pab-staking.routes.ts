@@ -127,4 +127,19 @@ router.get('/referrals', async (req: any, res: Response) => {
   }
 });
 
+router.post('/referrals/:referralId/claim', apiLimiter, async (req: any, res: Response) => {
+  try {
+    const { referralId } = req.params;
+    const result = await pabReferralService.claimVested(referralId);
+
+    return res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error: any) {
+    logger.error(`[PabReferral] claim error: ${error.message}`);
+    return res.status(400).json({ success: false, error: error.message });
+  }
+});
+
 export default router;

@@ -6180,13 +6180,15 @@ model PabReferral {
   referrerId    String
   refereeId     String
   refereeEmail  String?
-  status        String    @default("PENDING") // PENDING | REGISTERED | EARNED | PAID
+  status        String    @default("PENDING") // PENDING | REGISTERED | VESTING | EARNED | PAID
   referrerBonus Float     @default(200) // 200 PAB
   refereeBonus  Float     @default(500) // 500 PAB
   feeSharePct   Float     @default(5) // 5% of API fees for 12 months
   feeShareMonths Int      @default(12)
   vestedAt      DateTime?
   paidAt        DateTime?
+  vestingStart  DateTime?  @default(now())
+  vestingDurationDays Int @default(90)
   metadata      Json?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
