@@ -4,6 +4,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useBusinessSettings } from '../../hooks/useBusinessSettings';
 import { Card } from '../../components/primitives';
+import ModularDashboard from '../crm/components/ModularDashboard';
+import { useAuthStore } from '../../store/authStore';
 
 
 
@@ -47,6 +49,8 @@ export default function ContactOSPage() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { settings } = useBusinessSettings();
+  const { user } = useAuthStore();
+  const businessId = (user as any)?.business?.id || (user as any)?.businessId || localStorage.getItem('businessId') || 'default';
 
   // Redirect new users to the setup wizard
   useEffect(() => {
@@ -119,6 +123,11 @@ export default function ContactOSPage() {
             <Link to="/contact/clients" className="block">
               <StatCard icon="star" value={leads.filter(l => l.stage === 'vip').length.toString()} label="VIP" color="dusty-rose" delay={400} />
             </Link>
+          </div>
+
+          {/* ── Modular Dashboard ────────────────────────────────── */}
+          <div className="clay-rise clay-delay-3 mb-10">
+            <ModularDashboard businessId={businessId} data={{ leads }} />
           </div>
 
           {/* ── Clients list ──────────────────────────────────────── */}
