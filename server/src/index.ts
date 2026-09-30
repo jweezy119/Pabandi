@@ -428,6 +428,17 @@ compoundingService.startPeriodicCompounding();
 startInvoiceTrustCron();
 logger.info('✅ Compounding service auto-started (hourly fee reinvestment)');
 
+// Monthly referral payout cron (1st of every month at midnight)
+import { referralFeeShareService } from './services/referral-fee-share.service';
+cron.schedule('0 0 1 * *', async () => {
+  try {
+    await referralFeeShareService.processMonthlyPayouts();
+  } catch (error) {
+    console.error('[ReferralCron] Error processing monthly payouts:', error);
+  }
+});
+logger.info('✅ Referral payout cron auto-started (monthly on the 1st)');
+
 // Auto-start DEX auto-trader (continuous trading for LP fees)
 // TEMPORARILY DISABLED — focusing on core product first
 // import { startAutoTrader } from './services/autoTrader.service';

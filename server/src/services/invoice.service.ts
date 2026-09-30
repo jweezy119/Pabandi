@@ -3,6 +3,8 @@ import { CustomError } from '../middleware/errorHandler';
 import { trustCore } from '../trust/trust-core';
 import { emailService } from './email.service';
 import { notifyInvoicePaid, notifyInvoiceOverdue } from './notification.service';
+import { referralFeeShareService } from './referral-fee-share.service';
+import { logger } from '../utils/logger';
 
 type InvoiceLineItem = {
   service: string;
@@ -193,6 +195,15 @@ export async function markInvoicePaid(businessId: string, invoiceId: string, tra
       amount: updated.subtotal
     });
   }
+
+  // Credit referral fee-share (5% of invoice amount to referrer)
+  referralFeeShareService.creditReferrer({
+    businessId,
+    invoiceId: updated.id,
+    amount: updated.subtotal,
+  }).catch(err => {
+    logger.error(`[InvoiceService] Referral fee-share failed: ${err.message}`);
+  });
 
   const business = await prisma.business.findUnique({ where: { id: businessId } });
   if (business) {

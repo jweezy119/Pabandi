@@ -6196,6 +6196,29 @@ model PabReferral {
   @@index([referrerId])
   @@index([refereeId])
   @@index([status])
+  earnings ReferralEarning[]
+}
+
+model ReferralEarning {
+  id            String    @id @default(cuid())
+  referralId    String
+  referrerId    String
+  invoiceId     String?
+  amountPab     Float
+  amountUsd     Float?
+  feeSharePct   Float     @default(5)
+  status        String    @default("pending") // pending | paid | failed
+  paidAt        DateTime?
+  metadata      Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  referral      PabReferral @relation(fields: [referralId], references: [id])
+
+  @@index([referralId])
+  @@index([referrerId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model PabBuyback {
