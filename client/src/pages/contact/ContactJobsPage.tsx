@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
-import { crmJobsService } from '../../services/crmJobs.service';
 import { Button } from '../../components/primitives';
 
 
@@ -87,9 +86,7 @@ export default function ContactJobsPage() {
   // Calendar state
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [month, setMonth] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
-  const [today, setToday] = useState(new Date().getDate());
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [today] = useState(new Date().getDate());
 
   // Calendar calculations
   const startDays = useMemo(() => {
@@ -137,19 +134,10 @@ export default function ContactJobsPage() {
     let y = parseInt(year);
     if (m > 12) {
       m = 1;
-      y += 1;
+      y -= 1;
     }
     setYear(y.toString());
     setMonth(m.toString().padStart(2, '0'));
-  };
-
-  const resetToToday = () => {
-    const now = new Date();
-    setYear(now.getFullYear().toString());
-setMonth((now.getMonth() + 1).toString().padStart(2, '0'));
-setToday(now.getDate());
-setCurrentMonth(now.getMonth());
-setCurrentYear(now.getFullYear());
   };
 
   const monthName = new Date(parseInt(year), parseInt(month) - 1, 1).toLocaleString('default', { month: 'long' });
@@ -164,7 +152,8 @@ setCurrentYear(now.getFullYear());
     recurrence: 'one_time',
     endDate: '',
     notes: '',
-    requireDeposit: false
+    requireDeposit: false,
+    depositAmount: ''
   });
   const [clients, setClients] = useState<any[]>([]);
   const [clientSearch, setClientSearch] = useState('');
@@ -311,7 +300,8 @@ setCurrentYear(now.getFullYear());
           recurrence: 'one_time',
           endDate: '',
           notes: '',
-          requireDeposit: false
+          requireDeposit: false,
+          depositAmount: ''
         });
         await fetchJobs();
       } else {
@@ -454,6 +444,83 @@ setCurrentYear(now.getFullYear());
           </ClayCard>
         )}
 
+
+        {/* Calendar View */}
+        {filters.view === 'calendar' && (
+          <ClayCard>
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={prevMonth} className="clay-filter-chip clay-filter-chip--inactive text-xs">← Prev</button>
+              <h3 className="text-lg font-bold text-[var(--warm-ink)]">{monthName} {year}</h3>
+              <button onClick={nextMonth} className="clay-filter-chip clay-filter-chip--inactive text-xs">Next →</button>
+            </div>
+            
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                <div key={day} className="text-center text-xs font-semibold text-[var(--soft-stone)] py-2">{day}</div>
+              ))}
+            </div>
+            
+            <div className="grid grid-cols-7 gap-1">
+              {/* Empty cells for days before the first day of month */}
+              {Array.from({ length: startDays }).map((_, i) => (
+                <div key={`empty-${i}`} className="aspect-square"></div>
+              ))}
+              
+              {/* Days of the month */}
+              {Array.from({ length: daysInMonth }).map((_, i) => {
+                const day = i + 1;
+                const dateStr = `${year}-${month}-${day.toString().padStart(2, '0')}`;
+                const dayJobs = jobsByDate.get(dateStr) || [];
+                const isToday = day === today && parseInt(year) === new Date().getFullYear() && parseInt(month) - 1 === new Date().getMonth();
+                
+                return (
+                  <div
+                    key={day}
+                    className={`aspect-square border rounded-lg p-1 flex flex-col items-center justify-start pt-1 cursor-pointer transition-colors ${
+                      isToday 
+                        ? 'border-[var(--clay)] bg-[var(--clay)]/10' 
+                        : 'border-[var(--soft-stone)]/20 hover:border-[var(--clay)]/30'
+                    }`}
+                    onClick={() => {
+                      if (dayJobs.length > 0) {
+                        handleJobClick(dayJobs[0].id);
+                      }
+                    }}
+                  >
+                    <span className={`text-xs font-medium ${isToday ? 'text-[var(--clay)] font-bold' : 'text-[var(--warm-ink)]'}`}>
+                      {day}
+                    </span>
+                    {dayJobs.length > 0 && (
+                      <div className="mt-0.5 w-full px-1">
+                        <div className="text-[10px] bg-[var(--clay)] text-white rounded-full px-1 py-0.5 truncate text-center">
+                          {dayJobs.length}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              
+              {/* Empty cells for days after the last day of month */}
+              {Array.from({ length: endDays }).map((_, i) => (
+                <div key={`end-${i}`} className="aspect-square"></div>
+              ))}
+            </div>
+            
+            {/* Legend */}
+            <div className="mt-4 flex items-center gap-4 text-xs text-[var(--soft-stone)]">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded border border-[var(--clay)] bg-[var(--clay)]/10"></div>
+                <span>Today</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded bg-[var(--clay)]"></div>
+                <span>Has jobs</span>
+              </div>
+            </div>
+          </ClayCard>
+        )}
 
         {/* Create Job Modal */}
         {showCreateModal && (
@@ -676,7 +743,7 @@ setCurrentYear(now.getFullYear());
                     value={createJobForm.notes}
                     onChange={(e) => setCreateJobForm(prev => ({ ...prev, notes: e.target.value }))}
                     className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm clay-field-input"
-                    rows="3"
+                    rows={3}
                   />
                 </div>
 

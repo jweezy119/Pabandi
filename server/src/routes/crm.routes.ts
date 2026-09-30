@@ -269,6 +269,7 @@ router.post('/jobs/:id/checkin', async (req: AuthRequest, res: Response) => {
   try {
     const { id: jobId } = req.params;
     const { latitude, longitude } = req.body;
+    if (!req.user) return res.status(401).json({ success: false, error: 'Unauthorized' });
     const job = await crmService.checkInJob(jobId, req.user.id, latitude, longitude);
     res.json({ success: true, data: job });
   } catch (err: any) {
@@ -280,6 +281,7 @@ router.post('/jobs/:id/checkin', async (req: AuthRequest, res: Response) => {
 router.post('/jobs/:id/checkout', async (req: AuthRequest, res: Response) => {
   try {
     const { id: jobId } = req.params;
+    if (!req.user) return res.status(401).json({ success: false, error: 'Unauthorized' });
     const result = await crmService.checkOutJob(jobId, req.user.id);
     res.json({ success: true, data: result });
   } catch (err: any) {
@@ -330,6 +332,88 @@ router.get('/clients/:id/invoices', async (req: AuthRequest, res: Response) => {
 
 // GET /api/v1/crm/dashboard — Get dashboard statistics
 router.get('/dashboard', getDashboardStatsHandler);
+
+// GET /api/v1/crm/dashboard/:businessId/calendar — Get calendar data for dashboard
+router.get('/dashboard/:businessId/calendar', authenticate, async (req: any, res: Response) => {
+  try {
+    const { businessId } = req.params;
+    const { range = 'week' } = req.query;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let startDate: Date;
+    let endDate: Date;
+
+    if (range === 'week') {
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - today.getDay());
+      endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
+    } else if (range === 'month') {
+      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    } else {
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - 7);
+      endDate = new Date(today);
+      endDate.setDate(today.getDate() + 7);
+    }
+
+    const jobs = await prisma.crmJob.findMany({
+      where: {
+        businessId,
+        scheduledDate: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      include: {
+        client: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        scheduledDate: 'asc',
+      },
+    });
+
+    const days: any[] = [];
+    const currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      const dayJobs = jobs.filter(job => {
+        const jobDate = new Date(job.scheduledDate);
+        return jobDate.toISOString().split('T')[0] === dateStr;
+      });
+
+      days.push({
+        date: dateStr,
+        day: currentDate.toLocaleDateString('en-US', { weekday: 'short' }),
+        bookings: dayJobs.map(job => ({
+          id: job.id,
+          customerName: job.client?.name || 'Unknown',
+          time: job.scheduledTime || 'TBD',
+          status: job.status,
+          serviceType: job.serviceType,
+        })),
+      });
+
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return res.json({
+      success: true,
+      data: days,
+    });
+  } catch (error: any) {
+    console.error('[CRM] Calendar error:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // ── Trust-Aware Revenue Engine ──────────────────────────────────────────────
 

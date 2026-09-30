@@ -13,8 +13,8 @@ function FeatureGate({ feature, children }: { feature: string; children: React.R
 
 function BusinessGuard({ children }: { children: React.ReactNode }) {
   const { user } = useAuthStore();
-  if (!user?.activeBusinessId) {
-    return <Navigate to="/onboard" replace />;
+  if (user?.preferredMode !== 'business') {
+    return <Navigate to="/" replace />;
   }
   return <>{children}</>;
 }
@@ -23,6 +23,9 @@ function PersonalGuard({ children }: { children: React.ReactNode }) {
   const { user } = useAuthStore();
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+  if (user.preferredMode !== 'personal') {
+    return <Navigate to="/contact" replace />;
   }
   return <>{children}</>;
 }

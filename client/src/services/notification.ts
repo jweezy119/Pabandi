@@ -73,8 +73,6 @@ export class NotificationService {
       return false;
     }
   }
-  }
-  }
 
   /**
    * Send an SMS via server-side Twilio or OpenWA fallback.

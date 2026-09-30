@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
@@ -63,7 +63,7 @@ export function UserMenu() {
                 <div className="text-xs text-[var(--soft-stone)] truncate">{user?.email || ''}</div>
                 <div className="mt-2">
                   <span className="text-xs font-bold px-2 py-1 rounded-full bg-[var(--clay)]/10 text-[var(--clay)]">
-                    {currentMode === 'BUSINESS' ? 'Business Mode' : 'Personal Mode'}
+                    {currentMode === 'business' ? 'Business Mode' : 'Personal Mode'}
                   </span>
                 </div>
               </div>

@@ -7,6 +7,7 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
+  name?: string;
   phone?: string;
   role: string;
   profilePictureUrl?: string;
@@ -47,6 +48,7 @@ interface AuthState {
   setPabBalance: (balance: number, totalEarned?: number) => void;
   fetchWalletData: () => Promise<void>;
   updateProfile: (updatedUser: Partial<User>) => void;
+  toggleMode: (mode: 'business' | 'personal') => Promise<void>;
 }
 
 interface RegisterData {

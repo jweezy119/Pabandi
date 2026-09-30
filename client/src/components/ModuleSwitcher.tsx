@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
@@ -17,13 +17,13 @@ export function ModuleSwitcher() {
   const location = useLocation();
   const { user } = useAuthStore();
 
-  const activeMode = user?.activeMode || 'BUSINESS';
-  const modules = ALL_MODULES.filter(m => m.modes.includes(activeMode));
+  const activeMode = user?.preferredMode || 'business';
+  const modules = ALL_MODULES.filter(m => m.modes.includes(activeMode.toUpperCase()));
   const currentModule = modules.find(m => location.pathname.startsWith(m.path)) || modules[0];
 
   return (
     <div className="relative">
-      <button
+      <motion.button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-[rgba(0,0,0,0.05)] transition-colors"
         whileHover={{ scale: 1.02 }}
@@ -42,7 +42,7 @@ export function ModuleSwitcher() {
         >
           expand_more
         </motion.span>
-      </button>
+      </motion.button>
 
       <AnimatePresence>
         {isOpen && (
