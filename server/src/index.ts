@@ -367,6 +367,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/trust-profile`, './routes/trustProfile.routes'],
   [`/api/${v}/badge`, './routes/badge.routes'],
   [`/api/${v}/user`, './routes/userProfile.routes'],
+  [`/api/${v}/business-verification`, './routes/businessVerification.routes'],
 ];
 
 try {

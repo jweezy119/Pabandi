@@ -269,6 +269,8 @@ model Business {
   webhookEndpoints       WebhookEndpoint[]
   pabandiReviews         PabandiReview[]
   services               BusinessService[]
+  verification           BusinessVerification?
+  documents              BusinessDocument[]
   liveSellerIntegrations LiveSellerIntegration[]
   checkoutSessions       CheckoutSession[]
   shopifyStores          ShopifyStore[]
@@ -1581,12 +1583,52 @@ model BusinessService {
   price               Float
   duration            Int // Duration in minutes
   isActive            Boolean              @default(true)
+  category            String?
+  imageUrl            String?
+  tags                Json?
+  metadata            Json?
+  discountPrice       Float?
+  bookingLeadTime     Int?
+  maxBookingsPerDay   Int?
+  locationType        String?
+  requirements        String?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   business            Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
   reservationServices ReservationService[]
 
   @@index([businessId])
+  @@index([businessId, category])
+}
+
+model BusinessVerification {
+  id              String    @id @default(cuid())
+  businessId      String    @unique
+  business        Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  status          String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  documentType    String? // business_license | tax_id | other
+  documentUrl     String?
+  documentName    String?
+  submittedAt     DateTime  @default(now())
+  reviewedAt      DateTime?
+  reviewedBy      String?
+  rejectionReason String?
+  notes           String?
+}
+
+model BusinessDocument {
+  id           String   @id @default(cuid())
+  businessId   String
+  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  fileName     String
+  fileUrl      String
+  fileType     String
+  fileSize     Int
+  category     String // license | tax_id | insurance | other
+  uploadedAt   DateTime @default(now())
+  expiresAt    DateTime?
+  verified     Boolean  @default(false)
+  @@index([businessId, category])
 }
 
 model ReservationService {
