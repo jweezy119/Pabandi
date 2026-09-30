@@ -3,6 +3,7 @@ import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { prisma } from '../utils/database';
 import { apiLimiter, writeLimiter } from '../middleware/rateLimit.middleware';
 import { logger } from '../utils/logger';
+import axios from 'axios';
 
 const router = Router();
 
@@ -30,6 +31,20 @@ function verifyPlatformUrl(platform: string, url: string): boolean {
   }
 }
 
+async function checkUrlResolves(url: string): Promise<boolean> {
+  try {
+    const response = await axios.head(url, { timeout: 5000, maxRedirects: 3 });
+    return response.status >= 200 && response.status < 400;
+  } catch {
+    return false;
+  }
+}
+
+async function verifySocialLink(platform: string, url: string): Promise<boolean> {
+  if (!verifyPlatformUrl(platform, url)) return false;
+  return checkUrlResolves(url);
+}
+
 // GET /api/v1/user/profile — get own full profile
 router.get('/profile', authenticate, apiLimiter, async (req: AuthRequest, res: Response) => {
   try {
@@ -41,11 +56,12 @@ router.get('/profile', authenticate, apiLimiter, async (req: AuthRequest, res: R
       },
     });
     if (!user) return res.status(404).json({ success: false, error: 'User not found' });
-    const { passwordHash, ...safeUser } = user as any;
+    const { passwordHash, ...safeUser } = user;
     return res.json({ success: true, data: safeUser });
-  } catch (error: any) {
-    logger.error(`[UserProfile] get error: ${error.message}`);
-    return res.status(500).json({ success: false, error: error.message });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`[UserProfile] get error: ${message}`);
+    return res.status(500).json({ success: false, error: message });
   }
 });
 
@@ -96,11 +112,12 @@ router.patch('/profile', authenticate, writeLimiter, async (req: AuthRequest, re
       },
     });
 
-    const { passwordHash, ...safeUser } = user as any;
+    const { passwordHash, ...safeUser } = user;
     return res.json({ success: true, data: safeUser });
-  } catch (error: any) {
-    logger.error(`[UserProfile] update error: ${error.message}`);
-    return res.status(500).json({ success: false, error: error.message });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`[UserProfile] update error: ${message}`);
+    return res.status(500).json({ success: false, error: message });
   }
 });
 
@@ -119,7 +136,7 @@ router.get('/profile/:username', apiLimiter, async (req: Request, res: Response)
       return res.status(404).json({ success: false, error: 'Profile not found or private' });
     }
 
-    const { passwordHash, email, phone, nonce, ...publicUser } = user as any;
+    const { passwordHash, email, phone, nonce, ...publicUser } = user;
 
     const passport = await prisma.trustPassport.findFirst({ where: { userId: user.id } });
     const attestationCount = passport
@@ -135,9 +152,119 @@ router.get('/profile/:username', apiLimiter, async (req: Request, res: Response)
         lastName: user.lastName,
       },
     });
-  } catch (error: any) {
-    logger.error(`[UserProfile] public error: ${error.message}`);
-    return res.status(500).json({ success: false, error: error.message });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`[UserProfile] public error: ${message}`);
+    return res.status(500).json({ success: false, error: message });
+  }
+});
+
+// GET /api/v1/u/:username — public profile (no auth, no PII)
+router.get('/u/:username', apiLimiter, async (req: Request, res: Response) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { username: req.params.username },
+      include: {
+        socialLinks: { orderBy: { position: 'asc' } },
+        portfolioItems: { orderBy: { position: 'asc' } },
+      },
+    });
+
+    if (!user || !user.isPublic) {
+      return res.status(404).json({ success: false, error: 'Profile not found or private' });
+    }
+
+    const { passwordHash, email, phone, nonce, walletAddress, stripeCustomerId, ...safeUser } = user;
+
+    const passport = await prisma.trustPassport.findFirst({ where: { userId: user.id } });
+    const attestationCount = passport
+      ? await prisma.onchainAttestation.count({ where: { passportId: passport.id } })
+      : 0;
+
+    return res.json({
+      success: true,
+      data: {
+        ...safeUser,
+        attestationCount,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`[UserProfile] public u error: ${message}`);
+    return res.status(500).json({ success: false, error: message });
+  }
+});
+
+// GET /api/v1/u/:username/attestations — paginated onchain attestations
+router.get('/u/:username/attestations', apiLimiter, async (req: Request, res: Response) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { username: req.params.username } });
+    if (!user || !user.isPublic) {
+      return res.status(404).json({ success: false, error: 'Profile not found or private' });
+    }
+
+    const passport = await prisma.trustPassport.findFirst({ where: { userId: user.id } });
+    if (!passport) return res.json({ success: true, data: [], pagination: { page: 1, limit: 20, total: 0 } });
+
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const skip = (page - 1) * limit;
+
+    const [attestations, total] = await Promise.all([
+      prisma.onchainAttestation.findMany({
+        where: { passportId: passport.id },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.onchainAttestation.count({ where: { passportId: passport.id } }),
+    ]);
+
+    return res.json({
+      success: true,
+      data: attestations,
+      pagination: { page, limit, total },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`[UserProfile] attestations error: ${message}`);
+    return res.status(500).json({ success: false, error: message });
+  }
+});
+
+// GET /api/v1/u/:username/activity — trust event timeline
+router.get('/u/:username/activity', apiLimiter, async (req: Request, res: Response) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { username: req.params.username } });
+    if (!user || !user.isPublic) {
+      return res.status(404).json({ success: false, error: 'Profile not found or private' });
+    }
+
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const skip = (page - 1) * limit;
+
+    const [trustAudits, total] = await Promise.all([
+      prisma.trustAuditTrail.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.trustAuditTrail.count({ where: { userId: user.id } }),
+    ]);
+
+    return res.json({
+      success: true,
+      data: trustAudits,
+      pagination: { page, limit, total },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`[UserProfile] activity error: ${message}`);
+    return res.status(500).json({ success: false, error: message });
   }
 });
 
@@ -151,14 +278,15 @@ router.post('/social-links', authenticate, writeLimiter, async (req: AuthRequest
     const count = await prisma.socialLink.count({ where: { userId: req.user!.id } });
     if (count >= 10) return res.status(400).json({ success: false, error: 'Maximum 10 social links' });
 
-    const verified = verifyPlatformUrl(platform, url);
+    const verified = await verifySocialLink(platform, url);
     const link = await prisma.socialLink.create({
       data: { userId: req.user!.id, platform, url, displayName, verified, position: count },
     });
     return res.json({ success: true, data: link });
-  } catch (error: any) {
-    logger.error(`[UserProfile] create social link error: ${error.message}`);
-    return res.status(500).json({ success: false, error: error.message });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`[UserProfile] create social link error: ${message}`);
+    return res.status(500).json({ success: false, error: message });
   }
 });
 
@@ -170,7 +298,10 @@ router.patch('/social-links/:id', authenticate, writeLimiter, async (req: AuthRe
     });
     if (!existing) return res.status(404).json({ success: false, error: 'Link not found' });
 
-    const verified = url ? verifyPlatformUrl(platform || existing.platform, url) : existing.verified;
+    const finalPlatform = platform || existing.platform;
+    const finalUrl = url || existing.url;
+    const verified = url ? await verifySocialLink(finalPlatform, finalUrl) : existing.verified;
+
     const link = await prisma.socialLink.update({
       where: { id: req.params.id },
       data: {
@@ -181,9 +312,30 @@ router.patch('/social-links/:id', authenticate, writeLimiter, async (req: AuthRe
       },
     });
     return res.json({ success: true, data: link });
-  } catch (error: any) {
-    logger.error(`[UserProfile] update social link error: ${error.message}`);
-    return res.status(500).json({ success: false, error: error.message });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`[UserProfile] update social link error: ${message}`);
+    return res.status(500).json({ success: false, error: message });
+  }
+});
+
+router.post('/social-links/:id/verify', authenticate, writeLimiter, async (req: AuthRequest, res: Response) => {
+  try {
+    const existing = await prisma.socialLink.findFirst({
+      where: { id: req.params.id, userId: req.user!.id },
+    });
+    if (!existing) return res.status(404).json({ success: false, error: 'Link not found' });
+
+    const verified = await verifySocialLink(existing.platform, existing.url);
+    const link = await prisma.socialLink.update({
+      where: { id: req.params.id },
+      data: { verified },
+    });
+    return res.json({ success: true, data: link });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`[UserProfile] verify social link error: ${message}`);
+    return res.status(500).json({ success: false, error: message });
   }
 });
 
@@ -196,9 +348,10 @@ router.delete('/social-links/:id', authenticate, writeLimiter, async (req: AuthR
 
     await prisma.socialLink.delete({ where: { id: req.params.id } });
     return res.json({ success: true });
-  } catch (error: any) {
-    logger.error(`[UserProfile] delete social link error: ${error.message}`);
-    return res.status(500).json({ success: false, error: error.message });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`[UserProfile] delete social link error: ${message}`);
+    return res.status(500).json({ success: false, error: message });
   }
 });
 
@@ -213,9 +366,10 @@ router.patch('/social-links/reorder', authenticate, writeLimiter, async (req: Au
       )
     );
     return res.json({ success: true });
-  } catch (error: any) {
-    logger.error(`[UserProfile] reorder social links error: ${error.message}`);
-    return res.status(500).json({ success: false, error: error.message });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`[UserProfile] reorder social links error: ${message}`);
+    return res.status(500).json({ success: false, error: message });
   }
 });
 
@@ -233,9 +387,10 @@ router.post('/portfolio', authenticate, writeLimiter, async (req: AuthRequest, r
       data: { userId: req.user!.id, title, description, mediaUrl, linkUrl, position: count },
     });
     return res.json({ success: true, data: item });
-  } catch (error: any) {
-    logger.error(`[UserProfile] create portfolio error: ${error.message}`);
-    return res.status(500).json({ success: false, error: error.message });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`[UserProfile] create portfolio error: ${message}`);
+    return res.status(500).json({ success: false, error: message });
   }
 });
 
@@ -257,9 +412,10 @@ router.patch('/portfolio/:id', authenticate, writeLimiter, async (req: AuthReque
       },
     });
     return res.json({ success: true, data: item });
-  } catch (error: any) {
-    logger.error(`[UserProfile] update portfolio error: ${error.message}`);
-    return res.status(500).json({ success: false, error: error.message });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`[UserProfile] update portfolio error: ${message}`);
+    return res.status(500).json({ success: false, error: message });
   }
 });
 
@@ -272,9 +428,10 @@ router.delete('/portfolio/:id', authenticate, writeLimiter, async (req: AuthRequ
 
     await prisma.portfolioItem.delete({ where: { id: req.params.id } });
     return res.json({ success: true });
-  } catch (error: any) {
-    logger.error(`[UserProfile] delete portfolio error: ${error.message}`);
-    return res.status(500).json({ success: false, error: error.message });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`[UserProfile] delete portfolio error: ${message}`);
+    return res.status(500).json({ success: false, error: message });
   }
 });
 
@@ -289,9 +446,10 @@ router.patch('/portfolio/reorder', authenticate, writeLimiter, async (req: AuthR
       )
     );
     return res.json({ success: true });
-  } catch (error: any) {
-    logger.error(`[UserProfile] reorder portfolio error: ${error.message}`);
-    return res.status(500).json({ success: false, error: error.message });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`[UserProfile] reorder portfolio error: ${message}`);
+    return res.status(500).json({ success: false, error: message });
   }
 });
 

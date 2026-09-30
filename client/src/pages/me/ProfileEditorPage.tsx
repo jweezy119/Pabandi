@@ -342,6 +342,15 @@ export default function ProfileEditorPage() {
     }
   };
 
+  const handleVerifySocialLink = async (id: string) => {
+    try {
+      const res = await userProfileService.verifySocialLink(id);
+      const updated = res.data.data;
+      update({ socialLinks: profile.socialLinks.map(l => l.id === id ? updated : l) });
+      toast.success(updated.verified ? 'Link verified' : 'Could not verify link');
+    } catch { toast.error('Verification failed'); }
+  };
+
   const handleDeleteSocialLink = async (id: string) => {
     try {
       await userProfileService.deleteSocialLink(id);
@@ -570,6 +579,11 @@ export default function ProfileEditorPage() {
                         <p className="text-xs text-[var(--soft-stone)] truncate">{link.url}</p>
                       </div>
                       {link.verified && <Check size={14} className="text-[var(--sage)]" />}
+                      {!link.verified && (
+                        <button onClick={() => handleVerifySocialLink(link.id)} className="text-[10px] font-medium text-[var(--muted-ochre)] hover:text-[var(--clay)] transition-colors">
+                          Re-check
+                        </button>
+                      )}
                       <button onClick={() => handleReorderSocialLinks(moveItem(profile.socialLinks, i, -1))} className="p-1 hover:bg-[var(--warm-sand)]/50 rounded" disabled={i === 0}><ChevronUp size={14} className="text-[var(--soft-stone)]" /></button>
                       <button onClick={() => handleReorderSocialLinks(moveItem(profile.socialLinks, i, 1))} className="p-1 hover:bg-[var(--warm-sand)]/50 rounded" disabled={i === profile.socialLinks.length - 1}><ChevronDown size={14} className="text-[var(--soft-stone)]" /></button>
                       <button onClick={() => handleDeleteSocialLink(link.id)} className="p-1 hover:bg-red-50 rounded"><Trash2 size={14} className="text-red-400" /></button>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '../services/api';
 import { tokens } from '../design-system';
+import toast from 'react-hot-toast';
 
 // ── Icons ──────────────────────────────────────────────────────────────
 const CheckIcon = () => (
@@ -107,6 +108,12 @@ export default function BusinessJoinPage() {
         businessName: form.businessName,
       });
       setSubmitted(true);
+      toast.success('Set up your public profile →', {
+        action: {
+          label: 'Set Up',
+          onClick: () => window.location.href = '/me/profile',
+        },
+      });
     } catch (err: any) {
       const msg = err.response?.data?.message || '';
       if (msg.includes('already exists')) {
