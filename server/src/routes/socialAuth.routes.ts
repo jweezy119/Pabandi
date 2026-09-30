@@ -32,26 +32,15 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
         const email = profile.emails?.[0]?.value;
         if (!email) return done(null, false, { message: 'No email from GitHub' });
 
-        let user = await prisma.user.findUnique({ where: { email }, include: { business: true } });
-        if (!user) {
-          user = await prisma.user.create({
-            data: {
-              email,
-              firstName: profile.displayName?.split(' ')[0] || profile.username,
-              lastName: profile.displayName?.split(' ').slice(1).join(' ') || '',
-              githubId: profile.id,
-              isEmailVerified: true,
-              passwordHash: '',
-              role: 'CUSTOMER',
-              reliabilityScore: 750,
-              trustScore: 50.0,
-              verificationTier: 'BASIC',
-              gracePeriodUntil: new Date(Date.now() + 48 * 60 * 60 * 1000),
-            } as any,
-            include: { business: true },
-          });
-        } else if (!user.githubId) {
-          user = await prisma.user.update({
+        const user = await findOrCreateUser({
+          provider: 'github',
+          providerId: profile.id,
+          email,
+          metadata: { login: profile.username, name: profile.displayName, avatarUrl: profile.photos?.[0]?.value },
+        });
+
+        if (!user.githubId) {
+          await prisma.user.update({
             where: { id: user.id },
             data: { githubId: profile.id },
             include: { business: true },

@@ -10,6 +10,7 @@ import { Strategy as TikTokStrategy } from 'passport-tiktok-auth';
 import { prisma } from './database';
 import { UserRole } from '@prisma/client';
 import { logger } from './logger';
+import { findOrCreateUser } from '../services/identity.service';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
@@ -46,30 +47,23 @@ export function configurePassport() {
             const profilePictureUrl = profile.photos?.[0]?.value;
 
             const role: UserRole = req.query?.state === 'business' ? UserRole.BUSINESS_OWNER : UserRole.CUSTOMER;
-            let user: any = await prisma.user.findUnique({ where: { email } });
+            const user = await findOrCreateUser({
+              provider: 'google',
+              providerId: profile.id,
+              email,
+              metadata: { name: profile.displayName, avatar: profilePictureUrl, role: role === UserRole.BUSINESS_OWNER ? 'business' : 'personal' },
+            });
 
-            if (!user) {
-              user = await (prisma.user as any).create({
-                data: {
-                  email,
-                  passwordHash: '',
-                  firstName: profile.name?.givenName || profile.displayName || 'User',
-                  lastName: profile.name?.familyName || '',
-                  role,
-                  googleId: profile.id,
-                  profilePictureUrl,
-                  isEmailVerified: true,
-                },
+            if (user.role !== role) {
+              await prisma.user.update({
+                where: { id: user.id },
+                data: { role },
               });
-              logger.info(`New Google OAuth user created: ${email} (${role})`);
-            } else {
-              user = await (prisma.user as any).update({
-                where: { email },
-                data: { 
-                  googleId: profile.id, 
-                  isEmailVerified: true,
-                  profilePictureUrl: user.profilePictureUrl || profilePictureUrl
-                },
+            }
+            if (!user.googleId) {
+              await prisma.user.update({
+                where: { id: user.id },
+                data: { googleId: profile.id, isEmailVerified: true, profilePictureUrl: user.profilePictureUrl || profilePictureUrl },
               });
             }
             return done(null, user);
@@ -96,23 +90,16 @@ export function configurePassport() {
             if (!email) return done(new Error('No email from GitHub profile'));
             const profilePictureUrl = profile.photos?.[0]?.value;
             const role: UserRole = 'CUSTOMER';
-            let user: any = await prisma.user.findUnique({ where: { email } });
-            if (!user) {
-              user = await (prisma.user as any).create({
-                data: {
-                  email,
-                  passwordHash: '',
-                  firstName: profile.displayName?.split(' ')[0] || profile.username || 'GitHub',
-                  lastName: profile.displayName?.split(' ').slice(1).join(' ') || '',
-                  role,
-                  githubId: profile.id,
-                  profilePictureUrl,
-                  isEmailVerified: true,
-                },
-              });
-            } else {
-              user = await (prisma.user as any).update({
-                where: { email },
+            const user = await findOrCreateUser({
+              provider: 'github',
+              providerId: profile.id,
+              email,
+              metadata: { login: profile.username, name: profile.displayName, avatar: profilePictureUrl },
+            });
+
+            if (!user.githubId) {
+              await prisma.user.update({
+                where: { id: user.id },
                 data: { githubId: profile.id, isEmailVerified: true, profilePictureUrl: user.profilePictureUrl || profilePictureUrl },
               });
             }
