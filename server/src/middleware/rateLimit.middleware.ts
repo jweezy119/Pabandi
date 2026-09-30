@@ -26,6 +26,23 @@ export const strictApiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Write Limiter for financial/trust write endpoints
+// 10 requests per minute per authenticated user
+export const writeLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10,
+  message: {
+    success: false,
+    error: 'Too many write requests. Please slow down.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: any) => {
+    const userId = req.user?.id;
+    return userId ? `write-user-${userId}` : `write-ip-${req.ip}`;
+  },
+});
+
 // CourtListener screening rate limiter.
 // CourtListener API limits:
 //   - With API key: 5,000/day, ~10/min burst

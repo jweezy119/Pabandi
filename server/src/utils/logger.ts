@@ -15,10 +15,31 @@ const redactPII = (data: any): any => {
   return result;
 };
 
+const getRequestId = (req?: any): string | undefined => {
+  if (!req) return undefined;
+  return req.requestId || (req as any).headers?.['x-request-id'];
+};
+
 export const logger = {
-  info: (msg: any, ...meta: any[]) => console.log(`[INFO]`, redactPII(msg), ...meta.map(redactPII)),
-  error: (msg: any, ...meta: any[]) => console.error(`[ERROR]`, redactPII(msg), ...meta.map(redactPII)),
-  warn: (msg: any, ...meta: any[]) => console.warn(`[WARN]`, redactPII(msg), ...meta.map(redactPII)),
-  debug: (msg: any, ...meta: any[]) => console.debug(`[DEBUG]`, redactPII(msg), ...meta.map(redactPII)),
+  info: (msg: any, ...meta: any[]) => {
+    const reqId = getRequestId();
+    const prefix = reqId ? `[${reqId}]` : '';
+    console.log(`${prefix} [INFO]`, redactPII(msg), ...meta.map(redactPII));
+  },
+  error: (msg: any, ...meta: any[]) => {
+    const reqId = getRequestId();
+    const prefix = reqId ? `[${reqId}]` : '';
+    console.error(`${prefix} [ERROR]`, redactPII(msg), ...meta.map(redactPII));
+  },
+  warn: (msg: any, ...meta: any[]) => {
+    const reqId = getRequestId();
+    const prefix = reqId ? `[${reqId}]` : '';
+    console.warn(`${prefix} [WARN]`, redactPII(msg), ...meta.map(redactPII));
+  },
+  debug: (msg: any, ...meta: any[]) => {
+    const reqId = getRequestId();
+    const prefix = reqId ? `[${reqId}]` : '';
+    console.debug(`${prefix} [DEBUG]`, redactPII(msg), ...meta.map(redactPII));
+  },
   add: () => {}
 };

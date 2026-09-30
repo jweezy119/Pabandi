@@ -123,6 +123,10 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Request ID middleware
+import { requestIdMiddleware } from './middleware/requestId.middleware';
+app.use(requestIdMiddleware);
+
 // Request logging
 app.use((req, _res, next) => {
   logger.info(`${req.method} ${req.path}`);

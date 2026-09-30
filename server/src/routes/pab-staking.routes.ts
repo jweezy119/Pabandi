@@ -4,7 +4,7 @@ import { pabStakingService } from '../services/pab-staking.service';
 import { pabReferralService } from '../services/pab-referral.service';
 import { authenticate } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
-import { apiLimiter } from '../middleware/rateLimit.middleware';
+import { apiLimiter, writeLimiter } from '../middleware/rateLimit.middleware';
 
 const router = Router();
 
@@ -34,7 +34,7 @@ router.get('/position', async (req: any, res: Response) => {
   }
 });
 
-router.post('/stake', apiLimiter, async (req: any, res: Response) => {
+router.post('/stake', writeLimiter, async (req: any, res: Response) => {
   try {
     const userId = req.user.id;
     const body = StakeSchema.parse(req.body);
@@ -54,7 +54,7 @@ router.post('/stake', apiLimiter, async (req: any, res: Response) => {
   }
 });
 
-router.post('/unstake', apiLimiter, async (req: any, res: Response) => {
+router.post('/unstake', writeLimiter, async (req: any, res: Response) => {
   try {
     const userId = req.user.id;
     const body = UnstakeSchema.parse(req.body);

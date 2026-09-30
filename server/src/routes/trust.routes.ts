@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
-import { apiLimiter } from '../middleware/rateLimit.middleware';
+import { apiLimiter, writeLimiter } from '../middleware/rateLimit.middleware';
 import { getAttestationsForPassport } from '../services/onchain-attestation.service';
 
 const router = Router();
@@ -75,7 +75,7 @@ router.get('/resolve/:identifier', apiLimiter, async (req: Request, res: Respons
  * GET /api/v1/trust/credential/:passportId
  * Returns a signed JWT verifiable credential for the passport
  */
-router.get('/credential/:passportId', apiLimiter, async (req: Request, res: Response) => {
+router.get('/credential/:passportId', writeLimiter, async (req: Request, res: Response) => {
   try {
     const passportId = req.params.passportId;
     if (!passportId) {
@@ -121,7 +121,7 @@ router.get('/credential/:passportId', apiLimiter, async (req: Request, res: Resp
  * GET /api/v1/trust/public/:userId
  * Public trust profile for a user.
  */
-router.get('/public/:userId', apiLimiter, async (req: Request, res: Response) => {
+router.get('/public/:userId', writeLimiter, async (req: Request, res: Response) => {
   try {
     const userId = req.params.userId;
     if (!userId) {

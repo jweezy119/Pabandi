@@ -20,7 +20,9 @@
     "make:immutable": "ts-node scripts/make-immutable.ts",
     "update:metadata": "ts-node scripts/update-metadata.ts",
     "list:tokens": "ts-node scripts/list-wallet-tokens.ts",
-    "burn:lp": "ts-node scripts/burn-lp.ts"
+    "burn:lp": "ts-node scripts/burn-lp.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",
@@ -89,6 +91,7 @@
     "@types/passport-twitter": "^1.0.40",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
+    "@vitest/coverage-v8": "^4.1.11",
     "chokidar": "^5.0.0",
     "esbuild": "^0.28.2",
     "nodemon": "^3.1.14",
@@ -96,7 +99,8 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.23.15",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^4.1.11"
   },
   "overrides": {
     "uuid": "^8.3.2"

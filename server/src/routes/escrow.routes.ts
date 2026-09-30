@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { universalEscrowService, EscrowParty, EscrowCondition } from '../services/universal-escrow.service';
 import { logger } from '../utils/logger';
-import { apiLimiter } from '../middleware/rateLimit.middleware';
+import { apiLimiter, writeLimiter } from '../middleware/rateLimit.middleware';
 
 const router = Router();
 
@@ -27,7 +27,7 @@ const StatusUpdateSchema = z.object({
   status: z.enum(['draft', 'funded', 'in_progress', 'conditions_met', 'released', 'disputed', 'refunded']),
 });
 
-router.post('/', apiLimiter, async (req: Request, res: Response) => {
+router.post('/', writeLimiter, async (req: Request, res: Response) => {
   try {
     const body = CreateEscrowSchema.parse(req.body);
 
@@ -57,7 +57,7 @@ router.post('/', apiLimiter, async (req: Request, res: Response) => {
   }
 });
 
-router.patch('/:referenceId/status', apiLimiter, async (req: Request, res: Response) => {
+router.patch('/:referenceId/status', writeLimiter, async (req: Request, res: Response) => {
   try {
     const { referenceId } = req.params;
     const body = StatusUpdateSchema.parse(req.body);

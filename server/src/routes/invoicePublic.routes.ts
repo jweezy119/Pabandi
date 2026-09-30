@@ -1,8 +1,9 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { trustCore } from '../trust/trust-core';
 import { emailService } from '../services/email.service';
+import { apiLimiter, writeLimiter } from '../middleware/rateLimit.middleware';
 
 const router = Router();
 
@@ -56,7 +57,7 @@ router.get('/:invoiceId', async (req, res) => {
   }
 });
 
-router.post('/:invoiceId/pay', async (req, res) => {
+router.post('/:invoiceId/pay', writeLimiter, async (req, res) => {
   try {
     const { invoiceId } = req.params;
     const { transactionHash } = req.body;
