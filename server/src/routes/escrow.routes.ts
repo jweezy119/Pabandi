@@ -1,156 +1,165 @@
 import { Router, Request, Response } from 'express';
-import { prisma } from '../utils/database';
+import { z } from 'zod';
+import { universalEscrowService, EscrowParty, EscrowCondition } from '../services/universal-escrow.service';
 import { logger } from '../utils/logger';
+import { apiLimiter } from '../middleware/rateLimit.middleware';
 
 const router = Router();
 
-// Escrow state machine: PENDING → FUNDED → COMPLETED | DISPUTED | CANCELLED
-const VALID_TRANSITIONS: Record<string, string[]> = {
-  PENDING: ['FUNDED', 'CANCELLED'],
-  FUNDED: ['COMPLETED', 'DISPUTED', 'CANCELLED'],
-  DISPUTED: ['COMPLETED', 'CANCELLED'],
-  COMPLETED: [],
-  CANCELLED: [],
-};
+const CreateEscrowSchema = z.object({
+  referenceId: z.string().min(1),
+  template: z.string().default('custom'),
+  parties: z.array(z.object({
+    partyId: z.string(),
+    role: z.enum(['buyer', 'seller', 'broker']),
+  })) as z.ZodType<EscrowParty[]>,
+  amount: z.number().positive(),
+  currency: z.string().default('USDC'),
+  conditions: z.array(z.object({
+    type: z.enum(['delivery', 'milestone', 'checkin', 'manual']),
+    verify: z.record(z.any()),
+  })) as z.ZodType<EscrowCondition[]>,
+  deadline: z.string().optional(),
+  metadata: z.record(z.any()).optional(),
+});
 
-// ── POST /api/v1/escrow ─────────────────────────────────────────────────────
-// Open a secured sale (buyer + seller + item + amount).
-router.post('/', async (req: Request, res: Response) => {
+const StatusUpdateSchema = z.object({
+  status: z.enum(['draft', 'funded', 'in_progress', 'conditions_met', 'released', 'disputed', 'refunded']),
+});
+
+router.post('/', apiLimiter, async (req: Request, res: Response) => {
   try {
-    const { itemTitle, amount, currency = 'USD', sellerEmail, buyerEmail, listingUrl, referralCode, meetupLocation, meetupLat, meetupLng, meetupAt } = req.body;
+    const body = CreateEscrowSchema.parse(req.body);
 
-    if (!itemTitle || !amount || !sellerEmail) {
-      return res.status(400).json({ success: false, error: 'itemTitle, amount, and sellerEmail are required' });
+    const escrow = await universalEscrowService.create({
+      referenceId: body.referenceId,
+      template: body.template,
+      parties: body.parties,
+      amount: body.amount,
+      currency: body.currency,
+      conditions: body.conditions,
+      deadline: body.deadline,
+      metadata: body.metadata,
+    });
+
+    logger.info(`[UniversalEscrow] created ${escrow.referenceId} template=${escrow.template}`);
+
+    return res.status(201).json({
+      success: true,
+      data: escrow,
+    });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ success: false, error: error.errors });
+    }
+    logger.error(`[UniversalEscrow] create error: ${error.message}`);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.patch('/:referenceId/status', apiLimiter, async (req: Request, res: Response) => {
+  try {
+    const { referenceId } = req.params;
+    const body = StatusUpdateSchema.parse(req.body);
+
+    const escrow = await universalEscrowService.updateStatus(referenceId, body.status);
+
+    return res.json({
+      success: true,
+      data: escrow,
+    });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ success: false, error: error.errors });
+    }
+    logger.error(`[UniversalEscrow] status update error: ${error.message}`);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get('/:referenceId', apiLimiter, async (req: Request, res: Response) => {
+  try {
+    const { referenceId } = req.params;
+    const escrow = await universalEscrowService.getByReference(referenceId);
+
+    if (!escrow) {
+      return res.status(404).json({ success: false, error: 'Escrow not found' });
     }
 
-    const escrow = await prisma.localSaleEscrow.create({
-      data: {
-        itemTitle, amount: parseFloat(amount), currency, sellerEmail, buyerEmail,
-        listingUrl, referralCode, meetupLocation, meetupLat, meetupLng,
-        meetupAt: meetupAt ? new Date(meetupAt) : undefined,
-        status: 'PENDING', simulated: true,
-      },
+    return res.json({
+      success: true,
+      data: escrow,
     });
-
-    res.status(201).json({ success: true, data: escrow });
-  } catch (e: any) {
-    logger.error('Escrow create failed:', e);
-    res.status(500).json({ success: false, error: e.message });
+  } catch (error: any) {
+    logger.error(`[UniversalEscrow] get error: ${error.message}`);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// ── GET /api/v1/escrow/:id ──────────────────────────────────────────────────
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/party/:partyId', apiLimiter, async (req: Request, res: Response) => {
   try {
-    const escrow = await prisma.localSaleEscrow.findUnique({ where: { id: req.params.id } });
-    if (!escrow) return res.status(404).json({ success: false, error: 'Escrow not found' });
-    res.json({ success: true, data: escrow });
-  } catch (e: any) {
-    res.status(500).json({ success: false, error: e.message });
+    const { partyId } = req.params;
+    const escrows = await universalEscrowService.listByParty(partyId);
+
+    return res.json({
+      success: true,
+      data: escrows,
+    });
+  } catch (error: any) {
+    logger.error(`[UniversalEscrow] list error: ${error.message}`);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// ── POST /api/v1/escrow/:id/fund ────────────────────────────────────────────
-// Buyer funds the escrow.
-router.post('/:id/fund', async (req: Request, res: Response) => {
-  try {
-    const escrow = await prisma.localSaleEscrow.findUnique({ where: { id: req.params.id } });
-    if (!escrow) return res.status(404).json({ success: false, error: 'Escrow not found' });
-    if (!VALID_TRANSITIONS[escrow.status]?.includes('FUNDED')) {
-      return res.status(400).json({ success: false, error: `Cannot fund from status ${escrow.status}` });
-    }
+router.get('/templates', (_req: Request, res: Response) => {
+  const templates = [
+    {
+      id: 'freelance',
+      label: 'Freelance Project',
+      description: 'Milestone-based escrow for freelance work',
+      conditions: [
+        { type: 'milestone', verify: { milestoneId: 'required' } },
+      ],
+    },
+    {
+      id: 'freight',
+      label: 'Freight Shipment',
+      description: 'Delivery-based escrow for freight',
+      conditions: [
+        { type: 'delivery', verify: { trackingId: 'required', proof: 'photo' } },
+      ],
+    },
+    {
+      id: 'booking',
+      label: 'Service Booking',
+      description: 'Check-in-based escrow for bookings',
+      conditions: [
+        { type: 'checkin', verify: { location: 'required' } },
+      ],
+    },
+    {
+      id: 'property',
+      label: 'Property Lease',
+      description: 'Monthly lease deposit escrow',
+      conditions: [
+        { type: 'manual', verify: { landlordApproval: true } },
+      ],
+    },
+    {
+      id: 'goods',
+      label: 'Physical Goods',
+      description: 'Delivery + inspection escrow',
+      conditions: [
+        { type: 'delivery', verify: { trackingId: 'required' } },
+        { type: 'manual', verify: { inspectionPassed: true } },
+      ],
+    },
+  ];
 
-    const updated = await prisma.localSaleEscrow.update({
-      where: { id: escrow.id },
-      data: { status: 'FUNDED' },
-    });
-
-    res.json({ success: true, data: updated });
-  } catch (e: any) {
-    res.status(500).json({ success: false, error: e.message });
-  }
-});
-
-// ── POST /api/v1/escrow/:id/release ─────────────────────────────────────────
-// Buyer confirms receipt — funds release to seller.
-router.post('/:id/release', async (req: Request, res: Response) => {
-  try {
-    const escrow = await prisma.localSaleEscrow.findUnique({ where: { id: req.params.id } });
-    if (!escrow) return res.status(404).json({ success: false, error: 'Escrow not found' });
-    if (!VALID_TRANSITIONS[escrow.status]?.includes('COMPLETED')) {
-      return res.status(400).json({ success: false, error: `Cannot release from status ${escrow.status}` });
-    }
-
-    const updated = await prisma.localSaleEscrow.update({
-      where: { id: escrow.id },
-      data: { status: 'COMPLETED' },
-    });
-
-    res.json({ success: true, data: updated });
-  } catch (e: any) {
-    res.status(500).json({ success: false, error: e.message });
-  }
-});
-
-// ── POST /api/v1/escrow/:id/dispute ─────────────────────────────────────────
-// Either party files a dispute.
-router.post('/:id/dispute', async (req: Request, res: Response) => {
-  try {
-    const escrow = await prisma.localSaleEscrow.findUnique({ where: { id: req.params.id } });
-    if (!escrow) return res.status(404).json({ success: false, error: 'Escrow not found' });
-    if (!VALID_TRANSITIONS[escrow.status]?.includes('DISPUTED')) {
-      return res.status(400).json({ success: false, error: `Cannot dispute from status ${escrow.status}` });
-    }
-
-    const updated = await prisma.localSaleEscrow.update({
-      where: { id: escrow.id },
-      data: { status: 'DISPUTED' },
-    });
-
-    res.json({ success: true, data: updated });
-  } catch (e: any) {
-    res.status(500).json({ success: false, error: e.message });
-  }
-});
-
-// ── POST /api/v1/escrow/:id/cancel ──────────────────────────────────────────
-router.post('/:id/cancel', async (req: Request, res: Response) => {
-  try {
-    const escrow = await prisma.localSaleEscrow.findUnique({ where: { id: req.params.id } });
-    if (!escrow) return res.status(404).json({ success: false, error: 'Escrow not found' });
-    if (!VALID_TRANSITIONS[escrow.status]?.includes('CANCELLED')) {
-      return res.status(400).json({ success: false, error: `Cannot cancel from status ${escrow.status}` });
-    }
-
-    const updated = await prisma.localSaleEscrow.update({
-      where: { id: escrow.id },
-      data: { status: 'CANCELLED' },
-    });
-
-    res.json({ success: true, data: updated });
-  } catch (e: any) {
-    res.status(500).json({ success: false, error: e.message });
-  }
-});
-
-// ── GET /api/v1/escrow ─────────────────────────────────────────────────────
-// List escrows by email (buyer or seller).
-router.get('/', async (req: Request, res: Response) => {
-  try {
-    const { email, status } = req.query as Record<string, string>;
-    if (!email) return res.status(400).json({ success: false, error: 'email is required' });
-
-    const where: any = { OR: [{ sellerEmail: email }, { buyerEmail: email }] };
-    if (status) where.status = status;
-
-    const escrows = await prisma.localSaleEscrow.findMany({
-      where, orderBy: { createdAt: 'desc' }, take: 50,
-    });
-
-    res.json({ success: true, data: escrows });
-  } catch (e: any) {
-    res.status(500).json({ success: false, error: e.message });
-  }
+  return res.json({
+    success: true,
+    data: templates,
+  });
 });
 
 export default router;

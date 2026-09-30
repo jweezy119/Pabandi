@@ -65,23 +65,6 @@ class TrustCore {
           eventType,
           referenceId,
           metadata: { amount: payload.amount },
-        }).then(async result => {
-          if (result.signature) {
-            try {
-              await prisma.onchainAttestation.create({
-                data: {
-                  passportId,
-                  eventType,
-                  referenceId,
-                  txSignature: result.signature,
-                  hash: result.hash,
-                  explorerUrl: result.explorerUrl,
-                },
-              });
-            } catch (dbErr) {
-              console.error('[TrustCore] attestation DB write failed:', dbErr);
-            }
-          }
         }).catch(err => {
           console.error('[TrustCore] attestation write failed:', err);
         });

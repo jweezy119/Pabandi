@@ -4098,10 +4098,12 @@ model OnchainAttestation {
   txSignature  String   @unique
   hash         String
   explorerUrl  String
+  status       String   @default("pending") // pending | confirmed | failed
   createdAt    DateTime @default(now())
 
   @@index([passportId])
   @@index([eventType])
+  @@index([status])
 }
 
 // ── Best Fit Engine (Behavioral Biometrics & Pattern Matching) ─────────────
@@ -5733,6 +5735,25 @@ model Escrow {
   @@index([status])
   @@index([payerId])
   @@index([payeeId])
+}
+
+model UniversalEscrow {
+  id           String   @id @default(cuid())
+  referenceId  String   @unique
+  template     String   @default("custom") // freelance | freight | booking | property | goods | custom
+  parties      Json     // [{partyId, role: "buyer"|"seller"|"broker"}]
+  amount       Float
+  currency     String   @default("USDC") // USDC | SOL
+  conditions   Json     // [{type, verify: {...}}]
+  status       String   @default("draft") // draft | funded | in_progress | conditions_met | released | disputed | refunded
+  deadline     DateTime?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([referenceId])
+  @@index([status])
+  @@index([template])
 }
 
 model FiatPayment {
