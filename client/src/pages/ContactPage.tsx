@@ -1,92 +1,88 @@
 import { Link } from 'react-router-dom';
-import { tokens } from '../design-system';
+import { User, Building2, Mail, Phone, MessageCircle, HelpCircle, ArrowRight } from 'lucide-react';
 
 export default function ContactPage() {
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 md:px-8 space-y-6 sm:space-y-8 sm:space-y-12 sm:space-y-16 font-body" style={{ background: tokens.color.background, color: tokens.color.text }}>
-      
-      {/* Header */}
-      <section className="mx-auto max-w-3xl text-center space-y-6">
-        <div className="inline-flex items-center gap-2 rounded-full border border-[var(--clay)]/20 bg-[var(--clay)]/15 px-3 py-1 font-label text-sm text-[var(--terracotta)]">
-          We're Here For You
-        </div>
-        <h1 className="font-headline text-[3rem] leading-[1.1] font-bold tracking-tight text-on-surface md:text-[4rem]">
-          How can we help?
-        </h1>
-        <p className="text-xl leading-relaxed text-[var(--warm-ink)]/70">
-          At Pabandi, we obsess over your experience. Whether you're a VIP member managing a booking or a founding partner growing your business, our dedicated teams are ready to assist you.
-        </p>
-      </section>
-
-      {/* Contact Channels Grid */}
-      <section className="grid grid-cols-1 gap-5 md:grid-cols-2 sm:p-8">
-        
-        {/* Customer Support */}
-        <div className="rounded-3xl border border-white/[0.07] bg-white/[0.03] p-5 shadow-sm transition-all hover:-translate-y-[2px] hover:border-[var(--soft-stone)]/30 sm:p-8 md:p-10">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[var(--clay)]/20 bg-[var(--clay)]/10">
-            <span className="text-2xl">👤</span>
+    <div className="min-h-screen bg-[var(--cream)]">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 md:py-16">
+        <header className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--clay)]/20 bg-[var(--clay)]/10 px-4 py-1.5 text-sm font-medium text-[var(--clay)] mb-6">
+            We're Here For You
           </div>
-          <div>
-            <h2 className="font-headline mb-2 text-2xl font-bold text-on-surface">User Support</h2>
-            <p className="font-body mb-6 text-[var(--warm-ink)]/70">
-              Need help with a reservation, your Pabandi Score, or accessing your $PAB rewards? Our member success team is available 24/7.
+          <h1 className="text-3xl md:text-5xl font-bold text-[var(--warm-ink)] font-headline tracking-tight">
+            How can we help?
+          </h1>
+          <p className="text-[var(--soft-stone)] mt-4 max-w-xl mx-auto text-lg">
+            Whether you're a member managing a booking or a partner growing your business, we're ready to assist.
+          </p>
+        </header>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+          <div className="bg-white/60 backdrop-blur-sm border border-[rgba(191,179,163,0.2)] rounded-2xl p-6 md:p-8 shadow-[var(--shadow-soft)]">
+            <div className="w-12 h-12 rounded-xl bg-[var(--clay)]/10 flex items-center justify-center mb-4">
+              <User size={22} className="text-[var(--clay)]" />
+            </div>
+            <h2 className="text-xl font-bold text-[var(--warm-ink)] font-headline mb-2">User Support</h2>
+            <p className="text-[var(--soft-stone)] text-sm mb-5">
+              Need help with a reservation, your Trust Score, or accessing your $PAB rewards? Our member success team is available 24/7.
             </p>
-            <div className="space-y-4">
-              <a href="mailto:jay@pabandi.com" className="flex items-center gap-3 text-on-surface transition-colors hover:text-primary font-semibold">
+            <div className="space-y-3">
+              <a href="mailto:jay@pabandi.com" className="flex items-center gap-2 text-sm font-medium text-[var(--warm-ink)] hover:text-[var(--clay)] transition-colors">
+                <Mail size={14} className="text-[var(--clay)]" />
                 jay@pabandi.com
               </a>
-              <div className="flex items-center gap-3 font-semibold text-on-surface">
-                In-App Live Chat (Average response time: &lt; 2 mins)
+              <div className="flex items-center gap-2 text-sm text-[var(--soft-stone)]">
+                <MessageCircle size={14} className="text-[var(--sage)]" />
+                In-App Live Chat (avg. response: &lt; 2 mins)
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Business Support */}
-        <div className="rounded-3xl border border-[var(--sage)]/20 bg-[var(--sage)]/5 p-5 shadow-sm transition-all hover:-translate-y-[2px] hover:border-[var(--sage)]/30 sm:p-8 md:p-10 relative overflow-hidden">
-          <div className="pointer-events-none absolute right-0 top-0 h-32 w-32 rounded-full bg-[var(--sage)]/10 blur-2xl -translate-y-1/2 translate-x-1/2"></div>
-          <div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full border border-[var(--sage)]/30 bg-[var(--sage)]/20">
-            <span className="text-2xl" style={{ color: '#10b981' }}>🏪</span>
-          </div>
-          <div className="relative z-10">
-            <h2 className="font-headline mb-2 text-2xl font-bold text-on-surface">Partner Success</h2>
-            <p className="font-body mb-6 text-[var(--warm-ink)]/70">
-              For our business partners. Need help setting up your profile, understanding analytics, or managing escrow payouts? Reach your dedicated account manager.
+          <div className="bg-white/60 backdrop-blur-sm border border-[rgba(191,179,163,0.2)] rounded-2xl p-6 md:p-8 shadow-[var(--shadow-soft)]">
+            <div className="w-12 h-12 rounded-xl bg-[var(--sage)]/10 flex items-center justify-center mb-4">
+              <Building2 size={22} className="text-[var(--sage)]" />
+            </div>
+            <h2 className="text-xl font-bold text-[var(--warm-ink)] font-headline mb-2">Partner Success</h2>
+            <p className="text-[var(--soft-stone)] text-sm mb-5">
+              For business partners. Need help setting up your profile, understanding analytics, or managing escrow payouts?
             </p>
-            <div className="space-y-4">
-              <a href="mailto:jay@pabandi.com" className="flex items-center gap-3 text-on-surface transition-colors font-semibold" style={{ color: '#10b981' }}>
+            <div className="space-y-3">
+              <a href="mailto:jay@pabandi.com" className="flex items-center gap-2 text-sm font-medium text-[var(--warm-ink)] hover:text-[var(--sage)] transition-colors">
+                <Mail size={14} className="text-[var(--sage)]" />
                 jay@pabandi.com
               </a>
-              <a href="tel:+18007222634" className="flex items-center gap-3 text-on-surface transition-colors font-semibold" style={{ color: '#10b981' }}>
+              <a href="tel:+18007222634" className="flex items-center gap-2 text-sm font-medium text-[var(--warm-ink)] hover:text-[var(--sage)] transition-colors">
+                <Phone size={14} className="text-[var(--sage)]" />
                 1-800-PABANDI
               </a>
-              <a href="https://wa.me/18007222634" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-on-surface transition-colors font-semibold" style={{ color: '#10b981' }}>
+              <a href="https://wa.me/18007222634" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm font-medium text-[var(--warm-ink)] hover:text-[var(--sage)] transition-colors">
+                <MessageCircle size={14} className="text-[var(--sage)]" />
                 Partner WhatsApp Support
               </a>
             </div>
           </div>
         </div>
-      </section>
 
-      {/* General Inquiries */}
-      <section className="mx-auto max-w-2xl rounded-3xl border border-white/[0.07] bg-white/[0.03] p-5 text-center sm:p-8">
-        <h3 className="font-headline mb-2 text-xl font-bold text-on-surface">Press & General Inquiries</h3>
-        <p className="font-body mb-4 text-sm text-[var(--warm-ink)]/70">
-          For media inquiries, brand partnerships, or investment opportunities, please contact our corporate team.
-        </p>
-        <a href="mailto:hello@pabandi.com" className="inline-flex items-center gap-2 font-bold hover:underline" style={{ color: tokens.color.primary }}>
-          hello@pabandi.com
-        </a>
-      </section>
+        <div className="bg-white/60 backdrop-blur-sm border border-[rgba(191,179,163,0.2)] rounded-2xl p-6 md:p-8 text-center shadow-[var(--shadow-soft)] mb-8">
+          <h3 className="text-lg font-bold text-[var(--warm-ink)] font-headline mb-2">Press & General Inquiries</h3>
+          <p className="text-sm text-[var(--soft-stone)] mb-4">
+            For media inquiries, brand partnerships, or investment opportunities.
+          </p>
+          <a href="mailto:hello@pabandi.com" className="inline-flex items-center gap-2 font-semibold text-[var(--clay)] hover:underline">
+            <Mail size={14} />
+            hello@pabandi.com
+          </a>
+        </div>
 
-      {/* FAQ Link */}
-      <section className="border-t border-[var(--soft-stone)]/30 pt-8 text-center">
-        <p className="font-body mb-4 text-[var(--warm-ink)]/70">Looking for quick answers?</p>
-        <Link to="/" className="inline-flex items-center rounded-xl border border-[var(--soft-stone)]/30 bg-[var(--cream)] px-4 py-2.5 text-xs font-bold text-[var(--warm-ink)] transition-colors hover:bg-[var(--warm-sand)]">
-          Visit our Help Center
-        </Link>
-      </section>
-
+        <div className="border-t border-[rgba(191,179,163,0.15)] pt-8 text-center">
+          <p className="text-sm text-[var(--soft-stone)] mb-4">Looking for quick answers?</p>
+          <Link to="/support" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--warm-sand)]/50 text-sm font-semibold text-[var(--warm-ink)] hover:bg-[var(--warm-sand)] transition-colors">
+            <HelpCircle size={16} />
+            Visit Help Center
+            <ArrowRight size={14} />
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
