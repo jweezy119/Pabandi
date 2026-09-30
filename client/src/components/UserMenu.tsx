@@ -16,10 +16,10 @@ export function UserMenu() {
   };
 
   const handleToggleMode = async () => {
-    const newMode = user?.activeMode === 'BUSINESS' ? 'CUSTOMER' : 'BUSINESS';
+    const newMode = user?.preferredMode === 'business' ? 'personal' : 'business';
     await toggleMode(newMode);
     setIsOpen(false);
-    navigate(newMode === 'BUSINESS' ? '/dashboard' : '/');
+    navigate(newMode === 'business' ? '/contact' : '/me');
   };
 
   const menuItems = [
@@ -29,8 +29,8 @@ export function UserMenu() {
     { label: 'Business Settings', path: '/business', icon: 'storefront' },
   ];
 
-  const currentMode = user?.activeMode || 'CUSTOMER';
-  const modeLabel = currentMode === 'BUSINESS' ? 'Switch to Personal' : 'Switch to Business';
+  const currentMode = user?.preferredMode || 'business';
+  const modeLabel = currentMode === 'business' ? 'Switch to Personal' : 'Switch to Business';
 
   return (
     <div className="relative">

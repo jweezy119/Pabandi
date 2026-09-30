@@ -92,7 +92,7 @@ export const authService = {
     apiClient.post('/auth/wallet/verify', data),
   connectWallet: (address: string, chain: string) =>
     apiClient.put('/auth/wallet', { address, chain }),
-  toggleMode: (mode: 'CUSTOMER' | 'BUSINESS') =>
+    toggleMode: (mode: 'business' | 'personal') =>
     apiClient.post('/auth/mode', { mode }),
 };
 

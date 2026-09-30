@@ -1159,25 +1159,25 @@ export const getProfileChangeStatus = async (req: AuthRequest, res: Response, ne
 
 export const toggleUserMode = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { mode } = req.body as { mode?: 'CUSTOMER' | 'BUSINESS' };
-    if (!mode || !['CUSTOMER', 'BUSINESS'].includes(mode)) {
-      return res.status(400).json({ success: false, message: 'mode must be CUSTOMER or BUSINESS' });
+    const { mode } = req.body as { mode?: 'business' | 'personal' };
+    if (!mode || !['business', 'personal'].includes(mode)) {
+      return res.status(400).json({ success: false, message: 'mode must be business or personal' });
     }
 
     const user = await prisma.user.update({
       where: { id: req.user!.id },
-      data: { activeMode: mode },
+      data: { preferredMode: mode },
       select: {
         id: true,
         email: true,
         role: true,
-        activeMode: true,
+        preferredMode: true,
         business: true,
       },
     });
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, businessId: (user as any).businessId || (user as any).business?.id, activeMode: user.activeMode } as JwtPayload,
+      { id: user.id, email: user.email, role: user.role, businessId: (user as any).businessId || (user as any).business?.id, mode: user.preferredMode } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );

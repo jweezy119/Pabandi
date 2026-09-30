@@ -20,7 +20,7 @@ interface User {
   freelanceScore?: number;
   encryptedDietaryData?: string;
   walletAddress?: string;
-  activeMode?: 'CUSTOMER' | 'BUSINESS';
+  preferredMode?: 'business' | 'personal';
 }
 
 interface WalletState {
@@ -148,11 +148,11 @@ export const useAuthStore = create<AuthState>()(
       },
       updateProfile: (updatedUser: Partial<User>) => 
         set((state) => ({ user: state.user ? { ...state.user, ...updatedUser } : null })),
-      toggleMode: async (mode: 'CUSTOMER' | 'BUSINESS') => {
+      toggleMode: async (mode: 'business' | 'personal') => {
         const response = await authService.toggleMode(mode);
         const payload = response.data?.data ?? response.data;
         if (payload?.user) {
-          set((state) => ({ user: { ...state.user, activeMode: payload.user.activeMode } }));
+          set((state) => ({ user: { ...state.user, preferredMode: payload.user.preferredMode } }));
         }
       },
     }),
