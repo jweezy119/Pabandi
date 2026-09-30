@@ -6175,6 +6175,43 @@ model StakingRecord {
   @@index([tier])
 }
 
+model PabReferral {
+  id            String    @id @default(cuid())
+  referrerId    String
+  refereeId     String
+  refereeEmail  String?
+  status        String    @default("PENDING") // PENDING | REGISTERED | EARNED | PAID
+  referrerBonus Float     @default(200) // 200 PAB
+  refereeBonus  Float     @default(500) // 500 PAB
+  feeSharePct   Float     @default(5) // 5% of API fees for 12 months
+  feeShareMonths Int      @default(12)
+  vestedAt      DateTime?
+  paidAt        DateTime?
+  metadata      Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([referrerId])
+  @@index([refereeId])
+  @@index([status])
+}
+
+model PabBuyback {
+  id            String    @id @default(cuid())
+  amountPab     Float
+  amountUsd     Float
+  burnPct       Float     @default(100) // 100% burned
+  quarter       String    // e.g., "2026Q4"
+  txHash        String?
+  status        String    @default("PENDING") // PENDING | COMPLETED | FAILED
+  executedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([quarter])
+  @@index([status])
+}
+
 model BookingRecord {
   id           String    @id @default(cuid())
   bookingId    String    @unique

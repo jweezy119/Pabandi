@@ -4,6 +4,7 @@ import { trustAuditWriter } from './trustAuditWriter';
 import { webhookService } from './webhook.service';
 import { courtListenerService } from './osint/courtListener.service';
 import { notifyTrustScoreChanged } from './notification.service';
+import { pabStakingService } from './pab-staking.service';
 
 export interface TrustInputs {
   reliability: { completed: number; noShows: number; cancellations: number };
@@ -233,6 +234,10 @@ export class TrustScoreService {
     const previousScore = user.trustScore;
     const { score: newScore, verticalScores, weights } = this.calculateCompositeScore(inputs);
 
+    // 2a. Apply staking trust boost
+    const stakingInfo = await pabStakingService.getUserStaking(userId);
+    const stakedScore = Math.min(100, newScore + stakingInfo.trustBoost);
+
     // If score didn't change and it's not a severe event, we might skip logging to save space,
     // but for the demo we log it so the user sees the timeline.
     
@@ -240,7 +245,7 @@ export class TrustScoreService {
     await trustAuditWriter.enqueue({
       userId,
       previousScore,
-      newScore,
+      newScore: stakedScore,
       changeReason: event.reason,
       component: event.component,
       severity: event.severity,
@@ -248,7 +253,9 @@ export class TrustScoreService {
       methodology: '1.0.0',
       metadata: {
         ...(event.osintData || {}),
-        ...(litigation ? { litigation } : {})
+        ...(litigation ? { litigation } : {}),
+        stakingBoost: stakingInfo.trustBoost,
+        stakedScore,
       }
     });
 
@@ -262,7 +269,7 @@ export class TrustScoreService {
     await prisma.user.update({
       where: { id: userId },
       data: {
-        trustScore: newScore,
+        trustScore: stakedScore,
         verificationTier: newTier,
         commerceScore: verticalScores.commerceScore,
         hospitalityScore: verticalScores.hospitalityScore,
@@ -271,7 +278,7 @@ export class TrustScoreService {
       }
     });
 
-    logger.info(`[TrustScoreService] User ${userId} score updated from ${previousScore} to ${newScore}`);
+    logger.info(`[TrustScoreService] User ${userId} score updated from ${previousScore} to ${stakedScore} (base=${newScore}, boost=${stakingInfo.trustBoost})`);
 
     // Notify if score change > 20
     if (Math.abs(newScore - previousScore) > 20) {

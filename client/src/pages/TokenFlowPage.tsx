@@ -1,19 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { Surface, Button, Badge, tokens } from '../design-system';
 import { Link } from 'react-router-dom';
-import { pabService } from '../services/api';
+import { pabService, pabStakingService } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 
 export const TokenFlowPage: React.FC = () => {
+  const { isAuthenticated } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'overview' | 'earn' | 'spend' | 'stake' | 'history'>('overview');
   const [wallet, setWallet] = useState<any>(null);
+  const [stakingPosition, setStakingPosition] = useState<any>(null);
+  const [treasury, setTreasury] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    pabService.getWallet()
-      .then((r) => setWallet(r.data?.data))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+    const headers = isAuthenticated ? { Authorization: `Bearer ${localStorage.getItem('token')}` } : {};
+    Promise.all([
+      pabService.getWallet().then((r: any) => r.data?.data).catch(() => null),
+      isAuthenticated ? pabStakingService.getPosition().then((r: any) => r.data?.data).catch(() => null) : Promise.resolve(null),
+      pabStakingService.getTreasury().then((r: any) => r.data).catch(() => null),
+    ]).then(([walletData, positionData, treasuryData]) => {
+      setWallet(walletData);
+      setStakingPosition(positionData);
+      setTreasury(treasuryData);
+      setLoading(false);
+    });
+  }, [isAuthenticated]);
 
   const balance = wallet?.balance || 0;
   const staked = wallet?.stakedAmt || 0;

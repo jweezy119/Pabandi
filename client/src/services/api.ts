@@ -250,6 +250,15 @@ export const pabService = {
   getTreasury: () => apiClient.get('/pab/treasury'),
 };
 
+export const pabStakingService = {
+  getPosition: () => apiClient.get('/pab-staking/position'),
+  stake: (data: { amountPab: number; durationDays: number }) => apiClient.post('/pab-staking/stake', data),
+  unstake: (stakingRecordId: string) => apiClient.post('/pab-staking/unstake', { stakingRecordId }),
+  getTreasury: () => apiClient.get('/pab-staking/treasury'),
+  createReferral: (email: string) => apiClient.post('/pab-staking/referral', { email }),
+  getReferrals: () => apiClient.get('/pab-staking/referrals'),
+};
+
 export const reliabilityService = {
   getGuidelines: () => apiClient.get('/reliability/guidelines'),
   getHistory: () => apiClient.get('/reliability/history'),

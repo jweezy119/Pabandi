@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Surface, Badge, tokens } from '../design-system';
+import { useAuthStore } from '../store/authStore';
+import apiClient from '../services/api';
 
 const TIERS = [
-  { name: 'Bronze', stake: '100 $PAB', benefit: 'Basic trust badge', color: 'var(--terracotta)', perks: ['List items', 'Basic support', '1% fee discount'] },
-  { name: 'Silver', stake: '500 $PAB', benefit: 'Priority in search', color: 'var(--soft-stone)', perks: ['Priority search', 'Reduced fees (5%)', 'Verified badge', 'Priority support'] },
-  { name: 'Gold', stake: '2,000 $PAB', benefit: 'Reduced fees', color: 'var(--muted-ochre)', perks: ['All Silver perks', '10% fee discount', 'Arbitration voting', 'Featured listings'] },
-  { name: 'Platinum', stake: '10,000 $PAB', benefit: 'All benefits + revenue share', color: 'var(--soft-stone)', perks: ['All Gold perks', 'Revenue share', 'Governance votes', 'Custom branding', 'API access'] },
+  { name: 'Bronze', stake: '100 $PAB', benefit: 'Basic trust badge', color: 'var(--terracotta)', perks: ['List items', 'Basic support', '10% API discount'], discount: '10%' },
+  { name: 'Silver', stake: '1,000 $PAB', benefit: 'Priority in search', color: 'var(--soft-stone)', perks: ['Priority search', '25% API discount', 'Verified badge', 'Priority support'], discount: '25%' },
+  { name: 'Gold', stake: '10,000 $PAB', benefit: 'Reduced fees + beta', color: 'var(--muted-ochre)', perks: ['50% API discount', 'Beta access', 'Arbitration voting', 'Featured listings'], discount: '50%' },
+  { name: 'Platinum', stake: '100,000 $PAB', benefit: 'Enterprise + white-label', color: 'var(--soft-stone)', perks: ['Enterprise tier', 'White-label rights', 'Governance votes', 'Custom branding', 'API access'], discount: '50%' },
 ];
 
 const FLOWS = [
@@ -17,6 +19,23 @@ const FLOWS = [
 ];
 
 export const TokenomicsPage: React.FC = () => {
+  const { isAuthenticated } = useAuthStore();
+  const [treasury, setTreasury] = useState<any>(null);
+  const [position, setPosition] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+    Promise.all([
+      fetch(`${baseUrl}/api/v1/pab/treasury`).then(res => res.json()).then(j => j.data).catch(() => null),
+      isAuthenticated ? fetch(`${baseUrl}/api/v1/pab-staking/position`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(res => res.json()).then(j => j.data).catch(() => null) : Promise.resolve(null),
+    ]).then(([treasuryData, positionData]) => {
+      setTreasury(treasuryData);
+      setPosition(positionData);
+      setLoading(false);
+    });
+  }, [isAuthenticated]);
+
   return (
     <div className="min-h-screen" style={{ background: tokens.color.background }}>
       <div className="max-w-6xl mx-auto px-4 py-6">
@@ -29,6 +48,69 @@ export const TokenomicsPage: React.FC = () => {
             $PAB is the trust and rewards token of Pabandi. Earn it, stake it, spend it, govern with it.
           </p>
         </div>
+
+        {/* Live Treasury Stats */}
+        {!loading && treasury && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            <Surface className="text-center p-4">
+              <div className="text-xl md:text-2xl font-bold text-[var(--warm-ink)]">{Number(treasury.totalPabStaked || 0).toLocaleString()}</div>
+              <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Total Staked</div>
+            </Surface>
+            <Surface className="text-center p-4">
+              <div className="text-xl md:text-2xl font-bold text-[var(--sage)]">{Number(treasury.totalPabBurned || 0).toLocaleString()}</div>
+              <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Total Burned</div>
+            </Surface>
+            <Surface className="text-center p-4">
+              <div className="text-xl md:text-2xl font-bold text-[var(--clay)]">{Number(treasury.totalSolEarned || 0).toFixed(2)}</div>
+              <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>SOL Earned</div>
+            </Surface>
+            <Surface className="text-center p-4">
+              <div className="text-xl md:text-2xl font-bold text-[var(--muted-ochre)]">{Number(treasury.poolUsdcBalance || 0).toFixed(2)}</div>
+              <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>USDC Balance</div>
+            </Surface>
+          </div>
+        )}
+
+        {/* User Position */}
+        {isAuthenticated && position && (
+          <Surface className="p-4 md:p-6 mb-6">
+            <h2 className="text-lg font-bold text-[var(--warm-ink)] mb-4">👤 Your Position</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="p-3 rounded-xl bg-[var(--warm-sand)]">
+                <div className="text-xs" style={{ color: tokens.color.textDim }}>Total Staked</div>
+                <div className="text-lg font-bold text-[var(--warm-ink)]">{Number(position.totalStaked || 0).toLocaleString()} $PAB</div>
+              </div>
+              <div className="p-3 rounded-xl bg-[var(--warm-sand)]">
+                <div className="text-xs" style={{ color: tokens.color.textDim }}>Tier</div>
+                <div className="text-lg font-bold text-[var(--warm-ink)]">{position.tier || 'None'}</div>
+              </div>
+              <div className="p-3 rounded-xl bg-[var(--warm-sand)]">
+                <div className="text-xs" style={{ color: tokens.color.textDim }}>Trust Boost</div>
+                <div className="text-lg font-bold text-[var(--sage)]">+{position.trustBoost || 0}</div>
+              </div>
+              <div className="p-3 rounded-xl bg-[var(--warm-sand)]">
+                <div className="text-xs" style={{ color: tokens.color.textDim }}>Fee Discount</div>
+                <div className="text-lg font-bold text-[var(--clay)]">{Math.round((position.feeDiscount || 0) * 100)}%</div>
+              </div>
+            </div>
+            {position.records && position.records.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-sm font-bold text-[var(--warm-ink)] mb-2">Active Stakes</h3>
+                <div className="space-y-2">
+                  {position.records.map((record: any) => (
+                    <div key={record.id} className="p-3 rounded-xl bg-[var(--warm-sand)] flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-bold text-[var(--warm-ink)]">{Number(record.amountPab).toLocaleString()} $PAB</div>
+                        <div className="text-xs" style={{ color: tokens.color.textDim }}>Unlocks: {new Date(record.unlockAt).toLocaleDateString()}</div>
+                      </div>
+                      <div className="text-xs font-bold px-2 py-1 rounded-full bg-[var(--sage)]/20 text-[var(--sage)]">{record.tier}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Surface>
+        )}
 
         {/* Token Overview */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
