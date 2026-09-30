@@ -1017,3 +1017,20 @@ export const documentAIService = {
     apiClient.post('/documents/analyze', payload),
   history: () => apiClient.get('/documents/analyses'),
 };
+
+// User Profile / Trust Passport service
+export const userProfileService = {
+  getProfile: () => apiClient.get('/user/profile'),
+  updateProfile: (data: any) => apiClient.patch('/user/profile', data),
+  getPublicProfile: (username: string) => apiClient.get(`/user/profile/${username}`),
+  createSocialLink: (data: { platform: string; url: string; displayName?: string }) =>
+    apiClient.post('/user/social-links', data),
+  updateSocialLink: (id: string, data: any) => apiClient.patch(`/user/social-links/${id}`, data),
+  deleteSocialLink: (id: string) => apiClient.delete(`/user/social-links/${id}`),
+  reorderSocialLinks: (ids: string[]) => apiClient.patch('/user/social-links/reorder', { ids }),
+  createPortfolioItem: (data: { title: string; description?: string; mediaUrl?: string; linkUrl?: string }) =>
+    apiClient.post('/user/portfolio', data),
+  updatePortfolioItem: (id: string, data: any) => apiClient.patch(`/user/portfolio/${id}`, data),
+  deletePortfolioItem: (id: string) => apiClient.delete(`/user/portfolio/${id}`),
+  reorderPortfolioItems: (ids: string[]) => apiClient.patch('/user/portfolio/reorder', { ids }),
+};

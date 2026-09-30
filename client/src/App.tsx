@@ -260,6 +260,8 @@ import LedgerExpensesPage from './pages/ledger/LedgerExpensesPage';
 import LedgerAccountsPage from './pages/ledger/LedgerAccountsPage';
 import LedgerReportsPage from './pages/ledger/LedgerReportsPage';
 import ProtocolDashboardPage from './pages/ProtocolDashboardPage';
+import ProfileEditorPage from './pages/me/ProfileEditorPage';
+import PublicProfilePage from './pages/public/PublicProfilePage';
 
 // Support
 import SupportHomePage from './pages/support/SupportHomePage';
@@ -560,7 +562,7 @@ function AnimatedAppRoutes() {
             <Route path="promo" element={<PromoPage />} />
             <Route path="promotions" element={<PromotionsPage />} />
             <Route path="daraz-scanner" element={<DarazScannerPage />} />
-            <Route path="u/:slug" element={<PublicCustomerProfilePage />} />
+            <Route path="u/:username" element={<PublicProfilePage />} />
             <Route path="user/:id" element={<PublicCustomerProfilePage />} />
             <Route path="verify-email" element={<VerifyEmailPage />} />
             <Route path="passport/dietary" element={<DietaryPassportPage />} />
@@ -582,6 +584,7 @@ function AnimatedAppRoutes() {
             <Route path="me/bookings" element={<PersonalGuard><PersonalBookingsPage /></PersonalGuard>} />
             <Route path="me/rewards" element={<PersonalGuard><PersonalRewardsPage /></PersonalGuard>} />
             <Route path="me/wallet" element={<PersonalGuard><PersonalWalletPage /></PersonalGuard>} />
+            <Route path="me/profile" element={<PersonalGuard><ProfileEditorPage /></PersonalGuard>} />
           </Route>
       </Routes>
     </AnimatePresence>

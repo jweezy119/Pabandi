@@ -215,6 +215,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/admin/api-clients`, './routes/apiClients.routes'],
   [`/api/${v}/api-keys`, './routes/apiKey.routes'],
   [`/api/${v}/trust`, './routes/trust.routes'],
+  [`/api/${v}/profile`, './routes/profile.routes'],
   [`/api/${v}/trust/v1`, './routes/trustApi.v1.routes'],
   [`/api/${v}/monetization`, './routes/monetization.routes'],
   [`/api/${v}/linkedin/seed`, './routes/linkedinSeed.routes'],
@@ -365,6 +366,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/channels`, './routes/channel.routes'],
   [`/api/${v}/trust-profile`, './routes/trustProfile.routes'],
   [`/api/${v}/badge`, './routes/badge.routes'],
+  [`/api/${v}/user`, './routes/userProfile.routes'],
 ];
 
 try {

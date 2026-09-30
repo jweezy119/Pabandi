@@ -93,6 +93,20 @@ model User {
   usdcBalance             Float                    @default(0)
   activeMode              UserMode                 @default(CUSTOMER)
   preferredMode           String                   @default("business") // "business" | "personal"
+  username                String?                  @unique
+  bio                     String?
+  tagline                 String?
+  location                String?
+  websiteUrl              String?
+  avatarUrl               String?
+  bannerUrl               String?
+  bannerColor             String?                  @default("#C97B5A")
+  accentColor             String?                  @default("#8A9A7B")
+  isPublic                Boolean                  @default(true)
+  showScores              Boolean                  @default(true)
+  showSocialLinks         Boolean                  @default(true)
+  showPortfolio           Boolean                  @default(true)
+  layoutStyle             String                   @default("classic") // classic | compact | showcase
   authMethods             UserAuthMethod[]
   memberships             BusinessMember[]
   pakistanPayments        PakistanPayment[]
@@ -176,9 +190,12 @@ model User {
   stakingRecords          StakingRecord[]
   bookingPabRecords       BookingRecord[]
   agentRewards            AgentReward[]
+  socialLinks            SocialLink[]
+  portfolioItems         PortfolioItem[]
 
   @@index([email])
   @@index([phone])
+  @@index([username])
 }
 
 model Business {
@@ -4041,6 +4058,18 @@ model TrustPassport {
   walletAddress         String?    @unique
   visibility            String     @default("PUBLIC") // PUBLIC | PRIVATE | MODULE_ONLY
   privacySettings       Json? // { shareTrustScores: boolean, shareProfile: boolean, shareHistory: boolean, allowedModules: string[] }
+  // Social & portfolio links
+  socialLinks          Json? // { twitter, github, linkedin, instagram, youtube, website, portfolio, resume }
+  portfolioItems       Json? // [{ title, description, url, type, date }]
+  skills               Json? // string[] of skill tags
+  headline             String? // e.g. "Full-stack developer | Solana builder"
+  location             String? // e.g. "Karachi, Pakistan"
+  websiteUrl           String?
+  avatarUrl            String?
+  coverImageUrl        String?
+  // Display customization
+  displayTheme         String? @default("clay") // clay | dark | minimal
+  showOnPublicProfile  Boolean @default(true)
   claimsCount           Int        @default(0) // times requested/verified
   riskScore             Int?
   riskBand              String?
@@ -7140,4 +7169,30 @@ model Notification {
   createdAt   DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id])
   @@index([userId, read, createdAt])
+}
+
+model SocialLink {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform   String   // "linkedin" | "x" | "github" | "instagram" | "youtube" | "tiktok" | "website" | "custom"
+  url        String
+  displayName String?
+  position   Int      @default(0)
+  verified   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  @@index([userId, position])
+}
+
+model PortfolioItem {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  mediaUrl    String?
+  linkUrl     String?
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  @@index([userId, position])
 }
