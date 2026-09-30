@@ -369,6 +369,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/user`, './routes/userProfile.routes'],
   [`/api/${v}/business-verification`, './routes/businessVerification.routes'],
   [`/api/${v}/fluid-booking`, './routes/fluidBooking.routes'],
+  [`/api/${v}/values`, './routes/values.routes'],
 ];
 
 try {

@@ -107,6 +107,7 @@ model User {
   showSocialLinks         Boolean                  @default(true)
   showPortfolio           Boolean                  @default(true)
   layoutStyle             String                   @default("classic") // classic | compact | showcase
+  valuesPreferences       Json                     @default("{}")
   authMethods             UserAuthMethod[]
   memberships             BusinessMember[]
   pakistanPayments        PakistanPayment[]
@@ -259,6 +260,7 @@ model Business {
   travelFeePerMile       Float?    @default(0.50)
   maxTravelMinutes       Int?      @default(45)
   maxConcurrentBookings  Int       @default(1)
+  valuesPreferences      Json      @default("{}")
   owner                  User?                    @relation(fields: [ownerId], references: [id])
   businessHours          BusinessHours[]
   settings               BusinessSettings?

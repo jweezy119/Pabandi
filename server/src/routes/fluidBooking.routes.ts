@@ -17,11 +17,31 @@ router.get('/availability/:businessId', apiLimiter, async (req, res: Response) =
         id: true, name: true, slug: true, logoUrl: true, coverImageUrl: true,
         trustScore: true, isVerified: true, maxConcurrentBookings: true,
         depositAmount: true, depositPercentage: true, requireDeposit: true,
-        cancellationHours: true, serviceAddress: true,
+        cancellationHours: true, serviceAddress: true, valuesPreferences: true,
       },
     });
 
     if (!business) return res.status(404).json({ success: false, error: 'Business not found' });
+
+    let userPreferences: Record<string, unknown> = {};
+    if (req.user) {
+      const userData = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { valuesPreferences: true },
+      });
+      userPreferences = (userData?.valuesPreferences as Record<string, unknown>) || {};
+    }
+
+    const businessValues = (business.valuesPreferences as Record<string, unknown>) || {};
+    const valuesAlignment = {
+      userShariaCompliance: Boolean(userPreferences.shariaCompliance),
+      businessShariaCompliance: Boolean(businessValues.shariaCompliance),
+      userHalalOnly: Boolean(userPreferences.halalOnly),
+      businessHalalOnly: Boolean(businessValues.halalOnly),
+      userProfitSharing: Boolean(userPreferences.profitSharing),
+      businessProfitSharing: Boolean(businessValues.profitSharing),
+      aligned: userPreferences.shariaCompliance && businessValues.shariaCompliance ? true : null,
+    };
 
     const services = await prisma.businessService.findMany({
       where: { businessId, isActive: true },
@@ -114,6 +134,7 @@ router.get('/availability/:businessId', apiLimiter, async (req, res: Response) =
         } : null,
         isBlackout: Boolean(blackout),
         slots,
+        valuesAlignment,
       },
     });
   } catch (error: unknown) {

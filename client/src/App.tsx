@@ -265,6 +265,7 @@ import PublicProfilePage from './pages/public/PublicProfilePage';
 import FluidBookingPage from './pages/booking/FluidBookingPage';
 import BusinessVerificationPage from './pages/crm/BusinessVerificationPage';
 import QuickPostPage from './pages/crm/QuickPostPage';
+import ValuesPreferencesPage from './pages/me/ValuesPreferencesPage';
 
 // Support
 import SupportHomePage from './pages/support/SupportHomePage';
@@ -591,6 +592,7 @@ function AnimatedAppRoutes() {
             <Route path="me/profile" element={<PersonalGuard><ProfileEditorPage /></PersonalGuard>} />
             <Route path="me/verification" element={<PersonalGuard><BusinessVerificationPage /></PersonalGuard>} />
             <Route path="me/quick-post" element={<PersonalGuard><QuickPostPage /></PersonalGuard>} />
+            <Route path="me/values" element={<PersonalGuard><ValuesPreferencesPage /></PersonalGuard>} />
           </Route>
       </Routes>
     </AnimatePresence>
