@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { CustomError } from './errorHandler';
+import crypto from 'crypto';
 
 export interface ApiKeyRequest extends Request {
   apiClient?: {
@@ -22,6 +23,10 @@ const TIER_LIMITS: Record<string, number> = {
   ENTERPRISE: 100_000,
 };
 
+function hashApiKey(key: string): string {
+  return crypto.createHash('sha256').update(key).digest('hex');
+}
+
 /**
  * Validates the x-api-key header, enforces quota, and attaches
  * the resolved ApiClient to req.apiClient.
@@ -33,7 +38,6 @@ export const apiKeyAuth = async (
 ) => {
   req.requestStartTime = Date.now();
 
-  // Support both x-api-key header and Bearer token (developer docs convention)
   let apiKey = req.headers['x-api-key'] as string | undefined;
   if (!apiKey) {
     const authHeader = req.headers.authorization;
@@ -46,9 +50,11 @@ export const apiKeyAuth = async (
     return next(new CustomError('Missing API key. Provide via x-api-key header or Authorization: Bearer <key>', 401));
   }
 
+  const keyHash = hashApiKey(apiKey);
+
   try {
     const client = await prisma.apiClient.findUnique({
-      where: { apiKey },
+      where: { apiKeyHash: keyHash },
       select: {
         id: true,
         name: true,

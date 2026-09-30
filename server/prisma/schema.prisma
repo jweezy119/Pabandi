@@ -907,13 +907,17 @@ model ApiClient {
   id                String        @id @default(cuid())
   name              String
   email             String        @unique
-  apiKey            String        @unique
+  apiKey            String?       @unique
+  apiKeyHash        String?       @unique
   tier              ApiTier       @default(STARTER)
   callsUsed         Int           @default(0)
   callsLimit        Int           @default(500)
   isActive          Boolean       @default(true)
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
+  expiresAt         DateTime?
+  scopes            Json          @default("[]")
+  ipAllowlist       Json?
   paymentMethod     String?
   transactionHash   String?       @unique
   walletAddress     String?

@@ -104,7 +104,13 @@ export const PTP_RISK_BANDS: Record<PTPRiskBand, {
 };
 
 // Signing secret — in production, load from KMS/HSM, never hardcode.
-const PTP_SIGNING_SECRET = process.env.PTP_SIGNING_SECRET || 'dev-ptp-signing-secret-change-me';
+const PTP_SIGNING_SECRET = process.env.PTP_SIGNING_SECRET;
+
+if (!PTP_SIGNING_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('PTP_SIGNING_SECRET must be set in production');
+}
+
+const PTP_SIGNING_KEY = PTP_SIGNING_SECRET || '';
 const PTP_PUBLIC_KEY_ID = 'ptp-pabandi-2024';
 
 // Core attestation shape (entity: individual/business)
@@ -399,7 +405,7 @@ export class PTPEngine {
       capabilities: (attestation as any).capabilities ?? null,
       ownerUserId: (attestation as any).ownerUserId ?? null,
     };
-    return crypto.createHmac('sha512', PTP_SIGNING_SECRET).update(JSON.stringify(body)).digest('hex');
+    return crypto.createHmac('sha512', PTP_SIGNING_KEY).update(JSON.stringify(body)).digest('hex');
   }
 
   private signAgentAttestation(att: PTPAgentAttestation): string {
@@ -417,11 +423,11 @@ export class PTPEngine {
       issuer: att.issuer,
       publicKeyId: att.publicKeyId,
     };
-    return crypto.createHmac('sha512', PTP_SIGNING_SECRET).update(JSON.stringify(body)).digest('hex');
+    return crypto.createHmac('sha512', PTP_SIGNING_KEY).update(JSON.stringify(body)).digest('hex');
   }
 
   public getPublicKeyPEM(): string {
-    const pubKeyHash = crypto.createHash('sha256').update(PTP_SIGNING_SECRET).digest('base64');
+    const pubKeyHash = crypto.createHash('sha256').update(PTP_SIGNING_KEY).digest('base64');
     return `-----BEGIN PTP PUBLIC KEY-----\nVersion: PTP/1.0\nKeyID: ${PTP_PUBLIC_KEY_ID}\nKey: ${pubKeyHash}\n-----END PTP PUBLIC KEY-----`;
   }
 }

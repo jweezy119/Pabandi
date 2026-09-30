@@ -62,6 +62,112 @@ Property management for landlords. Manage tenants, leases, maintenance, and reve
 
 ---
 
+## Trust Passport Profiles
+
+Every user gets a public, shareable Trust Passport — their identity in the Pabandi ecosystem.
+
+**Key Features:**
+- **Editable by owner** — Full control over bio, tagline, location, avatar, banner
+- **Trust-first** — Scores lead, not follows. Users can hide but never fake
+- **Social linking** — LinkedIn, X, GitHub, Instagram, YouTube, TikTok with auto-verification
+- **Portfolio** — Showcase work with media, links, and featured items
+- **Customizable** — Banner colors, accent colors, layout styles (classic/compact/showcase)
+- **Live preview** — 375px mobile preview updates instantly as you edit
+- **Public view** — `pabandi.com/u/:username` with OG tags and share buttons
+
+---
+
+## CRM Modularity — Shape It Like Clay
+
+The CRM dashboard is fully modular. Users shape and mold their experience with their own hands.
+
+**Key Features:**
+- **Widget registry** — 10 widget types (stats, pipeline, revenue, clients, activities, tasks, alerts, calendar, team, goals)
+- **Drag-and-drop** — Reorder widgets, toggle visibility, half/full width
+- **Theme customization** — Accent colors, density (compact/comfortable/spacious), corner radius
+- **Custom fields** — Define fields per entity (Client, Deal, Job, Invoice)
+- **CSV import** — Bulk import clients and deals with column mapping and preview
+- **Service catalog** — Images, categories, tags, discount pricing, location types
+- **Business hours** — 7-day schedule with per-day hours
+- **Service area** — Radius, travel fee, max travel time
+
+---
+
+## Fluid Booking with Trust Scoring
+
+Booking is now a unified, trust-gated flow that adapts to each user.
+
+**Key Features:**
+- **4-step flow** — Service select → date/time → details → confirmed
+- **Real availability** — Per-service slots with capacity management
+- **Trust-gated deposits** — Waived for trusted users (80+), adjusted by risk score
+- **Slot locking** — 10-minute holds prevent double-booking during checkout
+- **Risk-based pricing** — No-show probability computed at booking time
+- **Values alignment** — Shows if user and business share values
+
+---
+
+## AI Agent Infrastructure
+
+Pabandi is the trust and settlement layer for AI agents.
+
+**Key Features:**
+- **Agent Capability Passport (PTP)** — Portable, offline-verifiable trust attestations with 5 risk bands
+- **Agent-to-agent communication** — Messaging, task queues, and collaboration
+- **Agent marketplace** — Register, discover, and hire agents
+- **Agent analytics** — Task completion, bookings, trust score, earnings
+- **Agent consent** — OAuth-like flow for agent-on-behalf-of-user actions
+- **MCP server** — JSON-RPC 2.0 with tool registry and access tiers
+- **SDKs** — TypeScript, JavaScript, and Python
+- **Webhooks** — HMAC-signed event delivery with retries
+- **API keys** — Hashed at rest, tiered quotas, scoped permissions
+
+**Agent Discovery:**
+- `/.well-known/agents.json` — Agent capabilities and endpoints
+- `/.well-known/agent-registry.json` — Dynamic agent registry
+- `/.well-known/agent-status` — Platform health for agents
+- `/.well-known/oauth-authorization-server` — OAuth discovery
+- `llms.txt` — LLM-friendly capability summary
+
+---
+
+## Values & Preferences
+
+Users and businesses can opt into values that matter to them.
+
+**Key Features:**
+- **Profit sharing** — Open to fair profit-sharing arrangements
+- **Ethical sourcing** — Prefer ethically-sourced businesses
+- **Community first** — Support community-focused businesses
+- **Environmental care** — Prefer eco-friendly practices
+- **Inclusive service** — Welcome all customers
+- **Radical transparency** — Open about pricing and policies
+- **Custom values** — Add any personal values
+- **Values alignment** — Booking shows if user and business share values
+
+---
+
+## Security & Trust
+
+**Security Guard Rails:**
+- API keys hashed at rest (SHA-256)
+- Audit logging for all mutating operations
+- Helmet with strict CSP, frameguard, referrer policy
+- Rate limiting on all endpoints including MCP
+- PTP signing secret required in production (no hardcoded fallback)
+- Input validation and upload security
+- CORS allowlist with production filtering
+
+**Trust System:**
+- 5 risk bands (A-E) with capability gating
+- ZK threshold proofs (prove score >= threshold without revealing score)
+- Financial guarantees for Band A/B users
+- Onchain attestations for key events
+- Trust audit trail with hash chain
+- Social trust boost from verified connections
+
+---
+
 ## Core Protocol Features
 
 ### Jev Decision Engine

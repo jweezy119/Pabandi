@@ -78,18 +78,29 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'", "https:"],
-      frameAncestors: ["'self'", "https://*.myshopify.com", "https://admin.shopify.com"],
+      frameAncestors: ["'self'"],
       objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
       upgradeInsecureRequests: [],
     },
   },
   crossOriginEmbedderPolicy: false,
-  frameguard: false, // Must be disabled so we don't send X-Frame-Options: SAMEORIGIN
+  frameguard: { action: 'sameorigin' },
   hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  permissionsPolicy: {
+    features: {
+      camera: ["'none'"],
+      microphone: ["'none'"],
+      geolocation: ["'self'"],
+      payment: ["'self'"],
+    },
+  },
 }));
 app.use(compression());
 const corsOrigins = [
@@ -136,8 +147,22 @@ app.use((req, _res, next) => {
 // Rate limiting
 app.use('/api/', rateLimiter);
 
-// DISABLED: Audit logging (runs on every request, memory overhead)
-// app.use('/api/', auditLog);
+// Audit logging for all mutating operations
+app.use('/api/', (req: any, res: any, next: any) => {
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+    const auditLog = {
+      timestamp: new Date().toISOString(),
+      method: req.method,
+      path: req.path,
+      userId: req.user?.id || null,
+      ip: req.ip,
+      userAgent: req.get('user-agent'),
+      requestId: req.requestId,
+    };
+    logger.info(`[AUDIT] ${JSON.stringify(auditLog)}`);
+  }
+  next();
+});
 
 // Firebase App Check Middleware for API routes — disabled to reduce startup memory (imports firebase-admin)
 app.use('/api/', (_req: any, _res: any, next: any) => next());
@@ -371,6 +396,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/fluid-booking`, './routes/fluidBooking.routes'],
   [`/api/${v}/values`, './routes/values.routes'],
   [`/api/${v}/agent-comm`, './routes/agentCommunication.routes'],
+  [`/.well-known`, './routes/agentDiscovery.routes'],
 ];
 
 try {
@@ -385,8 +411,16 @@ for (const [routePath, importPath] of routeMap) {
 }
 
 
-// Lazy-load MCP handler
-app.post('/mcp', async (req, res) => {
+// MCP endpoint with rate limiting
+import { RateLimit } from 'express-rate-limit';
+const mcpLimiter = RateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'MCP rate limit exceeded. Max 30 requests per minute.' },
+});
+app.post('/mcp', mcpLimiter, async (req, res) => {
   try {
     const { mcpHandler } = await import('./mcp/pabandiMcpServer');
     mcpHandler(req, res);
