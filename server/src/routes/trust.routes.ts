@@ -1,109 +1,118 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
 import { prisma } from '../utils/database';
+import { logger } from '../utils/logger';
+import { apiLimiter } from '../middleware/rateLimit.middleware';
 
 const router = Router();
+const JWT_SECRET = process.env.JWT_SECRET || 'pabandi-fallback-secret-2026';
+const VC_EXPIRY_HOURS = 24;
+
+function publicScores(passport: any) {
+  return {
+    payment: passport.paymentScore ?? 500,
+    showUp: passport.showUpScore ?? 500,
+    delivery: passport.deliveryScore ?? 500,
+    tenancy: passport.tenancyScore ?? 500,
+    freight: passport.freightScore ?? 500,
+  };
+}
 
 /**
- * GET /api/v1/trust/passport/:userId
- * Get trust passport with reliability score
+ * GET /api/v1/trust/resolve/:identifier
+ * identifier can be: email, wallet address, github username, phone
+ * Returns the linked TrustPassport with public scores only
  */
-router.get('/passport/:userId', async (req, res) => {
+router.get('/resolve/:identifier', apiLimiter, async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
-    let passport = await prisma.trustPassport.findUnique({ where: { userId } });
-    if (!passport) {
-      passport = await prisma.trustPassport.create({
-        data: { 
-          userId, 
-          handle: `user-${userId}`, 
-          displayName: `User ${userId}`, 
-          score: 50, 
-          level: 'bronze', 
-          verified: false 
-        },
-      });
+    const identifier = req.params.identifier;
+    if (!identifier) {
+      return res.status(400).json({ success: false, error: 'identifier is required' });
     }
-    res.json({ success: true, data: passport });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
 
-/**
- * PUT /api/v1/trust/score/:userId
- * Update trust score (with audit trail)
- */
-router.put('/score/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const { delta, reason } = req.body;
-    let passport = await prisma.trustPassport.findUnique({ where: { userId } });
-    if (!passport) {
-      passport = await prisma.trustPassport.create({
-        data: { 
-          userId, 
-          handle: `user-${userId}`, 
-          displayName: `User ${userId}`, 
-          score: 50, 
-          level: 'bronze', 
-          verified: false 
-        },
+    let passport: any = null;
+
+    if (identifier.includes('@')) {
+      passport = await prisma.trustPassport.findFirst({
+        where: { userId: (await prisma.user.findUnique({ where: { email: identifier } }))?.id },
+      });
+    } else if (identifier.startsWith('0x') || identifier.length >= 32) {
+      passport = await prisma.trustPassport.findFirst({
+        where: { OR: [{ walletAddress: identifier }, { userId: (await prisma.user.findFirst({ where: { walletAddress: identifier } }))?.id }] },
+      });
+    } else {
+      passport = await prisma.trustPassport.findFirst({
+        where: { OR: [{ handle: { equals: identifier } }, { providerRef: identifier }] },
       });
     }
-    const newScore = Math.max(0, Math.min(100, (passport.score || 50) + (delta || 0)));
-    const level = newScore >= 90 ? 'platinum' : newScore >= 70 ? 'gold' : newScore >= 50 ? 'silver' : 'bronze';
-    const updated = await prisma.trustPassport.update({
-      where: { userId },
-      data: { score: newScore, level },
+
+    if (!passport || passport.visibility !== 'PUBLIC') {
+      return res.status(404).json({ success: false, error: 'Passport not found or private' });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        handle: passport.handle,
+        displayName: passport.displayName,
+        category: passport.category,
+        walletAddress: passport.walletAddress,
+        claimsCount: passport.claimsCount,
+        scores: publicScores(passport),
+        verifiedIdentity: passport.verifiedIdentity,
+        fraudFlag: passport.fraudFlag,
+        issuedAt: new Date().toISOString(),
+      },
     });
-    res.json({ success: true, data: updated });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+  } catch (error: any) {
+    logger.error(`[Trust] resolve error: ${error.message}`);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
 /**
- * GET /api/v1/trust/risk/:userId
- * Get risk assessment for a user
+ * GET /api/v1/trust/credential/:passportId
+ * Returns a signed JWT verifiable credential for the passport
  */
-router.get('/risk/:userId', async (req, res) => {
+router.get('/credential/:passportId', apiLimiter, async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
-    const passport = await prisma.trustPassport.findUnique({ where: { userId } });
-    if (!passport) {
-      return res.status(404).json({ success: false, message: 'Passport not found' });
+    const passportId = req.params.passportId;
+    if (!passportId) {
+      return res.status(400).json({ success: false, error: 'passportId is required' });
     }
-    const risk = (passport.score || 50) >= 70 ? 'low' : (passport.score || 50) >= 40 ? 'medium' : 'high';
-    res.json({ success: true, data: { userId, score: passport.score, risk, level: passport.level } });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
 
-/**
- * GET /api/v1/trust/escrow/:userId
- * Check if user is eligible for escrow
- */
-router.get('/escrow/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    let passport = await prisma.trustPassport.findUnique({ where: { userId } });
-    if (!passport) {
-      passport = await prisma.trustPassport.create({
-        data: { 
-          userId, 
-          handle: `user-${userId}`, 
-          displayName: `User ${userId}`, 
-          score: 50, 
-          level: 'bronze', 
-          verified: false 
-        },
-      });
+    const passport = await prisma.trustPassport.findUnique({ where: { id: passportId } });
+    if (!passport || passport.visibility !== 'PUBLIC') {
+      return res.status(404).json({ success: false, error: 'Passport not found or private' });
     }
-    const eligible = (passport.score || 50) >= 30;
-    res.json({ success: true, data: { userId, eligible, score: passport.score || 50 } });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + VC_EXPIRY_HOURS * 60 * 60 * 1000);
+
+    const payload = {
+      iss: 'https://pabandi.com',
+      sub: passport.id,
+      handle: passport.handle,
+      displayName: passport.displayName,
+      scores: publicScores(passport),
+      verifiedEvents: passport.claimsCount,
+      verifiedIdentity: passport.verifiedIdentity,
+      issuedAt: now.toISOString(),
+      expiresAt: expiresAt.toISOString(),
+    };
+
+    const signedJwt = jwt.sign(payload, JWT_SECRET, { expiresIn: `${VC_EXPIRY_HOURS}h` });
+
+    return res.json({
+      success: true,
+      data: {
+        credential: signedJwt,
+        publicKeyUrl: `${req.protocol}://${req.get('host')}/.well-known/pabandi-keys.json`,
+      },
+    });
+  } catch (error: any) {
+    logger.error(`[Trust] credential error: ${error.message}`);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 

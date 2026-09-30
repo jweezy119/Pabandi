@@ -316,6 +316,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/agent-marketplace`, './routes/agentMarketplace.routes'],
   [`/api/${v}/agent-learning`, './routes/agentLearning.routes'],
   [`/api/${v}/trust-passport`, './routes/trustPassport.routes'],
+  [`/api/${v}/trust`, './routes/trust.routes'],
   [`/api/${v}/passport`, './routes/passport.routes'],
   [`/api/${v}/osint`, './routes/osint.routes'],
   [`/api/${v}/seal`, './routes/seal.routes'],

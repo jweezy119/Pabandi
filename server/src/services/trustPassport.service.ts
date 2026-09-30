@@ -49,6 +49,29 @@ export class TrustPassportService {
     });
   }
 
+  /** Find or create a passport by wallet address (wallet-first identity). */
+  async findOrCreateByWallet(input: {
+    walletAddress: string;
+    displayName: string;
+    category?: string;
+  }): Promise<any> {
+    const existing = await prisma.trustPassport.findUnique({
+      where: { walletAddress: input.walletAddress } as any,
+    });
+    if (existing) return existing;
+
+    const handle = `wallet-${input.walletAddress.slice(0, 8)}`;
+    return prisma.trustPassport.create({
+      data: {
+        handle,
+        displayName: input.displayName,
+        category: input.category ?? 'FREELANCER',
+        walletAddress: input.walletAddress,
+        visibility: 'PUBLIC',
+      },
+    });
+  }
+
   /** Public directory of passports (discovery). No auth. */
   async list(params?: { category?: string; search?: string; limit?: number }): Promise<any[]> {
     const where: any = { visibility: 'PUBLIC' };

@@ -2,6 +2,11 @@ import { Router, Request, Response } from 'express';
 import { ptpEngine } from '../protocol/ptp.spec';
 import path from 'path';
 import fs from 'fs';
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import { apiLimiter } from '../middleware/rateLimit.middleware';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'pabandi-fallback-secret-2026';
 
 const router = Router();
 
@@ -80,6 +85,28 @@ router.get('/agents.json', (req: Request, res: Response) => {
 
   res.setHeader('Content-Type', 'application/json');
   res.json(agentsDoc);
+});
+
+/**
+ * GET /.well-known/pabandi-keys.json
+ * Public key for verifying Pabandi VC JWTs.
+ */
+router.get('/pabandi-keys.json', (_req: Request, res: Response) => {
+  const publicKeyPem = crypto.createPublicKey(JWT_SECRET as any).export({ type: 'spki', format: 'pem' }).toString();
+  const jwks = {
+    keys: [
+      {
+        kty: 'EC',
+        crv: 'secp256k1',
+        x: Buffer.from(publicKeyPem).toString('base64url'),
+        alg: 'ES256',
+        use: 'sig',
+        kid: 'pabandi-1',
+      },
+    ],
+  };
+  res.setHeader('Content-Type', 'application/json');
+  res.json(jwks);
 });
 
 export default router;

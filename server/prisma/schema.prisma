@@ -4038,7 +4038,7 @@ model TrustPassport {
   category              String     @default("FREELANCER") // FREELANCER | BUILDER | FLEET | HOA | PROPERTY_MANAGER
   displayName           String
   bio                   String?
-  walletAddress         String?
+  walletAddress         String?    @unique
   visibility            String     @default("PUBLIC") // PUBLIC | PRIVATE | MODULE_ONLY
   privacySettings       Json? // { shareTrustScores: boolean, shareProfile: boolean, shareHistory: boolean, allowedModules: string[] }
   claimsCount           Int        @default(0) // times requested/verified
