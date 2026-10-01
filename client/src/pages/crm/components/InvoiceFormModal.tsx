@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FiX } from 'react-icons/fi';
 import { Button } from '../../../components/primitives';
+import { getAuthToken } from '../../../utils/authToken';
 
 type Client = { id: string; name: string; passportId?: string; paymentScore?: number };
 
@@ -17,7 +18,7 @@ export function InvoiceFormModal({ onClose, onSave, clients }: { onClose: () => 
     const fetchJobs = async () => {
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/jobs?status=COMPLETED`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` }
+          headers: { Authorization: `Bearer ${getAuthToken() || ''}` }
         });
         const d = await res.json();
         const clientJobs = (d.data || []).filter((j: any) => j.clientId === selectedClient);
@@ -41,7 +42,7 @@ export function InvoiceFormModal({ onClose, onSave, clients }: { onClose: () => 
     try {
       await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/invoices`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() || ''}` },
         body: JSON.stringify({
           clientId: selectedClient,
           dateDue: lastDay.toISOString(),

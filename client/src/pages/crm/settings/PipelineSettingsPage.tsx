@@ -3,11 +3,12 @@ import DashboardLayout from '../../../components/DashboardLayout';
 import { Card } from '../../../components/primitives/Card';
 import { Button } from '../../../components/primitives/Button';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getAuthToken } from '../../../utils/authToken';
 
 
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` });
+const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() || ''}` });
 
 export function PipelineSettingsPage() {
   const businessId = localStorage.getItem('businessId') || '';

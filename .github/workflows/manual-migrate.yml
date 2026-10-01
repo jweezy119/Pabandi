@@ -30,13 +30,31 @@ jobs:
           cd server
           npm install
 
-      - name: Resolve failed migration
+      - name: Resolve failed migration (if any)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
         run: |
           cd server
-          npx prisma migrate resolve --applied 20260902_add_current_hash
+          # Idempotent. `migrate resolve --applied` is NOT safe to run twice: it
+          # exits non-zero with P3008 when the migration is already recorded as
+          # applied. Because a failed step aborts the job, this used to make the
+          # entire workflow permanently unrunnable once that record existed --
+          # which it does, so `migrate deploy` below could never be reached.
+          #
+          # P3008 = already applied -> nothing to do.
+          # Other  -> genuinely blocked, fail loudly rather than migrate past it.
+          set +e
+          output=$(npx prisma migrate resolve --applied 20260902_add_current_hash 2>&1)
+          status=$?
+          set -e
+          echo "$output"
+          if [ $status -ne 0 ] && echo "$output" | grep -q "P3008"; then
+            echo "Already recorded as applied; skipping resolve."
+          elif [ $status -ne 0 ]; then
+            echo "::error::migrate resolve failed for a reason other than P3008"
+            exit $status
+          fi
 
       - name: Run Prisma Migrations
         env:

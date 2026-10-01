@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { Button } from '../../components/primitives';
+import { getAuthToken } from '../../utils/authToken';
 
 
 
@@ -168,7 +169,7 @@ export default function ContactJobsPage() {
     try {
       // Fetch clients for the dropdown
       const clientsRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${getAuthToken()}` },
       });
       if (clientsRes.ok) {
         const clientsData = await clientsRes.json();
@@ -226,7 +227,7 @@ export default function ContactJobsPage() {
       queryParams.append('sortOrder', sortOrder);
       
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/jobs?${queryParams.toString()}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${getAuthToken()}` },
       });
       
       if (res.ok) {
@@ -282,7 +283,7 @@ export default function ContactJobsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         },
         body: JSON.stringify(cleanedData)
       });

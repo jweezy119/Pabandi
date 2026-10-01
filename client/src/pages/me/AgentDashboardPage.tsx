@@ -5,6 +5,7 @@ import {
   Shield, Zap, Users, TrendingUp, Plus, MessageSquare
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getAuthToken } from '../../utils/authToken';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
 
@@ -47,7 +48,7 @@ export default function AgentDashboardPage() {
 
   const loadData = async () => {
     try {
-      const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
+      const headers = { Authorization: `Bearer ${getAuthToken()}` };
       const [analyticsRes, tasksRes, messagesRes] = await Promise.all([
         fetch(`${API_BASE}/api/v1/agent-comm/analytics`, { headers }),
         fetch(`${API_BASE}/api/v1/agent-comm/tasks`, { headers }),
@@ -69,7 +70,7 @@ export default function AgentDashboardPage() {
     try {
       const res = await fetch(`${API_BASE}/api/v1/agent-comm/task`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
         body: JSON.stringify(newTask),
       });
       if (res.ok) {
@@ -90,7 +91,7 @@ export default function AgentDashboardPage() {
     try {
       const res = await fetch(`${API_BASE}/api/v1/agent-comm/message`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
         body: JSON.stringify(newMessage),
       });
       if (res.ok) {
@@ -109,7 +110,7 @@ export default function AgentDashboardPage() {
     try {
       const res = await fetch(`${API_BASE}/api/v1/agent-comm/task/${taskId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
         body: JSON.stringify({ status: 'completed' }),
       });
       if (res.ok) {

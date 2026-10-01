@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { getAuthToken } from '../../utils/authToken';
 
 interface Service {
   id: string;
@@ -128,7 +129,7 @@ export default function CustomerBookingPage() {
         if (customer.email) {
           setLoadingTrust(true);
           fetch(`/api/v1/crm/clients?email=${encodeURIComponent(customer.email)}`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+            headers: { Authorization: `Bearer ${getAuthToken() || ''}` },
           })
             .then(r => r.json())
             .then(res => {

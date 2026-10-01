@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getAuthToken } from '../utils/authToken';
 
 interface AgentReward {
   id: string;
@@ -21,7 +22,7 @@ export const BookingWithPab: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'bookings' | 'rewards'>('bookings');
 
   const apiCall = async (url: string, method: string, body?: any) => {
-    const token = localStorage.getItem('token');
+    const token = getAuthToken();
     const res = await fetch(url, {
       method,
       headers: {

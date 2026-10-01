@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Surface, Button, Badge, tokens } from '../design-system';
 import { crmService, teamService } from '../services/api';
 import { useOfflineMode } from '../hooks/useOfflineMode';
+import { useSwipe } from '../hooks/useSwipe';
 
 type Contact = { id: string; firstName?: string; lastName?: string; email?: string; phone?: string; company?: string; title?: string; source?: string; status: string; tags: string[]; createdAt: string };
 type Deal = { id: string; title: string; description?: string; value: number; currency: string; stage: string; probability: number; expectedCloseDate?: string; closedAt?: string; lostReason?: string; contact?: Contact; createdAt: string };

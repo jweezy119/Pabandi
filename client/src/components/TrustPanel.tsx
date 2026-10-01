@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, ShieldAlert, ShieldCheck, Activity, AlertCircle } from 'lucide-react';
+import { getAuthToken } from '../utils/authToken';
 
 interface TrustPanelProps {
   passportId?: string;
@@ -16,7 +17,7 @@ export function TrustPanel({ passportId }: TrustPanelProps) {
     }
     const fetchPassport = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAuthToken();
         const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/trust/passports/${passportId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });

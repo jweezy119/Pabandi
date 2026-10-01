@@ -9,6 +9,7 @@ import DealListTable from '../crm/components/DealListTable';
 import DealFormModal from '../crm/components/DealFormModal';
 import CSVImportModal from '../crm/components/CSVImportModal';
 import { Upload } from 'lucide-react';
+import { getAuthToken } from '../../utils/authToken';
 
 
 
@@ -44,7 +45,7 @@ export default function ContactDealsPage() {
   async function fetchDealsAndClients() {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       const headers = { Authorization: `Bearer ${token}` };
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -67,7 +68,7 @@ export default function ContactDealsPage() {
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
       const res = await fetch(`${baseUrl}/api/v1/crm/deals`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
         body: JSON.stringify({ ...form, value: parseFloat(form.value) || 0, probability: parseInt(form.probability) || 10 }),
       });
       if (res.ok) {
@@ -84,7 +85,7 @@ export default function ContactDealsPage() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Authorization: `Bearer ${getAuthToken()}`,
       },
       body: JSON.stringify({ csvData }),
     });
@@ -111,7 +112,7 @@ export default function ContactDealsPage() {
       const probMap: Record<string, number> = { LEAD: 10, QUALIFIED: 30, PROPOSAL: 60, NEGOTIATION: 80, WON: 100, LOST: 0 };
       const res = await fetch(`${baseUrl}/api/v1/crm/deals/${dealId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
         body: JSON.stringify({ stage, probability: probMap[stage] ?? 10, ...(reason ? { lostReason: reason } : {}) }),
       });
       if (res.ok) fetchDealsAndClients();

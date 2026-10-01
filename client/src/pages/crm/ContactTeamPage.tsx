@@ -5,11 +5,12 @@ import { Button } from '../../components/primitives/Button';
 import { TeamList } from './components/TeamList';
 import { TeamInviteModal } from './components/TeamInviteModal';
 import { usePermissions } from '../../hooks/usePermissions';
+import { getAuthToken } from '../../utils/authToken';
 
 
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` });
+const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() || ''}` });
 
 export function ContactTeamPage() {
   const businessId = localStorage.getItem('businessId') || '';

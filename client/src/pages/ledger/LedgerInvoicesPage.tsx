@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
+import { getAuthToken } from '../../utils/authToken';
 
 const navItems = [
   { path: '/capital', label: 'Overview', icon: 'dashboard', end: true },
@@ -18,7 +19,7 @@ export default function LedgerInvoicesPage() {
     async function fetchInvoices() {
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/capital/invoices`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          headers: { Authorization: `Bearer ${getAuthToken()}` },
         });
         if (res.ok) {
           const data = await res.json();

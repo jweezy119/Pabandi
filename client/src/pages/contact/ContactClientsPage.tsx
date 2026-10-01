@@ -6,6 +6,7 @@ import ClientFormModal from '../crm/components/ClientFormModal';
 import CSVImportModal from '../crm/components/CSVImportModal';
 import { useAuthStore } from '../../store/authStore';
 import { Upload } from 'lucide-react';
+import { getAuthToken } from '../../utils/authToken';
 
 
 
@@ -27,7 +28,7 @@ export default function ContactClientsPage() {
   async function fetchBusinessSettings() {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/settings`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${getAuthToken()}` },
       });
       if (res.ok) {
         const data = await res.json();
@@ -44,7 +45,7 @@ export default function ContactClientsPage() {
   async function fetchClients() {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${getAuthToken()}` },
       });
       if (res.ok) {
         const data = await res.json();
@@ -74,7 +75,7 @@ export default function ContactClientsPage() {
         method: isEdit ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${getAuthToken()}`,
         },
         body: JSON.stringify(payload),
       });
@@ -98,7 +99,7 @@ export default function ContactClientsPage() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Authorization: `Bearer ${getAuthToken()}`,
       },
       body: JSON.stringify({ csvData }),
     });
@@ -114,7 +115,7 @@ export default function ContactClientsPage() {
     try {
       await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${getAuthToken()}` },
       });
       setShowDeleteConfirm(null);
       fetchClients();

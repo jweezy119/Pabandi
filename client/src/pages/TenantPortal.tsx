@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { getAuthToken } from '../utils/authToken';
 
 interface DashboardData {
   balance: { usdc: number; pabTokens: number; pabValueUsd: number; totalUsd: number };
@@ -31,7 +32,7 @@ export default function TenantPortal() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAuthToken();
         if (!token) { setError('Not authenticated'); setLoading(false); return; }
 
         // Fetch PAB balance

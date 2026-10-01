@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getAuthToken } from '../utils/authToken';
 
 export type Role = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
 
@@ -18,7 +19,7 @@ export function usePermissions(businessId: string) {
     // For now, assume we fetch the current user's role in this business.
     const fetchRole = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAuthToken();
         if (!token) return;
         
         // Example mock fetch logic, assuming the backend could return current user's role

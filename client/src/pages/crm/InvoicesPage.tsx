@@ -2,13 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button, ClaySkeletonCard } from '../../components/primitives';
 import { InvoiceList } from './components/InvoiceList';
 import { InvoiceFormModal } from './components/InvoiceFormModal';
+import { getAuthToken } from '../../utils/authToken';
 
 const CRM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
 
 async function api(path: string, options: RequestInit = {}) {
   const res = await fetch(`${CRM_API}${path}`, {
     ...options,
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}`, ...(options.headers || {}) },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() || ''}`, ...(options.headers || {}) },
   });
   if (!res.ok) throw new Error((await res.json()).error || 'API error');
   return res.json();

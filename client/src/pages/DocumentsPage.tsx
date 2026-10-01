@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { getAuthToken } from '../utils/authToken';
 
 const PM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/property-manager`;
 
@@ -16,7 +17,7 @@ const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
 );
 
 function authHeaders(): HeadersInit {
-  const token = localStorage.getItem('token') || localStorage.getItem('auth_token') || '';
+  const token = getAuthToken() || localStorage.getItem('auth_token') || '';
   return {
     'Content-Type': 'application/json',
     Authorization: token ? `Bearer ${token}` : '',

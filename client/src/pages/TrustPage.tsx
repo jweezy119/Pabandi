@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import { socialService } from '../services/api';
 import DownloadableTrustBadge from '../components/DownloadableTrustBadge';
 import { tokens } from '../design-system';
+import { getAuthToken } from '../utils/authToken';
 
 // ─── Platform Config ──────────────────────────────────────────────────────────
 const PLATFORMS = [
@@ -319,7 +320,7 @@ export default function TrustPage() {
 
   const handleConnect = async (platformId: string) => {
     if (platformId === 'LINKEDIN' || platformId === 'FACEBOOK') {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       if (!token) return alert('Please log in first');
       window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/social/connect/oauth/${platformId.toLowerCase()}?token=${token}`;
       return;

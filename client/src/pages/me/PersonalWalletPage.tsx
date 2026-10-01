@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getAuthToken } from '../../utils/authToken';
 
 export default function PersonalWalletPage() {
   const [wallet, setWallet] = useState<any>(null);
@@ -8,7 +9,7 @@ export default function PersonalWalletPage() {
     const fetchWallet = async () => {
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/wallet/me`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          headers: { Authorization: `Bearer ${getAuthToken()}` },
         });
         if (res.ok) {
           setWallet(await res.json());

@@ -5,6 +5,7 @@ import { EmptyState } from '../../components/primitives/EmptyState';
 import { ActivityFeed } from './components/ActivityFeed';
 import { ActivityFormModal } from './components/ActivityFormModal';
 import { TaskFormModal } from './components/TaskFormModal';
+import { getAuthToken } from '../../utils/authToken';
 
 
 
@@ -18,7 +19,7 @@ const TYPES = [
 ];
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` });
+const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() || ''}` });
 
 export function ContactActivitiesPage() {
   const businessId = localStorage.getItem('businessId') || '';

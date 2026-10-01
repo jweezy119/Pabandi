@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { TrustPanel } from '../../components/TrustPanel';
+import { getAuthToken } from '../../utils/authToken';
 
 function ClayCard({ children, className = '', hover = true, ...props }: any) {
   return (
@@ -44,7 +45,7 @@ export default function ContactJobDetailPage() {
       return;
     }
     setLoading(true);
-    const h = { Authorization: `Bearer ${localStorage.getItem('token')}` };
+    const h = { Authorization: `Bearer ${getAuthToken()}` };
     const API = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
     Promise.all([
       fetch(`${API}/api/v1/crm/jobs/${id}`, { headers: h }),
@@ -61,7 +62,7 @@ export default function ContactJobDetailPage() {
     const API = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
     await fetch(`${API}/api/v1/crm/jobs/${id}/checkin`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
       body: JSON.stringify({ status: 'in progress' }),
     }).catch(console.error);
     setCheckedInAt(now);
@@ -74,7 +75,7 @@ export default function ContactJobDetailPage() {
     const API = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
     await fetch(`${API}/api/v1/crm/jobs/${id}/checkout`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
       body: JSON.stringify({ status: 'complete' }),
     }).catch(console.error);
     setCheckedOutAt(now);
@@ -86,7 +87,7 @@ export default function ContactJobDetailPage() {
     const API = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
     await fetch(`${API}/api/v1/crm/jobs/${id}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
       body: JSON.stringify({ status: 'cancelled' }),
     }).catch(console.error);
     setJob((p: any) => ({ ...p, status: 'cancelled' }));
@@ -95,7 +96,7 @@ export default function ContactJobDetailPage() {
   const delJob = async () => {
     if (!confirm('Delete this job? This cannot be undone.')) return;
     const API = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-    await fetch(`${API}/api/v1/crm/jobs/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).catch(console.error);
+    await fetch(`${API}/api/v1/crm/jobs/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getAuthToken()}` } }).catch(console.error);
     navigate('/contact/jobs');
   };
 
@@ -127,7 +128,7 @@ export default function ContactJobDetailPage() {
                   const API = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
                   await fetch(`${API}/api/v1/crm/jobs`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
                     body: JSON.stringify({ serviceType: svc || 'New Deal', price, status: 'PENDING' }),
                   });
                   navigate('/contact/deals');

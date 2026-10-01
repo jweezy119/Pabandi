@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Surface, Badge, tokens } from '../design-system';
 import { useAuthStore } from '../store/authStore';
 import apiClient from '../services/api';
+import { getAuthToken } from '../utils/authToken';
 
 const TIERS = [
   { name: 'Bronze', stake: '100 $PAB', benefit: 'Basic trust badge', color: 'var(--terracotta)', perks: ['List items', 'Basic support', '10% API discount'], discount: '10%' },
@@ -28,7 +29,7 @@ export const TokenomicsPage: React.FC = () => {
     const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
     Promise.all([
       fetch(`${baseUrl}/api/v1/pab/treasury`).then(res => res.json()).then(j => j.data).catch(() => null),
-      isAuthenticated ? fetch(`${baseUrl}/api/v1/pab-staking/position`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(res => res.json()).then(j => j.data).catch(() => null) : Promise.resolve(null),
+      isAuthenticated ? fetch(`${baseUrl}/api/v1/pab-staking/position`, { headers: { Authorization: `Bearer ${getAuthToken()}` } }).then(res => res.json()).then(j => j.data).catch(() => null) : Promise.resolve(null),
     ]).then(([treasuryData, positionData]) => {
       setTreasury(treasuryData);
       setPosition(positionData);

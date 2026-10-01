@@ -6,6 +6,7 @@ import {
   Shield, AlertTriangle, CreditCard, Zap, ArrowLeft
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getAuthToken } from '../../utils/authToken';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
 
@@ -110,7 +111,7 @@ export default function FluidBookingPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+          Authorization: `Bearer ${getAuthToken() || ''}`,
         },
         body: JSON.stringify({
           businessId: business.id,

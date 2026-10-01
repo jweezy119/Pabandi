@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Shield, MessageCircle, Clock, Zap, Settings, Activity } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { tokens } from '../design-system';
+import { getAuthToken } from '../utils/authToken';
 
 export const PluginManagerPage = () => {
   const { user } = useAuthStore();
@@ -20,8 +21,8 @@ export const PluginManagerPage = () => {
     try {
       setLoading(true);
       const [pluginsRes, statsRes] = await Promise.all([
-        axios.get('/api/v1/openwa/plugins/available', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }),
-        axios.get('/api/v1/openwa/stats', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+        axios.get('/api/v1/openwa/plugins/available', { headers: { Authorization: `Bearer ${getAuthToken()}` } }),
+        axios.get('/api/v1/openwa/stats', { headers: { Authorization: `Bearer ${getAuthToken()}` } })
       ]);
       setPlugins(pluginsRes.data.data || []);
       setStats(statsRes.data.data);
@@ -38,7 +39,7 @@ export const PluginManagerPage = () => {
       await axios.post(
         `/api/v1/openwa/plugins/${id}/activate`,
         { active: !currentlyActive },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+        { headers: { Authorization: `Bearer ${getAuthToken()}` } }
       );
       // Optimistic update
       setPlugins(prev => prev.map(p => p.id === id ? { ...p, status: !currentlyActive ? 'active' : 'inactive' } : p));

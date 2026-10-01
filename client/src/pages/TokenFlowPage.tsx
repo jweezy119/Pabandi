@@ -3,6 +3,7 @@ import { Surface, Button, Badge, tokens } from '../design-system';
 import { Link } from 'react-router-dom';
 import { pabService, pabStakingService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import { getAuthToken } from '../utils/authToken';
 
 export const TokenFlowPage: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
@@ -14,7 +15,7 @@ export const TokenFlowPage: React.FC = () => {
 
   useEffect(() => {
     const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-    const headers = isAuthenticated ? { Authorization: `Bearer ${localStorage.getItem('token')}` } : {};
+    const headers = isAuthenticated ? { Authorization: `Bearer ${getAuthToken()}` } : {};
     Promise.all([
       pabService.getWallet().then((r: any) => r.data?.data).catch(() => null),
       isAuthenticated ? pabStakingService.getPosition().then((r: any) => r.data?.data).catch(() => null) : Promise.resolve(null),

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getAuthToken } from '../utils/authToken';
 
 const PAB_PRICE = 0.000178;
 const PAB_DISCOUNT = 0.05; // 5%
@@ -23,7 +24,7 @@ export default function RentPayment() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAuthToken();
         if (!token) { setError('Not authenticated'); setLoading(false); return; }
 
         // Fetch PAB balance
@@ -49,7 +50,7 @@ export default function RentPayment() {
   const handlePay = async () => {
     setState((s) => ({ ...s, status: 'confirming' }));
     try {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       const res = await fetch('/api/v1/jev/payment-route/me', {
         method: 'POST',
         headers: {

@@ -4,6 +4,7 @@ import { FiUsers, FiTrendingUp, FiAlertTriangle, FiStar, FiZap, FiEye, FiCheckCi
 import { Card, EmptyState, ClayBadge } from '../../components/primitives';
 import DashboardLayout from '../../components/DashboardLayout';
 import LoadingState from './components/LoadingState';
+import { getAuthToken } from '../../utils/authToken';
 
 // ─── Count-up animation ────────────────────────────────────────────────────────
 
@@ -36,7 +37,7 @@ function CountUpNumber({ end, duration = 800 }: { end: number | string; duration
 // ─── API Helper ───────────────────────────────────────────────────────────────
 
 const API = '/api/v1/crm';
-const token = localStorage.getItem('token') || '';
+const token = getAuthToken() || '';
 
 async function api(path: string, options: RequestInit = {}) {
   const res = await fetch(`${API}${path}`, {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getAuthToken } from '../../utils/authToken';
 
 export default function PersonalBookingsPage() {
   const [bookings, setBookings] = useState<any[]>([]);
@@ -8,7 +9,7 @@ export default function PersonalBookingsPage() {
     const fetchBookings = async () => {
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/bookings/me`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          headers: { Authorization: `Bearer ${getAuthToken()}` },
         });
         if (res.ok) {
           setBookings((await res.json()).data || []);

@@ -7,6 +7,7 @@ import {
   ChevronRight, Building2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getAuthToken } from '../../utils/authToken';
 
 interface VerificationStatus {
   status: string;
@@ -41,7 +42,7 @@ export default function BusinessVerificationPage() {
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/business-verification/status?businessId=${businessId}`,
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+        { headers: { Authorization: `Bearer ${getAuthToken()}` } }
       );
       if (res.ok) {
         const data = await res.json();
@@ -62,7 +63,7 @@ export default function BusinessVerificationPage() {
         `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/business-verification/submit`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
           body: JSON.stringify({ businessId, documentType: docType, documentUrl: docUrl, documentName: docName || undefined }),
         }
       );

@@ -3,6 +3,7 @@ import { FiUsers, FiDollarSign, FiCalendar, FiTrendingUp, FiTool, FiFileText, Fi
 import ContactsPipelineTab from './ContactsPipelineTab';
 import EmployeesTab from './EmployeesTab';
 import ReliabilityChip from '../../components/reliability/ReliabilityChip';
+import { getAuthToken } from '../../utils/authToken';
 
 const API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
 const PM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/property-manager`;
@@ -10,7 +11,7 @@ const PM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'
 async function api(path: string, options: RequestInit = {}) {
   const res = await fetch(`${API}${path}`, {
     ...options,
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}`, ...(options.headers || {}) },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() || ''}`, ...(options.headers || {}) },
   });
   if (!res.ok) throw new Error((await res.json()).error || 'API error');
   return res.json();
@@ -19,7 +20,7 @@ async function api(path: string, options: RequestInit = {}) {
 async function pmApi(path: string, options: RequestInit = {}) {
   const res = await fetch(`${PM_API}${path}`, {
     ...options,
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}`, ...(options.headers || {}) },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() || ''}`, ...(options.headers || {}) },
   });
   if (!res.ok) throw new Error((await res.json()).error || 'API error');
   return res.json();

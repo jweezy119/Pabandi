@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { getAuthToken } from '../../utils/authToken';
 
 export default function PersonalDashboardPage() {
   const [passport, setPassport] = useState<any>(null);
@@ -10,7 +11,7 @@ export default function PersonalDashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAuthToken();
         const headers = { Authorization: `Bearer ${token}` };
         
         const [passportRes, bookingsRes, rewardsRes] = await Promise.all([

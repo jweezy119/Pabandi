@@ -5,6 +5,7 @@ import PropertyConnectWizard from '../components/PropertyConnectWizard';
 import { hospitalityService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Button, Chip, Surface, Badge, tokens } from '../design-system';
+import { getAuthToken } from '../utils/authToken';
 
 type PropertyType = 'hotel' | 'guesthouse' | 'riad' | 'safari_camp' | 'experience' | 'vacation_rental' | 'other';
 
@@ -148,7 +149,7 @@ export default function HospitalityPage() {
     }
     setIsProcessingCheckout(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       const res = await fetch('/api/payments', {
         method: 'POST',
         headers: {

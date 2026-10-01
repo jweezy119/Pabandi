@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getAuthToken } from '../../utils/authToken';
 
 export default function PersonalPassportPage() {
   const [passport, setPassport] = useState<any>(null);
@@ -8,7 +9,7 @@ export default function PersonalPassportPage() {
     const fetchPassport = async () => {
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/trust-passport/me`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          headers: { Authorization: `Bearer ${getAuthToken()}` },
         });
         if (res.ok) {
           const data = await res.json();

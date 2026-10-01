@@ -11,6 +11,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import SolanaEscrowPayment from '../components/SolanaEscrowPayment';
+import { getAuthToken } from '../utils/authToken';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,7 +48,7 @@ const SolanaEscrowPage: React.FC = () => {
   const fetchEscrows = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token') || '';
+      const token = getAuthToken() || '';
       const userStr = localStorage.getItem('user');
       const user = userStr ? JSON.parse(userStr) : null;
       if (!user?.id) return;
@@ -81,7 +82,7 @@ const SolanaEscrowPage: React.FC = () => {
     setError(null);
     setLoading(true);
     try {
-      const token = localStorage.getItem('token') || '';
+      const token = getAuthToken() || '';
       const response = await fetch('/api/v1/solana-escrow/create', {
         method: 'POST',
         headers: {

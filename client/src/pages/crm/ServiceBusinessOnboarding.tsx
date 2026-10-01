@@ -148,7 +148,7 @@ export default function ServiceBusinessOnboarding() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-[var(--warm-ink)] mb-1.5">
-                      <Fiphone className="inline mr-1" size={14} /> Phone
+                      <FiPhone className="inline mr-1" size={14} /> Phone
                     </label>
                     <input
                       type="tel"

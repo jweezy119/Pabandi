@@ -6,6 +6,7 @@ import { useBusinessSettings } from '../../hooks/useBusinessSettings';
 import { Card } from '../../components/primitives';
 import ModularDashboard from '../crm/components/ModularDashboard';
 import { useAuthStore } from '../../store/authStore';
+import { getAuthToken } from '../../utils/authToken';
 
 
 
@@ -63,7 +64,7 @@ export default function ContactOSPage() {
     const fetchLeads = async () => {
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          headers: { Authorization: `Bearer ${getAuthToken()}` },
         });
         if (res.ok) {
           const data = await res.json();

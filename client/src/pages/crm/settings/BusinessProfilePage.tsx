@@ -7,9 +7,10 @@ import ClaySelect from '../components/ClaySelect';
 import { useAuthStore } from '../../../store/authStore';
 import { Camera, MapPin, Clock, Shield, Copy, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getAuthToken } from '../../../utils/authToken';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` });
+const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() || ''}` });
 
 const SERVICE_TYPES = [
   { value: 'salon', label: 'Salon & Spa' },

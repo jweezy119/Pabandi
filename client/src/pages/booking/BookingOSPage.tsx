@@ -1,6 +1,7 @@
 import DashboardLayout from '../../components/DashboardLayout';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { getAuthToken } from '../../utils/authToken';
 
 const NAV_ITEMS = [
   { path: '/booking', label: 'Discovery', icon: 'explore', end: true },
@@ -112,7 +113,7 @@ export default function BookingOSPage() {
     const fetchClients = async () => {
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          headers: { Authorization: `Bearer ${getAuthToken()}` },
         });
         if (res.ok) {
           const data = await res.json();

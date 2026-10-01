@@ -10,6 +10,7 @@ import { TrustPanel } from '../../components/TrustPanel';
 
 import { TrustPanel } from '../../components/TrustPanel';
 import { InlineEdit } from '../../components/primitives/InlineEdit';
+import { getAuthToken } from '../../utils/authToken';
 
 const TABS = ['Command Center', 'Files'];
 
@@ -34,7 +35,7 @@ export default function ContactClientDetailPage() {
 
   async function fetchClientAllData() {
     setLoading(true);
-    const token = localStorage.getItem('token');
+    const token = getAuthToken();
     const headers = { Authorization: `Bearer ${token}` };
     const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
 
@@ -62,7 +63,7 @@ export default function ContactClientDetailPage() {
   }
 
   const handleClientUpdate = async (field: string, value: any) => {
-    const token = localStorage.getItem('token');
+    const token = getAuthToken();
     const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
     const res = await fetch(`${baseUrl}/api/v1/crm/clients/${id}`, {
       method: 'PUT',
@@ -79,7 +80,7 @@ export default function ContactClientDetailPage() {
       const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
       const res = await fetch(`${baseUrl}/api/v1/crm/activities`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
         body: JSON.stringify({ ...activityForm, clientId: id }),
       });
       if (res.ok) {

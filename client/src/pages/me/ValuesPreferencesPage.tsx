@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import { getAuthToken } from '../../utils/authToken';
 import {
   Heart, Shield, Handshake, Leaf, Users, Sparkles,
   Check, Info, ChevronRight
@@ -83,7 +84,7 @@ export default function ValuesPreferencesPage() {
   const loadPreferences = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/v1/values/preferences`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${getAuthToken()}` },
       });
       if (res.ok) {
         const data = await res.json();
@@ -103,7 +104,7 @@ export default function ValuesPreferencesPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${getAuthToken()}`,
         },
         body: JSON.stringify({ preferences: newPrefs }),
       });

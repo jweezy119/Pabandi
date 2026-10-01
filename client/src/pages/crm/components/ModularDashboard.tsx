@@ -9,6 +9,7 @@ import {
   Palette, RotateCcw, LayoutGrid
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getAuthToken } from '../../../utils/authToken';
 
 interface ModularDashboardProps {
   businessId: string;
@@ -35,7 +36,7 @@ export default function ModularDashboard({ businessId, data }: ModularDashboardP
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/settings/dashboard-layout?businessId=${businessId}`,
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+        { headers: { Authorization: `Bearer ${getAuthToken()}` } }
       );
       if (res.ok) {
         const json = await res.json();
@@ -58,7 +59,7 @@ export default function ModularDashboard({ businessId, data }: ModularDashboardP
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            Authorization: `Bearer ${getAuthToken()}`,
           },
           body: JSON.stringify({ businessId, layout: newLayout, theme: newTheme }),
         }

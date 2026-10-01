@@ -7,9 +7,10 @@ import ClaySelect from '../components/ClaySelect';
 import { useAuthStore } from '../../../store/authStore';
 import { Plus, Trash2, Edit2, X, Check, Upload, Star, Package } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getAuthToken } from '../../../utils/authToken';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` });
+const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() || ''}` });
 
 const CATEGORIES = [
   { value: 'hair', label: 'Hair & Styling' },

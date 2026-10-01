@@ -5,6 +5,7 @@ import { Button, Chip, EmptyState } from '../../components/primitives';
 import ClientTimeline from '../crm/components/ClientTimeline';
 import { TrustPanel } from '../../components/TrustPanel';
 import { InlineEdit } from '../../components/primitives/InlineEdit';
+import { getAuthToken } from '../../utils/authToken';
 
 export default function ContactDealDetailPage() {
   const { id } = useParams();
@@ -22,7 +23,7 @@ export default function ContactDealDetailPage() {
 
   async function fetchDealData() {
     setLoading(true);
-    const token = localStorage.getItem('token');
+    const token = getAuthToken();
     const headers = { Authorization: `Bearer ${token}` };
     const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -55,7 +56,7 @@ export default function ContactDealDetailPage() {
   if (!deal) return <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" ><EmptyState icon="handshake" title="Deal Not Found" description="This deal does not exist." actionLabel="Go Back" onAction={() => window.location.href = '/contact/deals'} /></DashboardLayout>;
 
   const handleDealUpdate = async (field: string, value: any) => {
-    const token = localStorage.getItem('token');
+    const token = getAuthToken();
     const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
     const res = await fetch(`${baseUrl}/api/v1/crm/deals/${id}`, {
       method: 'PUT',
