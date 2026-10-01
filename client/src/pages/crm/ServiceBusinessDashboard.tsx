@@ -1,30 +1,63 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FiUsers, FiDollarSign, FiCalendar, FiTrendingUp, FiTool, FiFileText, FiCreditCard, FiTrendingDown, FiActivity, FiHome, FiBriefcase } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
+import { FiUsers, FiDollarSign, FiCalendar, FiTrendingUp, FiTool, FiFileText, FiTrendingDown, FiHome, FiPlus } from 'react-icons/fi';
 import ContactsPipelineTab from './ContactsPipelineTab';
 import EmployeesTab from './EmployeesTab';
 import ReliabilityChip from '../../components/reliability/ReliabilityChip';
+import { apiClient, crmService, propertyManagerService } from '../../services/api';
+import { getAuthToken } from '../../utils/authToken';
 
-const API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
-const PM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/property-manager`;
+/** Badge colour per invoice status. */
+const STATUS_COLORS: Record<string, string> = {
+  draft: 'bg-[var(--soft-stone)]/20 text-[var(--warm-ink)]',
+  sent: 'bg-blue-100 text-blue-800',
+  paid: 'bg-green-100 text-green-800',
+  overdue: 'bg-amber-100 text-amber-800',
+  defaulted: 'bg-red-100 text-red-800',
+};
 
-async function api(path: string, options: RequestInit = {}) {
-  const res = await fetch(`${API}${path}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}`, ...(options.headers || {}) },
-  });
-  if (!res.ok) throw new Error((await res.json()).error || 'API error');
-  return res.json();
+/**
+ * Data access goes through the shared `api.ts` services.
+ *
+ * This file previously used its own `fetch` wrappers that read the token from
+ * `getAuthToken()`. The app stores its session in the zustand
+ * `authStore` under the key `auth-storage`, so that lookup always returned an
+ * empty string, every request went out as `Bearer `, and the server rejected
+ * all of them. The wrappers also swallowed errors by reading `.error` while the
+ * API's canonical error body is `{ success: false, message }` — so a 500 was
+ * rendered as an empty list.
+ *
+ * These two helpers are now thin adapters over the shared `apiClient` so the
+ * auth header and error shape are handled in exactly one place. New code should
+ * call `crmService` / `propertyManagerService` directly.
+ */
+function unwrapError(err: any, fallback: string): string {
+  const body = err?.response?.data;
+  // The platform's canonical error body is `{ success: false, message }`, but
+  // some legacy routes still write `error` — read both rather than showing
+  // "undefined".
+  return body?.message || body?.error || err?.message || fallback;
 }
 
-async function pmApi(path: string, options: RequestInit = {}) {
-  const res = await fetch(`${PM_API}${path}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}`, ...(options.headers || {}) },
+/** GET/POST against the CRM router. */
+async function api(path: string, options: RequestInit = {}): Promise<any> {
+  const res = await apiClient.request({
+    url: `/crm${path}`,
+    method: (options.method as any) || 'GET',
+    data: options.body ? JSON.parse(options.body as string) : undefined,
   });
-  if (!res.ok) throw new Error((await res.json()).error || 'API error');
-  return res.json();
+  return res.data;
 }
 
+/** GET/POST against the Haq OS property-manager router. */
+async function pmApi(path: string, options: RequestInit = {}): Promise<any> {
+  const res = await apiClient.request({
+    url: `/property-manager${path}`,
+    method: (options.method as any) || 'GET',
+    data: options.body ? JSON.parse(options.body as string) : undefined,
+  });
+  return res.data;
+}
 type Tab = 'today' | 'calendar' | 'properties' | 'clients' | 'jobs' | 'team' | 'invoices' | 'money' | 'pipeline';
 
 export default function ServiceBusinessDashboard() {
@@ -39,28 +72,43 @@ export default function ServiceBusinessDashboard() {
   const [tenants, setTenants] = useState<any[]>([]);
   const [leases, setLeases] = useState<any[]>([]);
   const [maintenance, setMaintenance] = useState<any[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [properties, setProperties] = useState<any[]>([]);
 
   const loadAll = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const [s, j, c, e, p, ex] = await Promise.all([
-        api('/dashboard').catch(() => ({ data: {} })),
-        api('/jobs').catch(() => ({ data: [] })),
-        api('/clients').catch(() => ({ data: [] })),
-        api('/employees').catch(() => ({ data: [] })),
-        api('/payroll').catch(() => ({ data: [] })),
-        api('/expenses').catch(() => ({ data: [] })),
+        crmService.dashboard(),
+        crmService.jobs(),
+        crmService.clients(),
+        crmService.employees(),
+        crmService.payroll(),
+        crmService.expenses(),
       ]);
-      setStats(s.data); setJobs(j.data); setClients(c.data); setEmployees(e.data); setPayroll(p.data); setExpenses(ex.data);
-      const pm = await pmApi('/dashboard').catch(() => null);
-      if (pm?.data) {
-        setProperties(pm.data.properties || []);
-        setTenants(pm.data.tenants || []);
-        setLeases(pm.data.leases || []);
-        setMaintenance(pm.data.maintenance || []);
+      setStats(s.data?.data ?? {});
+      setJobs(j.data?.data ?? []);
+      setClients(c.data?.data ?? []);
+      setEmployees(e.data?.data ?? []);
+      setPayroll(p.data?.data ?? []);
+      setExpenses(ex.data?.data ?? []);
+
+      // Haq OS is a separate layer and may legitimately not be enrolled, so its
+      // absence is expected rather than an error worth surfacing.
+      const pm = await propertyManagerService.dashboard().catch(() => null);
+      if (pm?.data?.data) {
+        setProperties(pm.data.data.properties || []);
+        setTenants(pm.data.data.tenants || []);
+        setLeases(pm.data.data.leases || []);
+        setMaintenance(pm.data.data.maintenance || []);
       }
-    } finally { setLoading(false); }
+    } catch (err: any) {
+      // Surface it: a silently empty CRM is indistinguishable from a business
+      // with no activity, which is how this page went unnoticed as broken.
+      setLoadError(unwrapError(err, 'Failed to load'));
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { loadAll(); }, [loadAll]);
@@ -84,12 +132,17 @@ export default function ServiceBusinessDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => setTab('properties')} className="px-4 py-2 bg-[var(--clay)] text-white rounded-xl text-sm font-medium">Add Property</button>
-            <button onClick={() => setTab('tenants')} className="px-4 py-2 bg-white border border-[var(--soft-stone)]/30 rounded-xl text-sm font-medium text-[var(--warm-ink)]">Add Tenant</button>
+            <button onClick={() => setTab('clients')} className="px-4 py-2 bg-white border border-[var(--soft-stone)]/30 rounded-xl text-sm font-medium text-[var(--warm-ink)]">Add Tenant</button>
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-6">
+        {loadError && (
+          <div className="mb-4 rounded-xl border border-red-500/30 bg-red-50/60 p-3 text-sm text-red-800">
+            {loadError}
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard icon={FiDollarSign} label="Revenue" value={`$${totalRevenue.toLocaleString()}`} sub="This month" color="green" />
           <StatCard icon={FiTrendingDown} label="Expenses" value={`$${totalExpenses.toLocaleString()}`} sub={`$${(stats?.payrollCosts || 0).toLocaleString()} payroll`} color="red" />
@@ -117,6 +170,103 @@ export default function ServiceBusinessDashboard() {
         {tab === 'team' && <EmployeesTab employees={employees} onRefresh={loadAll} />}
         {tab === 'money' && <MoneyTab stats={stats} payroll={payroll} expenses={expenses} employees={employees} />}
         {tab === 'pipeline' && <ContactsPipelineTab />}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Money tab.
+ *
+ * Referenced by the tab bar but never defined, so switching to "money" threw a
+ * ReferenceError and took the whole dashboard down. Payroll and expenses were
+ * already being fetched and passed in, so this renders what was there.
+ */
+function MoneyTab({
+  stats,
+  payroll,
+  expenses,
+  employees,
+}: {
+  stats: any;
+  payroll: any[];
+  expenses: any[];
+  employees: any[];
+}) {
+  const money = (n: number) => `$${(n ?? 0).toLocaleString()}`;
+  const pendingPayroll = payroll.filter((p) => p.status !== 'PAID');
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard icon={<FiDollarSign className="w-4 h-4" />} color="text-green-600" label="Revenue" value={money(stats?.monthlyRevenue)} />
+        <StatCard icon={<FiFileText className="w-4 h-4" />} color="text-red-600" label="Expenses" value={money(stats?.monthlyExpenses)} />
+        <StatCard icon={<FiUsers className="w-4 h-4" />} color="text-amber-600" label="Payroll" value={money(stats?.payrollCosts)} />
+        <StatCard
+          icon={<FiTrendingUp className="w-4 h-4" />}
+          color="text-indigo-600"
+          label="Net"
+          value={money((stats?.monthlyRevenue ?? 0) - (stats?.monthlyExpenses ?? 0) - (stats?.payrollCosts ?? 0))}
+        />
+      </div>
+
+      {pendingPayroll.length > 0 && (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-50/50 p-4">
+          <p className="text-sm text-amber-900">
+            {pendingPayroll.length} payroll {pendingPayroll.length === 1 ? 'run is' : 'runs are'} unpaid —{' '}
+            {money(pendingPayroll.reduce((s, p) => s + (p.grossPay ?? 0), 0))} outstanding.
+          </p>
+        </div>
+      )}
+
+      <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-6">
+        <h2 className="text-lg font-bold text-[var(--warm-ink)] mb-3">Payroll</h2>
+        {payroll.length === 0 ? (
+          <p className="text-[var(--soft-stone)]">No payroll recorded</p>
+        ) : (
+          <div className="space-y-2">
+            {payroll.map((p) => {
+              const employee = employees.find((e) => e.id === p.employeeId);
+              return (
+                <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--warm-sand)]">
+                  <div>
+                    <p className="font-medium text-[var(--warm-ink)] text-sm">{employee?.name || 'Employee'}</p>
+                    <p className="text-xs text-[var(--soft-stone)]">
+                      {new Date(p.periodStart).toLocaleDateString()} – {new Date(p.periodEnd).toLocaleDateString()} ·{' '}
+                      {p.hoursWorked}h
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium text-[var(--warm-ink)] text-sm">{money(p.grossPay)}</p>
+                    <span className="text-xs text-[var(--soft-stone)]">{p.status}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-6">
+        <h2 className="text-lg font-bold text-[var(--warm-ink)] mb-3">Expenses</h2>
+        {expenses.length === 0 ? (
+          <p className="text-[var(--soft-stone)]">No expenses recorded</p>
+        ) : (
+          <div className="space-y-2">
+            {expenses.map((e) => (
+              <div key={e.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--warm-sand)]">
+                <div>
+                  <p className="font-medium text-[var(--warm-ink)] text-sm">{e.description}</p>
+                  <p className="text-xs text-[var(--soft-stone)]">
+                    {e.category}
+                    {e.vendor ? ` · ${e.vendor}` : ''} · {new Date(e.date).toLocaleDateString()}
+                  </p>
+                </div>
+                <p className="font-medium text-[var(--warm-ink)] text-sm">{money(e.amount)}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -270,13 +420,20 @@ function CalendarTab({ jobs }: { jobs: any[] }) {
 
 function PropertiesTab({ properties, onRefresh }: { properties: any[]; onRefresh: () => void }) {
   const [showForm, setShowForm] = useState(false);
+  const [showMaintenance, setShowMaintenance] = useState(false);
   return (
     <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-[var(--warm-ink)]">Properties</h2>
-        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-[var(--clay)] text-white rounded-xl text-sm font-medium">Add Property</button>
+        <div className="flex gap-2">
+          <button onClick={() => setShowMaintenance(!showMaintenance)} className="px-4 py-2 bg-white border border-[var(--soft-stone)]/30 rounded-xl text-sm font-medium text-[var(--warm-ink)]">
+            Log Maintenance
+          </button>
+          <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-[var(--clay)] text-white rounded-xl text-sm font-medium">Add Property</button>
+        </div>
       </div>
       {showForm && <PropertyForm onClose={() => setShowForm(false)} onSave={() => { setShowForm(false); onRefresh(); }} />}
+      {showMaintenance && <MaintenanceForm onClose={() => setShowMaintenance(false)} onSave={() => { setShowMaintenance(false); onRefresh(); }} />}
       {properties.length === 0 ? <p className="text-[var(--soft-stone)]">No properties yet</p> : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {properties.map((p: any) => (
@@ -317,9 +474,10 @@ function TenantsTab({ tenants, properties, leases, onRefresh }: { tenants: any[]
 
   if (selectedTenant) {
     const tenantLeases = leases.filter((l: any) => l.tenantEmail === selectedTenant.email);
-    const totalBilled = invoices.reduce((s: number, inv: any) => s + (inv.subtotal || 0), 0);
-    const totalPaid = invoices.filter((i: any) => i.status === 'paid').reduce((s: number, inv: any) => s + (inv.subtotal || 0), 0);
-    const outstanding = invoices.filter((i: any) => i.status === 'sent' || i.status === 'overdue').reduce((s: number, inv: any) => s + (inv.subtotal || 0), 0);
+    const tenantInvoices = invoices.filter((i: any) => i.clientId === selectedTenant.id);
+    const totalBilled = tenantInvoices.reduce((s: number, inv: any) => s + (inv.subtotal || 0), 0);
+    const totalPaid = tenantInvoices.filter((i: any) => i.status === 'paid').reduce((s: number, inv: any) => s + (inv.subtotal || 0), 0);
+    const outstanding = tenantInvoices.filter((i: any) => i.status === 'sent' || i.status === 'overdue').reduce((s: number, inv: any) => s + (inv.subtotal || 0), 0);
     const hasStats = totalBilled > 0 || totalPaid > 0 || outstanding > 0;
 
     return (
@@ -338,6 +496,9 @@ function TenantsTab({ tenants, properties, leases, onRefresh }: { tenants: any[]
               </div>
             </div>
             <ReliabilityChip score={paymentScore} size="md" />
+            <p className="text-xs text-[var(--soft-stone)] mt-1">
+              {tenantLeases.length} {tenantLeases.length === 1 ? 'lease' : 'leases'}
+            </p>
           </div>
 
           {hasStats && (

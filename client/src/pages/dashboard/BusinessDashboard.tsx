@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getAuthToken } from '../../utils/authToken';
 
 const TABS = ['Today', 'Calendar', 'Customers', 'Employees', 'Money', 'Services'] as const;
 type Tab = typeof TABS[number];
@@ -115,7 +116,7 @@ function TodayTab({ businessId }: { businessId: string }) {
   useEffect(() => {
     if (!businessId) return;
     fetch(`/api/v1/dashboard/${businessId}/today`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+      headers: { Authorization: `Bearer ${getAuthToken() ?? ''}` },
     })
       .then(r => r.json())
       .then(data => {
@@ -189,7 +190,7 @@ function CalendarTab({ businessId }: { businessId: string }) {
   useEffect(() => {
     if (!businessId) return;
     fetch(`/api/v1/dashboard/${businessId}/calendar`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+      headers: { Authorization: `Bearer ${getAuthToken() ?? ''}` },
     })
       .then(r => r.json())
       .then(data => {
@@ -232,7 +233,7 @@ function CustomersTab({ businessId }: { businessId: string }) {
   useEffect(() => {
     if (!businessId) return;
     fetch(`/api/v1/dashboard/${businessId}/customers`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+      headers: { Authorization: `Bearer ${getAuthToken() ?? ''}` },
     })
       .then(r => r.json())
       .then(data => {
@@ -278,7 +279,7 @@ function EmployeesTab({ businessId }: { businessId: string }) {
   useEffect(() => {
     if (!businessId) return;
     fetch(`/api/v1/dashboard/${businessId}/employees`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+      headers: { Authorization: `Bearer ${getAuthToken() ?? ''}` },
     })
       .then(r => r.json())
       .then(data => {
@@ -326,7 +327,7 @@ function MoneyTab({ businessId }: { businessId: string }) {
   const loadFinancials = () => {
     if (!businessId) return;
     fetch(`/api/v1/dashboard/${businessId}/money`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+      headers: { Authorization: `Bearer ${getAuthToken() ?? ''}` },
     })
       .then(r => r.json())
       .then(data => {
@@ -344,7 +345,7 @@ function MoneyTab({ businessId }: { businessId: string }) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+        Authorization: `Bearer ${getAuthToken() ?? ''}`,
       },
       body: JSON.stringify(expenseForm),
     });

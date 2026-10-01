@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getAuthToken } from '../utils/authToken';
 
 const API_URL = '/api/v1';
 
@@ -9,7 +10,7 @@ export const jobsService = {
   },
 
   applyForJob: async (jobId: string, resumeUrl?: string) => {
-    const token = localStorage.getItem('token');
+    const token = getAuthToken();
     const response = await axios.post(
       `${API_URL}/jobs/${jobId}/apply`,
       { resumeUrl },

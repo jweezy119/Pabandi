@@ -128,7 +128,7 @@ export const BookingCheckoutPage: React.FC = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
-      <div className="fixed inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 0%, "rgba(99,102,241,0.06)" 0%, transparent 60%)" }} />
+      <div className="fixed inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.06) 0%, transparent 60%)' }} />
       <div className="relative z-10 max-w-3xl mx-auto px-4 py-6 md:py-8 pb-32 md:pb-8">
         {/* Header */}
         <div className="mb-6">

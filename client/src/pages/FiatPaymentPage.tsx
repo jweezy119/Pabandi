@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { getAuthToken } from '../utils/authToken';
 
 interface FiatMethod {
   id: string;
@@ -91,7 +92,7 @@ export default function FiatPaymentPage() {
     const payeeConfig = getPayeeConfigFromForm();
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       const res = await fetch('/api/v1/fiat/create', {
         method: 'POST',
         headers: {
@@ -141,7 +142,7 @@ export default function FiatPaymentPage() {
   const handleMarkSent = async () => {
     if (!paymentRequest?.reference) return;
     try {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       await fetch(`/api/v1/fiat/${paymentRequest.reference}/sent`, {
         method: 'POST',
         headers: {
@@ -157,7 +158,7 @@ export default function FiatPaymentPage() {
 
   const handleConfirmPayment = async (ref: string) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       const res = await fetch(`/api/v1/fiat/${ref}/confirm`, {
         method: 'POST',
         headers: {
@@ -179,7 +180,7 @@ export default function FiatPaymentPage() {
 
   const handleRejectPayment = async (ref: string) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       const res = await fetch(`/api/v1/fiat/${ref}/reject`, {
         method: 'POST',
         headers: {
@@ -202,7 +203,7 @@ export default function FiatPaymentPage() {
 
   const loadBusinessPending = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       const res = await fetch('/api/v1/fiat/pending', {
         headers: token ? { Authorization: 'Bearer ' + token } : {},
       });

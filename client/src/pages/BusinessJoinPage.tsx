@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '../services/api';
 import { tokens } from '../design-system';
+import { getAuthToken } from '../utils/authToken';
 
 // ── Icons ──────────────────────────────────────────────────────────────
 const CheckIcon = () => (
@@ -49,7 +50,7 @@ export default function BusinessJoinPage() {
     }
     setIsProcessingCheckout(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       const res = await fetch('/api/payments', {
         method: 'POST',
         headers: {

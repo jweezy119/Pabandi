@@ -21,6 +21,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { ScoreReceipts } from '../components/ScoreReceipts';
 import { tokens } from '../design-system';
+import { getAuthToken } from '../utils/authToken';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Loyalty tier definitions (Pabandi-global)
@@ -647,7 +648,7 @@ export default function ProfilePage() {
   };
 
   const handleConnectMeta = async () => {
-    const token = localStorage.getItem('token');
+    const token = getAuthToken();
     if (!token) return addToast('Please log in first', 'error');
     setConnectingPlatform('META');
     window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/social/connect/oauth/facebook?token=${token}`;

@@ -271,7 +271,6 @@ export default function LandingPage() {
                 </div>
               </div>
 
-            </div>
               <div className="hero-visual">
                 <div className="clay-earth">
                   <svg width="100%" height="100%" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
@@ -291,19 +290,20 @@ export default function LandingPage() {
                     </defs>
                     <circle cx="150" cy="150" r="135" fill="#3A6EA5"/>
                     <g filter="url(#continent-edge)">
-                      <circle cx="82.5" cy="90" r="30" fill="#6B8E4E" stroke="#C9A66B" stroke-weight="1.5"/>
-                      <circle cx="138.75" cy="240" r="25" fill="#6B8E4E" stroke="#C9A66B" stroke-weight="1.5"/>
-                      <circle cx="150" cy="75" r="15" fill="#6B8E4E" stroke="#C9A66B" stroke-weight="1.5"/>
-                      <circle cx="165" cy="150" r="35" fill="#6B8E4E" stroke="#C9A66B" stroke-weight="1.5"/>
-                      <circle cx="210" cy="90" r="40" fill="#6B8E4E" stroke="#C9A66B" stroke-weight="1.5"/>
-                      <circle cx="251.25" cy="195" r="12" fill="#6B8E4E" stroke="#C9A66B" stroke-weight="1.5"/>
+                      <circle cx="82.5" cy="90" r="30" fill="#6B8E4E" stroke="#C9A66B" stroke-width="1.5"/>
+                      <circle cx="138.75" cy="240" r="25" fill="#6B8E4E" stroke="#C9A66B" stroke-width="1.5"/>
+                      <circle cx="150" cy="75" r="15" fill="#6B8E4E" stroke="#C9A66B" stroke-width="1.5"/>
+                      <circle cx="165" cy="150" r="35" fill="#6B8E4E" stroke="#C9A66B" stroke-width="1.5"/>
+                      <circle cx="210" cy="90" r="40" fill="#6B8E4E" stroke="#C9A66B" stroke-width="1.5"/>
+                      <circle cx="251.25" cy="195" r="12" fill="#6B8E4E" stroke="#C9A66B" stroke-width="1.5"/>
                     </g>
-                    <circle cx="150" cy="30" r="15" fill="#F5EFE6" stroke="#C9A66B" stroke-weight="1.5"/>
-                    <circle cx="150" cy="270" r="15" fill="#F5EFE6" stroke="#C9A66B" stroke-weight="1.5"/>
+                    <circle cx="150" cy="30" r="15" fill="#F5EFE6" stroke="#C9A66B" stroke-width="1.5"/>
+                    <circle cx="150" cy="270" r="15" fill="#F5EFE6" stroke="#C9A66B" stroke-width="1.5"/>
                     <rect width="300" height="300" fill="url(#clay-texture)"/>
                   </svg>
                 </div>
               </div>
+            </div>
           </div>
         </section>
 

@@ -5,3 +5,13 @@ build
 .env
 .env.*
 .git
+
+# Must stay excluded. Without this, `COPY server/ .` pulls a developer's local
+# dist/ into the image and `RUN tsc` merges new output into it rather than
+# replacing it — files deleted from src/ would survive as stale JS. That is the
+# stale-artifact class of bug this change exists to eliminate, reintroduced via
+# the build context.
+server/dist
+
+# Kept for the same reason: the image builds client/dist itself in its own stage.
+client/dist

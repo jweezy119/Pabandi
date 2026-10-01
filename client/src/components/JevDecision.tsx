@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getAuthToken } from '../utils/authToken';
 
 interface JevDecisionProps {
   type: 'trading' | 'risk' | 'payment' | 'quality';
@@ -24,7 +25,7 @@ export const JevDecision: React.FC<JevDecisionProps> = ({ type, entityId, title 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${getAuthToken() ?? ''}`,
         },
         body: JSON.stringify(type === 'payment' ? { amount: 1000 } : {}),
       });

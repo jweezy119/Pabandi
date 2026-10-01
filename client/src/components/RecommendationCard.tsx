@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getAuthToken } from '../utils/authToken';
 
 interface RecommendationProps {
   userId: string;
@@ -10,7 +11,7 @@ export const RecommendationCard: React.FC<RecommendationProps> = ({ userId }) =>
   const fetchRecommendation = async () => {
     try {
       const res = await fetch(`/api/v1/recommendations/next-feature`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${getAuthToken() ?? ''}` },
       });
       const data = await res.json();
       if (data.success) setRecommendation(data.data);

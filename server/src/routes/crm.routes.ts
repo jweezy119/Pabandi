@@ -1,6 +1,7 @@
-import { Router } from 'express';
+import { Router, type Response } from 'express';
 import { prisma } from '../utils/database';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticate, type AuthRequest } from '../middleware/auth.middleware';
+import { resolveCrmBusiness, requireCrmContext } from '../middleware/crmContext.middleware';
 import {
   enrollBusinessHandler,
   addEmployeeHandler,
@@ -23,26 +24,21 @@ import {
   getClientStageHandler,
 } from '../controllers/revenue.controller';
 import { invoiceTrustService } from '../services/invoice-trust.service';
-import { AuthRequest } from '../middleware/auth.middleware';
+import * as crmService from '../services/crm.service';
 
 const router = Router();
 
 // All routes require authentication
 router.use(authenticate);
 
-// Helper to extract businessId from request (query or body)
-function getBusinessId(req: AuthRequest): string {
-  const businessId = req.body?.businessId || req.query?.businessId;
-  if (!businessId) {
-    throw new Error('businessId is required');
-  }
-  return businessId as string;
-}
-
-// ── Business Enrollment ──────────────────────────────────────────────────────
-
 // POST /api/v1/crm/enroll — Enroll a new service business
+// Declared before the context resolver: enrollment is precisely the request
+// that creates the context every other route depends on.
 router.post('/enroll', enrollBusinessHandler);
+
+// Resolve the caller's business once, here, rather than re-deriving a businessId
+// from query/body in every handler. Everything below reads `req.crm`.
+router.use(resolveCrmBusiness);
 
 // ── Employee Management ──────────────────────────────────────────────────────
 
@@ -115,10 +111,15 @@ router.post('/expenses', recordExpenseHandler);
 router.get('/expenses', getExpensesHandler);
 
 // ── Invoices ──────────────────────────────────────────────────────────────────
+//
+// Invoices are keyed by the *platform* `Business` id rather than the CRM
+// service-business id, because invoice trust events resolve a passport through
+// client → serviceBusiness → Business → owner. Same business, two keys.
 
 router.get('/invoices', async (req: AuthRequest, res: Response) => {
   try {
-    const businessId = getBusinessId(req);
+    const businessId = requireCrmContext(req).businessId;
+    if (!businessId) return res.status(400).json({ success: false, error: 'Business is not linked to a platform business yet' });
     const { status } = req.query;
     const invoices = await prisma.invoice.findMany({
       where: { businessId, ...(status && { status: status as string }) },
@@ -133,7 +134,8 @@ router.get('/invoices', async (req: AuthRequest, res: Response) => {
 
 router.get('/invoices/:id', async (req: AuthRequest, res: Response) => {
   try {
-    const businessId = getBusinessId(req);
+    const businessId = requireCrmContext(req).businessId;
+    if (!businessId) return res.status(400).json({ success: false, error: 'Business is not linked to a platform business yet' });
     const invoice = await prisma.invoice.findFirst({
       where: { id: req.params.id, businessId },
       include: { client: true },
@@ -147,13 +149,33 @@ router.get('/invoices/:id', async (req: AuthRequest, res: Response) => {
 
 router.post('/invoices', async (req: AuthRequest, res: Response) => {
   try {
-    const businessId = getBusinessId(req);
+    const { businessId, serviceBusinessId } = requireCrmContext(req);
+    if (!businessId) return res.status(400).json({ success: false, error: 'Business is not linked to a platform business yet' });
+
     const { clientId, dateDue, lineItems, subtotal, notes } = req.body;
     if (!clientId || !dateDue) return res.status(400).json({ success: false, error: 'clientId and dateDue are required' });
-    
-    // Auto-generate invoice number
-    const count = await prisma.invoice.count({ where: { businessId } });
-    const number = `INV-${String(count + 1).padStart(4, '0')}`;
+
+    // Reject clients from another business before spending a number on them.
+    const client = await prisma.crmClient.findFirst({
+      where: { id: clientId, serviceBusinessId },
+      select: { id: true },
+    });
+    if (!client) return res.status(400).json({ success: false, error: 'clientId does not belong to this business' });
+
+    // Number scoped to the business, not global. A count+1 sequence races under
+    // concurrent creates, so the unique index is the real guard: a collision
+    // retries with the next candidate rather than 500ing.
+    const year = new Date().getFullYear();
+    const prefix = `INV-${year}-`;
+    let number = '';
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const count = await prisma.invoice.count({
+        where: { businessId, number: { startsWith: prefix } },
+      });
+      number = `${prefix}${String(count + 1 + attempt).padStart(4, '0')}`;
+      const clash = await prisma.invoice.findUnique({ where: { number }, select: { id: true } });
+      if (!clash) break;
+    }
 
     const invoice = await prisma.invoice.create({
       data: {
@@ -162,7 +184,7 @@ router.post('/invoices', async (req: AuthRequest, res: Response) => {
         clientId,
         dateDue: new Date(dateDue),
         status: 'draft',
-        lineItems: JSON.stringify(lineItems || []),
+        lineItems: lineItems ?? [],
         subtotal: subtotal || 0,
         notes: notes || null,
       },
@@ -176,7 +198,8 @@ router.post('/invoices', async (req: AuthRequest, res: Response) => {
 
 router.patch('/invoices/:id/status', async (req: AuthRequest, res: Response) => {
   try {
-    const businessId = getBusinessId(req);
+    const businessId = requireCrmContext(req).businessId;
+    if (!businessId) return res.status(400).json({ success: false, error: 'Business is not linked to a platform business yet' });
     const { status } = req.body;
     const invoice = await prisma.invoice.findFirst({ where: { id: req.params.id, businessId } });
     if (!invoice) return res.status(404).json({ success: false, error: 'Invoice not found' });
@@ -218,9 +241,8 @@ router.patch('/invoices/:id/status', async (req: AuthRequest, res: Response) => 
 // POST /api/v1/crm/jobs/:id/checkin — Check in for a job
 router.post('/jobs/:id/checkin', async (req: AuthRequest, res: Response) => {
   try {
-    const { id: jobId } = req.params;
-    const { latitude, longitude } = req.body;
-    const job = await crmService.checkInJob(jobId, req.user.id, latitude, longitude);
+    const { serviceBusinessId, userId } = requireCrmContext(req);
+    const job = await crmService.checkInJob(req.params.id, userId, req.body.latitude, req.body.longitude, serviceBusinessId);
     res.json({ success: true, data: job });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -230,8 +252,8 @@ router.post('/jobs/:id/checkin', async (req: AuthRequest, res: Response) => {
 // POST /api/v1/crm/jobs/:id/checkout — Check out from a job
 router.post('/jobs/:id/checkout', async (req: AuthRequest, res: Response) => {
   try {
-    const { id: jobId } = req.params;
-    const result = await crmService.checkOutJob(jobId, req.user.id);
+    const { serviceBusinessId, userId } = requireCrmContext(req);
+    const result = await crmService.checkOutJob(req.params.id, userId, serviceBusinessId);
     res.json({ success: true, data: result });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -251,7 +273,8 @@ router.post('/jobs/:id/noshow', async (req: AuthRequest, res: Response) => {
 
 router.delete('/invoices/:id', async (req: AuthRequest, res: Response) => {
   try {
-    const businessId = getBusinessId(req);
+    const businessId = requireCrmContext(req).businessId;
+    if (!businessId) return res.status(400).json({ success: false, error: 'Business is not linked to a platform business yet' });
     const invoice = await prisma.invoice.findFirst({ where: { id: req.params.id, businessId } });
     if (!invoice) return res.status(404).json({ success: false, error: 'Invoice not found' });
     if (invoice.status !== 'draft') return res.status(400).json({ success: false, error: 'Can only delete draft invoices' });
@@ -266,7 +289,8 @@ router.delete('/invoices/:id', async (req: AuthRequest, res: Response) => {
 // GET /api/v1/crm/clients/:id/invoices — Get invoices for a client
 router.get('/clients/:id/invoices', async (req: AuthRequest, res: Response) => {
   try {
-    const businessId = getBusinessId(req);
+    const businessId = requireCrmContext(req).businessId;
+    if (!businessId) return res.status(400).json({ success: false, error: 'Business is not linked to a platform business yet' });
     const invoices = await prisma.invoice.findMany({
       where: { clientId: req.params.id, businessId },
       orderBy: { createdAt: 'desc' },

@@ -17,7 +17,7 @@ const WARM_CLAY = {
   warmSand: '#E8D9C5',
 };
 
-export const PayInvoicePage: React.FC = () => {
+export default function PayInvoicePage() {
   const { invoiceId } = useParams<{ invoiceId: string }>();
   const navigate = useNavigate();
   const { authenticated } = usePrivy();

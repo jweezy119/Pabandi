@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getAuthToken } from '../utils/authToken';
 
 // US Payment Methods Configuration
 const US_PAYMENT_METHODS = {
@@ -122,7 +123,7 @@ class PaymentService {
       currency: 'USD'
     }, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Authorization: `Bearer ${getAuthToken() ?? ''}`,
         'Content-Type': 'application/json'
       }
     });
@@ -148,7 +149,7 @@ class PaymentService {
       notes: 'Cash on arrival'
     }, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Authorization: `Bearer ${getAuthToken() ?? ''}`,
         'Content-Type': 'application/json'
       }
     });
@@ -173,7 +174,7 @@ class PaymentService {
       currency: 'USD'
     }, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Authorization: `Bearer ${getAuthToken() ?? ''}`,
         'Content-Type': 'application/json'
       }
     });
@@ -189,7 +190,7 @@ class PaymentService {
   async refundPayment(paymentId: string): Promise<RefundResult> {
     const response = await axios.post(`${this.apiBase}/payments/${paymentId}/refund`, {}, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Authorization: `Bearer ${getAuthToken() ?? ''}`,
         'Content-Type': 'application/json'
       }
     });
@@ -214,7 +215,7 @@ class PaymentService {
   async getPaymentHistory(clientId: string): Promise<Array<any>> {
     const history = await axios.get(`${this.apiBase}/payments/client/${clientId}`, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Authorization: `Bearer ${getAuthToken() ?? ''}`,
         'Content-Type': 'application/json'
       }
     });
@@ -227,7 +228,7 @@ class PaymentService {
   async createCashAppPaymentLink(sessionId: string, _amount: number, _currency = 'USD'): Promise<PaymentResult> {
     const res = await axios.post(`/checkout/${sessionId}/cashapp`, {}, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Authorization: `Bearer ${getAuthToken() ?? ''}`,
         'Content-Type': 'application/json'
       }
     });
@@ -240,7 +241,7 @@ class PaymentService {
   async createPayLioPaymentLink(sessionId: string, _amount: number, _currency = 'USD', walletAddress: string, email?: string): Promise<PaymentResult> {
     const res = await axios.post(`/checkout/${sessionId}/paylio`, { walletAddress, email, currency: _currency }, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Authorization: `Bearer ${getAuthToken() ?? ''}`,
         'Content-Type': 'application/json'
       }
     });
@@ -254,7 +255,7 @@ class PaymentService {
     const res = await axios.get('/checkout/onramp/quotes', {
       params: { fiatAmount, fiatCurrency, cryptoCurrency },
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Authorization: `Bearer ${getAuthToken() ?? ''}`,
         'Content-Type': 'application/json'
       }
     });
@@ -279,7 +280,7 @@ class PaymentService {
       walletAddress,
     }, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Authorization: `Bearer ${getAuthToken() ?? ''}`,
         'Content-Type': 'application/json'
       }
     });
@@ -296,7 +297,7 @@ class PaymentService {
       fiatCurrency,
     }, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Authorization: `Bearer ${getAuthToken() ?? ''}`,
         'Content-Type': 'application/json'
       }
     });

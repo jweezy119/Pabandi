@@ -8,9 +8,24 @@
 #   Firebase. This script does that in one command.
 #
 # WHAT IT DOES:
-#   1. Build the client (client/dist).
+#   1. Build the client SPA (client/dist).
 #   2. Deploy client/dist to Firebase Hosting  -> pabandi.com + pabandi-42c5b.web.app.
 #   3. (Optional) git push to trigger a Render API rebuild.
+#
+# THE API NOW BUILDS FROM SOURCE:
+#   `server/dist` is no longer committed. The Dockerfile runs `prisma generate && tsc`,
+#   so Render compiles the API from the pushed source. Previously the image copied a
+#   committed artifact and ran it, which meant a correct push could deploy stale
+#   JavaScript and still report a successful build.
+#
+#   Note: `autoDeploy: true` on Render means any push to main deploys immediately,
+#   with no staging gate. For a deliberate deploy, set autoDeploy to false first,
+#   push, verify, then re-enable.
+#
+# MIGRATIONS:
+#   These run out-of-band via .github/workflows/manual-migrate.yml (`prisma migrate
+#   deploy`), NOT as part of the Render deploy — render.yaml's preDeployCommand is a
+#   no-op. So a schema change in this commit will NOT be applied by pushing alone.
 #
 # USAGE:
 #   ./deploy.sh            # build + firebase deploy only

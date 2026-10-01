@@ -62,7 +62,7 @@ export class PipelineTrustService {
     const deal = await prisma.contactDeal.findUnique({ where: { id: dealId } });
     if (!deal) return null;
 
-    eventBus.emitEvent('pipeline.deal.closed', { dealId, leadId: deal.leadId });
+    eventBus.emitEvent('pipeline.deal.closed', { dealId, leadId: deal.leadId }, 'crm');
     return { success: true, message: 'Score update triggered' };
   }
 }

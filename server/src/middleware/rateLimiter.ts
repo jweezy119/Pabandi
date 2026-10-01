@@ -15,6 +15,42 @@ export const authRateLimiter = rateLimit({
   skipSuccessfulRequests: true,
 });
 
+/**
+ * Account creation.
+ *
+ * Registration was previously covered only by the global limiter (100 requests
+ * per 15 minutes per IP), which permits ~100 new accounts per window from a
+ * single address. A script was found doing precisely that, leaving a trail of
+ * `probe-N@example.com` rows in the user table. Ten per quarter-hour is generous
+ * for real signups — including shared office and campus IPs — while making bulk
+ * account creation impractical.
+ */
+export const registrationRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  message: 'Too many accounts created from this network. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * Email-code login request/verify.
+ *
+ * Deliberately looser than `authRateLimiter`. These endpoints send a real email
+ * or SMS to a real person, and the platform's primary market is Pakistan where
+ * large numbers of subscribers share carrier-grade NAT addresses. A five-per-
+ * quarter-hour cap would lock out legitimate users behind a shared IP, so this
+ * is set to twenty and still stops enumeration.
+ */
+export const emailCodeRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  message: 'Too many verification attempts. Please try again later.',
+  skipSuccessfulRequests: true,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // LP API key auth: strict rate limit (5 attempts per 15 min per IP) to prevent
 // brute-force on the OFFRAMP__LP_API_KEY. Applied in the route, not globally.
 export const lpAuthRateLimiter = rateLimit({

@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { getAuthToken } from '../utils/authToken';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -116,7 +117,7 @@ const SolanaEscrowPayment: React.FC<{
     try {
       const response = await fetch(`/api/v1/solana-escrow/${escrowId}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+          Authorization: `Bearer ${getAuthToken() ?? ''}`,
         },
       });
       const data = await response.json();
@@ -153,7 +154,7 @@ const SolanaEscrowPayment: React.FC<{
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+          Authorization: `Bearer ${getAuthToken() ?? ''}`,
         },
       });
       const data = await response.json();
@@ -178,7 +179,7 @@ const SolanaEscrowPayment: React.FC<{
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+          Authorization: `Bearer ${getAuthToken() ?? ''}`,
         },
       });
       const data = await response.json();
@@ -203,7 +204,7 @@ const SolanaEscrowPayment: React.FC<{
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+          Authorization: `Bearer ${getAuthToken() ?? ''}`,
         },
       });
       const data = await response.json();
@@ -228,7 +229,7 @@ const SolanaEscrowPayment: React.FC<{
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+          Authorization: `Bearer ${getAuthToken() ?? ''}`,
         },
       });
       const data = await response.json();

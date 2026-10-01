@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { crmJobsService } from '../../services/crmJobs.service';
+import { getAuthToken } from '../../utils/authToken';
 
 const navItems = [
   { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
@@ -184,7 +185,7 @@ setCurrentYear(now.getFullYear());
     try {
       // Fetch clients for the dropdown
       const clientsRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${getAuthToken() ?? ''}` },
       });
       if (clientsRes.ok) {
         const clientsData = await clientsRes.json();
@@ -242,7 +243,7 @@ setCurrentYear(now.getFullYear());
       queryParams.append('sortOrder', sortOrder);
       
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/jobs?${queryParams.toString()}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${getAuthToken() ?? ''}` },
       });
       
       if (res.ok) {
@@ -298,7 +299,7 @@ setCurrentYear(now.getFullYear());
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${getAuthToken() ?? ''}`
         },
         body: JSON.stringify(cleanedData)
       });

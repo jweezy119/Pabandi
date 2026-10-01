@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { getAuthToken } from '../utils/authToken';
 
 /**
  * Frictionless Payment Component
@@ -45,7 +46,7 @@ export const FrictionlessPayment: React.FC<FrictionlessPaymentProps> = ({
     setError(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       if (!token) {
         // Guest checkout — create temporary account
         await guestPay();
@@ -149,7 +150,7 @@ export const FrictionlessPayment: React.FC<FrictionlessPaymentProps> = ({
     route: any
   ) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       const retryRes = await fetch('/api/v1/frictionless/retry', {
         method: 'POST',
         headers: {

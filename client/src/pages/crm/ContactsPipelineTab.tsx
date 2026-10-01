@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { getAuthToken } from '../../utils/authToken';
 
 interface ImportMeta {
   env: Record<string, string | undefined>;
@@ -55,7 +56,7 @@ const STAGE_LABELS: Record<ContactDeal['stage'], string> = {
 };
 
 async function apiFetch(endpoint: string, options: RequestInit = {}) {
-  const token = localStorage.getItem('token');
+  const token = getAuthToken();
   const res = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     headers: {

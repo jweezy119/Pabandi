@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { requireCrmContext } from '../middleware/crmContext.middleware';
 import { prisma } from '../utils/database';
 import { getActiveAlerts, dismissAlert } from '../services/alerts.service';
 import { updateClientScore, refreshClientTrust, getClientStage } from '../services/crm-reliability.service';
@@ -13,19 +14,8 @@ export async function getAlertsHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = req.body?.businessId || req.query?.businessId;
-    if (!businessId) {
-      throw new CustomError('businessId is required', 400);
-    }
-
-    const crmBusiness = await prisma.crmServiceBusiness.findUnique({
-      where: { businessId: businessId as string },
-    });
-    if (!crmBusiness) {
-      throw new CustomError('CRM business not found for this business', 404);
-    }
-
-    const alerts = await getActiveAlerts(crmBusiness.id);
+    const { serviceBusinessId } = requireCrmContext(req);
+    const alerts = await getActiveAlerts(serviceBusinessId);
     res.json({ success: true, data: alerts });
   } catch (error) {
     next(error);
@@ -39,19 +29,8 @@ export async function dismissAlertHandler(
 ) {
   try {
     const { id: alertId } = req.params;
-    const businessId = req.body?.businessId || req.query?.businessId;
-    if (!businessId) {
-      throw new CustomError('businessId is required', 400);
-    }
-
-    const crmBusiness = await prisma.crmServiceBusiness.findUnique({
-      where: { businessId: businessId as string },
-    });
-    if (!crmBusiness) {
-      throw new CustomError('CRM business not found for this business', 404);
-    }
-
-    const result = await dismissAlert(alertId, crmBusiness.id);
+    const { serviceBusinessId } = requireCrmContext(req);
+    const result = await dismissAlert(alertId, serviceBusinessId);
     res.json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -67,20 +46,10 @@ export async function getClientStageHandler(
 ) {
   try {
     const { id: clientId } = req.params;
-    const businessId = req.body?.businessId || req.query?.businessId;
-    if (!businessId) {
-      throw new CustomError('businessId is required', 400);
-    }
-
-    const crmBusiness = await prisma.crmServiceBusiness.findUnique({
-      where: { businessId: businessId as string },
-    });
-    if (!crmBusiness) {
-      throw new CustomError('CRM business not found for this business', 404);
-    }
+    const { serviceBusinessId } = requireCrmContext(req);
 
     const client = await prisma.crmClient.findFirst({
-      where: { id: clientId, serviceBusinessId: crmBusiness.id },
+      where: { id: clientId, serviceBusinessId },
       include: { jobs: true },
     });
     if (!client) {

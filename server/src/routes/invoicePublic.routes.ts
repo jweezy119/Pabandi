@@ -15,7 +15,7 @@ router.get('/:invoiceId', async (req, res) => {
     const invoice = await prisma.invoice.findUnique({
       where: { id: invoiceId },
       include: {
-        business: { select: { id: true, name: true, solanaAddress: true, logoUrl: true } },
+        business: { select: { id: true, name: true, logoUrl: true, slug: true } },
         client: { select: { id: true, name: true, email: true } },
       },
     });
@@ -36,11 +36,11 @@ router.get('/:invoiceId', async (req, res) => {
       business: {
         name: invoice.business.name,
         logoUrl: invoice.business.logoUrl,
-        solanaAddress: invoice.business.solanaAddress,
+        slug: invoice.business.slug,
       },
       clientName: invoice.client?.name,
     });
-  } catch (err) {
+  } catch (err: any) {
     logger.error(`[InvoicePublic] Error fetching invoice: ${err.message}`);
     res.status(500).json({ error: 'Failed to fetch invoice' });
   }

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Surface, Button, Badge, tokens } from '../design-system';
-import { propertyManagerService, teamService, documentAIService } from '../services/api';
+import { teamService, documentAIService } from '../services/api';
 import { CRM_CONFIG, BUSINESS_TYPES, BusinessType } from '../config/crmConfig';
 import { TenantWorkflowPage } from './TenantWorkflowPage';
 import TenantDashboardPage from './TenantDashboardPage';
 import { AIAssistantPage } from './AIAssistantPage';
-import { crmService } from '../services/api';
+import { apiClient, propertyManagerService } from '../services/api';
 import { Link } from 'react-router-dom';
 
 type Profile = { id: string; companyName?: string | null; businessType: BusinessType; slug?: string | null; domain?: string | null; brandColor?: string | null; logoUrl?: string | null; tagline?: string | null; active: boolean; };
@@ -36,20 +36,31 @@ export const CRMPage: React.FC = () => {
   const [bizType, setBizType] = useState<BusinessType>('GENERAL');
   const [crmDeals, setCrmDeals] = useState<any[]>([]);
   const [crmContact, setCrmContact] = useState<any[]>([]);
-  const [crmTasks, setCrmTasks] = useState<any[]>([]);
 
+  /**
+   * Loads the sales pipeline.
+   *
+   * Previously this called `crmService.deals()`, `.contact()` and `.tasks()`.
+   * None of those methods exist — they were phantom endpoints that had never
+   * been implemented server-side. Calling `undefined()` throws synchronously
+   * *before* `.catch()` can attach, so the throw escaped into the surrounding
+   * try/catch and the pipeline, contact list and tasks silently stayed empty on
+   * every load. Three dead calls in one Promise.all, invisible from the outside.
+   *
+   * Deals and leads are real and served by /api/v1/contact (now authenticated
+   * and scoped to the caller). Tasks are not implemented anywhere, so that
+   * column stays empty rather than pretending otherwise.
+   */
   const loadCrm = async () => {
     try {
-      const [dealsRes, pipelineRes, tasksRes] = await Promise.all([
-        crmService.deals().catch(() => ({ data: { data: [] } })),
-        crmService.contact().catch(() => ({ data: { data: { pipeline: [] } } })),
-        crmService.tasks().catch(() => ({ data: { data: [] } })),
+      const [dealsRes, leadsRes] = await Promise.all([
+        apiClient.get('/contact/deals').catch(() => ({ data: { data: [] } })),
+        apiClient.get('/contact/leads').catch(() => ({ data: { data: [] } })),
       ]);
       setCrmDeals(dealsRes.data?.data || []);
-      setCrmContact(pipelineRes.data?.data?.pipeline || []);
-      setCrmTasks(tasksRes.data?.data || []);
+      setCrmContact(leadsRes.data?.data || []);
     } catch (e) {
-      console.error('Failed to load CRM data', e);
+      console.error('Failed to load CRM pipeline', e);
     }
   };
 
@@ -562,8 +573,12 @@ export const CRMPage: React.FC = () => {
               <h3 className="text-lg font-bold text-[var(--warm-ink)]">✅ Tasks</h3>
               <Link to="/sales-crm" className="text-sm text-[var(--terracotta)] hover:text-[var(--terracotta)]">Manage in Sales CRM →</Link>
             </div>
-            {crmTasks.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No tasks yet.</p>}
-            {crmTasks.map((t: any) => (
+            {/* Tasks are not implemented on the server yet. Saying so plainly beats
+                showing an empty list that looks like "you have no tasks". */}
+            <p className="text-center py-8" style={{ color: tokens.color.textDim }}>
+              Tasks are not available in this workspace yet.
+            </p>
+            {false && ([] as any[]).map((t: any) => (
               <Surface key={t.id} className="flex items-center justify-between">
                 <div>
                   <div className="font-semibold text-[var(--warm-ink)]">{t.title}</div>

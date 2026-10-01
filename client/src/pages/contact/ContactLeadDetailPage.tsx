@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import ReliabilityChip from '../../components/reliability/ReliabilityChip';
+import { getAuthToken } from '../../utils/authToken';
 
 const navItems = [
   { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
@@ -48,7 +49,7 @@ export default function ContactLeadDetailPage() {
 
   useEffect(() => {
     if (!id) return;
-    const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
+    const headers = { Authorization: `Bearer ${getAuthToken() ?? ''}` };
     setLoading(true);
     Promise.all([
       fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients/${id}`, { headers }),

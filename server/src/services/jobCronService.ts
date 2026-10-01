@@ -3,17 +3,28 @@ import { logger } from '../utils/logger';
 import { prisma } from '../utils/database';
 import { jobLifecycleService } from './jobLifecycle.service';
 
+/** Minutes past the scheduled start after which a job counts as a no-show. */
+const NO_SHOW_GRACE_MINUTES = 30;
+
 export class JobCronService {
   private cronJob: any = null;
+  /** Guards against a slow run overlapping the next tick. */
+  private running = false;
 
   start() {
-    // Run every minute to check for overdue jobs and no-shows
     this.cronJob = cron.schedule('* * * * *', async () => {
+      // Without this, a run that takes longer than the interval stacks up and
+      // the same job gets marked missed twice.
+      if (this.running) return;
+      this.running = true;
       try {
         await this.processOverdueJobs();
         await this.processNoShows();
       } catch (error) {
-        logger.error('[JobCron] Error processing jobs:', error);
+        const message = error instanceof Error ? error.message : String(error);
+        logger.error(`[JobCron] Error processing jobs: ${message}`);
+      } finally {
+        this.running = false;
       }
     });
 
@@ -28,43 +39,76 @@ export class JobCronService {
   }
 
   private async processOverdueJobs() {
-    // Find jobs that are IN_PROGRESS but have been checked in for too long
-    // This would be based on business rules - for now, we'll skip this
-    // as the check-out logic handles lateness
+    // Stalled check-ins (IN_PROGRESS far past the scheduled end) are a real
+    // operational signal, but acting on them needs a per-business grace policy
+    // that does not exist yet. Left explicit rather than half-implemented.
   }
 
+  /**
+   * Mark jobs as no-shows once they are more than the grace period past their
+   * scheduled start.
+   *
+   * The previous version loaded every SCHEDULED job on the platform each minute
+   * and filtered in memory, and combined the schedule by string-concatenating a
+   * DateTime with a time string — which discarded the time entirely and compared
+   * against midnight. Both are fixed here: the window is bounded in the query and
+   * the schedule is composed in code.
+   */
   private async processNoShows() {
     const now = new Date();
-    
-    // Find scheduled jobs where the scheduled time has passed by more than 30 minutes
+    // scheduledDate is stored as a date; a job can only be a no-show once its
+    // whole day is in the past, so today is excluded and filtered precisely below.
+    const earliest = new Date(now);
+    earliest.setUTCDate(earliest.getUTCDate() - 1);
+    earliest.setUTCHours(0, 0, 0, 0);
+
     const jobs = await prisma.crmJob.findMany({
       where: {
         status: 'SCHEDULED',
-        // We need to compare scheduledDate + scheduledTime with now
-        // Since these are stored separately, we need to do this in the query
-        // For simplicity, we'll fetch all scheduled jobs and filter in memory
-        // In a production app, this would be optimized
-      }
+        scheduledDate: { lt: earliest },
+      },
+      select: { id: true, scheduledDate: true, scheduledTime: true },
+      take: 500,
     });
+
+    let marked = 0;
 
     for (const job of jobs) {
       try {
-        const scheduledTime = new Date(`${job.scheduledDate}T${job.scheduledTime}`);
-        const minutesLate = (now.getTime() - scheduledTime.getTime()) / (1000 * 60);
-        
-        if (minutesLate > 30) {
-          await jobLifecycleService.handleNoShow(job.id);
-        }
+        const start = composeStart(job.scheduledDate, job.scheduledTime);
+        if (!start) continue;
+
+        const minutesLate = (now.getTime() - start.getTime()) / (1000 * 60);
+        if (minutesLate <= NO_SHOW_GRACE_MINUTES) continue;
+
+        await jobLifecycleService.handleNoShow(job.id);
+        marked += 1;
       } catch (error) {
-        logger.error(`[JobCron] Error processing job ${job.id} for no-show:`, error);
+        const message = error instanceof Error ? error.message : String(error);
+        logger.error(`[JobCron] Error processing job ${job.id} for no-show: ${message}`);
       }
     }
-  }
 
-  // Additional cron jobs could be added here for:
-  // - Recurring job series generation
-  // - Invoice generation (though this is better handled via webhooks or events)
-  // - Deposit expiry, etc.
+    if (marked > 0) {
+      logger.info(`[JobCron] Marked ${marked} job(s) as no-show`);
+    }
+  }
+}
+
+/**
+ * Compose the real start instant from the stored date and `HH:mm` time.
+ * Returns null for a time that will not parse, so one malformed row cannot make
+ * the whole job count a no-show.
+ */
+function composeStart(scheduledDate: Date, scheduledTime: string): Date | null {
+  const match = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec((scheduledTime || '').trim());
+  if (!match) return null;
+
+  const start = new Date(scheduledDate);
+  start.setUTCHours(Number(match[1]), Number(match[2]), 0, 0);
+
+  if (Number.isNaN(start.getTime())) return null;
+  return start;
 }
 
 export const jobCronService = new JobCronService();

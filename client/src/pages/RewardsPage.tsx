@@ -3,6 +3,7 @@ import { useAuthStore } from '../store/authStore';
 import RewardCard from '../components/RewardCard';
 import FeeOffsetCalculator from '../components/FeeOffsetCalculator';
 import TierProgress from '../components/TierProgress';
+import { getAuthToken } from '../utils/authToken';
 
 interface RewardTransaction {
   id: string;
@@ -45,7 +46,7 @@ export default function RewardsPage() {
 
   const fetchRewardsData = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
 
       const [balanceRes, historyRes, tiersRes] = await Promise.all([

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import QRCode from '../components/QRCode';
 import { PhantomWalletAdapter } from '../components/PhantomWalletAdapter';
+import { getAuthToken } from '../utils/authToken';
 
 interface PlatformBalance {
   usdc: number;
@@ -45,10 +46,10 @@ export default function WalletFundingPage() {
     try {
       const [balanceRes, transfersRes] = await Promise.all([
         fetch('/api/v1/solana-usdc/platform-balance', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          headers: { Authorization: `Bearer ${getAuthToken() ?? ''}` },
         }).then(r => r.json()),
         fetch('/api/v1/solana-usdc/transfers', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          headers: { Authorization: `Bearer ${getAuthToken() ?? ''}` },
         }).then(r => r.json()).catch(() => ({ success: false })),
       ]);
 

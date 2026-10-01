@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { FiBriefcase, FiUsers, FiTrendingUp, FiAlertTriangle, FiStar, FiZap, FiEye, FiCheckCircle, FiX, FiClock, FiPhone, FiMail, FiMapPin } from 'react-icons/fi';
+import { getAuthToken } from '../../utils/authToken';
 
 // ─── API Helper ───────────────────────────────────────────────────────────────
 
 const API = '/api/v1/crm';
-const token = localStorage.getItem('token') || '';
+const token = getAuthToken() ?? '';
 
 async function api(path: string, options: RequestInit = {}) {
   const res = await fetch(`${API}${path}`, {

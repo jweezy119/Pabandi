@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getAuthToken } from '../utils/authToken';
 
 const API_URL = '/api/v1';
 
@@ -7,7 +8,7 @@ export const bookingService = {
    * Creates a reservation/escrow lock for a freelance milestone
    */
   createFreelanceBooking: async (businessId: string, estimatedHours: number, description: string, hourlyRate: number) => {
-    const token = localStorage.getItem('token');
+    const token = getAuthToken();
     
     // We send a generic POST to reservations, but we specify it's for a freelancer
     // The backend will catch the business category and auto-format the dates and calculate totals

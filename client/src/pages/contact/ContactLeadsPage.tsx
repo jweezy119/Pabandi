@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
+import { getAuthToken } from '../../utils/authToken';
 
 const navItems = [
   { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
@@ -21,7 +22,7 @@ export default function ContactLeadsPage() {
   async function fetchLeads() {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${getAuthToken() ?? ''}` },
       });
       if (res.ok) {
         const data = await res.json();
@@ -41,7 +42,7 @@ export default function ContactLeadsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${getAuthToken() ?? ''}`,
         },
         body: JSON.stringify(form),
       });

@@ -1,12 +1,44 @@
 import { prisma } from '../utils/database';
-import { invoiceGenerationService } from '../invoiceGeneration.service';
+import { invoiceGenerationService } from './invoiceGeneration.service';
 import { CustomError } from '../middleware/errorHandler';
+import { logger } from '../utils/logger';
 import { eventBus } from './event-bus.service';
-import { getClientStage } from './reliability.service';
+import { getClientStage } from './crm-reliability.service';
+import type { BusinessCategory } from '@prisma/client';
 
 // ─── Enroll Business ─────────────────────────────────────────────────────────
 
+/** Maps a free-form service type onto the platform's BusinessCategory. */
+const SERVICE_TYPE_TO_CATEGORY: Record<string, BusinessCategory> = {
+  CLEANING: 'CLEANING',
+  PLUMBING: 'OTHER',
+  ELECTRICIAN: 'OTHER',
+  HVAC: 'OTHER',
+  LANDSCAPING: 'OTHER',
+  PAINTING: 'OTHER',
+  CARPENTRY: 'OTHER',
+  PEST_CONTROL: 'OTHER',
+  MOVING: 'OTHER',
+  HANDYMAN: 'OTHER',
+  FREELANCE: 'FREELANCE',
+  PROPERTY_RENTAL: 'PROPERTY_RENTAL',
+};
+
+function resolveCategory(serviceType: string): BusinessCategory {
+  return SERVICE_TYPE_TO_CATEGORY[serviceType.toUpperCase()] ?? 'OTHER';
+}
+
+/**
+ * Enroll a service business into the CRM.
+ *
+ * Enrollment links an *existing* authenticated user to a platform `Business`,
+ * which is what lets booking, capital and property layers join to the same
+ * business record. It deliberately does not create users: silently minting an
+ * account with a placeholder password would hand every enrollee a credential
+ * they never chose.
+ */
 export async function enrollBusiness(data: {
+  ownerId: string;
   businessName: string;
   ownerEmail: string;
   ownerName: string;
@@ -14,39 +46,53 @@ export async function enrollBusiness(data: {
   phone?: string;
   address?: string;
 }) {
-  const { businessName, ownerEmail, ownerName, serviceType, phone, address } = data;
+  const { ownerId, businessName, ownerEmail, ownerName, serviceType, phone, address } = data;
 
   if (!businessName || !ownerEmail || !ownerName || !serviceType) {
     throw new CustomError('businessName, ownerEmail, ownerName, and serviceType are required', 400);
   }
+  if (!ownerId) {
+    throw new CustomError('Authentication required to enroll a business', 401);
+  }
 
-  let user = await prisma.user.findUnique({ where: { email: ownerEmail } });
+  const user = await prisma.user.findUnique({ where: { id: ownerId } });
   if (!user) {
-    user = await prisma.user.create({
-      data: { email: ownerEmail, firstName: ownerName, lastName: 'Owner', passwordHash: 'changeme' },
+    throw new CustomError('Authenticated user no longer exists', 401);
+  }
+  if (user.email && user.email.toLowerCase() !== ownerEmail.toLowerCase()) {
+    throw new CustomError(
+      `ownerEmail does not match the signed-in account (${user.email})`,
+      403
+    );
+  }
+
+  // Idempotent: re-enrolling returns the existing pairing rather than forking a
+  // second Business, which would split the cross-layer join.
+  const existingCrm = await prisma.crmServiceBusiness.findFirst({
+    where: { ownerId: user.id },
+    orderBy: { createdAt: 'asc' },
+    include: { business: true },
+  });
+  if (existingCrm) {
+    return { business: existingCrm.business, crmBusiness: existingCrm };
+  }
+
+  // Reuse an existing owned Business (e.g. one created via the booking flow)
+  // instead of creating a duplicate that would fragment revenue reporting.
+  let business = await prisma.business.findFirst({ where: { ownerId: user.id } });
+  if (!business) {
+    business = await prisma.business.create({
+      data: {
+        name: businessName,
+        email: ownerEmail,
+        phone: phone || null,
+        address: address || '',
+        category: resolveCategory(serviceType),
+        ownerId: user.id,
+        isActive: true,
+      },
     });
   }
-
-  // Check if user already has a business (idempotent enroll)
-  const existingBusiness = await prisma.business.findFirst({ where: { ownerId: user.id } });
-  if (existingBusiness) {
-    const existingCrm = await prisma.crmServiceBusiness.findFirst({ where: { businessId: existingBusiness.id } });
-    if (existingCrm) {
-      return { business: existingBusiness, crmBusiness: existingCrm };
-    }
-  }
-
-  const business = await prisma.business.create({
-    data: {
-      name: businessName,
-      email: ownerEmail,
-      phone: phone || null,
-      address: address || '',
-      category: 'CLEANING',
-      ownerId: user.id,
-      isActive: true,
-    },
-  });
 
   const crmBusiness = await prisma.crmServiceBusiness.create({
     data: {
@@ -79,7 +125,15 @@ export async function addEmployee(
   }
 
   const employee = await prisma.crmEmployee.create({
-    data: { serviceBusinessId, name, email: email || null, phone: phone || null, role, payRate, payType },
+    data: {
+      serviceBusinessId,
+      name,
+      email: email || '',
+      phone: phone || '',
+      role,
+      payRate,
+      payType,
+    },
   });
 
   return employee;
@@ -111,7 +165,14 @@ export async function addClient(
   }
 
   const client = await prisma.crmClient.create({
-    data: { serviceBusinessId, name, email: email || null, phone: phone || null, address: address || null, notes: notes || null },
+    data: {
+      serviceBusinessId,
+      name,
+      email: email || '',
+      phone: phone || '',
+      address: address || '',
+      notes: notes || null,
+    },
   });
 
   return client;
@@ -161,23 +222,48 @@ export async function createJob(
   if (!serviceType || !scheduledDate || !scheduledTime) {
     throw new CustomError('serviceType, scheduledDate, and scheduledTime are required', 400);
   }
+  if (!clientId) {
+    throw new CustomError('clientId is required', 400);
+  }
+  if (!address) {
+    throw new CustomError('address is required', 400);
+  }
 
-  const jobData: any = {
-    serviceBusinessId,
-    clientName: clientName || 'Unknown',
-    serviceType,
-    scheduledDate: new Date(scheduledDate),
-    scheduledTime,
-    durationMinutes,
-    price: price || 0,
-    status: 'SCHEDULED',
-  };
-  if (clientId) jobData.clientId = clientId;
-  if (address) jobData.address = address;
-  if (notes) jobData.notes = notes;
+  // Resolve the client within this business. Without the scope check a caller
+  // could book work against another business's client by id.
+  const client = await prisma.crmClient.findFirst({
+    where: { id: clientId, serviceBusinessId },
+    select: { id: true, name: true },
+  });
+  if (!client) {
+    throw new CustomError('Client not found for this business', 404);
+  }
+
+  if (employeeId) {
+    const employee = await prisma.crmEmployee.findFirst({
+      where: { id: employeeId, serviceBusinessId },
+      select: { id: true },
+    });
+    if (!employee) {
+      throw new CustomError('Employee not found for this business', 404);
+    }
+  }
 
   const job = await prisma.crmJob.create({
-    data: jobData,
+    data: {
+      serviceBusinessId,
+      clientId: client.id,
+      // Denormalized snapshot so a later client rename cannot rewrite history.
+      clientName: clientName || client.name,
+      serviceType,
+      scheduledDate: new Date(scheduledDate),
+      scheduledTime,
+      durationMinutes,
+      address,
+      notes: notes || null,
+      price: price || 0,
+      status: 'SCHEDULED',
+    },
     include: {
       client: true,
     },
@@ -192,16 +278,40 @@ export async function createJob(
   return job;
 }
 
-export async function assignEmployee(jobId: string, employeeId: string) {
+export async function assignEmployee(jobId: string, employeeId: string, serviceBusinessId?: string) {
+  // Both sides must belong to the same business as the job, otherwise an
+  // assignment could bridge two businesses' workforces.
+  const job = await prisma.crmJob.findFirst({
+    where: { id: jobId, ...(serviceBusinessId && { serviceBusinessId }) },
+    select: { id: true },
+  });
+  if (!job) throw new CustomError('Job not found', 404);
+
+  const employee = await prisma.crmEmployee.findFirst({
+    where: { id: employeeId, ...(serviceBusinessId && { serviceBusinessId }) },
+    select: { id: true },
+  });
+  if (!employee) throw new CustomError('Employee not found', 404);
+
   await prisma.crmJobAssignment.deleteMany({ where: { jobId } });
   return prisma.crmJobAssignment.create({
     data: { jobId, employeeId },
   });
 }
 
-export async function updateJobStatus(jobId: string, status: string) {
+export async function updateJobStatus(jobId: string, status: string, serviceBusinessId?: string) {
   if (!['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'].includes(status)) {
     throw new CustomError('Invalid status', 400);
+  }
+
+  // Scoped update: an unscoped `update` by id would let any authenticated caller
+  // rewrite the status of any job on the platform.
+  const existing = await prisma.crmJob.findFirst({
+    where: { id: jobId, ...(serviceBusinessId && { serviceBusinessId }) },
+    select: { id: true },
+  });
+  if (!existing) {
+    throw new CustomError('Job not found', 404);
   }
 
   const data: any = { status };
@@ -217,10 +327,12 @@ export async function updateJobStatus(jobId: string, status: string) {
 
   // Emit events
   if (status === 'COMPLETED') {
-    eventBus.publish({
+    await eventBus.publish({
       type: 'checkin.verified',
       jobId,
       clientId: job.clientId || undefined,
+      businessId: job.serviceBusinessId,
+      layer: 'crm',
       data: { job, completedAt: job.completedAt },
       timestamp: new Date(),
     });
@@ -403,11 +515,14 @@ export async function checkInJob(
   jobId: string,
   userId: string,
   latitude?: number,
-  longitude?: number
+  longitude?: number,
+  serviceBusinessId?: string
 ) {
-  const job = await prisma.crmJob.findUnique({
-    where: { id: jobId },
-    include: { client: true }
+  // Scoped lookup: without serviceBusinessId a caller could check in any job on
+  // the platform just by guessing an id.
+  const job = await prisma.crmJob.findFirst({
+    where: { id: jobId, ...(serviceBusinessId && { serviceBusinessId }) },
+    include: { client: true },
   });
 
   if (!job) {
@@ -424,7 +539,10 @@ export async function checkInJob(
     data: {
       status: 'IN_PROGRESS',
       checkedInAt: new Date(),
-      // In a real app, we would also store latitude/longitude if provided
+      // Captured so a later location check can verify the check-in actually
+      // happened at the job site — the basis for delivery reliability.
+      ...(latitude !== undefined && { checkinLat: latitude }),
+      ...(longitude !== undefined && { checkinLng: longitude }),
     }
   });
 
@@ -434,8 +552,8 @@ export async function checkInJob(
     clientId: job.clientId,
     timestamp: new Date(),
     latitude,
-    longitude
-  });
+    longitude,
+  }, 'crm');
 
   // Audit log entry would be handled by the trust-core service or similar
   // For now, we'll rely on the event bus to trigger appropriate updates
@@ -447,10 +565,11 @@ export async function checkInJob(
 
 export async function checkOutJob(
   jobId: string,
-  userId: string
+  userId: string,
+  serviceBusinessId?: string
 ) {
-  const job = await prisma.crmJob.findUnique({
-    where: { id: jobId },
+  const job = await prisma.crmJob.findFirst({
+    where: { id: jobId, ...(serviceBusinessId && { serviceBusinessId }) },
     include: { client: true }
   });
 
@@ -472,7 +591,7 @@ export async function checkOutJob(
   const updatedJob = await prisma.crmJob.update({
     where: { id: jobId },
     data: {
-      status: 'COMPLETE',
+      status: 'COMPLETED',
       checkedOutAt: new Date(),
       actualDurationMinutes: Math.round(actualDurationMinutes)
     }
@@ -489,8 +608,8 @@ export async function checkOutJob(
     workerId: userId,
     actualDurationMinutes,
     scheduledDurationMinutes,
-    timestamp: new Date()
-  });
+    timestamp: new Date(),
+  }, 'crm');
 
   // Update worker's deliveryScore (this would typically update the worker's TrustPassport)
   // In a real implementation, this would call a trust score update service
@@ -537,8 +656,8 @@ export async function handleNoShow(jobId: string) {
       jobId,
       clientId: job.clientId,
       timestamp: now,
-      minutesLate
-    });
+      minutesLate,
+    }, 'crm');
 
     logger.info(`[JobLifecycle] Job ${jobId} marked as MISSED (${minutesLate.toFixed(1)} minutes late)`);
   }

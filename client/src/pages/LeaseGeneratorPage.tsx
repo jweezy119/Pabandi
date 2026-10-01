@@ -1,4 +1,5 @@
 import { useState, useEffect, FormEvent } from "react";
+import { getAuthToken } from '../utils/authToken';
 
 const API_BASE = `${import.meta.env.VITE_API_URL || "https://pabandi.onrender.com"}/api/v1/property-manager`;
 const STEPS = ["Property & Tenant", "Lease Terms", "Clauses", "Review", "Sign & Send"] as const;
@@ -59,7 +60,7 @@ const allUtilities = ["Water", "Electricity", "Gas", "Trash", "Internet", "Cable
 
 async function apiGet(path: string) {
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { Authorization: `Bearer ${localStorage.getItem("auth_token") || localStorage.getItem("token") || ""}` },
+    headers: { Authorization: `Bearer ${getAuthToken() ?? ''}` },
   });
   if (!res.ok) throw new Error(`GET ${path} failed`);
   return res.json();
@@ -70,7 +71,7 @@ async function apiPost(path: string, body: unknown) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${localStorage.getItem("auth_token") || localStorage.getItem("token") || ""}`,
+      Authorization: `Bearer ${getAuthToken() ?? ''}`,
     },
     body: JSON.stringify(body),
   });

@@ -17,6 +17,11 @@ const apiClient = axios.create({
   },
 });
 
+// Exported for the few components that need a verb other than the helpers below.
+// Prefer the named service objects — they are the interface most of the app
+// should depend on.
+export { apiClient };
+
 // Request interceptor to add auth token and App Check token
 apiClient.interceptors.request.use(async (config) => {
   const token = useAuthStore.getState().token;
@@ -607,73 +612,259 @@ export const tenantService = {
 };
 
 // Generic CRM endpoints for sales/property management.
+/**
+ * CRM service.
+ *
+ * This previously advertised ~50 endpoints (`/crm/deals`, `/crm/campaigns`,
+ * `/crm/sequences`, `/crm/ai/*`, …) that have never existed on the server. Every
+ * one returned 404, and because callers wrapped the requests in
+ * `.catch(() => ({ data: {} }))` the failures were invisible — the CRM simply
+ * rendered empty. Only endpoints the server actually serves are listed here, so
+ * a call that fails now fails loudly.
+ *
+ * Note there is no `businessId` parameter anywhere in this object: the server
+ * resolves the caller's business from the auth token, so passing one was both
+ * unnecessary and a way to address another business.
+ */
 export const crmService = {
-  contacts: (params?: { status?: string; search?: string }) => apiClient.get(`/crm/contacts${params?.status || params?.search ? '?' + new URLSearchParams(params as any).toString() : ''}`),
-  createContact: (payload: any) => apiClient.post('/crm/contacts', payload),
-  updateContact: (id: string, payload: any) => apiClient.patch(`/crm/contacts/${id}`, payload),
-  deleteContact: (id: string) => apiClient.delete(`/crm/contacts/${id}`),
-  deals: (params?: { stage?: string; contactId?: string }) => apiClient.get(`/crm/deals${params?.stage || params?.contactId ? '?' + new URLSearchParams(params as any).toString() : ''}`),
-  createDeal: (payload: any) => apiClient.post('/crm/deals', payload),
-  updateDeal: (id: string, payload: any) => apiClient.patch(`/crm/deals/${id}`, payload),
-  moveDeal: (id: string, stage: string) => apiClient.patch(`/crm/deals/${id}/move`, { stage }),
-  deleteDeal: (id: string) => apiClient.delete(`/crm/deals/${id}`),
-  getDeal: (id: string) => apiClient.get(`/crm/deals/${id}`),
-  contact: () => apiClient.get('/crm/contact'),
-  campaigns: () => apiClient.get('/crm/campaigns'),
-  createCampaign: (payload: any) => apiClient.post('/crm/campaigns', payload),
-  addCampaignRecipient: (campaignId: string, payload: any) => apiClient.post(`/crm/campaigns/${campaignId}/recipients`, payload),
-  sendCampaign: (campaignId: string) => apiClient.post(`/crm/campaigns/${campaignId}/send`),
-  tasks: (params?: { status?: string; contactId?: string; dealId?: string }) => apiClient.get(`/crm/tasks${params?.status || params?.contactId || params?.dealId ? '?' + new URLSearchParams(params as any).toString() : ''}`),
-  createTask: (payload: any) => apiClient.post('/crm/tasks', payload),
-  updateTask: (id: string, payload: any) => apiClient.patch(`/crm/tasks/${id}`, payload),
-  deleteTask: (id: string) => apiClient.delete(`/crm/tasks/${id}`),
-  communications: (params?: { contactId?: string; dealId?: string; type?: string }) => apiClient.get(`/crm/communications${params?.contactId || params?.dealId || params?.type ? '?' + new URLSearchParams(params as any).toString() : ''}`),
-  createCommunication: (payload: any) => apiClient.post('/crm/communications', payload),
-  emailTemplates: (params?: { category?: string }) => apiClient.get(`/crm/email-templates${params?.category ? '?' + new URLSearchParams(params as any).toString() : ''}`),
-  createEmailTemplate: (payload: any) => apiClient.post('/crm/email-templates', payload),
-  updateEmailTemplate: (id: string, payload: any) => apiClient.patch(`/crm/email-templates/${id}`, payload),
-  deleteEmailTemplate: (id: string) => apiClient.delete(`/crm/email-templates/${id}`),
-  sequences: (params?: { status?: string }) => apiClient.get(`/crm/sequences${params?.status ? '?' + new URLSearchParams(params as any).toString() : ''}`),
-  createSequence: (payload: any) => apiClient.post('/crm/sequences', payload),
-  updateSequence: (id: string, payload: any) => apiClient.patch(`/crm/sequences/${id}`, payload),
-  deleteSequence: (id: string) => apiClient.delete(`/crm/sequences/${id}`),
-  enrollInSequence: (sequenceId: string, payload: any) => apiClient.post(`/crm/sequences/${sequenceId}/enroll`, payload),
-  getSequenceEnrollments: (sequenceId: string) => apiClient.get(`/crm/sequences/${sequenceId}/enrollments`),
-  forms: () => apiClient.get('/crm/forms'),
-  createForm: (payload: any) => apiClient.post('/crm/forms', payload),
-  getFormSubmissions: (formId: string) => apiClient.get(`/crm/forms/${formId}/submissions`),
-  submitForm: (slug: string, data: any) => apiClient.post(`/crm/forms/${slug}/submit`, data),
-  scoreContact: (contactId: string, payload: any) => apiClient.post(`/crm/contacts/${contactId}/score`, payload),
-  getContactScores: (contactId: string) => apiClient.get(`/crm/contacts/${contactId}/scores`),
-  reports: (params?: { type?: string }) => apiClient.get(`/crm/reports${params?.type ? '?' + new URLSearchParams(params as any).toString() : ''}`),
-  createReport: (payload: any) => apiClient.post('/crm/reports', payload),
-  runReport: (id: string) => apiClient.post(`/crm/reports/${id}/run`),
-  deleteReport: (id: string) => apiClient.delete(`/crm/reports/${id}`),
-  tickets: (params?: { status?: string; priority?: string; contactId?: string }) => apiClient.get(`/crm/tickets${params?.status || params?.priority || params?.contactId ? '?' + new URLSearchParams(params as any).toString() : ''}`),
-  createTicket: (payload: any) => apiClient.post('/crm/tickets', payload),
-  updateTicket: (id: string, payload: any) => apiClient.patch(`/crm/tickets/${id}`, payload),
-  addTicketComment: (ticketId: string, payload: any) => apiClient.post(`/crm/tickets/${ticketId}/comments`, payload),
-  getTicketComments: (ticketId: string) => apiClient.get(`/crm/tickets/${ticketId}/comments`),
-  knowledge: (params?: { category?: string; status?: string }) => apiClient.get(`/crm/knowledge${params?.category || params?.status ? '?' + new URLSearchParams(params as any).toString() : ''}`),
-  createKnowledgeArticle: (payload: any) => apiClient.post('/crm/knowledge', payload),
-  updateKnowledgeArticle: (id: string, payload: any) => apiClient.patch(`/crm/knowledge/${id}`, payload),
-  deleteKnowledgeArticle: (id: string) => apiClient.delete(`/crm/knowledge/${id}`),
-  events: (params?: { startDate?: string; endDate?: string; contactId?: string; dealId?: string }) => apiClient.get(`/crm/events${params?.startDate || params?.endDate || params?.contactId || params?.dealId ? '?' + new URLSearchParams(params as any).toString() : ''}`),
-  createEvent: (payload: any) => apiClient.post('/crm/events', payload),
-  updateEvent: (id: string, payload: any) => apiClient.patch(`/crm/events/${id}`, payload),
-  deleteEvent: (id: string) => apiClient.delete(`/crm/events/${id}`),
-  integrations: () => apiClient.get('/crm/integrations'),
-  createIntegration: (payload: any) => apiClient.post('/crm/integrations', payload),
-  updateIntegration: (id: string, payload: any) => apiClient.patch(`/crm/integrations/${id}`, payload),
-  deleteIntegration: (id: string) => apiClient.delete(`/crm/integrations/${id}`),
-  apiKeys: () => apiClient.get('/crm/api-keys'),
-  createApiKey: (payload: any) => apiClient.post('/crm/api-keys', payload),
-  deleteApiKey: (id: string) => apiClient.delete(`/crm/api-keys/${id}`),
-  aiInsights: (params?: { type?: string; isRead?: boolean }) => apiClient.get(`/crm/ai/insights${params?.type || params?.isRead !== undefined ? '?' + new URLSearchParams(params as any).toString() : ''}`),
-  markInsightRead: (id: string) => apiClient.patch(`/crm/ai/insights/${id}/read`),
-  aiNextAction: (contactId: string) => apiClient.post(`/crm/ai/next-action/${contactId}`),
-  aiScoreContact: (contactId: string) => apiClient.post(`/crm/ai/score/${contactId}`),
-  aiEmailDraft: (payload: { contactId: string; context?: string; tone?: string }) => apiClient.post('/crm/ai/email-draft', payload),
+  // Enrollment
+  enroll: (payload: {
+    businessName: string;
+    ownerName: string;
+    serviceType: string;
+    phone?: string;
+    address?: string;
+  }) => apiClient.post('/crm/enroll', payload),
+
+  // Dashboard
+  dashboard: () => apiClient.get('/crm/dashboard'),
+
+  // Team
+  employees: () => apiClient.get('/crm/employees'),
+  addEmployee: (payload: {
+    name: string;
+    email?: string;
+    phone?: string;
+    role: string;
+    payRate?: number;
+    payType?: string;
+  }) => apiClient.post('/crm/employees', payload),
+  updateEmployee: (
+    id: string,
+    payload: Partial<{
+      name: string;
+      email: string;
+      phone: string;
+      role: string;
+      payRate: number;
+      payType: string;
+      isActive: boolean;
+    }>
+  ) => apiClient.put(`/crm/employees/${id}`, payload),
+  deleteEmployee: (id: string) => apiClient.delete(`/crm/employees/${id}`),
+
+  // Clients
+  clients: () => apiClient.get('/crm/clients'),
+  addClient: (payload: {
+    name: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    notes?: string;
+  }) => apiClient.post('/crm/clients', payload),
+  clientStage: (id: string) => apiClient.get(`/crm/clients/${id}/stage`),
+  clientInvoices: (id: string) => apiClient.get(`/crm/clients/${id}/invoices`),
+
+  // Jobs
+  jobs: (params?: { status?: string; dateFrom?: string; dateTo?: string }) =>
+    apiClient.get(`/crm/jobs${params ? '?' + new URLSearchParams(params as any).toString() : ''}`),
+  addJob: (payload: {
+    clientId: string;
+    serviceType: string;
+    scheduledDate: string;
+    scheduledTime: string;
+    durationMinutes?: number;
+    address: string;
+    notes?: string;
+    price: number;
+  }) => apiClient.post('/crm/jobs', payload),
+  updateJobStatus: (id: string, status: string) => apiClient.patch(`/crm/jobs/${id}/status`, { status }),
+  assignJob: (id: string, employeeId: string) => apiClient.post(`/crm/jobs/${id}/assign`, { employeeId }),
+  checkIn: (id: string, latitude?: number, longitude?: number) =>
+    apiClient.post(`/crm/jobs/${id}/checkin`, { latitude, longitude }),
+  checkOut: (id: string) => apiClient.post(`/crm/jobs/${id}/checkout`),
+  markNoShow: (id: string) => apiClient.post(`/crm/jobs/${id}/noshow`),
+
+  // Money
+  expenses: (params?: { category?: string; dateFrom?: string; dateTo?: string }) =>
+    apiClient.get(`/crm/expenses${params ? '?' + new URLSearchParams(params as any).toString() : ''}`),
+  addExpense: (payload: {
+    category: string;
+    amount: number;
+    description: string;
+    vendor?: string;
+    date?: string;
+  }) => apiClient.post('/crm/expenses', payload),
+  payroll: (params?: { employeeId?: string; status?: string }) =>
+    apiClient.get(`/crm/payroll${params ? '?' + new URLSearchParams(params as any).toString() : ''}`),
+  addPayroll: (payload: {
+    employeeId: string;
+    periodStart: string;
+    periodEnd: string;
+    hoursWorked: number;
+    jobsCompleted: number;
+    grossPay: number;
+    deductions?: number;
+  }) => apiClient.post('/crm/payroll', payload),
+
+  // Invoices
+  invoices: (params?: { status?: string }) =>
+    apiClient.get(`/crm/invoices${params?.status ? '?status=' + params.status : ''}`),
+  invoice: (id: string) => apiClient.get(`/crm/invoices/${id}`),
+  addInvoice: (payload: {
+    clientId: string;
+    dateDue: string;
+    lineItems: { description: string; amount: number }[];
+    subtotal: number;
+    notes?: string;
+  }) => apiClient.post('/crm/invoices', payload),
+  setInvoiceStatus: (id: string, status: string) => apiClient.patch(`/crm/invoices/${id}/status`, { status }),
+  deleteInvoice: (id: string) => apiClient.delete(`/crm/invoices/${id}`),
+
+  // Trust-aware alerts
+  alerts: () => apiClient.get('/crm/alerts'),
+  dismissAlert: (id: string) => apiClient.post(`/crm/alerts/${id}/dismiss`),
+};
+
+/**
+ * Contact OS — the sales pipeline.
+ *
+ * Serves `/contact`, which is where leads, deals and activities actually live.
+ * `crmService` (above) is the operational CRM: clients, jobs, payroll, expenses.
+ * They are different surfaces and were being conflated.
+ *
+ * `SalesCRMPage` previously called 39 methods on `crmService` for this data —
+ * contacts, deals, campaigns, sequences, tickets, AI insights and so on. None of
+ * them existed. Every call threw, and because each was wrapped in a
+ * `.catch(() => fallback)` the page rendered a complete, plausible, permanently
+ * empty HubSpot. The five operations below are the ones the backend genuinely
+ * implements; everything else in that page is not built.
+ */
+export const contactOsService = {
+  // Leads / contacts
+  contacts: () => apiClient.get('/contact/contacts'),
+  createContact: (payload: {
+    name: string;
+    email?: string;
+    phone?: string;
+    company?: string;
+    source?: string;
+    notes?: string;
+    value?: number;
+    stage?: string;
+  }) => apiClient.post('/contact/contacts', payload),
+  updateContact: (id: string, payload: Partial<{
+    name: string; email: string; phone: string; company: string;
+    stage: string; notes: string; value: number | null;
+  }>) => apiClient.put(`/contact/contacts/${id}`, payload),
+  deleteContact: (id: string) => apiClient.delete(`/contact/contacts/${id}`),
+  setLeadStage: (id: string, stage: string) =>
+    apiClient.put(`/contact/leads/${id}/stage`, { stage }),
+
+  // Deals
+  deals: () => apiClient.get('/contact/deals'),
+  createDeal: (payload: { leadId: string; title: string; amount: number; stage?: string; closeDate?: string }) =>
+    apiClient.post('/contact/deals', payload),
+  updateDeal: (id: string, payload: Partial<{ title: string; amount: number; stage: string; closeDate: string | null }>) =>
+    apiClient.put(`/contact/deals/${id}`, payload),
+  getDeal: (id: string) => apiClient.get(`/contact/deals`),
+
+  // Activities
+  activities: (leadId: string) => apiClient.get(`/contact/contacts/${leadId}/activities`),
+  createActivity: (payload: { leadId: string; type: string; content?: string; dueAt?: string }) =>
+    apiClient.post('/contact/activities', payload),
+
+  stats: () => apiClient.get('/contact/stats'),
+};
+
+/**
+ * Business OS — the unified cross-layer surface.
+ *
+ * One call returns every installed module's contribution plus a merged timeline,
+ * so a dashboard does not have to fan out itself (and cannot end up disagreeing
+ * with itself about the same number).
+ */
+export type ModuleStatus = 'ok' | 'empty' | 'unavailable' | 'error';
+
+export interface ModuleFactsDto {
+  counts: Record<string, number | null>;
+  money: Record<string, { gross: number; net: number; outstanding: number; currency: string }>;
+  series?: { key: string; points: { t: string; v: number }[] }[];
+}
+
+export interface PulseDto {
+  businessId: string;
+  serviceBusinessId: string | null;
+  generatedAt: string;
+  range: { from: string; to: string };
+  modules: { id: string; status: ModuleStatus; reason?: string; facts?: ModuleFactsDto }[];
+  totals: {
+    revenue: number;
+    cost: number;
+    margin: number;
+    outstanding: number;
+    currency: string;
+    /** True when a module failed and was excluded from the totals. */
+    partial: boolean;
+  };
+  trust: {
+    available: boolean;
+    passportId?: string;
+    level?: string | null;
+    overall?: number | null;
+    verified?: boolean;
+    fraudFlag?: boolean;
+    scoped?: { dimension: string; score: number | null; sampleSize: number | null }[];
+  };
+  timeline: {
+    at: string;
+    moduleId: string;
+    kind: string;
+    subject?: { id: string; label: string; href?: string };
+    summary: string;
+    impact?: { trustDelta?: number; amount?: number; currency?: string };
+  }[];
+  flows: { capitalRaised: number; settledPayments: number; treasuryTotal: number };
+}
+
+export interface ModuleCatalogueDto {
+  modules: {
+    id: string;
+    key: string;
+    label: string;
+    blurb: string;
+    requires: string[];
+    installed: boolean;
+    satisfiable: boolean;
+    requiresInstalled: string[];
+  }[];
+}
+
+export const businessOsService = {
+  modules: () => apiClient.get<ModuleCatalogueDto>('/business-os/modules'),
+  pulse: (params?: { range?: string; from?: string; to?: string }) =>
+    apiClient.get<PulseDto>(
+      `/business-os/pulse${params ? '?' + new URLSearchParams(params as any).toString() : ''}`
+    ),
+  timeline: (params?: { range?: string; limit?: number }) =>
+    apiClient.get<PulseDto['timeline']>(
+      `/business-os/timeline${params ? '?' + new URLSearchParams(params as any).toString() : ''}`
+    ),
+  moduleFacts: (key: string, params?: { range?: string }) =>
+    apiClient.get(`/business-os/modules/${key}/facts${params?.range ? '?range=' + params.range : ''}`),
+  installModule: (key: string) => apiClient.post(`/business-os/modules/${key}/install`),
+  uninstallModule: (key: string) => apiClient.post(`/business-os/modules/${key}/uninstall`),
+  health: () => apiClient.get('/business-os/health'),
 };
 
 // Real-estate court screening (CourtListener eviction / litigation).

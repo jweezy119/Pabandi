@@ -248,14 +248,19 @@ const routeMap: [string, string][] = [
   [`/api/${v}/public/property`, './routes/public.property.routes'],
   [`/api/${v}/crm`, './routes/crm.routes'],
   [`/api/${v}/crm-advanced`, './routes/crmAdvanced.routes'],
+  [`/api/${v}/business-os`, './routes/businessOS.routes'],
+  [`/api/${v}/booking-services`, './routes/bookingService.routes'],
+  // Payment-partner webhooks. No user auth by design: the caller is the rail's
+  // server and is authenticated by HMAC signature instead.
+  [`/api/${v}/rail/webhooks`, './routes/railWebhook.routes'],
   [`/api/${v}/team`, './routes/team.routes'],
   [`/api/${v}/documents`, './routes/document.routes'],
   [`/api/${v}/tenant`, './routes/tenant.routes'],
-  [`/api/${v}/contact`, './routes.contact.routes'],
+  [`/api/${v}/contact`, './routes/contact.routes'],
 [`/api/${v}/promo`, './routes/promo.routes'],
   [`/api/${v}/rewards`, './routes/partnerRewards.routes'],
   [`/api/${v}/freight`, './routes/freight.routes'],
-[`/api/${v}/ledger`, './routes.ledger.routes'],
+[`/api/${v}/ledger`, './routes/ledger.routes'],
   [`/api/${v}/maps`, './routes/maps.routes'],
   [`/api/${v}/promotions`, './routes/promotions.routes'],
   [`/api/${v}/nightlife`, './routes/nightlife.routes'],
@@ -330,7 +335,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/agent-rewards`, './routes/agentReward.routes'],
   [`/api/${v}/crm-pab`, './routes/crmPab.routes'],
   [`/api/${v}/lease-pab`, './routes/leasePab.routes'],
-  [`/api/${v}/security`, './routes.security.routes'],
+  [`/api/${v}/security`, './routes/security.routes'],
   [`/api/${v}/pakistan`, './routes/pakistanPayment.routes'],
   [`/api/${v}/haq`, './routes/haqOS.routes'],
   [`/api/${v}/saf`, './routes/safOS.routes'],
@@ -377,6 +382,22 @@ logger.info(`✅ ${routeMap.length} lazy API routes registered`)
 import { initializeTrustCore } from './services/trust-core.service';
 initializeTrustCore();
 logger.info('✅ TrustCore event pipeline initialized');
+
+// Replay trust events that were persisted but not fully delivered before the last
+// restart. Runs after initializeTrustCore so subscribers are attached first.
+import { eventBus } from './services/event-bus.service';
+void eventBus.replayOutbox().then((n) => {
+  if (n > 0) logger.info(`✅ Replayed ${n} trust outbox deliveries`);
+});
+
+// Load the module registry so the Business OS layer catalogue is available.
+import { moduleRegistry } from './modules';
+logger.info(
+  `✅ Module registry loaded (${moduleRegistry.all().length} modules: ${moduleRegistry
+    .all()
+    .map((m) => m.key)
+    .join(', ')})`
+);
 
 // Auto-start job cron service (checks for overdue jobs and no-shows every minute)
 import { jobCronService } from './services/jobCronService';
@@ -517,26 +538,40 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
   // Routes are registered lazily via lazyRoute() at module load — no startup loading needed
   logger.info('✅ Server ready (routes will lazy-load on first request)');
 
-  // ── Auto-seed offline real businesses on cold start ─────────────────────
-  // Ensures discovery always has geo-located data without manual seed calls.
-  // Uses no external network — bundled real business coordinates. Safe in
-  // production: only inserts if the Business table has zero geo rows.
-  setImmediate(async () => {
-    try {
-      const { prisma } = await import('./utils/database');
-      const geoCount = await prisma.business.count({ where: { latitude: { not: null }, longitude: { not: null } } });
-      if (geoCount === 0) {
-        logger.info('Seeding offline real businesses (geo table empty)...');
-        const { seedOfflineBusinesses } = await import('./routes/seed.routes');
-        const count = await seedOfflineBusinesses();
-        logger.info(`✅ Auto-seeded ${count} offline businesses`);
-      } else {
-        logger.info(`Geo businesses already present (${geoCount}); skipping auto-seed`);
+  // ── Offline business auto-seed ────────────────────────────────────────────
+  // DISABLED. This ran on every cold start and inserted 27 bundled businesses
+  // carrying `isVerified: true` alongside invented rating / reviewCount /
+  // trustScore values. On a platform whose entire proposition is verified trust,
+  // fabricating those claims and showing them to users as real is worse than
+  // having an empty discovery page.
+  //
+  // The data is still reachable explicitly via POST /api/v1/seed/offline
+  // (admin-authenticated) for demo environments. To re-enable on boot, set
+  // SEED_OFFLINE_BUSINESSES=true — off by default, and always a conscious act.
+  if (process.env.SEED_OFFLINE_BUSINESSES === 'true') {
+    logger.warn(
+      '⚠️  SEED_OFFLINE_BUSINESSES=true — inserting demo businesses with fabricated trust scores'
+    );
+    setImmediate(async () => {
+      try {
+        const { prisma } = await import('./utils/database');
+        const geoCount = await prisma.business.count({
+          where: { latitude: { not: null }, longitude: { not: null } },
+        });
+        if (geoCount === 0) {
+          const { seedOfflineBusinesses } = await import('./routes/seed.routes');
+          const count = await seedOfflineBusinesses();
+          logger.info(`Seeded ${count} offline businesses`);
+        } else {
+          logger.info(`Geo businesses already present (${geoCount}); skipping seed`);
+        }
+      } catch (e: any) {
+        logger.warn('[Auto-seed] offline businesses skipped: ' + e.message);
       }
-    } catch (e: any) {
-      logger.warn('[Auto-seed] offline businesses skipped: ' + e.message);
-    }
-  });
+    });
+  } else {
+    logger.info('Auto-seed of offline businesses is disabled (set SEED_OFFLINE_BUSINESSES=true to opt in)');
+  }
 
 
   // DISABLED: Telegram bot (spawns background processes)

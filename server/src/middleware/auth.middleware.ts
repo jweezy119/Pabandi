@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { CustomError } from './errorHandler';
+import type { CrmContext } from './crmContext.middleware';
 
 // Extend Express globally so passport + our auth middleware agree on the type
 declare global {
@@ -22,6 +23,16 @@ export interface AuthRequest extends Request {
     lastName?: string;
     phone?: string;
   };
+  /**
+   * Business context, attached by `resolveCrmBusiness`.
+   *
+   * Declared here rather than via `declare global { namespace Express }` on
+   * purpose: ts-node compiles per-file, and a global `Request` augmentation in a
+   * separately-imported module can shadow `Express.User` for files that are
+   * compiled before the augmentation is in scope. Extending the already-exported
+   * `AuthRequest` keeps the augmentation local to the file that declares it.
+   */
+  crm?: CrmContext;
 }
 
 export const authenticate = (

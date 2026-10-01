@@ -13,6 +13,7 @@ import OAuthConsentPage from './pages/OAuthConsentPage';
 import ReservationsPage from './pages/ReservationsPage';
 import NewReservationPage from './pages/NewReservationPage';
 import { CheckoutSessionPage } from './pages/CheckoutSessionPage';
+import PayInvoicePage from './pages/PayInvoicePage';
 import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
 import CheckoutCancelPage from './pages/CheckoutCancelPage';
 import BookingPage from './pages/BookingPage';
@@ -148,6 +149,7 @@ import FreelanceStorefrontPage from './pages/FreelanceStorefrontPage';
 import ShariaCompliancePage from './pages/ShariaCompliancePage';
 import { MudarabahPoolsPage } from './pages/MudarabahPoolsPage';
 import ServiceBusinessDashboard from './pages/crm/ServiceBusinessDashboard';
+import BusinessWorkspaceShell from './pages/business-os/BusinessWorkspaceShell';
 import ProfitDashboardPage from './pages/ProfitDashboardPage';
 import { ShariaTransparencyPage } from './pages/ShariaTransparencyPage';
 import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
@@ -402,6 +404,9 @@ function App() {
             <Route path="business/activate/:id" element={<BusinessActivationPage />} />
             <Route path="business/crm" element={isAuthenticated ? <BusinessCrmPage /> : <Navigate to="/login" />} />
             <Route path="crm" element={isAuthenticated ? <ServiceBusinessDashboard /> : <Navigate to="/login" />} />
+            {/* Unified cross-layer surface. Everything under /crm/* resolves
+                through the module registry rather than a hard-coded tab list. */}
+            <Route path="crm/pulse" element={isAuthenticated ? <BusinessWorkspaceShell /> : <Navigate to="/login" />} />
             <Route path="post-business" element={<PostBusinessPage />} />
             <Route path="business/settings" element={isAuthenticated ? <BusinessSettingsPage /> : <Navigate to="/login" />} />
             <Route path="business/analytics" element={isAuthenticated ? <BusinessAnalyticsPage /> : <Navigate to="/login" />} />
