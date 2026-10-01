@@ -413,7 +413,17 @@ export async function scanFailureOwnership(): Promise<FailureOwnershipResult[]> 
   return results;
 }
 
-/** A business user filing a dispute on an invoice they own. */
+/**
+ * Invoice dispute creation. Writes a `Dispute` row with contextType: 'INVOICE'.
+ *
+ * This is the entry point that the future Sulha layer will wrap. Sulha will add
+ * arbitration, resolution states, and UI on top of the same `Dispute` rows —
+ * it will not replace this function.
+ *
+ * A business user filing a dispute on an invoice they own.
+ *
+ * See docs/decisions/0001-dispute-as-sulha-substrate.md
+ */
 export async function fileInvoiceDispute(params: {
   invoiceId: string;
   reason: string;

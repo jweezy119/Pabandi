@@ -1010,6 +1010,7 @@ A: It is your portable, verifiable trust credential. It lets you prove your reli
 || Zero-knowledge proof | Prove something is true without revealing the underlying data |
 || Off-chain attestation | Backend-signed cryptographic proof instead of raw data on-chain |
 || AI Arbitration Oracle | AI-assisted escrow dispute resolution with human escalation |
+|| Sulha | Pabandi's dispute resolution layer. Backed by the Dispute model (contextType: 'INVOICE' today; additional contexts to follow). Sulha adds arbitration workflow, resolution states, and UI on top of Dispute rows. (Planned — invoice dispute flow is live.) |
 || Cross-chain | Bridging state between Solana and EVM chains like BSC |
 || LayerZero | Permissionless cross-chain messaging protocol (optional, stretch goal) |
 || Chainlink CCIP | Cross-chain interoperability protocol for token and data transfers (optional) |

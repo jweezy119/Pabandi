@@ -1386,6 +1386,11 @@ model Payout {
   @@index([status])
 }
 
+/// Dispute is the durable primitive for all conflict resolution at Pabandi.
+/// The future "Sulha" layer (whitepaper v4.0) will be built on top of these rows —
+/// arbitration workflow, resolution states, and UI. Do NOT introduce a parallel
+/// dispute model. Extend `contextType` for new dispute categories instead.
+/// See docs/decisions/0001-dispute-as-sulha-substrate.md
 model Dispute {
   id               String          @id @default(cuid())
   userId           String?
@@ -1401,7 +1406,7 @@ model Dispute {
   stakedAmount     Float           @default(0)
   reservationId    String?         @unique
   // #3 Dispute Arbitration: attach disputes to paid-work contexts (not just reservations)
-  contextType      String? // MILESTONE | OFFRAMP | PAYOUT | RESERVATION
+  contextType      String? // MILESTONE | OFFRAMP | PAYOUT | RESERVATION | INVOICE
   contextId        String? // ProjectMilestone.id | OfframpIntent.id | Payout.id
   evidenceUrls     String[]
   user             User?           @relation("DisputesAgainst", fields: [userId], references: [id], onDelete: Cascade)
