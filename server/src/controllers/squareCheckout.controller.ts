@@ -36,12 +36,40 @@ export const getSquarePayment = async (req: Request, res: Response, next: NextFu
 
 export const handleSquareWebhook = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const body = JSON.stringify(req.body);
-    const signature = req.headers['x-square-signature'] as string;
+    /**
+     * Square signs the RAW request bytes and sends the digest in
+     * `x-square-hmacsha256-signature`.
+     *
+     * Two things were wrong here, and either one alone made every webhook
+     * fail with 401 no matter how correct the signing key was:
+     *
+     *  1. The header read was `x-square-signature`, which Square never sends.
+     *     The real name is `x-square-hmacsha256-signature` — as
+     *     reconciliation.routes.ts already used. So the signature was always
+     *     undefined and every delivery was rejected as unsigned.
+     *
+     *  2. `JSON.stringify(req.body)` re-serialises the parsed body, which is
+     *     not guaranteed to be byte-identical to what Square signed — key
+     *     order and whitespace come from the parser, not the sender. Square
+     *     signs the exact bytes it transmitted, so the digest must be computed
+     *     over `req.rawBody`, which index.ts captures via the json verify hook.
+     *     Same fix already applied in offramp.controller.ts.
+     */
+    const signature =
+      (req.headers['x-square-hmacsha256-signature'] as string | undefined) ??
+      (req.headers['x-square-signature'] as string | undefined);
     const webhookUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
-    
-    const isValid = await squareService.verifyWebhook(body, signature, webhookUrl);
+
+    const rawBody =
+      typeof (req as Request & { rawBody?: string }).rawBody === 'string'
+        ? (req as Request & { rawBody?: string }).rawBody as string
+        : JSON.stringify(req.body ?? {});
+
+    const isValid = await squareService.verifyWebhook(rawBody, signature, webhookUrl);
     if (!isValid) {
+      logger.warn(
+        `[SquareWebhook] Rejected delivery for ${webhookUrl}: signature mismatch or missing (${signature ? 'signature present but did not match' : 'no signature header'}).`,
+      );
       return res.status(401).json({ error: 'Invalid webhook signature' });
     }
 

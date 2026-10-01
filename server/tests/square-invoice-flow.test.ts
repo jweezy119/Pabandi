@@ -10,6 +10,7 @@ import {
 import { reconcileIncomingPayment } from '../src/services/auto-reconciliation.service';
 import { squareService } from '../src/services/squareCheckout.service';
 import { prisma } from '../src/utils/database';
+import crypto from 'crypto';
 import { markInvoicePaid } from '../src/services/invoice.service';
 import { createNotification } from '../src/services/notification.service';
 
@@ -254,5 +255,84 @@ describe('reconcileIncomingPayment with a rail-supplied invoice id', () => {
 
     expect(outcome.status).toBe('matched');
     expect(markInvoicePaid).toHaveBeenCalledWith('biz_1', 'inv_1', 'square:pay_1');
+  });
+});
+
+/**
+ * Webhook signature verification.
+ *
+ * This is the gate that made every Square delivery fail. Two independent bugs
+ * are pinned here, because either alone produces a 401 with a correct signing
+ * key and no clue why:
+ *
+ *  - the handler read `x-square-signature`, which Square never sends (it sends
+ *    `x-square-hmacsha256-signature`), so the signature was always undefined;
+ *  - the body was re-serialised with JSON.stringify instead of using the raw
+ *    bytes Square signed.
+ */
+
+describe('Square webhook signature verification', () => {
+  const SECRET = 'sq0csp-signing-key';
+  const URL = 'https://pabandi.onrender.com/api/v1/square-checkout/webhook';
+
+  const sign = (body: string) =>
+    crypto.createHmac('sha256', SECRET).update(URL + body).digest('base64');
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env.SQUARE_WEBHOOK_SECRET = SECRET;
+  });
+
+  const originalSecret = process.env.SQUARE_WEBHOOK_SECRET;
+  afterEach(() => {
+    process.env.SQUARE_WEBHOOK_SECRET = originalSecret;
+  });
+
+  it('accepts a correctly signed payload', async () => {
+    const body = JSON.stringify({ type: 'payment.updated', data: { object: { payment: { id: 'p1' } } } });
+    await expect(squareService.verifyWebhook(body, sign(body), URL)).resolves.toBe(true);
+  });
+
+  it('rejects when the header Square actually sends is absent', async () => {
+    const body = JSON.stringify({ type: 'payment.updated' });
+    // What the handler used to read. Square never sends this header, so this
+    // is the case that returned 401 for every real delivery.
+    await expect(squareService.verifyWebhook(body, undefined, URL)).resolves.toBe(false);
+  });
+
+  it('rejects a tampered body', async () => {
+    const body = JSON.stringify({ type: 'payment.updated' });
+    const signature = sign(body);
+    const tampered = JSON.stringify({ type: 'payment.completed' });
+    await expect(squareService.verifyWebhook(tampered, signature, URL)).resolves.toBe(false);
+  });
+
+  it('rejects a signature made for a different URL', async () => {
+    // Square signs notificationUrl + body, so a payload re-signed for another
+    // endpoint must not verify here.
+    const body = JSON.stringify({ type: 'payment.updated' });
+    const wrongUrl = 'https://evil.example/api/v1/square-checkout/webhook';
+    const signature = crypto.createHmac('sha256', SECRET).update(wrongUrl + body).digest('base64');
+    await expect(squareService.verifyWebhook(body, signature, URL)).resolves.toBe(false);
+  });
+
+  it('rejects everything in production when no signing key is configured', async () => {
+    delete process.env.SQUARE_WEBHOOK_SECRET;
+    const previousNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    const body = JSON.stringify({ type: 'payment.updated' });
+
+    // Fail closed: an unset secret must not mean "accept anything", which
+    // would make this an unauthenticated "mark any invoice paid" endpoint.
+    await expect(squareService.verifyWebhook(body, 'anything', URL)).resolves.toBe(false);
+
+    process.env.NODE_ENV = previousNodeEnv;
+  });
+
+  it('does not throw on a signature of the wrong length', async () => {
+    // timingSafeEqual throws on a length mismatch rather than returning false,
+    // which would turn a malformed header into a 500 instead of a 401.
+    const body = JSON.stringify({ type: 'payment.updated' });
+    await expect(squareService.verifyWebhook(body, 'short', URL)).resolves.toBe(false);
   });
 });

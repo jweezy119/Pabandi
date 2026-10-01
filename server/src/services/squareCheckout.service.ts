@@ -151,7 +151,7 @@ export class SquareService {
   /**
    * Verify a Square webhook signature
    */
-  async verifyWebhook(body: string, signature: string, url: string) {
+  async verifyWebhook(body: string, signature: string | undefined, url: string) {
     const crypto = await import('crypto');
     const webhookSecret = process.env.SQUARE_WEBHOOK_SECRET || '';
 
