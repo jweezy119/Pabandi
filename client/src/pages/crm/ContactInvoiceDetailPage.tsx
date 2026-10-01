@@ -23,6 +23,21 @@ type Metadata = {
   currency?: string;
 };
 
+type RailRouting = {
+  reasoning: string;
+  paymentScore: number;
+  clientCountry: string | null;
+  candidates: { railId: string; displayName: string; score: number }[];
+  termsRecommendation?: {
+    tier: string;
+    label: string;
+    dueInDays: number;
+    requireEscrow: boolean;
+    reason: string;
+    paymentScore: number;
+  };
+};
+
 export default function ContactInvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -33,14 +48,19 @@ export default function ContactInvoiceDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Record<string, unknown>>({});
   const [saving, setSaving] = useState(false);
+  const [routing, setRouting] = useState<RailRouting | null>(null);
 
   useEffect(() => {
     if (!id) return;
     const fetchInvoice = async () => {
       try {
-        const data = await api(`/invoices/${id}`);
+        const res = await api(`/invoices/${id}`);
+        // The API wraps the row in `{ success, data, routing }`; the page
+        // state holds the row itself so the render below stays unchanged.
+        const data = res.data || res;
         setInvoice(data);
-        
+        setRouting(res.routing || null);
+
         let parsedMeta = {};
         let text = data.notes || '';
         try {
@@ -48,7 +68,7 @@ export default function ContactInvoiceDetailPage() {
           parsedMeta = parsed.metadata || {};
           text = parsed.text || '';
         } catch { }
-        
+
         setMetadata(parsedMeta);
         setNotesText(text);
         
@@ -72,8 +92,9 @@ export default function ContactInvoiceDetailPage() {
     setSaving(true);
     try {
       await api(`/invoices/${id}/send`, { method: 'POST' });
-      const data = await api(`/invoices/${id}`);
-      setInvoice(data);
+      const res = await api(`/invoices/${id}`);
+      setInvoice(res.data || res);
+      setRouting(res.routing || null);
     } catch (err) {
       console.error(err);
     } finally {
@@ -88,8 +109,10 @@ export default function ContactInvoiceDetailPage() {
         method: 'PATCH',
         body: JSON.stringify(editForm),
       });
-      const data = await api(`/invoices/${id}`);
+      const res = await api(`/invoices/${id}`);
+      const data = res.data || res;
       setInvoice(data);
+      setRouting(res.routing || null);
       let text = data.notes || '';
       try {
         const parsed = JSON.parse(data.notes || '{}');
@@ -192,6 +215,33 @@ export default function ContactInvoiceDetailPage() {
             <div className="flex gap-2 items-center">
               <input type="text" readOnly value={paymentLink} className="flex-1 px-3 py-2 bg-gray-50 border rounded text-sm" />
               <Button variant="secondary" onClick={() => navigator.clipboard.writeText(paymentLink)}>Copy</Button>
+            </div>
+          </div>
+        )}
+
+        {routing && (
+          <div className="clay-alert clay-alert--info">
+            <div className="flex items-start gap-2">
+              <span className="material-symbols-outlined text-[18px] flex-shrink-0 mt-px" style={{ color: 'var(--clay)' }} aria-hidden="true">
+                alt_route
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium" style={{ color: 'var(--warm-ink)' }}>
+                  {routing.reasoning}
+                </p>
+                <p className="text-xs mt-1" style={{ color: 'var(--soft-stone)' }}>
+                  Client payment score {routing.paymentScore}
+                  {routing.clientCountry ? ` · ${routing.clientCountry}` : ''}
+                  {routing.candidates.length > 1
+                    ? ` · Considered ${routing.candidates.map((c) => c.displayName).join(', ')}`
+                    : ''}
+                </p>
+                {routing.termsRecommendation && (
+                  <p className="text-xs mt-1" style={{ color: 'var(--soft-stone)' }}>
+                    Recommended terms: {routing.termsRecommendation.label} — {routing.termsRecommendation.reason}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         )}

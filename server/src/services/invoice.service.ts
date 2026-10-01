@@ -112,25 +112,40 @@ export async function updateInvoice(businessId: string, invoiceId: string, data:
 }
 
 import { paymentRails } from '../payments/rails';
+import { selectRail } from './rail-router.service';
 
 export async function sendInvoice(businessId: string, invoiceId: string) {
-  const invoice = await prisma.invoice.findFirst({ where: { id: invoiceId, businessId }, include: { client: true } });
+  const invoice = await prisma.invoice.findFirst({
+    where: { id: invoiceId, businessId },
+    include: { client: { include: { passport: { select: { paymentScore: true } } } } },
+  });
   if (!invoice) throw new CustomError('Invoice not found', 404);
 
-  // Look up default payment method
-  const defaultMethod = await prisma.businessPaymentMethod.findFirst({
-    where: { businessId, isDefault: true }
-  });
+  // Route through the rail router instead of blindly taking the business
+  // default, so the chosen rail is explainable to both parties.
+  const [methods, railBusiness] = await Promise.all([
+    prisma.businessPaymentMethod.findMany({ where: { businessId } }),
+    prisma.business.findUnique({ where: { id: businessId }, select: { address: true, currency: true } }),
+  ]);
 
   let paymentLink = null;
-  if (defaultMethod) {
-    const rail = paymentRails[defaultMethod.railId];
-    if (rail) {
-      paymentLink = rail.getPaymentUrl(defaultMethod.target, {
-        amount: invoice.subtotal,
-        number: invoice.number,
-        currency: 'USD'
+  if (methods.length > 0) {
+    try {
+      const selection = selectRail(invoice, invoice.client, methods, {
+        businessAddress: railBusiness?.address,
+        passport: invoice.client.passport,
+        currency: railBusiness?.currency,
       });
+      const rail = paymentRails[selection.method.railId];
+      if (rail) {
+        paymentLink = rail.getPaymentUrl(selection.method.target, {
+          amount: invoice.subtotal,
+          number: invoice.number,
+          currency: railBusiness?.currency || 'USD',
+        });
+      }
+    } catch (err) {
+      logger.warn(`[InvoiceService] Rail routing failed for ${invoice.number}: ${err}`);
     }
   }
 

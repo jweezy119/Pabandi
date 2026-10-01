@@ -44,6 +44,7 @@ import {
   getClientStageHandler,
 } from '../controllers/revenue.controller';
 import { invoiceTrustService } from '../services/invoice-trust.service';
+import { selectRail, RailSelection } from '../services/rail-router.service';
 import { AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -187,10 +188,30 @@ router.get('/invoices/:id', async (req: AuthRequest, res: Response) => {
     const businessId = getBusinessId(req);
     const invoice = await prisma.invoice.findFirst({
       where: { id: req.params.id, businessId },
-      include: { client: true },
+      include: { client: { include: { passport: { select: { paymentScore: true } } } } },
     });
     if (!invoice) return res.status(404).json({ success: false, error: 'Invoice not found' });
-    res.json({ success: true, data: invoice });
+
+    // Explain the rail choice so the business sees why this payment method
+    // was picked for this client. Non-fatal: the invoice renders without it.
+    let routing: RailSelection | null = null;
+    try {
+      const [methods, biz] = await Promise.all([
+        prisma.businessPaymentMethod.findMany({ where: { businessId } }),
+        prisma.business.findUnique({ where: { id: businessId }, select: { address: true, currency: true } }),
+      ]);
+      if (methods.length > 0) {
+        routing = selectRail(invoice, invoice.client, methods, {
+          businessAddress: biz?.address,
+          passport: invoice.client.passport,
+          currency: biz?.currency,
+        });
+      }
+    } catch (routeErr) {
+      console.error('[CrmRoutes] rail routing failed:', routeErr);
+    }
+
+    res.json({ success: true, data: invoice, routing });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
