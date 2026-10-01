@@ -43,7 +43,9 @@ const VERTICALS = [
     example: 'Prestige Property Group',
     color: '#D9A854',
     bgLight: '#FDF8EE',
-    highlights: ['Pipeline stages', 'Company accounts', 'Task lists', 'Activity feed'],
+    // 'Company accounts' removed: it was marketing a feature with no model, no
+    // page, and no route behind it.
+    highlights: ['Pipeline stages', 'Task lists', 'Activity feed', 'Invoicing'],
   },
   {
     id: 'logistics',
