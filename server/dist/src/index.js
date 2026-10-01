@@ -97,6 +97,17 @@ if (process.env.NODE_ENV === 'production') {
     if (process.env.REQUIRE_APP_CHECK !== 'false' && !process.env.FIREBASE_APP_CHECK_SECRET) {
         requiredEnvVars.push('FIREBASE_APP_CHECK_SECRET (set REQUIRE_APP_CHECK=false to skip)');
     }
+    // PTP signing secret. protocol/ptp.spec.ts THROWS AT IMPORT TIME without it, so
+    // this is not a soft warning: every route that touches trust (passport
+    // issue/verify, /api/v1/pabandi/tools, /.well-known/agent-registry.json) fails
+    // to load and answers 500. Easy to miss, so it is listed explicitly.
+    if (!process.env.PTP_SIGNING_SECRET) {
+        requiredEnvVars.push('PTP_SIGNING_SECRET (⚠️ blocks every PTP/trust route — 500s at load time)');
+    }
+    // 64-char hex. utils/encryption.ts also throws at import time without it.
+    if (!process.env.ENCRYPTION_KEY) {
+        requiredEnvVars.push('ENCRYPTION_KEY (⚠️ 64-char hex, blocks anything using wallet encryption)');
+    }
 }
 if (requiredEnvVars.length > 0) {
     logger_1.logger.error(`🚨 Server starting with MISSING or weak env configuration in production:${requiredEnvVars.map(v => `\n   - ${v}`).join('')}\n` +
@@ -202,6 +213,7 @@ app.get('/healthz', (_req, res) => {
 // Each route prefix gets a lightweight stub that dynamically imports the real router on first request.
 function lazyRoute(routePath, importPath) {
     let loadedRouter = null;
+    let loadError = null;
     const stub = (req, res, next) => {
         if (loadedRouter) {
             return loadedRouter(req, res, next);
@@ -211,8 +223,19 @@ function lazyRoute(routePath, importPath) {
             logger_1.logger.info(`✅ Lazy-loaded route: ${routePath} from ${importPath}`);
             loadedRouter(req, res, next);
         }).catch(err => {
+            loadError = err?.message ?? String(err);
             logger_1.logger.error(`Failed to lazy-load route ${routePath}:`, err);
-            res.status(500).json({ success: false, error: 'Route module failed to load' });
+            // Surface the real cause. A bare "Route module failed to load" is
+            // undiagnosable in production — the cause is usually one missing env var
+            // throwing at import time (e.g. PTP_SIGNING_SECRET).
+            res.status(500).json({
+                success: false,
+                error: 'Route module failed to load',
+                cause: loadError,
+                hint: /must be set|is not set/.test(loadError || '')
+                    ? 'A required environment variable is missing — see the startup env report in the deploy logs.'
+                    : `Import ${importPath} failed; see deploy logs.`,
+            });
         });
     };
     app.use(routePath, stub);
@@ -567,6 +590,17 @@ app.get('/', (req, res) => {
 // routes (/search, /login, /dashboard, ...) resolve to index.html.
 const SPA_DIR = path_1.default.join(__dirname, '..', '..', 'src', 'public', 'app');
 const SPA_INDEX = path_1.default.join(SPA_DIR, 'index.html');
+// Agent discovery files (/llms.txt, /robots.txt, /openapi.yaml, /.well-known/api-host)
+// are served from the canonical repo files, mounted BEFORE the SPA static handler
+// so they are never answered with index.html.
+try {
+    const discoveryRoutes = require('./routes/discovery.routes');
+    app.use(discoveryRoutes.default || discoveryRoutes);
+    logger_1.logger.info('✅ Agent discovery files mounted (/llms.txt, /robots.txt, /openapi.yaml)');
+}
+catch (err) {
+    logger_1.logger.warn(`⚠️ Agent discovery routes not mounted: ${err?.message ?? err}`);
+}
 // Serve built assets with long cache (hashed filenames), but force no-cache on the
 // SPA shell (index.html) so Cloudflare/edge never serves a stale bundle after a deploy.
 app.use((req, res, next) => {

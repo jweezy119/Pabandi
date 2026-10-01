@@ -100,7 +100,52 @@ for (const m of signup.matchAll(/https:\/\/pabandi\.com(\/[^\s\\]*)/g)) {
   if (!isMounted(p)) fail(`signup checklist advertises unmounted endpoint: ${p}`);
 }
 
+// ── 6. live probe (opt-in): do the advertised URLs actually answer? ──────────
+// Static checks pass while a domain 404s, serves HTML for a JSON endpoint, or
+// points at a host that no longer resolves. Only runs with --live.
+async function liveProbe() {
+  const llmsText = read('llms.txt');
+  const base = process.env.PUBLIC_API_URL || 'https://pabandi.onrender.com';
+  const targets: Array<[string, string]> = [
+    ['GET', `${base}/llms.txt`],
+    ['GET', `${base}/openapi.yaml`],
+    ['GET', `${base}/robots.txt`],
+    ['GET', `${base}/healthz`],
+    ['GET', `${base}/api/v1/pabandi/tools`],
+    ['POST', `${base}/api/v1/agents/register`],
+  ];
+  for (const [method, url] of targets) {
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        ...(method === 'POST' ? { body: JSON.stringify({ agentHandle: `probe-${Date.now()}`, ownerEmail: `probe-${Date.now()}@example.com`, name: 'Probe' }) } : {}),
+      });
+      const type = res.headers.get('content-type') || '';
+      const body = await res.text();
+      const looksHtml = type.includes('text/html');
+      if (res.status >= 500) {
+        fail(`live ${method} ${url} → HTTP ${res.status}`);
+      } else if (looksHtml) {
+        // The SPA fallback answers anything unknown with index.html, which looks
+        // like success to a crawler. A discovery file served as HTML is a lie.
+        fail(`live ${method} ${url} returned HTML instead of a real ${url.endsWith('.yaml') ? 'YAML spec' : 'response'}`);
+      } else if (url.endsWith('.yaml') && !type.includes('yaml') && !type.includes('octet')) {
+        fail(`live ${url} content-type is ${type}, expected YAML`);
+      }
+      console.log(`  ${res.status}${looksHtml ? ' HTML!' : ''} ${method} ${url}`);
+    } catch (e: any) {
+      fail(`live ${method} ${url} unreachable — ${e.message}`);
+    }
+  }
+  const host = llmsText.match(/https?:\/\/[^/\s]+/)?.[0];
+  if (host && !host.includes('pabandi.onrender.com') && !host.includes(process.env.PUBLIC_API_URL || '//')) {
+    notes.push(`llms.txt advertises host ${host}; live base is ${base}`);
+  }
+}
+
 // ── report ────────────────────────────────────────────────────────────────────
+async function main() {
 console.log(`MCP tools exposed : ${(TOOLS as any[]).length}`);
 console.log(`registry entries  : ${pabandiToolsRegistry.length}`);
 console.log(`llms.txt tool refs: ${llmsToolNames.length}`);
@@ -110,11 +155,23 @@ if (undocumented.length > 0) {
   notes.push(`tools not documented in llms.txt: ${undocumented.map((t) => t.name).join(', ')}`);
 }
 
-for (const n of notes) console.log(`\nNOTE  ${n}`);
+for (const n of notes) console.log(`NOTE  ${n}`);
+
+if (process.argv.includes('--live')) {
+  console.log('\nlive probe:');
+  await liveProbe();
+}
 
 if (failures.length > 0) {
   console.error(`\n✗ ${failures.length} agent-surface problem(s):`);
   for (const f of failures) console.error(`  - ${f}`);
-  process.exit(1);
+  process.exitCode = 1;
+  return;
 }
 console.log('\n✓ every advertised agent-facing promise resolves to a real tool or mounted route');
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
