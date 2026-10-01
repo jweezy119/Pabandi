@@ -99,7 +99,6 @@ function buildNavFromSettings(settings: any, osName: string, defaultNav?: NavIte
     'Contact OS': [
       { path: '/contact', label: 'Dashboard', icon: 'dashboard', feature: null, end: true },
       { path: '/contact/clients', label: 'Clients', icon: 'groups', feature: 'clients' },
-      { path: '/contact/companies', label: 'Companies', icon: 'building', feature: 'companies' },
       { path: '/contact/deals', label: 'Deals', icon: 'handshake', feature: 'deals' },
       { path: '/contact/jobs', label: 'Jobs', icon: 'work', feature: 'jobs' },
       { path: '/contact/activities', label: 'Activities', icon: 'notifications', feature: 'activities' },
@@ -107,6 +106,11 @@ function buildNavFromSettings(settings: any, osName: string, defaultNav?: NavIte
       { path: '/contact/invoices', label: 'Invoices', icon: 'file', feature: 'invoices' },
       { path: '/contact/money-flow', label: 'Money Flow', icon: 'account_balance_wallet', feature: 'invoices' },
       { path: '/contact/team', label: 'Team', icon: 'users', feature: 'team' },
+      // NOTE: 'Companies' / B2B accounts used to sit here. It was removed
+      // rather than pointed somewhere: there is no Company model, and CrmClient
+      // has no company or account field, so there is no data behind the idea
+      // and no page that could honestly render it. It is a product decision,
+      // not a routing fix — reintroduce it with a model and a page together.
       { path: '/contact/settings/modules', label: 'Settings', icon: 'settings', feature: null },
     ],
   };

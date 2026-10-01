@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { Button, ClaySkeletonCard } from '../../components/primitives';
-import { InvoiceList } from './components/InvoiceList';
+import { Button, ClaySkeletonCard, Modal } from '../../components/primitives';
+import { InvoiceList, InvoiceListRow } from './components/InvoiceList';
 import { InvoiceFormModal } from './components/InvoiceFormModal';
 import { getAuthToken } from '../../utils/authToken';
+import { withBusinessId } from '../../utils/businessContext';
 
 const CRM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
 
@@ -17,7 +18,14 @@ async function api(path: string, options: RequestInit = {}) {
   return res.json();
 }
 
-type InvoiceData = { id: string; number: string; client: { name: string }; subtotal: number; status: string; dateDue: string };
+type InvoiceData = {
+  id: string;
+  number: string;
+  client: { name: string; reliabilityScore?: number; paymentScore?: number } | null;
+  subtotal: number;
+  status: string;
+  dateDue: string;
+};
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<InvoiceData[]>([]);
@@ -25,6 +33,12 @@ export default function InvoicesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
+  // Draft deletion. The server route existed and was correct (draft-only, tenant
+  // scoped) but had no UI at all, so a mistyped draft invoice was unremovable
+  // from the product.
+  const [pendingDelete, setPendingDelete] = useState<InvoiceListRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // The filter lives in the URL so the Money Flow tab can deep-link into a
   // filtered list. It was local state before, which silently discarded
@@ -53,6 +67,23 @@ export default function InvoicesPage() {
 
   useEffect(() => { loadInvoices(); }, [loadInvoices]);
   useEffect(() => { api('/clients').then(d => setClients(d.data || [])).catch(() => {}); }, []);
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await api(`/invoices/${pendingDelete.id}?${withBusinessId()}`, { method: 'DELETE' });
+      setPendingDelete(null);
+      await loadInvoices();
+    } catch (err) {
+      // Keep the dialog open and report the failure. Closing it on error would
+      // tell the user the invoice was deleted when it still exists.
+      setDeleteError(err instanceof Error ? err.message : 'Could not delete the invoice');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -98,10 +129,36 @@ export default function InvoicesPage() {
           <p className="text-[var(--soft-stone)]">No invoices yet. <button onClick={() => setShowCreate(true)} className="text-[var(--clay)] hover:underline clay-filter-chip--active" style={{ color: 'white', backgroundColor: 'var(--clay)', padding: '4px 12px', borderRadius: '9999px' }}>Create your first invoice</button></p>
         </div>
       ) : (
-        <InvoiceList invoices={invoices} />
+        <InvoiceList
+          invoices={invoices}
+          deletingId={deleting ? pendingDelete?.id ?? null : null}
+          onDelete={(invoice) => { setDeleteError(null); setPendingDelete(invoice); }}
+        />
       )}
 
       {showCreate && <InvoiceFormModal clients={clients} businessId={businessId || undefined} onClose={() => setShowCreate(false)} onSave={() => { setShowCreate(false); loadInvoices(); }} />}
+
+      <Modal
+        isOpen={!!pendingDelete}
+        onClose={() => { if (!deleting) { setPendingDelete(null); setDeleteError(null); } }}
+        title="Delete draft invoice?"
+        actionText={deleting ? 'Deleting…' : 'Delete'}
+        actionVariant="danger"
+        onAction={confirmDelete}
+      >
+        <p className="text-[var(--soft-stone)] mb-4 text-sm">
+          <strong style={{ color: 'var(--warm-ink)' }}>{pendingDelete?.number}</strong> for{' '}
+          ${pendingDelete?.subtotal?.toLocaleString() ?? 0} will be removed. This cannot be undone.
+        </p>
+        <p className="text-[var(--soft-stone)] mb-4 text-sm">
+          Only drafts can be deleted. Once an invoice has been sent it stays on the record.
+        </p>
+        {deleteError && (
+          <div className="clay-alert clay-alert--critical">
+            <p className="text-sm" style={{ color: 'var(--warm-ink)' }}>{deleteError}</p>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

@@ -21,7 +21,6 @@ const MODULES = [
       { id: 'invoices', name: 'Invoices', description: 'Bill your clients', defaultOn: true },
       { id: 'activities', name: 'Activities', description: 'Log calls and notes', defaultOn: true },
       { id: 'tasks', name: 'Tasks', description: 'Manage to-dos', defaultOn: true },
-      { id: 'companies', name: 'Companies', description: 'B2B Accounts', defaultOn: false },
       { id: 'jobs', name: 'Jobs & Scheduling', description: 'Service orders', defaultOn: false },
       { id: 'escrow', name: 'Escrow', description: 'Secure payments', defaultOn: false },
       { id: 'reliability', name: 'Reliability Reports', description: 'Trust scores', defaultOn: true },

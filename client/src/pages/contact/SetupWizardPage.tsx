@@ -76,7 +76,6 @@ const FEATURE_LABELS: Record<string, { icon: string; label: string }> = {
   tasks: { icon: 'task_alt', label: 'Task manager' },
   jobs: { icon: 'work', label: 'Jobs & scheduling' },
   reliability: { icon: 'verified', label: 'Reliability scores' },
-  companies: { icon: 'business', label: 'Company accounts' },
   escrow: { icon: 'security', label: 'Escrow payments' },
 };
 

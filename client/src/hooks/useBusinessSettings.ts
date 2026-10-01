@@ -55,7 +55,8 @@ export const VERTICAL_PRESETS: Record<string, {
     label: 'Real Estate',
     modules: ['contact', 'property'],
     features: {
-      contact: ['clients', 'deals', 'invoices', 'activities', 'tasks', 'companies'],
+      // 'companies' removed: no Company model, no route, no page.
+      contact: ['clients', 'deals', 'invoices', 'activities', 'tasks'],
     },
     pipelineStages: ['Prospect', 'Showing', 'Offer', 'Under Contract', 'Closed'],
   },

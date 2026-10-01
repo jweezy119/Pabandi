@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import { logger } from '../utils/logger';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/database';
 import { authenticate } from '../middleware/auth.middleware';
@@ -505,17 +506,44 @@ router.post('/jobs/:id/noshow', async (req: AuthRequest, res: Response) => {
   }
 });
 
+// DELETE /api/v1/crm/invoices/:id — Delete a draft invoice
+//
+// Scoped delete with the draft predicate inside the same statement. Doing a
+// read, checking the status, then deleting leaves a window where a draft sent
+// in between would still be deleted; deleteMany closes it, and its count is
+// also how the caller learns the outcome.
+//
+// The status comparison is case-insensitive because this codebase is not
+// consistent: invoice.service writes 'draft', invoiceGeneration.service wrote
+// 'SENT', and the public route wrote 'payment_claimed'. A literal
+// `status !== 'draft'` would make an uppercase draft undeletable.
 router.delete('/invoices/:id', async (req: AuthRequest, res: Response) => {
   try {
     const businessId = getBusinessId(req);
-    const invoice = await prisma.invoice.findFirst({ where: { id: req.params.id, businessId } });
-    if (!invoice) return res.status(404).json({ success: false, error: 'Invoice not found' });
-    if (invoice.status !== 'draft') return res.status(400).json({ success: false, error: 'Can only delete draft invoices' });
-    
-    await prisma.invoice.delete({ where: { id: req.params.id } });
+
+    const draft = await prisma.invoice.findFirst({
+      where: { id: req.params.id, businessId },
+      select: { id: true, number: true, status: true },
+    });
+    if (!draft) return res.status(404).json({ success: false, error: 'Invoice not found' });
+
+    if (draft.status.toLowerCase() !== 'draft') {
+      return res.status(400).json({ success: false, error: 'Only draft invoices can be deleted' });
+    }
+
+    // Re-check inside the write, so an invoice sent between the check above and
+    // this call is not deleted.
+    const deleted = await prisma.invoice.deleteMany({
+      where: { id: req.params.id, businessId, status: draft.status },
+    });
+    if (deleted.count === 0) {
+      return res.status(409).json({ success: false, error: 'This invoice was changed. Reload and try again.' });
+    }
+
+    logger.info(`[CrmRoutes] Deleted draft invoice ${draft.number} (${draft.id})`);
     res.json({ success: true, message: 'Invoice deleted' });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(err.statusCode || 500).json({ success: false, error: err.message });
   }
 });
 
