@@ -388,3 +388,11 @@ export class DisputeService {
     }
   }
 }
+
+/**
+ * Shared instance. DisputeService holds its own PrismaClient, so constructing a
+ * second one per caller would open another connection pool for the life of the
+ * process. Callers outside this module that only need a method should import
+ * this singleton rather than `new DisputeService()`.
+ */
+export const disputeService = new DisputeService();

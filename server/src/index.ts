@@ -480,12 +480,28 @@ jobCronService.start();
 
 import cron from 'node-cron';
 import { scanOverdueInvoices } from './services/invoice.service';
+import { scanFailureOwnership } from './services/failure-ownership.service';
 // Daily scan for overdue invoices at 9am local
 cron.schedule('0 9 * * *', async () => {
   try {
     await scanOverdueInvoices();
   } catch (error) {
     console.error('[InvoiceCron] Error scanning overdue invoices:', error);
+  }
+});
+
+// Failure ownership, an hour later so the status flip above has already
+// happened. Any invoice still unpaid 3+ days past due gets the client email,
+// the business notification, trust events on both passports, and — if escrow
+// is held — a dispute case.
+cron.schedule('0 10 * * *', async () => {
+  try {
+    const results = await scanFailureOwnership();
+    if (results.length > 0) {
+      console.log(`[FailureOwnership] Processed ${results.length} invoice(s)`);
+    }
+  } catch (error) {
+    console.error('[FailureOwnership] Error scanning invoices:', error);
   }
 });
 logger.info('✅ Job cron service auto-started (checks every minute)');

@@ -116,6 +116,53 @@ export const emailService = {
     return sendEmail({ to: business.email || 'business@example.com', subject: `Payment Received: Invoice ${invoice.number}`, html });
   },
 
+  /**
+   * The client-side half of failure ownership: "Payment didn't arrive —
+   * here's the link". Sent once an invoice is past the grace period and still
+   * unpaid, so the client learns the payment has not landed rather than
+   * assuming it did.
+   */
+  async sendPaymentDidntArrive(client: any, invoice: any, business: any, daysPastDue: number) {
+    if (!client?.email) return { skipped: true, reason: 'client has no email' };
+    const currency = business?.currency || 'USD';
+    const html = renderTemplate('payment-didnt-arrive', {
+      businessName: business?.name || 'Your service provider',
+      clientName: client.name,
+      invoiceNumber: invoice.number,
+      amount: String(invoice.subtotal),
+      currency,
+      dueDate: new Date(invoice.dateDue).toLocaleDateString(),
+      daysPastDue: String(daysPastDue),
+      payUrl: `${process.env.APP_URL || 'http://localhost:5173'}/pay/${invoice.id}`,
+    });
+    return sendEmail({
+      to: client.email,
+      subject: `Payment didn't arrive — ${invoice.number} from ${business?.name || 'your provider'}`,
+      html,
+    });
+  },
+
+  /** Both parties are notified when a dispute case opens. */
+  async sendDisputeOpened(party: any, invoice: any, business: any, disputeId: string, reason?: string) {
+    if (!party?.email) return { skipped: true, reason: 'party has no email' };
+    const html = renderTemplate('dispute-opened', {
+      partyName: party.name,
+      businessName: business?.name || '',
+      invoiceNumber: invoice.number,
+      amount: String(invoice.subtotal),
+      currency: business?.currency || 'USD',
+      dueDate: new Date(invoice.dateDue).toLocaleDateString(),
+      reason: reason || 'A case has been opened to review this invoice.',
+      disputeId,
+      caseUrl: `${process.env.APP_URL || 'http://localhost:5173'}/contact/invoices/${invoice.id}`,
+    });
+    return sendEmail({
+      to: party.email,
+      subject: `Dispute opened on ${invoice.number}`,
+      html,
+    });
+  },
+
   async sendPaymentClaimed(business: any, invoice: any, client: any) {
     const html = renderTemplate('payment-claimed', {
       businessName: business.name,

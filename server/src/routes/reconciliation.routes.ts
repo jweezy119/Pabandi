@@ -4,6 +4,7 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { authenticate } from '../middleware/auth.middleware';
 import { reconcileIncomingPayment, resolveQueuedMatch, ReconciliationStatus } from '../services/auto-reconciliation.service';
+import { fileInvoiceDispute, runFailureOwnership } from '../services/failure-ownership.service';
 import { isRailId, RailId } from '../services/rail-router.service';
 
 /**
@@ -263,6 +264,72 @@ router.post('/webhook/bank', authenticate, async (req: Request, res: Response) =
   } catch (err) {
     logger.error(`[ReconcileWebhook:bank] failed: ${err}`);
     return res.status(500).json({ error: 'Reconciliation failed' });
+  }
+});
+
+// ── Failure ownership ───────────────────────────────────────────────────────
+
+/**
+ * POST /api/v1/reconciliation/:invoiceId/dispute
+ *
+ * Body: { reason, evidence }
+ *
+ * Opens a dispute case in Pabandi's existing dispute layer and holds any
+ * escrow against the invoice until it resolves. Idempotent: a second call for
+ * the same invoice returns the existing case rather than filing a duplicate.
+ */
+router.post('/:invoiceId/dispute', authenticate, async (req: Request, res: Response) => {
+  try {
+    const invoiceId = String(req.params.invoiceId ?? '');
+    const { reason, evidence } = req.body ?? {};
+
+    if (!reason || typeof reason !== 'string' || reason.trim().length === 0) {
+      return res.status(400).json({ error: 'reason is required' });
+    }
+    if (evidence !== undefined && !Array.isArray(evidence)) {
+      return res.status(400).json({ error: 'evidence must be an array of URLs' });
+    }
+
+    const outcome = await fileInvoiceDispute({
+      invoiceId,
+      reason: reason.trim(),
+      evidence: (evidence as string[] | undefined) ?? [],
+      filedByUserId: req.user?.id,
+    });
+
+    return res.status(201).json({ success: true, data: outcome });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    logger.error(`[ReconcileDispute] failed: ${message}`);
+    if (message === 'Invoice not found') {
+      return res.status(404).json({ error: message });
+    }
+    return res.status(500).json({ error: 'Failed to open dispute' });
+  }
+});
+
+/**
+ * GET /api/v1/reconciliation/:invoiceId/failure-ownership
+ * What the failure flow currently thinks about this invoice.
+ */
+router.get('/:invoiceId/failure-ownership', authenticate, async (req: Request, res: Response) => {
+  try {
+    const outcome = await runFailureOwnership(String(req.params.invoiceId), { notify: false });
+    return res.json({ success: true, data: outcome });
+  } catch (err) {
+    logger.error(`[ReconcileFailureOwnership] failed: ${err}`);
+    return res.status(500).json({ error: 'Failed to evaluate failure ownership' });
+  }
+});
+
+/** POST /api/v1/reconciliation/:invoiceId/failure-ownership — run it now. */
+router.post('/:invoiceId/failure-ownership', authenticate, async (req: Request, res: Response) => {
+  try {
+    const outcome = await runFailureOwnership(String(req.params.invoiceId), { notify: true });
+    return res.json({ success: true, data: outcome });
+  } catch (err) {
+    logger.error(`[ReconcileFailureOwnership] failed: ${err}`);
+    return res.status(500).json({ error: 'Failed to run failure ownership' });
   }
 });
 
