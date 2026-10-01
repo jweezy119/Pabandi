@@ -35,7 +35,12 @@ CREATE TABLE IF NOT EXISTS "ReconciliationMatch" (
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP(3) NOT NULL,
 
-  CONSTRAINT "ReconciliationMatch_pkey" PRIMARY KEY ("id")
+  CONSTRAINT "ReconciliationMatch_pkey" PRIMARY KEY ("id"),
+  -- ON DELETE SET NULL, so deleting an invoice leaves the payment record
+  -- intact: an orphan row is real money that arrived, and losing it would
+  -- hide revenue.
+  CONSTRAINT "ReconciliationMatch_invoiceId_fkey"
+    FOREIGN KEY ("invoiceId") REFERENCES "Invoice"("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 -- Idempotency key. See above.
@@ -50,14 +55,3 @@ CREATE INDEX IF NOT EXISTS "ReconciliationMatch_status_idx"
 
 CREATE INDEX IF NOT EXISTS "ReconciliationMatch_createdAt_idx"
   ON "ReconciliationMatch"("createdAt");
-
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'ReconciliationMatch_invoiceId_fkey'
-  ) THEN
-    ALTER TABLE "ReconciliationMatch"
-      ADD CONSTRAINT "ReconciliationMatch_invoiceId_fkey"
-      FOREIGN KEY ("invoiceId") REFERENCES "Invoice"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-  END IF;
-END $$;

@@ -674,16 +674,19 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
     logger.error('Uncaught exception (process kept alive):', err?.message ?? err);
   });
 
-  // ── Agent onboarding tables ──────────────────────────────────────────────
-  // Agent signup/auth/passport/discovery all read "AgentMarketplace", which has
-  // no Prisma migration. Create it if this database doesn't have it, so a
-  // missing table can never turn every agent call into a missing-relation error.
+  // ── Raw-SQL tables ──────────────────────────────────────────────────────
+  // Nothing in the deploy path runs `prisma migrate deploy`, so any table that
+  // is not created by raw SQL does not exist in production.
+  //  - "AgentMarketplace": agent signup/auth/passport/discovery.
+  //  - "ReconciliationMatch": the rail payment webhooks.
+  // Creating them if absent means a missing table can never turn every such
+  // call into a missing-relation error while the routes look healthy.
   setImmediate(async () => {
     try {
-      const { ensureAgentTables } = await import('./utils/agentTableBootstrap');
+      const { ensureAgentTables } = await import('./utils/tableBootstrap');
       await ensureAgentTables();
     } catch (err: any) {
-      logger.warn(`Agent table bootstrap skipped: ${err?.message ?? err}`);
+      logger.warn(`Table bootstrap skipped: ${err?.message ?? err}`);
     }
   });
 
