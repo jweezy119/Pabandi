@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useAuthStore } from '../../store/authStore';
 import { Button, ClaySkeletonCard } from '../../components/primitives';
 import { InvoiceList } from './components/InvoiceList';
 import { InvoiceFormModal } from './components/InvoiceFormModal';
@@ -21,9 +23,20 @@ export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<InvoiceData[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
+
+  // The filter lives in the URL so the Money Flow tab can deep-link into a
+  // filtered list. It was local state before, which silently discarded
+  // ?status= and made every cross-link land on 'all'.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filter = searchParams.get('status') || 'all';
+  // User has no businessId field; ContactJobsPage falls back to 'default' for the same reason.
+  const businessId = useAuthStore((s) => (s.user as { businessId?: string } | undefined)?.businessId);
+
+  const setFilter = useCallback((next: string) => {
+    setSearchParams(next === 'all' ? {} : { status: next }, { replace: true });
+  }, [setSearchParams]);
 
   const loadInvoices = useCallback(async () => {
     try {
@@ -31,11 +44,12 @@ export default function InvoicesPage() {
       const params = new URLSearchParams();
       if (filter !== 'all') params.append('status', filter);
       if (search) params.append('search', search);
+      if (businessId) params.append('businessId', businessId);
       
       const data = await api(`/invoices?${params.toString()}`);
       setInvoices(data.data || []);
     } finally { setLoading(false); }
-  }, [filter, search]);
+  }, [filter, search, businessId]);
 
   useEffect(() => { loadInvoices(); }, [loadInvoices]);
   useEffect(() => { api('/clients').then(d => setClients(d.data || [])).catch(() => {}); }, []);
@@ -87,7 +101,7 @@ export default function InvoicesPage() {
         <InvoiceList invoices={invoices} />
       )}
 
-      {showCreate && <InvoiceFormModal clients={clients} onClose={() => setShowCreate(false)} onSave={() => { setShowCreate(false); loadInvoices(); }} />}
+      {showCreate && <InvoiceFormModal clients={clients} businessId={businessId || undefined} onClose={() => setShowCreate(false)} onSave={() => { setShowCreate(false); loadInvoices(); }} />}
     </div>
   );
 }

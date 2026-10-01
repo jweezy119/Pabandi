@@ -45,6 +45,7 @@ import {
 } from '../controllers/revenue.controller';
 import { invoiceTrustService } from '../services/invoice-trust.service';
 import { selectRail, RailSelection } from '../services/rail-router.service';
+import { buildTermsRecommendation, recordTermsDecision } from '../services/terms-recommendation.service';
 import { AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -217,15 +218,52 @@ router.get('/invoices/:id', async (req: AuthRequest, res: Response) => {
   }
 });
 
+/**
+ * GET /api/v1/crm/invoices/terms-recommendation
+ * The terms we would suggest for this client, so the create form can show it
+ * before the invoice exists. Read-only: it never writes an invoice or an
+ * audit row, because nothing has been decided yet.
+ */
+router.get('/invoices/terms-recommendation', async (req: AuthRequest, res: Response) => {
+  try {
+    const businessId = getBusinessId(req);
+    const clientId = String(req.query.clientId ?? '');
+    if (!clientId) return res.status(400).json({ success: false, error: 'clientId is required' });
+
+    const view = await buildTermsRecommendation(businessId, clientId, {
+      amount: req.query.amount != null ? Number(req.query.amount) : undefined,
+      currency: req.query.currency != null ? String(req.query.currency) : undefined,
+    });
+    if (!view) return res.status(404).json({ success: false, error: 'Client not found' });
+
+    res.json({ success: true, data: view });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 router.post('/invoices', async (req: AuthRequest, res: Response) => {
   try {
     const businessId = getBusinessId(req);
-    const { clientId, dateDue, lineItems, subtotal, notes } = req.body;
+    const { clientId, dateDue, lineItems, subtotal, notes, requireEscrow, terms, overrideReason } = req.body;
     if (!clientId || !dateDue) return res.status(400).json({ success: false, error: 'clientId and dateDue are required' });
     
     // Auto-generate invoice number
     const count = await prisma.invoice.count({ where: { businessId } });
     const number = `INV-${String(count + 1).padStart(4, '0')}`;
+
+    // Terms metadata rides along in the notes envelope, the same way
+    // requireEscrow and transactionHash already do — Invoice has no columns
+    // for any of them.
+    const notesText = typeof notes === 'string' ? notes : '';
+    let parsedNotes: { text: string; metadata: Record<string, unknown> } = { text: notesText, metadata: {} };
+    try {
+      const parsed = JSON.parse(notes);
+      if (parsed && typeof parsed === 'object' && 'metadata' in parsed) {
+        parsedNotes = { text: String(parsed.text ?? ''), metadata: (parsed.metadata ?? {}) as Record<string, unknown> };
+      }
+    } catch { /* notes was plain text, not the JSON envelope */ }
+    parsedNotes.metadata.requireEscrow = !!requireEscrow;
 
     const invoice = await prisma.invoice.create({
       data: {
@@ -236,10 +274,38 @@ router.post('/invoices', async (req: AuthRequest, res: Response) => {
         status: 'draft',
         lineItems: JSON.stringify(lineItems || []),
         subtotal: subtotal || 0,
-        notes: notes || null,
+        notes: JSON.stringify(parsedNotes),
       },
       include: { client: true },
     });
+
+    // Audit the terms decision when the caller sent one. An override never
+    // blocks creation — the business has already committed to billing this
+    // client, and the audit line is recoverable if it fails.
+    if (terms) {
+      const view = await buildTermsRecommendation(businessId, clientId, { amount: subtotal || 0 });
+      if (view) {
+        const accepted =
+          terms.tier === view.recommendation.tier &&
+          Number(terms.dueInDays ?? view.recommendation.dueInDays) === view.recommendation.dueInDays;
+
+        await recordTermsDecision({
+          businessId,
+          invoiceId: invoice.id,
+          clientId,
+          actorId: req.user?.id,
+          actorName: [req.user?.firstName, req.user?.lastName].filter(Boolean).join(' ') || undefined,
+          decision: {
+            terms: String(terms.label ?? view.recommendation.label),
+            dueInDays: Number(terms.dueInDays ?? view.recommendation.dueInDays),
+            requireEscrow: Boolean(requireEscrow),
+            overrideReason: accepted ? null : String(overrideReason ?? '').trim() || 'No reason given',
+            recommended: view.recommendation,
+          },
+        });
+      }
+    }
+
     res.status(201).json({ success: true, data: invoice });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
