@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { getAuthToken } from '../utils/authToken';
+import { API_HOST } from '../utils/apiHost';
 
 interface FiatMethod {
   id: string;
@@ -66,7 +67,7 @@ export default function FiatPaymentPage() {
 
   const loadPaymentStatus = async () => {
     try {
-      const res = await fetch(`/api/v1/fiat/${reference}/status`);
+      const res = await fetch(`${API_HOST}/api/v1/fiat/${reference}/status`);
       const json = await res.json();
       if (json.success) {
         setPaymentStatus(json.data);
@@ -93,7 +94,7 @@ export default function FiatPaymentPage() {
 
     try {
       const token = getAuthToken();
-      const res = await fetch('/api/v1/fiat/create', {
+      const res = await fetch(`${API_HOST}/api/v1/fiat/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -143,7 +144,7 @@ export default function FiatPaymentPage() {
     if (!paymentRequest?.reference) return;
     try {
       const token = getAuthToken();
-      await fetch(`/api/v1/fiat/${paymentRequest.reference}/sent`, {
+      await fetch(`${API_HOST}/api/v1/fiat/${paymentRequest.reference}/sent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -159,7 +160,7 @@ export default function FiatPaymentPage() {
   const handleConfirmPayment = async (ref: string) => {
     try {
       const token = getAuthToken();
-      const res = await fetch(`/api/v1/fiat/${ref}/confirm`, {
+      const res = await fetch(`${API_HOST}/api/v1/fiat/${ref}/confirm`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -181,7 +182,7 @@ export default function FiatPaymentPage() {
   const handleRejectPayment = async (ref: string) => {
     try {
       const token = getAuthToken();
-      const res = await fetch(`/api/v1/fiat/${ref}/reject`, {
+      const res = await fetch(`${API_HOST}/api/v1/fiat/${ref}/reject`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -204,7 +205,7 @@ export default function FiatPaymentPage() {
   const loadBusinessPending = async () => {
     try {
       const token = getAuthToken();
-      const res = await fetch('/api/v1/fiat/pending', {
+      const res = await fetch(`${API_HOST}/api/v1/fiat/pending`, {
         headers: token ? { Authorization: 'Bearer ' + token } : {},
       });
       const json = await res.json();

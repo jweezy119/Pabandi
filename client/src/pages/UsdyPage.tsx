@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { Button, Chip, Surface, tokens } from '../design-system';
+import { API_HOST } from '../utils/apiHost';
 
 type Lead = {
   email: string;
@@ -13,11 +14,11 @@ type Lead = {
 
 export default function UsdyPage() {
   const { data: usdyConfig } = useQuery('usdy-config-landing', () =>
-    fetch('/api/v1/pyd/usdy/config').then((r) => r.json()),
+    fetch(`${API_HOST}/api/v1/pyd/usdy/config`).then((r) => r.json()),
     { refetchOnWindowFocus: false }
   );
   const { data: usdyCount, refetch: refetchUsdyCount } = useQuery('usdy-leads-count-landing', () =>
-    fetch('/api/v1/pyd/usdy/leads/count').then((r) => r.json()),
+    fetch(`${API_HOST}/api/v1/pyd/usdy/leads/count`).then((r) => r.json()),
     { refetchOnWindowFocus: false }
   );
 
@@ -51,7 +52,7 @@ export default function UsdyPage() {
     setError(null);
     setSubmitting(true);
     try {
-      const res = await fetch('/api/v1/pyd/usdy/lead', {
+      const res = await fetch(`${API_HOST}/api/v1/pyd/usdy/lead`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import { API_HOST } from '../utils/apiHost';
 
 interface WhatsAppOptInProps {
   userId?: string;
@@ -68,7 +69,7 @@ export const WhatsAppOptIn: React.FC<WhatsAppOptInProps> = ({
 
     try {
       // Call API to save opt-in
-      const response = await fetch('/api/v1/whatsapp/opt-in', {
+      const response = await fetch(`${API_HOST}/api/v1/whatsapp/opt-in`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone, userId }),

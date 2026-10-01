@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getAuthToken } from '../utils/authToken';
+import { API_HOST } from '../utils/apiHost';
 
 /**
  * Frictionless Payment Component
@@ -55,7 +56,7 @@ export const FrictionlessPayment: React.FC<FrictionlessPaymentProps> = ({
 
       // Step 1: Jev security check (invisible to user)
       setIsJevChecking(true);
-      const securityRes = await fetch('/api/v1/security/check-transaction', {
+      const securityRes = await fetch(`${API_HOST}/api/v1/security/check-transaction`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,7 +79,7 @@ export const FrictionlessPayment: React.FC<FrictionlessPaymentProps> = ({
       }
 
       // Step 2: Get optimal payment route from Jev
-      const routeRes = await fetch('/api/v1/jev/payment-route/me', {
+      const routeRes = await fetch(`${API_HOST}/api/v1/jev/payment-route/me`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,7 +90,7 @@ export const FrictionlessPayment: React.FC<FrictionlessPaymentProps> = ({
       const routeData = await routeRes.json();
 
       // Step 3: Execute payment (agent handles all crypto)
-      const payRes = await fetch('/api/v1/frictionless/pay', {
+      const payRes = await fetch(`${API_HOST}/api/v1/frictionless/pay`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -123,7 +124,7 @@ export const FrictionlessPayment: React.FC<FrictionlessPaymentProps> = ({
   // Guest checkout — pay without account
   const guestPay = async () => {
     try {
-      const res = await fetch('/api/v1/frictionless/guest-pay', {
+      const res = await fetch(`${API_HOST}/api/v1/frictionless/guest-pay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount, description }),
@@ -151,7 +152,7 @@ export const FrictionlessPayment: React.FC<FrictionlessPaymentProps> = ({
   ) => {
     try {
       const token = getAuthToken();
-      const retryRes = await fetch('/api/v1/frictionless/retry', {
+      const retryRes = await fetch(`${API_HOST}/api/v1/frictionless/retry`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

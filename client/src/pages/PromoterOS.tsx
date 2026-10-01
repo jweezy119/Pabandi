@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { API_HOST } from '../utils/apiHost';
 
 const TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: '📊' },
@@ -26,7 +27,7 @@ export const PromoterOS: React.FC = () => {
     setLoading(true);
     try {
       // Load dashboard stats
-      const res = await fetch('/api/v1/nightlife/integrations/promoter/me/dashboard');
+      const res = await fetch(`${API_HOST}/api/v1/nightlife/integrations/promoter/me/dashboard`);
       const data = await res.json();
       if (data.success) setStats(data.data);
     } catch (e) {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { API_HOST } from '../utils/apiHost';
 
 type Channel = 'WHATSAPP' | 'TELEGRAM' | 'SMS';
 
@@ -32,7 +33,7 @@ export const ChannelAnalytics: React.FC<ChannelAnalyticsProps> = ({ businessId }
       const params = new URLSearchParams();
       if (dateRange.start) params.set('startDate', dateRange.start);
       if (dateRange.end) params.set('endDate', dateRange.end);
-      const res = await fetch(`/api/v1/channels/${businessId}/stats?${params}`);
+      const res = await fetch(`${API_HOST}/api/v1/channels/${businessId}/stats?${params}`);
       const data = await res.json();
       if (data.success) {
         setStats(data.data);

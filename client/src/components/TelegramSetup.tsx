@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_HOST } from '../utils/apiHost';
 
 interface TelegramSetupProps {
   businessId: string;
@@ -21,7 +22,7 @@ export const TelegramSetup: React.FC<TelegramSetupProps> = ({ businessId, onSetu
     setTesting(true);
     setError(null);
     try {
-      const res = await fetch('/api/v1/telegram/setup', {
+      const res = await fetch(`${API_HOST}/api/v1/telegram/setup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ businessId, botToken }),
@@ -44,7 +45,7 @@ export const TelegramSetup: React.FC<TelegramSetupProps> = ({ businessId, onSetu
   const disableBot = async () => {
     setLoading(true);
     try {
-      await fetch(`/api/v1/telegram/${businessId}`, { method: 'DELETE' });
+      await fetch(`${API_HOST}/api/v1/telegram/${businessId}`, { method: 'DELETE' });
       setBotStatus({ isActive: false });
       setSuccess('Bot disabled');
     } catch (e: any) {
@@ -56,7 +57,7 @@ export const TelegramSetup: React.FC<TelegramSetupProps> = ({ businessId, onSetu
 
   const checkStatus = async () => {
     try {
-      const res = await fetch(`/api/v1/telegram/${businessId}/status`);
+      const res = await fetch(`${API_HOST}/api/v1/telegram/${businessId}/status`);
       const data = await res.json();
       if (data.success) {
         setBotStatus(data.data);

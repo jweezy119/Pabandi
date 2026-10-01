@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import QRCode from '../../components/QRCode';
+import { API_HOST } from '../../utils/apiHost';
 
 interface BookingState {
   step: number;
@@ -62,7 +63,7 @@ export default function BookingFlowPage() {
     setState((s) => ({ ...s, error: null }));
 
     try {
-      const response = await fetch('/api/v1/core-bookings/create-with-payment', {
+      const response = await fetch(`${API_HOST}/api/v1/core-bookings/create-with-payment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -111,7 +112,7 @@ export default function BookingFlowPage() {
   const handleSimulatePaymentConfirmation = async (ref: string, _resId: string) => {
     try {
       // In demo mode, simulate confirmed payment
-      const response = await fetch(`/api/v1/core-bookings/status/${ref}`);
+      const response = await fetch(`${API_HOST}/api/v1/core-bookings/status/${ref}`);
       const json = await response.json();
 
       if (json?.success) {

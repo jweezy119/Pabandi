@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { API_HOST } from '../utils/apiHost';
 
 type ProfitReport = {
   totalCycles: number;
@@ -37,9 +38,9 @@ export default function ProfitEnginePage() {
   const fetchData = useCallback(async () => {
     try {
       const [r, a, s] = await Promise.all([
-        fetch('/api/v1/profit-engine/report').then(x => x.json()),
-        fetch('/api/v1/profit-engine/arbitrage').then(x => x.json()),
-        fetch('/api/v1/profit-engine/settlement').then(x => x.json()),
+        fetch(`${API_HOST}/api/v1/profit-engine/report`).then(x => x.json()),
+        fetch(`${API_HOST}/api/v1/profit-engine/arbitrage`).then(x => x.json()),
+        fetch(`${API_HOST}/api/v1/profit-engine/settlement`).then(x => x.json()),
       ]);
       if (r.success) setReport(r.report);
       if (a.success) setArbitrage(a.arbitrage);
@@ -71,7 +72,7 @@ export default function ProfitEnginePage() {
   const runCycle = async () => {
     setRunning(true);
     try {
-      const res = await fetch('/api/v1/profit-engine/cycle', { method: 'POST' });
+      const res = await fetch(`${API_HOST}/api/v1/profit-engine/cycle`, { method: 'POST' });
       const data = await res.json();
       if (data.success && data.result) {
         setCycles(prev => [{

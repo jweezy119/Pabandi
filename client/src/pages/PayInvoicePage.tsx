@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Badge, Button, tokens } from '../design-system';
+import { API_HOST } from '../utils/apiHost';
 
 const WARM_CLAY = {
   clay: '#C97B5A',
@@ -22,7 +23,7 @@ export const PayInvoicePage: React.FC = () => {
   useEffect(() => {
     const fetchInvoice = async () => {
       try {
-        const response = await fetch(`/api/v1/public/invoices/${invoiceId}`);
+        const response = await fetch(`${API_HOST}/api/v1/public/invoices/${invoiceId}`);
         if (response.ok) {
           const data = await response.json();
           setInvoice(data);
@@ -51,7 +52,7 @@ export const PayInvoicePage: React.FC = () => {
     setClaiming(true);
     setResult(null);
     try {
-      const response = await fetch(`/api/v1/public/invoices/${invoiceId}/claim-paid`, {
+      const response = await fetch(`${API_HOST}/api/v1/public/invoices/${invoiceId}/claim-paid`, {
         method: 'POST'
       });
       if (response.ok) {

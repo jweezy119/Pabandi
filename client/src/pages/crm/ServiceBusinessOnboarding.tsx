@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiChevronRight, FiChevronLeft, FiCheck, FiBriefcase, FiUsers, FiDollarSign, FiMapPin, FiPhone, FiPlus, FiTrash2 } from 'react-icons/fi';
+import { API_HOST } from '../../utils/apiHost';
 
 interface ServiceData {
   name: string;
@@ -56,7 +57,7 @@ export default function ServiceBusinessOnboarding() {
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      await fetch('/api/v1/crm/enroll', {
+      await fetch(`${API_HOST}/api/v1/crm/enroll`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

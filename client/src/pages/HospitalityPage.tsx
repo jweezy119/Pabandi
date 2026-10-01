@@ -6,6 +6,7 @@ import { hospitalityService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Button, Chip, Surface, Badge, tokens } from '../design-system';
 import { getAuthToken } from '../utils/authToken';
+import { API_HOST } from '../utils/apiHost';
 
 type PropertyType = 'hotel' | 'guesthouse' | 'riad' | 'safari_camp' | 'experience' | 'vacation_rental' | 'other';
 
@@ -79,11 +80,11 @@ export default function HospitalityPage() {
 
   // Live USDY rail status + social-proof count (public, honest SIMULATED→LIVE)
   const { data: usdyConfig } = useQuery('usdy-config', () =>
-    fetch('/api/v1/pyd/usdy/config').then((r) => r.json()),
+    fetch(`${API_HOST}/api/v1/pyd/usdy/config`).then((r) => r.json()),
     { refetchOnWindowFocus: false }
   );
   const { data: usdyCount, refetch: refetchUsdyCount } = useQuery('usdy-leads-count', () =>
-    fetch('/api/v1/pyd/usdy/leads/count').then((r) => r.json()),
+    fetch(`${API_HOST}/api/v1/pyd/usdy/leads/count`).then((r) => r.json()),
     { refetchOnWindowFocus: false }
   );
 
@@ -97,7 +98,7 @@ export default function HospitalityPage() {
     setUsdyError(null);
     setUsdySubmitting(true);
     try {
-      const res = await fetch('/api/v1/pyd/usdy/lead', {
+      const res = await fetch(`${API_HOST}/api/v1/pyd/usdy/lead`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -150,7 +151,7 @@ export default function HospitalityPage() {
     setIsProcessingCheckout(true);
     try {
       const token = getAuthToken();
-      const res = await fetch('/api/payments', {
+      const res = await fetch(`${API_HOST}/api/payments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -805,14 +805,14 @@ export const partnerRewardsService = {
 export const venuesService = {
   search: (params: { lat: number; lng: number; q?: string; category?: string; radius?: number; limit?: number }) => {
     const query = new URLSearchParams({ ...params } as any).toString();
-    return fetch(`/api/v1/venues/search?${query}`).then(r => r.json());
+    return fetch(`${API_HOST}/api/v1/venues/search?${query}`).then(r => r.json());
   },
-  getDetails: (source: string, id: string) => fetch(`/api/v1/venues/${source}/${id}`).then(r => r.json()),
-  getReviews: (source: string, id: string) => fetch(`/api/v1/venues/reviews/${source}/${id}`).then(r => r.json()),
-  getPhotos: (source: string, id: string) => fetch(`/api/v1/venues/photos/${source}/${id}`).then(r => r.json()),
+  getDetails: (source: string, id: string) => fetch(`${API_HOST}/api/v1/venues/${source}/${id}`).then(r => r.json()),
+  getReviews: (source: string, id: string) => fetch(`${API_HOST}/api/v1/venues/reviews/${source}/${id}`).then(r => r.json()),
+  getPhotos: (source: string, id: string) => fetch(`${API_HOST}/api/v1/venues/photos/${source}/${id}`).then(r => r.json()),
   getMenu: (name: string, lat?: number, lng?: number) => {
     const params = new URLSearchParams({ name, ...(lat && lng ? { lat: lat.toString(), lng: lng.toString() } : {}) } as any);
-    return fetch(`/api/v1/venues/menu?${params}`).then(r => r.json());
+    return fetch(`${API_HOST}/api/v1/venues/menu?${params}`).then(r => r.json());
   },
 };
 

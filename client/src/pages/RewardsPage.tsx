@@ -4,6 +4,7 @@ import RewardCard from '../components/RewardCard';
 import FeeOffsetCalculator from '../components/FeeOffsetCalculator';
 import TierProgress from '../components/TierProgress';
 import { getAuthToken } from '../utils/authToken';
+import { API_HOST } from '../utils/apiHost';
 
 interface RewardTransaction {
   id: string;
@@ -50,9 +51,9 @@ export default function RewardsPage() {
       const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
 
       const [balanceRes, historyRes, tiersRes] = await Promise.all([
-        fetch('/api/v1/rewards/balance', { headers }),
-        fetch('/api/v1/rewards/history', { headers }),
-        fetch('/api/v1/rewards/tiers'),
+        fetch(`${API_HOST}/api/v1/rewards/balance`, { headers }),
+        fetch(`${API_HOST}/api/v1/rewards/history`, { headers }),
+        fetch(`${API_HOST}/api/v1/rewards/tiers`),
       ]);
 
       if (balanceRes.ok) {

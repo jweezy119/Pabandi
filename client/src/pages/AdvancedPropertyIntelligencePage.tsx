@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Surface, Button, Badge, tokens } from '../design-system';
+import { API_HOST } from '../utils/apiHost';
 
 export const AdvancedPropertyIntelligencePage: React.FC = () => {
   const [form, setForm] = useState({ city: '', state: '', bedrooms: '', bathrooms: '', sqft: '', yearBuilt: '', propertyType: 'single_family', condition: 'good', hasGarage: false, hasPool: false });
@@ -9,7 +10,7 @@ export const AdvancedPropertyIntelligencePage: React.FC = () => {
   const analyze = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/v1/ai/advanced/property-intelligence', {
+      const res = await fetch(`${API_HOST}/api/v1/ai/advanced/property-intelligence`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, bedrooms: parseInt(form.bedrooms), bathrooms: parseFloat(form.bathrooms), sqft: parseInt(form.sqft), yearBuilt: form.yearBuilt ? parseInt(form.yearBuilt) : undefined }),

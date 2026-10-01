@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Surface, Button, Badge, tokens } from '../design-system';
+import { API_HOST } from '../utils/apiHost';
 
 export const AiPropertyAnalyzerPage: React.FC = () => {
   const [form, setForm] = useState({
@@ -13,7 +14,7 @@ export const AiPropertyAnalyzerPage: React.FC = () => {
   const analyze = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/v1/ai/analyze-property', {
+      const res = await fetch(`${API_HOST}/api/v1/ai/analyze-property`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

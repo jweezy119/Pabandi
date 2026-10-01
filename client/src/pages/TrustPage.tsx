@@ -5,6 +5,7 @@ import { socialService } from '../services/api';
 import DownloadableTrustBadge from '../components/DownloadableTrustBadge';
 import { tokens } from '../design-system';
 import { getAuthToken } from '../utils/authToken';
+import { API_HOST } from '../utils/apiHost';
 
 // ─── Platform Config ──────────────────────────────────────────────────────────
 const PLATFORMS = [
@@ -274,7 +275,7 @@ export default function TrustPage() {
         .catch(err => console.error('Failed to fetch connected platforms', err));
         
       if (user?.id) {
-        fetch(`/api/v1/trust/public/${user.id}`)
+        fetch(`${API_HOST}/api/v1/trust/public/${user.id}`)
           .then(res => res.json())
           .then(json => {
             if (json.success) {

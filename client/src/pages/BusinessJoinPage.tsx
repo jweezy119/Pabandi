@@ -4,6 +4,7 @@ import apiClient from '../services/api';
 import { tokens } from '../design-system';
 import toast from 'react-hot-toast';
 import { getAuthToken } from '../utils/authToken';
+import { API_HOST } from '../utils/apiHost';
 
 // ── Icons ──────────────────────────────────────────────────────────────
 const CheckIcon = () => (
@@ -52,7 +53,7 @@ export default function BusinessJoinPage() {
     setIsProcessingCheckout(true);
     try {
       const token = getAuthToken();
-      const res = await fetch('/api/payments', {
+      const res = await fetch(`${API_HOST}/api/payments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_HOST } from '../utils/apiHost';
 
 interface SMSSetupProps {
   businessId: string;
@@ -25,7 +26,7 @@ export const SMSSetup: React.FC<SMSSetupProps> = ({ businessId, onSetup }) => {
     setSendingTest(true);
     setError(null);
     try {
-      const res = await fetch('/api/v1/sms/send', {
+      const res = await fetch(`${API_HOST}/api/v1/sms/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -53,7 +54,7 @@ export const SMSSetup: React.FC<SMSSetupProps> = ({ businessId, onSetup }) => {
     setError(null);
     try {
       // Store credentials via env-based config endpoint (simplified)
-      const res = await fetch('/api/v1/sms/credentials', {
+      const res = await fetch(`${API_HOST}/api/v1/sms/credentials`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

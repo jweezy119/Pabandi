@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { tokens, Surface, Button, Badge } from '../design-system';
 import { protocolService } from '../services/protocolService';
+import { API_HOST } from '../utils/apiHost';
 
 export const AgentInterface: React.FC = () => {
   const [agentName, setAgentName] = useState('');
@@ -12,13 +13,13 @@ export const AgentInterface: React.FC = () => {
   const queryClient = useQueryClient();
 
   const { data: marketplaceStats } = useQuery('marketplace-stats', async () => {
-    const res = await fetch('/api/v1/agent-marketplace/stats');
+    const res = await fetch(`${API_HOST}/api/v1/agent-marketplace/stats`);
     const json = await res.json();
     return json.data;
   }, { refetchInterval: 15000 });
 
   const { data: leaderboard } = useQuery('agent-leaderboard', async () => {
-    const res = await fetch('/api/v1/agent-marketplace/leaderboard');
+    const res = await fetch(`${API_HOST}/api/v1/agent-marketplace/leaderboard`);
     const json = await res.json();
     return json.data;
   });
@@ -26,7 +27,7 @@ export const AgentInterface: React.FC = () => {
   const { data: agentProfile } = useQuery(
     ['agent-profile', selectedAgentId],
     async () => {
-      const res = await fetch(`/api/v1/agent-marketplace/agents/${selectedAgentId}`);
+      const res = await fetch(`${API_HOST}/api/v1/agent-marketplace/agents/${selectedAgentId}`);
       const json = await res.json();
       return json.data;
     },

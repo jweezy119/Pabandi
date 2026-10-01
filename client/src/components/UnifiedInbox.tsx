@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { API_HOST } from '../utils/apiHost';
 
 type Channel = 'WHATSAPP' | 'TELEGRAM' | 'SMS';
 
@@ -47,7 +48,7 @@ export const UnifiedInbox: React.FC<UnifiedInboxProps> = ({ businessId }) => {
     try {
       const params = new URLSearchParams();
       if (filterChannel !== 'ALL') params.set('channel', filterChannel);
-      const res = await fetch(`/api/v1/channels/${businessId}/messages?${params}`);
+      const res = await fetch(`${API_HOST}/api/v1/channels/${businessId}/messages?${params}`);
       const data = await res.json();
       if (data.success) {
         setMessages(data.data);
@@ -69,7 +70,7 @@ export const UnifiedInbox: React.FC<UnifiedInboxProps> = ({ businessId }) => {
     if (!replyText.trim()) return;
     setSending(true);
     try {
-      await fetch('/api/v1/channels/route', {
+      await fetch(`${API_HOST}/api/v1/channels/route`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

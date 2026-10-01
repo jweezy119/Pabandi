@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_HOST } from '../utils/apiHost';
 
 const AGENTS = [
   { id: 'PROMOTER_AUTON', name: 'PromoterAuton', icon: '🤖', color: 'purple', description: 'Autonomously manages promoters, adjusts deposits, recruits guests' },
@@ -30,7 +31,7 @@ export const AgentControlPanel: React.FC = () => {
 
   const loadExecutions = async () => {
     try {
-      const res = await fetch(`/api/v1/agents/executions?agentType=${activeAgent}&limit=20`);
+      const res = await fetch(`${API_HOST}/api/v1/agents/executions?agentType=${activeAgent}&limit=20`);
       const data = await res.json();
       if (data.success) setExecutions(data.data);
     } catch (e) {
@@ -40,7 +41,7 @@ export const AgentControlPanel: React.FC = () => {
 
   const loadVenues = async () => {
     try {
-      const res = await fetch('/api/v1/nightlife/venues?limit=50');
+      const res = await fetch(`${API_HOST}/api/v1/nightlife/venues?limit=50`);
       const data = await res.json();
       if (data.success) setVenues(data.data);
     } catch (e) {
@@ -51,7 +52,7 @@ export const AgentControlPanel: React.FC = () => {
   const runAgent = async (agentType: string) => {
     setRunningAgent(agentType);
     try {
-      const res = await fetch(`/api/v1/agents/${agentType}/run`, {
+      const res = await fetch(`${API_HOST}/api/v1/agents/${agentType}/run`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ venueId: selectedVenue }),
@@ -70,7 +71,7 @@ export const AgentControlPanel: React.FC = () => {
   const runAllAgents = async () => {
     setRunningAgent('ALL');
     try {
-      const res = await fetch('/api/v1/agents/run-all', { method: 'POST' });
+      const res = await fetch(`${API_HOST}/api/v1/agents/run-all`, { method: 'POST' });
       const data = await res.json();
       if (data.success) {
         loadExecutions();

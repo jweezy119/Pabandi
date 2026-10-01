@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '../design-system';
+import { API_HOST } from '../utils/apiHost';
 
 interface PayLioPaymentProps {
   amount: number;
@@ -23,7 +24,7 @@ export const PayLioPayment: React.FC<PayLioPaymentProps> = ({
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/v1/payments/paylio/create', {
+      const res = await fetch(`${API_HOST}/api/v1/payments/paylio/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

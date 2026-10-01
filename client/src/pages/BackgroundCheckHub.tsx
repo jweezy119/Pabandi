@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_HOST } from '../utils/apiHost';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // PREMIUM BACKGROUND CHECK HUB
@@ -53,7 +54,7 @@ export const BackgroundCheckHub: React.FC = () => {
     setResult(null);
 
     try {
-      const res = await fetch('/api/v1/background-checks/run', {
+      const res = await fetch(`${API_HOST}/api/v1/background-checks/run`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ firstName, lastName, state }),

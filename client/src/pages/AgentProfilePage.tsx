@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { API_HOST } from '../utils/apiHost';
 
 type Agent = {
   id: string;
@@ -24,7 +25,7 @@ export default function AgentProfilePage() {
 
   useEffect(() => {
     if (!slug) return;
-    fetch(`/api/v1/agent-marketplace/agents/${slug}`)
+    fetch(`${API_HOST}/api/v1/agent-marketplace/agents/${slug}`)
       .then(r => r.json())
       .then(d => {
         if (d.success) setAgent(d.agent);

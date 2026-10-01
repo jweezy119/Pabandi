@@ -5,6 +5,7 @@ import { textSearchService, businessService } from '../services/api';
 import { tokens, GlassCard } from '../design-system';
 import PageHeader from '../components/PageHeader';
 import { useAuthStore } from '../store/authStore';
+import { API_HOST } from '../utils/apiHost';
 
 type BadgeType = 'genesis-partner' | 'early-adopter' | 'trust-flux';
 
@@ -241,7 +242,7 @@ export default function FreelancePage() {
                     type="button"
                     onClick={() => {
                       if (!isAuthenticated) { navigate('/login'); return; }
-                      fetch('/api/v1/linkedin/seed/badge/purchase', {
+                      fetch(`${API_HOST}/api/v1/linkedin/seed/badge/purchase`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ linkedinId: 'self', badgeType: type, purchaserWallet: 'treasury' }),

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_HOST } from '../utils/apiHost';
 
 interface FeeCalculation {
   squareFee: number;
@@ -15,7 +16,7 @@ export default function FeeOffsetCalculator() {
 
   const calculate = async () => {
     try {
-      const res = await fetch('/api/v1/rewards/calculate', {
+      const res = await fetch(`${API_HOST}/api/v1/rewards/calculate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ purchaseAmount: amount }),

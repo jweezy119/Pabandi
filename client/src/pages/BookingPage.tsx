@@ -10,6 +10,7 @@ import { executeBscDeposit, executeSolanaDeposit, executeStellarFranklinDeposit 
 import { encryptRsa } from '../utils/e2ee';
 import { Button, Chip, Surface, tokens } from '../design-system';
 import { ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { API_HOST } from '../utils/apiHost';
 
 export default function BookingPage() {
   const { id } = useParams<{ id: string }>();
@@ -114,7 +115,7 @@ export default function BookingPage() {
           fd.append('screenshot', (formData as any).paymentScreenshot);
           fd.append('reference', bookingResult.bookingReference);
           fd.append('amount', String(effectiveDeposit || 25));
-          await fetch('/api/v1/payments/raast/verify', { method: 'POST', body: fd });
+          await fetch(`${API_HOST}/api/v1/payments/raast/verify`, { method: 'POST', body: fd });
         } catch {
           // Screenshot upload failed, but booking is still pending — user can retry
         } finally {

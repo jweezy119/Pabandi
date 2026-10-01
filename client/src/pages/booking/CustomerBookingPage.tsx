@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getAuthToken } from '../../utils/authToken';
+import { API_HOST } from '../../utils/apiHost';
 
 interface Service {
   id: string;
@@ -51,7 +52,7 @@ export default function CustomerBookingPage() {
 
   useEffect(() => {
     if (!slug) return;
-    fetch(`/api/v1/business/${slug}/public`)
+    fetch(`${API_HOST}/api/v1/business/${slug}/public`)
       .then(r => r.json())
       .then(data => {
         if (data.success) {
@@ -106,7 +107,7 @@ export default function CustomerBookingPage() {
     if (!selectedService || !selectedDate || !selectedTime || !customer.name || !customer.phone) return;
     setSubmitting(true);
     try {
-      const res = await fetch('/api/v1/bookings/customer', {
+      const res = await fetch(`${API_HOST}/api/v1/bookings/customer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -128,7 +129,7 @@ export default function CustomerBookingPage() {
         setStep(5);
         if (customer.email) {
           setLoadingTrust(true);
-          fetch(`/api/v1/crm/clients?email=${encodeURIComponent(customer.email)}`, {
+          fetch(`${API_HOST}/api/v1/crm/clients?email=${encodeURIComponent(customer.email)}`, {
             headers: { Authorization: `Bearer ${getAuthToken() || ''}` },
           })
             .then(r => r.json())

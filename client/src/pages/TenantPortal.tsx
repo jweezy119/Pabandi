@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getAuthToken } from '../utils/authToken';
+import { API_HOST } from '../utils/apiHost';
 
 interface DashboardData {
   balance: { usdc: number; pabTokens: number; pabValueUsd: number; totalUsd: number };
@@ -36,19 +37,19 @@ export default function TenantPortal() {
         if (!token) { setError('Not authenticated'); setLoading(false); return; }
 
         // Fetch PAB balance
-        const balanceRes = await fetch('/api/v1/crm-pab/balance', {
+        const balanceRes = await fetch(`${API_HOST}/api/v1/crm-pab/balance`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const balanceData = await balanceRes.json();
 
         // Fetch staking status
-        const stakingRes = await fetch('/api/v1/pab-staking/status', {
+        const stakingRes = await fetch(`${API_HOST}/api/v1/pab-staking/status`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const stakingData = await stakingRes.json();
 
         // Fetch DEX price for PAB valuation
-        const priceRes = await fetch('/api/v1/pab-dex/stats', {
+        const priceRes = await fetch(`${API_HOST}/api/v1/pab-dex/stats`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const priceData = await priceRes.json();

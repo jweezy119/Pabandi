@@ -4,6 +4,7 @@ import StatsBar from '../components/StatsBar';
 import LeaderboardTable from '../components/LeaderboardTable';
 import ProjectCard from '../components/ProjectCard';
 import AgentCard from '../components/AgentCard';
+import { API_HOST } from '../utils/apiHost';
 
 type Stats = {
   totalAgents: number;
@@ -47,9 +48,9 @@ export default function AgentMarketplacePage() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/v1/agent-marketplace/stats').then(r => r.json()),
-      fetch('/api/v1/agent-marketplace/leaderboard').then(r => r.json()),
-      fetch('/api/v1/agent-marketplace/projects/open').then(r => r.json()),
+      fetch(`${API_HOST}/api/v1/agent-marketplace/stats`).then(r => r.json()),
+      fetch(`${API_HOST}/api/v1/agent-marketplace/leaderboard`).then(r => r.json()),
+      fetch(`${API_HOST}/api/v1/agent-marketplace/projects/open`).then(r => r.json()),
     ]).then(([statsData, lbData, projData]) => {
       if (statsData.success) setStats(statsData.stats);
       if (lbData.success) setLeaderboard(lbData.leaderboard);

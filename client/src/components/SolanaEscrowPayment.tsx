@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { getAuthToken } from '../utils/authToken';
+import { API_HOST } from '../utils/apiHost';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -115,7 +116,7 @@ const SolanaEscrowPayment: React.FC<{
   const fetchEscrowState = useCallback(async () => {
     if (!escrowId) return;
     try {
-      const response = await fetch(`/api/v1/solana-escrow/${escrowId}`, {
+      const response = await fetch(`${API_HOST}/api/v1/solana-escrow/${escrowId}`, {
         headers: {
           Authorization: `Bearer ${getAuthToken() || ''}`,
         },
@@ -150,7 +151,7 @@ const SolanaEscrowPayment: React.FC<{
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/v1/solana-escrow/${escrowId}/fund`, {
+      const response = await fetch(`${API_HOST}/api/v1/solana-escrow/${escrowId}/fund`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -175,7 +176,7 @@ const SolanaEscrowPayment: React.FC<{
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/v1/solana-escrow/${escrowId}/release`, {
+      const response = await fetch(`${API_HOST}/api/v1/solana-escrow/${escrowId}/release`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -200,7 +201,7 @@ const SolanaEscrowPayment: React.FC<{
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/v1/solana-escrow/${escrowId}/refund`, {
+      const response = await fetch(`${API_HOST}/api/v1/solana-escrow/${escrowId}/refund`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -225,7 +226,7 @@ const SolanaEscrowPayment: React.FC<{
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/v1/solana-escrow/${escrowId}/dispute`, {
+      const response = await fetch(`${API_HOST}/api/v1/solana-escrow/${escrowId}/dispute`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

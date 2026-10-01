@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { API_HOST } from '../utils/apiHost';
 
 interface SquareCheckoutProps {
   referenceId: string;
@@ -33,7 +34,7 @@ export default function SquareCheckout({
     setStatus('creating');
     setError(null);
     try {
-      const res = await fetch('/api/v1/square-checkout/checkout', {
+      const res = await fetch(`${API_HOST}/api/v1/square-checkout/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -93,7 +94,7 @@ export default function SquareCheckout({
       }
 
       try {
-        const res = await fetch(`/api/v1/square-checkout/payment/${paymentId}`);
+        const res = await fetch(`${API_HOST}/api/v1/square-checkout/payment/${paymentId}`);
         const json = await res.json();
         if (!cancelled && json.success) {
           const state = json.payment?.status;

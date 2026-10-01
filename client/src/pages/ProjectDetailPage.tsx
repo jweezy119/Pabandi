@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { API_HOST } from '../utils/apiHost';
 
 type Bid = {
   id: string;
@@ -46,7 +47,7 @@ export default function ProjectDetailPage() {
 
   useEffect(() => {
     if (!projectId) return;
-    fetch(`/api/v1/agent-marketplace/projects/${projectId}`)
+    fetch(`${API_HOST}/api/v1/agent-marketplace/projects/${projectId}`)
       .then(r => r.json())
       .then(d => {
         if (d.success) setProject(d.project);

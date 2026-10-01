@@ -12,6 +12,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import SolanaEscrowPayment from '../components/SolanaEscrowPayment';
 import { getAuthToken } from '../utils/authToken';
+import { API_HOST } from '../utils/apiHost';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -53,7 +54,7 @@ const SolanaEscrowPage: React.FC = () => {
       const user = userStr ? JSON.parse(userStr) : null;
       if (!user?.id) return;
 
-      const response = await fetch(`/api/v1/solana-escrow/list/${user.id}`, {
+      const response = await fetch(`${API_HOST}/api/v1/solana-escrow/list/${user.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -83,7 +84,7 @@ const SolanaEscrowPage: React.FC = () => {
     setLoading(true);
     try {
       const token = getAuthToken() || '';
-      const response = await fetch('/api/v1/solana-escrow/create', {
+      const response = await fetch(`${API_HOST}/api/v1/solana-escrow/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAuthToken } from '../../utils/authToken';
+import { API_HOST } from '../../utils/apiHost';
 
 const TABS = ['Today', 'Calendar', 'Customers', 'Employees', 'Money', 'Services'] as const;
 type Tab = typeof TABS[number];
@@ -115,7 +116,7 @@ function TodayTab({ businessId }: { businessId: string }) {
 
   useEffect(() => {
     if (!businessId) return;
-    fetch(`/api/v1/dashboard/${businessId}/today`, {
+    fetch(`${API_HOST}/api/v1/dashboard/${businessId}/today`, {
       headers: { Authorization: `Bearer ${getAuthToken() || ''}` },
     })
       .then(r => r.json())
@@ -189,7 +190,7 @@ function CalendarTab({ businessId }: { businessId: string }) {
 
   useEffect(() => {
     if (!businessId) return;
-    fetch(`/api/v1/dashboard/${businessId}/calendar`, {
+    fetch(`${API_HOST}/api/v1/dashboard/${businessId}/calendar`, {
       headers: { Authorization: `Bearer ${getAuthToken() || ''}` },
     })
       .then(r => r.json())
@@ -232,7 +233,7 @@ function CustomersTab({ businessId }: { businessId: string }) {
 
   useEffect(() => {
     if (!businessId) return;
-    fetch(`/api/v1/dashboard/${businessId}/customers`, {
+    fetch(`${API_HOST}/api/v1/dashboard/${businessId}/customers`, {
       headers: { Authorization: `Bearer ${getAuthToken() || ''}` },
     })
       .then(r => r.json())
@@ -278,7 +279,7 @@ function EmployeesTab({ businessId }: { businessId: string }) {
 
   useEffect(() => {
     if (!businessId) return;
-    fetch(`/api/v1/dashboard/${businessId}/employees`, {
+    fetch(`${API_HOST}/api/v1/dashboard/${businessId}/employees`, {
       headers: { Authorization: `Bearer ${getAuthToken() || ''}` },
     })
       .then(r => r.json())
@@ -326,7 +327,7 @@ function MoneyTab({ businessId }: { businessId: string }) {
 
   const loadFinancials = () => {
     if (!businessId) return;
-    fetch(`/api/v1/dashboard/${businessId}/money`, {
+    fetch(`${API_HOST}/api/v1/dashboard/${businessId}/money`, {
       headers: { Authorization: `Bearer ${getAuthToken() || ''}` },
     })
       .then(r => r.json())
@@ -341,7 +342,7 @@ function MoneyTab({ businessId }: { businessId: string }) {
 
   const addExpense = async () => {
     if (!expenseForm.category || !expenseForm.amount) return;
-    await fetch(`/api/v1/dashboard/${businessId}/expense`, {
+    await fetch(`${API_HOST}/api/v1/dashboard/${businessId}/expense`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

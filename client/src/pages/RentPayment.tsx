@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAuthToken } from '../utils/authToken';
+import { API_HOST } from '../utils/apiHost';
 
 const PAB_PRICE = 0.000178;
 const PAB_DISCOUNT = 0.05; // 5%
@@ -28,7 +29,7 @@ export default function RentPayment() {
         if (!token) { setError('Not authenticated'); setLoading(false); return; }
 
         // Fetch PAB balance
-        const balanceRes = await fetch('/api/v1/crm-pab/balance', {
+        const balanceRes = await fetch(`${API_HOST}/api/v1/crm-pab/balance`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const balanceData = await balanceRes.json();
@@ -51,7 +52,7 @@ export default function RentPayment() {
     setState((s) => ({ ...s, status: 'confirming' }));
     try {
       const token = getAuthToken();
-      const res = await fetch('/api/v1/jev/payment-route/me', {
+      const res = await fetch(`${API_HOST}/api/v1/jev/payment-route/me`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

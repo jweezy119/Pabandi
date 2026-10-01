@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getAuthToken } from '../utils/authToken';
+import { API_HOST } from '../utils/apiHost';
 
 interface StakingTier {
   tier: string;
@@ -40,7 +41,7 @@ export const PabStaking: React.FC = () => {
   const fetchStatus = async () => {
     try {
       const token = getAuthToken();
-      const res = await fetch('/api/v1/pab-staking/status', {
+      const res = await fetch(`${API_HOST}/api/v1/pab-staking/status`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -59,7 +60,7 @@ export const PabStaking: React.FC = () => {
     setMessage('');
     try {
       const token = getAuthToken();
-      const res = await fetch('/api/v1/pab-staking/stake', {
+      const res = await fetch(`${API_HOST}/api/v1/pab-staking/stake`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -85,7 +86,7 @@ export const PabStaking: React.FC = () => {
     setMessage('');
     try {
       const token = getAuthToken();
-      const res = await fetch('/api/v1/pab-staking/unstake', {
+      const res = await fetch(`${API_HOST}/api/v1/pab-staking/unstake`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

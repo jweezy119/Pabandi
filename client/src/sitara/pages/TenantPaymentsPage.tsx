@@ -28,7 +28,7 @@ export default function TenantPaymentsPage() {
   const fetchPaymentHistory = async () => {
     try {
       // In production, this would call the API
-      // const response = await fetch('/api/v1/lease-pab/payment-history');
+      // const response = await fetch(`/api/v1/lease-pab/payment-history`);
       // const data = await response.json();
       
       // Mock data for demonstration

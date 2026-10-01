@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { tokens } from '../../design-system';
+import { API_HOST } from '../../utils/apiHost';
 
 interface ServiceItem {
   id: string;
@@ -118,7 +119,7 @@ export default function OnboardingWizard() {
     setSubmitting(true);
     try {
       const payload = { profile, services, availability, employees };
-      const res = await fetch('/api/v1/onboarding/complete', {
+      const res = await fetch(`${API_HOST}/api/v1/onboarding/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
