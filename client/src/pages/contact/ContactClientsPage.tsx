@@ -5,8 +5,8 @@ import ClientListTable from '../crm/components/ClientListTable';
 import ClientFormModal from '../crm/components/ClientFormModal';
 import CSVImportModal from '../crm/components/CSVImportModal';
 import { useAuthStore } from '../../store/authStore';
-import { Upload } from 'lucide-react';
 import { getAuthToken } from '../../utils/authToken';
+import { withBusinessId } from '../../utils/businessContext';
 
 
 
@@ -19,6 +19,9 @@ export default function ContactClientsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [customFields, setCustomFields] = useState<any[]>([]);
   const [showImportModal, setShowImportModal] = useState(false);
+  // A failed delete used to be logged to the console and the dialog closed
+  // anyway, so the user was shown a success they never got.
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchClients();
@@ -112,15 +115,40 @@ export default function ContactClientsPage() {
   }
 
   async function handleDeleteClient(id: string) {
-    try {
-      await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients/${id}`, {
+    // Check the response instead of assuming success. A 500 from the server
+    // used to be swallowed here, the confirm dialog closed, and the client
+    // still listed — so the user was told the delete worked when it did not.
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients/${id}?${withBusinessId()}`,
+      {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${getAuthToken()}` },
-      });
-      setShowDeleteConfirm(null);
-      fetchClients();
-    } catch (err) {
-      console.error('Failed to delete client:', err);
+      },
+    );
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      throw new Error(body?.error || `Delete failed (${res.status})`);
+    }
+    setShowDeleteConfirm(null);
+    setDeleteError(null);
+    await fetchClients();
+  }
+
+  /** Bulk delete: sequential, so one failure does not silently skip the rest. */
+  async function handleBulkDeleteClients(ids: string[]) {
+    const failures: string[] = [];
+    for (const id of ids) {
+      try {
+        await handleDeleteClient(id);
+      } catch {
+        failures.push(id);
+      }
+    }
+    if (failures.length > 0) {
+      setDeleteError(`${failures.length} of ${ids.length} could not be deleted. They are still listed.`);
+      // Refresh anyway, so the ones that did succeed disappear from the table.
+      await fetchClients();
+      throw new Error(`${failures.length} client${failures.length === 1 ? '' : 's'} could not be deleted.`);
     }
   }
 
@@ -154,8 +182,9 @@ export default function ContactClientsPage() {
         ) : (
           <ClientListTable 
             clients={clients} 
-            onEdit={(client: any) => { setSelectedClient(client); setShowFormModal(true); }}
-            onDelete={(id: string) => setShowDeleteConfirm(id)}
+            onEdit={(client) => { setSelectedClient(clients.find((c) => c.id === client.id) ?? null); setShowFormModal(true); }}
+            onDelete={(id: string) => { setDeleteError(null); setShowDeleteConfirm(id); }}
+            onBulkDelete={handleBulkDeleteClients}
           />
         )}
 
@@ -190,11 +219,22 @@ export default function ContactClientsPage() {
           title="Delete Client?"
           actionText="Delete"
           actionVariant="danger"
-          onAction={() => handleDeleteClient(showDeleteConfirm!)}
+          onAction={async () => {
+            try {
+              await handleDeleteClient(showDeleteConfirm!);
+            } catch (err) {
+              setDeleteError(err instanceof Error ? err.message : 'Delete failed');
+            }
+          }}
         >
-          <p className="text-[var(--soft-stone)] mb-6 text-sm">
+          <p className="text-[var(--soft-stone)] mb-4 text-sm">
             This action cannot be undone. All associated deals and activities will also be removed.
           </p>
+          {deleteError && (
+            <div className="clay-alert clay-alert--critical mb-4">
+              <p className="text-sm" style={{ color: 'var(--warm-ink)' }}>{deleteError}</p>
+            </div>
+          )}
         </Modal>
       </div>
     </DashboardLayout>

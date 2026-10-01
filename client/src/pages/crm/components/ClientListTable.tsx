@@ -2,7 +2,30 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Input, Chip } from '../../../components/primitives';
 
-export default function ClientListTable({ clients, onEdit, onDelete }: any) {
+/**
+ * onBulkDelete is optional so a caller that cannot delete reports that
+ * honestly. When it is absent the button is not rendered at all — a visible
+ * destructive button that quietly does nothing is worse than no button, because
+ * the user believes the delete happened.
+ */
+export interface ClientListTableRow {
+  id: string;
+  name: string;
+  email?: string;
+  company?: string;
+  status?: string;
+  totalSpent?: number;
+}
+
+export interface ClientListTableProps {
+  clients: ClientListTableRow[];
+  onEdit?: (client: ClientListTableRow) => void;
+  /** Takes the id, not the row: the confirm dialog is keyed by id. */
+  onDelete?: (id: string) => void;
+  onBulkDelete?: (ids: string[]) => void | Promise<void>;
+}
+
+export default function ClientListTable({ clients, onEdit, onDelete, onBulkDelete }: ClientListTableProps) {
   const [search, setSearch] = useState('');
   const [sortCol, setSortCol] = useState('name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
@@ -10,6 +33,9 @@ export default function ClientListTable({ clients, onEdit, onDelete }: any) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [columns, setColumns] = useState(['name', 'company', 'contact', 'ltv', 'status', 'actions']);
   const [showColPicker, setShowColPicker] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkError, setBulkError] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const itemsPerPage = 10;
 
   const toggleSort = (col: string) => {
@@ -40,7 +66,24 @@ export default function ClientListTable({ clients, onEdit, onDelete }: any) {
 
   const toggleSelectAll = () => {
     if (selectedIds.length === paginated.length) setSelectedIds([]);
-    else setSelectedIds(paginated.map((c: any) => c.id));
+    else setSelectedIds(paginated.map((c) => c.id));
+  };
+
+  const runBulkDelete = async () => {
+    if (!onBulkDelete) return;
+    setBulkBusy(true);
+    setBulkError(null);
+    try {
+      await onBulkDelete(selectedIds);
+      setSelectedIds([]);
+      setConfirmingDelete(false);
+    } catch (err) {
+      // Report the failure rather than clearing the selection: the user needs
+      // to know the clients are still there.
+      setBulkError(err instanceof Error ? err.message : 'Delete failed. Please try again.');
+    } finally {
+      setBulkBusy(false);
+    }
   };
 
   const toggleSelect = (id: string) => {
@@ -72,10 +115,26 @@ export default function ClientListTable({ clients, onEdit, onDelete }: any) {
         </div>
         <div className="flex gap-2 items-center relative">
           {selectedIds.length > 0 && (
-            <div className="flex gap-2 mr-4">
+            <div className="flex gap-2 mr-4 items-center">
               <span className="text-sm text-[var(--soft-stone)] self-center">{selectedIds.length} selected</span>
-              <Button variant="secondary" size="sm">Bulk Email</Button>
-              <Button variant="danger" size="sm" onClick={() => { /* Bulk Delete */ }}>Delete</Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setSelectedIds([])}
+                title="Clear selection"
+              >
+                Clear
+              </Button>
+              {onBulkDelete && (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  loading={bulkBusy}
+                  onClick={() => setConfirmingDelete(true)}
+                >
+                  Delete
+                </Button>
+              )}
             </div>
           )}
           <Button variant="ghost" size="sm" icon="view_column" onClick={() => setShowColPicker(!showColPicker)}>
@@ -142,12 +201,28 @@ export default function ClientListTable({ clients, onEdit, onDelete }: any) {
                 )}
                 {columns.includes('actions') && (
                   <td className="p-4 text-right">
-                    <button onClick={() => onEdit(client)} className="p-2 text-[var(--soft-stone)] hover:text-[var(--clay)] transition">
-                      <span className="material-symbols-outlined text-[20px]">edit</span>
-                    </button>
-                    <button onClick={() => onDelete(client.id)} className="p-2 text-[var(--soft-stone)] hover:text-[var(--terracotta)] transition">
-                      <span className="material-symbols-outlined text-[20px]">delete</span>
-                    </button>
+                    {/* Each action renders only when the caller supplied it, so
+                        the table never shows a control that cannot act. */}
+                    {onEdit && (
+                      <button
+                        onClick={() => onEdit(client)}
+                        title={`Edit ${client.name}`}
+                        aria-label={`Edit ${client.name}`}
+                        className="p-2 text-[var(--soft-stone)] hover:text-[var(--clay)] transition"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">edit</span>
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        onClick={() => onDelete(client.id)}
+                        title={`Delete ${client.name}`}
+                        aria-label={`Delete ${client.name}`}
+                        className="p-2 text-[var(--soft-stone)] hover:text-[var(--terracotta)] transition"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">delete</span>
+                      </button>
+                    )}
                   </td>
                 )}
               </tr>
@@ -158,13 +233,52 @@ export default function ClientListTable({ clients, onEdit, onDelete }: any) {
 
       <div className="p-4 border-t border-[rgba(191,179,163,0.3)] flex justify-between items-center bg-[var(--warm-sand)]/10">
         <span className="text-sm text-[var(--soft-stone)]">
-          Showing {(page - 1) * itemsPerPage + 1} to Math.min(page * itemsPerPage, filtered.length) of {filtered.length} entries
+          {filtered.length === 0
+            ? 'No entries'
+            : `Showing ${(page - 1) * itemsPerPage + 1} to ${Math.min(page * itemsPerPage, filtered.length)} of ${filtered.length} entries`}
         </span>
         <div className="flex gap-2">
           <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Prev</Button>
           <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</Button>
         </div>
       </div>
+
+      {/* Destructive confirmation. Deleting clients is not undoable from this
+          screen, and the selection can span a full page, so the count is
+          stated explicitly rather than "are you sure?" */}
+      {confirmingDelete && onBulkDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={() => setConfirmingDelete(false)}>
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl border border-[rgba(191,179,163,0.3)]"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bulk-delete-title"
+          >
+            <h3 id="bulk-delete-title" className="text-lg font-bold mb-2" style={{ color: 'var(--warm-ink)' }}>
+              Delete {selectedIds.length} client{selectedIds.length === 1 ? '' : 's'}?
+            </h3>
+            <p className="text-sm mb-4" style={{ color: 'var(--soft-stone)' }}>
+              Their jobs, invoices and history go with them. This cannot be undone.
+            </p>
+
+            {bulkError && (
+              <div className="clay-alert clay-alert--critical mb-4">
+                <p className="text-sm" style={{ color: 'var(--warm-ink)' }}>{bulkError}</p>
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end">
+              <Button variant="secondary" onClick={() => setConfirmingDelete(false)} disabled={bulkBusy}>
+                Cancel
+              </Button>
+              <Button variant="danger" onClick={runBulkDelete} loading={bulkBusy}>
+                {bulkBusy ? 'Deleting…' : `Delete ${selectedIds.length}`}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authService, cryptoService } from '../services/api';
+import { syncBusinessId } from '../utils/businessContext';
 
 interface User {
   id: string;
@@ -10,6 +11,13 @@ interface User {
   name?: string;
   phone?: string;
   role: string;
+  /**
+   * The tenant every ContactOS query is scoped by. ContactOS pages read this
+   * directly, and it is mirrored into localStorage by syncBusinessId() — see
+   * the comment on that function for why there are two copies.
+   */
+  businessId?: string | null;
+  business?: { id: string; name?: string } | null;
   profilePictureUrl?: string;
   reliabilityScore?: number;
   trustScore?: number;
@@ -76,6 +84,9 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         const response = await authService.login(email, password);
         const payload = response.data?.data ?? response.data; // support both shapes
+        // Mirror the tenant for the ContactOS pages that read it from
+        // localStorage. See utils/businessContext.ts for why both copies exist.
+        syncBusinessId(payload.user?.businessId ?? payload.user?.business?.id);
         set({
           user: payload.user,
           token: payload.token,
@@ -154,7 +165,18 @@ export const useAuthStore = create<AuthState>()(
         const response = await authService.toggleMode(mode);
         const payload = response.data?.data ?? response.data;
         if (payload?.user) {
-          set((state) => ({ user: { ...state.user, preferredMode: payload.user.preferredMode } }));
+          syncBusinessId(payload.user.businessId ?? payload.user.business?.id);
+          set((state) => ({
+            user: {
+              ...state.user,
+              ...payload.user,
+              preferredMode: payload.user.preferredMode,
+            },
+            // The server reissues the token because the JWT carries `mode`.
+            // Keeping the old one meant the client and the server disagreed
+            // about the active mode until the original token expired.
+            ...(payload.token ? { token: payload.token } : {}),
+          }));
         }
       },
     }),

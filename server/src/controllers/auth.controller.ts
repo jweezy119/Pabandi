@@ -150,30 +150,36 @@ export const register = async (
         },
       });
 
-    // Generate tokens
+    // A new business owner is, by definition, in business mode. Without this
+    // the client sees preferredMode === undefined and BusinessGuard bounces
+    // them off the CRM they have just signed up for.
+    const codeBusinessId = (updatedUser.business as { id?: string } | null)?.id ?? null;
+    const codeMode: 'business' | 'personal' =
+      updatedUser.role === UserRole.BUSINESS_OWNER ? 'business' : 'personal';
+
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, activeBusinessId: getActiveBusinessId(user), mode: user.preferredMode || 'business' } as JwtPayload,
+      { id: updatedUser.id, email: updatedUser.email, role: updatedUser.role, businessId: codeBusinessId, activeBusinessId: codeBusinessId, mode: codeMode } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
 
-      const refreshToken = jwt.sign(
-        { id: updatedUser.id } as JwtPayload,
-        JWT_REFRESH_SECRET as Secret,
-        { expiresIn: JWT_REFRESH_EXPIRES_IN as any }
-      );
+    const codeRefreshToken = jwt.sign(
+      { id: updatedUser.id } as JwtPayload,
+      JWT_REFRESH_SECRET as Secret,
+      { expiresIn: JWT_REFRESH_EXPIRES_IN as any }
+    );
 
-      logger.info(`User completed registration via code: ${updatedUser.email}`);
+    logger.info(`User completed registration via code: ${updatedUser.email}`);
 
-      return res.status(201).json({
-        success: true,
-        message: 'Registration completed successfully',
-        data: {
-          user: updatedUser,
-          token,
-          refreshToken,
-        },
-      });
+    return res.status(201).json({
+      success: true,
+      message: 'Registration completed successfully',
+      data: {
+        user: { ...updatedUser, preferredMode: codeMode, businessId: codeBusinessId },
+        token,
+        refreshToken: codeRefreshToken,
+      },
+    });
     }
 
     // Standard registration flow (without code)
@@ -342,9 +348,13 @@ export const register = async (
       logger.error('Failed to send verification email:', err);
     });
 
+    const registerBusinessId = (user.business as { id?: string } | null)?.id ?? null;
+    const registerMode: 'business' | 'personal' =
+      resolvedRole === UserRole.BUSINESS_OWNER ? 'business' : 'personal';
+
     // Generate tokens
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, businessId: (user as any).businessId || (user as any).business?.id, activeMode: user.activeMode || 'CUSTOMER' } as JwtPayload,
+      { id: user.id, email: user.email, role: user.role, businessId: registerBusinessId, activeBusinessId: registerBusinessId, mode: registerMode } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
@@ -375,7 +385,11 @@ export const register = async (
       success: true,
       message: 'User registered successfully',
       data: {
-        user,
+        user: {
+          ...user,
+          preferredMode: registerMode,
+          businessId: registerBusinessId,
+        },
         token,
         refreshToken,
       },
@@ -450,9 +464,17 @@ export const login = async (
 
     const activeBusinessId = getActiveBusinessId(user);
 
+    // preferredMode drives BusinessGuard/PersonalGuard on the client. It was
+    // omitted from the login payload, so every fresh session had
+    // `user.preferredMode === undefined`, every BusinessGuard route bounced to
+    // "/", and the user could not reach the CRM they had just signed in to.
+    // The JWT already carried `mode`; the response body simply did not.
+    const preferredMode: 'business' | 'personal' =
+      user.preferredMode === 'personal' ? 'personal' : 'business';
+
     // Generate tokens
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, activeBusinessId, mode: user.preferredMode || 'business' } as JwtPayload,
+      { id: user.id, email: user.email, role: user.role, businessId: activeBusinessId, activeBusinessId, mode: preferredMode } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
@@ -484,6 +506,10 @@ export const login = async (
           freelanceScore: user.freelanceScore,
           appointmentScore: user.appointmentScore,
           business: user.business,
+          preferredMode,
+          // The tenant every ContactOS query is scoped by. The client keeps a
+          // copy in localStorage for the pages that read it directly.
+          businessId: activeBusinessId,
         },
         token,
         refreshToken,
@@ -694,9 +720,13 @@ export const verifyLoginCode = async (
       data: { verificationCode: null, verificationCodeExpires: null, isEmailVerified: true },
     });
 
+    const codeBusinessId = (user.business as { id?: string } | null)?.id ?? null;
+    const codeMode: 'business' | 'personal' =
+      user.role === UserRole.BUSINESS_OWNER ? 'business' : 'personal';
+
     // Generate tokens
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, businessId: (user as any).businessId || (user as any).business?.id, activeMode: user.activeMode || 'CUSTOMER' } as JwtPayload,
+      { id: user.id, email: user.email, role: user.role, businessId: codeBusinessId, activeBusinessId: codeBusinessId, mode: codeMode } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
@@ -704,7 +734,7 @@ export const verifyLoginCode = async (
     const refreshToken = jwt.sign(
       { id: user.id } as JwtPayload,
       JWT_REFRESH_SECRET as Secret,
-      { expiresIn: JWT_REFRESH_EXPIRES_IN as any }
+      { expiresIn: JWT_EXPIRES_IN as any }
     );
 
     logger.info(`User logged in via email code: ${user.email}`);
@@ -728,6 +758,8 @@ export const verifyLoginCode = async (
           freelanceScore: user.freelanceScore,
           appointmentScore: user.appointmentScore,
           business: user.business,
+          preferredMode: codeMode,
+          businessId: codeBusinessId,
         },
         token,
         refreshToken,
@@ -1176,13 +1208,19 @@ export const toggleUserMode = async (req: AuthRequest, res: Response, next: Next
       },
     });
 
+    const businessId = (user.business as { id?: string } | null)?.id ?? null;
+
+    // A mode switch must reissue the token: the JWT carries `mode`, and any
+    // server-side authorization keyed on it would otherwise keep seeing the
+    // previous mode until the original token expired. The client stores this
+    // token, so the guards and the server agree immediately.
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, businessId: (user as any).businessId || (user as any).business?.id, mode: user.preferredMode } as JwtPayload,
+      { id: user.id, email: user.email, role: user.role, businessId, activeBusinessId: businessId, mode: user.preferredMode } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
 
-    res.json({ success: true, data: { user, token } });
+    res.json({ success: true, data: { user: { ...user, businessId }, token } });
   } catch (error) {
     next(error);
   }

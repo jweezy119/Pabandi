@@ -35,6 +35,9 @@ import BusinessPage from './pages/BusinessPage';
 // import SitaraApp from './sitara/SitaraApp';
 import { useAuthStore } from './store/authStore';
 import Layout from './components/Layout';
+import NotFoundPage from './pages/NotFoundPage';
+import LedgerInvoiceNewPage from './pages/ledger/LedgerInvoiceNewPage';
+import LedgerExpenseNewPage from './pages/ledger/LedgerExpenseNewPage';
 import HomePage from './pages/HomePage';
 import LandingPage from './pages/LandingPage';
 import './pages/LandingPage.css';
@@ -377,6 +380,10 @@ function AnimatedAppRoutes() {
           {/* CapitalOS - Finance & Accounting */}
           <Route path="capital" element={<CapitalOSPage />} />
           <Route path="capital/invoices" element={<LedgerInvoicesPage />} />
+          {/* The two create CTAs on the finance pages pointed here; without
+              these routes the primary action on each page blanked the app. */}
+          <Route path="capital/invoices/new" element={<LedgerInvoiceNewPage />} />
+          <Route path="capital/expenses/new" element={<LedgerExpenseNewPage />} />
           <Route path="capital/expenses" element={<LedgerExpensesPage />} />
           <Route path="capital/accounts" element={<LedgerAccountsPage />} />
           <Route path="capital/reports" element={<LedgerReportsPage />} />
@@ -598,6 +605,12 @@ function AnimatedAppRoutes() {
             <Route path="me/values" element={<PersonalGuard><ValuesPreferencesPage /></PersonalGuard>} />
             <Route path="me/agent" element={<PersonalGuard><AgentDashboardPage /></PersonalGuard>} />
           </Route>
+
+        {/* Catch-all. Must stay last: React Router matches in declaration order,
+            so anything above it keeps priority. Without this, an unmatched path
+            renders a blank page — and a blank page has no visible way back, so
+            a bad link strands the user on browser Back. */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </AnimatePresence>
   );

@@ -93,9 +93,9 @@ export function ContactJobsPage({ businessId }: { businessId: string }) {
       </div>
 
       {view === 'List' ? (
-        <JobList jobs={jobs} onJobClick={(id) => navigate(`/app/crm/jobs/${id}`)} />
+        <JobList jobs={jobs} onJobClick={(id) => navigate(`/contact/jobs/${id}`)} />
       ) : (
-        <JobCalendar jobs={jobs} onJobClick={(id) => navigate(`/app/crm/jobs/${id}`)} />
+        <JobCalendar jobs={jobs} onJobClick={(id) => navigate(`/contact/jobs/${id}`)} />
       )}
 
       <JobFormModal 

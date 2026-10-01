@@ -17,8 +17,6 @@ try { dotenv.config({ path: '.env.contracts' }); } catch (err) { logger.warn('.e
 
 const app = express();
 
-app.use(cors({ origin: true, credentials: true }));
-
 const httpServer = createServer(app);
 
 // DISABLED: Firebase Admin (spawns background processes)
@@ -133,8 +131,28 @@ const allowedOrigins = isProductionEnv
   ? productionOrigins.filter((v, i, a) => v && a.indexOf(v) === i)
   : corsOrigins.filter((v, i, a) => v && a.indexOf(v) === i);
 
+/**
+ * CORS is registered ONCE, here.
+ *
+ * It used to be registered twice: `cors({ origin: true, credentials: true })`
+ * near the top, then the allowlist below. The first registration reflects the
+ * caller's Origin back verbatim and, because Express does not re-run middleware
+ * once a response is effectively configured, the allowlist never took effect.
+ * The result was "allow any origin" combined with `credentials: true` — which
+ * lets any site on the internet make authenticated cross-origin calls to the
+ * API using a visitor's session.
+ *
+ * Requests with no Origin header (server-to-server, mobile, curl) are allowed
+ * through: CORS is a browser policy, and those callers are not subject to it.
+ * They are still subject to authentication.
+ */
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    logger.warn(`[CORS] rejected origin: ${origin}`);
+    return callback(null, false);
+  },
   credentials: true,
 }));
 

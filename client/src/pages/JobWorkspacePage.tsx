@@ -83,8 +83,14 @@ const JobWorkspacePage: React.FC = () => {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         
+        {/* There is no workspace list route, so the previous '/dashboard/jobs'
+            was a dead end. 'Back' now uses history, and the fallback goes to
+            the jobs list that does exist. */}
         <button 
-          onClick={() => navigate('/dashboard/jobs')}
+          onClick={() => {
+            if (window.history.length > 1) navigate(-1);
+            else navigate('/jobs');
+          }}
           className="flex items-center gap-2 text-[var(--soft-stone)] hover:text-[var(--warm-ink)] transition-colors mb-8 text-sm"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Workspace List

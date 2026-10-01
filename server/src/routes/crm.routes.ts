@@ -1,6 +1,9 @@
 import { Router, Response } from 'express';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/database';
 import { authenticate } from '../middleware/auth.middleware';
+import { CustomError } from '../middleware/errorHandler';
+import { updateInvoice, sendInvoice } from '../services/invoice.service';
 import {
   enrollBusinessHandler,
   addEmployeeHandler,
@@ -54,12 +57,39 @@ const router = Router();
 router.use(authenticate);
 
 // Helper to extract businessId from request (query or body)
+//
+// WHY THE FALLBACK CHAIN EXISTS
+// Clients resolve the tenant two different ways — the auth store and
+// localStorage — and some call sites append `?businessId=` while others do not.
+// Before this chain, any call that omitted the param threw a bare Error, which
+// the route-level catch turned into a 500. So "forgot a query param" surfaced
+// to the user as a server fault. The token is the authoritative source; an
+// explicit param is still honoured so an admin tool can pass a tenant it
+// legitimately owns, and the mismatch is logged rather than silently ignored.
 function getBusinessId(req: AuthRequest): string {
-  const businessId = req.body?.businessId || req.query?.businessId;
-  if (!businessId) {
-    throw new Error('businessId is required');
+  const fromRequest = (req.body?.businessId || req.query?.businessId) as string | undefined;
+  const fromToken = (req.user?.businessId || req.user?.activeBusinessId) as string | undefined;
+
+  if (fromRequest && fromToken && fromRequest !== fromToken) {
+    console.warn(
+      `[CrmRoutes] businessId mismatch for user ${req.user?.id}: request=${fromRequest} token=${fromToken}. Refusing.`,
+    );
   }
-  return businessId as string;
+
+  const businessId = fromRequest || fromToken;
+  if (!businessId) {
+    throw new CustomError('No business is associated with this account', 403);
+  }
+
+  // A request-supplied id that disagrees with the token is refused, not
+  // preferred. Otherwise any authenticated user could pass another tenant's
+  // businessId and read or write their clients, deals, jobs, invoices,
+  // payroll and expenses. The same rule lives in controllers/crm.controller.ts.
+  if (fromRequest && fromToken && fromRequest !== fromToken) {
+    throw new CustomError('Not allowed for this business', 403);
+  }
+
+  return businessId;
 }
 
 // ── Business Enrollment ──────────────────────────────────────────────────────
@@ -73,26 +103,56 @@ router.post('/enroll', enrollBusinessHandler);
 router.post('/employees', addEmployeeHandler);
 
 // PUT /api/v1/crm/employees/:id — Update employee
-router.put('/employees/:id', async (req, res) => {
+//
+// Scoped by businessId. These two routes previously updated and deleted by id
+// alone: any authenticated user could rename or hard-delete an employee in any
+// tenant, and neither request even needed a businessId. `updateMany`/`deleteMany`
+// with the tenant predicate is both the authorisation check and a 404 for
+// rows that belong to someone else.
+router.put('/employees/:id', async (req: AuthRequest, res: Response) => {
   try {
-    const { name, email, phone, role, payRate, payType, isActive } = req.body;
-    const employee = await prisma.crmEmployee.update({
-      where: { id: req.params.id },
-      data: { name, email, phone, role, payRate: payRate ? Number(payRate) : undefined, payType, isActive },
+    const businessId = getBusinessId(req);
+    const { name, email, phone, role, payRate, payType, isActive } = req.body ?? {};
+
+    // `payRate ? Number(payRate) : undefined` silently dropped a legitimate 0,
+    // so setting a rate to zero was impossible. Checked on presence instead.
+    const updated = await prisma.crmEmployee.updateMany({
+      where: { id: req.params.id, businessId },
+      data: {
+        ...(name !== undefined ? { name } : {}),
+        ...(email !== undefined ? { email } : {}),
+        ...(phone !== undefined ? { phone } : {}),
+        ...(role !== undefined ? { role } : {}),
+        ...(payRate !== undefined && payRate !== null && payRate !== ''
+          ? { payRate: Number(payRate) }
+          : {}),
+        ...(payType !== undefined ? { payType } : {}),
+        ...(isActive !== undefined ? { isActive } : {}),
+      },
     });
+
+    if (updated.count === 0) {
+      return res.status(404).json({ success: false, error: 'Employee not found' });
+    }
+
+    const employee = await prisma.crmEmployee.findUnique({ where: { id: req.params.id } });
     res.json({ success: true, data: employee });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(err.statusCode || 500).json({ success: false, error: err.message });
   }
 });
 
 // DELETE /api/v1/crm/employees/:id — Delete employee
-router.delete('/employees/:id', async (req, res) => {
+router.delete('/employees/:id', async (req: AuthRequest, res: Response) => {
   try {
-    await prisma.crmEmployee.delete({ where: { id: req.params.id } });
+    const businessId = getBusinessId(req);
+    const deleted = await prisma.crmEmployee.deleteMany({ where: { id: req.params.id, businessId } });
+    if (deleted.count === 0) {
+      return res.status(404).json({ success: false, error: 'Employee not found' });
+    }
     res.json({ success: true, message: 'Employee deleted' });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(err.statusCode || 500).json({ success: false, error: err.message });
   }
 });
 
@@ -247,10 +307,6 @@ router.post('/invoices', async (req: AuthRequest, res: Response) => {
     const businessId = getBusinessId(req);
     const { clientId, dateDue, lineItems, subtotal, notes, requireEscrow, terms, overrideReason } = req.body;
     if (!clientId || !dateDue) return res.status(400).json({ success: false, error: 'clientId and dateDue are required' });
-    
-    // Auto-generate invoice number
-    const count = await prisma.invoice.count({ where: { businessId } });
-    const number = `INV-${String(count + 1).padStart(4, '0')}`;
 
     // Terms metadata rides along in the notes envelope, the same way
     // requireEscrow and transactionHash already do — Invoice has no columns
@@ -265,19 +321,37 @@ router.post('/invoices', async (req: AuthRequest, res: Response) => {
     } catch { /* notes was plain text, not the JSON envelope */ }
     parsedNotes.metadata.requireEscrow = !!requireEscrow;
 
-    const invoice = await prisma.invoice.create({
-      data: {
-        number,
-        businessId,
-        clientId,
-        dateDue: new Date(dateDue),
-        status: 'draft',
-        lineItems: JSON.stringify(lineItems || []),
-        subtotal: subtotal || 0,
-        notes: JSON.stringify(parsedNotes),
-      },
-      include: { client: true },
-    });
+    // Invoice number. The previous `count() + 1` raced: two concurrent creates
+    // both computed the same number, and Invoice.number is @unique, so the
+    // loser got a P2002 and a 500 after doing all the work. Retry on collision
+    // instead — the count is re-read each attempt, so the window shrinks rather
+    // than being papered over.
+    let invoice: Awaited<ReturnType<typeof prisma.invoice.create>> | null = null;
+    let lastError: unknown = null;
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const count = await prisma.invoice.count({ where: { businessId } });
+      const number = `INV-${String(count + 1 + attempt).padStart(4, '0')}`;
+      try {
+        invoice = await prisma.invoice.create({
+          data: {
+            number,
+            businessId,
+            clientId,
+            dateDue: new Date(dateDue),
+            status: 'draft',
+            lineItems: JSON.stringify(lineItems || []),
+            subtotal: subtotal || 0,
+            notes: JSON.stringify(parsedNotes),
+          },
+          include: { client: true },
+        });
+        break;
+      } catch (err) {
+        lastError = err;
+        if (!(err instanceof Prisma.PrismaClientKnownRequestError) || err.code !== 'P2002') throw err;
+      }
+    }
+    if (!invoice) throw lastError;
 
     // Audit the terms decision when the caller sent one. An override never
     // blocks creation — the business has already committed to billing this
@@ -309,6 +383,38 @@ router.post('/invoices', async (req: AuthRequest, res: Response) => {
     res.status(201).json({ success: true, data: invoice });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * PATCH /api/v1/crm/invoices/:id — edit a draft invoice.
+ *
+ * The invoice detail page has always called this. Only the /status variant
+ * existed, so "Save Changes" was a silent 404 while the button looked live.
+ */
+router.patch('/invoices/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const businessId = getBusinessId(req);
+    const updated = await updateInvoice(businessId, req.params.id, req.body);
+    res.json({ success: true, data: updated });
+  } catch (err: any) {
+    res.status(err.statusCode || 500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/v1/crm/invoices/:id/send — send a draft to the client.
+ *
+ * Routes the invoice through the rail router and emails the client. The detail
+ * page's "Send Invoice" button has always called this path.
+ */
+router.post('/invoices/:id/send', async (req: AuthRequest, res: Response) => {
+  try {
+    const businessId = getBusinessId(req);
+    const sent = await sendInvoice(businessId, req.params.id);
+    res.json({ success: true, data: sent });
+  } catch (err: any) {
+    res.status(err.statusCode || 500).json({ success: false, error: err.message });
   }
 });
 
@@ -379,13 +485,23 @@ router.post('/jobs/:id/checkout', async (req: AuthRequest, res: Response) => {
 });
 
 // POST /api/v1/crm/jobs/:id/noshow — Handle no-show (called by cron)
+//
+// Scoped by businessId. This previously called handleNoShow(jobId) with no
+// tenant check and no user check, so any authenticated user could mark any
+// job in any tenant as a no-show — which also moves a client's trust score.
 router.post('/jobs/:id/noshow', async (req: AuthRequest, res: Response) => {
   try {
-    const { id: jobId } = req.params;
-    await crmService.handleNoShow(jobId);
+    const businessId = getBusinessId(req);
+    const job = await prisma.crmJob.findFirst({
+      where: { id: req.params.id, businessId },
+      select: { id: true },
+    });
+    if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
+
+    await crmService.handleNoShow(job.id);
     res.json({ success: true, message: 'No-show processed' });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(err.statusCode || 500).json({ success: false, error: err.message });
   }
 });
 
@@ -423,9 +539,19 @@ router.get('/clients/:id/invoices', async (req: AuthRequest, res: Response) => {
 router.get('/dashboard', getDashboardStatsHandler);
 
 // GET /api/v1/crm/dashboard/:businessId/calendar — Get calendar data for dashboard
-router.get('/dashboard/:businessId/calendar', authenticate, async (req: any, res: Response) => {
+//
+// The tenant here comes from the path, not the query string, so the router-wide
+// `authenticate` was never enough on its own: the path was never compared with
+// the token. It is now, so this cannot be used to read another tenant's job
+// schedule and customer names.
+router.get('/dashboard/:businessId/calendar', async (req: AuthRequest, res: Response) => {
   try {
-    const { businessId } = req.params;
+    const requested = String(req.params.businessId);
+    const tokenBusinessId = req.user?.businessId ?? req.user?.activeBusinessId;
+    if (tokenBusinessId && requested !== tokenBusinessId) {
+      return res.status(403).json({ success: false, error: 'Not allowed for this business' });
+    }
+    const businessId = requested;
     const { range = 'week' } = req.query;
 
     const today = new Date();

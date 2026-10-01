@@ -3,12 +3,24 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 
-const ALL_MODULES = [
-  { id: 'contact', label: 'ContactOS', path: '/contact', icon: 'contacts', color: 'var(--clay)', modes: ['BUSINESS', 'CUSTOMER'] },
-  { id: 'booking', label: 'BookingOS', path: '/booking', icon: 'book_online', color: 'var(--sage)', modes: ['BUSINESS', 'CUSTOMER'] },
-  { id: 'property', label: 'PropertyOS', path: '/property', icon: 'real_estate_agent', color: 'var(--sky-wash)', modes: ['BUSINESS', 'CUSTOMER'] },
-  { id: 'freight', label: 'FreightOS', path: '/freight', icon: 'local_shipping', color: 'var(--muted-ochre)', modes: ['BUSINESS', 'CUSTOMER'] },
-  { id: 'capital', label: 'CapitalOS', path: '/capital', icon: 'account_balance', color: 'var(--dusty-rose)', modes: ['BUSINESS', 'CUSTOMER'] },
+/**
+ * Which account mode each module belongs to.
+ *
+ * These were all `['BUSINESS', 'CUSTOMER']`, but the store's mode values are
+ * `'business' | 'personal'` — there is no 'CUSTOMER'. So the filter compared
+ * against a value that could never appear, every module passed, and the list
+ * was the whole catalogue in both modes. Business modules were therefore
+ * reachable from a personal account, which is the opposite of what the guard
+ * intends.
+ */
+type AccountMode = 'business' | 'personal';
+
+const ALL_MODULES: Array<{ id: string; label: string; path: string; icon: string; color: string; modes: AccountMode[] }> = [
+  { id: 'contact', label: 'ContactOS', path: '/contact', icon: 'contacts', color: 'var(--clay)', modes: ['business'] },
+  { id: 'capital', label: 'CapitalOS', path: '/capital', icon: 'account_balance', color: 'var(--dusty-rose)', modes: ['business'] },
+  { id: 'property', label: 'PropertyOS', path: '/property', icon: 'real_estate_agent', color: 'var(--sky-wash)', modes: ['business'] },
+  { id: 'freight', label: 'FreightOS', path: '/freight', icon: 'local_shipping', color: 'var(--muted-ochre)', modes: ['business'] },
+  { id: 'booking', label: 'BookingOS', path: '/booking', icon: 'book_online', color: 'var(--sage)', modes: ['business', 'personal'] },
 ];
 
 export function ModuleSwitcher() {
@@ -17,9 +29,11 @@ export function ModuleSwitcher() {
   const location = useLocation();
   const { user } = useAuthStore();
 
-  const activeMode = user?.preferredMode || 'business';
-  const modules = ALL_MODULES.filter(m => m.modes.includes(activeMode.toUpperCase()));
-  const currentModule = modules.find(m => location.pathname.startsWith(m.path)) || modules[0];
+  const activeMode: AccountMode = user?.preferredMode === 'personal' ? 'personal' : 'business';
+  const modules = ALL_MODULES.filter((m) => m.modes.includes(activeMode));
+  // A personal account has no business modules, so fall back to the full list
+  // rather than indexing an empty array and crashing the switcher.
+  const currentModule = modules.find((m) => location.pathname.startsWith(m.path)) ?? ALL_MODULES[0];
 
   return (
     <div className="relative">

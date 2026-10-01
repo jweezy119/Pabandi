@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
+import { getAuthToken } from '../../utils/authToken';
+
+const LEDGER_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/capital`;
 
 const navItems = [
   { path: '/capital', label: 'Dashboard', icon: 'dashboard', end: true },
@@ -10,27 +13,84 @@ const navItems = [
   { path: '/capital/reports', label: 'Reports', icon: 'bar_chart' },
 ];
 
+type TrendBucket = { label: string; income: number; expenses: number };
+
+type CashFlow = {
+  period: string;
+  totalIncome: number;
+  totalExpenses: number;
+  netCashFlow: number;
+  incomeCount: number;
+  expenseCount: number;
+  pendingInvoices: number;
+  overdueInvoices: number;
+  trend: TrendBucket[];
+};
+
+/**
+ * WHY THIS PAGE USED TO BE FAKE
+ * The dashboard set its own state in a useEffect: inflow 125000, outflow 87000,
+ * net 38000, 24 invoices, 8 pending, 2 overdue — invented on every load, with
+ * no fetch. The chart drew a literal [65, 45, 78, …] array, and the four
+ * "Recent Transactions" rows were hardcoded objects.
+ *
+ * So a US business opening their finance tab saw numbers that looked like
+ * accounts and were fiction, with no empty state and nothing to indicate they
+ * were not real. That is worse than an empty page: an empty page is honest.
+ *
+ * It now reads GET /capital/cashflow, which is computed from the same ledger
+ * invoices and expenses the other pages list. Every figure on screen and every
+ * number in the chart come from that one response, so they cannot disagree with
+ * each other the way the old hardcoded set did.
+ */
 export default function CapitalOSPage() {
   const [period, setPeriod] = useState<'month' | 'year'>('month');
-  const [cashFlow, setCashFlow] = useState<any>(null);
+  const [cashFlow, setCashFlow] = useState<CashFlow | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setCashFlow({
-      inflow: 125000,
-      outflow: 87000,
-      net: 38000,
-      invoices: 24,
-      pendingInvoices: 8,
-      overdue: 2,
-    });
-    setLoading(false);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${LEDGER_API}/cashflow?period=${period}`, {
+        headers: { Authorization: `Bearer ${getAuthToken() || ''}` },
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || `Could not load (${res.status})`);
+      }
+      const body = await res.json();
+      setCashFlow(body.data as CashFlow);
+    } catch (err) {
+      setCashFlow(null);
+      setError(err instanceof Error ? err.message : 'Could not load cash flow');
+    } finally {
+      setLoading(false);
+    }
   }, [period]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const money = (n: number) =>
+    `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  // Scale the bars against the largest absolute value in the window, so a quiet
+  // month is visibly small rather than being drawn as if it were large.
+  const peak = Math.max(
+    1,
+    ...(cashFlow?.trend ?? []).flatMap((b) => [b.income, b.expenses]),
+  );
+
+  const hasActivity =
+    (cashFlow?.totalIncome ?? 0) > 0 ||
+    (cashFlow?.totalExpenses ?? 0) > 0 ||
+    (cashFlow?.pendingInvoices ?? 0) > 0;
 
   return (
     <DashboardLayout osName="CapitalOS" osIcon="L" osColor="sky-wash" navItems={navItems}>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Finance Dashboard</h1>
             <p style={{ color: 'var(--soft-stone)' }}>Cash flow, invoices, and financial reporting</p>
@@ -43,27 +103,48 @@ export default function CapitalOSPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="p-5 rounded-[var(--radius-card)] transition hover:-translate-y-0.5"
-            style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
-            <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Total Inflow</p>
-            <p className="text-2xl font-bold" style={{ color: 'var(--sage)' }}>${cashFlow?.inflow?.toLocaleString() || 0}</p>
+        {error && (
+          <div className="clay-alert clay-alert--critical">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm" style={{ color: 'var(--warm-ink)' }}>{error}</p>
+              <button
+                onClick={load}
+                className="text-xs font-medium underline"
+                style={{ color: 'var(--terracotta)' }}
+              >
+                Retry
+              </button>
+            </div>
           </div>
-          <div className="p-5 rounded-[var(--radius-card)] transition hover:-translate-y-0.5"
-            style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
-            <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Total Outflow</p>
-            <p className="text-2xl font-bold" style={{ color: 'var(--dusty-rose)' }}>${cashFlow?.outflow?.toLocaleString() || 0}</p>
-          </div>
-          <div className="p-5 rounded-[var(--radius-card)] transition hover:-translate-y-0.5"
-            style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
-            <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Net Cash Flow</p>
-            <p className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>${cashFlow?.net?.toLocaleString() || 0}</p>
-          </div>
-          <div className="p-5 rounded-[var(--radius-card)] transition hover:-translate-y-0.5"
-            style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
-            <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Pending Invoices</p>
-            <p className="text-2xl font-bold" style={{ color: 'var(--muted-ochre)' }}>{cashFlow?.pendingInvoices || 0}</p>
-          </div>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: 'Cash In', value: cashFlow?.totalIncome, icon: 'arrow_downward', color: 'var(--sage)' },
+            { label: 'Cash Out', value: cashFlow?.totalExpenses, icon: 'arrow_upward', color: 'var(--dusty-rose)' },
+            { label: 'Net', value: cashFlow?.netCashFlow, icon: 'account_balance', color: 'var(--clay)' },
+            { label: 'Pending Invoices', value: cashFlow?.pendingInvoices, icon: 'schedule', color: 'var(--muted-ochre)', isCount: true },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="p-5 rounded-[var(--radius-card)]"
+              style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}
+            >
+              <div className="flex items-start justify-between">
+                <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>{stat.label}</p>
+                <span className="material-symbols-outlined text-[18px]" style={{ color: stat.color }} aria-hidden="true">
+                  {stat.icon}
+                </span>
+              </div>
+              <p className="text-2xl font-bold mt-1" style={{ color: 'var(--warm-ink)' }}>
+                {loading
+                  ? '—'
+                  : stat.isCount
+                    ? (stat.value ?? 0).toString()
+                    : money(stat.value ?? 0)}
+              </p>
+            </div>
+          ))}
         </div>
 
         <div className="flex gap-2">
@@ -75,61 +156,135 @@ export default function CapitalOSPage() {
                 color: period === p ? 'white' : 'var(--warm-ink)',
                 boxShadow: period === p ? 'var(--shadow-soft)' : 'none',
               }}>
-              {p.charAt(0).toUpperCase() + p.slice(1)}
+              Last {p === 'month' ? '30 days' : '12 months'}
             </button>
           ))}
         </div>
 
-        <div className="rounded-[var(--radius-card)] p-6"
-          style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
-          <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--warm-ink)' }}>Cash Flow Trend</h2>
-          <div className="flex items-end gap-2 h-40">
-            {[65, 45, 78, 52, 88, 95, 72, 60, 85, 92, 68, 75].map((h, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center">
-                <div className="w-full rounded-t transition-all"
-                  style={{ height: `${h}%`, background: 'var(--sky-wash)' }} />
-                <p className="text-[10px] mt-1" style={{ color: 'var(--soft-stone)' }}>{['J','F','M','A','M','J','J','A','S','O','N','D'][i]}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+        <div className="rounded-[var(--radius-card)] p-6" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
+          <h2 className="text-lg font-bold mb-1" style={{ color: 'var(--warm-ink)' }}>Cash Flow</h2>
+          <p className="text-xs mb-4" style={{ color: 'var(--soft-stone)' }}>
+            Paid invoices against recorded expenses, over the selected period.
+          </p>
 
-        <div className="rounded-[var(--radius-card)] overflow-hidden"
-          style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
-          <div className="p-5" style={{ borderBottom: '1px solid rgba(191,179,163,0.3)' }}>
-            <h2 className="text-lg font-bold" style={{ color: 'var(--warm-ink)' }}>Recent Transactions</h2>
-          </div>
-          {loading ? (
-            <div className="p-8 text-center" style={{ color: 'var(--soft-stone)' }}>Loading...</div>
-          ) : (
-            <div>
-              {[
-                { id: '1', desc: 'Payment from Acme Corp', amount: 15000, type: 'income', date: '2026-09-18' },
-                { id: '2', desc: 'Office Rent', amount: -3500, type: 'expense', date: '2026-09-15' },
-                { id: '3', desc: 'Software Subscription', amount: -299, type: 'expense', date: '2026-09-14' },
-                { id: '4', desc: 'Consulting Revenue', amount: 8500, type: 'income', date: '2026-09-12' },
-              ].map((tx, idx, arr) => (
-                <div key={tx.id} className="p-5 flex items-center justify-between"
-                  style={{ borderBottom: idx < arr.length - 1 ? '1px solid rgba(191,179,163,0.2)' : 'none' }}>
-                  <div>
-                    <p className="font-medium" style={{ color: 'var(--warm-ink)' }}>{tx.desc}</p>
-                    <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>{tx.date}</p>
+          {!loading && !cashFlow?.trend?.length && (
+            <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>No data for this period yet.</p>
+          )}
+
+          {cashFlow?.trend && cashFlow.trend.length > 0 && (
+            <>
+              <div className="flex items-end gap-1 sm:gap-2 h-40">
+                {cashFlow.trend.map((bucket) => (
+                  <div key={bucket.label} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+                    <div className="w-full flex items-end justify-center gap-0.5" style={{ height: '150px' }}>
+                      <div
+                        className="w-1/2 rounded-t"
+                        title={`In ${bucket.label}: ${money(bucket.income)}`}
+                        style={{
+                          height: `${Math.max(bucket.income > 0 ? 2 : 0, (bucket.income / peak) * 100)}%`,
+                          background: 'var(--sage)',
+                        }}
+                      />
+                      <div
+                        className="w-1/2 rounded-t"
+                        title={`Out ${bucket.label}: ${money(bucket.expenses)}`}
+                        style={{
+                          height: `${Math.max(bucket.expenses > 0 ? 2 : 0, (bucket.expenses / peak) * 100)}%`,
+                          background: 'var(--dusty-rose)',
+                        }}
+                      />
+                    </div>
+                    <p className="text-[10px] truncate w-full text-center" style={{ color: 'var(--soft-stone)' }}>
+                      {bucket.label}
+                    </p>
                   </div>
-                  <span className="font-medium" style={{ color: tx.amount > 0 ? 'var(--sage)' : 'var(--dusty-rose)' }}>
-                    {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString()}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+              <div className="flex gap-4 mt-3 text-xs" style={{ color: 'var(--soft-stone)' }}>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm" style={{ background: 'var(--sage)' }} /> In
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm" style={{ background: 'var(--dusty-rose)' }} /> Out
+                </span>
+              </div>
+            </>
           )}
         </div>
 
-        <footer className="pt-8 text-center" style={{ borderTop: '1px solid rgba(191,179,163,0.3)' }}>
-          <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>
-            Powered by <Link to="/" className="hover:opacity-80 transition" style={{ color: 'var(--clay)' }}>Pabandi</Link> — The Global Trust Layer
-          </p>
-          <p className="text-xs mt-2" style={{ color: 'var(--soft-stone)' }}>© 2026 Pabandi. All rights reserved.</p>
-        </footer>
+        <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
+          <div className="p-5 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(191,179,163,0.3)' }}>
+            <h2 className="text-lg font-bold" style={{ color: 'var(--warm-ink)' }}>Recent Activity</h2>
+            <Link to="/capital/invoices" className="text-sm" style={{ color: 'var(--clay)' }}>
+              View all
+            </Link>
+          </div>
+
+          {!loading && !hasActivity && (
+            <div className="p-10 text-center">
+              <span
+                className="material-symbols-outlined text-4xl mb-2 block"
+                style={{ color: 'var(--soft-stone)', opacity: 0.4 }}
+                aria-hidden="true"
+              >
+                receipt_long
+              </span>
+              <p className="font-medium" style={{ color: 'var(--warm-ink)' }}>Nothing recorded yet</p>
+              <p className="text-sm mt-1" style={{ color: 'var(--soft-stone)' }}>
+                Add your first invoice or expense and your cash flow will appear here.
+              </p>
+            </div>
+          )}
+
+          {loading && (
+            <div className="p-10 text-center text-sm" style={{ color: 'var(--soft-stone)' }}>Loading…</div>
+          )}
+
+          {cashFlow && hasActivity && (
+            <div className="divide-y" style={{ borderColor: 'rgba(191,179,163,0.2)' }}>
+              <Link
+                to="/capital/invoices"
+                className="flex items-center justify-between p-4 hover:bg-[var(--warm-sand)]/20 transition"
+              >
+                <div>
+                  <p className="font-medium text-sm" style={{ color: 'var(--warm-ink)' }}>Paid invoices</p>
+                  <p className="text-xs" style={{ color: 'var(--soft-stone)' }}>
+                    {cashFlow.incomeCount} received this period
+                  </p>
+                </div>
+                <p className="font-medium" style={{ color: 'var(--sage)' }}>{money(cashFlow.totalIncome)}</p>
+              </Link>
+
+              <Link
+                to="/capital/expenses"
+                className="flex items-center justify-between p-4 hover:bg-[var(--warm-sand)]/20 transition"
+              >
+                <div>
+                  <p className="font-medium text-sm" style={{ color: 'var(--warm-ink)' }}>Expenses</p>
+                  <p className="text-xs" style={{ color: 'var(--soft-stone)' }}>
+                    {cashFlow.expenseCount} recorded this period
+                  </p>
+                </div>
+                <p className="font-medium" style={{ color: 'var(--terracotta)' }}>{money(cashFlow.totalExpenses)}</p>
+              </Link>
+
+              {cashFlow.overdueInvoices > 0 && (
+                <Link
+                  to="/capital/invoices"
+                  className="flex items-center justify-between p-4 hover:bg-[var(--warm-sand)]/20 transition"
+                >
+                  <div>
+                    <p className="font-medium text-sm" style={{ color: 'var(--terracotta)' }}>Overdue invoices</p>
+                    <p className="text-xs" style={{ color: 'var(--soft-stone)' }}>Past their due date</p>
+                  </div>
+                  <p className="font-medium" style={{ color: 'var(--terracotta)' }}>
+                    {cashFlow.overdueInvoices}
+                  </p>
+                </Link>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </DashboardLayout>
   );

@@ -4,12 +4,20 @@ import { Button, ClaySkeletonCard } from '../../components/primitives';
 import { InvoiceLineItems } from './components/InvoiceLineItems';
 import { TrustPanel } from '../../components/TrustPanel';
 import { getAuthToken } from '../../utils/authToken';
+import { withBusinessId } from '../../utils/businessContext';
 
 const CRM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
 const APP_URL = window.location.origin;
 
+/**
+ * Every CRM call carries the tenant. The server can fall back to the token, but
+ * the pages that read businessId from the store or localStorage do not all
+ * agree on whether to append it, and a missing param used to surface as a 500.
+ */
 async function api(path: string, options: RequestInit = {}) {
-  const res = await fetch(`${CRM_API}${path}`, {
+  const separator = path.includes('?') ? '&' : '?';
+  const url = `${CRM_API}${path}${separator}${withBusinessId().replace(/^\?/, '')}`;
+  const res = await fetch(url, {
     ...options,
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() || ''}`, ...(options.headers || {}) },
   });

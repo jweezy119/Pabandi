@@ -37,13 +37,36 @@ import {
   markInvoicePaid,
 } from '../services/crm.service';
 
-// Helper to extract businessId from request (query, body, or JWT)
+// Helper to extract businessId from request.
+//
+// The request-supplied value is checked first, so it wins. That is a
+// cross-tenant hole: any authenticated user could pass another business's id
+// and read or write their clients, deals, invoices and payroll.
+//
+// The token is therefore authoritative. An explicit request businessId is
+// honoured only when it matches the token, so admin tooling and imports keep
+// working while a mismatch is refused rather than silently allowed. The same
+// rule is applied in routes/crm.routes.ts, which has its own copy of this
+// helper.
 function getBusinessId(req: AuthRequest): string {
-  const businessId = req.body?.businessId || req.query?.businessId || req.user?.businessId;
-  if (!businessId) {
-    throw new CustomError('businessId is required', 400);
+  const requested = (req.body?.businessId || req.query?.businessId) as string | undefined;
+  const tokenBusinessId = req.user?.businessId ?? req.user?.activeBusinessId;
+
+  if (requested && tokenBusinessId && requested !== tokenBusinessId) {
+    console.warn(
+      `[CrmController] businessId mismatch for user ${req.user?.id}: request=${requested} token=${tokenBusinessId}. Refusing.`,
+    );
+    throw new CustomError('Not allowed for this business', 403);
   }
-  return businessId as string;
+
+  const businessId = requested || tokenBusinessId;
+  if (!businessId) {
+    // 403 rather than 400: the request was well-formed, the account just has
+    // no business attached. "businessId is required" was also a 400, which
+    // implied the caller could fix it by sending a different id.
+    throw new CustomError('No business is associated with this account', 403);
+  }
+  return businessId;
 }
 
 // ─── Enroll Business ─────────────────────────────────────────────────────────

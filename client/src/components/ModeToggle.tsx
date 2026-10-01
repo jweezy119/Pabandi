@@ -11,23 +11,32 @@ export function ModeToggle() {
   const currentMode = user?.preferredMode || 'business';
   const isBusiness = currentMode === 'business';
 
+  const [failed, setFailed] = useState(false);
+
   const handleToggle = async () => {
     setIsLoading(true);
+    setFailed(false);
     try {
       const newMode = isBusiness ? 'personal' : 'business';
       await toggleMode(newMode);
+      // Only navigate once the switch is confirmed. Navigating first would
+      // land the user on a route whose guard reads the OLD mode and bounces
+      // them straight back — the exact loop this switch must not create.
       navigate(newMode === 'business' ? '/contact' : '/me');
     } catch (err) {
       console.error('Failed to toggle mode:', err);
+      setFailed(true);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
+    <>
     <motion.button
       onClick={handleToggle}
       disabled={isLoading}
+      title={isBusiness ? 'Switch to your personal account' : 'Switch to your business account'}
       className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-all"
       style={{
         background: isBusiness ? 'var(--clay)' : 'var(--sage)',
@@ -40,5 +49,11 @@ export function ModeToggle() {
       <span className="opacity-80">→</span>
       <span>{isBusiness ? 'Personal' : 'Business'}</span>
     </motion.button>
+    {failed && (
+      <span role="alert" className="text-xs" style={{ color: 'var(--terracotta)' }}>
+        Could not switch account. Try again.
+      </span>
+    )}
+    </>
   );
 }

@@ -22,7 +22,19 @@ export interface AuthRequest extends Request {
     firstName?: string;
     lastName?: string;
     phone?: string;
+    /**
+     * The tenant this request may act on. Signed into the JWT at login and
+     * re-signed on every mode switch, so the client and the server agree on
+     * which business a session belongs to.
+     */
     businessId?: string;
+    /**
+     * Legacy alias for the same value. Older tokens were issued before the
+     * claim was renamed, so both are accepted when resolving a tenant.
+     */
+    activeBusinessId?: string;
+    /** The account mode the token was issued for. */
+    mode?: string;
   };
 }
 
@@ -53,13 +65,19 @@ export const authenticate = (
       lastName?: string;
       phone?: string;
       businessId?: string;
+      activeBusinessId?: string;
       activeMode?: string;
+      mode?: string;
     };
 
-    req.user = decoded;
+    // Older tokens carried the tenant as `activeBusinessId`; current ones carry
+    // it as `businessId`. Normalise so every downstream reader sees one field
+    // regardless of which token version presented.
+    const businessId = decoded.businessId ?? decoded.activeBusinessId;
+    req.user = { ...decoded, businessId };
 
-    if (decoded.businessId) {
-      tenantContext.run({ businessId: decoded.businessId }, () => next());
+    if (businessId) {
+      tenantContext.run({ businessId }, () => next());
     } else {
       next();
     }

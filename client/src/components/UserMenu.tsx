@@ -8,18 +8,31 @@ export function UserMenu() {
   const { user, logout, toggleMode } = useAuthStore();
   const navigate = useNavigate();
 
-  const initials = user?.name ? user.name.substring(0, 2).toUpperCase() : 'U';
+  const displayName = user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
+  const initials = displayName
+    ? displayName.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
+    : (user?.email?.[0] ?? 'U').toUpperCase();
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  // Mirrors ModeToggle's condition. These were written independently and
+  // disagreed on the undefined case, so the two entry points could show
+  // opposite labels for the same session.
   const handleToggleMode = async () => {
-    const newMode = user?.preferredMode === 'business' ? 'personal' : 'business';
-    await toggleMode(newMode);
+    const newMode = (user?.preferredMode ?? 'business') === 'business' ? 'personal' : 'business';
     setIsOpen(false);
-    navigate(newMode === 'business' ? '/contact' : '/me');
+    try {
+      await toggleMode(newMode);
+      navigate(newMode === 'business' ? '/contact' : '/me');
+    } catch (err) {
+      console.error('Failed to switch account mode:', err);
+      // Stay where we are. Navigating on a failed switch would drop the user
+      // into a route their guard is about to bounce them out of.
+      alert('Could not switch account mode. Please try again.');
+    }
   };
 
   const menuItems = [
