@@ -46,6 +46,17 @@ export interface IncomingPayment {
   clientId?: string;
   businessId?: string;
   currency?: string;
+  /**
+   * The invoice this payment was created for, when the rail told us.
+   *
+   * Square writes the invoice id into the checkout's payment note and returns
+   * it on the webhook, so the correct invoice is known outright. That skips the
+   * amount scan entirely — and with it the ambiguity that made a real payment
+   * queue for manual review because a second invoice happened to share an
+   * amount. This is the strongest signal available and is preferred over any
+   * amount-based inference.
+   */
+  invoiceId?: string;
 }
 
 export interface MatchCandidate {
@@ -180,7 +191,53 @@ export async function reconcileIncomingPayment(payment: IncomingPayment): Promis
     throw err;
   }
 
-  // ── Step 2: decide which invoice this is. ────────────────────────────────
+  // ── Step 2a: the rail named the invoice outright. Trust it. ──────────────
+  //
+  // Everything below this point is inference. When Square hands us the invoice
+  // id it created the checkout for, there is nothing to infer: the amount check
+  // becomes a sanity assertion rather than a search, and the ambiguous
+  // "two invoices for $150" case cannot occur.
+  if (payment.invoiceId) {
+    const named = await prisma.invoice.findUnique({
+      where: { id: payment.invoiceId },
+      select: { id: true, number: true, businessId: true, status: true, subtotal: true },
+    });
+
+    if (named && named.status.toLowerCase() !== 'paid') {
+      const settled = await settleClaimedInvoice(claimId, payment, named.id, named.number, named.businessId, 1);
+      return settled;
+    }
+
+    // The note names an invoice that is already paid, or one that has since
+    // been deleted. Record it as an orphan with the reason rather than falling
+    // back to an amount scan, which could settle the wrong invoice.
+    await prisma.reconciliationMatch.update({
+      where: { id: claimId },
+      data: {
+        status: 'orphan',
+        confidence: named ? 1 : 0,
+        note: named
+          ? `Payment note named invoice ${named.number}, which is already paid.`
+          : `Payment note named invoice ${payment.invoiceId}, which no longer exists.`,
+      },
+    });
+    logger.warn(
+      `[Reconcile] ${payment.rail} paymentRef=${payment.paymentRef} names invoice ${payment.invoiceId}, which is ${named ? `already ${named.status}` : 'missing'}. Recorded as orphan.`,
+    );
+    return {
+      status: 'orphan',
+      duplicate: false,
+      matchId: claimId,
+      invoiceId: null,
+      confidence: named ? 1 : 0,
+      candidates: [],
+      reasoning: named
+        ? `Payment names invoice ${named.number}, which is already paid.`
+        : `Payment names invoice ${payment.invoiceId}, which no longer exists.`,
+    };
+  }
+
+  // ── Step 2b: decide which invoice this is by inference. ──────────────────
   const candidates = await findCandidates(payment);
 
   if (candidates.length === 0) {
@@ -231,7 +288,7 @@ export async function reconcileIncomingPayment(payment: IncomingPayment): Promis
     };
   }
 
-  // ── Step 3: unique match — settle the invoice. ──────────────────────────
+  // ── Step 3: unique inferred match — settle it. ─────────────────────────
   const winner = candidates[0];
 
   const invoice = await prisma.invoice.findUnique({
@@ -252,41 +309,70 @@ export async function reconcileIncomingPayment(payment: IncomingPayment): Promis
       matchId: claimId,
       invoiceId: null,
       confidence: 0,
-      candidates: [],
+      candidates,
       reasoning: `Candidate invoice ${winner.invoiceNumber} no longer exists.`,
     };
   }
 
-  // markInvoicePaid is itself idempotent on trust events (InvoiceTrustEvent has
-  // @@unique([invoiceId, eventType])), so a crash-and-retry here cannot double-emit.
-  await markInvoicePaid(invoice.businessId, invoice.id, payment.paymentRef);
+  return settleClaimedInvoice(
+    claimId,
+    payment,
+    invoice.id,
+    invoice.number,
+    invoice.businessId,
+    winner.confidence,
+    candidates as unknown as Prisma.InputJsonValue,
+  );
+}
 
-  // Link the rail reference so the invoice carries its settlement handle.
+/**
+ * Mark an invoice paid against an already-claimed ReconciliationMatch row.
+ *
+ * Shared by the named-invoice path and the inferred path so settlement has one
+ * implementation and one set of invariants: the trust event is idempotent
+ * (InvoiceTrustEvent is @@unique([invoiceId, eventType])), the row is only
+ * linked once, and the business is notified once.
+ */
+async function settleClaimedInvoice(
+  claimId: string,
+  payment: IncomingPayment,
+  invoiceId: string,
+  invoiceNumber: string,
+  businessId: string,
+  confidence: number,
+  candidates?: Prisma.InputJsonValue,
+): Promise<ReconciliationOutcome> {
+  await markInvoicePaid(businessId, invoiceId, payment.paymentRef);
+
   await prisma.reconciliationMatch.update({
     where: { id: claimId },
     data: {
       status: 'matched',
-      invoiceId: invoice.id,
-      confidence: winner.confidence,
+      invoiceId,
+      confidence,
       matchedAt: new Date(),
-      candidates: candidates as unknown as Prisma.InputJsonValue,
-      note: `Auto-matched to ${invoice.number}.`,
+      ...(candidates ? { candidates } : {}),
+      note: payment.invoiceId
+        ? `Matched by rail-supplied invoice reference (${invoiceNumber}).`
+        : `Auto-matched to ${invoiceNumber}.`,
     },
   });
 
   logger.info(
-    `[Reconcile] Matched ${payment.rail} paymentRef=${payment.paymentRef} → ${invoice.number} (confidence ${winner.confidence}).`,
+    `[Reconcile] Matched ${payment.rail} paymentRef=${payment.paymentRef} → ${invoiceNumber} (confidence ${confidence}${payment.invoiceId ? ', by invoice reference' : ''}).`,
   );
-  await notifyAutoMatch(invoice.businessId, invoice.number, payment);
+  await notifyAutoMatch(businessId, invoiceNumber, payment);
 
   return {
     status: 'matched',
     duplicate: false,
     matchId: claimId,
-    invoiceId: invoice.id,
-    confidence: winner.confidence,
-    candidates,
-    reasoning: `Matched ${payment.rail} payment ${payment.paymentRef} to ${invoice.number}.`,
+    invoiceId,
+    confidence,
+    candidates: [],
+    reasoning: payment.invoiceId
+      ? `Matched ${payment.rail} payment ${payment.paymentRef} to ${invoiceNumber} by reference.`
+      : `Matched ${payment.rail} payment ${payment.paymentRef} to ${invoiceNumber}.`,
   };
 }
 

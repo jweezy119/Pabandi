@@ -83,8 +83,12 @@ export const handleSquareWebhook = async (req: Request, res: Response, next: Nex
               amount: amountMajor,
               paidAt: new Date(),
               clientId: result.clientId ?? undefined,
+              // The invoice this checkout was created for, read from the note
+              // we wrote at checkout time. Exact, where the amount scan is a
+              // guess that can tie with another invoice of the same value.
+              invoiceId: result.invoiceId ?? undefined,
               businessId: payment?.businessId ?? undefined,
-              currency: 'USD',
+              currency: result.currency ?? 'USD',
             });
             result.reconciliation = { status: outcome.status, duplicate: outcome.duplicate, reasoning: outcome.reasoning };
           }

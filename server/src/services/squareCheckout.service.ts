@@ -1,11 +1,22 @@
 import { SquareClient, SquareEnvironment } from 'square';
 import { logger } from '../utils/logger';
+import { squareEnvironment, squareBaseUrl, parseInvoiceNote } from './square-connection.service';
 
 const accessToken = process.env.SQUARE_ACCESS_TOKEN || '';
 
+/**
+ * Environment-aware client.
+ *
+ * This used to be hardcoded to `SquareEnvironment.Production` while
+ * square.routes.ts honoured SQUARE_ENV (defaulting to sandbox). The two
+ * disagreed, so a sandbox token was pointed at production checkout or vice
+ * versa — and a sandbox checkout accepts no real money, so the failure looked
+ * like a silent no-op rather than an error.
+ */
 const squareClient = new SquareClient({
   token: accessToken,
-  environment: SquareEnvironment.Production,
+  environment:
+    squareEnvironment() === 'production' ? SquareEnvironment.Production : SquareEnvironment.Sandbox,
 });
 
 /** Reconciliation annotation the controller attaches to a processed webhook. */
@@ -24,12 +35,19 @@ export type SquareWebhookResult =
       amountCents: number | null;
       currency: string | null;
       clientId: string | null;
+      /**
+       * Set when the payment was created for a Pabandi invoice, read from the
+       * `note` we wrote at checkout time. This is what makes reconciliation an
+       * exact match instead of a guess on amount alone.
+       */
+      invoiceId: string | null;
+      invoiceNumber: string | null;
       reconciliation?: SquareReconciliationNote;
     }
   | { type: 'REFUND_CREATED'; paymentId: string; amount: unknown }
   | { type: 'UNKNOWN'; eventType: string };
 
-const SQUARE_BASE = 'https://connect.squareup.com';
+const SQUARE_BASE = squareBaseUrl();
 const SQUARE_VERSION = '2026-09-16';
 const SQUARE_LOCATION_ID = process.env.SQUARE_LOCATION_ID || '';
 
@@ -176,19 +194,29 @@ export class SquareService {
 
     switch (eventType) {
       case 'payment.completed':
-      case 'payment.updated':
+      case 'payment.updated': {
+        const payment = data?.payment;
+        // Square sends snake_case in webhooks; accept both for safety.
+        const amountMoney = payment?.amount_money ?? payment?.amountMoney;
+        const note = payment?.note ?? null;
+        const ours = parseInvoiceNote(note);
+
         return {
           type: 'PAYMENT_UPDATED',
-          paymentId: data?.payment?.id,
-          status: data?.payment?.status,
+          paymentId: payment?.id,
+          status: payment?.status,
           // Square reports money in minor units; reconciliation compares
           // against Invoice.subtotal, which is stored in major units.
-          amountCents: data?.payment?.amount_money?.amount ?? data?.payment?.amountMoney?.amount ?? null,
-          currency: data?.payment?.amount_money?.currency ?? data?.payment?.amountMoney?.currency ?? null,
-          // Square's customer reference is opaque to us, so this only helps
-          // when the caller set reference_id to a Pabandi client id.
-          clientId: data?.payment?.reference_id ?? data?.payment?.order_id ?? null,
+          amountCents: amountMoney?.amount != null ? Number(amountMoney.amount) : null,
+          currency: amountMoney?.currency ?? null,
+          // Only trust reference_id when we put a Pabandi client id there.
+          // order_id is opaque to us, so it is no longer read as a client id —
+          // doing so handed reconciliation a Square identifier it could not use.
+          clientId: payment?.reference_id ?? null,
+          invoiceId: ours?.invoiceId ?? null,
+          invoiceNumber: ours?.invoiceNumber ?? null,
         };
+      }
       case 'refund.created':
         return {
           type: 'REFUND_CREATED',

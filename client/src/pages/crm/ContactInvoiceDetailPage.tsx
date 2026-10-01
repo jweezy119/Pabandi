@@ -29,6 +29,13 @@ type Metadata = {
   requireEscrow?: boolean;
   transactionHash?: string;
   currency?: string;
+  /**
+   * Where the payment link came from. 'square-static-link' is the one that
+   * matters: Square is not connected for this business, so the link is a
+   * fixed-price page and the amount on it may not match the invoice.
+   */
+  paymentLinkSource?: string;
+  paymentLinkWarning?: string;
 };
 
 type RailRouting = {
@@ -224,6 +231,18 @@ export default function ContactInvoiceDetailPage() {
               <input type="text" readOnly value={paymentLink} className="flex-1 px-3 py-2 bg-gray-50 border rounded text-sm" />
               <Button variant="secondary" onClick={() => navigator.clipboard.writeText(paymentLink)}>Copy</Button>
             </div>
+            {metadata.paymentLinkSource && (
+              <p className="text-xs mt-2" style={{ color: 'var(--soft-stone)' }}>
+                {metadata.paymentLinkSource === 'square-merchant-link' && 'Priced for this invoice, on your own Square account.'}
+                {metadata.paymentLinkSource === 'square-platform-link' && "Priced for this invoice. Processed on Pabandi's Square account — connect your own under Settings → Payment."}
+                {metadata.paymentLinkSource === 'square-static-link' && 'Your registered Square link, at its fixed price.'}
+              </p>
+            )}
+            {metadata.paymentLinkWarning && (
+              <div className="clay-alert clay-alert--warning mt-3">
+                <p className="text-sm" style={{ color: 'var(--warm-ink)' }}>{metadata.paymentLinkWarning}</p>
+              </div>
+            )}
           </div>
         )}
 

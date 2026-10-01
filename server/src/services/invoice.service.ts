@@ -113,6 +113,92 @@ export async function updateInvoice(businessId: string, invoiceId: string, data:
 
 import { paymentRails } from '../payments/rails';
 import { selectRail } from './rail-router.service';
+import {
+  resolveSquareCredentials,
+  createSquarePaymentLink,
+  invoiceNote,
+} from './square-connection.service';
+
+/**
+ * Read the notes envelope, tolerating notes that are plain text.
+ *
+ * Invoice has no column for escrow, currency, transaction hash or link source,
+ * so they all ride along inside `notes` as JSON. Rows written before that
+ * convention — and rows edited by hand — are plain strings, and JSON.parse
+ * throws on those. Every reader has to cope with both.
+ */
+export function readNotesEnvelope(notes: string | null): {
+  text: string;
+  metadata: Record<string, unknown>;
+} {
+  if (!notes) return { text: '', metadata: {} };
+  try {
+    const parsed = JSON.parse(notes) as { text?: unknown; metadata?: unknown };
+    if (parsed && typeof parsed === 'object' && parsed.metadata && typeof parsed.metadata === 'object') {
+      return {
+        text: typeof parsed.text === 'string' ? parsed.text : '',
+        metadata: parsed.metadata as Record<string, unknown>,
+      };
+    }
+  } catch {
+    // Plain text, not the envelope.
+  }
+  return { text: notes, metadata: {} };
+}
+
+/**
+ * Create a Square payment link priced for this specific invoice.
+ *
+ * Credentials resolve to the business's own Square account when it has
+ * completed OAuth, and to the platform token otherwise — so the money lands with
+ * the merchant in the normal case. The idempotency key is the invoice id, so
+ * re-sending an invoice returns the same link instead of minting a second one.
+ *
+ * Returns null when Square is not usable at all, leaving the caller to fall
+ * back. It never throws into the send path: an invoice must still be sendable
+ * if a payment provider is having a bad day.
+ */
+async function createSquareInvoiceLink(
+  businessId: string,
+  invoice: { id: string; number: string; subtotal: number; client?: { email?: string | null } },
+  currency: string,
+): Promise<{ url: string; source: 'square-merchant-link' | 'square-platform-link' } | null> {
+  try {
+    const credentials = await resolveSquareCredentials(businessId);
+    if (!credentials) {
+      logger.warn(
+        `[InvoiceService] Square selected for ${invoice.number} but no credentials are available (no SquareConnection and no SQUARE_ACCESS_TOKEN). Falling back to the registered static link.`,
+      );
+      return null;
+    }
+
+    const created = await createSquarePaymentLink({
+      credentials,
+      idempotencyKey: `invoice-${invoice.id}`,
+      lineItemName: `Invoice ${invoice.number}`,
+      amount: Number(invoice.subtotal ?? 0),
+      currency,
+      // The note is what the webhook reads back to identify this invoice.
+      note: invoiceNote(invoice.id, invoice.number),
+      ...(invoice.client?.email ? { buyerEmail: invoice.client.email } : {}),
+      redirectUrl: `${process.env.APP_URL || 'https://pabandi.com'}/pay/${invoice.id}?status=paid`,
+      metadata: { pabandiInvoiceId: invoice.id, pabandiInvoiceNumber: invoice.number },
+    });
+
+    logger.info(
+      `[InvoiceService] Created Square link for ${invoice.number} ($${invoice.subtotal}) via ${credentials.source} credentials.`,
+    );
+    return {
+      url: created.url,
+      source: credentials.source === 'merchant' ? 'square-merchant-link' : 'square-platform-link',
+    };
+  } catch (err) {
+    logger.error(
+      `[InvoiceService] Square link creation failed for ${invoice.number}: ${err instanceof Error ? err.message : err}. Falling back to the registered static link.`,
+    );
+    return null;
+  }
+}
 
 export async function sendInvoice(businessId: string, invoiceId: string) {
   const invoice = await prisma.invoice.findFirst({
@@ -128,7 +214,9 @@ export async function sendInvoice(businessId: string, invoiceId: string) {
     prisma.business.findUnique({ where: { id: businessId }, select: { address: true, currency: true } }),
   ]);
 
-  let paymentLink = null;
+  let paymentLink: string | null = null;
+  let paymentLinkSource = 'none';
+
   if (methods.length > 0) {
     try {
       const selection = selectRail(invoice, invoice.client, methods, {
@@ -136,22 +224,62 @@ export async function sendInvoice(businessId: string, invoiceId: string) {
         passport: invoice.client.passport,
         currency: railBusiness?.currency,
       });
-      const rail = paymentRails[selection.method.railId];
-      if (rail) {
+      const railId = selection.method.railId;
+      const rail = paymentRails[railId];
+
+      if (railId === 'square') {
+        // Square needs a link priced for THIS invoice.
+        //
+        // The generic path below builds a URL by appending ?amount= to the
+        // business's registered payment link. That does not work: a Square
+        // Payment Link is a fixed-price hosted page and Square ignores an
+        // amount query parameter, so every invoice would collect whatever that
+        // one link was pinned at. A $15,000 invoice and a $150 invoice would
+        // charge the same.
+        const square = await createSquareInvoiceLink(businessId, invoice, railBusiness?.currency || 'USD');
+        if (square) {
+          paymentLink = square.url;
+          paymentLinkSource = square.source;
+        }
+        // If Square is not configured, fall through to the registered link and
+        // log it: a wrong-amount link is bad, but no link at all is worse, and
+        // the log is what tells us to finish setup.
+      }
+
+      if (!paymentLink && rail) {
         paymentLink = rail.getPaymentUrl(selection.method.target, {
           amount: invoice.subtotal,
           number: invoice.number,
           currency: railBusiness?.currency || 'USD',
         });
+        if (railId === 'square') paymentLinkSource = 'square-static-link';
       }
     } catch (err) {
       logger.warn(`[InvoiceService] Rail routing failed for ${invoice.number}: ${err}`);
     }
   }
 
+  // Carry the link source in the notes envelope, the same place requireEscrow
+  // and transactionHash already live. 'square-static-link' is the one worth
+  // knowing about: it means the amount on the link may not match the invoice,
+  // because Square is not connected for this business.
+  const { text: existingNotes, metadata: existingMeta } = readNotesEnvelope(invoice.notes);
+  const metadata = {
+    ...existingMeta,
+    paymentLinkSource,
+    ...(paymentLinkSource === 'square-static-link'
+      ? { paymentLinkWarning: 'Square is not connected for this business, so the link uses a fixed price and may not match this invoice.' }
+      : {}),
+  };
+
   const updated = await prisma.invoice.update({
     where: { id: invoiceId },
-    data: { status: 'sent', sentAt: new Date(), paymentLink },
+    data: {
+      status: 'sent',
+      sentAt: new Date(),
+      paymentLink,
+      notes: JSON.stringify({ text: existingNotes, metadata }),
+    },
     include: { client: true }
   });
 

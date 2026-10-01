@@ -3,6 +3,14 @@ import { prisma } from '../utils/database';
 import { authenticate } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
 import jwt from 'jsonwebtoken';
+import {
+  squareAppConfigured as isConfigured,
+  squareBaseUrl,
+  protectToken,
+  fetchSquareLocations,
+  resolveSquareCredentials,
+  createSquarePaymentLink,
+} from '../services/square-connection.service';
 
 // Square OAuth → location import (geo) + future payment rails.
 // Setup: Square Developer Dashboard → create app → set redirect URL to
@@ -19,40 +27,7 @@ const API_URL = process.env.API_URL || 'https://pabandi.onrender.com';
 const CLIENT_URL = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://pabandi.com';
 const REDIRECT_URI = `${API_URL}/api/v1/square/callback`;
 
-const squareBase = () =>
-  SQUARE_ENV === 'production' ? 'https://connect.squareup.com' : 'https://connect.squareupsandbox.com';
-
-const isConfigured = () => !!(SQUARE_APP_ID && SQUARE_APP_SECRET);
-
-function protectToken(token: string): string {
-  try {
-    // Reuse the app's field encryption when available.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { encrypt } = require('../utils/encryption');
-    if (process.env.ENCRYPTION_KEY && typeof encrypt === 'function') return encrypt(token);
-  } catch {
-    /* fall through to raw storage with a warning */
-  }
-  logger.warn('[square] ENCRYPTION_KEY not set — storing OAuth token unencrypted');
-  return token;
-}
-
-function unprotectToken(stored: string): string {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { decrypt } = require('../utils/encryption');
-    if (process.env.ENCRYPTION_KEY && typeof decrypt === 'function') {
-      try {
-        return decrypt(stored);
-      } catch {
-        return stored; // stored raw — use as-is
-      }
-    }
-  } catch {
-    /* fall through */
-  }
-  return stored;
-}
+const squareBase = () => squareBaseUrl();
 
 async function ensureOwner(businessId: string, userId: string) {
   const business = await prisma.business.findFirst({
@@ -61,6 +36,7 @@ async function ensureOwner(businessId: string, userId: string) {
   return business;
 }
 
+/** Exchange an OAuth code for a merchant access token. */
 async function exchangeCode(code: string) {
   const res = await fetch(`${squareBase()}/oauth2/token`, {
     method: 'POST',
@@ -85,34 +61,7 @@ async function exchangeCode(code: string) {
   };
 }
 
-async function refreshAccessToken(refreshToken: string) {
-  const res = await fetch(`${squareBase()}/oauth2/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({
-      client_id: SQUARE_APP_ID,
-      client_secret: SQUARE_APP_SECRET,
-      refresh_token: refreshToken,
-      grant_type: 'refresh_token',
-    }),
-  });
-  const data: any = await res.json();
-  if (!res.ok || !data.access_token) {
-    throw new Error(data?.message || 'Square token refresh failed');
-  }
-  return data;
-}
 
-async function fetchLocations(accessToken: string) {
-  const res = await fetch(`${squareBase()}/v2/locations`, {
-    headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
-  });
-  const data: any = await res.json();
-  if (!res.ok) {
-    throw new Error(data?.errors?.[0]?.detail || 'Square locations fetch failed');
-  }
-  return (data?.locations || []) as any[];
-}
 
 async function importLocations(businessId: string, locations: any[]) {
   const primary = locations.find((l: any) => l.status === 'ACTIVE') || locations[0];
@@ -216,7 +165,7 @@ router.get('/callback', async (req: Request, res: Response) => {
     }
 
     const tokens = await exchangeCode(code);
-    const locations = await fetchLocations(tokens.access_token);
+    const locations = await fetchSquareLocations(tokens.access_token);
     const imported = await importLocations(business.id, locations);
 
     await prisma.squareConnection.upsert({
@@ -259,23 +208,10 @@ router.post('/sync', authenticate, async (req: any, res: Response, next: NextFun
     if (!businessId) return res.status(400).json({ error: 'businessId is required' });
     const business = await ensureOwner(String(businessId), req.user!.id);
     if (!business) return res.status(403).json({ error: 'Not your business' });
-    const conn = await prisma.squareConnection.findUnique({ where: { businessId: business.id } });
-    if (!conn) return res.status(404).json({ error: 'Square not connected' });
+    const credentials = await resolveSquareCredentials(business.id);
+    if (!credentials) return res.status(404).json({ error: 'Square not connected' });
 
-    let accessToken = unprotectToken(conn.accessToken);
-    if (conn.tokenExpiresAt && conn.tokenExpiresAt < new Date() && conn.refreshToken) {
-      const refreshed: any = await refreshAccessToken(conn.refreshToken);
-      accessToken = refreshed.access_token;
-      await prisma.squareConnection.update({
-        where: { businessId: business.id },
-        data: {
-          accessToken: protectToken(accessToken),
-          tokenExpiresAt: refreshed.expires_at ? new Date(refreshed.expires_at) : undefined,
-        },
-      });
-    }
-
-    const locations = await fetchLocations(accessToken);
+    const locations = await fetchSquareLocations(credentials.accessToken);
     const imported = await importLocations(business.id, locations);
     await prisma.squareConnection.update({
       where: { businessId: business.id },
@@ -296,73 +232,33 @@ router.post('/payment-link', authenticate, async (req: any, res: Response, next:
     if (!businessId || !amount) return res.status(400).json({ error: 'businessId and amount are required' });
     const business = await ensureOwner(String(businessId), req.user!.id);
     if (!business) return res.status(403).json({ error: 'Not your business' });
-    const conn = await prisma.squareConnection.findUnique({ where: { businessId: business.id } });
-    if (!conn) return res.status(404).json({ error: 'Square not connected' });
 
-    let accessToken = unprotectToken(conn.accessToken);
-    if (conn.tokenExpiresAt && conn.tokenExpiresAt < new Date() && conn.refreshToken) {
-      const refreshed: any = await refreshAccessToken(conn.refreshToken);
-      accessToken = refreshed.access_token;
-      await prisma.squareConnection.update({
-        where: { businessId: business.id },
-        data: {
-          accessToken: protectToken(accessToken),
-          tokenExpiresAt: refreshed.expires_at ? new Date(refreshed.expires_at) : undefined,
-        },
-      });
+    // Validated here as well as inside createSquarePaymentLink: the shared
+    // helper throws, which would surface as a 500 for what is a bad request.
+    const amountMajor = Number(amount);
+    if (!Number.isFinite(amountMajor) || amountMajor <= 0) {
+      return res.status(400).json({ error: 'Invalid amount' });
     }
 
-    const cents = Math.round(Number(amount) * 100);
-    if (!Number.isFinite(cents) || cents <= 0) return res.status(400).json({ error: 'Invalid amount' });
+    const credentials = await resolveSquareCredentials(business.id);
+    if (!credentials) return res.status(404).json({ error: 'Square not connected' });
 
-    // Location is required by Square — sync it if we never stored one.
-    let locationId = conn.squareLocationId;
-    if (!locationId) {
-      const locations = await fetchLocations(accessToken);
-      const primary = locations.find((l: any) => l.status === 'ACTIVE') || locations[0];
-      locationId = primary?.id;
-      if (locationId) {
-        await prisma.squareConnection.update({
-          where: { businessId: business.id },
-          data: { squareLocationId: locationId, lastSyncedAt: new Date() },
-        });
-      }
-    }
-    if (!locationId) return res.status(400).json({ error: 'No Square location found for this business' });
-
-    const resp = await fetch(`${squareBase()}/v2/online-checkout/payment-links`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({
-        idempotency_key: `sitara-${reservationId || Date.now()}-${cents}`,
-        order: {
-          location_id: locationId,
-          line_items: [
-            {
-              name: label || 'Sitara booking deposit',
-              quantity: '1',
-              base_price_money: { amount: cents, currency: 'USD' },
-            },
-          ],
-          metadata: reservationId ? { sitaraReservationId: String(reservationId) } : undefined,
-        },
-        checkout_options: {
-          redirect_url: `${CLIENT_URL}/sitara/my-bookings?pay=success&ref=${reservationId || ''}`,
-          ask_for_shipping_address: false,
-        },
-      }),
+    // One implementation now, shared with the invoice rail: credentials
+    // resolution, token refresh, location lookup and link creation.
+    const link = await createSquarePaymentLink({
+      credentials,
+      idempotencyKey: `sitara-${reservationId || Date.now()}-${Math.round(amountMajor * 100)}`,
+      lineItemName: label || 'Sitara booking deposit',
+      amount: amountMajor,
+      currency: 'USD',
+      note: reservationId ? `Pabandi booking ${reservationId}` : 'Pabandi booking deposit',
+      redirectUrl: `${CLIENT_URL}/sitara/my-bookings?pay=success&ref=${reservationId || ''}`,
+      ...(reservationId ? { metadata: { sitaraReservationId: String(reservationId) } } : {}),
     });
-    const data: any = await resp.json();
-    if (!resp.ok || !data?.payment_link?.url) {
-      throw new Error(data?.errors?.[0]?.detail || 'Square payment link failed');
-    }
+
     res.json({
       success: true,
-      data: { url: data.payment_link.url, id: data.payment_link.id, orderId: data.payment_link.order_id },
+      data: { url: link.url, id: link.paymentLinkId, orderId: link.orderId, via: credentials.source },
     });
   } catch (error) {
     next(error);
@@ -388,18 +284,9 @@ router.get('/catalog', authenticate, async (req: any, res: Response, next: NextF
     const conn = await prisma.squareConnection.findUnique({ where: { businessId: business.id } });
     if (!conn) return res.status(404).json({ error: 'Square not connected' });
 
-    let accessToken = unprotectToken(conn.accessToken);
-    if (conn.tokenExpiresAt && conn.tokenExpiresAt < new Date() && conn.refreshToken) {
-      const refreshed: any = await refreshAccessToken(conn.refreshToken);
-      accessToken = refreshed.access_token;
-      await prisma.squareConnection.update({
-        where: { businessId: business.id },
-        data: {
-          accessToken: protectToken(accessToken),
-          tokenExpiresAt: refreshed.expires_at ? new Date(refreshed.expires_at) : undefined,
-        },
-      });
-    }
+    const credentials = await resolveSquareCredentials(business.id);
+    if (!credentials) return res.status(404).json({ error: 'Square not connected' });
+    const accessToken = credentials.accessToken;
 
     // Page through the catalog: items, variations, modifier lists, modifiers.
     const objects: any[] = [];
