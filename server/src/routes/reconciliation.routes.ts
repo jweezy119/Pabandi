@@ -5,6 +5,7 @@ import { logger } from '../utils/logger';
 import { authenticate } from '../middleware/auth.middleware';
 import { reconcileIncomingPayment, resolveQueuedMatch, ReconciliationStatus } from '../services/auto-reconciliation.service';
 import { fileInvoiceDispute, runFailureOwnership } from '../services/failure-ownership.service';
+import { getMoneyFlow } from '../services/money-flow.service';
 import { isRailId, RailId } from '../services/rail-router.service';
 
 /**
@@ -305,6 +306,26 @@ router.post('/:invoiceId/dispute', authenticate, async (req: Request, res: Respo
       return res.status(404).json({ error: message });
     }
     return res.status(500).json({ error: 'Failed to open dispute' });
+  }
+});
+
+/**
+ * GET /api/v1/reconciliation/money-flow
+ * The ContactOS "Money Flow" tab: expected incoming, received this week,
+ * outstanding, per-rail volume and projected fees, and currency exposure.
+ * Derived live from invoices and reconciliation matches — no stored aggregate.
+ */
+router.get('/money-flow', authenticate, async (req: Request, res: Response) => {
+  try {
+    const businessId = req.query.businessId ? String(req.query.businessId) : req.user?.businessId;
+    if (!businessId) {
+      return res.status(400).json({ error: 'businessId is required' });
+    }
+    const summary = await getMoneyFlow(String(businessId));
+    return res.json({ success: true, data: summary });
+  } catch (err) {
+    logger.error(`[MoneyFlow] failed: ${err}`);
+    return res.status(500).json({ error: 'Failed to load money flow' });
   }
 });
 

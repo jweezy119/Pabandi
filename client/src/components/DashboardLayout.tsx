@@ -105,6 +105,7 @@ function buildNavFromSettings(settings: any, osName: string, defaultNav?: NavIte
       { path: '/contact/activities', label: 'Activities', icon: 'notifications', feature: 'activities' },
       { path: '/contact/tasks', label: 'Tasks', icon: 'check', feature: 'tasks' },
       { path: '/contact/invoices', label: 'Invoices', icon: 'file', feature: 'invoices' },
+      { path: '/contact/money-flow', label: 'Money Flow', icon: 'account_balance_wallet', feature: 'invoices' },
       { path: '/contact/team', label: 'Team', icon: 'users', feature: 'team' },
       { path: '/contact/settings/modules', label: 'Settings', icon: 'settings', feature: null },
     ],

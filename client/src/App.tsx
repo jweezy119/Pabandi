@@ -256,6 +256,7 @@ import { PayInvoicePage } from './pages/PayInvoicePage';
 import LedgerInvoicesPage from './pages/ledger/LedgerInvoicesPage';
 import InvoicesPage from './pages/crm/InvoicesPage';
 import ContactInvoiceDetailPage from './pages/crm/ContactInvoiceDetailPage';
+import ContactMoneyFlowPage from './pages/contact/ContactMoneyFlowPage';
 import LedgerExpensesPage from './pages/ledger/LedgerExpensesPage';
 import LedgerAccountsPage from './pages/ledger/LedgerAccountsPage';
 import LedgerReportsPage from './pages/ledger/LedgerReportsPage';
@@ -359,6 +360,7 @@ function AnimatedAppRoutes() {
            <Route path="invite/accept" element={<InviteAcceptPage />} />
            <Route path="contact/invoices" element={<BusinessGuard><FeatureGate feature="invoices"><InvoicesPage /></FeatureGate></BusinessGuard>} />
            <Route path="contact/invoices/:id" element={<BusinessGuard><FeatureGate feature="invoices"><ContactInvoiceDetailPage /></FeatureGate></BusinessGuard>} />
+          <Route path="contact/money-flow" element={<BusinessGuard><FeatureGate feature="invoices"><ContactMoneyFlowPage /></FeatureGate></BusinessGuard>} />
            <Route path="contact/settings" element={<BusinessGuard><SettingsHubPage /></BusinessGuard>} />
            <Route path="contact/settings/profile" element={<BusinessGuard><BusinessProfilePage /></BusinessGuard>} />
            <Route path="contact/settings/modules" element={<BusinessGuard><ModulesSettingsPage /></BusinessGuard>} />
