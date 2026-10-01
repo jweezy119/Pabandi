@@ -6914,9 +6914,40 @@ model Invoice {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   trustEvents InvoiceTrustEvent[]
+  reconciliationMatches ReconciliationMatch[]
 
   @@index([businessId, status])
   @@index([clientId])
+}
+
+/// One row per inbound rail payment that we tried to match to an invoice.
+///
+/// `paymentRef` is UNIQUE, and that constraint is the idempotency key: a rail
+/// that redelivers a webhook retries the same reference, so the second insert
+/// fails and the handler treats it as already-processed. Do not drop it.
+/// `invoiceId` is optional so an orphan payment — real money that matched
+/// nothing — can still be recorded rather than silently dropped.
+model ReconciliationMatch {
+  id          String   @id @default(cuid())
+  invoiceId   String?
+  invoice     Invoice? @relation(fields: [invoiceId], references: [id])
+  paymentRef  String   @unique
+  rail        String
+  amount      Decimal  @db.Decimal(18, 6)
+  confidence  Float    @default(0)
+  status      String   @default("queued") // "matched" | "queued" | "orphan"
+  /// When status is "queued", the candidate invoices the reviewer can pick
+  /// between, and why each was considered. Json so the shape can grow.
+  candidates  Json?
+  /// Free-text note: why it was orphaned, or which candidate a human chose.
+  note        String?
+  matchedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([invoiceId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model InvoiceTrustEvent {

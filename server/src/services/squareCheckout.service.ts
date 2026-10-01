@@ -1,4 +1,5 @@
 import { SquareClient, SquareEnvironment } from 'square';
+import { logger } from '../utils/logger';
 
 const accessToken = process.env.SQUARE_ACCESS_TOKEN || '';
 
@@ -6,6 +7,27 @@ const squareClient = new SquareClient({
   token: accessToken,
   environment: SquareEnvironment.Production,
 });
+
+/** Reconciliation annotation the controller attaches to a processed webhook. */
+export interface SquareReconciliationNote {
+  status: string;
+  duplicate: boolean;
+  reasoning: string;
+}
+
+export type SquareWebhookResult =
+  | {
+      type: 'PAYMENT_UPDATED';
+      paymentId: string;
+      status: string;
+      /** Square reports minor units; reconciliation compares against major. */
+      amountCents: number | null;
+      currency: string | null;
+      clientId: string | null;
+      reconciliation?: SquareReconciliationNote;
+    }
+  | { type: 'REFUND_CREATED'; paymentId: string; amount: unknown }
+  | { type: 'UNKNOWN'; eventType: string };
 
 const SQUARE_BASE = 'https://connect.squareup.com';
 const SQUARE_VERSION = '2026-09-16';
@@ -114,19 +136,41 @@ export class SquareService {
   async verifyWebhook(body: string, signature: string, url: string) {
     const crypto = await import('crypto');
     const webhookSecret = process.env.SQUARE_WEBHOOK_SECRET || '';
-    if (!webhookSecret) return true;
+
+    // Fail closed once the secret is configured to be required. An unset
+    // SQUARE_WEBHOOK_SECRET used to mean "accept everything", which turns this
+    // endpoint into an unauthenticated way to mark any invoice as paid.
+    if (!webhookSecret) {
+      if (process.env.NODE_ENV === 'production') {
+        logger.error(
+          '[SquareWebhook] SQUARE_WEBHOOK_SECRET is unset in production. Rejecting webhook rather than accepting an unverifiable request.',
+        );
+        return false;
+      }
+      return true;
+    }
+
+    if (!signature) return false;
 
     const expected = crypto
       .createHmac('sha256', webhookSecret)
       .update(url + body)
       .digest('base64');
-    return expected === signature;
+
+    const a = Buffer.from(expected);
+    const b = Buffer.from(signature);
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
   }
 
   /**
    * Process Square webhook event
+   *
+   * The result is echoed straight back in the webhook HTTP response, and the
+   * controller annotates it with a reconciliation outcome. That annotation is
+   * part of the shape, so it is declared here rather than added ad hoc.
    */
-  async processWebhook(event: any) {
+  async processWebhook(event: any): Promise<SquareWebhookResult> {
     const eventType = event.type;
     const data = event.data?.object;
 
@@ -137,6 +181,13 @@ export class SquareService {
           type: 'PAYMENT_UPDATED',
           paymentId: data?.payment?.id,
           status: data?.payment?.status,
+          // Square reports money in minor units; reconciliation compares
+          // against Invoice.subtotal, which is stored in major units.
+          amountCents: data?.payment?.amount_money?.amount ?? data?.payment?.amountMoney?.amount ?? null,
+          currency: data?.payment?.amount_money?.currency ?? data?.payment?.amountMoney?.currency ?? null,
+          // Square's customer reference is opaque to us, so this only helps
+          // when the caller set reference_id to a Pabandi client id.
+          clientId: data?.payment?.reference_id ?? data?.payment?.order_id ?? null,
         };
       case 'refund.created':
         return {

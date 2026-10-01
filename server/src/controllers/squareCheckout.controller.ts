@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { squareService } from '../services/squareCheckout.service';
 import { prisma } from '../utils/database';
+import { logger } from '../utils/logger';
+import { reconcileIncomingPayment } from '../services/auto-reconciliation.service';
 
 export const createSquareCheckout = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -62,6 +64,34 @@ export const handleSquareWebhook = async (req: Request, res: Response, next: Nex
             where: { id: payment.reservationId },
             data: { depositPaid: true },
           });
+        }
+      }
+
+      // A checkout-linked Payment is already bound to its reservation, but
+      // money that arrives outside the checkout flow has no such link. Feed
+      // every completed Square payment through reconciliation, which matches
+      // on { amount, clientId, within 7 days }. This is idempotent on the
+      // Square payment id, so redelivery is a no-op and an already-bound
+      // payment just records a 'queued' row a reviewer can dismiss.
+      if (process.env.RECONCILIATION_AUTO_MATCH !== 'false') {
+        try {
+          const amountMajor = result.amountCents != null ? result.amountCents / 100 : null;
+          if (amountMajor != null) {
+            const outcome = await reconcileIncomingPayment({
+              paymentRef: `square:${result.paymentId}`,
+              rail: 'square',
+              amount: amountMajor,
+              paidAt: new Date(),
+              clientId: result.clientId ?? undefined,
+              businessId: payment?.businessId ?? undefined,
+              currency: 'USD',
+            });
+            result.reconciliation = { status: outcome.status, duplicate: outcome.duplicate, reasoning: outcome.reasoning };
+          }
+        } catch (reconErr) {
+          // Reconciliation failure must not fail the webhook: Square retries
+          // non-2xx for days, and a retry cannot help if the cause is ours.
+          logger.error(`[SquareWebhook] reconciliation failed for ${result.paymentId}: ${reconErr}`);
         }
       }
     }
