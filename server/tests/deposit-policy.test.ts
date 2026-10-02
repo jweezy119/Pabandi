@@ -6,7 +6,7 @@ import {
   multiplierForBand,
   quoteWithoutHistory,
   type TrustBand,
-} from '../src/services/deposit-policy.service';
+} from '../src/services/deposit-policy.rules';
 
 /**
  * Trust-band deposits.
