@@ -1,21 +1,38 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticate, authorize } from '../middleware/auth.middleware';
 
 /**
- * WHY THIS ROUTER IS NOW AUTHENTICATED
+ * WHY THIS ROUTER IS AUTHENTICATED, AND WHY FIVE OF ITS ROUTES ARE ADMIN-ONLY
  *
- * Every one of these thirteen endpoints was mounted with no `authenticate`.
- * Eight of them move money or write the treasury ledger — charge-rake,
- * sol-checkout, confirm-rake, route-yield, confirm-yield — so an anonymous
- * caller could have driven the fee machinery directly.
+ * Authentication first: all thirteen endpoints were mounted with no
+ * `authenticate`, and eight of them move money or write the treasury ledger, so
+ * an anonymous caller could drive the fee machinery directly.
  *
- * Two stay public deliberately: /leaderboard is a public leaderboard, and
- * /referral/:code is a shareable handle a business pastes into a link. Both are
- * read-only and neither exposes another party's balances.
+ * Authorisation second, which is what the previous pass left open. These
+ * endpoints act on the protocol treasury rather than a tenant, so per-business
+ * ownership does not apply — but "not a tenant" is not the same as "any user".
  *
- * Note this authenticates but does not authorise: these endpoints operate on
- * the protocol treasury rather than a tenant, so per-business ownership does not
- * apply. Role-gating them is a separate decision.
+ * The treasury write paths are admin-only because of what an authenticated user
+ * could do with them:
+ *
+ *   - charge-rake / route-yield take the *payer address from the request body*
+ *     and write a PENDING_CHARGE row for any amount. The transaction needs the
+ *     payer's signature so no money moves, but the ledger row is real and is
+ *     what confirm-rake later reconciles against. Arbitrary users were able to
+ *     mint them at will.
+ *   - confirm-rake / confirm-yeld mark a PENDING_CHARGE DEPLOYED once it finds
+ *     *a* valid on-chain transaction. It does not check that the transaction
+ *     belongs to that charge, so passing any real signature against any
+ *     bookingRef marked the row confirmed and credited the referral and partner
+ *     kickbacks attached to it. That is a ledger-forging path, not just noise.
+ *   - demo-book runs the whole simulation for arbitrary inputs.
+ *
+ * The quotes are read-only and stay open to any authenticated user, because a
+ * price quote does not need to be privileged to be useful.
+ *
+ * /leaderboard and /referral/:code remain fully public and unauthenticated — a
+ * leaderboard should be public and a referral code is a shareable handle.
+ * Neither exposes another party's balances.
  */
 import { autonomousEconomyService } from '../services/autonomousEconomy.service';
 
@@ -44,7 +61,7 @@ router.post('/quote-rake', authenticate, async (req, res) => {
 });
 
 // Charge a human SOL rake — returns a base64 tx for the payer to sign + broadcast
-router.post('/charge-rake', authenticate, async (req, res) => {
+router.post('/charge-rake', authenticate, authorize('ADMIN'), async (req, res) => {
   try {
     const { payer, solAmount, bookingRef, referralCode, partnerId } = req.body || {};
     if (!payer || !solAmount) return res.status(400).json({ success: false, error: 'payer + solAmount required' });
@@ -59,6 +76,11 @@ router.post('/charge-rake', authenticate, async (req, res) => {
 // A human booking an agent pays in SOL; 1% skims to the fee wallet, rest settles.
 // Returns a partial-signed tx for the payer to broadcast. chargeRake already persists a
 // PENDING_CHARGE so confirm-rake can close the booking on broadcast.
+// Stays open to any authenticated user deliberately: this is the real customer
+// path where a client pays in SOL, so it cannot be admin-only. It does write a
+// PENDING_CHARGE via chargeRake, which is what makes the admin gate on
+// confirm-rake load-bearing — that gate is what stops anyone from minting a
+// charge here and then declaring it settled against an unrelated signature.
 router.post('/sol-checkout', authenticate, async (req, res) => {
   try {
     const { payer, solAmount, bookingRef, agentId, note, referralCode, partnerId } = req.body || {};
@@ -81,7 +103,7 @@ router.get('/business/:refCode', authenticate, async (req, res) => {
 });
 
 // ── Demo booking (no wallet): full booking cycle server-side, simulated:true ──
-router.post('/demo-book', authenticate, async (req, res) => {
+router.post('/demo-book', authenticate, authorize('ADMIN'), async (req, res) => {
   try {
     const { referralCode, partnerId, agentId, gigId, solAmount } = req.body || {};
     const r = await autonomousEconomyService.demoBook({ referralCode, partnerId, agentId, gigId, solAmount: solAmount ? Number(solAmount) : undefined });
@@ -92,7 +114,7 @@ router.post('/demo-book', authenticate, async (req, res) => {
 });
 
 // ── Confirm human rake (closes the booking after the payer broadcasts) ──
-router.post('/confirm-rake', authenticate, async (req, res) => {
+router.post('/confirm-rake', authenticate, authorize('ADMIN'), async (req, res) => {
   try {
     const { bookingRef, txHash } = req.body || {};
     if (!bookingRef || !txHash) return res.status(400).json({ success: false, error: 'bookingRef + txHash required' });
@@ -117,7 +139,7 @@ router.post('/quote-yield', authenticate, async (req, res) => {
 });
 
 // Route a user's SOL into JitoSOL — returns a base64 tx for the user to sign + broadcast
-router.post('/route-yield', authenticate, async (req, res) => {
+router.post('/route-yield', authenticate, authorize('ADMIN'), async (req, res) => {
   try {
     const { user, solAmount, bookingRef, partnerId } = req.body || {};
     if (!user || !solAmount) return res.status(400).json({ success: false, error: 'user + solAmount required' });
@@ -129,7 +151,7 @@ router.post('/route-yield', authenticate, async (req, res) => {
 });
 
 // Confirm a yield route after the user broadcasts the tx
-router.post('/confirm-yield', authenticate, async (req, res) => {
+router.post('/confirm-yield', authenticate, authorize('ADMIN'), async (req, res) => {
   try {
     const { bookingRef, txHash } = req.body || {};
     if (!bookingRef || !txHash) return res.status(400).json({ success: false, error: 'bookingRef + txHash required' });

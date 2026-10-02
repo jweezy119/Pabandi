@@ -6,7 +6,9 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { authenticate } from '../middleware/auth.middleware';
+import crypto from 'crypto';
+import { authenticate, authorize } from '../middleware/auth.middleware';
+import { logger } from '../utils/logger';
 import { treasuryOrchestrator } from '../services/treasury/orchestrator.service';
 
 const router = Router();
@@ -47,12 +49,50 @@ router.get('/virtual-account', authenticate, async (req: Request, res: Response)
  * body: { virtualAccountId, amountUsd }
  */
 router.post('/webhooks/fiat-deposit', async (req: Request, res: Response): Promise<any> => {
+  // This was completely unauthenticated: anyone who knew a virtualAccountId
+  // could post an arbitrary amount and mint a PENDING_SWEEP treasury position
+  // for it. handleIncomingWire does not check the caller against the account, so
+  // the position could be created against any user's account and then swept.
+  //
+  // A banking partner would sign this. Until one is wired, the only source of
+  // truth available is the caller naming the amount out of band, so this is
+  // admin-only rather than merely authenticated — an ordinary user must not be
+  // able to declare money into the treasury.
+  const configured = (process.env.TREASURY_FIAT_WEBHOOK_SECRET || '').trim();
+  if (!configured) {
+    logger.error(
+      '[Treasury] Rejected fiat-deposit: TREASURY_FIAT_WEBHOOK_SECRET is not configured. Until a banking partner is wired this endpoint credits money and cannot be called.',
+    );
+    return res.status(503).json({ success: false, error: 'Fiat deposit webhook is not configured' });
+  }
+
+  // Sign the exact bytes received. index.ts captures them on the json verify
+  // hook; re-serialising req.body would produce different whitespace and never
+  // match.
+  const rawBody =
+    typeof (req as Request & { rawBody?: string }).rawBody === 'string'
+      ? ((req as Request & { rawBody?: string }).rawBody as string)
+      : JSON.stringify(req.body ?? {});
+
+  const presented = String(req.headers['x-treasury-signature'] ?? '');
+  const expected = crypto.createHmac('sha256', configured).update(rawBody).digest('hex');
+  const a = Buffer.from(expected);
+  const b = Buffer.from(presented);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    logger.warn('[Treasury] Rejected fiat-deposit: signature mismatch');
+    return res.status(401).json({ success: false, error: 'Invalid signature' });
+  }
+
   try {
     const { virtualAccountId, amountUsd } = req.body ?? {};
     if (!virtualAccountId || !amountUsd) {
       return res.status(400).json({ success: false, error: 'virtualAccountId and amountUsd required' });
     }
-    const pos = await treasuryOrchestrator.handleIncomingWire(virtualAccountId, Number(amountUsd));
+    const amount = Number(amountUsd);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({ success: false, error: 'amountUsd must be a positive number' });
+    }
+    const pos = await treasuryOrchestrator.handleIncomingWire(virtualAccountId, amount);
     res.json({ success: true, data: pos });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -64,11 +104,18 @@ router.post('/webhooks/fiat-deposit', async (req: Request, res: Response): Promi
  * POST /api/v1/treasury/sweep
  * body: { treasuryPositionId, destinationWallet }
  */
-router.post('/sweep', authenticate, async (req: Request, res: Response): Promise<any> => {
+// Money leaves the treasury here, to a caller-supplied wallet. Any
+// authenticated user could name any position and their own address, so this is
+// admin-only: it is a treasury withdrawal, not a user action.
+router.post('/sweep', authenticate, authorize('ADMIN'), async (req: Request, res: Response): Promise<any> => {
   try {
     const { treasuryPositionId, destinationWallet } = req.body ?? {};
     if (!treasuryPositionId || !destinationWallet) {
       return res.status(400).json({ success: false, error: 'treasuryPositionId and destinationWallet required' });
+    }
+    // A sweep destination is a blockchain address, so a typo is unrecoverable.
+    if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(destinationWallet)) {
+      return res.status(400).json({ success: false, error: 'destinationWallet is not a valid Solana address' });
     }
     const result = await treasuryOrchestrator.sweepToWeb3(treasuryPositionId, destinationWallet);
     res.json({ success: true, data: result });
@@ -82,7 +129,7 @@ router.post('/sweep', authenticate, async (req: Request, res: Response): Promise
  * POST /api/v1/treasury/demo-flow
  * body: { amountUsd, destinationWallet }
  */
-router.post('/demo-flow', authenticate, async (req: Request, res: Response): Promise<any> => {
+router.post('/demo-flow', authenticate, authorize('ADMIN'), async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = (req as any).user?.id;
     const { amountUsd, destinationWallet } = req.body ?? {};
