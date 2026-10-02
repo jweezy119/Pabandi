@@ -7,6 +7,7 @@ import { reconcileIncomingPayment, resolveQueuedMatch, ReconciliationStatus } fr
 import { fileInvoiceDispute, runFailureOwnership } from '../services/failure-ownership.service';
 import { getMoneyFlow } from '../services/money-flow.service';
 import { isRailId, RailId } from '../services/rail-router.service';
+import { paypalService } from '../services/paypal.service';
 
 /**
  * Reconciliation routes.
@@ -30,8 +31,11 @@ const router = Router();
 // ── Signature verification ──────────────────────────────────────────────────
 
 /**
- * HMAC-SHA256 hex over the raw body, compared in constant time. Used by
- * PayPal and SafePay, both of which sign the raw request bytes.
+ * HMAC-SHA256 hex over the raw body, compared in constant time. Used by Square
+ * and SafePay, which sign the raw request bytes.
+ *
+ * PayPal does not use this scheme and never did — see the paypal branch in
+ * verifyRailSignature, which delegates to PayPal's own verification endpoint.
  */
 function verifyHmacHex(rawBody: string, signature: string | undefined, secret: string | undefined): boolean {
   if (!secret) return false;
@@ -48,7 +52,10 @@ function verifyHmacHex(rawBody: string, signature: string | undefined, secret: s
  * verified is an unauthenticated "mark this invoice paid" endpoint, so this
  * fails closed rather than waving unverified requests through.
  */
-function verifyRailSignature(rail: RailId, req: Request): { ok: true } | { ok: false; reason: string } {
+async function verifyRailSignature(
+  rail: RailId,
+  req: Request,
+): Promise<{ ok: true } | { ok: false; reason: string }> {
   const rawBody = typeof (req as Request & { rawBody?: string }).rawBody === 'string'
     ? (req as Request & { rawBody?: string }).rawBody as string
     : JSON.stringify(req.body ?? {});
@@ -62,10 +69,20 @@ function verifyRailSignature(rail: RailId, req: Request): { ok: true } | { ok: f
   }
 
   if (rail === 'paypal') {
-    const secret = process.env.PAYPAL_WEBHOOK_SECRET;
-    if (!secret) return { ok: false, reason: 'PAYPAL_WEBHOOK_SECRET is not configured' };
-    const signature = req.headers['paypal-transmission-sig'] as string | undefined;
-    if (!verifyHmacHex(rawBody, signature, secret)) return { ok: false, reason: 'invalid PayPal signature' };
+    // PayPal has no shared-secret HMAC. The signature is certificate-based and
+    // can only be checked against PayPal's verify-webhook-signature endpoint
+    // using the dashboard webhook id, so this delegates to paypalService.
+    //
+    // This used to compare an HMAC of the raw body against PAYPAL_WEBHOOK_SECRET,
+    // which is Square's scheme. No such PayPal secret exists, so the check could
+    // never succeed: PayPal payments were collected and then never reconciled.
+    // verifyWebhook() returns false rather than throwing, so a PayPal outage
+    // does not turn into a retry storm against us.
+    const verified = await paypalService.verifyWebhook(
+      req.headers as Record<string, string>,
+      rawBody,
+    );
+    if (!verified) return { ok: false, reason: 'invalid or unverifiable PayPal signature' };
     return { ok: true };
   }
 
@@ -189,7 +206,7 @@ router.post('/webhook/:rail', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Bank transfers are confirmed manually, not by webhook.' });
     }
 
-    const verification = verifyRailSignature(rail, req);
+    const verification = await verifyRailSignature(rail, req);
     if (!verification.ok) {
       logger.warn(`[ReconcileWebhook:${rail}] Rejected webhook: ${verification.reason}`);
       return res.status(401).json({ error: verification.reason });

@@ -1,21 +1,24 @@
 import { logger } from '../utils/logger';
-
-const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || '';
-const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || '';
-const PAYPAL_API_URL =
-  process.env.NODE_ENV === 'production'
-    ? 'https://api-m.paypal.com'
-    : 'https://api-m.sandbox.paypal.com';
+import {
+  paymentCredentials,
+  webhookId as configuredWebhookId,
+  apiBaseUrl,
+  type PaypalCredentials,
+} from '../config/paypal-credentials';
 
 /**
  * PayPal REST API v2 client — native fetch, zero extra dependencies.
  * Sandbox: api-m.sandbox.paypal.com  |  Live: api-m.paypal.com
+ *
+ * Credentials are resolved per call rather than captured at import time. The
+ * old module-level `process.env` read meant a half-configured pair looked
+ * configured until the first API call, which then failed with PayPal's own
+ * 401 — indistinguishable from a permissions problem.
  */
 
-async function getAccessToken(): Promise<string> {
-  const credentials = Buffer.from(
-    `${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`
-  ).toString('base64');
+async function getAccessToken(creds: PaypalCredentials): Promise<string> {
+  const credentials = Buffer.from(`${creds.clientId}:${creds.clientSecret}`).toString('base64');
+  const PAYPAL_API_URL = apiBaseUrl();
 
   const response = await fetch(`${PAYPAL_API_URL}/v1/oauth2/token`, {
     method: 'POST',
@@ -57,13 +60,16 @@ export const paypalService = {
       cancelUrl ||
       `${frontendUrl}/reservations?paypal_cancel=true&ref=${reservationId}`;
 
-    if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
-      logger.warn('PayPal credentials not set');
+    const creds = paymentCredentials();
+    if (!creds) {
+      logger.warn('PayPal credentials not set — cannot create checkout');
       return `${frontendUrl}/reservations?paypal_disabled=true&ref=${reservationId}`;
     }
 
+    const PAYPAL_API_URL = apiBaseUrl();
+
     try {
-      const token = await getAccessToken();
+      const token = await getAccessToken(creds);
 
       // Format amount to 2 decimal places as string
       const amountStr = (amount / 100).toFixed(2); // input is cents
@@ -112,7 +118,7 @@ export const paypalService = {
       }
 
       logger.info(
-        `PayPal order created for reservation: ${reservationId} (${currency.toUpperCase()} ${amountStr})`
+        `PayPal order created for reservation: ${reservationId} (${currency.toUpperCase()} ${amountStr}) via ${creds.account} credentials`
       );
       return approveLink;
     } catch (error: any) {
@@ -126,8 +132,16 @@ export const paypalService = {
    * Call this from your PayPal return URL handler.
    */
   async captureOrder(orderId: string): Promise<boolean> {
+    const creds = paymentCredentials();
+    if (!creds) {
+      logger.error('PayPal credentials not set — cannot capture order');
+      return false;
+    }
+
+    const PAYPAL_API_URL = apiBaseUrl();
+
     try {
-      const token = await getAccessToken();
+      const token = await getAccessToken(creds);
 
       const response = await fetch(
         `${PAYPAL_API_URL}/v2/checkout/orders/${orderId}/capture`,
@@ -163,13 +177,20 @@ export const paypalService = {
     captureId: string,
     amountCents?: number
   ): Promise<boolean> {
-    if (!PAYPAL_CLIENT_ID) {
-      logger.warn('PayPal credentials not set — skipping refund');
-      return true;
+    // A refund that reports success when nothing happened is worse than one that
+    // reports failure. This used to `return true` on missing credentials, which
+    // meant an unconfigured deployment recorded every deposit as successfully
+    // refunded while the customer kept their money.
+    const creds = paymentCredentials();
+    if (!creds) {
+      logger.error('PayPal credentials not set — refund NOT issued');
+      return false;
     }
 
+    const PAYPAL_API_URL = apiBaseUrl();
+
     try {
-      const token = await getAccessToken();
+      const token = await getAccessToken(creds);
 
       const body: any = {};
       if (amountCents) {
@@ -206,21 +227,72 @@ export const paypalService = {
   },
 
   /**
-   * Verify a PayPal IPN / Webhook event.
-   * PayPal uses a verification call-back — check transmission-id header.
+   * Verify a PayPal webhook delivery.
+   *
+   * PayPal does not use a shared-secret HMAC of the body the way Square does.
+   * It signs each delivery with a certificate, and the only way to check that
+   * signature is PayPal's own verify-webhook-signature endpoint, which needs
+   * the transmission headers, the event, and a webhook id from the dashboard.
+   * A `PAYPAL_WEBHOOK_SECRET` can therefore never make this pass.
+   *
+   * Fails closed. The old version returned `NODE_ENV !== 'production'` when
+   * credentials were missing, so in production it returned false but in every
+   * other environment it returned true — accepting unverified deliveries.
    */
   async verifyWebhook(
     headers: Record<string, string>,
     rawBody: string,
-    webhookId: string
+    webhookIdOverride?: string
   ): Promise<boolean> {
-    if (!PAYPAL_CLIENT_ID) {
-      logger.warn('PayPal webhook verification skipped: no credentials');
-      return process.env.NODE_ENV !== 'production';
+    const creds = paymentCredentials();
+    if (!creds) {
+      logger.error('PayPal webhook verification failed: no payment credentials configured');
+      return false;
+    }
+
+    const webhookId = (webhookIdOverride || configuredWebhookId()).trim();
+    if (!webhookId) {
+      logger.error(
+        'PayPal webhook verification failed: PAYPAL_WEBHOOK_ID is not set. Without the dashboard webhook id PayPal cannot confirm the signature.',
+      );
+      return false;
+    }
+
+    // All five transmission headers are part of what PayPal verifies. Any one
+    // missing means the request did not come from PayPal's delivery pipeline.
+    const required = [
+      'paypal-auth-algo',
+      'paypal-cert-url',
+      'paypal-transmission-id',
+      'paypal-transmission-sig',
+      'paypal-transmission-time',
+    ] as const;
+    const missing = required.filter((h) => !headers[h]);
+    if (missing.length > 0) {
+      logger.warn(`PayPal webhook rejected: missing header(s) ${missing.join(', ')}`);
+      return false;
+    }
+
+    // cert_url is a URL PayPal's response is validated against. Only ever
+    // accept PayPal's own hosts, so a forged header cannot point verification
+    // at an attacker-controlled certificate.
+    const certUrl = headers['paypal-cert-url'];
+    if (!/^https:\/\/api(-m)?(\.sandbox)?\.paypal\.com\//i.test(certUrl)) {
+      logger.warn(`PayPal webhook rejected: cert_url is not a PayPal host (${certUrl})`);
+      return false;
+    }
+
+    let event: unknown;
+    try {
+      event = JSON.parse(rawBody);
+    } catch {
+      logger.warn('PayPal webhook rejected: body is not valid JSON');
+      return false;
     }
 
     try {
-      const token = await getAccessToken();
+      const token = await getAccessToken(creds);
+      const PAYPAL_API_URL = apiBaseUrl();
 
       const response = await fetch(
         `${PAYPAL_API_URL}/v1/notifications/verify-webhook-signature`,
@@ -237,12 +309,16 @@ export const paypalService = {
             transmission_sig: headers['paypal-transmission-sig'],
             transmission_time: headers['paypal-transmission-time'],
             webhook_id: webhookId,
-            webhook_event: JSON.parse(rawBody),
+            webhook_event: event,
           }),
         }
       );
 
       const data = (await response.json()) as any;
+      if (!response.ok) {
+        logger.error(`PayPal webhook verification call failed: ${data?.message || response.status}`);
+        return false;
+      }
       return data.verification_status === 'SUCCESS';
     } catch (error: any) {
       logger.error('PayPal webhook verification failed', error.message);

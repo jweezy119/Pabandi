@@ -11,13 +11,12 @@ import { prisma } from './database';
 import { UserRole } from '@prisma/client';
 import { logger } from './logger';
 import { findOrCreateUser } from '../services/identity.service';
+import { loginCredentials } from '../config/paypal-credentials';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || '';
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || '';
-const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || '';
-const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || '';
 const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID || '';
 const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET || '';
 const TWITTER_CONSUMER_KEY = process.env.TWITTER_CONSUMER_KEY || '';
@@ -114,12 +113,16 @@ export function configurePassport() {
     logger.warn('GitHub OAuth credentials not set. GitHub login will use demo fallback.');
   }
 
-  if (PAYPAL_CLIENT_ID && PAYPAL_CLIENT_SECRET) {
+  // PayPal sign-in reads its own credentials. It used to share
+  // PAYPAL_CLIENT_ID/SECRET with the payments service, so rotating the pair for
+  // checkout silently broke login at the next restart.
+  const paypalLogin = loginCredentials();
+  if (paypalLogin) {
     passport.use(
       new PayPalStrategy(
         {
-          clientID: PAYPAL_CLIENT_ID,
-          clientSecret: PAYPAL_CLIENT_SECRET,
+          clientID: paypalLogin.clientId,
+          clientSecret: paypalLogin.clientSecret,
           callbackURL: '/api/v1/auth/paypal/callback',
           scope: 'openid profile email',
         },
