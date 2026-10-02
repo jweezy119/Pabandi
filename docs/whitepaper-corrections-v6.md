@@ -144,17 +144,25 @@ Three separate mismatches, not one:
 >
 > Reaching band A removes the deposit entirely, whatever the merchant's base.
 
-**On the 50% ceiling.** Two options, and this needs a decision rather than a wording change:
+**On the 50% ceiling — decided and implemented.** Option (a): the code now honours the
+promise. The applied deposit is clamped to 50% of the booking value
+(`DEPOSIT_CEILING_RATIO` in `deposit-policy.rules.ts`).
 
-- **(a) Honour it.** Cap the applied deposit at 50% of the booking total in
-  `deposit-policy.rules.ts`, and say so in §4. Adds a clamp, keeps the promise.
-- **(b) Amend it.** Rewrite the §4 line to state the real rule — a deposit is at most 1.25×
-  the merchant's base, and the merchant's base is always visible before you book. On a 20%
-  base the D band applies 25% of the booking.
+Worth noting *why* it is a separate clamp rather than a tighter multiplier. The band
+multiplier is a statement about the **customer** — how much extra to ask of someone with a
+poor record. The ceiling is a statement about the **merchant** — a floor under Pabandi's own
+promise, whoever they are. Collapsing the two would make the promise hold by penalising
+every honest D-band customer for one merchant's misconfiguration, which is the wrong
+person to bill for it.
 
-I lean **(a)**. The 50% ceiling in §4 reads as a deliberate customer protection, and the
-paper already promises it. Silently weakening a protection to match code is the wrong
-direction of travel; clamping the code to match the promise is one line and preserves trust.
+The clamp engages only when the booking's value is known. A business using a flat
+`depositAmount` can be quoted before the booking cost exists, and the ceiling is defined
+against that cost — so an unknown value leaves the quote unclamped and flagged rather than
+guessing at a cap. A 60% base on a D-band booking now asks 50% instead of 75%; a 20% base
+is untouched at 25%, so no merchant sees their ordinary quotes change.
+
+§4 needs no edit. The paper is now correct, which was the better outcome — the alternative
+was quietly weakening a published customer protection to match code.
 
 **Also note the internal contradiction.** §2 promises never to guilt a customer about a
 deposit, and §4 mandates one. Rewriting §2's deposit sentence resolves it — see below.
@@ -329,18 +337,22 @@ query layer.
 
 1. **§16 escrow** — highest risk, and the fix strengthens the story rather than weakening it.
 2. **§9.3 models** — remove the calibration claim; publish the delta table.
-3. **Deposit ceiling** — decide (a) or (b) above.
+3. ~~Deposit ceiling~~ — **done**, implemented in `deposit-policy.rules.ts`. §4 is now correct.
 4. **Flywheel and emission arithmetic** — mechanical, no judgement calls.
 5. **Mudarabah funding source and the AAOIFI wording.**
-6. **Shipped / in progress / roadmap labels** — then apply throughout.
+6. **Shipped / in progress / roadmap labels** — then apply throughout, starting with A2A.
+
+Two decisions are now closed: the deposit ceiling is honoured in code, and A2A is
+**Roadmap**. Items 1, 2, 4 and 5 are wording changes still awaiting sign-off.
 
 ---
 
 ## Not addressed here
 
-- **A2A messaging** — v6.0 describes it; there are no files. Not corrected above because the
-  fix is deletion, and deleting a feature from a whitepaper is a product decision. Confirm
-  whether it is **Roadmap** or should come out.
+- **A2A messaging — decided: Roadmap.** v6.0 describes it as a working capability; there
+  are no files. Keep the section, move it under **Roadmap**, and correct the tense from
+  present to intended. Deleting it was the other option and the worse one: the ambition was
+  never the problem, only that it currently reads as shipped.
 - **Payment rails** — v6.0 describes multi-rail support; Square and PayPal are live. Worth
   stating precisely which rails are **Shipped**.
 - **SaaS tiers** — the $0/$49/$149 tiers are live in `config/subscriptions.ts` and do not
