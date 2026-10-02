@@ -273,6 +273,44 @@ describe('escrow — literal paths are not shadowed by parameterised ones', () =
   });
 });
 
+describe('fees — reads only, and never another merchant\'s revenue', () => {
+  let router: any;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    router = (await import('../src/routes/fees.routes')).default;
+  });
+
+  it('publishes the schedule without authentication', () => {
+    // A merchant who has to email support to learn the price will assume the
+    // worst, and the ones who assume the worst are the ones we cannot onboard.
+    expect(requiresAuth(router, 'get', '/schedule')).toBe(false);
+  });
+
+  it('gates the balance and the per-business history', () => {
+    expect(requiresAuth(router, 'get', '/balance')).toBe(true);
+    // Ownership is checked against ownerId in the handler, but authentication is
+    // a precondition: without it there is no caller to compare against.
+    expect(requiresAuth(router, 'get', '/business/:businessId')).toBe(true);
+  });
+
+  it('restricts the platform-wide margin view to admins', () => {
+    // This one aggregates every tenant's revenue, so a merchant hitting it would
+    // see the whole marketplace's take rate.
+    expect(hasRoleGate(router, 'get', '/admin/margin')).toBe(true);
+  });
+
+  it('exposes no way to write or pay a fee', () => {
+    // Collection belongs on a billing cycle. An endpoint that marks fees paid, or
+    // takes a payment, is a payment integration we have not built — and one
+    // reachable now would let a merchant void their own balance.
+    const writable = router.stack
+      .filter((l: any) => l.route)
+      .filter((l: any) => !['get', 'head'].includes(Object.keys(l.route.methods)[0]));
+    expect(writable).toHaveLength(0);
+  });
+});
+
 describe('the endpoints fixed earlier are still gated', () => {
   // Regression cover: these were the first pass, and a later refactor that
   // dropped a gate would otherwise go unnoticed because the whole file would

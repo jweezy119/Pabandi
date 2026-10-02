@@ -43,4 +43,58 @@ describe('splitStatements', () => {
     expect(splitStatements('')).toEqual([]);
     expect(splitStatements('-- only a comment\n')).toEqual([]);
   });
+
+  /**
+   * The third way naive splitting breaks, and the one that bit us.
+   *
+   * Postgres has no `ADD CONSTRAINT IF NOT EXISTS`, so an idempotent foreign key
+   * has to be a `DO $$ … $$` block — and that block contains semicolons of its own.
+   * Splitting on every `;` produced a DO header, a bare `END IF`, and a stray
+   * `END $$`: three queries, two of which are syntax errors, thrown at boot on
+   * every deploy after the first.
+   */
+  describe('dollar-quoted blocks', () => {
+    const guardedFk = [
+      'DO $$ BEGIN',
+      "  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'X_fkey') THEN",
+      '    ALTER TABLE "X" ADD CONSTRAINT "X_fkey" FOREIGN KEY ("b") REFERENCES "Business"("id");',
+      '  END IF;',
+      'END $$;',
+    ].join('\n');
+
+    it('keeps a guarded DO block as one statement', () => {
+      expect(splitStatements(guardedFk)).toHaveLength(1);
+    });
+
+    it('does not emit END IF or END $$ as standalone queries', () => {
+      // The specific symptom: these fragments are syntactically invalid, so the
+      // bootstrap logs a warning and the table never gets its foreign key.
+      for (const statement of splitStatements(guardedFk)) {
+        expect(statement).not.toMatch(/^END IF$/);
+        expect(statement).not.toMatch(/^END \$\$$/);
+      }
+    });
+
+    it('still splits around the block', () => {
+      const sql = `CREATE TABLE x (id TEXT);\n${guardedFk}\nCREATE INDEX i ON x (id);`;
+      const parts = splitStatements(sql);
+      expect(parts).toHaveLength(3);
+      expect(parts[0]).toBe('CREATE TABLE x (id TEXT)');
+      expect(parts[1]).toContain('ADD CONSTRAINT');
+      expect(parts[2]).toBe('CREATE INDEX i ON x (id)');
+    });
+
+    it('handles a tagged dollar quote', () => {
+      // $body$ … $body$ is equally valid and would be split on its semicolons by
+      // a splitter that only recognises $$.
+      const sql = "DO $body$ BEGIN PERFORM 1; END $body$;";
+      expect(splitStatements(sql)).toHaveLength(1);
+    });
+
+    it('leaves a semicolon inside a string literal alone', () => {
+      // The other place a naive split breaks: 'a;b' is one literal, not two
+      // statements.
+      expect(splitStatements("INSERT INTO t VALUES ('a;b');")).toHaveLength(1);
+    });
+  });
 });

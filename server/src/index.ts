@@ -269,6 +269,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/fiat`, './routes/fiatPayment.routes'],
   [`/api/${v}/payments/raast`, './routes/raastPayment.routes'],
   [`/api/${v}/payments/recon`, './routes/payment-reconciliation.routes'],
+  [`/api/${v}/fees`, './routes/fees.routes'],
   [`/api/${v}/analytics`, './routes/analytics.routes'],
   [`/api/${v}/admin`, './routes/admin.routes'],
   [`/api/${v}/shopify-integration`, './routes/shopify-integration.routes'],

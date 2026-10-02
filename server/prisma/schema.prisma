@@ -191,8 +191,8 @@ model User {
   stakingRecords          StakingRecord[]
   bookingPabRecords       BookingRecord[]
   agentRewards            AgentReward[]
-  socialLinks            SocialLink[]
-  portfolioItems         PortfolioItem[]
+  socialLinks             SocialLink[]
+  portfolioItems          PortfolioItem[]
 
   @@index([email])
   @@index([phone])
@@ -255,12 +255,12 @@ model Business {
   serviceAddress         String?
   serviceLat             Float?
   serviceLng             Float?
-  serviceRadiusMiles     Float?    @default(25)
-  travelFeeEnabled       Boolean   @default(false)
-  travelFeePerMile       Float?    @default(0.50)
-  maxTravelMinutes       Int?      @default(45)
-  maxConcurrentBookings  Int       @default(1)
-  valuesPreferences      Json      @default("{}")
+  serviceRadiusMiles     Float?                   @default(25)
+  travelFeeEnabled       Boolean                  @default(false)
+  travelFeePerMile       Float?                   @default(0.50)
+  maxTravelMinutes       Int?                     @default(45)
+  maxConcurrentBookings  Int                      @default(1)
+  valuesPreferences      Json                     @default("{}")
   owner                  User?                    @relation(fields: [ownerId], references: [id])
   businessHours          BusinessHours[]
   settings               BusinessSettings?
@@ -307,6 +307,12 @@ model Business {
   smsLogs                SMSLog[]
   members                BusinessMember[]
 
+  // Fees Pabandi has earned from this business and not yet collected. Payments
+  // settle into the merchant's own account, so this is an accrual rather than a
+  // deduction — see FeeAssessment.
+  feeAssessments FeeAssessment[]
+  feeStatements  MerchantFeeStatement[]
+
   @@index([ownerId])
   @@index([city])
   @@index([category])
@@ -314,28 +320,28 @@ model Business {
 }
 
 model UserAuthMethod {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  provider    String   // "email" | "github" | "google" | "wallet" | "privy"
-  providerId  String   // the external identifier
-  metadata    Json?
-  createdAt   DateTime @default(now())
-  lastUsedAt  DateTime?
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider   String // "email" | "github" | "google" | "wallet" | "privy"
+  providerId String // the external identifier
+  metadata   Json?
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
 
   @@unique([provider, providerId])
   @@index([userId])
 }
 
 model BusinessMember {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  businessId  String
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  role        String   // "owner" | "admin" | "member" | "viewer"
-  status      String   @default("active")
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  role       String // "owner" | "admin" | "member" | "viewer"
+  status     String   @default("active")
+  createdAt  DateTime @default(now())
 
   @@unique([userId, businessId])
   @@index([userId])
@@ -422,9 +428,9 @@ model BusinessHours {
 model BusinessAvailability {
   id            String   @id @default(cuid())
   businessId    String
-  dayOfWeek     Int      // 0-6, Sunday-Saturday
-  startTime     String   // "09:00"
-  endTime       String   // "17:00"
+  dayOfWeek     Int // 0-6, Sunday-Saturday
+  startTime     String // "09:00"
+  endTime       String // "17:00"
   slotMinutes   Int      @default(60)
   bufferMinutes Int      @default(15)
   isActive      Boolean  @default(true)
@@ -436,12 +442,12 @@ model BusinessAvailability {
 }
 
 model BlackoutDate {
-  id          String   @id @default(cuid())
-  businessId  String
-  date        DateTime
-  reason      String?
-  createdAt   DateTime @default(now())
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  businessId String
+  date       DateTime
+  reason     String?
+  createdAt  DateTime @default(now())
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId, date])
 }
@@ -516,18 +522,18 @@ model CacheEntry {
 }
 
 model LocationAttestation {
-  id              String         @id @default(cuid())
-  passportId      String
-  jobId           String
-  geoHash         String         // SHA-256 of (jobId + lat + lng + timestamp)
-  lat             Float
-  lng             Float
-  distanceMeters  Float
-  timestamp       DateTime       @default(now())
-  txHash          String?
-  verified        Boolean        @default(false)
-  createdAt       DateTime       @default(now())
-  passport        TrustPassport  @relation(fields: [passportId], references: [id], onDelete: Cascade)
+  id             String        @id @default(cuid())
+  passportId     String
+  jobId          String
+  geoHash        String // SHA-256 of (jobId + lat + lng + timestamp)
+  lat            Float
+  lng            Float
+  distanceMeters Float
+  timestamp      DateTime      @default(now())
+  txHash         String?
+  verified       Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  passport       TrustPassport @relation(fields: [passportId], references: [id], onDelete: Cascade)
 
   @@index([passportId])
   @@index([jobId])
@@ -535,48 +541,48 @@ model LocationAttestation {
 }
 
 model Booking {
-  id              String   @id @default(cuid())
-  businessId      String
-  clientId        String?
-  slotStart       DateTime
-  slotEnd         DateTime
-  serviceType     String
-  depositAmount   Float?
-  depositStatus   String?  // null | required | funded | refunded | forfeited
-  status          String   @default("pending") // pending | confirmed | attended | no_show | cancelled
-  paymentRef      String?
-  paidVia         String?
-  metadata        Json?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  client          CrmClient? @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  job             CrmJob?  @relation(fields: [id], references: [bookingId])
-  review          BookingReview?
+  id            String         @id @default(cuid())
+  businessId    String
+  clientId      String?
+  slotStart     DateTime
+  slotEnd       DateTime
+  serviceType   String
+  depositAmount Float?
+  depositStatus String? // null | required | funded | refunded | forfeited
+  status        String         @default("pending") // pending | confirmed | attended | no_show | cancelled
+  paymentRef    String?
+  paidVia       String?
+  metadata      Json?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  business      Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client        CrmClient?     @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  job           CrmJob?        @relation(fields: [id], references: [bookingId])
+  review        BookingReview?
 
-  clientAddress   String?
-  clientLat       Float?
-  clientLng       Float?
-  distanceMiles   Float?
-  driveMinutes    Int?
-  travelFee       Float? @default(0)
-  depositReason   String?
+  clientAddress String?
+  clientLat     Float?
+  clientLng     Float?
+  distanceMiles Float?
+  driveMinutes  Int?
+  travelFee     Float?  @default(0)
+  depositReason String?
 
   @@index([businessId, slotStart])
 }
 
 model BookingReview {
-  id                  String   @id @default(cuid())
-  bookingId           String   @unique
-  businessId          String
-  clientPassportId    String
-  rating              Int      // 1-5
-  title               String?
-  body                String?
-  verified            Boolean  @default(true)  // always true — only real attenders can review
-  createdAt           DateTime @default(now())
-  booking             Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  business            Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  bookingId        String   @unique
+  businessId       String
+  clientPassportId String
+  rating           Int // 1-5
+  title            String?
+  body             String?
+  verified         Boolean  @default(true) // always true — only real attenders can review
+  createdAt        DateTime @default(now())
+  booking          Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  business         Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId, rating])
 }
@@ -799,7 +805,7 @@ model BusinessSettings {
   customFields                Json     @default("{}")
   pipelineStages              Json     @default("[]")
   dashboardLayout             Json     @default("[]")
-  dashboardTheme             Json     @default("{}")
+  dashboardTheme              Json     @default("{}")
   trustSettings               Json     @default("{}")
   hideAdvancedByDefault       Boolean  @default(true)
   createdAt                   DateTime @default(now())
@@ -1687,17 +1693,18 @@ model BusinessVerification {
 }
 
 model BusinessDocument {
-  id           String   @id @default(cuid())
-  businessId   String
-  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  fileName     String
-  fileUrl      String
-  fileType     String
-  fileSize     Int
-  category     String // license | tax_id | insurance | other
-  uploadedAt   DateTime @default(now())
-  expiresAt    DateTime?
-  verified     Boolean  @default(false)
+  id         String    @id @default(cuid())
+  businessId String
+  business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  fileName   String
+  fileUrl    String
+  fileType   String
+  fileSize   Int
+  category   String // license | tax_id | insurance | other
+  uploadedAt DateTime  @default(now())
+  expiresAt  DateTime?
+  verified   Boolean   @default(false)
+
   @@index([businessId, category])
 }
 
@@ -4161,71 +4168,71 @@ model CommunityGrant {
 
 // ── Trust Passport (public, portable provider trust identity) ───────────────
 model TrustPassport {
-  id                    String     @id @default(cuid())
-  handle                String     @unique // shareable slug, e.g. "apex-builders"
-  agentId               String? // Web3Agent.id if linked
-  providerRef           String? // string key used across deposits/bonds/BC (landlordId/beneficiaryId/subjectId)
-  category              String     @default("FREELANCER") // FREELANCER | BUILDER | FLEET | HOA | PROPERTY_MANAGER
-  displayName           String
-  bio                   String?
-  walletAddress         String?    @unique
-  visibility            String     @default("PUBLIC") // PUBLIC | PRIVATE | MODULE_ONLY
-  privacySettings       Json? // { shareTrustScores: boolean, shareProfile: boolean, shareHistory: boolean, allowedModules: string[] }
+  id                  String     @id @default(cuid())
+  handle              String     @unique // shareable slug, e.g. "apex-builders"
+  agentId             String? // Web3Agent.id if linked
+  providerRef         String? // string key used across deposits/bonds/BC (landlordId/beneficiaryId/subjectId)
+  category            String     @default("FREELANCER") // FREELANCER | BUILDER | FLEET | HOA | PROPERTY_MANAGER
+  displayName         String
+  bio                 String?
+  walletAddress       String?    @unique
+  visibility          String     @default("PUBLIC") // PUBLIC | PRIVATE | MODULE_ONLY
+  privacySettings     Json? // { shareTrustScores: boolean, shareProfile: boolean, shareHistory: boolean, allowedModules: string[] }
   // Social & portfolio links
-  socialLinks          Json? // { twitter, github, linkedin, instagram, youtube, website, portfolio, resume }
-  portfolioItems       Json? // [{ title, description, url, type, date }]
-  skills               Json? // string[] of skill tags
-  headline             String? // e.g. "Full-stack developer | Solana builder"
-  location             String? // e.g. "Karachi, Pakistan"
-  websiteUrl           String?
-  avatarUrl            String?
-  coverImageUrl        String?
+  socialLinks         Json? // { twitter, github, linkedin, instagram, youtube, website, portfolio, resume }
+  portfolioItems      Json? // [{ title, description, url, type, date }]
+  skills              Json? // string[] of skill tags
+  headline            String? // e.g. "Full-stack developer | Solana builder"
+  location            String? // e.g. "Karachi, Pakistan"
+  websiteUrl          String?
+  avatarUrl           String?
+  coverImageUrl       String?
   // Display customization
-  displayTheme         String? @default("clay") // clay | dark | minimal
-  showOnPublicProfile  Boolean @default(true)
-  claimsCount           Int        @default(0) // times requested/verified
-  riskScore             Int?
-  riskBand              String?
-  lastCheckedAt         DateTime?
-  userId                String?    @unique
-  score                 Float?
-  level                 String?
-  verified              Boolean?
-  createdAt             DateTime   @default(now())
-  updatedAt             DateTime   @updatedAt
-  crmClient             CrmClient? @relation("CrmClientTrustPassport")
+  displayTheme        String?    @default("clay") // clay | dark | minimal
+  showOnPublicProfile Boolean    @default(true)
+  claimsCount         Int        @default(0) // times requested/verified
+  riskScore           Int?
+  riskBand            String?
+  lastCheckedAt       DateTime?
+  userId              String?    @unique
+  score               Float?
+  level               String?
+  verified            Boolean?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  crmClient           CrmClient? @relation("CrmClientTrustPassport")
 
   // Scoped scores — each 0-1000, each earned within its own context
-  showUpScore           Int? @default(500)
-  paymentScore          Int? @default(500)
-  deliveryScore         Int? @default(500)
-  tenancyScore          Int? @default(500)
-  freightScore          Int? @default(500)
+  showUpScore   Int? @default(500)
+  paymentScore  Int? @default(500)
+  deliveryScore Int? @default(500)
+  tenancyScore  Int? @default(500)
+  freightScore  Int? @default(500)
 
   // Confidence indicators
-  showUpSampleSize      Int @default(0)
-  paymentSampleSize     Int @default(0)
-  deliverySampleSize    Int @default(0)
-  tenancySampleSize     Int @default(0)
-  freightSampleSize     Int @default(0)
+  showUpSampleSize   Int @default(0)
+  paymentSampleSize  Int @default(0)
+  deliverySampleSize Int @default(0)
+  tenancySampleSize  Int @default(0)
+  freightSampleSize  Int @default(0)
 
   // Character-level flags — the only things that transfer globally
-  verifiedIdentity      Boolean   @default(false)
-  verifiedAt            DateTime?
-  fraudFlag             Boolean   @default(false)
-  fraudFlaggedAt        DateTime?
-  escrowTheftFlag       Boolean   @default(false)
-  chargebackFraudCount  Int       @default(0)
+  verifiedIdentity     Boolean   @default(false)
+  verifiedAt           DateTime?
+  fraudFlag            Boolean   @default(false)
+  fraudFlaggedAt       DateTime?
+  escrowTheftFlag      Boolean   @default(false)
+  chargebackFraudCount Int       @default(0)
 
   // Location verification
-  verifiedLocationCount Int       @default(0)
+  verifiedLocationCount Int @default(0)
 
   // Relations
-  gigHistory            PassportGigHistory[]
-  endorsements          SkillEndorsement[]
-  vector                PassportVector?
-  invoiceTrustEvents    InvoiceTrustEvent[]
-  locationAttestations  LocationAttestation[]
+  gigHistory           PassportGigHistory[]
+  endorsements         SkillEndorsement[]
+  vector               PassportVector?
+  invoiceTrustEvents   InvoiceTrustEvent[]
+  locationAttestations LocationAttestation[]
 
   @@index([handle])
   @@index([agentId])
@@ -4233,15 +4240,15 @@ model TrustPassport {
 }
 
 model OnchainAttestation {
-  id           String   @id @default(cuid())
-  passportId   String
-  eventType    String
-  referenceId  String
-  txSignature  String   @unique
-  hash         String
-  explorerUrl  String
-  status       String   @default("pending") // pending | confirmed | failed
-  createdAt    DateTime @default(now())
+  id          String   @id @default(cuid())
+  passportId  String
+  eventType   String
+  referenceId String
+  txSignature String   @unique
+  hash        String
+  explorerUrl String
+  status      String   @default("pending") // pending | confirmed | failed
+  createdAt   DateTime @default(now())
 
   @@index([passportId])
   @@index([eventType])
@@ -5880,18 +5887,18 @@ model Escrow {
 }
 
 model UniversalEscrow {
-  id           String   @id @default(cuid())
-  referenceId  String   @unique
-  template     String   @default("custom") // freelance | freight | booking | property | goods | custom
-  parties      Json     // [{partyId, role: "buyer"|"seller"|"broker"}]
-  amount       Float
-  currency     String   @default("USDC") // USDC | SOL
-  conditions   Json     // [{type, verify: {...}}]
-  status       String   @default("draft") // draft | funded | in_progress | conditions_met | released | disputed | refunded
-  deadline     DateTime?
-  metadata     Json?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String    @id @default(cuid())
+  referenceId String    @unique
+  template    String    @default("custom") // freelance | freight | booking | property | goods | custom
+  parties     Json // [{partyId, role: "buyer"|"seller"|"broker"}]
+  amount      Float
+  currency    String    @default("USDC") // USDC | SOL
+  conditions  Json // [{type, verify: {...}}]
+  status      String    @default("draft") // draft | funded | in_progress | conditions_met | released | disputed | refunded
+  deadline    DateTime?
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([referenceId])
   @@index([status])
@@ -6318,44 +6325,44 @@ model StakingRecord {
 }
 
 model PabReferral {
-  id            String    @id @default(cuid())
-  referrerId    String
-  refereeId     String
-  refereeEmail  String?
-  status        String    @default("PENDING") // PENDING | REGISTERED | VESTING | EARNED | PAID
-  referrerBonus Float     @default(200) // 200 PAB
-  refereeBonus  Float     @default(500) // 500 PAB
-  feeSharePct   Float     @default(5) // 5% of API fees for 12 months
-  feeShareMonths Int      @default(12)
-  vestedAt      DateTime?
-  paidAt        DateTime?
-  vestingStart  DateTime?  @default(now())
-  vestingDurationDays Int @default(90)
-  metadata      Json?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                  String            @id @default(cuid())
+  referrerId          String
+  refereeId           String
+  refereeEmail        String?
+  status              String            @default("PENDING") // PENDING | REGISTERED | VESTING | EARNED | PAID
+  referrerBonus       Float             @default(200) // 200 PAB
+  refereeBonus        Float             @default(500) // 500 PAB
+  feeSharePct         Float             @default(5) // 5% of API fees for 12 months
+  feeShareMonths      Int               @default(12)
+  vestedAt            DateTime?
+  paidAt              DateTime?
+  vestingStart        DateTime?         @default(now())
+  vestingDurationDays Int               @default(90)
+  metadata            Json?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  earnings            ReferralEarning[]
 
   @@index([referrerId])
   @@index([refereeId])
   @@index([status])
-  earnings ReferralEarning[]
 }
 
 model ReferralEarning {
-  id            String    @id @default(cuid())
-  referralId    String
-  referrerId    String
-  invoiceId     String?
-  amountPab     Float
-  amountUsd     Float?
-  feeSharePct   Float     @default(5)
-  status        String    @default("pending") // pending | paid | failed
-  paidAt        DateTime?
-  metadata      Json?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id          String    @id @default(cuid())
+  referralId  String
+  referrerId  String
+  invoiceId   String?
+  amountPab   Float
+  amountUsd   Float?
+  feeSharePct Float     @default(5)
+  status      String    @default("pending") // pending | paid | failed
+  paidAt      DateTime?
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  referral      PabReferral @relation(fields: [referralId], references: [id])
+  referral PabReferral @relation(fields: [referralId], references: [id])
 
   @@index([referralId])
   @@index([referrerId])
@@ -6364,16 +6371,16 @@ model ReferralEarning {
 }
 
 model PabBuyback {
-  id            String    @id @default(cuid())
-  amountPab     Float
-  amountUsd     Float
-  burnPct       Float     @default(100) // 100% burned
-  quarter       String    // e.g., "2026Q4"
-  txHash        String?
-  status        String    @default("PENDING") // PENDING | COMPLETED | FAILED
-  executedAt    DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id         String    @id @default(cuid())
+  amountPab  Float
+  amountUsd  Float
+  burnPct    Float     @default(100) // 100% burned
+  quarter    String // e.g., "2026Q4"
+  txHash     String?
+  status     String    @default("PENDING") // PENDING | COMPLETED | FAILED
+  executedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@index([quarter])
   @@index([status])
@@ -6899,30 +6906,115 @@ model LedgerAccount {
 }
 
 model Invoice {
-  id         String    @id @default(cuid())
-  number     String    @unique
-  businessId String
-  clientId   String
-  client     CrmClient @relation(fields: [clientId], references: [id])
-  dateIssued DateTime  @default(now())
-  dateDue    DateTime
-  status     String    @default("draft")
-  lineItems  Json
-  subtotal   Float     @default(0)
-  notes      String?
-  sentAt     DateTime?
-  paidAt     DateTime?
-  paymentLink String?
-  transactionHash String? @unique
-  reminderCount   Int @default(0)
-  lastReminderAt  DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  trustEvents InvoiceTrustEvent[]
+  id                    String                @id @default(cuid())
+  number                String                @unique
+  businessId            String
+  clientId              String
+  client                CrmClient             @relation(fields: [clientId], references: [id])
+  dateIssued            DateTime              @default(now())
+  dateDue               DateTime
+  status                String                @default("draft")
+  lineItems             Json
+  subtotal              Float                 @default(0)
+  notes                 String?
+  sentAt                DateTime?
+  paidAt                DateTime?
+  paymentLink           String?
+  transactionHash       String?               @unique
+  reminderCount         Int                   @default(0)
+  lastReminderAt        DateTime?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  trustEvents           InvoiceTrustEvent[]
   reconciliationMatches ReconciliationMatch[]
 
   @@index([businessId, status])
   @@index([clientId])
+}
+
+/// A fee Pabandi has earned and not yet collected.
+///
+/// WHY THIS IS AN ACCRUAL AND NOT A DEDUCTION
+/// Deposits and invoice payments settle into the *merchant's own* Square account
+/// (see resolveSquareCredentials — the merchant token is preferred over the
+/// platform token). The money never passes through Pabandi, so there is nothing
+/// to take a percentage out of at the point of charge. Anything claiming to deduct
+/// the fee from the customer's payment is describing a custody model we do not
+/// have, and would only work while the platform-token fallback was in use.
+///
+/// So the fee is recorded when a charge is created and collected later — an
+/// accounts-receivable entry, like a commission an agent earns.
+///
+/// WHY EVERY RATE IS SNAPSHOTTED
+/// `rate`, `feeCents`, `processingCents`, `tier`, `category` and the `breakdown`
+/// are all frozen at assessment time. If the schedule changes next month, the
+/// fee a merchant was quoted in March must still reconcile to the amount on
+/// their March invoice. Recomputing from today's rates would silently rewrite
+/// history and produce a figure nobody can explain.
+///
+/// `idempotencyKey` is UNIQUE and is what makes assessment safe to retry: a
+/// re-sent invoice or a replayed webhook must not bill twice.
+model FeeAssessment {
+  id              String    @id @default(cuid())
+  businessId      String
+  /// What this fee is for: an invoice, a booking deposit, a referral payout.
+  sourceType      String
+  sourceId        String
+  /// Amount of the underlying charge, in cents. The base the rate applied to.
+  chargeCents     Int
+  /// The fee, in cents. What the merchant owes us.
+  feeCents        Int
+  /// What payment processing cost on that charge, in cents.
+  processingCents Int
+  /// What is left for us after processing. Negative means we lost money on the
+  /// transaction, which assertProfitable() should make impossible — kept as a
+  /// column so an anomaly is visible in the ledger rather than inferred.
+  marginCents     Int
+  /// Rate as basis points, frozen. 450 = 4.5%.
+  rateBps         Int
+  tier            String
+  category        String
+  currency        String    @default("USD")
+  status          String    @default("accrued") // accrued | invoiced | paid | waived
+  /// Why the rate came out the way it did, e.g. ["category:SALON x0.75"].
+  /// Shown to the merchant on the fee line, so the number is explainable
+  /// without a support ticket.
+  breakdown       Json?
+  idempotencyKey  String    @unique
+  /// Set when this was folded into a merchant billing statement.
+  billedAt        DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  Business        Business  @relation(fields: [businessId], references: [id])
+
+  @@index([businessId, status])
+  @@index([sourceType, sourceId])
+  @@index([createdAt])
+}
+
+/// One statement to a merchant covering many accrued fees.
+///
+/// Billing them per transaction would be an email per appointment. Fees
+/// accumulate here and are presented as a periodic statement, which is also what
+/// makes the "10 free transactions" allowance meaningful: it counts settled
+/// charges, not statements.
+model MerchantFeeStatement {
+  id          String    @id @default(cuid())
+  businessId  String
+  number      String    @unique
+  periodStart DateTime
+  periodEnd   DateTime
+  /// Cents assessed in this period.
+  totalCents  Int       @default(0)
+  status      String    @default("draft") // draft | sent | paid | void
+  dueAt       DateTime?
+  paidAt      DateTime?
+  note        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  Business    Business  @relation(fields: [businessId], references: [id])
+
+  @@index([businessId, status])
 }
 
 /// One row per inbound rail payment that we tried to match to an invoice.
@@ -6933,22 +7025,22 @@ model Invoice {
 /// `invoiceId` is optional so an orphan payment — real money that matched
 /// nothing — can still be recorded rather than silently dropped.
 model ReconciliationMatch {
-  id          String   @id @default(cuid())
-  invoiceId   String?
-  invoice     Invoice? @relation(fields: [invoiceId], references: [id])
-  paymentRef  String   @unique
-  rail        String
-  amount      Decimal  @db.Decimal(18, 6)
-  confidence  Float    @default(0)
-  status      String   @default("queued") // "matched" | "queued" | "orphan"
+  id         String    @id @default(cuid())
+  invoiceId  String?
+  invoice    Invoice?  @relation(fields: [invoiceId], references: [id])
+  paymentRef String    @unique
+  rail       String
+  amount     Decimal   @db.Decimal(18, 6)
+  confidence Float     @default(0)
+  status     String    @default("queued") // "matched" | "queued" | "orphan"
   /// When status is "queued", the candidate invoices the reviewer can pick
   /// between, and why each was considered. Json so the shape can grow.
-  candidates  Json?
+  candidates Json?
   /// Free-text note: why it was orphaned, or which candidate a human chose.
-  note        String?
-  matchedAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  note       String?
+  matchedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@index([invoiceId])
   @@index([status])
@@ -7039,22 +7131,22 @@ model CrmBusiness {
 }
 
 model CrmEmployee {
-  id         String   @id @default(cuid())
-  businessId String
-  name       String
-  email      String?
-  phone      String?
-  role       String
-  payRate    Float    @default(0)
-  payType    String   @default("HOURLY") // HOURLY | SALARY | PER_JOB
-  isActive   Boolean  @default(true)
+  id               String   @id @default(cuid())
+  businessId       String
+  name             String
+  email            String?
+  phone            String?
+  role             String
+  payRate          Float    @default(0)
+  payType          String   @default("HOURLY") // HOURLY | SALARY | PER_JOB
+  isActive         Boolean  @default(true)
   hireDate         DateTime @default(now())
   inviteToken      String?  @unique
   inviteStatus     String   @default("PENDING") // PENDING | ACCEPTED
   reliabilityScore Float    @default(100)
   deliveryScore    Float    @default(100)
   createdAt        DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  updatedAt        DateTime @updatedAt
 
   business CrmBusiness  @relation(fields: [businessId], references: [id], onDelete: Cascade)
   jobs     CrmJob[]     @relation("JobAssignments")
@@ -7192,10 +7284,10 @@ model CrmJob {
   booking    Booking?
 
   // Location verification
-  checkinLat         Float?
-  checkinLng         Float?
-  checkinDistanceM   Float?
-  locationVerified   Boolean  @default(false)
+  checkinLat       Float?
+  checkinLng       Float?
+  checkinDistanceM Float?
+  locationVerified Boolean @default(false)
 
   @@index([businessId])
   @@index([status])
@@ -7261,22 +7353,22 @@ model SupportTicket {
   resolvedAt   DateTime?
   replies      SupportReply[]
 
-  user         User           @relation(fields: [userId], references: [id])
-  business     Business       @relation(fields: [businessId], references: [id])
-  assignedTo   User?          @relation("TicketAssignee", fields: [assignedToId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+  business   Business @relation(fields: [businessId], references: [id])
+  assignedTo User?    @relation("TicketAssignee", fields: [assignedToId], references: [id])
 }
 
 model SupportReply {
-  id         String        @id @default(uuid())
-  ticketId   String
-  authorId   String
-  isInternal Boolean       @default(false)
-  body       String
-  createdAt  DateTime      @default(now())
-  attachments String?      
+  id          String   @id @default(uuid())
+  ticketId    String
+  authorId    String
+  isInternal  Boolean  @default(false)
+  body        String
+  createdAt   DateTime @default(now())
+  attachments String?
 
-  ticket     SupportTicket @relation(fields: [ticketId], references: [id])
-  author     User          @relation(fields: [authorId], references: [id])
+  ticket SupportTicket @relation(fields: [ticketId], references: [id])
+  author User          @relation(fields: [authorId], references: [id])
 }
 
 model KbArticle {
@@ -7293,25 +7385,27 @@ model KbArticle {
 model BusinessPaymentMethod {
   id          String   @id @default(cuid())
   businessId  String
-  railId      String   // 'solana' | 'square' | 'paypal' | 'safepay' | 'bank'
-  displayName String   // "Business Square account"
-  target      String   // wallet address, payment link URL, or bank details
+  railId      String // 'solana' | 'square' | 'paypal' | 'safepay' | 'bank'
+  displayName String // "Business Square account"
+  target      String // wallet address, payment link URL, or bank details
   isDefault   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
   @@index([businessId, railId])
 }
 
 model Notification {
-  id          String   @id @default(cuid())
-  userId      String
-  type        String
-  title       String
-  body        String?
-  actionUrl   String?
-  read        Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id])
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String?
+  actionUrl String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
   @@index([userId, read, createdAt])
 }
 
@@ -7319,12 +7413,13 @@ model SocialLink {
   id          String   @id @default(cuid())
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  platform   String   // "linkedin" | "x" | "github" | "instagram" | "youtube" | "tiktok" | "website" | "custom"
-  url        String
+  platform    String // "linkedin" | "x" | "github" | "instagram" | "youtube" | "tiktok" | "website" | "custom"
+  url         String
   displayName String?
-  position   Int      @default(0)
-  verified   Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  position    Int      @default(0)
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
   @@index([userId, position])
 }
 
@@ -7338,5 +7433,6 @@ model PortfolioItem {
   linkUrl     String?
   position    Int      @default(0)
   createdAt   DateTime @default(now())
+
   @@index([userId, position])
 }

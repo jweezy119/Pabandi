@@ -20,6 +20,7 @@ import {
   advanceBookingEscrow,
   forfeitBookingDeposit,
 } from '../services/booking-escrow.service';
+import { assessFeeSafe } from '../services/fee-assessment.service';
 
 const router = Router();
 
@@ -264,6 +265,22 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
               });
               paymentUrl = created.url;
               paymentLinkSource = credentials.source === 'merchant' ? 'square-merchant-link' : 'square-platform-link';
+
+              // Record the fee on the deposit. An accrual, not a deduction: the
+              // deposit settles into the business's own Square account, so there
+              // is no percentage to take from it here. Keyed on the booking id, so
+              // a regenerated link does not bill twice.
+              const assessment = await assessFeeSafe({
+                businessId,
+                sourceType: 'booking_deposit',
+                sourceId: booking.id,
+                chargeCents: Math.round(Number(totalDeposit) * 100),
+              });
+              if (assessment) {
+                console.log(
+                  `[Booking] Deposit fee assessed for ${booking.id}: ${assessment.feeCents}c (${assessment.quote.tier}).`,
+                );
+              }
             } else {
               paymentLinkSource = 'square-static-link';
               console.warn(

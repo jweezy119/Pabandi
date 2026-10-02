@@ -118,6 +118,7 @@ import {
   createSquarePaymentLink,
   invoiceNote,
 } from './square-connection.service';
+import { assessFeeSafe } from './fee-assessment.service';
 
 /**
  * Read the notes envelope, tolerating notes that are plain text.
@@ -188,6 +189,26 @@ async function createSquareInvoiceLink(
     logger.info(
       `[InvoiceService] Created Square link for ${invoice.number} ($${invoice.subtotal}) via ${credentials.source} credentials.`,
     );
+
+    // Record the fee we will owe on this invoice. Not a deduction — the charge
+    // below settles into the merchant's own account, so there is nothing to take a
+    // percentage from. This is an accrual, collected on a later statement.
+    //
+    // Keyed on the invoice id, so re-sending an invoice (which mints a fresh link
+    // above) assesses once and reuses the existing row thereafter.
+    const assessment = await assessFeeSafe({
+      businessId,
+      sourceType: 'invoice',
+      sourceId: invoice.id,
+      chargeCents: Math.round(Number(invoice.subtotal ?? 0) * 100),
+    });
+    if (assessment) {
+      logger.info(
+        `[InvoiceService] Invoice ${invoice.number} fee assessed: ${assessment.feeCents}c ` +
+          `(${assessment.quote.tier}${assessment.reused ? ', reused' : ''}).`,
+      );
+    }
+
     return {
       url: created.url,
       source: credentials.source === 'merchant' ? 'square-merchant-link' : 'square-platform-link',
