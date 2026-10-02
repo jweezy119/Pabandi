@@ -77,6 +77,47 @@ export const handleSquareWebhook = async (req: Request, res: Response, next: Nex
     
     // Update payment status in DB based on webhook
     if (result.type === 'PAYMENT_UPDATED' && result.status === 'COMPLETED') {
+      // A booking deposit is paid by its own per-booking Square link, whose
+      // note carries the booking id. Reconciling on amount alone would tie a
+      // deposit to some other booking that happened to cost the same, so this
+      // is matched exactly, the same way invoices are.
+      if (result.bookingId) {
+        try {
+          const booking = await prisma.booking.findUnique({
+            where: { id: result.bookingId },
+          });
+          if (booking) {
+            const expectedCents = Math.round(
+              ((booking.depositAmount || 0) + (booking.travelFee || 0)) * 100,
+            );
+            const paidCents = result.amountCents;
+
+            if (paidCents != null && paidCents !== expectedCents) {
+              // Underpayment is a real dispute, not something to paper over by
+              // marking the deposit funded. Record it and let a human decide.
+              logger.warn(
+                `[SquareWebhook] Booking deposit for ${booking.id} collected $${(paidCents / 100).toFixed(2)} but $${(expectedCents / 100).toFixed(2)} was due. Leaving deposit unfunded.`,
+              );
+              await prisma.booking.update({
+                where: { id: booking.id },
+                data: { paidVia: 'square' },
+              });
+            } else {
+              await prisma.booking.update({
+                where: { id: booking.id },
+                data: {
+                  depositStatus: 'funded',
+                  paidVia: 'square',
+                  ...(booking.status === 'pending' ? { status: 'confirmed' } : {}),
+                },
+              });
+              logger.info(`[SquareWebhook] Booking deposit funded for ${booking.id}.`);
+            }
+          }
+        } catch (bookingErr) {
+          logger.error(`[SquareWebhook] booking deposit update failed for ${result.bookingId}: ${bookingErr}`);
+        }
+      }
       // Find payment by Square payment ID and update status
       const payment = await prisma.payment.findUnique({
         where: { transactionId: result.paymentId },

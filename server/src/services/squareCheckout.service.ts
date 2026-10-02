@@ -1,6 +1,6 @@
 import { SquareClient, SquareEnvironment } from 'square';
 import { logger } from '../utils/logger';
-import { squareEnvironment, squareBaseUrl, parseInvoiceNote } from './square-connection.service';
+import { squareEnvironment, squareBaseUrl, parseInvoiceNote, parseBookingNote } from './square-connection.service';
 
 const accessToken = process.env.SQUARE_ACCESS_TOKEN || '';
 
@@ -42,6 +42,8 @@ export type SquareWebhookResult =
        */
       invoiceId: string | null;
       invoiceNumber: string | null;
+      /** Set when the payment was created for a booking deposit. */
+      bookingId: string | null;
       reconciliation?: SquareReconciliationNote;
     }
   | { type: 'REFUND_CREATED'; paymentId: string; amount: unknown }
@@ -200,6 +202,7 @@ export class SquareService {
         const amountMoney = payment?.amount_money ?? payment?.amountMoney;
         const note = payment?.note ?? null;
         const ours = parseInvoiceNote(note);
+        const booking = parseBookingNote(note);
 
         return {
           type: 'PAYMENT_UPDATED',
@@ -215,6 +218,7 @@ export class SquareService {
           clientId: payment?.reference_id ?? null,
           invoiceId: ours?.invoiceId ?? null,
           invoiceNumber: ours?.invoiceNumber ?? null,
+          bookingId: booking?.bookingId ?? null,
         };
       }
       case 'refund.created':

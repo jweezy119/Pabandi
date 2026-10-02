@@ -1,6 +1,13 @@
 export interface InvoiceData {
   amount: number;
-  number: string;
+  /**
+   * Human-facing reference. Optional because not every caller has one — a
+   * booking deposit passes `reference` but no `number`, since it has no invoice
+   * number. Rails should treat both as optional labels, never as the thing
+   * that determines the amount.
+   */
+  number?: string;
+  reference?: string;
   currency: string;
 }
 

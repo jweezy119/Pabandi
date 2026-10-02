@@ -5,6 +5,11 @@ import { trustCore } from '../trust/trust-core';
 import { paymentRails } from '../payments/rails';
 import { geoService } from '../services/geo.service';
 import { findOrCreateClient } from '../services/crm.service';
+import {
+  resolveSquareCredentials,
+  createSquarePaymentLink,
+  bookingNote,
+} from '../services/square-connection.service';
 
 const router = Router();
 
@@ -157,6 +162,9 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
     // If deposit required, generate payment link
     let paymentUrl: string | null = null;
+    // 'square-static-link' means the amount on the link may not match the
+    // deposit, because Square was not connected for this business.
+    let paymentLinkSource = 'none';
     const totalDeposit = (depositAmount || 0) + travelFee;
 
     if (totalDeposit > 0) {
@@ -166,7 +174,47 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
       if (defaultMethod) {
         const rail = paymentRails[defaultMethod.railId];
-        if (rail) {
+
+        // Square Payment Links created by hand are fixed-price hosted pages
+        // that ignore `?amount=`, so routing a deposit through
+        // rail.getPaymentUrl handed the customer the business's one static
+        // link and collected whatever it was pinned at — a $40 deposit and a
+        // $400 deposit collected the same. Mint a per-booking link priced from
+        // this booking instead, and fall back to the static link only if Square
+        // is unusable so the booking is still payable.
+        if (rail && defaultMethod.railId === 'square') {
+          try {
+            const credentials = await resolveSquareCredentials(businessId);
+            if (credentials) {
+              const created = await createSquarePaymentLink({
+                credentials,
+                idempotencyKey: `booking-deposit-${booking.id}`,
+                lineItemName: `Booking deposit`,
+                amount: Number(totalDeposit),
+                currency: (business.currency || 'USD').toUpperCase(),
+                // The note is how the webhook identifies which booking was paid.
+                note: bookingNote(booking.id),
+                ...(customerEmail ? { buyerEmail: customerEmail } : {}),
+                redirectUrl: `${process.env.APP_URL || 'https://pabandi.com'}/b/${business.slug}/confirm/${booking.id}`,
+                metadata: { pabandiBookingId: booking.id },
+              });
+              paymentUrl = created.url;
+              paymentLinkSource = credentials.source === 'merchant' ? 'square-merchant-link' : 'square-platform-link';
+            } else {
+              paymentLinkSource = 'square-static-link';
+              console.warn(
+                `[Booking] Square selected for deposit on booking ${booking.id} but no credentials available; falling back to the registered static link.`,
+              );
+            }
+          } catch (err) {
+            paymentLinkSource = 'square-static-link';
+            console.error(
+              `[Booking] Square deposit link failed for booking ${booking.id}: ${err instanceof Error ? err.message : err}. Falling back to the registered static link.`,
+            );
+          }
+        }
+
+        if (!paymentUrl && rail) {
           paymentUrl = rail.getPaymentUrl(defaultMethod.target, {
             amount: totalDeposit,
             reference: `deposit-${booking.id}`,
@@ -194,6 +242,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
           status: booking.status,
         },
         paymentUrl,
+        paymentLinkSource,
         redirectUrl: paymentUrl ? `/b/${business.slug}/pay/${booking.id}` : `/b/${business.slug}/confirm/${booking.id}`,
       },
     });

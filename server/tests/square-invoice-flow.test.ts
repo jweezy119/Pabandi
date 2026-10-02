@@ -3,9 +3,12 @@ import { Prisma } from '@prisma/client';
 import {
   parseInvoiceNote,
   invoiceNote,
+  parseBookingNote,
+  bookingNote,
   squareEnvironment,
   squareBaseUrl,
   INVOICE_NOTE_PREFIX,
+  BOOKING_NOTE_PREFIX,
 } from '../src/services/square-connection.service';
 import { reconcileIncomingPayment } from '../src/services/auto-reconciliation.service';
 import { squareService } from '../src/services/squareCheckout.service';
@@ -80,6 +83,35 @@ describe('invoice note round-trip', () => {
   });
 });
 
+describe('booking deposit note round-trip', () => {
+  // Booking deposits were the second half of the static-link bug: the deposit
+  // URL came from rail.getPaymentUrl, which handed out the business's one
+  // fixed-price Square link, so every deposit collected the same amount. Each
+  // booking now gets its own priced link, and the note is how the webhook knows
+  // which booking was paid.
+
+  it('writes and reads back the same booking id', () => {
+    const note = bookingNote('bkg_abc123');
+    expect(note.startsWith(BOOKING_NOTE_PREFIX)).toBe(true);
+    expect(parseBookingNote(note)).toEqual({ bookingId: 'bkg_abc123' });
+  });
+
+  it('does not read an invoice note as a booking, or vice versa', () => {
+    // The two prefixes share a namespace, so a booking note reaching the
+    // invoice path must not resolve to a bogus invoice.
+    expect(parseInvoiceNote(bookingNote('bkg_1'))).toBeNull();
+    expect(parseBookingNote(invoiceNote('inv_1', 'INV-0042'))).toBeNull();
+  });
+
+  it('returns null for a note that is not ours', () => {
+    expect(parseBookingNote('Pabandi booking abc')).toBeNull();
+    expect(parseBookingNote('')).toBeNull();
+    expect(parseBookingNote(null)).toBeNull();
+    expect(parseBookingNote(undefined)).toBeNull();
+    expect(parseBookingNote(`${BOOKING_NOTE_PREFIX}`)).toBeNull();
+  });
+});
+
 describe('Square environment resolution', () => {
   const originalEnv = { ...process.env };
   afterEach(() => {
@@ -134,6 +166,29 @@ describe('processWebhook — recovering the invoice', () => {
     expect(result.invoiceNumber).toBe('INV-0042');
     // Minor units in, and reconciliation compares against major units.
     expect(result.amountCents).toBe(15000);
+  });
+
+  it('reads the booking id out of the payment note and leaves invoiceId null', async () => {
+    // A deposit is not an invoice, and it must not be reconciled as one —
+    // otherwise the deposit's amount scan could match some other invoice that
+    // happened to cost the same.
+    const result = await squareService.processWebhook({
+      type: 'payment.completed',
+      data: {
+        object: {
+          payment: {
+            id: 'pay_dep_1',
+            status: 'COMPLETED',
+            amount_money: { amount: 4000, currency: 'USD' },
+            note: bookingNote('bkg_xyz'),
+          },
+        },
+      },
+    });
+    if (result.type !== 'PAYMENT_UPDATED') throw new Error('wrong branch');
+    expect(result.bookingId).toBe('bkg_xyz');
+    expect(result.invoiceId).toBeNull();
+    expect(result.amountCents).toBe(4000);
   });
 
   it('does not treat an opaque order_id as a client id', async () => {

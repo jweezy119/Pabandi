@@ -313,3 +313,26 @@ export function parseInvoiceNote(note: string | null | undefined): { invoiceId: 
   if (sep <= 0) return null;
   return { invoiceId: rest.slice(0, sep), invoiceNumber: rest.slice(sep + 1) };
 }
+
+/**
+ * The same trick for booking deposits.
+ *
+ * A booking deposit was previously paid through the business's one static
+ * Square link, which is a fixed-price page — so a $40 deposit and a $400
+ * deposit both collected whatever that link was pinned at. Each booking now
+ * gets its own priced link, and the note is what tells the webhook which
+ * booking arrived.
+ */
+export const BOOKING_NOTE_PREFIX = 'pabandi:booking:';
+
+export function bookingNote(bookingId: string): string {
+  return `${BOOKING_NOTE_PREFIX}${bookingId}`;
+}
+
+/** Pull the booking id back out of a payment note. Null if it is not ours. */
+export function parseBookingNote(note: string | null | undefined): { bookingId: string } | null {
+  if (!note || !note.startsWith(BOOKING_NOTE_PREFIX)) return null;
+  const bookingId = note.slice(BOOKING_NOTE_PREFIX.length);
+  if (!bookingId) return null;
+  return { bookingId };
+}
