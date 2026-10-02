@@ -374,20 +374,25 @@ describe('the endpoints fixed earlier are still gated', () => {
   // Regression cover: these were the first pass, and a later refactor that
   // dropped a gate would otherwise go unnoticed because the whole file would
   // still look "authenticated".
-  it('keeps the payout migration admin-only', async () => {
+  // Each of these does a dynamic import of a route module, which pulls in that
+  // module's full controller dependency graph. Five seconds is not enough once
+  // several run in the same file while the rest of the suite competes for CPU —
+  // the assertion is fast, the import is not.
+  it('keeps the payout migration admin-only', { timeout: 20000 }, async () => {
     vi.resetModules();
     const router = (await import('../src/routes/payout.routes')).default;
     expect(requiresAuth(router, 'post', '/migrate')).toBe(true);
     expect(hasRoleGate(router, 'post', '/migrate')).toBe(true);
   });
 
-  it('keeps escrow mutations authenticated', async () => {
+  it('keeps escrow mutations authenticated', { timeout: 20000 }, async () => {
     vi.resetModules();
     const router = (await import('../src/routes/escrow.routes')).default;
     expect(requiresAuth(router, 'post', '/')).toBe(true);
     expect(requiresAuth(router, 'patch', '/:referenceId/status')).toBe(true);
   });
 });
+
 describe('agent marketplace — a caller cannot act as another agent', () => {
   // Every route here is authenticated, which is what made them read as protected.
   // Three of them accepted an identity from the request body, so a logged-in user

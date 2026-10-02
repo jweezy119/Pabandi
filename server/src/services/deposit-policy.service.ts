@@ -91,5 +91,8 @@ export async function quoteDepositForClient(params: {
   }
 
   const { band, score } = await bandForCrmClient(params.crmClientId);
-  return applyBand(base, band, score, currency);
+  // Pass the booking value so the 50% ceiling can be enforced. Omitting it here
+  // would make the whitepaper's promise unenforceable on exactly the bookings
+  // where it matters.
+  return applyBand(base, band, score, currency, params.serviceValue);
 }

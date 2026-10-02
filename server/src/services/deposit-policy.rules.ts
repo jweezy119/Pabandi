@@ -76,6 +76,38 @@ const BAND_MULTIPLIER: Record<TrustBand, number> = {
   D: 1.25,
 };
 
+/**
+ * The hard ceiling on a deposit, as a fraction of the booking's value.
+ *
+ * The whitepaper promises a deposit is "never more than 50%" of the booking. Until
+ * now nothing enforced that: the D-band multiplier of 1.25 only stays under the
+ * ceiling while a business sets a base of 40% or less, so a single merchant
+ * setting a 60% base silently broke a published customer protection.
+ *
+ * The band multiplier and this ceiling are different things and both are needed.
+ * The multiplier is about the *customer* — how much extra to ask of someone with
+ * a poor record. The ceiling is about the *merchant* — a floor under Pabandi's own
+ * promise, regardless of who they are. Tightening the multiplier to make the
+ * ceiling hold would penalise every honest D-band customer for a merchant's
+ * misconfiguration, which is the wrong person to bill for it.
+ *
+ * Anchored to booking value, so it scales with the size of the transaction. It
+ * only engages when the booking's value is known — see `applyBand`.
+ */
+export const DEPOSIT_CEILING_RATIO = 0.5;
+
+/**
+ * Whether a deposit can be quoted without the booking's value.
+ *
+ * A business using a flat `depositAmount` can be quoted before we know what the
+ * booking costs, and the ceiling is defined against that cost. Inventing one would
+ * either clamp nothing or clamp arbitrarily, so an unknown value leaves the quote
+ * unclamped and flags it, rather than guessing.
+ */
+export function ceilingApplies(serviceValue: number | null | undefined): boolean {
+  return Number.isFinite(Number(serviceValue)) && Number(serviceValue) > 0;
+}
+
 export function bandForScore(score: number): TrustBand {
   if (!Number.isFinite(score)) return 'C';
   for (const { band, min } of BAND_THRESHOLDS) {
@@ -123,6 +155,12 @@ export interface DepositQuote {
   adjusted: boolean;
   /** The amount a customer with no history would be asked for. */
   standardAmount: number;
+  /** True when the 50% ceiling reduced the amount. */
+  capped?: boolean;
+  /** The ceiling that applied, in currency units. Null when unknowable. */
+  ceilingAmount?: number | null;
+  /** The band-scaled amount before the ceiling intervened. */
+  uncappedAmount?: number;
 }
 
 /**
@@ -134,24 +172,40 @@ export function applyBand(
   band: TrustBand,
   score: number | null,
   currency = 'USD',
+  serviceValue?: number | null,
 ): DepositQuote {
   const base = Number.isFinite(baseAmount) && baseAmount > 0 ? baseAmount : 0;
   const multiplier = multiplierForBand(band);
 
   // Rounded to cents. A deposit is a cash figure; 0.0000001 rounding artefacts
   // show up on an invoice and read as a bug.
-  const amount = Math.round(base * multiplier * 100) / 100;
+  const unrounded = base * multiplier;
+  const amount = Math.round(unrounded * 100) / 100;
+
+  // Clamp to the published ceiling. Only when the booking's value is known —
+  // the ceiling is a fraction of it, so an unknown value means an unknowable cap.
+  const clampable = ceilingApplies(serviceValue);
+  const ceiling = clampable ? Math.round(Number(serviceValue) * DEPOSIT_CEILING_RATIO * 100) / 100 : null;
+  const capped = clampable && amount > (ceiling as number);
+  const finalAmount = capped ? (ceiling as number) : amount;
 
   return {
     baseAmount: Math.round(base * 100) / 100,
     multiplier,
-    amount,
+    amount: finalAmount,
     currency,
     band,
     score,
     explanation: bandExplanation(band),
     adjusted: multiplier !== 1,
     standardAmount: Math.round(base * 100) / 100,
+    capped,
+    // The cap actually engaged, so support can explain the number instead of
+    // guessing why it is lower than the band's arithmetic implies.
+    ceilingAmount: ceiling,
+    // What the band asked for before the ceiling intervened. Needed to show the
+    // customer a real contrast — otherwise "capped" is unfalsifiable.
+    uncappedAmount: amount,
   };
 }
 

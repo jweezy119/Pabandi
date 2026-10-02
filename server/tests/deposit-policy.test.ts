@@ -169,3 +169,73 @@ describe('explanations', () => {
     expect(bandExplanation('D')).not.toMatch(/untrustworthy|fraud|risk/i);
   });
 });
+describe('the 50% deposit ceiling', () => {
+  // §4 of the whitepaper promises a deposit is "never more than 50%" of the
+  // booking. Nothing enforced that. The D-band multiplier of 1.25 only stays
+  // under the ceiling while a merchant sets a base of 40% or less, so one
+  // merchant setting a 60% base silently broke a published customer protection.
+  const SERVICE = 1000;
+
+  it('leaves an ordinary D-band deposit untouched', () => {
+    // 20% base x 1.25 = 25%, comfortably under the ceiling. The clamp must not
+    // fire on normal quotes and quietly change what merchants expect to collect.
+    const q = applyBand(200, 'D', 100, 'USD', SERVICE);
+    expect(q.amount).toBe(250);
+    expect(q.capped).toBe(false);
+  });
+
+  it('caps a deposit that would exceed half the booking', () => {
+    // 60% base x 1.25 = 75%, which breaks the promise.
+    const q = applyBand(600, 'D', 100, 'USD', SERVICE);
+    expect(q.amount).toBe(500);
+    expect(q.capped).toBe(true);
+    expect(q.ceilingAmount).toBe(500);
+  });
+
+  it('reports the uncapped figure so the reduction is explainable', () => {
+    // Without this, "capped" is unfalsifiable — the customer sees 500 and the
+    // band's arithmetic says 750, with nothing to reconcile the two.
+    const q = applyBand(600, 'D', 100, 'USD', SERVICE);
+    expect(q.uncappedAmount).toBe(750);
+    expect(q.amount).toBeLessThan(q.uncappedAmount);
+  });
+
+  it('leaves the base and multiplier intact when capping', () => {
+    // The clamp reduces what is *asked*, not the merchant's setting or the band's
+    // standing. Overwriting these would make the merchant's own configuration
+    // read differently depending on who booked.
+    const q = applyBand(600, 'D', 100, 'USD', SERVICE);
+    expect(q.baseAmount).toBe(600);
+    expect(q.multiplier).toBe(1.25);
+  });
+
+  it('does not clamp when the booking value is unknown', () => {
+    // The ceiling is a fraction of the booking's cost. Without that cost there is
+    // nothing to compare against, so guessing would either clamp nothing or
+    // clamp arbitrarily.
+    const q = applyBand(600, 'D', 100, 'USD', null);
+    expect(q.amount).toBe(750);
+    expect(q.capped).toBe(false);
+    expect(q.ceilingAmount).toBeNull();
+  });
+
+  it('caps the worst realistic case, not just a contrived one', () => {
+    // A 100% base x 1.25 = 125% — a deposit larger than the booking itself.
+    const q = applyBand(1000, 'D', 0, 'USD', SERVICE);
+    expect(q.amount).toBe(500);
+  });
+
+  it('never caps band A, which is already zero', () => {
+    const q = applyBand(900, 'A', 900, 'USD', SERVICE);
+    expect(q.amount).toBe(0);
+    expect(q.capped).toBe(false);
+  });
+
+  it('agrees with itself at exactly the ceiling', () => {
+    // 40% base x 1.25 = 50% exactly. Off-by-one here would either cap a quote
+    // that needs no cap or let 1 cent through.
+    const q = applyBand(400, 'D', 100, 'USD', SERVICE);
+    expect(q.amount).toBe(500);
+    expect(q.capped).toBe(false);
+  });
+});
