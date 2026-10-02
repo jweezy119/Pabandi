@@ -46,11 +46,16 @@
  * The fee must exceed payment processing at every ticket size, or we lose money
  * on exactly the local services this marketplace exists for.
  *
- * Square's standard rate is 2.9% + 30¢. That fixed 30¢ is 2.0% of a $15 job and
- * 0.6% of a $50 one, so a flat percentage cannot work across job sizes — at 4%
- * it is *negative* below roughly $40. That arithmetic, not preference, is why
- * small tickets are a flat fee and large tickets are a percentage. See
- * `MIN_MARGIN_CENTS` and `assertProfitable` below, which enforce it in code
+ * Square's standard rate is 2.9% + 30¢, so the break-even platform fee is
+ * 2.9% + 32¢/amount — 5.07% at $15, 3.54% at $50, 3.06% at $200. That fixed 30¢
+ * is 2.0% of a $15 job, so a single percentage cannot work across the range.
+ *
+ * Which means the floor is not a rounding concern: any rate below ~2.9% is a
+ * negative-margin business, because processing IS 2.9%. An earlier draft of the
+ * pricing proposed 0.5% flat, which loses $1.23 on a $500 booking.
+ *
+ * Hence two tiers — a minimum fee on small bookings, one flat percentage above
+ * them — and `MIN_MARGIN_CENTS` / `assertProfitable`, which enforce it in code
  * rather than in a spreadsheet someone has to remember to open.
  *
  * ── Why categories modulate ───────────────────────────────────────────────
@@ -162,27 +167,35 @@ export const SMALL_TICKET_FEE_CENTS = 185;
 export const MAX_SMALL_TICKET_RATE = 0.12;
 
 /**
- * Percentage for mid-range charges.
+ * THE PLATFORM FEE: 3.5% flat, with a $1.85 minimum on small bookings.
  *
- * 4.5% rather than the 4% that reads better. At $50 processing is 175¢ and 4%
- * collects 200¢ — a 25¢ margin on the merchant's entire booking, which is not a
- * business. 4.5% triples that. The floor in `minimumViableRate` would have
- * corrected the worst of it anyway; this is choosing the number deliberately
- * rather than being rescued by a guard rail.
- */
-export const MID_TICKET_RATE = 0.045;
-
-/**
- * Percentage for large charges.
+ * This is the number a merchant is quoted, and it has one job: clear the
+ * processor and leave margin. At 3.5%:
  *
- * Lower than mid-range because our cost is a percentage too: at $5,000
- * processing is 2.91%, so the extra half-point on mid is margin rather than
- * necessity. But not much lower — an earlier 3% here netted 20¢ on a $1,480
- * charge, which is 1.3% of the fee and no business at all. 3.5% keeps roughly
- * 17% of the fee as margin.
+ *   $200   →  $7.00 fee vs  $6.10 processing →  $0.90 margin
+ *   $500   → $17.50 fee vs $14.80 processing →  $2.70 margin
+ *   $5,000 → $175.00    vs $145.30           → $29.70 margin
+ *
+ * WHY NOT 0.5%, WHICH AN EARLIER DRAFT PROPOSED
+ * A flat 0.5% loses money on every ticket size. Square's 30¢ fixed fee is 2% of a
+ * $15 job, so 0.5% collects 8¢ against 74¢ of cost. At $500, Pabandi would earn
+ * $2.50 while Square took $14.80 — subsidising the processor on every transaction.
+ * Any rate below ~2.9% is a negative-margin business, because processing IS 2.9%.
+ *
+ * WHY NO LARGE-TICKET DISCOUNT
+ * An earlier schedule charged 3.5% over $500 against 4.5% below. That priced on
+ * our own cost structure rather than on what a merchant can pay, and it made the
+ * public pricing page a two-row table for no benefit. One rate is simpler to
+ * quote, simpler to reconcile, and easier to hold to.
+ *
+ * WHY NO DISCOUNT FOR SUBSCRIBERS
+ * Subscriptions once halved the fee for paying customers. The profitability floor
+ * then ate most of the discount — at $200 they saved 32% rather than the 50%
+ * advertised, and at $500 only 15%. A pricing page has to say something it can
+ * keep, so the subscription is now purely a SaaS tier (see
+ * config/subscriptions.ts) and the fee is one honest rate for everyone.
  */
-export const LARGE_TICKET_THRESHOLD_CENTS = 50_000; // $500
-export const LARGE_TICKET_RATE = 0.035;
+export const PLATFORM_FEE_RATE = 0.035;
 
 // ── Category modulation ────────────────────────────────────────────────────
 //
@@ -278,7 +291,7 @@ export const LAUNCH_RATE_MULTIPLIER = 0;
 
 // ── The schedule ──────────────────────────────────────────────────────────
 
-export type FeeTier = 'small' | 'mid' | 'large';
+export type FeeTier = 'small' | 'standard';
 
 export interface FeeInputs {
   /** Charge amount in cents. */
@@ -373,8 +386,7 @@ export function quoteFee(inputs: FeeInputs, currency = 'USD'): FeeQuote {
     bps = Math.min(toBps(SMALL_TICKET_FEE_CENTS / amountCents), toBps(MAX_SMALL_TICKET_RATE));
     applied.push(`small-ticket: flat ${(SMALL_TICKET_FEE_CENTS / 100).toFixed(2)}`);
   } else {
-    bps = toBps(tier === 'mid' ? MID_TICKET_RATE : LARGE_TICKET_RATE);
-    if (tier === 'large') applied.push('large-ticket: reduced rate');
+    bps = toBps(PLATFORM_FEE_RATE);
   }
 
   // 3. Category modulation, per-business override winning over the default.
@@ -429,9 +441,7 @@ export function quoteFee(inputs: FeeInputs, currency = 'USD'): FeeQuote {
 }
 
 export function tierFor(amountCents: number): FeeTier {
-  if (amountCents < FLAT_FEE_THRESHOLD_CENTS) return 'small';
-  if (amountCents < LARGE_TICKET_THRESHOLD_CENTS) return 'mid';
-  return 'large';
+  return amountCents < FLAT_FEE_THRESHOLD_CENTS ? 'small' : 'standard';
 }
 
 /**
@@ -467,21 +477,19 @@ export function publicFeeSchedule(): {
   onboarding: { freeTransactions: number };
 } {
   return {
+    // Two rows, because that is the truth: a minimum fee on small bookings and a
+    // flat percentage above them. The earlier three-row table with a large-ticket
+    // discount was pricing on our own cost structure rather than the merchant's.
     tiers: [
       {
         label: 'Small bookings',
         range: `under ${(FLAT_FEE_THRESHOLD_CENTS / 100).toFixed(0)}`,
-        rate: `${(SMALL_TICKET_FEE_CENTS / 100).toFixed(2)} flat`,
+        rate: `${(SMALL_TICKET_FEE_CENTS / 100).toFixed(2)} minimum`,
       },
       {
-        label: 'Standard',
-        range: `${(FLAT_FEE_THRESHOLD_CENTS / 100).toFixed(0)} – ${(LARGE_TICKET_THRESHOLD_CENTS / 100).toFixed(0)}`,
-        rate: `${(MID_TICKET_RATE * 100).toFixed(1)}%`,
-      },
-      {
-        label: 'Large jobs',
-        range: `over ${(LARGE_TICKET_THRESHOLD_CENTS / 100).toFixed(0)}`,
-        rate: `${(LARGE_TICKET_RATE * 100).toFixed(1)}%`,
+        label: 'Everything else',
+        range: `${(FLAT_FEE_THRESHOLD_CENTS / 100).toFixed(0)} and above`,
+        rate: `${(PLATFORM_FEE_RATE * 100).toFixed(1)}%`,
       },
     ],
     categories: Object.entries(CATEGORY_PRICING).map(([category, pricing]) => ({

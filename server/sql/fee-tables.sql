@@ -153,3 +153,57 @@ DO $$ BEGIN
       ON DELETE SET NULL ON UPDATE CASCADE;
   END IF;
 END $$;
+
+-- ── Subscriptions ──────────────────────────────────────────────────────────
+-- A merchant's paid plan. Whop owns the billing; this is the local record the
+-- fee engine reads, because calling Whop per booking to ask "what plan is this
+-- merchant on" would put a network round-trip in the pricing path of a
+-- customer's payment. A cache can disagree with its source, so Whop webhooks
+-- always win over what is stored here.
+
+CREATE TABLE IF NOT EXISTS "MerchantSubscription" (
+  id TEXT NOT NULL,
+  "businessId" TEXT NOT NULL,
+  "tier" TEXT NOT NULL DEFAULT 'free',
+  "status" TEXT NOT NULL DEFAULT 'inactive',
+  "whopMembershipId" TEXT,
+  "whopPlanId" TEXT,
+  "whopCompanyId" TEXT,
+  "priceCents" INTEGER NOT NULL DEFAULT 0,
+  "currency" TEXT NOT NULL DEFAULT 'USD',
+  "currentPeriodStart" TIMESTAMP(3),
+  "currentPeriodEnd" TIMESTAMP(3),
+  "cancelAtPeriodEnd" BOOLEAN NOT NULL DEFAULT false,
+  "canceledAt" TIMESTAMP(3),
+  "lastWebhookId" TEXT,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+
+  CONSTRAINT "MerchantSubscription_pkey" PRIMARY KEY ("id")
+);
+
+-- One subscription per business. This is what makes the Business side a
+-- one-to-one, and therefore what lets the fee engine read a merchant's tier
+-- without querying for duplicates. Two active rows would mean two tiers.
+CREATE UNIQUE INDEX IF NOT EXISTS "MerchantSubscription_businessId_key"
+  ON "MerchantSubscription" ("businessId");
+
+-- Webhook settlement: membership events carry Whop's membership id.
+CREATE UNIQUE INDEX IF NOT EXISTS "MerchantSubscription_whopMembershipId_key"
+  ON "MerchantSubscription" ("whopMembershipId")
+  WHERE "whopMembershipId" IS NOT NULL;
+
+-- Finding everyone on a plan, for a price change or a migration.
+CREATE INDEX IF NOT EXISTS "MerchantSubscription_tier_status_idx"
+  ON "MerchantSubscription" ("tier", "status");
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'MerchantSubscription_businessId_fkey'
+  ) THEN
+    ALTER TABLE "MerchantSubscription"
+      ADD CONSTRAINT "MerchantSubscription_businessId_fkey"
+      FOREIGN KEY ("businessId") REFERENCES "Business"("id")
+      ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;

@@ -30,6 +30,13 @@ vi.mock('../src/utils/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
+// assessFee now reads the merchant's subscription tier. Mocked rather than hitting
+// the DB: these tests are about what gets written, and the tier's effect on the
+// quote is asserted in fees.test.ts and fee-scope.test.ts.
+vi.mock('../src/services/subscription.service', () => ({
+  usageMultiplierForBusiness: vi.fn(async () => 1),
+}));
+
 import { prisma } from '../src/utils/database';
 import {
   assessFee,
@@ -54,10 +61,10 @@ function row(overrides: Record<string, unknown> = {}) {
     sourceType: 'invoice',
     sourceId: 'inv_1',
     chargeCents: 20_000,
-    feeCents: 900,
+    feeCents: 700,
     processingCents: 610,
-    marginCents: 290,
-    rateBps: 450,
+    marginCents: 90,
+    rateBps: 350,
     tier: 'mid',
     category: 'CLEANING',
     currency: 'USD',
@@ -106,16 +113,16 @@ describe('assessFee writes what was charged', () => {
     expect(mock(prisma.feeAssessment.create)).toHaveBeenCalledTimes(1);
     const data = mock(prisma.feeAssessment.create).mock.calls[0][0].data;
     expect(data.chargeCents).toBe(20_000);
-    expect(data.rateBps).toBe(450);
-    expect(data.feeCents).toBe(900);
+    expect(data.rateBps).toBe(350);
+    expect(data.feeCents).toBe(700);
     // Processing and margin are stored so a later anomaly is visible in the
     // ledger rather than having to be re-derived.
     expect(data.processingCents).toBe(610);
-    expect(data.marginCents).toBe(290);
-    expect(data.tier).toBe('mid');
+    expect(data.marginCents).toBe(90);
+    expect(data.tier).toBe('standard');
     expect(data.category).toBe('CLEANING');
     expect(data.status).toBe('accrued');
-    expect(result.feeCents).toBe(900);
+    expect(result.feeCents).toBe(700);
     expect(result.reused).toBe(false);
   });
 
@@ -169,7 +176,7 @@ describe('assessFee is safe to retry', () => {
     // Re-sending an invoice is normal and should be silent.
     expect(mock(prisma.feeAssessment.create)).not.toHaveBeenCalled();
     expect(result.reused).toBe(true);
-    expect(result.feeCents).toBe(900);
+    expect(result.feeCents).toBe(700);
   });
 
   it('returns the original rate, not today\'s', async () => {
@@ -201,7 +208,7 @@ describe('assessFee is safe to retry', () => {
     });
 
     expect(result.reused).toBe(true);
-    expect(result.feeCents).toBe(900);
+    expect(result.feeCents).toBe(700);
   });
 
   it('rethrows a genuine failure rather than swallowing it', async () => {

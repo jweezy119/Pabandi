@@ -312,6 +312,7 @@ model Business {
   // deduction — see FeeAssessment.
   feeAssessments FeeAssessment[]
   feeStatements  MerchantFeeStatement[]
+  subscription   MerchantSubscription?
 
   @@index([ownerId])
   @@index([city])
@@ -7046,6 +7047,55 @@ model MerchantFeeStatement {
 /// fails and the handler treats it as already-processed. Do not drop it.
 /// `invoiceId` is optional so an orphan payment — real money that matched
 /// nothing — can still be recorded rather than silently dropped.
+/// One merchant's subscription state. One row per business; a resubscribe
+/// updates the existing row rather than stacking rows.
+///
+/// WHY WHOP OWNS THE BILLING AND WE OWN THE STATE
+/// Whop handles the card, the ACH mandate, the retries and the dunning. We keep a
+/// local record because our fee engine reads the tier on every charge, and calling
+/// Whop per booking to ask "what plan is this merchant on" would put a network
+/// round-trip in the pricing path of a customer's payment.
+///
+/// That makes this a cache, and a cache can disagree with its source. The rule is
+/// that a webhook always wins over the cached value, and the cache is only ever a
+/// fallback — see whopSubscriptionService.
+model MerchantSubscription {
+  id                 String    @id @default(cuid())
+  /// UNIQUE, and that is load-bearing rather than incidental: the Business side is
+  /// a one-to-one (`subscription MerchantSubscription?`), which is what lets the
+  /// fee engine read a merchant's tier without a query for duplicates. Two active
+  /// rows would mean two tiers and an ambiguous answer.
+  businessId         String    @unique
+  business           Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  /// free | pro | business
+  tier               String    @default("free")
+  status             String    @default("inactive") // inactive | trialing | active | past_due | canceled | unpaid
+  /// Whop's identifiers. The membership id is what webhooks refer to.
+  whopMembershipId   String?
+  whopPlanId         String?
+  whopCompanyId      String?
+  /// Cents per period. Snapshot of what was sold, so a later price change does not
+  /// rewrite what this merchant agreed to.
+  priceCents         Int       @default(0)
+  currency           String    @default("USD")
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  /// Cancelled but still serving until period end. Distinct from canceledAt: a
+  /// subscription cancelled at period end is still active today, and treating it
+  /// as cancelled would charge a merchant the wrong fee for the rest of the month.
+  cancelAtPeriodEnd  Boolean   @default(false)
+  canceledAt         DateTime?
+  /// Last Whop webhook id applied. Webhook ids are used as an idempotency key so a
+  /// redelivered membership event cannot be applied twice.
+  lastWebhookId      String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([businessId, status])
+  @@index([whopMembershipId])
+  @@index([status])
+}
+
 model ReconciliationMatch {
   id         String    @id @default(cuid())
   invoiceId  String?

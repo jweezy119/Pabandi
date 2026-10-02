@@ -6,6 +6,7 @@ import {
   tierFor,
   publicFeeSchedule,
   PROCESSOR,
+  PLATFORM_FEE_RATE,
   MIN_CHARGE_CENTS,
   FIRST_TRANSACTION_FREE_LIMIT,
   CATEGORY_PRICING,
@@ -22,9 +23,10 @@ import type { BusinessCategory } from '@prisma/client';
  * each other:
  *
  *   PROFITABILITY. Every rate must exceed payment processing at every ticket
- *   size. Square's 30¢ fixed charge is 2% of a $15 job, so a flat percentage is
- *   negative below roughly $40. Anything that lets us lose money on a small
- *   local booking is not a pricing choice, it is a bug.
+ *   size. Square is 2.9% + 30¢, so break-even is 2.9% + 32¢/amount — 5.07% at
+ *   $15. Any rate below ~2.9% is a negative-margin business because processing IS
+ *   2.9%. A test here pins the 0.5% rate an earlier draft proposed, which loses
+ *   $1.23 on a $500 booking, so it cannot be reintroduced unread.
  *
  *   PROFITABILITY AT SCALE. The other failure is pricing below cost on the jobs
  *   that carry the business. A $15,000 job at 3% is real money, and treating
@@ -107,11 +109,39 @@ describe('profitability at every ticket size', () => {
 });
 
 describe('tiering', () => {
-  it('uses a flat fee below $50 and a percentage above', () => {
+  it('uses a minimum fee below $50 and one flat rate above', () => {
+    // Two tiers, not three. The earlier three-row table priced on our own cost
+    // structure; one rate above the threshold is simpler to quote and to hold to.
     expect(tierFor(4_999)).toBe('small');
-    expect(tierFor(5_000)).toBe('mid');
-    expect(tierFor(49_999)).toBe('mid');
-    expect(tierFor(50_000)).toBe('large');
+    expect(tierFor(5_000)).toBe('standard');
+    expect(tierFor(50_000)).toBe('standard');
+    expect(tierFor(5_000_000)).toBe('standard');
+  });
+
+  it('charges one rate at every size above the threshold', () => {
+    // No large-ticket discount. A merchant with a $5,000 month is not the one who
+    // needs convincing, and pricing off our cost structure is not a reason.
+    expect(quoteFee({ amountCents: 50_000, category: 'CLEANING', settledTransactions: 50 }).rate)
+      .toBe(quoteFee({ amountCents: 500_000, category: 'CLEANING', settledTransactions: 50 }).rate);
+  });
+
+  it('charges 3.5% flat, and clears processing at every size', () => {
+    // The number a merchant is quoted. Below ~2.9% the business is
+    // negative-margin, because processing IS 2.9%.
+    expect(PLATFORM_FEE_RATE).toBe(0.035);
+    for (const cents of [5_000, 20_000, 50_000, 500_000, 5_000_000]) {
+      const q = quoteFee({ amountCents: cents, category: 'OTHER', settledTransactions: 50 });
+      expect(q.marginCents, `${cents}c`).toBeGreaterThan(0);
+    }
+  });
+
+  it('loses money at the 0.5% an earlier draft proposed', () => {
+    // Recorded so the rejected rate cannot be reintroduced by someone who has not
+    // seen the arithmetic. At $500: 0.5% collects $2.50 against $14.80 of
+    // processing — we would be subsidising Square on every transaction.
+    const cents = 50_000;
+    const feeAtPointFivePercent = Math.round(cents * 0.005);
+    expect(feeAtPointFivePercent).toBeLessThan(processingCostCents(cents));
   });
 
   it('charges the same flat fee across the upper small range', () => {
@@ -143,12 +173,6 @@ describe('tiering', () => {
     expect(fee(49, 'OTHER').feeCents).toBe(185);
   });
 
-  it('charges less as a percentage above $500 without losing money', () => {
-    const mid = fee(200);
-    const large = fee(5_000);
-    expect(large.rate).toBeLessThan(mid.rate);
-    expect(large.marginCents).toBeGreaterThan(0);
-  });
 });
 
 describe('category modulation', () => {
@@ -298,8 +322,9 @@ describe('determinism and presentation', () => {
     // A published table generated separately from the engine is how a merchant
     // ends up quoted one rate and billed another.
     const schedule = publicFeeSchedule();
-    expect(schedule.tiers).toHaveLength(3);
-    expect(schedule.tiers[0].rate).toBe('1.85 flat');
+    expect(schedule.tiers).toHaveLength(2);
+    expect(schedule.tiers[0].rate).toBe('1.85 minimum');
+    expect(schedule.tiers[1].rate).toBe('3.5%');
     expect(schedule.categories).toHaveLength(Object.keys(CATEGORY_PRICING).length);
   });
 });
