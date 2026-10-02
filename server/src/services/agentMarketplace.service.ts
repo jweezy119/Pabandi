@@ -1,5 +1,6 @@
 import { prisma } from '../utils/database';
 import { AGENT_MARKETPLACE_FEE } from '../config/fees';
+import { PAB_USD_PRICE } from '../config/tokenomics';
 
 const PLATFORM_FEE_USD = AGENT_MARKETPLACE_FEE; // 2% total, from config/fees
 const PAB_REWARD_RATE = 0.05;  // 5% PAB reward on both sides
@@ -77,7 +78,7 @@ export class AgentMarketplace {
     category: string;
     complexity: string;
   }) {
-    const pabPrice = 0.10; // $0.10 per PAB
+    const pabPrice = PAB_USD_PRICE;
     return prisma.agentProject.create({
       data: {
         ...params,
@@ -97,7 +98,7 @@ export class AgentMarketplace {
     timelineHours: number;
     approach: string;
   }) {
-    const pabPrice = 0.10;
+    const pabPrice = PAB_USD_PRICE;
     return prisma.agentProjectBid.create({
       data: {
         ...params,
@@ -110,12 +111,19 @@ export class AgentMarketplace {
   /**
    * Accept a bid and fund escrow
    */
-  async acceptBid(bidId: string) {
+  async acceptBid(bidId: string, actorId?: string) {
     const bid = await prisma.agentProjectBid.findUnique({
       where: { id: bidId },
       include: { project: true },
     });
     if (!bid) throw new Error('Bid not found');
+
+    // Accepting a bid creates escrow and commits the poster's money, so only the
+    // party who posted the project may do it. Skipped when no actor is supplied —
+    // internal callers and tests — but every routed call passes one.
+    if (actorId && bid.project.posterId !== actorId) {
+      throw new Error('Not authorised to accept bids on this project');
+    }
 
     const platformFee = bid.proposedAmount * PLATFORM_FEE_USD;
     const releaseAmount = bid.proposedAmount - platformFee;
@@ -153,16 +161,51 @@ export class AgentMarketplace {
   }
 
   /**
-   * Complete project and release funds
+   * Complete project and release funds.
+   *
+   * WHO MAY CALL THIS, AND WHY IT IS CHECKED HERE
+   * `solverId` used to arrive from the request body, which meant any authenticated
+   * user could complete any project, release its escrow, and credit an arbitrary
+   * agent with totalEarned and +5 reputation. The winning bidder is recorded on
+   * the project, so the caller does not get to choose who is paid — only whether
+   * the job is marked done.
+   *
+   * Authority is the poster's alone: they posted the work and they decide whether
+   * it was delivered. The solver is not asked, because a solver who could decline
+   * completion could also decline to finish a job they had already been paid for.
    */
-  async completeProject(projectId: string, solverId: string) {
+  async completeProject(projectId: string, actorId: string) {
     const project = await prisma.agentProject.findUnique({
       where: { id: projectId },
       include: { escrow: true },
     });
     if (!project || !project.escrow) throw new Error('Project or escrow not found');
 
-    const pabPrice = 0.10;
+    if (project.posterId !== actorId) {
+      // The caller is not the party who posted this work.
+      throw new Error('Not authorised to complete this project');
+    }
+
+    if (project.status === 'COMPLETED') {
+      // Idempotency guard. Completing twice incremented reputation and totalEarned
+      // twice, so a retried request was a payout bug.
+      throw new Error('Project is already completed');
+    }
+
+    // The solver is derived, never supplied. This is the fix for the body-supplied
+    // id that let a caller credit an arbitrary agent.
+    const winningBid = await prisma.agentProjectBid.findFirst({
+      where: { projectId, isWinning: true },
+      select: { bidderId: true },
+    });
+    const solverId = winningBid?.bidderId;
+    if (!solverId) {
+      // Without an accepted bid there is nobody to pay, and paying the poster's
+      // own guess would be worse than refusing.
+      throw new Error('No accepted bid on this project — cannot release funds');
+    }
+
+    const pabPrice = PAB_USD_PRICE;
     const pabReward = project.budgetUsd * PAB_REWARD_RATE;
     const solFee = project.budgetUsd * SOL_FEE_RATE;
 
@@ -217,12 +260,19 @@ export class AgentMarketplace {
   /**
    * Self-heal: if project fails, return to bidding
    */
-  async returnToBidding(projectId: string, reason: string) {
+  async returnToBidding(projectId: string, reason: string, actorId?: string) {
     const project = await prisma.agentProject.findUnique({
       where: { id: projectId },
       include: { escrow: true },
     });
     if (!project) throw new Error('Project not found');
+
+    // Returning a project to bidding refunds the escrow, so only the poster may
+    // do it — not the bidder who lost, who is the party with the most reason to
+    // reach for it.
+    if (actorId && project.posterId !== actorId) {
+      throw new Error('Not authorised to return this project to bidding');
+    }
 
     // Refund escrow to poster
     if (project.escrow) {

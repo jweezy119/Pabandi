@@ -388,3 +388,68 @@ describe('the endpoints fixed earlier are still gated', () => {
     expect(requiresAuth(router, 'patch', '/:referenceId/status')).toBe(true);
   });
 });
+describe('agent marketplace — a caller cannot act as another agent', () => {
+  // Every route here is authenticated, which is what made them read as protected.
+  // Three of them accepted an identity from the request body, so a logged-in user
+  // could post as someone else, bid as someone else, and — worst — complete any
+  // project and have the escrow released to an agent they chose.
+  let router: any;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    router = (await import('../src/routes/agentMarketplace.routes')).default;
+  });
+
+  it('authenticates every state-changing route', () => {
+    // By behaviour, not by function name: under vitest an imported middleware can
+    // be renamed, so `handles.includes('authenticate')` is not reliable. Calling
+    // each layer with no token must produce a 401.
+    const writes = router.stack
+      .filter((l: any) => l.route)
+      .filter((l: any) => Object.keys(l.route.methods).some((m) => m !== 'get' && m !== 'head'));
+    expect(writes.length).toBeGreaterThan(0);
+
+    for (const layer of writes) {
+      for (const handle of layer.route.stack.map((h: any) => h.handle)) {
+        const next = vi.fn();
+        handle({ headers: {}, user: undefined }, captureResponse(), next);
+        const err = next.mock.calls[0]?.[0];
+        if (err?.statusCode === 401) break;
+      }
+      // The final handler must not have run without a token: an unauthenticated
+      // call has to be stopped by a layer before it, not reach business logic.
+      const last = layer.route.stack[layer.route.stack.length - 1]?.handle;
+      const res = captureResponse();
+      const next = vi.fn();
+      try {
+        last({ headers: {}, user: undefined, body: {}, params: {} }, res, next);
+      } catch {
+        // Throwing before any response also means the handler did not complete.
+      }
+      expect(res.body, `${Object.keys(layer.route.methods)[0]} ${layer.route.path}`).toBeUndefined();
+    }
+  });
+
+  it('does not let a caller supply their own identity', async () => {
+    // Structural rather than behavioural: the controller used
+    // `req.user?.id || req.body.posterId`, so a caller who sent a posterId in the
+    // body was trusted over the token.
+    //
+    // Comments are stripped first, because the fix's own explanatory comments name
+    // the pattern they removed — and a grep that matches its own documentation is
+    // a grep nobody trusts.
+    const source = await import('node:fs').then((fs) =>
+      fs.readFileSync(new URL('../src/controllers/agentMarketplace.controller.ts', import.meta.url), 'utf8'),
+    );
+    const code = source
+      .split('\n')
+      .filter((line: string) => !line.trim().startsWith('//') && !line.trim().startsWith('*'))
+      .join('\n');
+
+    expect(code).not.toMatch(/\|\|\s*req\.body\.posterId/);
+    expect(code).not.toMatch(/\|\|\s*req\.body\.bidderId/);
+    // solverId must not be read from the body at all — the winning bid decides
+    // who gets paid.
+    expect(code).not.toMatch(/req\.body\.solverId/);
+  });
+});
