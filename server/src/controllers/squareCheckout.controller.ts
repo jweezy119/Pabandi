@@ -3,6 +3,7 @@ import { squareService } from '../services/squareCheckout.service';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { reconcileIncomingPayment } from '../services/auto-reconciliation.service';
+import { advanceBookingEscrow } from '../services/booking-escrow.service';
 
 export const createSquareCheckout = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -110,6 +111,13 @@ export const handleSquareWebhook = async (req: Request, res: Response, next: Nex
                   paidVia: 'square',
                   ...(booking.status === 'pending' ? { status: 'confirmed' } : {}),
                 },
+              });
+              // The escrow record is what a dispute is later read from, so it
+              // has to advance with the payment rather than waiting on the
+              // booking status column to be reconciled by hand.
+              await advanceBookingEscrow(booking.id, 'funded', {
+                source: 'square-webhook',
+                facts: { amountCents: result.amountCents, currency: result.currency },
               });
               logger.info(`[SquareWebhook] Booking deposit funded for ${booking.id}.`);
             }

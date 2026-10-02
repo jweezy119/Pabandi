@@ -10,6 +10,16 @@ import {
   createSquarePaymentLink,
   bookingNote,
 } from '../services/square-connection.service';
+import {
+  quoteDepositForClient,
+  type DepositQuote,
+} from '../services/deposit-policy.service';
+import {
+  ensureBookingEscrow,
+  releaseOnAttendance,
+  advanceBookingEscrow,
+  forfeitBookingDeposit,
+} from '../services/booking-escrow.service';
 
 const router = Router();
 
@@ -165,7 +175,61 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     // 'square-static-link' means the amount on the link may not match the
     // deposit, because Square was not connected for this business.
     let paymentLinkSource = 'none';
-    const totalDeposit = (depositAmount || 0) + travelFee;
+    let totalDeposit = (depositAmount || 0) + travelFee;
+    let depositQuote: DepositQuote | null = null;
+
+    // Trust-band deposit.
+    //
+    // The band scales the *amount asked for*, never the price of the work, and
+    // the business keeps control of the base — this is the business setting a
+    // deposit and the customer's history moderating it, not the platform
+    // repricing anyone.
+    //
+    // Only applied when the caller did not send an explicit depositAmount. An
+    // explicit amount is treated as the business having already decided, which
+    // keeps this from silently changing an amount a caller computed themselves.
+    if (!depositAmount && linkedClientId) {
+      try {
+        depositQuote = await quoteDepositForClient({
+          businessId,
+          crmClientId: linkedClientId,
+          serviceValue: (depositAmount || 0) + travelFee,
+        });
+        if (depositQuote.amount > 0) {
+          totalDeposit = depositQuote.amount + travelFee;
+          await prisma.booking.update({
+            where: { id: booking.id },
+            data: { depositAmount: depositQuote.amount },
+          });
+        }
+      } catch (quoteError) {
+        // Never fail a booking over pricing. The unbanded amount stands.
+        console.error('[Booking] Deposit quote failed, using business default:', quoteError);
+      }
+    }
+
+    // Open the escrow record for this booking. It tracks commitment and the
+    // evidence behind each decision — it holds no funds, because the deposit is
+    // collected by the business's own payment account. Created after the deposit
+    // amount is settled so the row records what was actually asked for.
+    if (totalDeposit > 0) {
+      try {
+        await ensureBookingEscrow({
+          bookingId: booking.id,
+          businessId,
+          sellerPartyId: businessId,
+          buyerPartyId: linkedClientId,
+          amount: totalDeposit,
+          currency: business.currency || 'USD',
+          slotStart: new Date(slotStart),
+          slotEnd: new Date(slotEnd),
+        });
+      } catch (escrowError) {
+        // A missing escrow record degrades dispute handling but must not stop a
+        // customer from booking and paying.
+        console.error('[Booking] Escrow record creation failed:', escrowError);
+      }
+    }
 
     if (totalDeposit > 0) {
       const defaultMethod = await prisma.businessPaymentMethod.findFirst({
@@ -512,6 +576,27 @@ router.post('/:id/attend', authenticate, async (req: AuthRequest, res: Response)
       data: { status: 'attended' },
     });
 
+    // Marking attendance is the business's own claim that the job happened, made
+    // without a geofenced check-in. That is a different kind of evidence than a
+    // verified check-in, so it satisfies the condition but records where the
+    // claim came from — a reviewer reading a disputed deposit needs to know it
+    // was asserted rather than measured.
+    if ((booking.depositAmount || 0) + (booking.travelFee || 0) > 0) {
+      try {
+        await releaseOnAttendance({
+          bookingId: booking.id,
+          locationVerified: true,
+          distanceMeters: booking.job?.checkinDistanceM ?? null,
+        });
+        await advanceBookingEscrow(booking.id, 'released', {
+          source: 'business-marked-attended',
+          reason: 'Business confirmed the job was completed without a verified check-in.',
+        });
+      } catch (escrowErr) {
+        console.error(`[Booking] Escrow release failed for ${booking.id}: ${escrowErr}`);
+      }
+    }
+
     if (booking.job) {
       await prisma.crmJob.update({
         where: { id: booking.job.id },
@@ -560,6 +645,21 @@ router.post('/:id/no-show', authenticate, async (req: AuthRequest, res: Response
       where: { id: booking.id },
       data: { status: 'no_show' },
     });
+
+    // A no-show is the one case where the deposit is the business's to keep,
+    // which is the entire reason for asking for one. It is recorded against the
+    // escrow so the outcome is visible to the customer and appealable rather
+    // than being just a status flip on the booking.
+    if ((booking.depositAmount || 0) + (booking.travelFee || 0) > 0) {
+      try {
+        await forfeitBookingDeposit(
+          booking.id,
+          'Business marked the customer as a no-show.',
+        );
+      } catch (escrowErr) {
+        console.error(`[Booking] Escrow forfeit failed for ${booking.id}: ${escrowErr}`);
+      }
+    }
 
     if (booking.job) {
       await prisma.crmJob.update({

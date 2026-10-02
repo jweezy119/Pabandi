@@ -3,9 +3,39 @@ import { prisma } from '../utils/database';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { trustCore } from '../trust/trust-core';
 import { geoService } from '../services/geo.service';
+import { logger } from '../utils/logger';
+import { releaseOnAttendance } from '../services/booking-escrow.service';
 
 const router = Router();
 router.use(authenticate);
+
+/**
+ * Is the caller the business that owns this job?
+ *
+ * This router authenticated every request but never checked that the caller had
+ * anything to do with the job. Any logged-in user could check in to any job,
+ * and because a verified check-in is what releases a booking deposit, that made
+ * the evidence the escrow model rests on self-certified by a third party.
+ *
+ * CrmBusiness is keyed by ownerEmail rather than owning a User row, so the join
+ * is through the authenticated user's email. Email is the identity the whole
+ * booking flow is already keyed on — findOrCreateClient matches clients the same
+ * way — so this is consistent with how the booking was created rather than a
+ * second, inconsistent notion of ownership.
+ *
+ * The worker's own client account is also accepted: some jobs are carried out
+ * by a freelancer account acting as the second party, and rejecting them would
+ * break the flow the geofence exists to support.
+ */
+async function canCheckInToJob(req: AuthRequest, job: { business: { ownerEmail?: string | null }; client: { id: string; email?: string | null } }): Promise<boolean> {
+  const user = req.user;
+  if (!user) return false;
+  const email = String(user.email ?? '').toLowerCase();
+  if (!email) return false;
+  if ((job.business.ownerEmail ?? '').toLowerCase() === email) return true;
+  if ((job.client.email ?? '').toLowerCase() === email) return true;
+  return false;
+}
 
 // ── POST /api/v1/checkin/job/:jobId ──
 // Check in to a job with geofenced verification
@@ -25,6 +55,10 @@ router.post('/job/:jobId', async (req: AuthRequest, res: Response) => {
 
     if (!job) {
       return res.status(404).json({ success: false, error: 'Job not found' });
+    }
+
+    if (!(await canCheckInToJob(req, job))) {
+      return res.status(403).json({ success: false, error: 'Not a party to this job' });
     }
 
     if (job.status !== 'SCHEDULED' && job.status !== 'IN_PROGRESS') {
@@ -64,6 +98,30 @@ router.post('/job/:jobId', async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // An override is the business deciding, on the record, that the worker is
+    // somewhere the geofence cannot see. It has to name the person who made that
+    // call and say why in enough detail for a dispute reviewer to judge it —
+    // `overrideReason` alone is free text from whoever called the endpoint, which
+    // used to be any authenticated user at all.
+    //
+    // Kept on the job so it survives regardless of what the escrow row does.
+    if (!distanceCheck.withinRadius) {
+      if (!req.user?.id) {
+        return res.status(401).json({ success: false, error: 'Authentication required to override' });
+      }
+      const note = String(overrideReason).trim();
+      if (note.length < 10) {
+        return res.status(400).json({
+          success: false,
+          error: 'OVERRIDE_REASON_REQUIRED',
+          message: 'Please describe why this check-in is being overridden (at least 10 characters). This is recorded and may be reviewed.',
+        });
+      }
+      logger.warn(
+        `[Checkin] Location override on job ${jobId} by user ${req.user.id}: ${note} (${distanceCheck.distanceMeters.toFixed(0)}m from the job location).`,
+      );
+    }
+
     // Allow check-in
     await prisma.crmJob.update({
       where: { id: jobId },
@@ -72,6 +130,25 @@ router.post('/job/:jobId', async (req: AuthRequest, res: Response) => {
         status: 'IN_PROGRESS',
       },
     });
+
+    // Advance the booking escrow. A verified check-in satisfies the condition
+    // the deposit was conditioned on; an override does not, and is recorded as
+    // a dispute rather than a release so the decision gets looked at.
+    //
+    // Wrapped because this is a webhook-adjacent path: a failure here must not
+    // fail a check-in the worker already made.
+    if (job.booking?.id) {
+      try {
+        await releaseOnAttendance({
+          bookingId: job.booking.id,
+          locationVerified: distanceCheck.withinRadius,
+          distanceMeters: distanceCheck.distanceMeters,
+          overrideReason: overrideReason ?? null,
+        });
+      } catch (escrowErr) {
+        logger.error(`[Checkin] Escrow advance failed for booking ${job.booking.id}: ${escrowErr}`);
+      }
+    }
 
     // Fire trust events
     if (distanceCheck.withinRadius) {
@@ -123,6 +200,10 @@ router.post('/job/:jobId/checkout', async (req: AuthRequest, res: Response) => {
 
     if (!job) {
       return res.status(404).json({ success: false, error: 'Job not found' });
+    }
+
+    if (!(await canCheckInToJob(req, job))) {
+      return res.status(403).json({ success: false, error: 'Not a party to this job' });
     }
 
     if (job.status !== 'IN_PROGRESS') {
