@@ -31,10 +31,10 @@
  */
 
 import { prisma } from '../utils/database';
+import { PAB_USD_PRICE as PAB_PRICE } from '../config/tokenomics';
 
 const PLATFORM_FEE_RATE = 0.02;
 const PAB_REWARD_RATE = 0.05;
-const PAB_PRICE = 0.01;
 const SETTLEMENT_FREQUENCY_PER_DAY = 1;
 
 interface AgentCredit {

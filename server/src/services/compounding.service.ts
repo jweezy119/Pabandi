@@ -29,6 +29,23 @@ const BASE_TASK_VALUE = 0.10; // $0.10 — higher value per task
 const MAX_TASK_VALUE = 1.00; // $1.00 cap
 const GROWTH_RATE_PER_HOUR = 0.05; // 5% hourly growth (aggressive)
 
+// This service projects hypothetical growth from an assumed cycle volume. It
+// never observes a real payment, so every number it produces is an assumption,
+// not revenue. `PabReserve` is the service that holds collected fees.
+//
+// Two rules follow, and both matter for the ledger:
+//
+// 1. The projected fee must not be written to `treasuryPosition` as
+//    CONFIRMED. That table is the real treasury, and a simulation writing
+//    fabricated amounts into it is indistinguishable from actual income once
+//    committed. The rows are marked PENDING_PROJECTION and bucketed away from
+//    OPERATING so no real balance includes them.
+//
+// 2. `feeRate` is a projection parameter, not the fee to charge. Anything that
+//    moves real money must read its rate from `fees.ts`, not from here. A 15%
+//    projection default silently becoming the real take rate is how a
+//    marketplace ends up charging 15% to merchants.
+
 interface CompoundSnapshot {
   hour: number;
   reserve: number;
@@ -113,10 +130,15 @@ export class CompoundingService {
 
     await prisma.treasuryPosition.create({
       data: {
-        bucket: 'OPERATING',
+        bucket: 'PROJECTION',
         amount: hourlyFees,
-        status: 'CONFIRMED',
-        meta: { source: 'COMPOUND', hour: this.totalCompounds, newReserve: this.reserve },
+        status: 'PENDING_PROJECTION',
+        meta: {
+          source: 'COMPOUND_PROJECTION',
+          simulated: true,
+          hour: this.totalCompounds,
+          newReserve: this.reserve,
+        },
       },
     });
 

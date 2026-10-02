@@ -1,12 +1,10 @@
 import { prisma } from '../utils/database';
+import { PAB_USD_PRICE as PAB_PRICE_USD } from '../config/tokenomics';
 
 // Base reward rates
 const CUSTOMER_REWARD_RATE = 0.10;  // 10% of purchase
 const BUSINESS_REWARD_RATE = 0.05;  // 5% of purchase
 const REFERRAL_REWARD_RATE = 0.02;  // 2% of referee's purchase
-
-// PAB token price (fetch from oracle or use fixed for now)
-const PAB_PRICE_USD = 0.10; // $0.10 per PAB
 
 export interface RewardCalculation {
   customerRewardUsd: number;

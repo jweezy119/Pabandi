@@ -1,5 +1,6 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { PAB_USD_PRICE } from '../config/tokenomics';
 
 export class ReferralFeeShareService {
   async creditReferrer({
@@ -101,8 +102,7 @@ export class ReferralFeeShareService {
   }
 
   private convertToPab(usdAmount: number): number {
-    const PAB_PRICE_USD = 0.01;
-    return Math.round((usdAmount / PAB_PRICE_USD) * 100) / 100;
+    return Math.round((usdAmount / PAB_USD_PRICE) * 100) / 100;
   }
 
   async processMonthlyPayouts() {

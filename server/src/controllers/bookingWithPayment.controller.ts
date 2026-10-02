@@ -7,12 +7,12 @@ import { prisma } from '../utils/database';
 import { rewardEngine } from '../services/rewardEngine.service';
 import { squareService } from '../services/squareCheckout.service';
 import { generateQRCodeUrl } from '../utils/qrcode';
+import { PAB_USD_PRICE as PAB_PRICE_USD } from '../config/tokenomics';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const DEPOSIT_AMOUNT = 25; // flat $25 for demo
 const CREATION_FEE_BPS = 100; // 1%
 const RELEASE_FEE_BPS = 100; // 1% (total 2%)
-const PAB_PRICE_USD = 0.10;
 
 function generateBookingRef(): string {
   const ts = Date.now().toString(36).toUpperCase();

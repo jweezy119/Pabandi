@@ -67,13 +67,13 @@
 
 import { prisma } from '../utils/database';
 import { autoApproval } from './autoApproval.service';
+import { PAB_USD_PRICE as PAB_PRICE } from '../config/tokenomics';
 
 // ─── Configuration ───────────────────────────────────────
 const MIN_TASK_USD = 0.05;           // 5 cents minimum
 const MAX_TASK_USD = 0.25;           // 25 cents maximum
 const PLATFORM_FEE_RATE = 0.02;      // 2%
 const PAB_REWARD_RATE = 0.05;        // 5% per side (internal credit)
-const PAB_PRICE = 0.01;              // $0.01 per PAB (lower = more supply)
 const SOL_BUFFER = 0.01;             // Never go below 0.01 SOL
 const TARGET_CYCLES_PER_DAY = 10;
 

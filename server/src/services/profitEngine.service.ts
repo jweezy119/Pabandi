@@ -1,12 +1,15 @@
 import { prisma } from '../utils/database';
 import { compoundingService } from './compounding.service';
+import { PAB_USD_PRICE as PAB_PRICE } from '../config/tokenomics';
 
 // ─── Configuration ───────────────────────────────────────
 const DEFAULT_FEE_RATE = 0.10; // 10% — managed by compounding service
+// Fee actually applied to real AgentEscrow rows. Distinct from the
+// compounding service's projection rate on purpose.
+const AGENT_PROJECT_FEE_RATE = 0.10;
 const MIN_CYCLE_TIME = 30;
 const TARGET_CYCLE_TIME = 60;
 const PAB_REWARD_RATE = 0.05;
-const PAB_PRICE = 0.10;
 
 // ─── Rate Limiting Protection ────────────────────────────
 const MIN_CYCLE_INTERVAL_MS = 200;
@@ -49,8 +52,11 @@ export class ProfitEngine {
   private minuteResetTime = Date.now();
 
   // Use dynamic fee rate from compounding service
+  // Real money must not inherit the compounding service's 15% projection
+  // default — see the note in compounding.service.ts. Fee on real escrow comes
+  // from the single fee engine, not from a simulation parameter.
   private get feeRate(): number {
-    return compoundingService.getCurrentSettings().feeRate;
+    return AGENT_PROJECT_FEE_RATE;
   }
   
   // Use dynamic task value from compounding service

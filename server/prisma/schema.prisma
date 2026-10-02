@@ -1334,11 +1334,11 @@ model TreasuryPosition {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  bucket    String // OPERATING | TREASURY | LP_PROVISION | YIELD_REINVEST | EMERGENCY
+  bucket    String // OPERATING | TREASURY | LP_PROVISION | YIELD_REINVEST | EMERGENCY | PROJECTION
   kind      String? // HOSPITALITY | REALESTATE | ESCROW | RAKED | REFERRAL | default null
   amount    Float
   txHash    String?
-  status    String   @default("PENDING") // PENDING | DEPLOYED | REPATRIATED
+  status    String   @default("PENDING") // PENDING | DEPLOYED | REPATRIATED | PENDING_PROJECTION
   meta      Json?
 
   @@index([bucket])
