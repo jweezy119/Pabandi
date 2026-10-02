@@ -62,21 +62,20 @@ export class ReferralFeeShareService {
         return existingEarning;
       }
 
-      const referrerWallet = await prisma.pabWallet.findUnique({
-        where: { userId: referral.referrerId },
-      });
-
-      if (!referrerWallet) {
-        await prisma.pabWallet.create({
-          data: { userId: referral.referrerId, balance: feePab, totalEarned: feePab },
-        });
-      } else {
-        await prisma.pabWallet.update({
-          where: { userId: referral.referrerId },
-          data: { balance: { increment: feePab }, totalEarned: { increment: feePab } },
-        });
-      }
-
+      // The earning is recorded here as PENDING and nothing is credited to the
+      // wallet yet.
+      //
+      // It used to increment PabWallet.balance right here, AND
+      // processMonthlyPayouts incremented the same rows again when flipping
+      // pending -> paid. Nothing debits in between, so referrers were paid the
+      // fee share twice: 10% of invoice value instead of 5%. The monthly cron
+      // at index.ts made this monthly and compounding.
+      //
+      // Crediting only on payout is the model the field names already describe —
+      // status 'pending' with a paidAt implies money is not available until the
+      // payout runs, and the two distinct PabTransaction actions
+      // ('referral_fee_share' vs 'referral_fee_share_payout') only make sense
+      // as accrue-then-pay.
       const earning = await prisma.referralEarning.create({
         data: {
           referralId: referral.id,
@@ -89,18 +88,10 @@ export class ReferralFeeShareService {
         },
       });
 
-      await prisma.pabTransaction.create({
-        data: {
-          walletId: (await prisma.pabWallet.findUnique({ where: { userId: referral.referrerId } }))!.id,
-          type: 'EARN',
-          amount: feePab,
-          action: 'referral_fee_share',
-          description: `5% fee share from invoice ${invoiceId} (${business.name})`,
-          balanceAfter: (await prisma.pabWallet.findUnique({ where: { userId: referral.referrerId } }))!.balance,
-        },
-      });
-
-      logger.info(`[ReferralFeeShare] Credited ${feePab} PAB to referrer ${referral.referrerId} for invoice ${invoiceId}`);
+      logger.info(
+        `[ReferralFeeShare] Accrued ${feePab} PAB for referrer ${referral.referrerId} on invoice ${invoiceId}. ` +
+          'Credited to the wallet when the monthly payout runs.',
+      );
 
       return earning;
     } catch (err: any) {
@@ -124,34 +115,42 @@ export class ReferralFeeShareService {
 
     for (const earning of pendingEarnings) {
       try {
-        const referrerWallet = await prisma.pabWallet.findUnique({
-          where: { userId: earning.referrerId },
+        // Claim the row first, atomically. updateMany on the status predicate
+        // means a concurrent cron run gets count 0 and skips it — the same
+        // compare-and-set pattern the reconciliation idempotency guard uses.
+        // Without this, two overlapping runs would both pay the same earning.
+        const claimed = await prisma.referralEarning.updateMany({
+          where: { id: earning.id, status: 'pending' },
+          data: { status: 'paid', paidAt: new Date() },
         });
 
-        if (!referrerWallet) {
-          await prisma.pabWallet.create({
-            data: { userId: earning.referrerId, balance: earning.amountPab, totalEarned: earning.amountPab },
-          });
-        } else {
-          await prisma.pabWallet.update({
-            where: { userId: earning.referrerId },
-            data: { balance: { increment: earning.amountPab }, totalEarned: { increment: earning.amountPab } },
-          });
+        if (claimed.count === 0) {
+          logger.info(`[ReferralFeeShare] Earning ${earning.id} already claimed by another run; skipping`);
+          continue;
         }
 
-        await prisma.referralEarning.update({
-          where: { id: earning.id },
-          data: { status: 'paid', paidAt: new Date() },
+        // This is now the only place a referral fee share reaches a wallet.
+        const wallet = await prisma.pabWallet.upsert({
+          where: { userId: earning.referrerId },
+          create: {
+            userId: earning.referrerId,
+            balance: earning.amountPab,
+            totalEarned: earning.amountPab,
+          },
+          update: {
+            balance: { increment: earning.amountPab },
+            totalEarned: { increment: earning.amountPab },
+          },
         });
 
         await prisma.pabTransaction.create({
           data: {
-            walletId: (await prisma.pabWallet.findUnique({ where: { userId: earning.referrerId } }))!.id,
+            walletId: wallet.id,
             type: 'EARN',
             amount: earning.amountPab,
             action: 'referral_fee_share_payout',
             description: `Monthly payout: ${earning.amountPab} PAB from invoice ${earning.invoiceId}`,
-            balanceAfter: (await prisma.pabWallet.findUnique({ where: { userId: earning.referrerId } }))!.balance,
+            balanceAfter: wallet.balance,
           },
         });
 

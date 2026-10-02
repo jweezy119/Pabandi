@@ -1,10 +1,28 @@
 import { Router } from 'express';
+import { authenticate } from '../middleware/auth.middleware';
+
+/**
+ * WHY THIS ROUTER IS NOW AUTHENTICATED
+ *
+ * Every one of these thirteen endpoints was mounted with no `authenticate`.
+ * Eight of them move money or write the treasury ledger — charge-rake,
+ * sol-checkout, confirm-rake, route-yield, confirm-yield — so an anonymous
+ * caller could have driven the fee machinery directly.
+ *
+ * Two stay public deliberately: /leaderboard is a public leaderboard, and
+ * /referral/:code is a shareable handle a business pastes into a link. Both are
+ * read-only and neither exposes another party's balances.
+ *
+ * Note this authenticates but does not authorise: these endpoints operate on
+ * the protocol treasury rather than a tenant, so per-business ownership does not
+ * apply. Role-gating them is a separate decision.
+ */
 import { autonomousEconomyService } from '../services/autonomousEconomy.service';
 
 const router = Router();
 
 // Net platform SOL revenue (profitability report)
-router.get('/net-revenue', async (_req, res) => {
+router.get('/net-revenue', authenticate, async (_req, res) => {
   try {
     const r = await autonomousEconomyService.netSolRevenue();
     res.json({ success: true, data: r });
@@ -14,7 +32,7 @@ router.get('/net-revenue', async (_req, res) => {
 });
 
 // Quote a human SOL rake (no on-chain action)
-router.post('/quote-rake', async (req, res) => {
+router.post('/quote-rake', authenticate, async (req, res) => {
   try {
     const { payer, solAmount } = req.body || {};
     if (!payer || !solAmount) return res.status(400).json({ success: false, error: 'payer + solAmount required' });
@@ -26,7 +44,7 @@ router.post('/quote-rake', async (req, res) => {
 });
 
 // Charge a human SOL rake — returns a base64 tx for the payer to sign + broadcast
-router.post('/charge-rake', async (req, res) => {
+router.post('/charge-rake', authenticate, async (req, res) => {
   try {
     const { payer, solAmount, bookingRef, referralCode, partnerId } = req.body || {};
     if (!payer || !solAmount) return res.status(400).json({ success: false, error: 'payer + solAmount required' });
@@ -41,7 +59,7 @@ router.post('/charge-rake', async (req, res) => {
 // A human booking an agent pays in SOL; 1% skims to the fee wallet, rest settles.
 // Returns a partial-signed tx for the payer to broadcast. chargeRake already persists a
 // PENDING_CHARGE so confirm-rake can close the booking on broadcast.
-router.post('/sol-checkout', async (req, res) => {
+router.post('/sol-checkout', authenticate, async (req, res) => {
   try {
     const { payer, solAmount, bookingRef, agentId, note, referralCode, partnerId } = req.body || {};
     if (!payer || !solAmount) return res.status(400).json({ success: false, error: 'payer + solAmount required' });
@@ -53,7 +71,7 @@ router.post('/sol-checkout', async (req, res) => {
 });
 
 // ── Business dashboard (by referral code): posted gigs, bookings, rake earned ──
-router.get('/business/:refCode', async (req, res) => {
+router.get('/business/:refCode', authenticate, async (req, res) => {
   try {
     const r = await autonomousEconomyService.businessDashboard(req.params.refCode);
     res.json({ success: true, data: r });
@@ -63,7 +81,7 @@ router.get('/business/:refCode', async (req, res) => {
 });
 
 // ── Demo booking (no wallet): full booking cycle server-side, simulated:true ──
-router.post('/demo-book', async (req, res) => {
+router.post('/demo-book', authenticate, async (req, res) => {
   try {
     const { referralCode, partnerId, agentId, gigId, solAmount } = req.body || {};
     const r = await autonomousEconomyService.demoBook({ referralCode, partnerId, agentId, gigId, solAmount: solAmount ? Number(solAmount) : undefined });
@@ -74,7 +92,7 @@ router.post('/demo-book', async (req, res) => {
 });
 
 // ── Confirm human rake (closes the booking after the payer broadcasts) ──
-router.post('/confirm-rake', async (req, res) => {
+router.post('/confirm-rake', authenticate, async (req, res) => {
   try {
     const { bookingRef, txHash } = req.body || {};
     if (!bookingRef || !txHash) return res.status(400).json({ success: false, error: 'bookingRef + txHash required' });
@@ -87,7 +105,7 @@ router.post('/confirm-rake', async (req, res) => {
 
 // ── Yield router (option Y): route USER external SOL → JitoSOL, platform skims entry fee ──
 // Quote a yield route (no on-chain action)
-router.post('/quote-yield', async (req, res) => {
+router.post('/quote-yield', authenticate, async (req, res) => {
   try {
     const { user, solAmount } = req.body || {};
     if (!user || !solAmount) return res.status(400).json({ success: false, error: 'user + solAmount required' });
@@ -99,7 +117,7 @@ router.post('/quote-yield', async (req, res) => {
 });
 
 // Route a user's SOL into JitoSOL — returns a base64 tx for the user to sign + broadcast
-router.post('/route-yield', async (req, res) => {
+router.post('/route-yield', authenticate, async (req, res) => {
   try {
     const { user, solAmount, bookingRef, partnerId } = req.body || {};
     if (!user || !solAmount) return res.status(400).json({ success: false, error: 'user + solAmount required' });
@@ -111,7 +129,7 @@ router.post('/route-yield', async (req, res) => {
 });
 
 // Confirm a yield route after the user broadcasts the tx
-router.post('/confirm-yield', async (req, res) => {
+router.post('/confirm-yield', authenticate, async (req, res) => {
   try {
     const { bookingRef, txHash } = req.body || {};
     if (!bookingRef || !txHash) return res.status(400).json({ success: false, error: 'bookingRef + txHash required' });
@@ -133,7 +151,7 @@ router.get('/referral/:code', async (req, res) => {
   }
 });
 
-router.get('/partner/:id', async (req, res) => {
+router.get('/partner/:id', authenticate, async (req, res) => {
   try {
     const r = await autonomousEconomyService.partnerStats(req.params.id);
     res.json({ success: true, data: r });

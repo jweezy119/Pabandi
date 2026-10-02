@@ -3,8 +3,37 @@ import { z } from 'zod';
 import { universalEscrowService, EscrowParty, EscrowCondition } from '../services/universal-escrow.service';
 import { logger } from '../utils/logger';
 import { apiLimiter, writeLimiter } from '../middleware/rateLimit.middleware';
+import { authenticate, AuthRequest } from '../middleware/auth.middleware';
+import { CustomError } from '../middleware/errorHandler';
+import { prisma } from '../utils/database';
 
 const router = Router();
+
+/**
+ * WHY EVERYTHING HERE IS NOW AUTHENTICATED
+ *
+ * This router had no `authenticate` at all — only rate limiters. Verified live:
+ * an unauthenticated PATCH to /:referenceId/status reached the database and
+ * attempted the update (returning 500 only because that escrow did not exist).
+ * So anyone could mark any escrow `released` or `refunded`, which is how escrow
+ * is supposed to hold money.
+ *
+ * A token is not sufficient on its own: `referenceId` is a client-chosen
+ * string (`POST /` takes it from the body, not a server-issued id), so an
+ * authenticated user could still address another party's escrow. Every route
+ * below therefore checks that the caller is a named party on the escrow.
+ */
+
+/** True when the caller is one of the escrow's parties. */
+async function isParty(referenceId: string, userId: string): Promise<boolean> {
+  const escrow = await prisma.universalEscrow.findUnique({
+    where: { referenceId },
+    select: { parties: true },
+  });
+  if (!escrow) return false;
+  const parties = escrow.parties as { partyId?: string }[];
+  return parties.some((p) => p?.partyId === userId);
+}
 
 const CreateEscrowSchema = z.object({
   referenceId: z.string().min(1),
@@ -27,7 +56,10 @@ const StatusUpdateSchema = z.object({
   status: z.enum(['draft', 'funded', 'in_progress', 'conditions_met', 'released', 'disputed', 'refunded']),
 });
 
-router.post('/', writeLimiter, async (req: Request, res: Response) => {
+router.post('/', authenticate, writeLimiter, async (req: AuthRequest, res: Response) => {
+  const userId = req.user?.id;
+  if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
   try {
     const body = CreateEscrowSchema.parse(req.body);
 
@@ -57,10 +89,19 @@ router.post('/', writeLimiter, async (req: Request, res: Response) => {
   }
 });
 
-router.patch('/:referenceId/status', writeLimiter, async (req: Request, res: Response) => {
+router.patch('/:referenceId/status', authenticate, writeLimiter, async (req: AuthRequest, res: Response) => {
   try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
     const { referenceId } = req.params;
     const body = StatusUpdateSchema.parse(req.body);
+
+    if (!(await isParty(referenceId, userId))) {
+      // 403 rather than 404: the caller is authenticated, and a party check
+      // that returns "not found" would be indistinguishable from a wrong id.
+      throw new CustomError('Not a party to this escrow', 403);
+    }
 
     const escrow = await universalEscrowService.updateStatus(referenceId, body.status);
 
@@ -72,18 +113,32 @@ router.patch('/:referenceId/status', writeLimiter, async (req: Request, res: Res
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, error: error.errors });
     }
+    // Preserve the status a CustomError carries. Without this the party check
+    // below throws a 403 that the generic catch flattens to a 500, which both
+    // hides the cause and misreports an authorization failure as a server fault.
+    if (error instanceof CustomError) {
+      return res.status(error.statusCode).json({ success: false, error: error.message });
+    }
     logger.error(`[UniversalEscrow] status update error: ${error.message}`);
     return res.status(500).json({ success: false, error: error.message });
   }
 });
 
-router.get('/:referenceId', apiLimiter, async (req: Request, res: Response) => {
+router.get('/:referenceId', authenticate, apiLimiter, async (req: AuthRequest, res: Response) => {
   try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
     const { referenceId } = req.params;
     const escrow = await universalEscrowService.getByReference(referenceId);
 
     if (!escrow) {
       return res.status(404).json({ success: false, error: 'Escrow not found' });
+    }
+
+    if (!(await isParty(referenceId, userId))) {
+      // Amount, deadline and conditions are commercially sensitive.
+      return res.status(403).json({ success: false, error: 'Not a party to this escrow' });
     }
 
     return res.json({
@@ -96,9 +151,18 @@ router.get('/:referenceId', apiLimiter, async (req: Request, res: Response) => {
   }
 });
 
-router.get('/party/:partyId', apiLimiter, async (req: Request, res: Response) => {
+router.get('/party/:partyId', authenticate, apiLimiter, async (req: AuthRequest, res: Response) => {
   try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
     const { partyId } = req.params;
+    // Was unauthenticated and enumerated any party's escrows by guessing an
+    // id. Only your own.
+    if (partyId !== userId) {
+      return res.status(403).json({ success: false, error: 'Not your party id' });
+    }
+
     const escrows = await universalEscrowService.listByParty(partyId);
 
     return res.json({

@@ -58,7 +58,16 @@ describe('Critical Path Integration Tests', () => {
   });
 
   describe('markInvoicePaid → referral fee-share → PAB credit', () => {
-    it('should credit 5% of invoice amount to referrer PAB balance', async () => {
+    /**
+     * Accrue on invoice paid, credit on the monthly payout.
+     *
+     * This previously asserted `wallet.balance > 0` immediately after
+     * creditReferrer — which is what made the double-payment invisible: the
+     * same credit happened again in processMonthlyPayouts, so the referrer
+     * received 10% of the invoice rather than 5%. The balance is now asserted
+     * across the full lifecycle instead, and the payout is checked to fire once.
+     */
+    it('should accrue 5% on invoice paid and credit it once on payout', async () => {
       const ts = Date.now();
       const referrerEmail = `referrer-${ts}@example.com`;
       const refereeEmail = `referee-${ts}@example.com`;
@@ -118,14 +127,29 @@ describe('Critical Path Integration Tests', () => {
       expect(result).toBeDefined();
       expect(result?.amountPab).toBeGreaterThan(0);
 
-      const wallet = await prisma.pabWallet.findUnique({ where: { userId: referrer.id } });
-      expect(wallet?.balance).toBeGreaterThan(0);
+      // Accrued, not paid.
+      const walletBeforePayout = await prisma.pabWallet.findUnique({ where: { userId: referrer.id } });
+      expect(walletBeforePayout?.balance).toBe(0);
 
       const earning = await prisma.referralEarning.findFirst({
         where: { referralId: referral.id },
       });
       expect(earning).toBeDefined();
       expect(earning?.status).toBe('pending');
+
+      // The monthly payout is the only place it reaches the wallet.
+      await referralFeeShareService.processMonthlyPayouts();
+
+      const walletAfterPayout = await prisma.pabWallet.findUnique({ where: { userId: referrer.id } });
+      expect(walletAfterPayout?.balance).toBe(earning?.amountPab);
+
+      const settled = await prisma.referralEarning.findFirst({ where: { referralId: referral.id } });
+      expect(settled?.status).toBe('paid');
+
+      // A second payout run must not pay it again.
+      await referralFeeShareService.processMonthlyPayouts();
+      const walletAfterSecondRun = await prisma.pabWallet.findUnique({ where: { userId: referrer.id } });
+      expect(walletAfterSecondRun?.balance).toBe(earning?.amountPab);
     }, 30000);
   });
 

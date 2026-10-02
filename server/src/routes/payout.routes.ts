@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { payoutService } from '../services/payout.service';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticate, authorize } from '../middleware/auth.middleware';
 import { prisma } from '../utils/database';
 
 const router = Router();
@@ -50,7 +50,7 @@ router.get('/history', authenticate, async (req: any, res) => {
  * @route POST /api/v1/payouts/migrate
  * @desc Create Payout table (Cloud Run FS read-only)
  */
-router.post('/migrate', async (_req: Request, res: Response) => {
+router.post('/migrate', authenticate, authorize('ADMIN'), async (_req: Request, res: Response) => {
   try {
     await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "Payout" (
       "id" TEXT NOT NULL, "userId" TEXT NOT NULL, "amountUsdc" DOUBLE PRECISION NOT NULL,
