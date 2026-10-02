@@ -15,6 +15,10 @@ import { rateLimiter } from './middleware/rateLimiter';
 dotenv.config();
 try { dotenv.config({ path: '.env.contracts' }); } catch (err) { logger.warn('.env.contracts not loaded'); }
 
+// Set once at startup. /health reports it so a stale instance is distinguishable
+// from a fresh deploy even before a commit-level signal exists.
+process.env.PABANDI_STARTED_AT ||= new Date().toISOString();
+
 const app = express();
 
 const httpServer = createServer(app);
@@ -203,7 +207,19 @@ app.get('/health', (_req, res) => {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
     googleOAuth: !!process.env.GOOGLE_CLIENT_ID,
-    deployVersion: '2026-09-08-migration-fix-v2',
+    // The build identity, not a hand-maintained label.
+    //
+    // This used to be a hardcoded string that had not changed since 2026-09-08,
+    // which made /health useless for the one question it matters for: is the
+    // running build the commit I just pushed? It answered 200 "ok" while 434
+    // commits had landed, and a stale green check is worse than no check.
+    //
+    // RENDER_GIT_COMMIT is injected by Render from the deployed commit. Startup is
+    // stamped too, so a long-running instance is distinguishable from a fresh
+    // deploy without waiting for a restart.
+    deployVersion: process.env.RENDER_GIT_COMMIT || 'unknown',
+    commitSha: process.env.RENDER_GIT_COMMIT || null,
+    startedAt: process.env.PABANDI_STARTED_AT || null,
   });
 });
 
