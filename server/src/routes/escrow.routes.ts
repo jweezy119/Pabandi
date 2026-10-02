@@ -124,57 +124,16 @@ router.patch('/:referenceId/status', authenticate, writeLimiter, async (req: Aut
   }
 });
 
-router.get('/:referenceId', authenticate, apiLimiter, async (req: AuthRequest, res: Response) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
-
-    const { referenceId } = req.params;
-    const escrow = await universalEscrowService.getByReference(referenceId);
-
-    if (!escrow) {
-      return res.status(404).json({ success: false, error: 'Escrow not found' });
-    }
-
-    if (!(await isParty(referenceId, userId))) {
-      // Amount, deadline and conditions are commercially sensitive.
-      return res.status(403).json({ success: false, error: 'Not a party to this escrow' });
-    }
-
-    return res.json({
-      success: true,
-      data: escrow,
-    });
-  } catch (error: any) {
-    logger.error(`[UniversalEscrow] get error: ${error.message}`);
-    return res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-router.get('/party/:partyId', authenticate, apiLimiter, async (req: AuthRequest, res: Response) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
-
-    const { partyId } = req.params;
-    // Was unauthenticated and enumerated any party's escrows by guessing an
-    // id. Only your own.
-    if (partyId !== userId) {
-      return res.status(403).json({ success: false, error: 'Not your party id' });
-    }
-
-    const escrows = await universalEscrowService.listByParty(partyId);
-
-    return res.json({
-      success: true,
-      data: escrows,
-    });
-  } catch (error: any) {
-    logger.error(`[UniversalEscrow] list error: ${error.message}`);
-    return res.status(500).json({ success: false, error: error.message });
-  }
-});
-
+/**
+ * `/templates` must be registered before `/:referenceId`.
+ *
+ * Express matches in registration order, so with this route declared after the
+ * parameterised one, `GET /templates` matched as a referenceId of "templates",
+ * hit `authenticate`, and returned 401. The public template catalogue had
+ * therefore never been reachable — verified live, where /templates answered 401
+ * while a genuinely unknown path in the same router also answered 401 rather
+ * than 404, which is the tell that a handler matched at all.
+ */
 router.get('/templates', (_req: Request, res: Response) => {
   const templates = [
     {
@@ -224,6 +183,57 @@ router.get('/templates', (_req: Request, res: Response) => {
     success: true,
     data: templates,
   });
+});
+
+router.get('/:referenceId', authenticate, apiLimiter, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+    const { referenceId } = req.params;
+    const escrow = await universalEscrowService.getByReference(referenceId);
+
+    if (!escrow) {
+      return res.status(404).json({ success: false, error: 'Escrow not found' });
+    }
+
+    if (!(await isParty(referenceId, userId))) {
+      // Amount, deadline and conditions are commercially sensitive.
+      return res.status(403).json({ success: false, error: 'Not a party to this escrow' });
+    }
+
+    return res.json({
+      success: true,
+      data: escrow,
+    });
+  } catch (error: any) {
+    logger.error(`[UniversalEscrow] get error: ${error.message}`);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get('/party/:partyId', authenticate, apiLimiter, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+    const { partyId } = req.params;
+    // Was unauthenticated and enumerated any party's escrows by guessing an
+    // id. Only your own.
+    if (partyId !== userId) {
+      return res.status(403).json({ success: false, error: 'Not your party id' });
+    }
+
+    const escrows = await universalEscrowService.listByParty(partyId);
+
+    return res.json({
+      success: true,
+      data: escrows,
+    });
+  } catch (error: any) {
+    logger.error(`[UniversalEscrow] list error: ${error.message}`);
+    return res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 export default router;

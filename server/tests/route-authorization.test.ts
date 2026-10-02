@@ -236,6 +236,43 @@ describe('settlement — the manual trigger is admin-only', () => {
   });
 });
 
+describe('escrow — literal paths are not shadowed by parameterised ones', () => {
+  // Express matches in registration order, so `GET /templates` declared after
+  // `GET /:referenceId` is matched as a referenceId lookup. It returned 401 in
+  // production because the parameterised route carries `authenticate`, which
+  // made a public catalogue look like a protected resource.
+  let router: any;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    router = (await import('../src/routes/escrow.routes')).default;
+  });
+
+  function order(router: any): Array<[string, string]> {
+    return router.stack
+      .filter((l: any) => l.route)
+      .map((l: any) => {
+        const method = Object.keys(l.route.methods)[0];
+        return [l.route.path, method] as [string, string];
+      });
+  }
+
+  it('registers /templates before /:referenceId', () => {
+    const paths = order(router).map(([p]) => p);
+    expect(paths.indexOf('/templates')).toBeGreaterThanOrEqual(0);
+    expect(paths.indexOf('/templates')).toBeLessThan(paths.indexOf('/:referenceId'));
+  });
+
+  it('keeps the template catalogue unauthenticated', () => {
+    expect(requiresAuth(router, 'get', '/templates')).toBe(false);
+  });
+
+  it('still requires auth on the parameterised route it was shadowing', () => {
+    expect(requiresAuth(router, 'get', '/:referenceId')).toBe(true);
+    expect(hasRoleGate(router, 'get', '/:referenceId')).toBe(false);
+  });
+});
+
 describe('the endpoints fixed earlier are still gated', () => {
   // Regression cover: these were the first pass, and a later refactor that
   // dropped a gate would otherwise go unnoticed because the whole file would
