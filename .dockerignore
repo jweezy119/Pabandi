@@ -13,6 +13,12 @@
 .git
 .github
 **/node_modules
+# Must stay excluded. server/dist was tracked in git before .gitignore covered
+# it, and git keeps tracking files it already tracks — so it sat in the repo
+# long after the ignore rule existed. The Dockerfile compiles fresh, but a
+# committed or local dist/ inside the build context merges into the image's own
+# output: files deleted from src/ survive as stale JS. The image would build,
+# pass its health check, and serve code that no longer exists in source.
 **/dist
 **/build
 **/.next
