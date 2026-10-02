@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { Button } from '../../components/primitives';
 import { getAuthToken } from '../../utils/authToken';
-
+import { crmJobsService } from '../../services/crmJobs.service';
 
 
 // Reused Clay primitives from booking/BookingOSPage.tsx

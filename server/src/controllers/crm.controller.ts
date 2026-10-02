@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { requireCrmContext } from '../middleware/crmContext.middleware';
 import { prisma } from '../utils/database';
 import {
   enrollBusiness,
@@ -8,9 +9,6 @@ import {
   getEmployees,
   addClient,
   getClients,
-  getClient,
-  updateClient,
-  deleteClient,
   createJob,
   assignEmployee,
   updateJobStatus,
@@ -20,54 +18,7 @@ import {
   recordExpense,
   getExpenses,
   getDashboardStats,
-  createDeal,
-  getDeals,
-  getDeal,
-  updateDeal,
-  deleteDeal,
-  createActivity,
-  getActivities,
-  updateActivity,
-  deleteActivity,
-  addFile,
-  getFiles,
-  deleteFile,
-  createInvoice,
-  getInvoices,
-  markInvoicePaid,
 } from '../services/crm.service';
-
-// Helper to extract businessId from request.
-//
-// The request-supplied value is checked first, so it wins. That is a
-// cross-tenant hole: any authenticated user could pass another business's id
-// and read or write their clients, deals, invoices and payroll.
-//
-// The token is therefore authoritative. An explicit request businessId is
-// honoured only when it matches the token, so admin tooling and imports keep
-// working while a mismatch is refused rather than silently allowed. The same
-// rule is applied in routes/crm.routes.ts, which has its own copy of this
-// helper.
-function getBusinessId(req: AuthRequest): string {
-  const requested = (req.body?.businessId || req.query?.businessId) as string | undefined;
-  const tokenBusinessId = req.user?.businessId ?? req.user?.activeBusinessId;
-
-  if (requested && tokenBusinessId && requested !== tokenBusinessId) {
-    console.warn(
-      `[CrmController] businessId mismatch for user ${req.user?.id}: request=${requested} token=${tokenBusinessId}. Refusing.`,
-    );
-    throw new CustomError('Not allowed for this business', 403);
-  }
-
-  const businessId = requested || tokenBusinessId;
-  if (!businessId) {
-    // 403 rather than 400: the request was well-formed, the account just has
-    // no business attached. "businessId is required" was also a 400, which
-    // implied the caller could fix it by sending a different id.
-    throw new CustomError('No business is associated with this account', 403);
-  }
-  return businessId;
-}
 
 // ─── Enroll Business ─────────────────────────────────────────────────────────
 
@@ -78,7 +29,19 @@ export async function enrollBusinessHandler(
 ) {
   try {
     const { businessName, ownerEmail, ownerName, serviceType, phone, address } = req.body;
-    const business = await enrollBusiness({ businessName, ownerEmail, ownerName, serviceType, phone, address });
+    // Enrollment is authenticated but not yet business-scoped, so the owner is
+    // taken from the token rather than the body.
+    const ownerId = req.user?.id;
+    if (!ownerId) throw new CustomError('Authentication required', 401);
+    const business = await enrollBusiness({
+      ownerId,
+      businessName,
+      ownerEmail: ownerEmail || req.user?.email,
+      ownerName,
+      serviceType,
+      phone,
+      address,
+    });
     res.status(201).json({ success: true, data: business });
   } catch (error) {
     next(error);
@@ -93,7 +56,7 @@ export async function addEmployeeHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = getBusinessId(req);
+    const businessId = requireCrmContext(req).serviceBusinessId;
     const { name, email, phone, role, payRate, payType } = req.body;
     const employee = await addEmployee(businessId, { name, email, phone, role, payRate, payType });
     res.status(201).json({ success: true, data: employee });
@@ -108,7 +71,7 @@ export async function getEmployeesHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = getBusinessId(req);
+    const businessId = requireCrmContext(req).serviceBusinessId;
     const employees = await getEmployees(businessId);
     res.json({ success: true, data: employees });
   } catch (error) {
@@ -124,9 +87,9 @@ export async function addClientHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = getBusinessId(req);
-    const { name, email, phone, address, notes, customData } = req.body;
-    const client = await addClient(businessId, { name, email, phone, address, notes, customData });
+    const businessId = requireCrmContext(req).serviceBusinessId;
+    const { name, email, phone, address, notes } = req.body;
+    const client = await addClient(businessId, { name, email, phone, address, notes });
     res.status(201).json({ success: true, data: client });
   } catch (error) {
     next(error);
@@ -139,55 +102,9 @@ export async function getClientsHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = getBusinessId(req);
+    const businessId = requireCrmContext(req).serviceBusinessId;
     const clients = await getClients(businessId);
     res.json({ success: true, data: clients });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function getClientHandler(
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) {
-  try {
-    const businessId = getBusinessId(req);
-    const { id } = req.params;
-    const client = await getClient(businessId, id);
-    res.json({ success: true, data: client });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function updateClientHandler(
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) {
-  try {
-    const businessId = getBusinessId(req);
-    const { id } = req.params;
-    const { name, email, phone, address, notes, customData } = req.body;
-    const client = await updateClient(businessId, id, { name, email, phone, address, notes, customData });
-    res.json({ success: true, data: client });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function deleteClientHandler(
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) {
-  try {
-    const businessId = getBusinessId(req);
-    const { id } = req.params;
-    await deleteClient(businessId, id);
-    res.json({ success: true, message: 'Client deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -201,14 +118,15 @@ export async function createJobHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = getBusinessId(req);
-    const { clientId, serviceType, scheduledDate, scheduledTime, duration, address, notes, price } = req.body;
+    const businessId = requireCrmContext(req).serviceBusinessId;
+    const { clientId, clientName, serviceType, scheduledDate, scheduledTime, duration, durationMinutes, address, notes, price } = req.body;
     const job = await createJob(businessId, {
       clientId,
+      clientName,
       serviceType,
       scheduledDate,
       scheduledTime,
-      durationMinutes: duration ? +duration : 60,
+      durationMinutes: durationMinutes ?? (duration ? +duration : 60),
       address,
       notes,
       price,
@@ -230,7 +148,7 @@ export async function assignEmployeeHandler(
     if (!employeeId) {
       throw new CustomError('employeeId is required', 400);
     }
-    const job = await assignEmployee(jobId, employeeId);
+    const job = await assignEmployee(jobId, employeeId, requireCrmContext(req).serviceBusinessId);
     res.json({ success: true, data: job });
   } catch (error) {
     next(error);
@@ -248,7 +166,7 @@ export async function updateJobStatusHandler(
     if (!status) {
       throw new CustomError('status is required', 400);
     }
-    const job = await updateJobStatus(jobId, status);
+    const job = await updateJobStatus(jobId, status, requireCrmContext(req).serviceBusinessId);
     res.json({ success: true, data: job });
   } catch (error) {
     next(error);
@@ -261,7 +179,7 @@ export async function getJobsHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = getBusinessId(req);
+    const businessId = requireCrmContext(req).serviceBusinessId;
     const { dateFrom, dateTo, status, employeeId, clientId } = req.query;
     const jobs = await getJobs(businessId, {
       dateFrom: dateFrom as string | undefined,
@@ -284,7 +202,7 @@ export async function recordPayrollHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = getBusinessId(req);
+    const businessId = requireCrmContext(req).serviceBusinessId;
     const { employeeId, periodStart, periodEnd, hoursWorked, jobsCompleted, grossPay, deductions, netPay } = req.body;
     const payroll = await recordPayroll(businessId, {
       employeeId,
@@ -308,7 +226,7 @@ export async function getPayrollHistoryHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = getBusinessId(req);
+    const businessId = requireCrmContext(req).serviceBusinessId;
     const { employeeId } = req.query;
     const payrolls = await getPayrollHistory(businessId, employeeId as string | undefined);
     res.json({ success: true, data: payrolls });
@@ -325,7 +243,7 @@ export async function recordExpenseHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = getBusinessId(req);
+    const businessId = requireCrmContext(req).serviceBusinessId;
     const { category, amount, description, date, vendor } = req.body;
     const expense = await recordExpense(businessId, { category, amount, description, date, vendor });
     res.status(201).json({ success: true, data: expense });
@@ -340,7 +258,7 @@ export async function getExpensesHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = getBusinessId(req);
+    const businessId = requireCrmContext(req).serviceBusinessId;
     const { category, dateFrom, dateTo } = req.query;
     const expenses = await getExpenses(businessId, {
       category: category as string | undefined,
@@ -361,347 +279,10 @@ export async function getDashboardStatsHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = getBusinessId(req);
+    const businessId = requireCrmContext(req).serviceBusinessId;
     const stats = await getDashboardStats(businessId);
     res.json({ success: true, data: stats });
   } catch (error) {
     next(error);
   }
 }
-
-// ─── Deal Handlers ───────────────────────────────────────────────────────────
-
-export async function createDealHandler(req: AuthRequest, res: Response, next: NextFunction) {
-  try {
-    const businessId = getBusinessId(req);
-    const deal = await createDeal(businessId, req.body);
-    res.status(201).json({ success: true, data: deal });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function getDealsHandler(req: AuthRequest, res: Response, next: NextFunction) {
-  try {
-    const businessId = getBusinessId(req);
-    const { stage, clientId } = req.query;
-    const deals = await getDeals(businessId, {
-      stage: stage as string | undefined,
-      clientId: clientId as string | undefined,
-    });
-    res.json({ success: true, data: deals });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function getDealHandler(req: AuthRequest, res: Response, next: NextFunction) {
-  try {
-    const businessId = getBusinessId(req);
-    const deal = await getDeal(businessId, req.params.id);
-    res.json({ success: true, data: deal });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function updateDealHandler(req: AuthRequest, res: Response, next: NextFunction) {
-  try {
-    const businessId = getBusinessId(req);
-    const deal = await updateDeal(businessId, req.params.id, req.body);
-    res.json({ success: true, data: deal });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function deleteDealHandler(req: AuthRequest, res: Response, next: NextFunction) {
-  try {
-    const businessId = getBusinessId(req);
-    await deleteDeal(businessId, req.params.id);
-    res.json({ success: true, message: 'Deal deleted' });
-  } catch (error) {
-    next(error);
-  }
-}
-
-// ─── Activity Handlers ─────────────────────────────────────────────────────────
-
-export async function createActivityHandler(req: AuthRequest, res: Response, next: NextFunction) {
-  try {
-    const businessId = getBusinessId(req);
-    const activity = await createActivity(businessId, req.body);
-    res.status(201).json({ success: true, data: activity });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function getActivitiesHandler(req: AuthRequest, res: Response, next: NextFunction) {
-  try {
-    const businessId = getBusinessId(req);
-    const { clientId, dealId, type } = req.query;
-    const activities = await getActivities(businessId, {
-      clientId: clientId as string | undefined,
-      dealId: dealId as string | undefined,
-      type: type as string | undefined,
-    });
-    res.json({ success: true, data: activities });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function updateActivityHandler(req: AuthRequest, res: Response, next: NextFunction) {
-  try {
-    const businessId = getBusinessId(req);
-    const activity = await updateActivity(businessId, req.params.id, req.body);
-    res.json({ success: true, data: activity });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function deleteActivityHandler(req: AuthRequest, res: Response, next: NextFunction) {
-  try {
-    const businessId = getBusinessId(req);
-    await deleteActivity(businessId, req.params.id);
-    res.json({ success: true, message: 'Activity deleted' });
-  } catch (error) {
-    next(error);
-  }
-}
-
-// ─── File Handlers ─────────────────────────────────────────────────────────────
-
-export async function addFileHandler(req: AuthRequest, res: Response, next: NextFunction) {
-  try {
-    const businessId = getBusinessId(req);
-    const { clientId, fileName, fileUrl, fileSize, fileType } = req.body;
-    const file = await addFile(businessId, clientId, { fileName, fileUrl, fileSize, fileType });
-    res.status(201).json({ success: true, data: file });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function getFilesHandler(req: AuthRequest, res: Response, next: NextFunction) {
-  try {
-    const businessId = getBusinessId(req);
-    const { clientId } = req.query;
-    const files = await getFiles(businessId, clientId as string);
-    res.json({ success: true, data: files });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function deleteFileHandler(req: AuthRequest, res: Response, next: NextFunction) {
-  try {
-    const businessId = getBusinessId(req);
-    await deleteFile(businessId, req.params.id);
-    res.json({ success: true, message: 'File deleted' });
-  } catch (error) {
-    next(error);
-  }
-}
-
-// ─── Invoice Handlers ──────────────────────────────────────────────────────────
-
-export async function createInvoiceHandler(req: AuthRequest, res: Response, next: NextFunction) {
-  try {
-    const businessId = getBusinessId(req);
-    const invoice = await createInvoice(businessId, req.body);
-    res.status(201).json({ success: true, data: invoice });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function getInvoicesHandler(req: AuthRequest, res: Response, next: NextFunction) {
-  try {
-    const businessId = getBusinessId(req);
-    const { clientId, status } = req.query;
-    const invoices = await getInvoices(businessId, {
-      clientId: clientId as string | undefined,
-      status: status as string | undefined,
-    });
-    res.json({ success: true, data: invoices });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function markInvoicePaidHandler(req: AuthRequest, res: Response, next: NextFunction) {
-  try {
-    const businessId = getBusinessId(req);
-    const invoice = await markInvoicePaid(businessId, req.params.id);
-    res.json({ success: true, data: invoice });
-  } catch (error) {
-    next(error);
-  }
-}
-
-function parseCSV(text: string): string[][] {
-  const rows: string[][] = [];
-  let current: string[] = [];
-  let inQuotes = false;
-  let field = '';
-
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    if (inQuotes) {
-      if (char === '"') {
-        if (text[i + 1] === '"') { field += '"'; i++; }
-        else { inQuotes = false; }
-      } else { field += char; }
-    } else {
-      if (char === '"') { inQuotes = true; }
-      else if (char === ',') { current.push(field); field = ''; }
-      else if (char === '\n' || char === '\r') {
-        if (char === '\r' && text[i + 1] === '\n') i++;
-        current.push(field); field = '';
-        if (current.some(c => c.trim() !== '')) rows.push(current);
-        current = [];
-      } else { field += char; }
-    }
-  }
-  current.push(field);
-  if (current.some(c => c.trim() !== '')) rows.push(current);
-  return rows;
-}
-
-const CLIENT_FIELD_MAP: Record<string, string> = {
-  name: 'name', fullname: 'name', 'full name': 'name', contact: 'name',
-  email: 'email', 'email address': 'email', e_mail: 'email',
-  phone: 'phone', 'phone number': 'phone', mobile: 'phone', cell: 'phone',
-  company: 'company', organization: 'company', business: 'company',
-  address: 'address', street: 'address',
-  notes: 'notes', note: 'notes', comments: 'notes',
-  status: 'status', 'client status': 'status',
-  city: 'city', state: 'state', zip: 'zip', 'zip code': 'zip',
-  country: 'country', source: 'source', 'lead source': 'source',
-  tag: 'tags', tags: 'tags',
-};
-
-const DEAL_FIELD_MAP: Record<string, string> = {
-  title: 'title', name: 'title', deal: 'title', 'deal name': 'title',
-  value: 'value', amount: 'value', price: 'value', dealvalue: 'value',
-  stage: 'stage', status: 'stage', 'deal stage': 'stage',
-  probability: 'probability', prob: 'probability',
-  'expected close date': 'expectedCloseDate', closedate: 'expectedCloseDate', 'close date': 'expectedCloseDate',
-  client: 'clientId', 'client name': 'clientId', contact: 'clientId',
-  notes: 'notes', description: 'notes', 'deal notes': 'notes',
-  currency: 'currency',
-};
-
-export async function importClientsHandler(req: AuthRequest, res: Response, next: NextFunction) {
-  try {
-    const businessId = getBusinessId(req);
-    const csvText = req.body.csvData as string;
-    if (!csvText) throw new CustomError('No CSV data provided', 400);
-
-    const rows = parseCSV(csvText);
-    if (rows.length < 2) throw new CustomError('CSV must have a header row and at least one data row', 400);
-
-    const headers = rows[0].map(h => h.toLowerCase().trim());
-    const dataRows = rows.slice(1);
-
-    const results = { imported: 0, skipped: 0, errors: [] as string[] };
-
-    for (let i = 0; i < dataRows.length; i++) {
-      const row = dataRows[i];
-      const record: Record<string, unknown> = {};
-
-      for (let j = 0; j < headers.length; j++) {
-        const field = CLIENT_FIELD_MAP[headers[j]];
-        if (field) record[field] = row[j]?.trim() || '';
-      }
-
-      if (!record.name) { results.skipped++; results.errors.push(`Row ${i + 2}: missing name`); continue; }
-      if (record.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(record.email as string)) {
-        results.skipped++; results.errors.push(`Row ${i + 2}: invalid email`); continue;
-      }
-
-      const existing = await prisma.crmClient.findFirst({ where: { businessId, name: record.name as string } });
-      if (existing) { results.skipped++; results.errors.push(`Row ${i + 2}: duplicate name "${record.name}"`); continue; }
-
-      await prisma.crmClient.create({
-        data: {
-          businessId,
-          name: record.name as string,
-          email: (record.email as string) || null,
-          phone: (record.phone as string) || null,
-          address: (record.address as string) || null,
-          notes: (record.notes as string) || null,
-          status: 'ACTIVE',
-          isActive: true,
-        },
-      });
-      results.imported++;
-    }
-
-    res.json({ success: true, data: results });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function importDealsHandler(req: AuthRequest, res: Response, next: NextFunction) {
-  try {
-    const businessId = getBusinessId(req);
-    const csvText = req.body.csvData as string;
-    if (!csvText) throw new CustomError('No CSV data provided', 400);
-
-    const rows = parseCSV(csvText);
-    if (rows.length < 2) throw new CustomError('CSV must have a header row and at least one data row', 400);
-
-    const headers = rows[0].map(h => h.toLowerCase().trim());
-    const dataRows = rows.slice(1);
-    const clients = await prisma.crmClient.findMany({ where: { businessId }, select: { id: true, name: true } });
-    const clientMap = new Map(clients.map(c => [c.name.toLowerCase(), c.id]));
-
-    const results = { imported: 0, skipped: 0, errors: [] as string[] };
-
-    for (let i = 0; i < dataRows.length; i++) {
-      const row = dataRows[i];
-      const record: Record<string, unknown> = {};
-
-      for (let j = 0; j < headers.length; j++) {
-        const field = DEAL_FIELD_MAP[headers[j]];
-        if (field) record[field] = row[j]?.trim() || '';
-      }
-
-      if (!record.title) { results.skipped++; results.errors.push(`Row ${i + 2}: missing title`); continue; }
-
-      let clientId: string | null = null;
-      if (record.clientId) {
-        clientId = clientMap.get((record.clientId as string).toLowerCase()) || null;
-      }
-
-      const stage = (record.stage as string || 'LEAD').toUpperCase();
-      const validStages = ['LEAD', 'QUALIFIED', 'PROPOSAL', 'NEGOTIATION', 'WON', 'LOST'];
-
-      await prisma.crmDeal.create({
-        data: {
-          businessId,
-          title: record.title as string,
-          value: parseFloat(record.value as string) || 0,
-          currency: (record.currency as string) || 'USD',
-          stage: validStages.includes(stage) ? stage : 'LEAD',
-          probability: parseInt(record.probability as string) || 20,
-          expectedCloseDate: record.expectedCloseDate ? new Date(record.expectedCloseDate as string) : null,
-          notes: (record.notes as string) || null,
-          clientId,
-          ownerName: req.user?.firstName || 'Unknown',
-        },
-      });
-      results.imported++;
-    }
-
-    res.json({ success: true, data: results });
-  } catch (error) {
-    next(error);
-  }
-}
-

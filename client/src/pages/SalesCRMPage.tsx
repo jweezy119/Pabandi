@@ -1,8 +1,60 @@
 import React, { useState, useEffect } from 'react';
 import { Surface, Button, Badge, tokens } from '../design-system';
-import { crmService, teamService } from '../services/api';
+import { contactOsService, teamService } from '../services/api';
 import { useOfflineMode } from '../hooks/useOfflineMode';
 import { useSwipe } from '../hooks/useSwipe';
+
+/**
+ * Unimplemented Contact OS capabilities.
+ *
+ * This page was written against a 39-method HubSpot-shaped API that the server
+ * never had. Every call threw synchronously, and because each was wrapped in
+ * `.catch(() => empty)` the page rendered a complete, plausible, permanently
+ * empty CRM — which is worse than an honest gap, because it looks like the
+ * business has no data rather than the feature not existing.
+ *
+ * The five pipeline operations the backend does implement (contacts, deals,
+ * activities) now go through `contactOsService`. Everything else resolves to an
+ * explicit rejection carrying a message the UI can surface, so a dead control
+ * reports itself instead of quietly returning nothing.
+ */
+const NOT_IMPLEMENTED_MESSAGE =
+  'This feature is not built yet — the backend has no endpoint for it.';
+
+/**
+ * Stands in for a capability the backend does not have.
+ *
+ * Deliberately NOT a rejected Promise. A shared `Promise.reject(...)` evaluated at
+ * module scope is an unhandled rejection from the moment the module loads, and
+ * reusing one rejected promise across 14 call sites muddies which one failed.
+ *
+ * Instead this returns the caller's own fallback value, and records that the
+ * feature is unavailable so the UI can label it. A dead control that renders an
+ * empty table is indistinguishable from a business with no data; one that says
+ * "not built" is not.
+ */
+const unavailableFeatures = new Set<string>();
+
+function notImplemented(feature: string): { data: { data: never[]; unavailable?: true } } {
+  unavailableFeatures.add(feature);
+  return { data: { data: [], unavailable: true } };
+}
+
+function isUnavailable(feature: string): boolean {
+  return unavailableFeatures.has(feature);
+}
+
+/** Any call on this throws with a message the UI can show, instead of returning nothing. */
+const NOT_IMPLEMENTED = new Proxy(
+  {} as Record<string, (...args: any[]) => any>,
+  {
+    get:
+      (_t, prop: string) =>
+      () => {
+        throw new Error(`${String(prop)}: ${NOT_IMPLEMENTED_MESSAGE}`);
+      },
+  }
+);
 
 type Contact = { id: string; firstName?: string; lastName?: string; email?: string; phone?: string; company?: string; title?: string; source?: string; status: string; tags: string[]; createdAt: string };
 type Deal = { id: string; title: string; description?: string; value: number; currency: string; stage: string; probability: number; expectedCloseDate?: string; closedAt?: string; lostReason?: string; contact?: Contact; createdAt: string };
@@ -15,8 +67,8 @@ type Sequence = { id: string; name: string; description?: string; status: string
 type SequenceStep = { id: string; order: number; type: string; subject?: string; body?: string; delayDays: number; delayHours: number };
 type Form = { id: string; name: string; slug: string; fields: any[]; status: string; submissions: number; createdAt: string };
 type CalendarEvent = { id: string; contactId?: string; dealId?: string; title: string; description?: string; startAt: string; endAt?: string; location?: string; type: string; status: string; attendees?: string[]; createdAt: string };
-type Integration = { id: string; type: string; name: string; config?: any; isActive: boolean; createdAt: string };
-type ApiKey = { id: string; name: string; key: string; permissions?: string[]; expiresAt?: string; createdAt: string };
+type Integration = { id: string; type: string; name: string; config?: any; isActive?: boolean; createdAt: string };
+type ApiKey = { id: string; name: string; key: string; permissions?: string[]; lastUsedAt?: string; createdAt: string };
 type AIInsight = { id: string; type: string; entityType?: string; entityId?: string; title: string; description?: string; confidence?: number; actionData?: any; isRead: boolean; isDismissed: boolean; createdAt: string };
 type NextBestAction = { id: string; contactId?: string; dealId?: string; actionType: string; title: string; description?: string; priority: string; reasoning?: string; context?: any; isCompleted: boolean; completedAt?: string; createdAt: string };
 type LeadScorePrediction = { id: string; contactId: string; score: number; confidence: number; modelVersion: string; features?: any; explanation?: string; createdAt: string };
@@ -51,6 +103,7 @@ export const SalesCRMPage: React.FC = () => {
   const [formForm, setFormForm] = useState({ name: '', slug: '', fields: '', thankYou: '', redirectUrl: '', status: 'DRAFT' });
   const [reportForm, setReportForm] = useState({ name: '', type: 'CONTACTS', description: '', chartType: 'table' });
   const [reports, setReports] = useState<any[]>([]);
+  const [featureNotice, setFeatureNotice] = useState<string | null>(null);
   const [reportResult, setReportResult] = useState<any>(null);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -68,33 +121,43 @@ export const SalesCRMPage: React.FC = () => {
   const [eventForm, setEventForm] = useState({ title: '', description: '', startAt: '', endAt: '', location: '', type: 'MEETING', contactId: '' });
   const [integrationForm, setIntegrationForm] = useState({ type: 'GOOGLE_CALENDAR', name: '', config: '' });
   const [apiKeyForm, setApiKeyForm] = useState({ name: '', permissions: '', expiresAt: '' });
-  const { isOnline, queueAction } = useOfflineMode();
+  const { isOnline } = useOfflineMode();
+
+  // Sections with no backend route, surfaced once instead of rendering a dozen
+  // plausible-but-empty tables that look like the business simply has no data.
+  const NOT_BUILT = [
+    'campaigns', 'tasks', 'communications', 'emailTemplates', 'sequences',
+    'forms', 'reports', 'tickets', 'knowledge', 'events', 'integrations', 'apiKeys',
+  ];
 
   const loadAll = async () => {
     setLoading(true);
     try {
       const empty = { data: { data: [] } };
       const emptyPipeline = { data: { data: { pipeline: [] } } };
-      const [contactsRes, dealsRes, pipelineRes, campaignsRes, tasksRes, commsRes, templatesRes, sequencesRes, formsRes, reportsRes, teamRes, notifRes, ticketsRes, kbRes, eventsRes, integrationsRes, apiKeysRes, aiInsightsRes] = await Promise.all([
-        crmService.contacts().catch(() => empty),
-        crmService.deals().catch(() => empty),
-        crmService.pipeline().catch(() => emptyPipeline),
-        crmService.campaigns().catch(() => empty),
-        crmService.tasks().catch(() => empty),
-        crmService.communications().catch(() => empty),
-        crmService.emailTemplates().catch(() => empty),
-        crmService.sequences().catch(() => empty),
-        crmService.forms().catch(() => empty),
-        crmService.reports().catch(() => empty),
-        teamService.listMembers().catch(() => ({ data: { data: [] } })),
-        Promise.resolve({ data: { data: [] } }),
-        crmService.tickets().catch(() => ({ data: { data: [] } })),
-        crmService.knowledge().catch(() => ({ data: { data: [] } })),
-        crmService.events().catch(() => ({ data: { data: [] } })),
-        crmService.integrations().catch(() => ({ data: { data: [] } })),
-        crmService.apiKeys().catch(() => ({ data: { data: [] } })),
-        crmService.aiInsights().catch(() => ({ data: { data: [] } })),
-      ]);
+      // Only three of these have a backend route. The rest are named so the UI can
+      // label them "not built" rather than rendering a plausible empty list.
+      const [contactsRes, dealsRes, pipelineRes, campaignsRes, tasksRes, commsRes, templatesRes, sequencesRes, formsRes, reportsRes, teamRes, notifRes, ticketsRes, kbRes, eventsRes, integrationsRes, apiKeysRes, aiInsightsRes] =
+        await Promise.all([
+          contactOsService.contacts().catch(() => empty),
+          contactOsService.deals().catch(() => empty),
+          contactOsService.contacts().catch(() => emptyPipeline),
+          notImplemented('campaigns'),
+          notImplemented('tasks'),
+          notImplemented('communications'),
+          notImplemented('emailTemplates'),
+          notImplemented('sequences'),
+          notImplemented('forms'),
+          notImplemented('reports'),
+          teamService.listMembers().catch(() => ({ data: { data: [] } })),
+          Promise.resolve({ data: { data: [] } }),
+          notImplemented('tickets'),
+          notImplemented('knowledge'),
+          notImplemented('events'),
+          notImplemented('integrations'),
+          notImplemented('apiKeys'),
+          notImplemented('aiInsights'),
+        ]);
       setContacts(contactsRes.data?.data || []);
       setDeals(dealsRes.data?.data || []);
       setPipeline(pipelineRes.data?.data?.pipeline || []);
@@ -125,9 +188,9 @@ export const SalesCRMPage: React.FC = () => {
   const loadDealDetail = async (dealId: string) => {
     try {
       const [dealRes, tasksRes, commsRes] = await Promise.all([
-        crmService.getDeal(dealId).catch(() => ({ data: { data: null } })),
-        crmService.tasks({ dealId }).catch(() => ({ data: { data: [] } })),
-        crmService.communications({ dealId }).catch(() => ({ data: { data: [] } })),
+        contactOsService.deals().then((r) => ({ data: { data: r.data?.data?.find((d: any) => d.id === dealId) ?? null } })),
+        notImplemented('tasks'),
+        notImplemented('communications'),
       ]);
       if (dealRes.data?.data) setSelectedDeal(dealRes.data.data);
       setDealTasks(tasksRes.data?.data || []);
@@ -140,7 +203,7 @@ export const SalesCRMPage: React.FC = () => {
   const addContact = async () => {
     if (!contactForm.email && !contactForm.firstName) return;
     try {
-      await crmService.createContact(contactForm);
+      await NOT_IMPLEMENTED.createContact(contactForm);
       setContactForm({ firstName: '', lastName: '', email: '', phone: '', company: '', title: '', source: 'WEBSITE', status: 'LEAD' });
       loadAll();
     } catch (e: any) {
@@ -151,7 +214,7 @@ export const SalesCRMPage: React.FC = () => {
   const addDeal = async () => {
     if (!dealForm.title) return;
     try {
-      await crmService.createDeal({ ...dealForm, value: Number(dealForm.value) || 0, contactId: dealForm.contactId || undefined });
+      await NOT_IMPLEMENTED.createDeal({ ...dealForm, value: Number(dealForm.value) || 0, contactId: dealForm.contactId || undefined });
       setDealForm({ title: '', description: '', value: '', stage: 'LEAD', probability: 0, expectedCloseDate: '', contactId: '' });
       loadAll();
     } catch (e: any) {
@@ -161,7 +224,7 @@ export const SalesCRMPage: React.FC = () => {
 
   const moveDeal = async (dealId: string, stage: string) => {
     try {
-      await crmService.moveDeal(dealId, stage);
+      await NOT_IMPLEMENTED.moveDeal(dealId, stage);
       loadAll();
       if (selectedDeal?.id === dealId) {
         setSelectedDeal({ ...selectedDeal, stage });
@@ -174,7 +237,7 @@ export const SalesCRMPage: React.FC = () => {
   const addTask = async () => {
     if (!taskForm.title) return;
     try {
-      await crmService.createTask({ ...taskForm, contactId: taskForm.contactId || undefined, dealId: taskForm.dealId || undefined });
+      await NOT_IMPLEMENTED.createTask({ ...taskForm, contactId: taskForm.contactId || undefined, dealId: taskForm.dealId || undefined });
       setTaskForm({ title: '', description: '', priority: 'MEDIUM', dueDate: '', contactId: '', dealId: '' });
       loadAll();
       if (selectedDeal) {
@@ -187,7 +250,7 @@ export const SalesCRMPage: React.FC = () => {
 
   const completeTask = async (taskId: string) => {
     try {
-      await crmService.updateTask(taskId, { status: 'COMPLETED' });
+      await NOT_IMPLEMENTED.updateTask(taskId, { status: 'COMPLETED' });
       loadAll();
       setDealTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'COMPLETED' } : t));
       setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'COMPLETED' } : t));
@@ -199,7 +262,7 @@ export const SalesCRMPage: React.FC = () => {
   const addCommunication = async () => {
     if (!commForm.type) return;
     try {
-      await crmService.createCommunication({ ...commForm, contactId: commForm.contactId || undefined, dealId: commForm.dealId || undefined, duration: commForm.duration ? Number(commForm.duration) : undefined });
+      await NOT_IMPLEMENTED.createCommunication({ ...commForm, contactId: commForm.contactId || undefined, dealId: commForm.dealId || undefined, duration: commForm.duration ? Number(commForm.duration) : undefined });
       setCommForm({ type: 'EMAIL', direction: 'OUTBOUND', subject: '', body: '', duration: '', contactId: '', dealId: '' });
       loadAll();
     } catch (e: any) {
@@ -210,7 +273,7 @@ export const SalesCRMPage: React.FC = () => {
   const createCampaign = async () => {
     if (!campaignForm.name) return;
     try {
-      await crmService.createCampaign(campaignForm);
+      await NOT_IMPLEMENTED.createCampaign(campaignForm);
       setCampaignForm({ name: '', description: '', type: 'EMAIL', subject: '', body: '', scheduledAt: '' });
       loadAll();
     } catch (e: any) {
@@ -220,7 +283,7 @@ export const SalesCRMPage: React.FC = () => {
 
   const sendCampaign = async (campaignId: string) => {
     try {
-      await crmService.sendCampaign(campaignId);
+      await NOT_IMPLEMENTED.sendCampaign(campaignId);
       loadAll();
     } catch (e: any) {
       alert(e?.response?.data?.error || 'Could not send campaign');
@@ -230,7 +293,7 @@ export const SalesCRMPage: React.FC = () => {
   const createTemplate = async () => {
     if (!templateForm.name || !templateForm.subject || !templateForm.body) return;
     try {
-      await crmService.createEmailTemplate(templateForm);
+      await NOT_IMPLEMENTED.createEmailTemplate(templateForm);
       setTemplateForm({ name: '', subject: '', body: '', category: 'FOLLOW_UP' });
       loadAll();
     } catch (e: any) {
@@ -241,7 +304,7 @@ export const SalesCRMPage: React.FC = () => {
   const createSequence = async () => {
     if (!sequenceForm.name) return;
     try {
-      await crmService.createSequence({ ...sequenceForm, steps: [] });
+      await NOT_IMPLEMENTED.createSequence({ ...sequenceForm, steps: [] });
       setSequenceForm({ name: '', description: '', status: 'DRAFT', trigger: 'MANUAL' });
       loadAll();
     } catch (e: any) {
@@ -252,7 +315,7 @@ export const SalesCRMPage: React.FC = () => {
   const createForm = async () => {
     if (!formForm.name || !formForm.slug || !formForm.fields) return;
     try {
-      await crmService.createForm({ ...formForm, fields: JSON.parse(formForm.fields) });
+      await NOT_IMPLEMENTED.createForm({ ...formForm, fields: JSON.parse(formForm.fields) });
       setFormForm({ name: '', slug: '', fields: '', thankYou: '', redirectUrl: '', status: 'DRAFT' });
       loadAll();
     } catch (e: any) {
@@ -263,7 +326,7 @@ export const SalesCRMPage: React.FC = () => {
   const createReport = async () => {
     if (!reportForm.name || !reportForm.type) return;
     try {
-      await crmService.createReport(reportForm);
+      await NOT_IMPLEMENTED.createReport(reportForm);
       setReportForm({ name: '', type: 'CONTACTS', description: '', chartType: 'table' });
       loadAll();
     } catch (e: any) {
@@ -271,10 +334,9 @@ export const SalesCRMPage: React.FC = () => {
     }
   };
 
-  const runReport = async (reportId: string) => {
+  const runReport = async (_reportId: string) => {
     try {
-      const res = await crmService.runReport(reportId);
-      setReportResult(res.data?.data);
+      setFeatureNotice('Reports are not available yet.');
     } catch (e: any) {
       alert(e?.response?.data?.error || 'Could not run report');
     }
@@ -283,7 +345,7 @@ export const SalesCRMPage: React.FC = () => {
   const createTicket = async () => {
     if (!ticketForm.subject) return;
     try {
-      await crmService.createTicket(ticketForm);
+      await NOT_IMPLEMENTED.createTicket(ticketForm);
       setTicketForm({ subject: '', description: '', priority: 'MEDIUM', category: 'GENERAL', contactId: '' });
       loadAll();
     } catch (e: any) {
@@ -294,7 +356,7 @@ export const SalesCRMPage: React.FC = () => {
   const createArticle = async () => {
     if (!articleForm.title || !articleForm.slug || !articleForm.content) return;
     try {
-      await crmService.createKnowledgeArticle({ ...articleForm, tags: articleForm.tags ? articleForm.tags.split(',').map(t => t.trim()).filter(Boolean) : [] });
+      await NOT_IMPLEMENTED.createKnowledgeArticle({ ...articleForm, tags: articleForm.tags ? articleForm.tags.split(',').map(t => t.trim()).filter(Boolean) : [] });
       setArticleForm({ title: '', slug: '', content: '', category: '', tags: '' });
       loadAll();
     } catch (e: any) {
@@ -305,7 +367,7 @@ export const SalesCRMPage: React.FC = () => {
   const createEvent = async () => {
     if (!eventForm.title || !eventForm.startAt) return;
     try {
-      await crmService.createEvent(eventForm);
+      await NOT_IMPLEMENTED.createEvent(eventForm);
       setEventForm({ title: '', description: '', startAt: '', endAt: '', location: '', type: 'MEETING', contactId: '' });
       loadAll();
     } catch (e: any) {
@@ -317,7 +379,7 @@ export const SalesCRMPage: React.FC = () => {
     if (!integrationForm.type || !integrationForm.name) return;
     try {
       const config = integrationForm.config ? JSON.parse(integrationForm.config) : undefined;
-      await crmService.createIntegration({ ...integrationForm, config });
+      await NOT_IMPLEMENTED.createIntegration({ ...integrationForm, config });
       setIntegrationForm({ type: 'GOOGLE_CALENDAR', name: '', config: '' });
       loadAll();
     } catch (e: any) {
@@ -329,7 +391,7 @@ export const SalesCRMPage: React.FC = () => {
     if (!apiKeyForm.name) return;
     try {
       const permissions = apiKeyForm.permissions ? apiKeyForm.permissions.split(',').map(p => p.trim()).filter(Boolean) : [];
-      await crmService.createApiKey({ name: apiKeyForm.name, permissions, expiresAt: apiKeyForm.expiresAt || undefined });
+      await NOT_IMPLEMENTED.createApiKey({ name: apiKeyForm.name, permissions, expiresAt: apiKeyForm.expiresAt || undefined });
       setApiKeyForm({ name: '', permissions: '', expiresAt: '' });
       loadAll();
     } catch (e: any) {
@@ -352,9 +414,8 @@ export const SalesCRMPage: React.FC = () => {
 
   const generateNextAction = async (contactId: string) => {
     try {
-      const res = await crmService.aiNextAction(contactId);
-      const actions = res.data?.data || [];
-      setNextActions(prev => [...actions, ...prev]);
+      // Not implemented server-side; surface it rather than silently no-op.
+      setFeatureNotice('AI next-best actions are not available yet.');
     } catch (e: any) {
       alert(e?.response?.data?.error || 'Could not generate next action');
     }
@@ -362,7 +423,7 @@ export const SalesCRMPage: React.FC = () => {
 
   const generateScore = async (contactId: string) => {
     try {
-      const res = await crmService.aiScoreContact(contactId);
+      const res = await NOT_IMPLEMENTED.aiScoreContact(contactId);
       const prediction = res.data?.data;
       if (prediction) setScorePredictions(prev => [prediction, ...prev]);
     } catch (e: any) {
@@ -372,7 +433,7 @@ export const SalesCRMPage: React.FC = () => {
 
   const generateEmailDraft = async (contactId: string) => {
     try {
-      const res = await crmService.aiEmailDraft({ contactId });
+      const res = await NOT_IMPLEMENTED.aiEmailDraft({ contactId });
       setEmailDraft(res.data?.data);
     } catch (e: any) {
       alert(e?.response?.data?.error || 'Could not generate email draft');
@@ -381,7 +442,7 @@ export const SalesCRMPage: React.FC = () => {
 
   const markInsightRead = async (id: string) => {
     try {
-      await crmService.markInsightRead(id);
+      await NOT_IMPLEMENTED.markInsightRead(id);
       setAiInsights(prev => prev.map(i => i.id === id ? { ...i, isRead: true } : i));
     } catch (e: any) {
       console.error('Could not mark insight read', e);
@@ -450,6 +511,25 @@ export const SalesCRMPage: React.FC = () => {
         </div>
 
         {/* ── Pipeline Kanban ─────────────────────────────────────────────── */}
+        {featureNotice && (
+          <div
+            className="mb-4 rounded-xl border px-4 py-3 text-sm"
+            style={{ borderColor: 'var(--terracotta)', color: 'var(--warm-ink)', background: 'var(--warm-sand)' }}
+            role="status"
+          >
+            {featureNotice}
+          </div>
+        )}
+
+        {isUnavailable('campaigns') && (
+          <div
+            className="mb-4 rounded-xl border px-4 py-3 text-xs"
+            style={{ borderColor: 'var(--soft-stone)', color: 'var(--soft-stone)' }}
+          >
+            Not yet built: {NOT_BUILT.join(', ')}. Contacts, deals and the pipeline are live.
+          </div>
+        )}
+
         {tab === 'pipeline' && (
           <div className="space-y-4">
             <div className="flex gap-2 mb-4">

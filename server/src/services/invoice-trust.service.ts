@@ -20,7 +20,7 @@ const PAYMENT_SCORE_DELTAS: Record<string, number> = {
 };
 
 // Determine the paymentScore delta for an invoice status change
-async function getPaymentScoreDelta(
+function getPaymentScoreDelta(
   oldStatus: string,
   newStatus: string,
   timestamp: Date,
@@ -66,12 +66,39 @@ async function getPaymentScoreDelta(
 }
 
 // Get passportId (TrustPassport id) for a client (CrmClient)
+//
+// The score being moved here is the *payer's* payment reliability, so the
+// passport must belong to the client — not to the business that issued the
+// invoice. Resolution order:
+//
+//   1. the passport explicitly linked to the client record (strongest);
+//   2. a passport whose handle matches the client's email, for clients onboarded
+//      on the platform before a CRM record existed.
+//
+// If neither resolves the invoice event is still recorded against the invoice,
+// but no score is moved and the miss is logged rather than silently charged to
+// the wrong party.
 async function getPassportIdForClient(clientId: string): Promise<string | null> {
   const client = await prisma.crmClient.findUnique({
     where: { id: clientId },
-    select: { passportId: true },
+    select: { passportId: true, email: true, phone: true },
   });
-  return client?.passportId ?? null;
+  if (!client) return null;
+
+  if (client.passportId) return client.passportId;
+
+  if (client.email) {
+    const byHandle = await prisma.trustPassport.findFirst({
+      where: { handle: { equals: client.email, mode: 'insensitive' } },
+      select: { id: true },
+    });
+    if (byHandle) return byHandle.id;
+  }
+
+  logger.warn(
+    `[InvoiceTrust] No trust passport resolved for client ${clientId} — skipping score update`
+  );
+  return null;
 }
 
 // Check if an invoice event has already been recorded
@@ -186,8 +213,26 @@ async function processInvoiceStatusChange(
     return;
   }
 
+  // Read the current score so the trust event can record the delta it caused.
+  const passport = await prisma.trustPassport.findUnique({
+    where: { id: passportId },
+    select: { paymentScore: true },
+  });
+  const scoreBefore = passport?.paymentScore ?? 500;
+
+  // Apply the same decay the score update will apply, so scoreAfter is the
+  // value actually persisted rather than an approximation.
+  const ageDays = Math.max(
+    0,
+    (Date.now() - timestamp.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  const scoreAfter = Math.max(
+    0,
+    Math.min(1000, scoreBefore + Math.round(delta * paymentScoreDecayFactor(ageDays)))
+  );
+
   // Record the event
-  await recordInvoiceEvent(invoiceId, passportId, eventType);
+  await recordInvoiceEvent(invoiceId, passportId, eventType, scoreBefore, scoreAfter);
 
   // Emit event via event bus (for other consumers)
   eventBus.emitEvent(eventType, {
@@ -196,7 +241,7 @@ async function processInvoiceStatusChange(
     clientId,
     timestamp,
     delta,
-  });
+  }, 'payments');
 
   // Update paymentScore (only for events that affect score)
   if (delta !== 0) {

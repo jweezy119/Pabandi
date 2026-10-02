@@ -22,6 +22,18 @@ process.env.JWT_SECRET = SECRET;
 vi.mock('../src/utils/database', () => ({
   prisma: {
     invoice: { findFirst: vi.fn(), deleteMany: vi.fn() },
+    // crm.routes mounts resolveCrmBusiness, which reads this table to scope every
+    // request to the caller's own business. Without it the middleware throws and
+    // the suite sees a 500 HTML page instead of the handler's real response.
+    // Must resolve, not be null: resolveCrmBusiness 403s the request when no
+    // service business is enrolled, which masks every handler assertion behind
+    // the same status code. The row links back to the same business the token
+    // carries so getBusinessId's mismatch guard sees no disagreement.
+    crmServiceBusiness: {
+      findFirst: vi.fn().mockImplementation(() =>
+        Promise.resolve({ id: 'csb_1', businessId: BUSINESS, ownerId: 'u1' }),
+      ),
+    },
   },
 }));
 

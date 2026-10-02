@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { Button } from '../../components/primitives';
 import { getAuthToken } from '../../utils/authToken';
-
 const LEDGER_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/capital`;
 
 const navItems = [
@@ -32,7 +31,6 @@ const FILTERS = [
   { key: 'overdue', label: 'Overdue' },
   { key: 'paid', label: 'Paid' },
 ] as const;
-
 /**
  * The only CapitalOS page that already fetched real data, so most of this is
  * fixing the parts around it:
@@ -55,7 +53,6 @@ export default function LedgerInvoicesPage() {
   const [filter, setFilter] = useState<string>('all');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rowError, setRowError] = useState<string | null>(null);
-
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);

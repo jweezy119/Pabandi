@@ -5,6 +5,7 @@
   "main": "dist/src/index.js",
   "scripts": {
     "dev": "ts-node --transpileOnly src/index.ts",
+    "dev:watch": "nodemon src/index.ts",
     "gcp-build": "prisma generate && tsc",
     "compile": "prisma generate && (tsc --noEmitOnError false || true) && node scripts/build-assets.js",
     "zk:build": "ts-node src/zk/buildZk.ts",

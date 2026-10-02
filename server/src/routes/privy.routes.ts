@@ -87,7 +87,7 @@ router.get('/wallet/:id', async (req: Request, res: Response) => {
       FROM "Business" WHERE id = ${id}
     `;
 
-    const org = business[0] as { id: string; organizationName: string; privyWalletId: string; createdAt: Date };
+    const org = business[0] as { id: string; organizationName: string; privyWalletId: string; createdAt: Date } | undefined;
     if (!org || !org.privyWalletId) {
       return res.status(404).json({ success: false, error: 'Organization wallet not found' });
     }
@@ -95,7 +95,7 @@ router.get('/wallet/:id', async (req: Request, res: Response) => {
     // Get live balance from Privy
     let balance;
     try {
-      balance = await getWalletBalance(business.privyWalletId, 'solana');
+      balance = await getWalletBalance(org.privyWalletId, 'solana');
     } catch {
       balance = { balance: '0', unit: 'SOL' };
     }
@@ -103,13 +103,13 @@ router.get('/wallet/:id', async (req: Request, res: Response) => {
     res.json({
       success: true,
       data: {
-        organizationId: business.id,
-        organizationName: business.organizationName,
-        address: business.privyWalletId,
+        organizationId: org.id,
+        organizationName: org.organizationName,
+        address: org.privyWalletId,
         chain: 'solana',
         status: 'active',
         balance,
-        createdAt: business.createdAt,
+        createdAt: org.createdAt,
       },
     });
   } catch (err: any) {

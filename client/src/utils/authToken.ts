@@ -1,6 +1,5 @@
 import { useAuthStore } from '../store/authStore';
 import { getAuthToken } from './authToken';
-
 /**
  * The one canonical way to read the session token.
  *
@@ -21,7 +20,6 @@ export function getAuthToken(): string | null {
 
   const live = useAuthStore.getState()?.token;
   if (live) return live;
-
   try {
     const raw = window.localStorage.getItem('auth-storage');
     if (!raw) return null;

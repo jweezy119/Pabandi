@@ -345,6 +345,11 @@ const routeMap: [string, string][] = [
   [`/api/${v}/crm/activities`, './routes/activity.routes'],
   [`/api/${v}/crm/tasks`, './routes/task.routes'],
   [`/api/${v}/crm-advanced`, './routes/crmAdvanced.routes'],
+  [`/api/${v}/business-os`, './routes/businessOS.routes'],
+  [`/api/${v}/booking-services`, './routes/bookingService.routes'],
+  // Payment-partner webhooks. No user auth by design: the caller is the rail's
+  // server and is authenticated by HMAC signature instead.
+  [`/api/${v}/rail/webhooks`, './routes/railWebhook.routes'],
   [`/api/${v}/team`, './routes/team.routes'],
   [`/api/${v}/reports`, './routes/reports.routes'],
   [`/api/${v}/settings`, './routes/settings.routes'],
@@ -510,6 +515,22 @@ logger.info(`✅ ${routeMap.length} lazy API routes registered`)
 import { initializeTrustCore } from './services/trust-core.service';
 initializeTrustCore();
 logger.info('✅ TrustCore event pipeline initialized');
+
+// Replay trust events that were persisted but not fully delivered before the last
+// restart. Runs after initializeTrustCore so subscribers are attached first.
+import { eventBus } from './services/event-bus.service';
+void eventBus.replayOutbox().then((n) => {
+  if (n > 0) logger.info(`✅ Replayed ${n} trust outbox deliveries`);
+});
+
+// Load the module registry so the Business OS layer catalogue is available.
+import { moduleRegistry } from './modules';
+logger.info(
+  `✅ Module registry loaded (${moduleRegistry.all().length} modules: ${moduleRegistry
+    .all()
+    .map((m) => m.key)
+    .join(', ')})`
+);
 
 // Auto-start job cron service (checks for overdue jobs and no-shows every minute)
 import { jobCronService } from './services/jobCronService';

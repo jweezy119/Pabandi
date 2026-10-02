@@ -858,7 +858,18 @@ router.post('/offline-businesses', async (_req: Request, res: Response): Promise
 
 export { OFFLINE_BUSINESSES };
 
-/** Idempotently insert the offline business seed. Returns number inserted. */
+/**
+ * Idempotently insert the offline business seed. Returns number inserted.
+ *
+ * These entries carry bundled `rating` / `reviewCount` / `trustScore` values.
+ * They are demo figures, and this function deliberately does **not** copy them
+ * onto the record, nor mark the business verified. Inserting a synthetic
+ * business with `isVerified: true` and an invented trust score presents
+ * fabricated verification to users as though the platform had established it —
+ * which is the one thing a trust protocol must never do. Discovery renders
+ * these as unverified listings that still need to earn a score through real
+ * bookings and reviews.
+ */
 export async function seedOfflineBusinesses(): Promise<number> {
   const count = await prisma.business.count({ where: { latitude: { not: null }, longitude: { not: null } } });
   if (count > 0) return count; // already seeded
@@ -871,10 +882,11 @@ export async function seedOfflineBusinesses(): Promise<number> {
           name: b.name, category: b.category, address: b.address, city: b.city,
           state: b.state || '', country: b.country, postalCode: b.zip || null,
           phone: b.phone || null, latitude: b.lat, longitude: b.lng, slug: b.slug,
-          rating: b.rating, reviewCount: b.reviewCount, trustScore: b.trustScore,
-          isVerified: true, isActive: true,
-          description: `${b.name} — real ${b.category.toLowerCase().replace('_', ' ')} on Pabandi. ${b.address || ''}`,
-          externalDetails: { source: 'OFFLINE_SEED', verifiedCoordinates: true },
+          // rating / reviewCount / trustScore intentionally left at defaults.
+          isVerified: false,
+          isActive: true,
+          description: `${b.name} — ${b.category.toLowerCase().replace('_', ' ')} on Pabandi. ${b.address || ''}`,
+          externalDetails: { source: 'OFFLINE_SEED', coordinatesBundled: true },
         },
       });
       inserted++;

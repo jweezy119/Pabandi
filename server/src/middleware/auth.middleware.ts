@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { CustomError } from './errorHandler';
 import { tenantContext } from '../lib/prisma';
+import type { CrmContext } from './crmContext.middleware';
 
 declare global {
   namespace Express {
@@ -36,6 +37,16 @@ export interface AuthRequest extends Request {
     /** The account mode the token was issued for. */
     mode?: string;
   };
+  /**
+   * Business context, attached by `resolveCrmBusiness`.
+   *
+   * Declared here rather than via `declare global { namespace Express }` on
+   * purpose: ts-node compiles per-file, and a global `Request` augmentation in a
+   * separately-imported module can shadow `Express.User` for files that are
+   * compiled before the augmentation is in scope. Extending the already-exported
+   * `AuthRequest` keeps the augmentation local to the file that declares it.
+   */
+  crm?: CrmContext;
 }
 
 export const authenticate = (

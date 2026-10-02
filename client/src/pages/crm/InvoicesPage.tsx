@@ -6,6 +6,8 @@ import { InvoiceList, InvoiceListRow } from './components/InvoiceList';
 import { InvoiceFormModal } from './components/InvoiceFormModal';
 import { getAuthToken } from '../../utils/authToken';
 import { withBusinessId } from '../../utils/businessContext';
+import { useParams, Link } from 'react-router-dom';
+import { FiPlus, FiTrash2, FiSend, FiCheckCircle, FiClock, FiAlertCircle, FiEye, FiX } from 'react-icons/fi';
 
 const CRM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
 

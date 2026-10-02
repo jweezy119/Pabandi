@@ -37,7 +37,7 @@ export class LedgerTrustService {
     });
 
     for (const inv of overdue) {
-      eventBus.emitEvent('ledger.invoice.overdue', { invoiceId: inv.id });
+      eventBus.emitEvent('ledger.invoice.overdue', { invoiceId: inv.id }, 'payments');
     }
 
     return overdue;
@@ -47,11 +47,13 @@ export class LedgerTrustService {
     const invoice = await prisma.ledgerInvoice.findUnique({ where: { id: invoiceId } });
     if (!invoice || !invoice.clientId) return null;
 
-    eventBus.emitEvent('trust.score.changed', {
+    eventBus.emitEvent('score.changed', {
       userId: invoice.clientId,
+      clientId: invoice.clientId,
+      businessId: invoice.businessId,
       delta: -2,
       reason: `Late payment on invoice ${invoice.number}`,
-    });
+    }, 'payments');
 
     return { success: true };
   }

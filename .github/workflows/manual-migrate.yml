@@ -1,4 +1,7 @@
-name: Manual Prisma Migration to Supabase
+name: Manual Prisma Migration
+
+# The DATABASE_URL secret points at Aliyun RDS (Singapore), NOT Supabase.
+# The old name said Supabase, which was misleading when auditing this job.
 
 on:
   workflow_dispatch:
@@ -39,8 +42,13 @@ jobs:
           # Idempotent. `migrate resolve --applied` is NOT safe to run twice: it
           # exits non-zero with P3008 when the migration is already recorded as
           # applied. Because a failed step aborts the job, this used to make the
+<<<<<<< HEAD
           # entire workflow permanently unrunnable once that record existed --
           # which it does, so `migrate deploy` below could never be reached.
+=======
+          # entire workflow permanently unrunnable once the record existed --
+          # which it now does, so `deploy` below could never be reached.
+>>>>>>> e112cebf7
           #
           # P3008 = already applied -> nothing to do.
           # Other  -> genuinely blocked, fail loudly rather than migrate past it.

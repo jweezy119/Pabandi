@@ -5,15 +5,12 @@ import { Card, EmptyState, ClayBadge } from '../../components/primitives';
 import DashboardLayout from '../../components/DashboardLayout';
 import LoadingState from './components/LoadingState';
 import { getAuthToken } from '../../utils/authToken';
-
 // ─── Count-up animation ────────────────────────────────────────────────────────
-
 function CountUpNumber({ end, duration = 800 }: { end: number | string; duration?: number }) {
   const numericEnd = typeof end === 'string' ? parseInt(end, 10) || 0 : end;
   const [value, setValue] = useState(0);
   const rafRef = useRef<number>(0);
   const startTime = useRef<number>(0);
-
   useEffect(() => {
     startTime.current = performance.now();
     const tick = () => {
@@ -30,9 +27,10 @@ function CountUpNumber({ end, duration = 800 }: { end: number | string; duration
     return () => cancelAnimationFrame(rafRef.current);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [numericEnd, duration]);
-
   return <span style={{ fontVariantNumeric: 'tabular-nums' }}>{value}</span>;
 }
+import { useState, useEffect } from 'react';
+import { FiBriefcase, FiUsers, FiTrendingUp, FiAlertTriangle, FiStar, FiZap, FiEye, FiCheckCircle, FiX, FiClock, FiPhone, FiMail, FiMapPin } from 'react-icons/fi';
 
 // ─── API Helper ───────────────────────────────────────────────────────────────
 

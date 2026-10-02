@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { requireCrmContext } from '../middleware/crmContext.middleware';
 import { prisma } from '../utils/database';
 import { getActiveAlerts, dismissAlert } from '../services/alerts.service';
 import { updateClientScore, refreshClientTrust, getClientStage } from '../services/crm-reliability.service';

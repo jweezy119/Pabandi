@@ -221,7 +221,21 @@ export const getBusiness = async (
           console.error('Failed to fetch business from OSM:', osmErr.message);
         }
       } else {
-        const apiKey = '' /* Google Maps removed: use free OpenStreetMap enrichment instead */;
+        // Google Maps import — INTENTIONALLY DISABLED, do not simply re-add a key.
+        //
+        // The Google Maps Platform Terms (Maps Service Specific Terms §14.3 and
+        // §3.2.3) forbid building a durable database out of Places responses:
+        // names, addresses, phones, websites, hours, ratings and reviews may be
+        // displayed live at request time with attribution, but may not be
+        // pre-fetched, indexed or persisted and served later. Only `place_id`
+        // may be stored indefinitely, and lat/lng only for 30 days.
+        //
+        // The code below persists all of exactly those fields, so re-enabling it
+        // as-written would be a terms violation, not just a cost question.
+        // The supported pattern is a live lookup per user request with no DB
+        // write (see the sourcing decision in the Business OS docs), or OpenStreetMap
+        // data, which is ODbL and genuinely ours to store.
+        const apiKey = '';
         if (apiKey) {
           try {
             const googleRes = await axios.get(

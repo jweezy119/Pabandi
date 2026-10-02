@@ -66,6 +66,34 @@ interface AuthRequest extends Request {
   };
 }
 
+/**
+ * Domains reserved for testing/documentation by RFC 2606 and RFC 6761. They can
+ * never belong to a real person, so an account on one is either a developer, a
+ * test script or an automated abuse — never a customer.
+ *
+ * Registration is being hit by a recurring script creating
+ * `probe-<epoch>@example.com` accounts (observed 4 times in 2 hours against a
+ * live deployment). Rate limiting bounds how many it gets through; this stops
+ * the class entirely. It is a correctness check, not a heuristic.
+ */
+const RESERVED_EMAIL_DOMAINS = new Set([
+  'example.com', 'example.net', 'example.org',
+  'test', 'localhost', 'local',
+  'invalid', 'example',
+  // RFC 6761 / RFC 8375 reserved special-use names.
+  'pabandi.local', 'pabandi.test', 'pabandi.invalid', 'pabandi.sim',
+]);
+
+export function isReservedTestDomain(email: string): boolean {
+  const domain = email.trim().toLowerCase().split('@')[1] ?? '';
+  if (!domain) return false;
+  if (RESERVED_EMAIL_DOMAINS.has(domain)) return true;
+  // Any label under a reserved TLD is equally unusable: foo@example.com,
+  // foo.test.example, and so on.
+  const [tld] = domain.split('.').slice(-1);
+  return tld === 'test' || tld === 'invalid' || tld === 'local';
+}
+
 export const register = async (
   req: Request<{}, {}, RegisterBody>,
   res: Response,
@@ -73,6 +101,15 @@ export const register = async (
 ) => {
   try {
     const { email, password, firstName, lastName, phone, role, refCode, code } = req.body;
+
+    if (isReservedTestDomain(email)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          'That email domain is reserved for testing and cannot be used to register. ' +
+          'Use a real, deliverable email address.',
+      });
+    }
 
     // If code is provided, verify it first (code-based registration flow)
     if (code) {
@@ -521,7 +558,7 @@ export const login = async (
 };
 
 export const refreshToken = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -621,7 +658,7 @@ export const verifyEmail = async (
 
 // Public email code login: request code for any email (no auth required)
 export const requestLoginCode = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -684,7 +721,7 @@ export const requestLoginCode = async (
 
 // Public email code login: verify code and login/register (no auth required)
 export const verifyLoginCode = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -827,7 +864,7 @@ export const verifyPhone = async (
 };
 
 export const forgotPassword = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -868,7 +905,7 @@ export const forgotPassword = async (
 };
 
 export const resetPassword = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -913,7 +950,7 @@ export const resetPassword = async (
 };
 
 export const updatePassword = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -1003,7 +1040,7 @@ export const updateProfile = async (
   }
 };
 
-export const getNonce = async (req: Request, res: Response, next: NextFunction) => {
+export const getNonce = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const walletAddressRaw = typeof req.body?.walletAddress === 'string' ? req.body.walletAddress.trim() : '';
     let walletAddress: string;
@@ -1052,7 +1089,7 @@ export const getNonce = async (req: Request, res: Response, next: NextFunction) 
   }
 };
 
-export const verifyWallet = async (req: Request, res: Response, next: NextFunction) => {
+export const verifyWallet = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const walletAddressRaw = typeof req.body?.walletAddress === 'string' ? req.body.walletAddress.trim() : '';
     const signature = typeof req.body?.signature === 'string' ? req.body.signature.trim() : '';
