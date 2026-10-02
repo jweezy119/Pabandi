@@ -207,3 +207,106 @@ DO $$ BEGIN
       ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
 END $$;
+
+-- ── PAB tokenomics ─────────────────────────────────────────────────────────
+-- The supply is fixed at 1,000,000,000 PAB with no further minting. Making that
+-- checkable is the point: an exchange or investor divides the tranches, so they
+-- live in rows rather than prose, and config/pab-supply.ts asserts they reconcile.
+--
+-- Supply-side quantities are BIGINT. 500,000,000 + 150,000,000 is not
+-- 650,000,000 in IEEE 754, and a supply that does not reconcile is the first thing
+-- anyone checks. Genuinely fractional rewards stay Float on PabWallet.
+
+CREATE TABLE IF NOT EXISTS "TokenAllocation" (
+  id TEXT NOT NULL,
+  "category" TEXT NOT NULL,
+  "amount" BIGINT NOT NULL,
+  "bps" INTEGER NOT NULL,
+  "vestingStart" TIMESTAMP(3),
+  "vestingEnd" TIMESTAMP(3),
+  "vestingCliff" TIMESTAMP(3),
+  "note" TEXT,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+
+  CONSTRAINT "TokenAllocation_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE IF NOT EXISTS "TreasuryBucket" (
+  id TEXT NOT NULL,
+  "name" TEXT NOT NULL,
+  "allocationBps" INTEGER NOT NULL,
+  "balancePab" BIGINT NOT NULL DEFAULT 0,
+  "balanceUsdCents" BIGINT NOT NULL DEFAULT 0,
+  "description" TEXT,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+
+  CONSTRAINT "TreasuryBucket_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE IF NOT EXISTS "BuybackRecord" (
+  id TEXT NOT NULL,
+  "quarter" TEXT NOT NULL,
+  "pabAmount" BIGINT NOT NULL,
+  "usdSpentCents" BIGINT NOT NULL,
+  "revenueCents" BIGINT NOT NULL,
+  "txHash" TEXT,
+  "status" TEXT NOT NULL DEFAULT 'PENDING',
+  "executionNote" TEXT,
+  "executedAt" TIMESTAMP(3),
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+
+  CONSTRAINT "BuybackRecord_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE IF NOT EXISTS "StakingEpoch" (
+  id TEXT NOT NULL,
+  "label" TEXT NOT NULL,
+  "startsAt" TIMESTAMP(3) NOT NULL,
+  "endsAt" TIMESTAMP(3) NOT NULL,
+  "revenueCents" BIGINT NOT NULL DEFAULT 0,
+  "poolBps" INTEGER NOT NULL DEFAULT 3000,
+  "poolCents" BIGINT NOT NULL DEFAULT 0,
+  "distributedPab" BIGINT NOT NULL DEFAULT 0,
+  "status" TEXT NOT NULL DEFAULT 'OPEN',
+  "distributedAt" TIMESTAMP(3),
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+
+  CONSTRAINT "StakingEpoch_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE IF NOT EXISTS "TokenBurn" (
+  id TEXT NOT NULL,
+  "pabAmount" BIGINT NOT NULL,
+  "reason" TEXT NOT NULL,
+  "reference" TEXT,
+  "txHash" TEXT,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT "TokenBurn_pkey" PRIMARY KEY ("id")
+);
+
+-- The supply has one definition per category, so a second row cannot quietly
+-- introduce a second answer to "how much is there".
+CREATE UNIQUE INDEX IF NOT EXISTS "TokenAllocation_category_key"
+  ON "TokenAllocation" ("category");
+
+CREATE UNIQUE INDEX IF NOT EXISTS "TreasuryBucket_name_key"
+  ON "TreasuryBucket" ("name");
+
+-- A quarter can only be bought back once. A second record would mean the 10% rule
+-- ran twice on the same revenue.
+CREATE UNIQUE INDEX IF NOT EXISTS "BuybackRecord_quarter_key"
+  ON "BuybackRecord" ("quarter");
+
+-- An epoch cannot be funded twice, which is what stops the same revenue being
+-- shared with stakers a second time.
+CREATE UNIQUE INDEX IF NOT EXISTS "StakingEpoch_label_key"
+  ON "StakingEpoch" ("label");
+
+CREATE INDEX IF NOT EXISTS "TokenBurn_createdAt_idx" ON "TokenBurn" ("createdAt");
+CREATE INDEX IF NOT EXISTS "BuybackRecord_status_idx" ON "BuybackRecord" ("status");
+CREATE INDEX IF NOT EXISTS "StakingEpoch_status_idx" ON "StakingEpoch" ("status");

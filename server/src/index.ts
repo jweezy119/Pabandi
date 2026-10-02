@@ -270,6 +270,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/payments/raast`, './routes/raastPayment.routes'],
   [`/api/${v}/payments/recon`, './routes/payment-reconciliation.routes'],
   [`/api/${v}/fees`, './routes/fees.routes'],
+  [`/api/${v}/tokenomics`, './routes/tokenomics.routes'],
   [`/api/${v}/fee-collection`, './routes/fee-collection.routes'],
   [`/api/${v}/analytics`, './routes/analytics.routes'],
   [`/api/${v}/admin`, './routes/admin.routes'],
