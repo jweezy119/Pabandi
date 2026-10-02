@@ -1,11 +1,31 @@
 /**
- * Pabandi fee schedule — the single source of truth.
+ * Pabandi fee schedule — the single source of truth for what we CHARGE.
  *
- * Nothing else in the codebase may define a money rate. Thirteen constants
- * previously did, ranging from 0.025% to 15%, with six different rates for the
- * same booking. A merchant billed 5% while their neighbour was billed 3% is not
- * a rounding difference, it is a reason to leave, and it is unanswerable
- * because no two code paths agreed on what the fee was.
+ * SCOPE, WHICH IS NARROWER THAN IT LOOKS
+ * This file is for platform take rates and our processor cost. It is deliberately
+ * NOT the home of every number with a percentage in it. An audit found roughly 50
+ * such constants and classified them: only 7 are actually a take. The rest are
+ *
+ *   REWARDS   PAB_REWARD_RATE and friends — money we pay OUT to agents and
+ *             customers for showing up. 5% is not a 5% fee; folding it in here
+ *             would make it look like revenue and would eventually be quoted as
+ *             one.
+ *   STAKING   AUTO_STAKE_RATE, SLASH_RATES, STAKE_TIERS — token mechanics with
+ *             their own accounting, and a slashing rate is emphatically not a fee.
+ *   GAS       SOL_FEE_PER_BOOKING, SOL_BUFFER — denominated in SOL, not USD, and
+ *             they pay a validator rather than us.
+ *   SIMULATION compounding's 15%, profitEngine's rate — projections that move no
+ *             money. compounding.service.ts documents this itself.
+ *   TOLERANCE AMOUNT_TOLERANCE in reconciliation — a matching window.
+ *
+ * Putting any of those in a fee engine would be actively harmful: it would make
+ * the engine's arithmetic and its reporting lie. They are collected here as
+ * documentation of that decision, not migrated.
+ *
+ * What this file does replace: six different rates for the same booking. A
+ * merchant billed 5% while their neighbour was billed 3% is not a rounding
+ * difference, it is a reason to leave, and it is unanswerable because no two code
+ * paths agreed on what the fee was.
  *
  * ── What this fee pays for ─────────────────────────────────────────────────
  *
@@ -472,3 +492,60 @@ export function publicFeeSchedule(): {
     onboarding: { freeTransactions: FIRST_TRANSACTION_FREE_LIMIT },
   };
 }
+
+// ── Agent and API layer ────────────────────────────────────────────────────
+//
+// A different schedule from the merchant fee above, and deliberately separate
+// rather than sharing CATEGORY_PRICING. These are flat per-unit prices for
+// machine callers, so the tiering-by-ticket-size logic does not apply — there is
+// no "small job" about a metered API call.
+//
+// Kept here because they are still prices we charge, and the failure mode of them
+// drifting apart is the same as any other fee constant: two documents quoting
+// different numbers for the same thing.
+//
+// X402_PRICING values match section 11.5 of the whitepaper. They were inline in
+// x402.service.ts and are now the definition rather than a copy.
+export const X402_PRICING = {
+  /** Per Trust API call. */
+  TRUST_API_CALL: 0.01,
+  /** Per escrow initiated, as a fraction of the escrowed amount. */
+  ESCROW_INITIATION: 0.005,
+  PREMIUM_PASSPORT: 0.05,
+  MCP_TOOL_CALL: 0.001,
+} as const;
+
+/**
+ * Agent-layer take rates.
+ *
+ * These apply to agent-to-agent commerce, which is a different market from local
+ * services and has its own pricing. `AGENT_ECONOMY_RAKE` is a 10% rake on a human
+ * rake — it is not a second layer on top of one; it is the only fee on that path.
+ * `AGENT_MARKETPLACE_FEE` is the 2% on agent escrow.
+ *
+ * The two coexist because they price different transactions: one is taken when an
+ * agent pays a rake, the other when an agent's escrow settles. That distinction
+ * was invisible while both were literals named similarly in different files.
+ */
+export const AGENT_ECONOMY_RAKE = 0.10;
+export const AGENT_MARKETPLACE_FEE = 0.02;
+
+/** Offramp conversion fee, as a fraction. Quoted to the user before they convert. */
+export const OFFRAMP_FEE_RATE = 0.015;
+
+/**
+ * Published processor rates, for reporting only. Never charged.
+ *
+ * These are what Square, PayPal, SafePay and Solana COST us per rail. They appear
+ * in money-flow reporting so a margin question can be answered, and they are the
+ * same numbers PROCESSOR models for the merchant fee's profitability floor. They
+ * are not a schedule anyone is billed.
+ */
+export const PUBLISHED_RAIL_FEES: Record<string, { bps: number; label: string; note: string }> = {
+  square: { bps: 290, label: 'Square', note: '2.9% + $0.30 per transaction' },
+  paypal: { bps: 290, label: 'PayPal', note: '2.9% + fixed fee, varies by tier' },
+  safepay: { bps: 250, label: 'SafePay', note: '2.5% local card processing' },
+  solana: { bps: 25, label: 'Solana USDC', note: '~$0.25 network fee per transfer' },
+  bank: { bps: 0, label: 'Bank transfer', note: 'No processing fee' },
+};
+

@@ -1,6 +1,7 @@
 import { prisma } from '../utils/database';
+import { AGENT_MARKETPLACE_FEE } from '../config/fees';
 
-const PLATFORM_FEE_USD = 0.02; // 2% total
+const PLATFORM_FEE_USD = AGENT_MARKETPLACE_FEE; // 2% total, from config/fees
 const PAB_REWARD_RATE = 0.05;  // 5% PAB reward on both sides
 const SOL_FEE_RATE = 0.001;    // 0.1% SOL fee (simulated)
 

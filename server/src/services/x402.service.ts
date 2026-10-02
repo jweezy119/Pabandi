@@ -1,4 +1,5 @@
 import { logger } from '../utils/logger';
+import { X402_PRICING } from '../config/fees';
 
 export interface X402PaymentRequest {
   amount: number;
@@ -28,12 +29,12 @@ const PABANDI_PAYOUT_ADDRESS = process.env.PABANDI_PAYOUT_ADDRESS || process.env
 // was never paid. Set X402_ALLOW_UNVERIFIED=true to run unpaid (local dev).
 const ALLOW_UNVERIFIED = process.env.X402_ALLOW_UNVERIFIED === 'true';
 
-export const X402_PRICING = {
-  TRUST_API_CALL: 0.01,
-  ESCROW_INITIATION: 0.005,
-  PREMIUM_PASSPORT: 0.05,
-  MCP_TOOL_CALL: 0.001,
-};
+/**
+ * Re-exported from config/fees.ts so existing importers keep working while the
+ * definition lives with the rest of the schedule. An inline copy here was one of
+ * the places the x402 prices could drift from what a pricing page quotes.
+ */
+export { X402_PRICING };
 
 /**
  * The `X-PAYMENT` header is base64 of { paymentPayload, payload } as defined

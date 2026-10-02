@@ -27,10 +27,11 @@ import { Keypair, PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress, createAssociatedTokenAccountInstruction, createTransferInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import bs58 from 'bs58';
 import crypto from 'crypto';
+import { AGENT_ECONOMY_RAKE } from '../config/fees';
 
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 const AGENT_FUNDING_USDC = 10; // Each agent gets $10 USDC to start
-const PLATFORM_FEE_RATE = 0.10; // 10% platform fee
+const PLATFORM_FEE_RATE = AGENT_ECONOMY_RAKE; // 10% platform fee, from config/fees
 const SOLEND_APY = 0.04; // 4% APY on idle USDC
 
 interface AgentWallet {

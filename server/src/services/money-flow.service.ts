@@ -1,6 +1,7 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { RAIL_IDS, RailId, isRailId } from './rail-router.service';
+import { PUBLISHED_RAIL_FEES } from '../config/fees';
 
 /**
  * Money Flow — the read model behind the ContactOS "Money Flow" tab.
@@ -31,14 +32,15 @@ import { RAIL_IDS, RailId, isRailId } from './rail-router.service';
  * spread across the rails, which would make every rail number a guess.
  */
 
-/** Published card/PSP pricing, as basis points of the amount. */
-export const RAIL_FEES: Record<RailId, { bps: number; label: string; note: string }> = {
-  square: { bps: 290, label: 'Square', note: '2.9% + $0.30 per transaction' },
-  paypal: { bps: 290, label: 'PayPal', note: '2.9% + fixed fee, varies by tier' },
-  safepay: { bps: 250, label: 'SafePay', note: '2.5% local card processing' },
-  solana: { bps: 25, label: 'Solana USDC', note: '~$0.25 network fee per transfer' },
-  bank: { bps: 0, label: 'Bank transfer', note: 'No processing fee' },
-};
+/**
+ * Published processor rates, re-exported from config/fees.
+ *
+ * Reporting only — never charged. These are what each rail COSTS us, and they are
+ * the same numbers the merchant fee's profitability floor is computed from.
+ * Defined in one place so a reporting figure cannot drift from the schedule
+ * that depends on it.
+ */
+export const RAIL_FEES = PUBLISHED_RAIL_FEES;
 
 export interface RailBreakdownRow {
   railId: string;

@@ -1,4 +1,5 @@
 import { logger } from '../utils/logger';
+import { OFFRAMP_FEE_RATE } from '../config/fees';
 
 const CASHAPP_API_BASE = 'https://api.cashapp.com/v1';
 const CASHAPP_CLIENT_ID = process.env.CASHAPP_CLIENT_ID || '';
@@ -160,7 +161,7 @@ export const cashAppService = {
     cryptoCurrency?: string;
     fiatCurrency?: string;
   }): Promise<CashAppOfframpQuote> {
-    const feePct = 0.015;
+    const feePct = OFFRAMP_FEE_RATE;
     const rate = 1.0;
     const grossFiat = +(cryptoAmount * rate).toFixed(2);
     const fee = +(grossFiat * feePct).toFixed(2);
