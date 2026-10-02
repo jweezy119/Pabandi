@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS "FeeAssessment" (
   "breakdown" JSONB,
   "idempotencyKey" TEXT NOT NULL,
   "billedAt" TIMESTAMP(3),
+  "statementId" TEXT,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -92,8 +93,15 @@ CREATE INDEX IF NOT EXISTS "FeeAssessment_sourceType_sourceId_idx"
 CREATE INDEX IF NOT EXISTS "FeeAssessment_createdAt_idx"
   ON "FeeAssessment"("createdAt");
 
+-- The collection cycle pulls every fee on a statement.
+CREATE INDEX IF NOT EXISTS "FeeAssessment_statementId_idx"
+  ON "FeeAssessment"("statementId");
+
 CREATE INDEX IF NOT EXISTS "MerchantFeeStatement_businessId_status_idx"
   ON "MerchantFeeStatement"("businessId", "status");
+
+CREATE INDEX IF NOT EXISTS "MerchantFeeStatement_periodStart_periodEnd_idx"
+  ON "MerchantFeeStatement"("periodStart", "periodEnd");
 
 -- ON DELETE CASCADE: fees are an accounting record of this business's activity.
 -- Deleting a business removes its obligations along with it, which is correct for
@@ -108,3 +116,8 @@ ALTER TABLE "MerchantFeeStatement"
   ADD CONSTRAINT "MerchantFeeStatement_businessId_fkey"
   FOREIGN KEY ("businessId") REFERENCES "Business"("id")
   ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "FeeAssessment"
+  ADD CONSTRAINT "FeeAssessment_statementId_fkey"
+  FOREIGN KEY ("statementId") REFERENCES "MerchantFeeStatement"("id")
+  ON DELETE SET NULL ON UPDATE CASCADE;

@@ -6955,7 +6955,7 @@ model Invoice {
 /// `idempotencyKey` is UNIQUE and is what makes assessment safe to retry: a
 /// re-sent invoice or a replayed webhook must not bill twice.
 model FeeAssessment {
-  id              String    @id @default(cuid())
+  id              String                @id @default(cuid())
   businessId      String
   /// What this fee is for: an invoice, a booking deposit, a referral payout.
   sourceType      String
@@ -6974,18 +6974,23 @@ model FeeAssessment {
   rateBps         Int
   tier            String
   category        String
-  currency        String    @default("USD")
-  status          String    @default("accrued") // accrued | invoiced | paid | waived
+  currency        String                @default("USD")
+  status          String                @default("accrued") // accrued | invoiced | paid | waived
   /// Why the rate came out the way it did, e.g. ["category:SALON x0.75"].
   /// Shown to the merchant on the fee line, so the number is explainable
   /// without a support ticket.
   breakdown       Json?
-  idempotencyKey  String    @unique
+  idempotencyKey  String                @unique
   /// Set when this was folded into a merchant billing statement.
   billedAt        DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  Business        Business  @relation(fields: [businessId], references: [id])
+  /// The statement that carries this fee. SET NULL rather than CASCADE: voiding a
+  /// statement must not delete the underlying fee, because that is a real charge
+  /// against a real appointment and deleting it would quietly forgive revenue.
+  statementId     String?
+  statement       MerchantFeeStatement? @relation(fields: [statementId], references: [id])
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  Business        Business              @relation(fields: [businessId], references: [id])
 
   @@index([businessId, status])
   @@index([sourceType, sourceId])
@@ -7014,7 +7019,11 @@ model MerchantFeeStatement {
   updatedAt   DateTime  @updatedAt
   Business    Business  @relation(fields: [businessId], references: [id])
 
+  /// The individual fees this statement covers.
+  assessments FeeAssessment[]
+
   @@index([businessId, status])
+  @@index([periodStart, periodEnd])
 }
 
 /// One row per inbound rail payment that we tried to match to an invoice.

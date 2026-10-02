@@ -311,6 +311,65 @@ describe('fees — reads only, and never another merchant\'s revenue', () => {
   });
 });
 
+describe('fee collection — reads are merchant-scoped, writes are not', () => {
+  let router: any;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    router = (await import('../src/routes/fee-collection.routes')).default;
+  });
+
+  it('lets a merchant read what they owe', () => {
+    for (const path of ['/statements', '/statements/:id', '/owes']) {
+      expect(requiresAuth(router, 'get', path), path).toBe(true);
+    }
+  });
+
+  it('restricts every settlement action to admins', () => {
+    // Marking a statement paid asserts that money arrived in a bank account. If a
+    // merchant could call it on their own statement, every fee would be
+    // self-forgiven.
+    const actions: Array<[string, string]> = [
+      ['post', '/statements/generate'],
+      ['post', '/statements/:id/paid'],
+      ['post', '/statements/:id/void'],
+      ['post', '/statements/:id/waive'],
+      ['get', '/overdue'],
+      ['get', '/position'],
+    ];
+    for (const [method, path] of actions) {
+      expect(requiresAuth(router, method, path), path).toBe(true);
+      expect(hasRoleGate(router, method, path), path).toBe(true);
+    }
+  });
+
+  it('gates every write route, not just the ones enumerated above', () => {
+    // Enumerating routes is how one gets added and forgotten. This walks whatever
+    // is actually mounted, so a new settlement route fails here until it is gated.
+    // Named middleware is matched by invoking it with a CUSTOMER, because
+    // authorize() returns an anonymous arrow.
+    const writable = router.stack
+      .filter((l: any) => l.route)
+      .map((l: any) => ({
+        method: Object.keys(l.route.methods)[0],
+        path: l.route.path,
+        handles: l.route.stack.map((h: any) => h.handle),
+      }))
+      .filter((r) => !['get', 'head'].includes(r.method));
+
+    expect(writable.length).toBeGreaterThan(0);
+    for (const route of writable) {
+      const rejectsCustomer = route.handles.some((handle: any) => {
+        if (handle?.name !== '') return false;
+        const next = vi.fn();
+        handle({ user: { id: 'u1', role: 'CUSTOMER' } }, captureResponse(), next);
+        return next.mock.calls[0]?.[0]?.statusCode === 403;
+      });
+      expect(rejectsCustomer, `${route.method.toUpperCase()} ${route.path}`).toBe(true);
+    }
+  });
+});
+
 describe('the endpoints fixed earlier are still gated', () => {
   // Regression cover: these were the first pass, and a later refactor that
   // dropped a gate would otherwise go unnoticed because the whole file would

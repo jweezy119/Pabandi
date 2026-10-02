@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS "FeeAssessment" (
   "breakdown" JSONB,
   "idempotencyKey" TEXT NOT NULL,
   "billedAt" TIMESTAMP(3),
+  "statementId" TEXT,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -89,8 +90,17 @@ CREATE INDEX IF NOT EXISTS "FeeAssessment_sourceType_sourceId_idx"
 CREATE INDEX IF NOT EXISTS "FeeAssessment_createdAt_idx"
   ON "FeeAssessment" ("createdAt");
 
+-- The collection cycle pulls every fee on a statement. Voiding a statement
+-- SET NULLs this rather than cascading, so the fee survives as a real charge.
+CREATE INDEX IF NOT EXISTS "FeeAssessment_statementId_idx"
+  ON "FeeAssessment" ("statementId");
+
 CREATE INDEX IF NOT EXISTS "MerchantFeeStatement_businessId_status_idx"
   ON "MerchantFeeStatement" ("businessId", "status");
+
+-- Period reporting: "what did we bill in March?"
+CREATE INDEX IF NOT EXISTS "MerchantFeeStatement_periodStart_periodEnd_idx"
+  ON "MerchantFeeStatement" ("periodStart", "periodEnd");
 
 -- The foreign keys are added separately and guarded, because ALTER TABLE ADD
 -- CONSTRAINT has no IF NOT EXISTS in Postgres. Re-adding would fail every deploy
@@ -116,5 +126,19 @@ DO $$ BEGIN
       ADD CONSTRAINT "MerchantFeeStatement_businessId_fkey"
       FOREIGN KEY ("businessId") REFERENCES "Business"("id")
       ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'FeeAssessment_statementId_fkey'
+  ) THEN
+    -- SET NULL, not CASCADE. Voiding a statement returns its fees to unbilled;
+    -- cascading would delete the underlying fees, which are real charges against
+    -- real appointments. Losing them would quietly forgive revenue.
+    ALTER TABLE "FeeAssessment"
+      ADD CONSTRAINT "FeeAssessment_statementId_fkey"
+      FOREIGN KEY ("statementId") REFERENCES "MerchantFeeStatement"("id")
+      ON DELETE SET NULL ON UPDATE CASCADE;
   END IF;
 END $$;
