@@ -13,6 +13,8 @@ import {
   overdueStatements,
   revenuePosition,
   dunningStage,
+  sendStatementViaSquareById,
+  sendOutstandingStatementsViaSquare,
   type StatementStatus,
 } from '../services/fee-collection.service';
 
@@ -295,5 +297,63 @@ router.get('/position', authenticate, authorize('ADMIN'), async (_req: AuthReque
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+/**
+ * Send one statement to its merchant via Square invoice.
+ *
+ * Admin-only for the same reason as markStatementPaid: deciding a statement
+ * leaves the manual path is a collection decision, and a merchant-reachable
+ * trigger for it would let them push a bill at a moment of their choosing.
+ */
+router.post(
+  '/statements/:id/send',
+  authenticate,
+  authorize('ADMIN'),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const result = await sendStatementViaSquareById(req.params.id);
+      if (!result.ok) {
+        // 409 for a state conflict (already sent, paid, void), 503 for a
+        // capability or configuration gap. They mean different things to whoever
+        // is trying to fix it.
+        const status = result.reason === 'capability' || result.reason === 'not_configured' ? 503 : 422;
+        return res.status(status).json({
+          success: false,
+          reason: result.reason,
+          error: result.detail ?? 'Could not send statement via Square',
+        });
+      }
+      res.json({
+        success: true,
+        data: {
+          statementId: req.params.id,
+          squareInvoiceId: result.squareInvoiceId,
+          paymentLink: result.paymentLink,
+        },
+      });
+    } catch (err: any) {
+      const status = err instanceof CustomError ? err.statusCode : 500;
+      if (status === 500) logger.error(`[Fees] Square send failed: ${err.message}`);
+      res.status(status).json({ success: false, error: err.message });
+    }
+  },
+);
+
+/** Batch: invoice every outstanding statement that is not already invoiced. */
+router.post(
+  '/statements/send-batch',
+  authenticate,
+  authorize('ADMIN'),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const limit = boundedInt(req.body?.limit, 50, 1, 200);
+      const result = await sendOutstandingStatementsViaSquare(limit);
+      res.json({ success: true, data: result });
+    } catch (err: any) {
+      logger.error(`[Fees] Square batch send failed: ${err.message}`);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  },
+);
 
 export default router;

@@ -54,6 +54,18 @@ export function squareAppConfigured(): boolean {
   return Boolean(process.env.SQUARE_APP_ID && process.env.SQUARE_APP_SECRET);
 }
 
+/**
+ * Platform location, if one is configured. This is Pabandi's own account.
+ *
+ * Exported as a function rather than read at import so that a value set after
+ * module load — or in a test — is actually seen, and so callers get null rather
+ * than an empty string that fails deep inside a fetch.
+ */
+export function platformLocation(): string | null {
+  const location = process.env.SQUARE_LOCATION_ID;
+  return location && location.length > 0 ? location : null;
+}
+
 /** Platform-level token, if one is configured. This is Pabandi's own account. */
 export function platformAccessToken(): string | null {
   const token = process.env.SQUARE_ACCESS_TOKEN;

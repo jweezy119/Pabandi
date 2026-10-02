@@ -61,6 +61,9 @@ CREATE TABLE IF NOT EXISTS "MerchantFeeStatement" (
   "status" TEXT NOT NULL DEFAULT 'draft',
   "dueAt" TIMESTAMP(3),
   "paidAt" TIMESTAMP(3),
+  "paymentLink" TEXT,
+  "squareInvoiceId" TEXT,
+  "sentAt" TIMESTAMP(3),
   "note" TEXT,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -97,6 +100,14 @@ CREATE INDEX IF NOT EXISTS "FeeAssessment_statementId_idx"
 
 CREATE INDEX IF NOT EXISTS "MerchantFeeStatement_businessId_status_idx"
   ON "MerchantFeeStatement" ("businessId", "status");
+
+-- Webhook settlement: the Square invoice webhook carries Square's id, and a
+-- linear scan per delivery is a denial-of-service vector on a public endpoint.
+-- Partial, because NULL values are the overwhelming majority (every statement
+-- still being collected manually) and indexing those wastes space for nothing.
+CREATE UNIQUE INDEX IF NOT EXISTS "MerchantFeeStatement_squareInvoiceId_key"
+  ON "MerchantFeeStatement" ("squareInvoiceId")
+  WHERE "squareInvoiceId" IS NOT NULL;
 
 -- Period reporting: "what did we bill in March?"
 CREATE INDEX IF NOT EXISTS "MerchantFeeStatement_periodStart_periodEnd_idx"

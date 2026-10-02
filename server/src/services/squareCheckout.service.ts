@@ -46,6 +46,13 @@ export type SquareWebhookResult =
       bookingId: string | null;
       reconciliation?: SquareReconciliationNote;
     }
+  | {
+      type: 'INVOICE_PAYMENT_MADE';
+      /** Square's invoice id, matched against MerchantFeeStatement.squareInvoiceId. */
+      invoiceId: string | null;
+      /** Informational only — never used to match a statement. */
+      amountCents: number | null;
+    }
   | { type: 'REFUND_CREATED'; paymentId: string; amount: unknown }
   | { type: 'UNKNOWN'; eventType: string };
 

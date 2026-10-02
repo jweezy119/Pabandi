@@ -4,6 +4,7 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { reconcileIncomingPayment } from '../services/auto-reconciliation.service';
 import { advanceBookingEscrow } from '../services/booking-escrow.service';
+import { settleStatementFromSquareInvoice } from '../services/fee-collection.service';
 
 export const createSquareCheckout = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -76,6 +77,35 @@ export const handleSquareWebhook = async (req: Request, res: Response, next: Nex
 
     const result = await squareService.processWebhook(req.body);
     
+    // A merchant paying their own platform fee is an invoice.payment_made event,
+    // not a payment. It settles a MerchantFeeStatement, and it must never fall
+    // through to the customer-payment branch below — a fee invoice and a customer
+    // deposit of the same amount are different money in opposite directions, and
+    // reconciling one as the other would mark a deposit paid because a fee was.
+    if (result.type === 'INVOICE_PAYMENT_MADE') {
+      // No id means we cannot identify which statement this settles. Acking
+      // without guessing is the only safe option: matching on the amount would
+      // risk settling one merchant's fee with another's.
+      if (!result.invoiceId) {
+        logger.warn('[SquareWebhook] invoice.payment_made carried no invoice id; ignoring.');
+        return res.json({ received: true, settled: false, reason: 'missing invoice id' });
+      }
+      try {
+        const outcome = await settleStatementFromSquareInvoice(result.invoiceId);
+        if (!outcome.settled) {
+          logger.info(
+            `[SquareWebhook] Invoice payment for ${result.invoiceId} did not settle a statement: ${outcome.reason}.`,
+          );
+        }
+        return res.json({ received: true, settled: outcome.settled, reason: outcome.reason });
+      } catch (invoiceErr) {
+        // Square retries non-2xx for days, but a retry cannot help if the cause
+        // is ours. Log it and ack.
+        logger.error(`[SquareWebhook] invoice settlement failed for ${result.invoiceId}: ${invoiceErr}`);
+        return res.json({ received: true, settled: false });
+      }
+    }
+
     // Update payment status in DB based on webhook
     if (result.type === 'PAYMENT_UPDATED' && result.status === 'COMPLETED') {
       // A booking deposit is paid by its own per-booking Square link, whose

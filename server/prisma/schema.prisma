@@ -7004,20 +7004,33 @@ model FeeAssessment {
 /// makes the "10 free transactions" allowance meaningful: it counts settled
 /// charges, not statements.
 model MerchantFeeStatement {
-  id          String    @id @default(cuid())
-  businessId  String
-  number      String    @unique
-  periodStart DateTime
-  periodEnd   DateTime
+  id              String    @id @default(cuid())
+  businessId      String
+  number          String    @unique
+  periodStart     DateTime
+  periodEnd       DateTime
   /// Cents assessed in this period.
-  totalCents  Int       @default(0)
-  status      String    @default("draft") // draft | sent | paid | void
-  dueAt       DateTime?
-  paidAt      DateTime?
-  note        String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  Business    Business  @relation(fields: [businessId], references: [id])
+  totalCents      Int       @default(0)
+  status          String    @default("draft") // draft | sent | paid | void
+  dueAt           DateTime?
+  paidAt          DateTime?
+  /// The Square-hosted page the merchant pays on, when collection is automated.
+  /// Null while collection is still manual — the two paths coexist, because not
+  /// every merchant has the capability enabled and not every statement should be
+  /// turned into an invoice on its own schedule.
+  paymentLink     String?
+  /// Square's own invoice id, so a webhook settles the statement by identity
+  /// rather than by matching on amount. Customer payment webhooks carry our note;
+  /// these carry Square's id, and amount-matching a fee invoice against a
+  /// customer's deposit payment is precisely the confusion to avoid.
+  squareInvoiceId String?
+  /// Set once the merchant has been emailed. Distinguishes "not sent yet" from
+  /// "sent and unpaid", which are different states for dunning.
+  sentAt          DateTime?
+  note            String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  Business        Business  @relation(fields: [businessId], references: [id])
 
   /// The individual fees this statement covers.
   assessments FeeAssessment[]

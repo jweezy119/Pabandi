@@ -30,6 +30,13 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { CustomError } from '../middleware/errorHandler';
+import {
+  sendStatementViaSquare as createSquareInvoiceForStatement,
+  attachSquareInvoice,
+  resolveBillingEmail,
+  buildFeeLineItems,
+  findStatementBySquareInvoice,
+} from './square-invoice.service';
 
 export type StatementStatus = 'draft' | 'sent' | 'paid' | 'void';
 
@@ -470,4 +477,140 @@ export async function revenuePosition(now = new Date()): Promise<RevenuePosition
     statementsAwaitingPayment,
     businessesOwing: businessesOwing.length,
   };
+}
+
+/**
+ * Send an outstanding statement to the merchant via Square invoice.
+ *
+ * This is the automated counterpart to markStatementPaid: the merchant is emailed
+ * a Square-hosted page and pays their own fee, and a webhook settles the
+ * statement without a human confirming a bank transfer. Both paths coexist
+ * because neither suits every merchant — a small fee makes the card charge
+ * material to them, and some have not granted INVOICES_WRITE.
+ *
+ * Returns the reason on failure rather than throwing. A merchant who cannot be
+ * invoiced should not stop the other statements in the batch.
+ */
+export async function sendStatementViaSquareById(statementId: string) {
+  const statement = await prisma.merchantFeeStatement.findUnique({
+    where: { id: statementId },
+    include: {
+      assessments: {
+        select: { sourceType: true, feeCents: true, currency: true, category: true, rateBps: true },
+      },
+    },
+  });
+  if (!statement) throw new CustomError('Statement not found', 404);
+  if (statement.status === 'paid') throw new CustomError('Statement is already paid', 409);
+  if (statement.status === 'void') throw new CustomError('Statement has been voided', 409);
+
+  // A statement already sent must not be re-invoiced. Sending a second Square
+  // invoice for the same fees is the double-billing this whole model exists to
+  // prevent, and it would land in the merchant's inbox as two separate demands.
+  if (statement.squareInvoiceId) {
+    throw new CustomError(
+      `Statement already invoiced through Square (${statement.squareInvoiceId})`,
+      409,
+    );
+  }
+
+  const recipient = await resolveBillingEmail(statement.businessId);
+  if (!recipient) {
+    return { ok: false as const, reason: 'no_recipient' as const, detail: 'No billing email on file.' };
+  }
+
+  const lineItems = buildFeeLineItems(statement.assessments);
+  const result = await createSquareInvoiceForStatement({
+    statementNumber: statement.number,
+    totalCents: statement.totalCents,
+    currency: (statement.assessments[0]?.currency ?? 'USD'),
+    recipientEmail: recipient.email,
+    recipientName: recipient.name,
+    dueAt: statement.dueAt,
+    lineItems,
+  });
+
+  if (result.ok) {
+    await attachSquareInvoice({
+      statementId: statement.id,
+      squareInvoiceId: result.squareInvoiceId,
+      paymentLink: result.paymentLink,
+    });
+    logger.info(
+      `[Fees] Statement ${statement.number} sent to ${recipient.email} via Square ` +
+        `(invoice ${result.squareInvoiceId}).`,
+    );
+  }
+
+  return result;
+}
+
+/**
+ * Send every outstanding statement that has not already been invoiced.
+ *
+ * Deliberately skips statements already carrying a Square invoice id — the
+ * batch is safe to re-run, which matters because a cron will eventually fire
+ * twice and because an operator will retry after a partial failure.
+ */
+export async function sendOutstandingStatementsViaSquare(
+  limit = 50,
+): Promise<{ sent: number; skipped: number; failed: Array<{ statementId: string; reason: string; detail?: string }> }> {
+  const pending = await prisma.merchantFeeStatement.findMany({
+    where: { status: { in: ['draft', 'sent'] }, squareInvoiceId: null },
+    orderBy: { dueAt: 'asc' },
+    take: limit,
+    select: { id: true },
+  });
+
+  let sent = 0;
+  let skipped = 0;
+  const failed: Array<{ statementId: string; reason: string; detail?: string }> = [];
+
+  for (const { id } of pending) {
+    try {
+      const result = await sendStatementViaSquareById(id);
+      if (result.ok) sent++;
+      else failed.push({ statementId: id, reason: result.reason, detail: result.detail });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      // A 409 means someone else already handled it — a double-send race, or an
+      // operator paying it manually a moment ago. Not a failure.
+      if (message.includes('already')) {
+        skipped++;
+        continue;
+      }
+      logger.error(`[Fees] Square send failed for statement ${id}: ${message}`);
+      failed.push({ statementId: id, reason: 'error', detail: message });
+    }
+  }
+
+  return { sent, skipped, failed };
+}
+
+/**
+ * Settle a statement from a Square invoice webhook.
+ *
+ * Idempotent: a settled statement returns without re-stamping paidAt, because
+ * Square redelivers and a restamped timestamp makes collection timing
+ * unreportable.
+ */
+export async function settleStatementFromSquareInvoice(
+  squareInvoiceId: string,
+): Promise<{ settled: boolean; reason?: string }> {
+  const statement = await findStatementBySquareInvoice(squareInvoiceId);
+  if (!statement) return { settled: false, reason: 'no matching statement' };
+  if (statement.status === 'paid') return { settled: false, reason: 'already paid' };
+  if (statement.status === 'void') return { settled: false, reason: 'statement voided' };
+
+  await prisma.merchantFeeStatement.update({
+    where: { id: statement.id },
+    data: {
+      status: 'paid',
+      paidAt: new Date(),
+      note: `Paid via Square invoice ${squareInvoiceId}.`,
+    },
+  });
+
+  logger.info(`[Fees] Statement ${statement.id} settled from Square invoice ${squareInvoiceId}.`);
+  return { settled: true };
 }
