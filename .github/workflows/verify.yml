@@ -165,6 +165,15 @@ jobs:
         working-directory: client
         run: npm ci --legacy-peer-deps
 
+      - name: Run client tests
+        working-directory: client
+        # The client had no test runner at all — zero test files. That is why
+        # `<Navigate to="/" replace />` survived in BusinessGuard until a customer
+        # reported that clicking Contact OS lands them on the homepage: nothing could
+        # assert that clicking a visible nav link goes where the link says. The server
+        # suite cannot cover it; the guard is client-side routing.
+        run: npx vitest run
+
       - name: Compile server
         working-directory: server
         # Verifies the thing Docker runs: `compile` produces dist/ in the image and

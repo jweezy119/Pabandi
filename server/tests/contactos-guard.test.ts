@@ -87,8 +87,23 @@ describe('safeInternalPath', () => {
 });
 
 describe('BusinessGuard source', () => {
+  // The guards moved out of App.tsx into components/RouteGuards.tsx so they can be
+  // unit-tested — App.tsx imports every page in the app, so importing it into a test
+  // pulls the whole application in. These structural assertions moved with them.
+  //
+  // Behaviour is now covered by client/src/components/RouteGuards.test.tsx. What is
+  // kept here is the source-level regression net, which catches a reintroduced
+  // anti-pattern even if it is written slightly differently than expected.
+  const guards = readFileSync(
+    new URL('../../client/src/components/RouteGuards.tsx', import.meta.url),
+    'utf8',
+  );
+  const code = guards
+    .split('\n')
+    .filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*'))
+    .join('\n');
+
   const app = readFileSync(new URL('../../client/src/App.tsx', import.meta.url), 'utf8');
-  const code = app.split('\n').filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*')).join('\n');
 
   it('no longer compares preferredMode directly', () => {
     // A structural guard on the regression: if someone reintroduces the direct
@@ -107,6 +122,34 @@ describe('BusinessGuard source', () => {
     // Without this, signing in lands on a generic page and the customer has to find
     // the CRM a second time.
     expect(code).toMatch(/state=\{\{ from: window\.location\.pathname \}\}/);
+  });
+
+  it('does not silently bounce a personal-mode user to the marketing homepage', () => {
+    // Reported as "clicking on contact os brings us back to pabandi.com".
+    //
+    // `<Navigate to="/" replace />` in the business branch did exactly that: the nav
+    // offers Contact OS unconditionally, so the user clicked a link the app had
+    // already decided to refuse, and `replace` destroyed the requested URL so Back
+    // could not recover it. Nothing said why. PersonalGuard's own comment criticised
+    // landing users on a marketing page while BusinessGuard was doing it.
+    expect(code).not.toMatch(/<Navigate to="\/" replace \/>/);
+  });
+
+  it('shows the mode gate instead, so the click is not discarded', () => {
+    expect(code).toMatch(/<BusinessModeGate \/>/);
+  });
+
+  it('does not send PersonalGuard to a route that is itself mode-guarded', () => {
+    // PersonalGuard used to redirect to /contact, which is BusinessGuard-guarded, so a
+    // business-mode user following a personal link was bounced back where they came
+    // from — a loop that also lost the original request.
+    expect(code).not.toMatch(/<Navigate to="\/contact" replace \/>/);
+  });
+
+  it('still guards the ContactOS routes in App.tsx', () => {
+    // Guards being correct is worthless if the routes stopped using them.
+    expect(app).toMatch(/path="contact" element=\{<BusinessGuard>/);
+    expect(app).toMatch(/path="contact\/clients" element=\{<BusinessGuard>/);
   });
 });
 

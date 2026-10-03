@@ -11,43 +11,12 @@ function FeatureGate({ feature, children }: { feature: string; children: React.R
   return <>{children}</>;
 }
 
-function BusinessGuard({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated } = useAuthStore();
-
-  // Signed out: send them to login, and keep the intended destination so that
-  // signing in resumes where they meant to be. Without `state`, they land on the
-  // home page and have to find the CRM again — which is the other half of "the
-  // ContactOS does not open correctly".
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: window.location.pathname }} />;
-  }
-
-  if (effectiveMode(user) !== 'business') {
-    return <Navigate to="/" replace />;
-  }
-  return <>{children}</>;
-}
-
-function PersonalGuard({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated } = useAuthStore();
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: window.location.pathname }} />;
-  }
-
-  if (effectiveMode(user) !== 'personal') {
-    // To the contact surface rather than "/": a personal user who followed a
-    // business link should land somewhere real, not on a marketing page.
-    return <Navigate to="/contact" replace />;
-  }
-  return <>{children}</>;
-}
 import { AppShell } from './components/AppShell';
+import { BusinessGuard, PersonalGuard } from './components/RouteGuards';
 import DashboardPage from './pages/DashboardPage';
 import BusinessPage from './pages/BusinessPage';
 // import SitaraApp from './sitara/SitaraApp';
 import { useAuthStore } from './store/authStore';
-import { effectiveMode } from './utils/accountMode';
 import Layout from './components/Layout';
 import NotFoundPage from './pages/NotFoundPage';
 import LedgerInvoiceNewPage from './pages/ledger/LedgerInvoiceNewPage';
@@ -390,7 +359,11 @@ function AnimatedAppRoutes() {
           <Route path="contact/settings/notifications" element={<NotificationsPage />} />
           <Route path="contact/settings/api-keys" element={<ApiKeysPage />} />
           <Route path="contact/settings/webhooks" element={<WebhooksPage />} />
-          <Route path="contact/setup" element={<SetupWizardPage />} />
+          {/* Was unguarded, so a personal-mode user could reach it by typing the URL
+              while every other ContactOS route showed the mode gate. It enrolls a
+              business, so it belongs behind the same guard. Only ContactOSPage links
+              here, and that is already guarded, so nothing that worked before stops. */}
+          <Route path="contact/setup" element={<BusinessGuard><SetupWizardPage /></BusinessGuard>} />
 
           {/* CapitalOS - Finance & Accounting */}
           <Route path="capital" element={<CapitalOSPage />} />
