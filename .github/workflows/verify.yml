@@ -30,6 +30,35 @@ jobs:
   test:
     name: Tests and types
     runs-on: ubuntu-latest
+
+    # 14 suites import the real Prisma client and talk to an actual database
+    # (critical-paths.test.ts does referralEarning.deleteMany() in beforeEach and
+    # failed here with PrismaClientInitializationError). Previously this job had no
+    # database, so it could never have passed.
+    #
+    # A throwaway container, deliberately NOT the repo's DATABASE_URL secret. That
+    # secret points at production. `deleteMany` against it in a beforeEach is not a
+    # risk worth taking to make a pipeline green, and these suites are not written to
+    # leave production data intact.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pabandi
+          POSTGRES_PASSWORD: pabandi
+          POSTGRES_DB: pabandi_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://pabandi:pabandi@localhost:5432/pabandi_test
+      DIRECT_URL: postgresql://pabandi:pabandi@localhost:5432/pabandi_test
+
     steps:
       - uses: actions/checkout@v4
 
@@ -52,19 +81,43 @@ jobs:
         # Cheap, and it has caught real drift: the merge unioned two schemas and an
         # invalid one would fail at runtime, not at boot.
         #
-        # DATABASE_URL is set to a syntactically valid dummy. `prisma validate`
-        # parses and checks the schema; it never connects, and without a URL it
-        # refuses to parse at all — so this is not a shortcut, it is the only way to
-        # validate without a live database. Nothing in this job can reach it.
-        env:
-          DATABASE_URL: postgresql://user:pass@localhost:5432/pabandi_schema_check
+        # DATABASE_URL comes from the job env and points at the throwaway
+        # container. `prisma validate` only parses, but it refuses to parse at all
+        # without a URL present — which is why this step failed before the service
+        # container existed.
         run: npx prisma validate
+
+      - name: Build the test database
+        working-directory: server
+        # `db push`, NOT `migrate deploy`. This is not a shortcut — the migration
+        # folder cannot build this database, and I confirmed that rather than assuming:
+        #
+        #   * `prisma/migrations/003_recommendation_tables.sql` sits in the migrations
+        #     ROOT, not in a timestamped folder, so migrate deploy never runs it. It
+        #     was applied by hand to the one live database.
+        #   * Consequently `migrate deploy` on an empty database dies at
+        #     20260829_add_agent_learning_and_app_integration with
+        #     ERROR: relation "Project" does not exist.
+        #   * Worse, no migration anywhere creates "Web3Agent" — the table AgentStake's
+        #     foreign key targets. Counting CREATE TABLE statements across all 37
+        #     migrations gives 72 tables against 338 models in schema.prisma, so 271
+        #     models have no migration at all.
+        #
+        # Production was therefore built by db push, not by migrations. db push derives
+        # the schema from schema.prisma, which IS what production actually runs, so it
+        # is the only option that makes CI test the real schema. Using
+        # `migrate deploy` here would fail; using the repo's DATABASE_URL secret would
+        # mean running deleteMany() in a beforeEach against production.
+        #
+        # No --accept-data-loss: this runs against an empty throwaway container, where
+        # nothing can be lost, and omitting the flag means that if this is ever pointed
+        # at a real database it fails loudly instead of dropping tables.
+        run: npx prisma db push
 
       - name: Run tests
         working-directory: server
-        # runInBand: the suite has a known intermittent Prisma-client resolution
-        # failure under parallel workers. Serialising removes the race; the open
-        # flake is tracked in docs/build-plan.md as item 3.2.
+        # The open intermittent Prisma flake is tracked in docs/build-plan.md as
+        # item 3.2 and documented in vitest.config.ts.
         # No --poolOptions here. vitest 4's CLI rejects it outright
         # ("CACError: Unknown option `--poolOptions`"), and vitest.config.ts
         # documents that pool=forks + singleFork was already tried and REVERTED

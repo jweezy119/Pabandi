@@ -281,3 +281,33 @@ either one silently.
 Phase 2 is the most fun and the least profitable. It is also the phase that gets built first
 by anyone who enjoys building. Every task here is ungated until 0.1 exists — a customer-obsessed
 product with no upgrade path is a hobby, and the limits *are* the product.
+## The database cannot be rebuilt from migrations (verified 2026-10-03)
+
+Found while wiring CI to a real database: 14 test suites talk to Postgres, so the
+pipeline needed a throwaway database to exist at all. Building it exposed this.
+
+- `prisma/migrations/003_recommendation_tables.sql` sits in the migrations **root**,
+  not in a timestamped folder. `prisma migrate deploy` only applies migrations in
+  folders, so it never ran. It was applied by hand, once, to the live database.
+- Consequently `migrate deploy` against an empty database fails at
+  `20260829_add_agent_learning_and_app_integration`:
+  `ERROR: relation "Project" does not exist`.
+- No migration anywhere creates `Web3Agent`, which is the table `AgentStake`'s
+  foreign key targets.
+- Counting `CREATE TABLE` across all 37 migrations yields **72 tables against 338
+  models in `schema.prisma` — 271 models have no migration at all.**
+
+Production was built by `db push`, not by migrations. CI therefore uses
+`prisma db push`, which derives the schema from `schema.prisma` — the schema
+production actually runs — and verified green on a fresh container.
+
+**The risk this creates:** there is no verified restore path. If the live database
+is lost, `prisma migrate deploy` cannot rebuild it, and the `migrate` folder
+implies a reproducibility it does not have. Recovery currently means `db push`
+against `schema.prisma`, which reproduces table structure but not data and not any
+migration-specific data backfills.
+
+Not fixed here. Closing it properly means either baselining the remaining 271
+tables into migrations or explicitly documenting `db push` as the supported
+procedure and treating `prisma/migrations` as vestigial. That is a decision, not a
+cleanup, and it wants a deliberate plan rather than a drive-by edit.
