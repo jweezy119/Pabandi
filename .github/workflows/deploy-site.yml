@@ -1,0 +1,124 @@
+name: deploy-site
+
+# Publishes client/dist to Firebase Hosting.
+#
+# WHY THIS EXISTS
+# ---------------
+# Firebase deploys were MANUAL, and nothing in CI touched them. The site therefore
+# drifted silently: for two days pabandi.com served a bundle from before several
+# fixes, while the API on Render was current and /health confirmed every commit.
+#
+# The session where that was discovered had a false-negative at its centre. A fix
+# was deployed, verified in /health, and confirmed present in the deployed Render
+# bundle — and the customer still saw the bug, because they were on a different
+# host entirely. Every verification was correct. All of them were about the wrong
+# artifact.
+#
+# Two deploy targets, one repo, no automation on either. This closes the site half.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # Only when the site or its deploy config changes. The API deploys to Render
+      # on its own cadence; rebuilding the site for a server-only commit would
+      # publish an identical bundle for no reason.
+      - 'client/**'
+      - 'firebase.json'
+      - '.firebaserc'
+      - '.github/workflows/deploy-site.yml'
+      - 'scripts/smoke.mjs'
+
+concurrency:
+  group: deploy-site
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build and publish to Firebase
+    runs-on: ubuntu-latest
+
+    # Safety: never publish from a fork. A fork can run workflow code with access
+    # to secrets if it is not gated, and this one writes to production.
+    if: github.repository == 'jweezy119/Pabandi'
+
+    permissions:
+      contents: read
+      id-token: write # Firebase deploy uses OIDC, not a long-lived token
+
+    env:
+      FIREBASE_PROJECT: pabandi-42c5b
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install client dependencies
+        working-directory: client
+        run: npm ci --legacy-peer-deps
+
+      - name: Build client
+        working-directory: client
+        run: npm run build
+
+      - name: Assert the shell references a bundle that exists
+        working-directory: client
+        # Guards the actual failure: the site shell named a bundle the server did
+        # not have, so a customer ran a copy from their own cache and a deployed fix
+        # never reached them.
+        #
+        # The check is REFERENCE-based, not a file count. Vite emits additional
+        # index-*.js chunks for lazy routes and they are legitimately named
+        # index-*; an earlier version of this step counted them and would have
+        # failed every deploy over a normal build. What matters is that whatever
+        # index.html points at is present in dist.
+        run: |
+          set -euo pipefail
+          cd dist
+          referenced=$(grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' index.html | head -1)
+          if [ -z "$referenced" ]; then
+            echo "::error::index.html references no bundle"
+            exit 1
+          fi
+          echo "index.html references: $referenced"
+          if [ ! -f "$referenced" ]; then
+            echo "::error::$referenced is referenced but missing from dist"
+            exit 1
+          fi
+          echo "present: $(wc -c < "$referenced" | tr -d ' ') bytes"
+          echo "index-*.js chunks in dist: $(ls assets/index-*.js | wc -l | tr -d ' ') (lazily loaded, expected)"
+
+      - name: Authenticate to Firebase
+        uses: firebase-actions/setup-firebase@v3
+        with:
+          project: ${{ env.FIREBASE_PROJECT }}
+
+      - name: Deploy hosting
+        run: npx firebase-tools deploy --only hosting --project ${{ env.FIREBASE_PROJECT }} --non-interactive
+
+      - name: Smoke test the published site
+        # Runs against the artifact that was just published, not against whatever
+        # happened to be live. This is the check that would have caught the two-day
+        # drift the moment a commit shipped.
+        run: |
+          npm ci --no-save firebase-tools --prefix "$RUNNER_TEMP/fb" || true
+          node scripts/smoke.mjs "${{ github.sha }}"
+        env:
+          SMOKE_SITE_URL: https://pabandi.com
+          SMOKE_API_URL: https://pabandi.onrender.com
+
+      - name: Summarise
+        if: always()
+        run: |
+          {
+            echo "### Site deployed"
+            echo ""
+            echo "- commit: ${{ github.sha }}"
+            echo "- site: https://pabandi.com"
+            echo ""
+            echo "Smoke test output above is the verification. If it fails, the site is"
+            echo "serving something other than what this commit built."
+          } >> "$GITHUB_STEP_SUMMARY"
