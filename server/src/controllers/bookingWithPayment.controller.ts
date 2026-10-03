@@ -4,10 +4,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { prisma } from '../utils/database';
+import { logger } from '../utils/logger';
 import { rewardEngine } from '../services/rewardEngine.service';
 import { squareService } from '../services/squareCheckout.service';
 import { generateQRCodeUrl } from '../utils/qrcode';
 import { PAB_USD_PRICE as PAB_PRICE_USD } from '../config/tokenomics';
+import { assessFeeSafe } from '../services/fee-assessment.service';
+import { BOOKING_NOTE_PREFIX } from '../services/square-connection.service';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const DEPOSIT_AMOUNT = 25; // flat $25 for demo
@@ -116,7 +119,10 @@ export const createBookingWithPayment = async (
         currency: 'USD',
         redirectUrl: `${baseUrl}/api/v1/bookings/confirm-payment?ref=${bookingRef}&paymentId=${payment.id}`,
         cancelUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/sitara/book/${businessId}?pay=cancelled`,
-        note: `Pabandi booking ${bookingRef}`,
+        // Must match BOOKING_NOTE_PREFIX or the webhook cannot tie this payment
+        // back to its reservation, and the deposit is never funded. The previous
+        // free-text 'Pabandi booking <ref>' matched nothing.
+        note: `${BOOKING_NOTE_PREFIX}${reservation.id}`,
         customerEmail: email,
       });
       squareCheckoutUrl = checkout.url;
@@ -124,6 +130,24 @@ export const createBookingWithPayment = async (
       // If Square credentials aren't configured, return a demo URL for testing
       squareCheckoutUrl = `${baseUrl}/api/v1/bookings/confirm-payment?ref=${bookingRef}&paymentId=${payment.id}&demo=true`;
       console.warn(`Square checkout creation failed (${err.message}); using demo URL for dev.`);
+    }
+
+    // Platform fee on this deposit. This path had none: assessFeeSafe ran in
+    // bookings.routes and invoice.service, so deposits taken through this
+    // checkout were collected and never billed. An accrual, not a deduction — the
+    // charge settles into the merchant's own Square account. Idempotent on
+    // (sourceType, sourceId), so a retried request reuses the existing row.
+    const assessment = await assessFeeSafe({
+      businessId,
+      sourceType: 'booking_deposit',
+      sourceId: reservation.id,
+      chargeCents: Math.round(Number(depositAmount) * 100),
+    });
+    if (assessment) {
+      logger.info(
+        `[BookingWithPayment] Deposit fee assessed for ${reservation.id}: ` +
+          `${assessment.feeCents}c (${assessment.quote.tier})`,
+      );
     }
 
     return res.status(201).json({

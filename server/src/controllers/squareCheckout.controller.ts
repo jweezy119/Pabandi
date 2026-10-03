@@ -5,6 +5,7 @@ import { logger } from '../utils/logger';
 import { reconcileIncomingPayment } from '../services/auto-reconciliation.service';
 import { advanceBookingEscrow } from '../services/booking-escrow.service';
 import { settleStatementFromSquareInvoice } from '../services/fee-collection.service';
+import { assessFeeSafe } from '../services/fee-assessment.service';
 
 export const createSquareCheckout = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -149,6 +150,29 @@ export const handleSquareWebhook = async (req: Request, res: Response, next: Nex
                 source: 'square-webhook',
                 facts: { amountCents: result.amountCents, currency: result.currency },
               });
+              // Assess the platform fee on the deposit now that it is actually
+              // funded. This is the money path that had none: assessFeeSafe was
+              // called from the booking flow when the LINK was created and from
+              // invoice.service, but not when a Square deposit was PAID. Revenue
+              // collected through a direct Square checkout was never billed.
+              //
+              // An accrual, not a deduction — the deposit settles into the
+              // merchant's own Square account, so there is no percentage to take
+              // from it. Idempotent on (sourceType, sourceId), so a redelivered
+              // Square webhook reuses the existing row rather than double-billing.
+              const assessment = await assessFeeSafe({
+                businessId: booking.businessId,
+                sourceType: 'booking_deposit',
+                sourceId: booking.id,
+                chargeCents: expectedCents,
+              });
+              if (assessment) {
+                logger.info(
+                  `[SquareWebhook] Deposit fee assessed for ${booking.id}: ` +
+                    `${assessment.feeCents}c (${assessment.quote.tier})`,
+                );
+              }
+
               logger.info(`[SquareWebhook] Booking deposit funded for ${booking.id}.`);
             }
           }
