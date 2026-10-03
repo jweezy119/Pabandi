@@ -6,6 +6,22 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/**/*.test.ts'],
 
+    // Raised from the defaults (5s test / 10s hook) after CI failed on
+    // route-authorization.test.ts with "Hook timed out in 10000ms" at the
+    // `vi.resetModules()` + dynamic-import beforeEach.
+    //
+    // That is a budget problem, not a logic failure: this suite takes ~158s locally
+    // for 32 tests, because every test re-imports the router and re-initialises the
+    // Prisma client from scratch. On a cold CI runner a single import crosses 10s.
+    //
+    // The real fix is to stop re-importing per test (hoist the router, or build the
+    // app once per describe), which would cut this suite from minutes to seconds.
+    // Until then the timeout has to fit the cost that actually exists. These are
+    // ceilings on legitimately slow work, not a way to make a hang look green —
+    // nothing here sleeps waiting on an external service.
+    hookTimeout: 30000,
+    testTimeout: 30000,
+
     // KNOWN FLAKE — not yet root-caused.
     //
     // Roughly 1 run in 3 fails with a module-resolution error against the
