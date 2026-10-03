@@ -27,6 +27,7 @@ import { invoiceTrustService } from '../services/invoice-trust.service';
 import * as crmService from '../services/crm.service';
 import { CustomError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
+import { tierGuard } from '../middleware/tierGuard.middleware';
 
 const router = Router();
 
@@ -103,7 +104,7 @@ router.get('/employees', getEmployeesHandler);
 // ── Client Management ───────────────────────────────────────────────────────
 
 // POST /api/v1/crm/clients — Add client/customer
-router.post('/clients', addClientHandler);
+router.post('/clients', tierGuard({ resource: 'clients' }), addClientHandler);
 
 // GET /api/v1/crm/clients — List clients
 router.get('/clients', getClientsHandler);
@@ -111,7 +112,7 @@ router.get('/clients', getClientsHandler);
 // ── Job Management ──────────────────────────────────────────────────────────
 
 // POST /api/v1/crm/jobs — Create a service job
-router.post('/jobs', createJobHandler);
+router.post('/jobs', tierGuard({ resource: 'jobs' }), createJobHandler);
 
 // GET /api/v1/crm/jobs — List jobs with filters
 router.get('/jobs', getJobsHandler);
@@ -175,7 +176,7 @@ router.get('/invoices/:id', async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.post('/invoices', async (req: AuthRequest, res: Response) => {
+router.post('/invoices', tierGuard({ resource: 'invoices' }), async (req: AuthRequest, res: Response) => {
   try {
     const { businessId, serviceBusinessId } = requireCrmContext(req);
     if (!businessId) return res.status(400).json({ success: false, error: 'Business is not linked to a platform business yet' });
