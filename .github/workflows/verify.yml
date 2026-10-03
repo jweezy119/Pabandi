@@ -65,7 +65,7 @@ jobs:
         # runInBand: the suite has a known intermittent Prisma-client resolution
         # failure under parallel workers. Serialising removes the race; the open
         # flake is tracked in docs/build-plan.md as item 3.2.
-        run: npx vitest run --pool=forks --poolOptions.forks.singleFork=true
+        run: npx vitest run --pool=forks --poolOptions.forks.singleFork
 
       - name: Type check
         working-directory: server
@@ -95,8 +95,12 @@ jobs:
 
       - name: Compile server
         working-directory: server
-        # Verifies the thing Docker runs: `compile` is what produces dist/ in the
-        # image, and it stages the email templates the runtime reads.
+        # Verifies the thing Docker runs: `compile` produces dist/ in the image and
+        # stages the email templates the runtime reads. It tolerates the 26 known
+        # type errors by design — the type job below reports those, so failing
+        # here too would only make this step unrunnable.
+        env:
+          DATABASE_URL: postgresql://user:pass@localhost:5432/pabandi_schema_check
         run: npm run compile
 
       - name: Build client

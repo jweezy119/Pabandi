@@ -91,13 +91,14 @@ jobs:
           echo "present: $(wc -c < "$referenced" | tr -d ' ') bytes"
           echo "index-*.js chunks in dist: $(ls assets/index-*.js | wc -l | tr -d ' ') (lazily loaded, expected)"
 
+      # w9jds/firebase-action accepts GCP_SA_KEY_FIREBASE. GCP_SA_KEY is already a
+      # repo secret (set 2026-05-10), so no new credential is needed — the first
+      # attempt failed only because the action looks for the FIREBASE_-prefixed name
+      # and there was no FIREBASE_TOKEN for it to fall back on.
       - name: Authenticate to Firebase
-        # firebase-actions/* are MARKETPLACE actions — github.com/firebase-actions
-        # does not exist, so the repository-style path fails to resolve. This was
-        # the entire deploy failing on its first run.
         uses: w9jds/firebase-action@v13.6.0
-        with:
-          project: ${{ env.FIREBASE_PROJECT }}
+        env:
+          GCP_SA_KEY_FIREBASE: ${{ secrets.GCP_SA_KEY }}
 
       - name: Deploy hosting
         run: npx firebase-tools deploy --only hosting --project ${{ env.FIREBASE_PROJECT }} --non-interactive
