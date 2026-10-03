@@ -12,19 +12,32 @@ function FeatureGate({ feature, children }: { feature: string; children: React.R
 }
 
 function BusinessGuard({ children }: { children: React.ReactNode }) {
-  const { user } = useAuthStore();
-  if (user?.preferredMode !== 'business') {
+  const { user, isAuthenticated } = useAuthStore();
+
+  // Signed out: send them to login, and keep the intended destination so that
+  // signing in resumes where they meant to be. Without `state`, they land on the
+  // home page and have to find the CRM again — which is the other half of "the
+  // ContactOS does not open correctly".
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace state={{ from: window.location.pathname }} />;
+  }
+
+  if (effectiveMode(user) !== 'business') {
     return <Navigate to="/" replace />;
   }
   return <>{children}</>;
 }
 
 function PersonalGuard({ children }: { children: React.ReactNode }) {
-  const { user } = useAuthStore();
-  if (!user) {
-    return <Navigate to="/login" replace />;
+  const { user, isAuthenticated } = useAuthStore();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace state={{ from: window.location.pathname }} />;
   }
-  if (user.preferredMode !== 'personal') {
+
+  if (effectiveMode(user) !== 'personal') {
+    // To the contact surface rather than "/": a personal user who followed a
+    // business link should land somewhere real, not on a marketing page.
     return <Navigate to="/contact" replace />;
   }
   return <>{children}</>;
@@ -34,6 +47,7 @@ import DashboardPage from './pages/DashboardPage';
 import BusinessPage from './pages/BusinessPage';
 // import SitaraApp from './sitara/SitaraApp';
 import { useAuthStore } from './store/authStore';
+import { effectiveMode } from './utils/accountMode';
 import Layout from './components/Layout';
 import NotFoundPage from './pages/NotFoundPage';
 import LedgerInvoiceNewPage from './pages/ledger/LedgerInvoiceNewPage';

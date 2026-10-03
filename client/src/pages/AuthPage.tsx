@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { effectiveMode, safeInternalPath } from '../utils/accountMode';
 import { authService } from '../services/api';
 import { signMessageWithPhantom } from '../utils/web3';
 import { tokens } from '../design-system';
@@ -181,6 +182,7 @@ const EmailCodeLogin = ({ email, onEmailChange, onVerified, onError }: {
 
 export default function AuthPage() {
   const location = useLocation();
+  const user = useAuthStore((s) => s.user);
   const [searchParams] = useSearchParams();
   const [mode, setMode] = useState<Mode>(() => location.pathname === '/register' ? 'signup' : 'login');
   const [role, setRole] = useState<Role>(() => {
@@ -238,10 +240,23 @@ export default function AuthPage() {
     }
   };
 
+  /**
+   * Where to send the user after a successful sign-in.
+   *
+   * `state.from` is set by BusinessGuard/PersonalGuard when it bounces a
+   * signed-out visitor to /login — the "I clicked the CRM and got bounced" case.
+   * Without honouring it, a successful login dumps them on a generic page instead
+   * of where they were going. Falls back to the mode's own home.
+   */
+
   const getPostLoginTarget = () => {
-    const redirect = searchParams.get('redirect');
-    if (redirect && !redirect.includes('/login')) return redirect;
-    return '/freelance';
+    const fromState = safeInternalPath((location.state as { from?: string } | null)?.from);
+    if (fromState) return fromState;
+
+    const fromQuery = safeInternalPath(searchParams.get('redirect'));
+    if (fromQuery) return fromQuery;
+
+    return effectiveMode(user) === 'business' ? '/contact' : '/me';
   };
 
   const handleWalletAuth = async () => {
