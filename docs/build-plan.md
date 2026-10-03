@@ -179,9 +179,28 @@ The delta table is published. Show it to the customer in the product, not just t
 Drafted in `docs/whitepaper-corrections-v6.md`, unshipped. §16 escrow custody and §9.3 the
 four nonexistent models are the two that would be tested first by a technical reader.
 
-### 3.2 Fix the intermittent test flake · **quality**
-`pab-supply.test.ts` fails ~1 run in 4 on Prisma client resolution. Never a false pass, but a
+### 3.2 Fix the intermittent test flake · **quality** — **DONE, root cause found**
+`pab-supply.test.ts` failed ~1 run in 4 on Prisma client resolution. Never a false pass, but a
 red suite invites "my change broke it" — which cost real time twice today.
+
+**Root cause: `src/utils/ensurePrisma.ts`.** It ran `npx prisma generate` via `execSync` on
+*every* import of `utils/database.ts`. Vitest runs test files in parallel workers, so several
+workers each spawned a `prisma generate` writing into `node_modules/.prisma/client` while other
+workers were reading it — a torn read. The concurrency was only the delivery mechanism; the
+redundant regeneration was the defect.
+
+It is now skipped when `VITEST=true` or `NODE_ENV=test`, which is safe because the client is
+generated explicitly before the suite runs (`verify.yml` has a dedicated step; `npm run compile`
+does it locally).
+
+Evidence: 5 consecutive clean full runs with the fix; with regeneration restored, the third
+run failed with the exact historical error. Small sample, and the proof is really the code
+path rather than the ratio — but the failure mode and the ~1-in-3 rate both match what was
+documented for months as unexplained.
+
+It only became visible when `tests/customer-flow.integration.test.ts` started booting the real
+Express app, which forces a generate at a moment when other suites are mid-run. That test did
+not create the flake; it made an existing one fire reliably, which is how it was caught.
 
 ### 3.3 Two CRMs, one brand · **technical debt**
 `CrmBusiness` and `CrmServiceBusiness` coexist. Every read picks one. Consolidating is a
@@ -253,8 +272,8 @@ verify against the host the customer is actually on.
 
 - **1.4** 26 server type errors (`checkin.routes` 6, `booking.service` 3) and a
   separate 539 in the client. All pre-existing; neither surface gained any.
-- **3.2** `pab-supply.test.ts` flakes ~1 run in 4 on Prisma client resolution.
-  Pre-existing, never a false pass, but it invites "my change broke it".
+- **3.2** RESOLVED. The Prisma client flake was `ensurePrisma.ts` running `prisma generate` on
+  every import, racing parallel test workers. Skipped under test; 5 clean full runs.
 - **3.3** Two CRMs, one brand. `CrmBusiness` and `CrmServiceBusiness` coexist.
   0.3 made reads span both, so consolidation is now safe — and it is the cause of
   the dual-column design that caused the empty dashboard.
@@ -346,3 +365,52 @@ CodeQL had been failing continuously and was being ignored as noise. Triaged:
 - `js/sensitive-get-query` (1, medium) — `bookingService.routes.ts` filters a roster by
   `gender` via query string, so it lands in access logs and referrers. Moving it to POST
   would change the API contract; needs a deliberate decision, not a drive-by edit.
+
+## Integration tests, and what the first one found (2026-10-03)
+
+`server/tests/customer-flow.integration.test.ts` walks the flow a customer actually
+reports: register → set up the business → add a client → read it back. Real Express
+app with its real middleware, over real HTTP on an ephemeral port, against a real
+Postgres. Only cron and outbound email are stubbed.
+
+It is guarded against the obvious footgun: `server/.env` points `DATABASE_URL` at the
+live Aliyun RDS instance, and these tests write and `deleteMany`. The suite refuses to
+run unless the connected database's name contains `test`, `integration` or `ci`.
+
+### It found a registration-blocking bug on its first run
+
+`identity.service.findOrCreateUser` created users with only an email:
+
+```ts
+const newUser = await prisma.user.create({
+  data: { email: ... } as any,
+});
+```
+
+`passwordHash`, `firstName` and `lastName` are all **required** by the schema, so that
+`create` threw on every genuinely new user, on any database. Reachable three ways:
+
+- the "Sign up" form on `/login` (`AuthPage` posts `/auth/register` without a `code`)
+- first-time GitHub sign-in
+- first-time Twitter/X sign-in
+
+Only pre-existing users got through, via the email-match branch. So new-user signup and
+both OAuth providers returned **500**.
+
+The `as any` is why nobody saw it: it silenced the compile error that would have named
+all three missing fields. Removing it made `tsc` report them immediately, which is how
+`firstName`/`lastName` were found after `passwordHash`. The create now type-checks.
+
+Why no test caught it: every unit test of this service mocked Prisma, and a mocked
+Prisma cannot tell you a required column is missing. That is precisely the class of
+defect a unit test cannot see, and the reason for adding this layer.
+
+Fixed by supplying an unguessable random `passwordHash` (these accounts are
+passwordless — the provider is the credential) and deriving names from provider metadata,
+mirroring `agentSignup.routes.ts`.
+
+### Also closed here
+
+- `vitest.config.ts` item 3.2, the Prisma flake — see 3.2 above for the root cause.
+- `PersonalGuard` redirected to `/contact`, which is itself mode-guarded. Covered by the
+  client test suite, not this one.
