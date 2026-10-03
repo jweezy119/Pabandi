@@ -4,8 +4,11 @@ import { prisma } from '../utils/database';
 import * as jobService from './job.service';
 import { jobLifecycleService } from './jobLifecycle.service';
 
-/** Minutes past the scheduled start after which a job counts as a no-show. */
-const NO_SHOW_GRACE_MINUTES = 30;
+// NO_SHOW_GRACE_MINUTES and composeJobStart are imported, not redeclared. They
+// were separate literals in this file and in crm.service, and two definitions of
+// one rule is exactly how they diverge: a route that marked a job missed at 20
+// minutes while this cron waited for 30 would penalise a worker once per path.
+import { NO_SHOW_GRACE_MINUTES, composeJobStart } from './crm.service';
 
 export class JobCronService {
   private cronJob: any = null;
@@ -76,7 +79,7 @@ export class JobCronService {
 
     for (const job of jobs) {
       try {
-        const start = composeStart(job.scheduledDate, job.scheduledTime);
+        const start = composeJobStart(job.scheduledDate, job.scheduledTime);
         if (!start) continue;
 
         const minutesLate = (now.getTime() - start.getTime()) / (1000 * 60);
@@ -105,15 +108,5 @@ export class JobCronService {
 // one, and the merged CRM model kept that optional rather than tightening it.
 // A job with no time cannot be judged late, so this returns null and the
 // caller skips it — which is why the guard below is load-bearing.
-function composeStart(scheduledDate: Date, scheduledTime: string | null): Date | null {
-  const match = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec((scheduledTime || '').trim());
-  if (!match) return null;
-
-  const start = new Date(scheduledDate);
-  start.setUTCHours(Number(match[1]), Number(match[2]), 0, 0);
-
-  if (Number.isNaN(start.getTime())) return null;
-  return start;
-}
 
 export const jobCronService = new JobCronService();

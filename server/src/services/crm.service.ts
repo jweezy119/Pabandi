@@ -78,6 +78,50 @@ function resolveCategory(serviceType: string): BusinessCategory {
  * platform business alone is the scope. It must not become "match everything" —
  * that would leak another tenant's P&L.
  */
+/**
+ * Grace period before a scheduled job counts as a no-show.
+ *
+ * Matches the cron's own value. They were separate literals and had to stay
+ * consistent: a route that marked a job missed at 20 minutes while the cron waited
+ * until 30 would penalise a worker twice, once per path.
+ */
+export const NO_SHOW_GRACE_MINUTES = 30;
+
+/**
+ * Compose a job's scheduled start from its date column and its time string.
+ *
+ * WHY THIS EXISTS
+ * ---------------
+ * `CrmJob.scheduledDate` is a `DateTime` column and `scheduledTime` is a separate
+ * string. Interpolating them — `new Date(`${date}T${time}`)` — yields
+ * "Sat Oct 20 2026 00:00:00 GMT+0000 (Coordinated Universal Time)T10:00", which is
+ * Invalid Date. Every comparison against it is NaN, so the branch never runs.
+ *
+ * That is not hypothetical: it is why this route never marked a job missed, while
+ * jobCronService (which had its own correct helper) kept doing it. Two code paths,
+ * one of them silently inert.
+ *
+ * Returns null when the time is absent or unparseable rather than guessing, and
+ * null-safety is load-bearing: `scheduledTime` is optional on the schema, so a job
+ * can legitimately have no time.
+ */
+export function composeJobStart(
+  scheduledDate: Date | string | null | undefined,
+  scheduledTime: string | null | undefined,
+): Date | null {
+  const match = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec((scheduledTime || '').trim());
+  if (!match) return null;
+
+  const base = scheduledDate ? new Date(scheduledDate) : null;
+  if (!base || Number.isNaN(base.getTime())) return null;
+
+  // setUTCHours, not setHours: stored times are UTC and the cron's helper already
+  // made this choice. Using local time here would mark jobs missed an hour early
+  // or late depending on the server's timezone.
+  base.setUTCHours(Number(match[1]), Number(match[2]), 0, 0);
+  return Number.isNaN(base.getTime()) ? null : base;
+}
+
 export function crmScope(
   serviceBusinessId?: string | null,
   businessId?: string | null,
@@ -758,11 +802,25 @@ export async function handleNoShow(jobId: string, serviceBusinessId?: string | n
   }
 
   const now = new Date();
-  const scheduledTime = new Date(`${job.scheduledDate}T${job.scheduledTime}`);
+  const scheduledTime = composeJobStart(job.scheduledDate as Date, job.scheduledTime as string | null);
+
+  // A job with no usable start time cannot be judged late. Previously this was
+  // `new Date(`${job.scheduledDate}T${job.scheduledTime}`)`, and scheduledDate is a
+  // DateTime column — so interpolating it produced the string
+  // "Sat Oct 20 2026 ...T10:00", which is Invalid Date. minutesLate was therefore
+  // always NaN, `NaN > 30` was always false, and this route NEVER marked a job
+  // missed. The no-show penalty existed only via the cron, which had its own
+  // (correct) helper.
+  if (!scheduledTime) {
+    logger.warn(
+      `[CRM] Job ${jobId} has no usable scheduled start; not eligible for a no-show.`,
+    );
+    return;
+  }
 
   // Check if it's been more than 30 minutes since scheduled time
   const minutesLate = (now.getTime() - scheduledTime.getTime()) / (1000 * 60);
-  if (minutesLate > 30) {
+  if (minutesLate > NO_SHOW_GRACE_MINUTES) {
     // Update job status to missed
     await prisma.crmJob.update({
       where: { id: jobId },
