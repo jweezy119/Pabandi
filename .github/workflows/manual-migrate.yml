@@ -11,6 +11,9 @@ on:
         required: true
         default: ''
 
+permissions:
+  contents: read
+
 jobs:
   migrate:
     name: Run Prisma Migrations
@@ -39,16 +42,11 @@ jobs:
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
         run: |
           cd server
-          # Idempotent. `migrate resolve --applied` is NOT safe to run twice: it
-          # exits non-zero with P3008 when the migration is already recorded as
-          # applied. Because a failed step aborts the job, this used to make the
-<<<<<<< HEAD
-          # entire workflow permanently unrunnable once that record existed --
-          # which it does, so `migrate deploy` below could never be reached.
-=======
-          # entire workflow permanently unrunnable once the record existed --
-          # which it now does, so `deploy` below could never be reached.
->>>>>>> e112cebf7
+          # Idempotent. `migrate resolve --applied` is NOT safe to run twice: it exits
+          # non-zero with P3008 when the migration is already recorded as applied.
+          # Because a failed step aborts the job, this used to make the entire workflow
+          # permanently unrunnable once that record existed -- which it does, so
+          # `migrate deploy` below could never be reached.
           #
           # P3008 = already applied -> nothing to do.
           # Other  -> genuinely blocked, fail loudly rather than migrate past it.

@@ -311,3 +311,38 @@ Not fixed here. Closing it properly means either baselining the remaining 271
 tables into migrations or explicitly documenting `db push` as the supported
 procedure and treating `prisma/migrations` as vestigial. That is a decision, not a
 cleanup, and it wants a deliberate plan rather than a drive-by edit.
+
+## CodeQL triage (2026-10-03)
+
+CodeQL had been failing continuously and was being ignored as noise. Triaged:
+
+**Fixed**
+- `js/incomplete-url-substring-sanitization` (high) — `verify-agent-surface.ts`
+  checked `host.includes('pabandi.onrender.com')`, which passes for
+  `https://pabandi.onrender.com.evil.example`. It was also silently disabled: with
+  `PUBLIC_API_URL` unset the fallback was `'//'`, which every absolute URL contains.
+  Now parses both URLs and compares hostnames.
+- `js/polynomial-redos` (high) — `/^[^\s@]+@[^\s@]+\.[^\s@]+$/`, duplicated in three
+  files. Bounded to RFC 5321 limits in `src/utils/validators.ts`. Could not be made
+  slow on V8, so this was static-analysis risk on a pre-auth route, not a reproduced
+  DoS.
+- `actions/missing-workflow-permissions` — added `permissions: contents: read` to all
+  four workflows.
+
+**False positives, deliberately left open**
+- `js/insufficient-password-hash` (3, high) flags SHA-256 over `x-api-key` / `apiKey`.
+  API keys are `pab_` + 24 random bytes = 192 bits of entropy. SHA-256 is correct for
+  high-entropy tokens; bcrypt would be slower and no safer. The rule cannot tell a
+  password from a random token. The third is `passwordHash: crypto.randomBytes(32)` on
+  an account with no interactive login by design — the API key is the credential.
+- Not dismissed in config. A dismissal needs a justification someone will read in six
+  months, and that belongs next to the rule, not in a commit message.
+
+**Open backlog**
+- `js/missing-rate-limiting` — **95 high**, essentially every Express route. Real
+  hardening, not a defect, and too large to do properly in one sitting. Prioritise by
+  money and auth paths first: `payments`, `payout`, `escrow`, `checkout`, `auth`,
+  `admin`, then the read-only discovery routes last.
+- `js/sensitive-get-query` (1, medium) — `bookingService.routes.ts` filters a roster by
+  `gender` via query string, so it lands in access logs and referrers. Moving it to POST
+  would change the API contract; needs a deliberate decision, not a drive-by edit.
