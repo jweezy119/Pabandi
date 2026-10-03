@@ -12,7 +12,18 @@ function getClient(): Resend {
 }
 const FROM = process.env.EMAIL_FROM || 'noreply@pabandi.com';
 
-export async function sendEmail({ to, subject, html }) {
+/**
+ * Args for sendEmail. Explicit because every one of these was implicitly `any`,
+ * which also made `err.message` on the catch below an error: on a strict config
+ * `err` is `unknown` and has no `message`.
+ */
+export interface SendEmailArgs {
+  to: string;
+  subject: string;
+  html: string;
+}
+
+export async function sendEmail({ to, subject, html }: SendEmailArgs) {
   if (!process.env.RESEND_API_KEY) {
     console.log('[email] no API key, skipping send to', to);
     return { skipped: true };
@@ -23,7 +34,11 @@ export async function sendEmail({ to, subject, html }) {
     return result;
   } catch (err) {
     console.error('[email] failed', err);
-    return { error: err.message };
+    // err is unknown, so it has no `.message`. Reading one off it was the second
+    // error in this function, and it would have thrown inside the catch — turning
+    // a failed send into an unhandled rejection.
+    const message = err instanceof Error ? err.message : String(err);
+    return { error: message };
   }
 }
 
@@ -172,6 +187,44 @@ export const emailService = {
       verifyUrl: `${process.env.APP_URL || 'http://localhost:5173'}/contact/invoices`
     });
     return sendEmail({ to: business.email || 'business@example.com', subject: `Client Claims Paid: Verify Invoice ${invoice.number}`, html });
+  },
+
+  /**
+   * Confirmation for an entry added to a venue's guest list.
+   *
+   * Called by guestListService after every add. It was calling a method that did
+   * not exist, so every guest-list confirmation threw a TypeError — caught and
+   * logged as a warning by the caller, which is why it presented as "emails just
+   * sometimes don't arrive" rather than as an error.
+   *
+   * The template is `guest-list-confirmed`, added alongside. Without it
+   * renderTemplate silently falls back to dumping the data object as JSON into
+   * the email body, so the previous state would have been a broken-looking email
+   * even once the method existed.
+   *
+   * Every field is read defensively: the entry is a Prisma row with an optional
+   * email, optional venue relation and optional guestNames, and this must not be
+   * the thing that throws when any of those are absent.
+   */
+  async sendGuestListConfirmation(entry: any) {
+    const to = entry?.email;
+    if (!to) return { skipped: true };
+
+    const guestNames = Array.isArray(entry.guestNames) ? entry.guestNames : [];
+    const html = renderTemplate('guest-list-confirmed', {
+      clientName: guestNames[0] || 'there',
+      venueName: entry.venue?.name || 'the venue',
+      venueAddress: entry.venue?.address || '',
+      confirmationCode: entry.confirmationCode || '',
+      date: entry.date ? new Date(entry.date).toLocaleDateString() : '',
+      partySize: String(entry.partySize ?? ''),
+      guestNames: guestNames.join(', '),
+    });
+    return sendEmail({
+      to,
+      subject: `Guest list confirmed: ${entry.venue?.name || 'your venue'}`,
+      html,
+    });
   },
 
   async sendWelcome(user: any) {

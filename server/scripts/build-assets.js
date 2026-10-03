@@ -34,6 +34,25 @@ function copyFile(src, dest) {
 copyDir(path.join(SERVER_ROOT, 'src', 'public'), path.join(SERVER_ROOT, 'dist', 'src', 'public'));
 copyDir(path.join(SERVER_ROOT, 'sql'), path.join(SERVER_ROOT, 'dist', 'sql'));
 
+// 1b. email templates.
+//
+// email.service.ts reads templates from `__dirname/../templates/emails`. Compiled,
+// `__dirname` is dist/src/services, so it looks in dist/src/templates/emails —
+// which nothing was creating. renderTemplate catches the missing file and falls
+// back to JSON.stringify(data), so every email "sent" successfully with a raw
+// JSON dump as the body. No error, no alert: the templates simply never shipped.
+//
+// Copying the directory is the fix; asserting it landed is what stops it
+// regressing silently a third time.
+copyDir(path.join(SERVER_ROOT, 'src', 'templates'), path.join(SERVER_ROOT, 'dist', 'src', 'templates'));
+
+const templateOut = path.join(SERVER_ROOT, 'dist', 'src', 'templates', 'emails');
+if (!fs.existsSync(path.join(templateOut, 'base.html'))) {
+  console.error(`FATAL: email templates were not staged into ${templateOut}. ` +
+    'Every email would render as a JSON dump. Refusing to continue.');
+  process.exit(1);
+}
+
 // 2. discovery files
 copyFile(path.join(REPO_ROOT, 'llms.txt'), path.join(SERVER_ROOT, 'src', 'public', 'llms.txt'));
 copyFile(path.join(REPO_ROOT, 'robots.txt'), path.join(SERVER_ROOT, 'src', 'public', 'robots.txt'));
