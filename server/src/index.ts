@@ -217,6 +217,23 @@ app.get('/health', (_req, res) => {
     // A boolean, never the key itself. `emailConfigured: false` is actionable;
     // the presence of a secret in a public health endpoint is not.
     emailConfigured: Boolean((process.env.RESEND_API_KEY || '').trim()),
+    // SMS and billing. Same reasoning as emailConfigured: these gate features sold
+    // on paid tiers (smsReminders on Pro at $49, and the entire upgrade path), and
+    // there was no way to tell from outside whether they were configured. A paid
+    // feature that silently does nothing is worse than one that is visibly absent.
+    //
+    // Presence of the key, NOT proof of delivery. Whop in particular needs real
+    // plan ids to be useful; a key with no plans configured passes this check and
+    // still cannot take a payment.
+    smsConfigured: Boolean(
+      (process.env.TWILIO_ACCOUNT_SID || '').trim() &&
+      (process.env.TWILIO_AUTH_TOKEN || '').trim() &&
+      (process.env.TWILIO_PHONE_NUMBER || '').trim(),
+    ),
+    whopConfigured: Boolean((process.env.WHOP_API_KEY || '').trim()),
+    // PTP attestation signing. Its absence used to throw at module load and 500 six
+    // route modules; it is now a per-request 503, so this is how anyone finds out.
+    ptpSigningConfigured: Boolean((process.env.PTP_SIGNING_SECRET || '').trim()),
     // The build identity, not a hand-maintained label.
     //
     // This used to be a hardcoded string that had not changed since 2026-09-08,
