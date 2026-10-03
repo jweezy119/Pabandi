@@ -727,6 +727,17 @@ app.use((req: express.Request, res: express.Response, next: express.NextFunction
     || p === '/robots.txt' || p === '/sitemap.xml' || p === '/llms.txt' || p.startsWith('/pab-')) {
     return next();
   }
+  // A request for a service worker must not be answered with the SPA shell.
+  //
+  // Serving HTML at /sw.js looks like a 200 to a registration check, so a client
+  // keeps believing it has a worker installed — and any worker it DOES still have
+  // keeps serving whatever it precached, which is how a browser ended up running a
+  // bundle that no longer exists on the server. The PWA plugin is disabled and the
+  // worker file deleted; this makes the absence explicit rather than leaving HTML
+  // sitting at that URL, where nothing can unregister cleanly.
+  if (p === '/sw.js' || p === '/service-worker.js') {
+    return res.status(404).type('text/plain').send('Not found');
+  }
   res.setHeader('Cache-Control', 'no-cache');
   res.sendFile(SPA_INDEX, (err: any) => { if (err) next(); });
 });
