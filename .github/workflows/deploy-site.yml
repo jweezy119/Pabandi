@@ -17,6 +17,12 @@ name: deploy-site
 # Two deploy targets, one repo, no automation on either. This closes the site half.
 
 on:
+  # Needed because the paths filter below is correct and therefore made this workflow
+  # unrunnable in exactly the case it existed to fix: the client enrollment fix was
+  # pushed, its deploy failed on a bad action path, and no later commit touched
+  # client/** — so the customer's bug stayed live with no way to re-publish except a
+  # meaningless code change. A deploy you cannot retry is not a safety net.
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
