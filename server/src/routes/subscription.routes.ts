@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express';
-import { authenticate, type AuthRequest } from '../middleware/auth.middleware';
+import { authenticate, authorize, type AuthRequest } from '../middleware/auth.middleware';
 import { resolveCrmBusiness, requireCrmContext } from '../middleware/crmContext.middleware';
 import { CustomError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
@@ -16,6 +16,8 @@ import {
   type SubscriptionStatus,
 } from '../services/subscription.service';
 import { PAID_TIERS, SUBSCRIPTION_TIERS, type SubscriptionTier } from '../config/subscriptions';
+import { reconcileSubscriptions } from '../services/subscription-reconcile.service';
+import { subscriptionReconcileCron } from '../services/subscriptionReconcileCron.service';
 
 /**
  * Subscriptions — the upgrade door.
@@ -276,6 +278,41 @@ router.post('/checkout', async (req: AuthRequest, res: Response) => {
   } catch (err) {
     next(err, res);
   }
+});
+
+/**
+ * POST /api/v1/subscriptions/reconcile
+ * Run reconciliation now instead of waiting for the hourly cron.
+ *
+ * ADMIN only. It mutates subscription state, and the safe failure mode is
+ * "nothing changed" — an operator triggering it is fine, a merchant triggering it
+ * repeatedly would be a way to hammer the provider's API.
+ */
+router.post('/reconcile', authorize('ADMIN'), async (_req: AuthRequest, res: Response) => {
+  try {
+    const result = await reconcileSubscriptions();
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err, res);
+  }
+});
+
+/**
+ * GET /api/v1/subscriptions/reconcile/status
+ * Whether the job is running, and what it last did. Read-only, so an operator can
+ * confirm the safety property: a stale `lastRunAt` with zero corrections means it
+ * is converging, not failing silently.
+ */
+router.get('/reconcile/status', authorize('ADMIN'), (_req: AuthRequest, res: Response) => {
+  res.json({
+    success: true,
+    data: {
+      configured: whopConfigured(),
+      running: Boolean((subscriptionReconcileCron as any).task),
+      lastRunAt: (subscriptionReconcileCron as any).lastRunAt ?? null,
+      lastResult: (subscriptionReconcileCron as any).lastResult ?? null,
+    },
+  });
 });
 
 /** Operational counters. No PII, and useful for confirming billing is working. */

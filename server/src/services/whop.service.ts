@@ -42,7 +42,7 @@ const SEPARATOR = '.';
  */
 export const WEBHOOK_TOLERANCE_SECONDS = 5 * 60;
 
-const WHOP_API_BASE = 'https://api.whop.com';
+export const WHOP_API_BASE = 'https://api.whop.com';
 
 function apiKey(): string | null {
   const key = (process.env.WHOP_API_KEY || '').trim();

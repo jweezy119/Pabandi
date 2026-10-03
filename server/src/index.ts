@@ -537,6 +537,10 @@ logger.info(
 import { jobCronService } from './services/jobCronService';
 jobCronService.start();
 
+// Subscription reconciliation. Recovers paid tiers lost to a missed webhook.
+import { subscriptionReconcileCron } from './services/subscriptionReconcileCron.service';
+subscriptionReconcileCron.start();
+
 import cron from 'node-cron';
 import { scanOverdueInvoices } from './services/invoice.service';
 import { scanFailureOwnership } from './services/failure-ownership.service';
