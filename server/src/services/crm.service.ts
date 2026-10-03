@@ -434,16 +434,57 @@ export async function recordPayroll(
     grossPay: number;
     deductions?: number;
     netPay: number;
-  }
+  },
+  businessId?: string | null,
 ) {
   const { employeeId, periodStart, periodEnd, hoursWorked = 0, jobsCompleted = 0, grossPay, deductions = 0, netPay } = data;
+
+  // Validate the employee belongs to THIS business, and the money is coherent.
+  //
+  // Neither was checked. employeeId is a real FK with onDelete: Cascade and the
+  // route is authenticated, so any business could POST /crm/payroll naming another
+  // tenant's employee and produce a cross-tenant payroll row: their employee under
+  // our serviceBusinessId. That row then appears in their employee history via the
+  // relation, and the amount is attacker-chosen. Same class as the unscoped
+  // invoice delete — the write looked fine because nothing forced it to check.
+  if (!employeeId) {
+    throw new CustomError('employeeId is required', 400);
+  }
+  if (!Number.isFinite(grossPay) || !Number.isFinite(netPay)) {
+    throw new CustomError('grossPay and netPay must be numbers', 400);
+  }
+  // netPay is what the employee actually receives; a value above gross is not a
+  // rounding artefact, it is a payroll error or an attempt to inflate the record.
+  if (netPay < 0 || grossPay < 0) {
+    throw new CustomError('Payroll amounts cannot be negative', 400);
+  }
+  if (netPay > grossPay) {
+    throw new CustomError('netPay cannot exceed grossPay', 400);
+  }
+
+  const start = new Date(periodStart);
+  const end = new Date(periodEnd);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    throw new CustomError('periodStart and periodEnd must be valid dates', 400);
+  }
+  if (end.getTime() < start.getTime()) {
+    throw new CustomError('periodEnd cannot be before periodStart', 400);
+  }
+
+  const employee = await prisma.crmEmployee.findFirst({
+    where: { AND: [{ id: employeeId }, crmScope(serviceBusinessId, businessId)] },
+    select: { id: true },
+  });
+  if (!employee) {
+    throw new CustomError('Employee not found for this business', 404);
+  }
 
   return prisma.crmPayroll.create({
     data: {
       serviceBusinessId,
       employeeId,
-      periodStart: new Date(periodStart),
-      periodEnd: new Date(periodEnd),
+      periodStart: start,
+      periodEnd: end,
       hoursWorked,
       jobsCompleted,
       grossPay,
@@ -482,6 +523,19 @@ export async function recordExpense(
 
   if (!category || !amount || !description) {
     throw new CustomError('category, amount, and description are required', 400);
+  }
+
+  // `!amount` above already rejects 0, but not a negative number, and a negative
+  // expense is subtracted from monthlyExpenses in the dashboard — which turns a
+  // typo into an inflated profit figure. Expenses only add.
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new CustomError('Expense amount must be a positive number', 400);
+  }
+
+  // An unparseable date silently becomes Invalid Date and Prisma rejects it with
+  // an opaque error, so it is caught here with a message a merchant can act on.
+  if (date != null && Number.isNaN(new Date(date).getTime())) {
+    throw new CustomError('Expense date must be a valid date', 400);
   }
 
   return prisma.crmExpense.create({

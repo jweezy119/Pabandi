@@ -222,7 +222,7 @@ export async function recordPayrollHandler(
       grossPay,
       deductions,
       netPay,
-    });
+    }, crm.businessId);
     res.status(201).json({ success: true, data: payroll });
   } catch (error) {
     next(error);
