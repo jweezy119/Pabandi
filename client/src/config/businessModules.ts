@@ -13,6 +13,26 @@
  * The one rule that matters: never treat a module as available based on this
  * file. Availability always comes from the server's `installed` flag, because
  * only the server knows whether a prerequisite resolved.
+ *
+ * ROUTES ARE A CONTRACT, AND THESE FIVE WERE BROKEN
+ * ------------------------------------------------
+ * Five of the six modules pointed at `/crm/<key>`, and App.tsx never registered
+ * those paths. A customer clicking "Bookings" navigated to a URL with no route and
+ * got a blank page — the workspace shell calls `navigate(descriptor.route)`
+ * unconditionally, with no fallback and no disabled state.
+ *
+ * The live surface is the `contact/*` tree. These now point at routes that exist:
+ *
+ *   booking  -> /contact            the workspace itself lists bookings and jobs
+ *   capital  -> /contact/money-flow Mudarabah pools, P&L, payouts
+ *   payments -> /contact/invoices   settlement and invoices
+ *   property -> null                no page exists
+ *   trust    -> null                no page exists
+ *
+ * `route: null` is the honest answer for those two. The server still registers
+ * both modules, so they remain visible in the grid; a `ModuleCard` with no route
+ * renders as unavailable rather than navigating nowhere. Inventing placeholder
+ * pages would have hidden the gap behind a page that looks built.
  */
 
 export type ModuleId =
@@ -35,7 +55,9 @@ export interface ModuleDescriptor {
   /** One line shown in the module catalogue. */
   blurb: string;
   /** Where this module's full workspace lives. */
-  route: string;
+  /** Where this module navigates. Null when no page exists yet — the card
+   *  renders as unavailable rather than sending the customer to a blank URL. */
+  route: string | null;
   /** Accent colour, from the design-system palette. */
   accent: 'primary' | 'secondary' | 'accent' | 'success' | 'warning' | 'danger' | 'textMuted';
   /** Paint order in the workspace shell. Lower comes first. */
@@ -54,7 +76,7 @@ export const MODULES: ModuleDescriptor[] = [
     label: 'CRM',
     glyph: '◈',
     blurb: 'Clients, jobs, team, payroll and expenses',
-    route: '/crm',
+    route: '/contact',
     accent: 'primary',
     order: 10,
   },
@@ -64,7 +86,7 @@ export const MODULES: ModuleDescriptor[] = [
     label: 'Bookings',
     glyph: '▤',
     blurb: 'Reservations, deposits, check-ins and no-shows',
-    route: '/crm/booking',
+    route: '/contact',
     accent: 'accent',
     order: 20,
   },
@@ -74,7 +96,7 @@ export const MODULES: ModuleDescriptor[] = [
     label: 'Property',
     glyph: '⌂',
     blurb: 'Rent roll, tenant risk, leases and maintenance',
-    route: '/crm/property',
+    route: null,
     accent: 'secondary',
     order: 30,
   },
@@ -84,7 +106,7 @@ export const MODULES: ModuleDescriptor[] = [
     label: 'Capital',
     glyph: '◐',
     blurb: 'Mudarabah pools, credit capacity and payouts',
-    route: '/crm/capital',
+    route: '/contact/money-flow',
     accent: 'success',
     order: 40,
   },
@@ -94,7 +116,7 @@ export const MODULES: ModuleDescriptor[] = [
     label: 'Payments',
     glyph: '◉',
     blurb: 'Card, wallet, Raast and on-chain settlement',
-    route: '/crm/payments',
+    route: '/contact/invoices',
     accent: 'warning',
     order: 50,
   },
@@ -104,7 +126,7 @@ export const MODULES: ModuleDescriptor[] = [
     label: 'Trust',
     glyph: '✦',
     blurb: 'Passport scores, verification and fraud signals',
-    route: '/crm/trust',
+    route: null,
     accent: 'danger',
     order: 60,
   },

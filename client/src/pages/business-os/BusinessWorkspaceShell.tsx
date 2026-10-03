@@ -217,11 +217,27 @@ export default function BusinessWorkspaceShell() {
               <ModuleCard
                 key={descriptor.id}
                 id={descriptor.id}
-                status={report?.status ?? (isInstalled ? 'ok' : 'unavailable')}
-                reason={report?.reason}
+                // A module the server reports healthy can still have no page in
+                // this app. Reporting it `unavailable` is the honest state: the
+                // Open button is gated on `status === 'ok'`, so a null route can
+                // never send the customer to a blank URL.
+                status={
+                  descriptor.route ? (report?.status ?? (isInstalled ? 'ok' : 'unavailable')) : 'unavailable'
+                }
+                reason={
+                  descriptor.route
+                    ? report?.reason
+                    : 'Not available in this app yet — the data exists, the page does not.'
+                }
                 facts={report?.facts}
                 busy={busyModule === descriptor.id}
-                onOpen={() => navigate(descriptor.route)}
+                onOpen={() => {
+                  // Belt and braces: the card only shows Open when status is ok,
+                  // which now requires a route. Guarding here too means a future
+                  // refactor that widens the status condition cannot navigate to
+                  // null.
+                  if (descriptor.route) navigate(descriptor.route);
+                }}
                 onToggle={() => toggle(descriptor.key, !isInstalled)}
               />
             );
