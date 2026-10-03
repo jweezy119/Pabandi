@@ -6,6 +6,11 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/**/*.test.ts'],
 
+    // Runs before any test module is imported, which is the only point at which it can
+    // supply values that src/ reads at module scope (auth.controller.ts captures
+    // JWT_SECRET and JWT_REFRESH_SECRET that way). Fills gaps only; never overrides.
+    setupFiles: ['tests/setup-env.ts'],
+
     // Raised from the defaults (5s test / 10s hook) after CI failed on
     // route-authorization.test.ts with "Hook timed out in 10000ms" at the
     // `vi.resetModules()` + dynamic-import beforeEach.

@@ -36,9 +36,10 @@ import type { Server } from 'node:http';
  * database for the life of the process).
  */
 
-process.env.NODE_ENV = 'test';
-process.env.RESEND_API_KEY = 'test-dummy-key';
-process.env.JWT_SECRET = 'test-jwt-secret';
+// Env defaults come from tests/setup-env.ts (a setupFile), which runs before this
+// module. They are not repeated here: an earlier version of this file set JWT_SECRET
+// but not JWT_REFRESH_SECRET, passed locally because server/.env supplied it, and failed
+// in CI with "secretOrPrivateKey must have a value" from deep inside jsonwebtoken.
 
 // Cron. src/index.ts calls .start() on two services and schedules three node-cron jobs
 // at module scope. Unmocked, they run against this database for the whole run.
