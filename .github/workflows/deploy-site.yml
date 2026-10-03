@@ -97,17 +97,39 @@ jobs:
           echo "present: $(wc -c < "$referenced" | tr -d ' ') bytes"
           echo "index-*.js chunks in dist: $(ls assets/index-*.js | wc -l | tr -d ' ') (lazily loaded, expected)"
 
-      # w9jds/firebase-action accepts GCP_SA_KEY_FIREBASE. GCP_SA_KEY is already a
-      # repo secret (set 2026-05-10), so no new credential is needed — the first
-      # attempt failed only because the action looks for the FIREBASE_-prefixed name
-      # and there was no FIREBASE_TOKEN for it to fall back on.
-      - name: Authenticate to Firebase
-        uses: w9jds/firebase-action@v13.6.0
+      # Using firebase-tools directly, not a wrapper action. Two wrapper attempts have
+      # now failed here: firebase-actions/setup-firebase does not exist as a repository
+      # (they are marketplace actions), and w9jds/firebase-action wanted a credential
+      # variable name I could not verify — the v13.6.0 tag I guessed has no action.yml
+      # at that path, and mapping GCP_SA_KEY to GCP_SA_KEY_FIREBASE still failed.
+      #
+      # Guessing at a third-party action's input names is not worth a third attempt when
+      # the documented mechanism is GOOGLE_APPLICATION_CREDENTIALS plus the firebase CLI,
+      # which is stable and inspectable.
+      #
+      # GCP_SA_KEY is an existing repo service-account JSON secret (set 2026-05-10), so
+      # this needs no new credential from you.
+      - name: Write service account credentials
         env:
-          GCP_SA_KEY_FIREBASE: ${{ secrets.GCP_SA_KEY }}
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          if [ -z "$GCP_SA_KEY" ]; then
+            echo "::error::secrets.GCP_SA_KEY is empty - cannot authenticate to Firebase"
+            exit 1
+          fi
+          printf '%s' "$GCP_SA_KEY" > "$RUNNER_TEMP/firebase-sa.json"
+          # Fail here, not three steps later with an opaque auth error.
+          node -e "JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP + '/firebase-sa.json','utf8'))" \
+            || { echo "::error::GCP_SA_KEY is not valid JSON"; exit 1; }
 
       - name: Deploy hosting
-        run: npx firebase-tools deploy --only hosting --project ${{ env.FIREBASE_PROJECT }} --non-interactive
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-sa.json
+        run: |
+          npx --yes firebase-tools@13 deploy \
+            --only hosting \
+            --project "$FIREBASE_PROJECT" \
+            --non-interactive
 
       - name: Smoke test the published site
         # Runs against the artifact that was just published, not against whatever
