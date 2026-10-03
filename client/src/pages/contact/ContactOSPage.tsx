@@ -6,7 +6,6 @@ import { useBusinessSettings } from '../../hooks/useBusinessSettings';
 import { Card } from '../../components/primitives';
 import ModularDashboard from '../crm/components/ModularDashboard';
 import { useAuthStore } from '../../store/authStore';
-import { crmService } from '../../services/api';
 import { getAuthToken } from '../../utils/authToken';
 
 
@@ -70,7 +69,8 @@ export default function ContactOSPage() {
       const user = useAuthStore.getState().user;
       const name =
         (user as any)?.business?.name || (user as any)?.businessName || fallbackName;
-      await crmService.enroll({
+      // Via the store so the reissued token (with a non-null businessId) is adopted.
+      await useAuthStore.getState().enrollBusiness({
         businessName: String(name),
         ownerName: (user as any)?.name || (user as any)?.firstName || String(name),
         // 'general' matches the catch-all preset the wizard offers, and the server

@@ -3,6 +3,14 @@ import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { requireCrmContext } from '../middleware/crmContext.middleware';
 import { prisma } from '../utils/database';
+import { logger } from '../utils/logger';
+import jwt, { type Secret } from 'jsonwebtoken';
+
+// Read the same way auth.controller does, rather than via a shared config module: the
+// signing inputs live in exactly one place already, and duplicating that is how the two
+// halves drift.
+const JWT_SECRET = process.env.JWT_SECRET!;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 import {
   enrollBusiness,
   addEmployee,
@@ -42,7 +50,55 @@ export async function enrollBusinessHandler(
       phone,
       address,
     });
-    res.status(201).json({ success: true, data: business });
+    // REISSUE THE TOKEN.
+    //
+    // Nine call sites read `req.user.businessId` (invoice.routes among them), and that
+    // claim is baked into the token at login. Enrollment happens AFTER login, so a user
+    // who registered as a customer and then set up a business through the wizard kept a
+    // token with `businessId: null` — and `POST /api/v1/invoices/:id/pay` passed that
+    // null straight into Prisma:
+    //
+    //   Argument `businessId` must not be null.   (500)
+    //
+    // That is the same failure mode toggleMode already documents and fixes by
+    // reissuing. Found by tests/money-flow.integration.test.ts.
+    //
+    // Reissuing fixes all nine consumers at once, rather than patching each one to
+    // re-resolve the business. `activeBusinessId` is set alongside `businessId` because
+    // that is the pair toggleMode writes and the pair the auth middleware reads.
+    //
+    // Sessions minted before this change still carry a null businessId and need one
+    // re-login (or a mode toggle, which also reissues).
+    //
+    // Skipped when the service business has no linked Business row (business is
+    // nullable on that model), because there is no id to put in the token and writing
+    // null would reproduce the very bug this fixes.
+    const businessId = business.business?.id ?? null;
+    let token: string | undefined;
+    if (businessId) {
+      const owner = await prisma.user.findUnique({
+        where: { id: ownerId },
+        select: { id: true, email: true, role: true, preferredMode: true },
+      });
+      token = jwt.sign(
+        {
+          id: ownerId,
+          email: owner?.email,
+          role: owner?.role,
+          businessId,
+          activeBusinessId: businessId,
+          mode: owner?.preferredMode === 'personal' ? 'personal' : 'business',
+        } as jwt.JwtPayload,
+        JWT_SECRET as Secret,
+        { expiresIn: JWT_EXPIRES_IN as any },
+      );
+    } else {
+      logger.warn(
+        `[CRM] enrollment for user ${ownerId} produced no Business row; token not reissued`,
+      );
+    }
+
+    res.status(201).json({ success: true, data: business, token });
   } catch (error) {
     next(error);
   }

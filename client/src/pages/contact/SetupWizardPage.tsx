@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { useBusinessSettings, VERTICAL_PRESETS } from '../../hooks/useBusinessSettings';
-import { crmService } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 
 // ─── Vertical definitions with richer metadata ──────────────────────────────
@@ -380,7 +379,9 @@ export default function SetupWizardPage() {
     setEnrollError(null);
     try {
       const user = useAuthStore.getState().user;
-      await crmService.enroll({
+      // Via the store, not crmService directly: enrollment reissues the token so its
+      // `businessId` claim stops being null, and only the store persists it.
+      await useAuthStore.getState().enrollBusiness({
         businessName: businessName.trim(),
         ownerName: (user as any)?.name || (user as any)?.firstName || businessName.trim(),
         // The preset id IS the serviceType the server categorises on.

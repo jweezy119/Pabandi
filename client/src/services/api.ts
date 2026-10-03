@@ -649,6 +649,9 @@ export const crmService = {
     serviceType: string;
     phone?: string;
     address?: string;
+    // The server reissues the token on enrollment so its `businessId` claim matches the
+    // business just created — see the note in crm.controller. The caller is responsible
+    // for storing it; see store/authStore.enrollBusiness.
   }) => apiClient.post('/crm/enroll', payload),
 
   // Dashboard

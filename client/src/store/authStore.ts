@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { authService, cryptoService } from '../services/api';
+import { authService, cryptoService, crmService } from '../services/api';
 import { syncBusinessId } from '../utils/businessContext';
 
 interface User {
@@ -57,6 +57,14 @@ interface AuthState {
   fetchWalletData: () => Promise<void>;
   updateProfile: (updatedUser: Partial<User>) => void;
   toggleMode: (mode: 'business' | 'personal') => Promise<void>;
+
+  enrollBusiness: (payload: {
+    businessName: string;
+    ownerName: string;
+    serviceType: string;
+    phone?: string;
+    address?: string;
+  }) => Promise<unknown>;
 }
 
 interface RegisterData {
@@ -161,6 +169,39 @@ export const useAuthStore = create<AuthState>()(
       },
       updateProfile: (updatedUser: Partial<User>) => 
         set((state) => ({ user: state.user ? { ...state.user, ...updatedUser } : null })),
+      /**
+       * Enroll this account as a service business, and adopt the reissued token.
+       *
+       * The server now signs a fresh token on enrollment because `businessId` is a claim
+       * baked in at login, and enrollment happens after it. Nine server call sites read
+       * `req.user.businessId`; without the new token they saw null and
+       * `POST /api/v1/invoices/:id/pay` failed with a 500. Calling crmService.enroll
+       * directly and ignoring the token left the session broken until the next login,
+       * which is why this goes through the store rather than being called inline.
+       */
+      enrollBusiness: async (payload: {
+        businessName: string;
+        ownerName: string;
+        serviceType: string;
+        phone?: string;
+        address?: string;
+      }) => {
+        const response = await crmService.enroll(payload);
+        const body = response.data ?? {};
+        const data = body?.data ?? body;
+        // The token sits at the top level of the body, beside `data`.
+        if (body?.token) {
+          set(() => ({ token: body.token as string }));
+        }
+        const businessId = data?.business?.id ?? null;
+        if (businessId) {
+          syncBusinessId(businessId);
+          set((state) => ({
+            user: state.user ? { ...state.user, businessId } : state.user,
+          }));
+        }
+        return data;
+      },
       toggleMode: async (mode: 'business' | 'personal') => {
         const response = await authService.toggleMode(mode);
         const payload = response.data?.data ?? response.data;
