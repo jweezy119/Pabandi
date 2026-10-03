@@ -770,8 +770,28 @@ app.use((_req, res) => {
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
-// Start server
+// Start server — but ONLY when this file is the process entrypoint.
+//
+// It used to listen unconditionally at module scope. That is fine for `node dist/index.js`
+// and wrong for anything that imports the app, and two integration suites now do: each
+// worker imported src/index, each bound port 5000, and the second one died with
+//
+//   Error: listen EADDRINUSE: address already in use 0.0.0.0:5000
+//
+// Vitest reported it as an unhandled error and failed the run even though all 572 tests
+// passed — so the suite went red for a reason that had nothing to do with any assertion.
+//
+// The suites want the real app with its real middleware; they do not want it holding a
+// port. They call app.listen(0) themselves, on an ephemeral port, so they cannot collide
+// with anything.
+//
+// `require.main === module` is the precise test: true when run as the entrypoint, false
+// when imported. NODE_ENV is deliberately not used here — a production process that
+// imports this module (a worker, a script) would then silently never listen.
 const parsedPort = typeof PORT === 'string' ? parseInt(PORT, 10) : PORT;
+const isEntrypoint = require.main === module || process.argv[1]?.endsWith('index.js') === true;
+
+if (isEntrypoint) {
 httpServer.listen(parsedPort, '0.0.0.0', async () => {
   logger.info(`🚀 Server running on port ${parsedPort}`);
   logger.info(`📚 API available at http://localhost:${parsedPort}/api/${API_VERSION}`);
@@ -884,6 +904,7 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
     logger.warn('Reminder cron skipped: ' + (err as Error).message);
   }
 });
+} // end `if (isEntrypoint)`
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
