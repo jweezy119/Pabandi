@@ -189,6 +189,43 @@ migration and should follow 0.3, not precede it.
 
 ---
 
+## Progress
+
+Phase 0 and Phase 1 are done. Recorded because the order was the point — the first
+three items were all revenue already built but not switched on.
+
+| Task | State | Verified by |
+|---|---|---|
+| 0.1 Enforce tier limits | done `620ddfaa3` | 10 tests; the boundary test caught an off-by-one in my own guard |
+| 0.3 CRM read/write split | done `07b0f9030` | 9 tests; 4 fail against the pre-fix code |
+| 1.1 CRM suite (partial) | done `dd4973a0d` | surfaced the delivery-score gap below |
+| 0.2 Fees on Square checkout | done `2f658576e` | 11 tests; both fixes fail when reverted |
+| 0.5 Kill dead module routes | done `8185f30cc` | 7 tests; 2 fail against the original routes |
+| 1.2 Whop checkout + webhooks | done `1ab5251f3` | 13 tests; includes a behavioural /pricing 401 |
+| 1.3 Billing reconciliation | done `8ced3484f` | 9 tests; 3 fail if errors downgrade rows |
+
+**Found while testing 1.1:** delivery scores were emitted into a void. Nothing
+subscribed to `delivery.on_time`, `delivery.late` or `delivery.missed`, so a
+perfect provider and a chronic no-show carried the same deliveryScore. Fixed in
+`dd4973a0d`; 8 of 12 new tests fail without it.
+
+### Still open
+
+- **1.1 remainder.** 12 of 19 `crm.service` functions still have no test:
+  `enrollBusiness`, `addEmployee`, `addClient`, `createJob`, `assignEmployee`,
+  `updateJobStatus`, `recordPayroll`, `recordExpense`, `getPayrollHistory`,
+  `getExpenses`, `checkInJob`, `checkOutJob`, `handleNoShow`. `recordPayroll` and
+  `recordExpense` write money rows and are the priority.
+- **1.4** The 26 type errors, concentrated in `checkin.routes` (6),
+  `email.service` (now 0 — fixed separately), `booking.service` (3).
+- **3.2** `pab-supply.test.ts` flakes ~1 run in 4 on Prisma client resolution.
+  Pre-existing, never a false pass, but it invites "my change broke it".
+- **3.3** Two CRMs, one brand. `CrmBusiness` and `CrmServiceBusiness` coexist.
+  Consolidation is a migration and should follow 0.3 — which is done, so this is
+  now the natural next structural task.
+- **0.4** Square `INVOICES_WRITE`. Blocked on merchants re-consenting: code change
+  plus a product decision, not something to close unilaterally.
+
 ## Order, and why
 
 Phase 0 first because each item is cheap, individually revenue-positive, and currently
