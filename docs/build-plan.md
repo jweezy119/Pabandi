@@ -231,6 +231,24 @@ Four defects that were present and invisible:
 | Back/forward | `adb07b1a6` | `window.location.assign` (full reload) and no scroll restoration on `POP`. |
 | Email failure diagnosability | `9d092ce41` | The provider's rejection reason was discarded, so a failure was undiagnosable from outside. |
 
+### TWO DEPLOY TARGETS — the trap that cost a day
+
+`pabandi.com` is **Firebase Hosting** (`client/dist`, project `pabandi-42c5b`).
+`pabandi.onrender.com` is **Render** (the API, from `server/`).
+
+Two independent pipelines. Every server-side verification this session checked
+Render, while the customer was on Firebase. A fix can be deployed, verified against
+the API, live in `/health`, and completely absent from the site the customer uses.
+
+Concretely: `preferredMode` guard fix, mobile nav, back/forward — all live and
+verified on Render, none of them on Firebase. The customer reported the loop
+persisting because they were right, and the server was not evidence.
+
+**State as of `e778d6f85` + Firebase deploy:** both targets current. Firebase deploy
+is still MANUAL — nothing in `.github/workflows` or `package.json` publishes it, which
+is exactly why it drifted silently. Adding a CI publish step is the fix; until then,
+verify against the host the customer is actually on.
+
 ### Still open
 
 - **1.4** 26 server type errors (`checkin.routes` 6, `booking.service` 3) and a
