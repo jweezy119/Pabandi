@@ -16,6 +16,15 @@ name: verify
 #
 # This is the fix for the failure mode, not for any individual bug.
 
+# Least privilege. Without this the job inherits the repository default, which may be
+# read/write. CodeQL flagged all three of these workflows as
+# actions/missing-workflow-permissions.
+#
+# verify only ever reads the checkout. deploy-site needs to open a pull request
+# comment? No — it does not, so it is contents: read as well.
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main]

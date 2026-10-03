@@ -11,6 +11,7 @@ import { authenticate } from '../middleware/auth.middleware';
 import { pydService, YieldPoolKey } from '../services/pyd.service';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { isValidEmailShape } from '../utils/validators';
 
 const router = Router();
 
@@ -236,7 +237,7 @@ router.post('/usdy/hold', authenticate, async (req: Request, res: Response): Pro
 router.post('/usdy/lead', async (req: Request, res: Response): Promise<any> => {
   try {
     const { email, name, propertyType, portfolioSize, country, message } = req.body || {};
-    if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!isValidEmailShape(email)) {
       return res.status(400).json({ success: false, message: 'Valid email required to pre-register.' });
     }
     const lead = await prisma.usdyLead.upsert({

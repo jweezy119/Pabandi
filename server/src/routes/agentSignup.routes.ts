@@ -3,6 +3,7 @@ import { prisma } from '../utils/database';
 import { writeLimiter } from '../middleware/rateLimit.middleware';
 import { logger } from '../utils/logger';
 import crypto from 'crypto';
+import { isValidEmailShape } from '../utils/validators';
 
 const router = Router();
 
@@ -75,7 +76,7 @@ router.post('/register', writeLimiter, async (req: Request, res: Response) => {
       });
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail)) {
+    if (!isValidEmailShape(ownerEmail)) {
       return res.status(400).json({ success: false, error: 'Invalid email' });
     }
 

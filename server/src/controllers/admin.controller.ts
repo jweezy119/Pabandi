@@ -5,6 +5,7 @@ import { listAdminPlugins, getAdminPlugin, updateAdminPlugin } from '../services
 import { fail, ok } from '../utils/apiResponse';
 import bcrypt from 'bcrypt';
 import { UserRole } from '@prisma/client';
+import { EMAIL_PATTERN } from '../utils/validators';
 
 // ─── POST /admin/setup ────────────────────────────────────────────
 // PUBLIC bootstrap: create first ADMIN user if and only if zero users exist
@@ -20,7 +21,7 @@ export const setupAdmin = async (req: AuthRequest, res: Response, next: NextFunc
     }
 
     // Validate email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = EMAIL_PATTERN;
     if (!email || !emailRegex.test(email)) {
       return fail(res, 'Valid email is required', 400);
     }

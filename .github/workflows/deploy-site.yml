@@ -16,6 +16,15 @@ name: deploy-site
 #
 # Two deploy targets, one repo, no automation on either. This closes the site half.
 
+# Least privilege. Without this the job inherits the repository default, which may be
+# read/write. CodeQL flagged all three of these workflows as
+# actions/missing-workflow-permissions.
+#
+# verify only ever reads the checkout. deploy-site needs to open a pull request
+# comment? No — it does not, so it is contents: read as well.
+permissions:
+  contents: read
+
 on:
   # Needed because the paths filter below is correct and therefore made this workflow
   # unrunnable in exactly the case it existed to fix: the client enrollment fix was

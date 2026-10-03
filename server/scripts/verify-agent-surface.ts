@@ -138,9 +138,29 @@ async function liveProbe() {
       fail(`live ${method} ${url} unreachable — ${e.message}`);
     }
   }
-  const host = llmsText.match(/https?:\/\/[^/\s]+/)?.[0];
-  if (host && !host.includes('pabandi.onrender.com') && !host.includes(process.env.PUBLIC_API_URL || '//')) {
-    notes.push(`llms.txt advertises host ${host}; live base is ${base}`);
+  // Compare PARSED HOSTNAMES, not substrings.
+  //
+  // The old check was `!host.includes('pabandi.onrender.com')`, which passes for
+  // 'https://pabandi.onrender.com.evil.example' and for
+  // 'https://evil.example/pabandi.onrender.com' — i.e. it would have reported our own
+  // domain being hijacked as fine. CodeQL flagged it as
+  // js/incomplete-url-substring-sanitization.
+  //
+  // It was also silently disabled: with PUBLIC_API_URL unset the fallback argument was
+  // '//', every absolute URL contains '//', so `!host.includes('//')` was always false
+  // and the check never fired. Two independent ways for it to not do its job.
+  const advertised = llmsText.match(/https?:\/\/[^/\s]+/)?.[0];
+  if (advertised) {
+    const expected = new URL(base).hostname;
+    let actual: string | null = null;
+    try {
+      actual = new URL(advertised).hostname;
+    } catch {
+      actual = null;
+    }
+    if (actual !== expected) {
+      notes.push(`llms.txt advertises host ${advertised}; live base is ${base}`);
+    }
   }
 }
 
