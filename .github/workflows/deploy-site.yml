@@ -139,6 +139,12 @@ jobs:
         env:
           SMOKE_SITE_URL: https://pabandi.com
           SMOKE_API_URL: https://pabandi.onrender.com
+          # This workflow's path filter only matches client-side and deploy-config
+          # files, so this commit cannot have changed the API. Render deploys on its
+          # own cadence, so requiring the same commitSha here only produces false
+          # failures — one already failed a green deploy on a CI-only commit.
+          # Every functional API check below still runs and still fails hard.
+          SMOKE_API_SHA_ADVISORY: '1'
 
       - name: Summarise
         if: always()

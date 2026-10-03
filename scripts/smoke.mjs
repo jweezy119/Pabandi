@@ -40,6 +40,8 @@ const TARGETS = {
 };
 
 const EXPECTED_COMMIT = process.env.EXPECTED_COMMIT || process.argv[2] || null;
+// Set when the commit under test cannot have changed the API. See the commitSha check.
+const API_SHA_ADVISORY = process.env.SMOKE_API_SHA_ADVISORY === '1';
 
 /** The marker that proves the CRM guard fix is in a bundle. If this changes, so
  *  does this check — it is deliberately coupled to a specific shipped fix. */
@@ -106,10 +108,22 @@ async function checkApi() {
     record('health.commitSha reported', 'WARN', 'absent — cannot detect a stale deploy');
   } else if (EXPECTED_COMMIT) {
     const matches = sha.startsWith(EXPECTED_COMMIT) || EXPECTED_COMMIT.startsWith(sha);
+    // Advisory mode exists because the two deploy targets are independent and on
+    // different cadences. deploy-site.yml only triggers on client/**, firebase.json,
+    // .firebaserc, itself, and scripts/smoke.mjs — none of which is server code. So
+    // the site publishing commit X while Render still serves X-1 is the NORMAL case,
+    // not drift. Asserting equality there failed a green deploy on a CI-only commit.
+    //
+    // It stays a hard failure by default: when someone runs this against a commit that
+    // did change the API, an out-of-step Render deploy is exactly the two-day drift
+    // this script exists to catch.
     record(
       'health.commitSha matches expected',
-      matches ? 'PASS' : 'FAIL',
-      matches ? sha.slice(0, 9) : `expected ${EXPECTED_COMMIT.slice(0, 9)}, got ${sha.slice(0, 9)}`,
+      matches ? 'PASS' : API_SHA_ADVISORY ? 'WARN' : 'FAIL',
+      matches
+        ? sha.slice(0, 9)
+        : `expected ${EXPECTED_COMMIT.slice(0, 9)}, got ${sha.slice(0, 9)}` +
+          (API_SHA_ADVISORY ? ' (advisory: site and API deploy independently)' : ''),
     );
   } else {
     record('health.commitSha reported', 'PASS', `${sha.slice(0, 9)} (pass EXPECTED_COMMIT to assert)`);
