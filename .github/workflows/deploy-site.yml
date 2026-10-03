@@ -92,7 +92,10 @@ jobs:
           echo "index-*.js chunks in dist: $(ls assets/index-*.js | wc -l | tr -d ' ') (lazily loaded, expected)"
 
       - name: Authenticate to Firebase
-        uses: firebase-actions/setup-firebase@v3
+        # firebase-actions/* are MARKETPLACE actions — github.com/firebase-actions
+        # does not exist, so the repository-style path fails to resolve. This was
+        # the entire deploy failing on its first run.
+        uses: w9jds/firebase-action@v13.6.0
         with:
           project: ${{ env.FIREBASE_PROJECT }}
 
@@ -103,9 +106,7 @@ jobs:
         # Runs against the artifact that was just published, not against whatever
         # happened to be live. This is the check that would have caught the two-day
         # drift the moment a commit shipped.
-        run: |
-          npm ci --no-save firebase-tools --prefix "$RUNNER_TEMP/fb" || true
-          node scripts/smoke.mjs "${{ github.sha }}"
+        run: node scripts/smoke.mjs "${{ github.sha }}"
         env:
           SMOKE_SITE_URL: https://pabandi.com
           SMOKE_API_URL: https://pabandi.onrender.com

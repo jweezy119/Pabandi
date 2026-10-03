@@ -49,8 +49,15 @@ jobs:
 
       - name: Validate the schema
         working-directory: server
-        # Cheap, and it has caught real drift: the merge unioned two schemas and
-        # an invalid one would fail at runtime, not at boot.
+        # Cheap, and it has caught real drift: the merge unioned two schemas and an
+        # invalid one would fail at runtime, not at boot.
+        #
+        # DATABASE_URL is set to a syntactically valid dummy. `prisma validate`
+        # parses and checks the schema; it never connects, and without a URL it
+        # refuses to parse at all — so this is not a shortcut, it is the only way to
+        # validate without a live database. Nothing in this job can reach it.
+        env:
+          DATABASE_URL: postgresql://user:pass@localhost:5432/pabandi_schema_check
         run: npx prisma validate
 
       - name: Run tests
