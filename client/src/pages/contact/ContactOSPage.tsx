@@ -6,6 +6,7 @@ import { useBusinessSettings } from '../../hooks/useBusinessSettings';
 import { Card } from '../../components/primitives';
 import ModularDashboard from '../crm/components/ModularDashboard';
 import { useAuthStore } from '../../store/authStore';
+import { crmService } from '../../services/api';
 import { getAuthToken } from '../../utils/authToken';
 
 
@@ -48,10 +49,41 @@ function StatCard({ icon, value, label, color = 'clay', delay = 0 }: {
 export default function ContactOSPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [enrolled, setEnrolled] = useState(false);
   const navigate = useNavigate();
   const { settings } = useBusinessSettings();
   const { user } = useAuthStore();
   const businessId = (user as any)?.business?.id || (user as any)?.businessId || localStorage.getItem('businessId') || 'default';
+
+  /**
+   * Create the service-business row this account is missing, then reload.
+   *
+   * Self-healing because the setup wizard is not reachable for an account whose
+   * local hasCompletedSetup is already set — which is exactly the population that
+   * is broken now. redirecting to setup would loop.
+   *
+   * Silent on failure: the dashboard still renders, just empty. A modal here would
+   * block someone whose CRM is fine but whose network is not.
+   */
+  const enrollNow = async (fallbackName: string) => {
+    try {
+      const user = useAuthStore.getState().user;
+      const name =
+        (user as any)?.business?.name || (user as any)?.businessName || fallbackName;
+      await crmService.enroll({
+        businessName: String(name),
+        ownerName: (user as any)?.name || (user as any)?.firstName || String(name),
+        // 'general' matches the catch-all preset the wizard offers, and the server
+        // falls back to a default category for anything unrecognised.
+        serviceType: (useBusinessSettings.getState?.() as any)?.vertical || 'general',
+      });
+      setEnrolled(true);
+    } catch (err) {
+      // Not fatal to the page. Logged so it is diagnosable, not shown so it does
+      // not become a wall.
+      console.error('[ContactOS] could not enroll this account:', err);
+    }
+  };
 
   // Redirect new users to the setup wizard
   useEffect(() => {
@@ -69,6 +101,22 @@ export default function ContactOSPage() {
         if (res.ok) {
           const data = await res.json();
           setLeads(data.data || []);
+          return;
+        }
+
+        // A 403 means there is no CrmServiceBusiness for this account, so EVERY
+        // /crm route 403s and the workspace is inert. This branch used to be empty,
+        // which is why an unenrolled account saw a blank dashboard and a Save
+        // button that did nothing, with no indication of why.
+        //
+        // Enroll rather than redirect to setup: an account whose local
+        // hasCompletedSetup is already true never sees the wizard, so routing there
+        // would loop straight back here. Self-healing is the only path that works
+        // for those accounts.
+        if (res.status === 403) {
+          await enrollNow('Your workspace');
+        } else {
+          console.error('Failed to fetch clients:', res.status);
         }
       } catch (err) {
         console.error('Failed to fetch leads:', err);
@@ -80,6 +128,26 @@ export default function ContactOSPage() {
 
     fetchLeads();
   }, []);
+
+  // Refetch once enrollment lands, so the dashboard is populated rather than
+  // sitting empty after a successful self-heal.
+  useEffect(() => {
+    if (!enrolled) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
+          headers: { Authorization: `Bearer ${getAuthToken()}` },
+        });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        setLeads(data.data || []);
+      } catch {
+        /* leave the list empty; nothing worse to show than an error wall */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [enrolled]);
 
   const location = useLocation();
 

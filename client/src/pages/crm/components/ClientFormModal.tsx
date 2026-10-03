@@ -4,6 +4,13 @@ import ClaySelect from './ClaySelect';
 import CustomFieldsRenderer from './CustomFieldsRenderer';
 
 interface ClientFormModalProps {
+  /**
+   * A save failure, shown in the form.
+   *
+   * The form used to close on a failed write and print the reason to the console,
+   * so a customer pressing Save on a 403 saw the dialog close and nothing happen.
+   */
+  error?: string | null;
   client?: {
     id: string;
     name: string;
@@ -26,7 +33,7 @@ const STATUS_OPTIONS = [
   { value: 'INACTIVE', label: 'Inactive', icon: '💤' },
 ];
 
-export default function ClientFormModal({ client, onClose, onSave, customFields }: ClientFormModalProps) {
+export default function ClientFormModal({ client, onClose, onSave, customFields, error }: ClientFormModalProps) {
   const [form, setForm] = useState(client || {
     id: '', name: '', email: '', phone: '', company: '', notes: '', status: 'ACTIVE', customData: {}
   });
@@ -60,6 +67,20 @@ export default function ClientFormModal({ client, onClose, onSave, customFields 
             values={form.customData as Record<string, unknown>}
             onChange={handleCustomChange}
           />
+        </div>
+      )}
+
+      {/* Placed immediately above the actions, so a failed save is read before the
+          button the customer just pressed — not on another screen, and not in the
+          console. */}
+      {error && (
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-xl px-3 py-2.5 text-sm"
+          style={{ background: 'var(--danger-container, #FCE8E6)', color: 'var(--on-danger-container, #8C1D18)' }}
+        >
+          <span className="material-symbols-outlined text-[18px] shrink-0 mt-px">error</span>
+          <span>{error}</span>
         </div>
       )}
 

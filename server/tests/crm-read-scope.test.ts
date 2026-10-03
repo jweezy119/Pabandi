@@ -42,8 +42,10 @@ vi.mock('../src/utils/database', () => ({
     },
     crmExpense: { findMany: vi.fn(async () => rows.crmExpense), create: vi.fn() },
     crmPayroll: { findMany: vi.fn(async () => rows.crmPayroll), create: vi.fn() },
-    crmServiceBusiness: { findFirst: vi.fn() },
-    crmBusiness: { findFirst: vi.fn() },
+    crmServiceBusiness: { findFirst: vi.fn(async () => null), create: vi.fn() },
+    crmBusiness: { findFirst: vi.fn(async () => null) },
+    business: { findFirst: vi.fn(async () => ({ id: 'biz_1' })), create: vi.fn(async () => ({ id: 'biz_new' })) },
+    user: { findUnique: vi.fn(async () => ({ id: 'u1', email: 'owner@example.com' })) },
   },
 }));
 
@@ -198,6 +200,62 @@ describe('other CRM reads share the same scope', () => {
     for (const call of vi.mocked(prisma.crmClient.findMany).mock.calls) {
       expect(accepts(predicateOf(call), bookingRow())).toBe(true);
     }
+  });
+});
+
+describe('enrollment, which makes the CRM reachable at all', () => {
+  // Every /crm route sits behind resolveCrmBusiness, which 403s when the account
+  // has no CrmServiceBusiness. That is exactly the state a customer landed in when
+  // setup completed WITHOUT enrolling — which is what shipped. The wizard marked
+  // local preferences complete and never called /crm/enroll, so every read and
+  // write 403'd and "Save Changes" looked inert.
+  it('returns the existing pairing instead of forking a second one', async () => {
+    // The client self-heals by calling enroll on every 403, so enrollment runs more
+    // than once per account. Without this guard a retry creates a SECOND
+    // CrmServiceBusiness, and every read then has an ambiguous tenant — the exact
+    // fork the two-CRM merge already had to work around.
+    const { prisma: mocked } = await import('../src/utils/database');
+    const { enrollBusiness } = await import('../src/services/crm.service');
+
+    vi.mocked(mocked.crmServiceBusiness.findFirst).mockResolvedValueOnce({
+      id: 'csb_existing',
+      business: { id: 'biz_existing' },
+    } as never);
+
+    const result = await enrollBusiness({
+      ownerId: 'u1',
+      businessName: 'Apex',
+      ownerEmail: 'owner@example.com',
+      ownerName: 'Amara',
+      serviceType: 'general',
+    });
+
+    expect(result.business).toEqual({ id: 'biz_existing' });
+    expect(mocked.crmServiceBusiness.create).not.toHaveBeenCalled();
+  });
+
+  it('creates the pairing on a first enrollment', async () => {
+    const { prisma: mocked } = await import('../src/utils/database');
+    const { enrollBusiness } = await import('../src/services/crm.service');
+
+    vi.mocked(mocked.crmServiceBusiness.findFirst).mockResolvedValueOnce(null as never);
+
+    const result = await enrollBusiness({
+      ownerId: 'u1',
+      businessName: 'Apex',
+      ownerEmail: 'owner@example.com',
+      ownerName: 'Amara',
+      serviceType: 'general',
+    });
+
+    // The mock's create returns undefined, so assert the CALL rather than the row —
+    // the point is that a pairing is created on first enrollment, not what it holds.
+    expect(mocked.crmServiceBusiness.create).toHaveBeenCalled();
+    // And it is scoped to this owner, which is what stops enrollment creating a
+    // service business for someone else.
+    const arg = vi.mocked(mocked.crmServiceBusiness.create).mock.calls[0][0] as any;
+    expect(arg.data.ownerId).toBe('u1');
+    expect(arg.data.businessId).toBeTruthy();
   });
 });
 

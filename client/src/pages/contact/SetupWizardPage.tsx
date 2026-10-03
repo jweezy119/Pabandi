@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { useBusinessSettings, VERTICAL_PRESETS } from '../../hooks/useBusinessSettings';
+import { crmService } from '../../services/api';
+import { useAuthStore } from '../../store/authStore';
 
 // ─── Vertical definitions with richer metadata ──────────────────────────────
 const VERTICALS = [
@@ -160,12 +162,20 @@ function VerticalStep({
 // ─── Step 2: Feature review ───────────────────────────────────────────────────
 function FeatureReviewStep({
   verticalId,
+  businessName,
+  onBusinessNameChange,
   onBack,
   onConfirm,
+  canConfirm,
+  enrolling,
 }: {
   verticalId: string;
+  businessName: string;
+  onBusinessNameChange: (v: string) => void;
   onBack: () => void;
   onConfirm: () => void;
+  canConfirm: boolean;
+  enrolling: boolean;
 }) {
   const vertical = VERTICALS.find((v) => v.id === verticalId)!;
   const preset = VERTICAL_PRESETS[verticalId];
@@ -173,6 +183,38 @@ function FeatureReviewStep({
 
   return (
     <div>
+      {/* The business name. Enrollment needs it, and this wizard never asked for it
+          — so the CRM could only ever be enrolled with a placeholder, or not at
+          all. It was not at all: no step called /crm/enroll, so every /crm route
+          403'd and "Save Changes" silently did nothing. */}
+      <div className="mb-6">
+        <label
+          htmlFor="setup-business-name"
+          className="block text-sm font-medium mb-1.5"
+          style={{ color: 'var(--warm-ink)' }}
+        >
+          Business name
+        </label>
+        <input
+          id="setup-business-name"
+          type="text"
+          value={businessName}
+          onChange={(e) => onBusinessNameChange(e.target.value)}
+          placeholder={vertical.label}
+          autoComplete="organization"
+          required
+          className="w-full rounded-xl px-4 py-3 text-base outline-none focus:ring-2"
+          style={{
+            background: 'var(--surface-bright, #fff)',
+            border: '1px solid var(--soft-stone, #E7DED0)',
+            color: 'var(--warm-ink)',
+          }}
+        />
+        <p className="text-xs mt-1.5" style={{ color: 'var(--warm-stone)' }}>
+          Shown on your booking page and in every message a customer receives.
+        </p>
+      </div>
+
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
           <span className="text-3xl">{vertical.emoji}</span>
@@ -241,10 +283,11 @@ function FeatureReviewStep({
         </button>
         <button
           onClick={onConfirm}
-          className="flex-[2] py-4 rounded-2xl font-bold text-white transition-all duration-200 hover:opacity-90"
+          disabled={!canConfirm || enrolling}
+          className="flex-[2] py-4 rounded-2xl font-bold text-white transition-all duration-200 hover:opacity-90 disabled:opacity-40"
           style={{ backgroundColor: 'var(--clay)', fontSize: '1rem' }}
         >
-          Looks good — let's go 🎉
+          {enrolling ? 'Setting up…' : "Looks good — let's go 🎉"}
         </button>
       </div>
     </div>
@@ -312,15 +355,59 @@ export default function SetupWizardPage() {
 
   const [step, setStep] = useState(1);
   const [selectedVertical, setSelectedVertical] = useState<string | null>(null);
+  const [businessName, setBusinessName] = useState('');
+  const [enrolling, setEnrolling] = useState(false);
+  const [enrollError, setEnrollError] = useState<string | null>(null);
+
+  /**
+   * Create the CrmServiceBusiness row.
+   *
+   * THIS WAS NEVER CALLED, and it is why the CRM did not work.
+   *
+   * Every /crm/* route sits behind resolveCrmBusiness, which 403s with
+   * "No service business enrolled for this account" when the row does not exist.
+   * The setup wizard marked local preferences complete and moved on, so enrollment
+   * never happened: the customer finished setup, landed on the clients page, and
+   * every read and write 403'd. Save Changes appeared to do nothing because the
+   * failure was console.error'd and never rendered.
+   *
+   * enrollBusiness is idempotent server-side (it returns the existing pairing), so
+   * a retry or a second visit is safe.
+   */
+  const enroll = async () => {
+    if (!selectedVertical) return;
+    setEnrolling(true);
+    setEnrollError(null);
+    try {
+      const user = useAuthStore.getState().user;
+      await crmService.enroll({
+        businessName: businessName.trim(),
+        ownerName: (user as any)?.name || (user as any)?.firstName || businessName.trim(),
+        // The preset id IS the serviceType the server categorises on.
+        serviceType: selectedVertical,
+      });
+      applyPreset(selectedVertical);
+      markSetupComplete();
+      setStep(3);
+    } catch (err: any) {
+      // Shown, not logged. If enrollment fails the CRM is unusable, and the
+      // customer must be told rather than dropped into a broken screen.
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        'Could not finish setting up your business. Check your connection and try again.';
+      setEnrollError(message);
+    } finally {
+      setEnrolling(false);
+    }
+  };
 
   const handleConfirm = () => {
-    if (!selectedVertical) return;
-    applyPreset(selectedVertical);
-    setStep(3);
+    if (!selectedVertical || !businessName.trim()) return;
+    void enroll();
   };
 
   const handleEnter = () => {
-    markSetupComplete();
     navigate('/contact/clients?onboarded=true');
   };
 
@@ -375,9 +462,24 @@ export default function SetupWizardPage() {
               />
             )}
 
+            {step === 2 && enrollError && (
+              <div
+                role="alert"
+                className="mb-4 flex items-start gap-2 rounded-xl px-3 py-2.5 text-sm"
+                style={{ background: 'var(--danger-container, #FCE8E6)', color: 'var(--on-danger-container, #8C1D18)' }}
+              >
+                <span className="material-symbols-outlined text-[18px] shrink-0 mt-px">error</span>
+                <span>{enrollError}</span>
+              </div>
+            )}
+
             {step === 2 && selectedVertical && (
               <FeatureReviewStep
                 verticalId={selectedVertical}
+                businessName={businessName}
+                onBusinessNameChange={setBusinessName}
+                canConfirm={Boolean(businessName.trim())}
+                enrolling={enrolling}
                 onBack={() => setStep(1)}
                 onConfirm={handleConfirm}
               />

@@ -61,6 +61,9 @@ export default function ContactClientsPage() {
     }
   }
 
+  // Set when a save fails, rendered next to the form. See handleSaveClient.
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   async function handleSaveClient(form: any) {
     const isEdit = !!form.id;
     const url = isEdit 
@@ -84,16 +87,31 @@ export default function ContactClientsPage() {
       });
       
       if (!res.ok) {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({}));
         console.error('Failed to save client:', err);
+
+        // Surface it. This was console.error-only, so a 403 closed the modal on
+        // nothing and left the customer pressing a button that appeared to do
+        // nothing at all — the reported symptom. A write that fails must say so.
+        //
+        // The 403 case is specifically called out because it has a known cause and
+        // a known fix: this account has no CrmServiceBusiness row, so every /crm
+        // route 403s before reaching a handler. That is fixed by completing setup.
+        const message =
+          res.status === 403 && err?.message === 'No service business enrolled for this account'
+            ? 'Finish setting up your business before adding clients.'
+            : err?.message || err?.error || `Could not save (${res.status})`;
+        setSaveError(message);
         return;
       }
-      
+
+      setSaveError(null);
       setShowFormModal(false);
       setSelectedClient(null);
       fetchClients();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save client:', err);
+      setSaveError(err?.message || 'Could not save. Check your connection and try again.');
     }
   }
 
@@ -196,9 +214,10 @@ export default function ContactClientsPage() {
         >
           <ClientFormModal 
             client={selectedClient} 
-            onClose={() => setShowFormModal(false)} 
+            onClose={() => { setSaveError(null); setShowFormModal(false); }} 
             onSave={handleSaveClient} 
             customFields={customFields}
+            error={saveError}
           />
         </Modal>
 
