@@ -65,7 +65,17 @@ jobs:
         # runInBand: the suite has a known intermittent Prisma-client resolution
         # failure under parallel workers. Serialising removes the race; the open
         # flake is tracked in docs/build-plan.md as item 3.2.
-        run: npx vitest run --pool=forks --poolOptions.forks.singleFork
+        # No --poolOptions here. vitest 4's CLI rejects it outright
+        # ("CACError: Unknown option `--poolOptions`"), and vitest.config.ts
+        # documents that pool=forks + singleFork was already tried and REVERTED
+        # because it did not fix the Prisma flake. So the flag was both invalid and
+        # contradicted by an existing finding.
+        #
+        # This job also happens to be the experiment vitest.config.ts asks for: the
+        # client is generated in its own earlier step, so no `prisma generate` is in
+        # flight while tests run. If this job stays green while local runs flake, the
+        # torn-read theory is confirmed and the flake is local-only.
+        run: npx vitest run
 
       - name: Type check
         working-directory: server
