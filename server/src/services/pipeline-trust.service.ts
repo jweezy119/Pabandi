@@ -62,7 +62,10 @@ export class PipelineTrustService {
     const deal = await prisma.crmDeal.findUnique({ where: { id: dealId } });
     if (!deal) return null;
 
-    eventBus.emitEvent('pipeline.deal.closed', { dealId, leadId: deal.leadId }, 'crm');
+    // Emits clientId, not leadId: the deal above is a CrmDeal, which relates to a
+    // client. `leadId` belongs to the Contact OS branch's ContactDeal, and this
+    // file queries ours. The merge spliced their event payload onto our query.
+    eventBus.emitEvent('pipeline.deal.closed', { dealId, clientId: deal.clientId });
     return { success: true, message: 'Score update triggered' };
   }
 }

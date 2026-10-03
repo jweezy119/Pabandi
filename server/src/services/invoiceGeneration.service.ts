@@ -30,7 +30,11 @@ export class InvoiceGenerationService {
       throw new Error('Business ID not found on job');
     }
 
-    const businessId = serviceBusiness.businessId;
+    // Read the tenant off the job itself. This referenced an undefined
+    // `serviceBusiness`, throwing a ReferenceError on every completed job — the
+    // function could not have succeeded. The merge spliced the line in from the
+    // Contact OS branch, where the id came from a resolved serviceBusiness.
+    const businessId = job.businessId;
     if (!businessId) {
       throw new Error(
         'Service business is not linked to a platform business — cannot invoice'

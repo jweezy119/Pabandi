@@ -27,7 +27,7 @@ function getPaymentScoreDelta(
   isPaidOnTime?: boolean,
   isOverdue?: boolean,
   isDefaulted?: boolean
-): Promise<{ delta: number; eventType: string }> {
+): { delta: number; eventType: string } {
   const now = new Date();
   const ageMs = now.getTime() - timestamp.getTime();
   const ageDays = Math.max(0, ageMs / (1000 * 60 * 60 * 24));
@@ -194,7 +194,8 @@ async function processInvoiceStatusChange(
   }
 
   // Determine delta and event type
-  const { delta, eventType } = await getPaymentScoreDelta(
+  // Synchronous: pure arithmetic over the status transition and invoice age.
+  const { delta, eventType } = getPaymentScoreDelta(
     oldStatus,
     newStatus,
     timestamp,
@@ -232,7 +233,10 @@ async function processInvoiceStatusChange(
   );
 
   // Record the event
-  await recordInvoiceEvent(invoiceId, passportId, eventType, scoreBefore, scoreAfter);
+  // recordInvoiceEvent reads the current score itself; the signature takes three
+  // arguments. The extra two were ignored at runtime, so this worked by accident
+  // while reading as though the caller's values were being persisted.
+  await recordInvoiceEvent(invoiceId, passportId, eventType);
 
   // Emit event via event bus (for other consumers)
   eventBus.emitEvent(eventType, {

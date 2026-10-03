@@ -331,7 +331,9 @@ export async function updateJobStatus(jobId: string, status: string, serviceBusi
       type: 'checkin.verified',
       jobId,
       clientId: job.clientId || undefined,
-      businessId: job.serviceBusinessId,
+      // serviceBusinessId is nullable on the merged schema because two CRMs write
+      // this table; `businessId` on the event is optional but not null-able.
+      businessId: job.serviceBusinessId ?? undefined,
       layer: 'crm',
       data: { job, completedAt: job.completedAt },
       timestamp: new Date(),
