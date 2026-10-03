@@ -690,12 +690,30 @@ try {
 } catch (err: any) {
   logger.warn(`⚠️ Agent discovery routes not mounted: ${err?.message ?? err}`);
 }
-// Serve built assets with long cache (hashed filenames), but force no-cache on the
-// SPA shell (index.html) so Cloudflare/edge never serves a stale bundle after a deploy.
-app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const p = req.path;
-  if ((p === '/' || p === '/index.html') && req.method === 'GET') {
-    res.setHeader('Cache-Control', 'no-cache');
+// Serve built assets with long cache (hashed filenames), but force no-store on every
+// SPA route so neither Cloudflare nor a browser can serve a stale bundle.
+// Keep every SPA ROUTE uncached; only hashed ASSETS may be cached.
+//
+// This matched only '/' and '/index.html', so every other route — /login,
+// /contact, /dashboard — was served with whatever an edge or the browser already
+// held. A customer on a cached /contact kept running an old bundle long after
+// deploy: a bundle several builds old was still being served from a browser while
+// the server had the new one, so a fix was deployed, verified against the server,
+// and never reached the person who needed it.
+//
+// The rule that matters: a document naming a hashed bundle must never be cached,
+// because the hash exists precisely so the URL changes when the code does. Files
+// under /assets/ are content-hashed and immutable, so those can be cached hard.
+app.use((req: express.Request, res: Response, next: express.NextFunction) => {
+  const isHashedAsset =
+    req.path.startsWith('/assets/') || req.path.startsWith('/images/');
+
+  if (req.method === 'GET' && !isHashedAsset) {
+    // no-store, not no-cache: no-cache still permits a stored copy that merely has
+    // to be revalidated, which is what let a stale shell survive in the first place.
+    res.setHeader('Cache-Control', 'no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
   }
   next();
 });

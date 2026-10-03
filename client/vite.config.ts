@@ -7,7 +7,40 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
   base: env.VITE_BASE || '/',
-  plugins: [react(), VitePWA({ registerType: 'autoUpdate', includeAssets: ['favicon.ico'], workbox: { maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 }, manifest: { name: 'Pabandi CRM', short_name: 'Pabandi', description: 'Property Management & Sales CRM', theme_color: '#6366f1', background_color: '#0f172a', display: 'standalone' } })],
+  plugins: [
+    react(),
+    // Precache OFF, and the service worker disabled entirely.
+    //
+    // This shipped a precache manifest listing hashed bundles — including ones from
+    // earlier builds, which kept resolving to whatever the browser had stored. A
+    // deployed fix then reached the server and never reached the browser: the
+    // customer was running a bundle several builds old whose asset URL 404s on the
+    // server, and whose code still contained the bug being fixed.
+    //
+    // `registerSW` was never called in the app, so the worker was orphaned but
+    // still deployed at /sw.js and still intercepting. Precaching the app shell for
+    // a dashboard that is served with fresh headers on every load buys nothing: the
+    // shell is already cheap, and the assets are content-hashed so they are safe to
+    // fetch directly.
+    //
+    // If a PWA is wanted later it needs a decision about update UX, not a silent
+    // precache — a customer stuck on an old bundle cannot be told so.
+    VitePWA({
+      registerType: 'autoUpdate',
+      // Emit no worker at all, rather than emitting one nobody registers.
+      disable: true,
+      includeAssets: ['favicon.ico'],
+      workbox: { maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 },
+      manifest: {
+        name: 'Pabandi CRM',
+        short_name: 'Pabandi',
+        description: 'Property Management & Sales CRM',
+        theme_color: '#6366f1',
+        background_color: '#0f172a',
+        display: 'standalone',
+      },
+    }),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

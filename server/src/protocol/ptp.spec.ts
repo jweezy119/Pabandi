@@ -106,8 +106,27 @@ export const PTP_RISK_BANDS: Record<PTPRiskBand, {
 // Signing secret — in production, load from KMS/HSM, never hardcode.
 const PTP_SIGNING_SECRET = process.env.PTP_SIGNING_SECRET;
 
-if (!PTP_SIGNING_SECRET && process.env.NODE_ENV === 'production') {
-  throw new Error('PTP_SIGNING_SECRET must be set in production');
+// NOT thrown at module load.
+//
+// This used to `throw` at import time when the secret was absent, which meant one
+// unset variable took down every route that transitively imports this file — six
+// route modules including /crypto/wallet, /seal and /agent-passport. The symptom
+// was a 500 on a page that has nothing to do with agents.
+//
+// requirePassport.middleware, one of those importers, documents the opposite
+// intent: "Human users never send it, so their authenticated flows are completely
+// unaffected." A top-level throw defeats exactly that.
+//
+// The requirement is real and still enforced — signing and verifying an agent
+// attestation cannot work without a secret — so it is checked where the secret is
+// USED. A human request now gets a working endpoint and a clear log line; an agent
+// request gets a 503 naming the missing variable, which is actionable. Failing on
+// import made the misconfiguration invisible and broke far more than it protected.
+export function requirePtpSigningSecret(): string {
+  if (!PTP_SIGNING_SECRET) {
+    throw new Error('PTP_SIGNING_SECRET must be set to sign or verify agent attestations');
+  }
+  return PTP_SIGNING_SECRET;
 }
 
 const PTP_SIGNING_KEY = PTP_SIGNING_SECRET || '';
@@ -405,7 +424,7 @@ export class PTPEngine {
       capabilities: (attestation as any).capabilities ?? null,
       ownerUserId: (attestation as any).ownerUserId ?? null,
     };
-    return crypto.createHmac('sha512', PTP_SIGNING_KEY).update(JSON.stringify(body)).digest('hex');
+    return crypto.createHmac('sha512', requirePtpSigningSecret()).update(JSON.stringify(body)).digest('hex');
   }
 
   private signAgentAttestation(att: PTPAgentAttestation): string {
@@ -423,11 +442,11 @@ export class PTPEngine {
       issuer: att.issuer,
       publicKeyId: att.publicKeyId,
     };
-    return crypto.createHmac('sha512', PTP_SIGNING_KEY).update(JSON.stringify(body)).digest('hex');
+    return crypto.createHmac('sha512', requirePtpSigningSecret()).update(JSON.stringify(body)).digest('hex');
   }
 
   public getPublicKeyPEM(): string {
-    const pubKeyHash = crypto.createHash('sha256').update(PTP_SIGNING_KEY).digest('base64');
+    const pubKeyHash = crypto.createHash('sha256').update(requirePtpSigningSecret()).digest('base64');
     return `-----BEGIN PTP PUBLIC KEY-----\nVersion: PTP/1.0\nKeyID: ${PTP_PUBLIC_KEY_ID}\nKey: ${pubKeyHash}\n-----END PTP PUBLIC KEY-----`;
   }
 }

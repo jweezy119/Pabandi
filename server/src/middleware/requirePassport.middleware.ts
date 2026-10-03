@@ -42,7 +42,24 @@ export const requirePassport = (need: string) => {
       return res.status(401).json({ success: false, error: 'X-Agent-Passport is not valid base64 JSON' });
     }
 
-    const result = ptpEngine.verifyAgentPassport(att, need);
+    let result: { valid: boolean; error?: string };
+    try {
+      result = ptpEngine.verifyAgentPassport(att, need);
+    } catch (err) {
+      // 503, not 500. The agent path needs a signing secret we do not have
+      // configured; that is a server-side misconfiguration, and saying so plainly
+      // is what makes it fixable. The previous behaviour threw out of this
+      // middleware, which surfaced as an opaque failure on the agent's request and
+      // — before the throw was moved out of module load — took the whole route
+      // module down with it.
+      const message = err instanceof Error ? err.message : String(err);
+      logger.error(`[requirePassport] cannot verify '${need}': ${message}`);
+      return res.status(503).json({
+        success: false,
+        error: 'Agent passport verification is not available on this deployment.',
+      });
+    }
+
     if (!result.valid) {
       logger.warn(`[requirePassport] denied agent ${att?.subject?.id || '?'} for '${need}': ${result.error}`);
       return res.status(403).json({
