@@ -7,6 +7,7 @@ import {
   createSubscriptionCheckout,
   verifyWebhookDelivery,
   whopConfigured,
+  planIdForTier,
 } from '../services/whop.service';
 import {
   applyMembershipEvent,
@@ -202,10 +203,24 @@ function membershipStatus(eventType: string, rawStatus: unknown): SubscriptionSt
  * that needs a login is a pricing page nobody can read before deciding to log in.
  */
 router.get('/pricing', (_req: Request, res: Response) => {
+  // `available: false` rather than omitting the tiers.
+  //
+  // /pricing said nothing about whether a plan could actually be bought, and
+  // /checkout returned 503. So a merchant could be blocked at 50 clients, shown
+  // "Pro — $49", tap upgrade, and be told subscriptions were unavailable. Three
+  // pieces built in separate sessions, none of them checking the others.
+  //
+  // Advertising a price with no way to pay it is worse than advertising nothing: it
+  // converts a customer's willingness to buy into a dead end. Returning the tier
+  // with an explicit flag lets the UI say "coming soon" or collect a waitlist
+  // instead, and costs nothing to flip once WHOP_API_KEY is set.
+  const purchasable = whopConfigured();
+
   res.json({
     success: true,
     data: {
       currency: 'USD',
+      purchasable,
       tiers: PAID_TIERS.map((key) => {
         const t = SUBSCRIPTION_TIERS[key];
         return {
@@ -213,6 +228,9 @@ router.get('/pricing', (_req: Request, res: Response) => {
           monthlyPrice: t.monthlyPrice,
           limits: t.limits,
           headline: t.headline,
+          // Per-tier rather than one global flag: a plan with a missing Whop plan id
+          // cannot be sold even when billing is otherwise configured.
+          available: purchasable && Boolean(planIdForTier(key)),
         };
       }),
     },

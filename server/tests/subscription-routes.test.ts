@@ -10,6 +10,9 @@ vi.mock('../src/services/whop.service', () => ({
   verifyWebhookDelivery: vi.fn(async () => true),
   createSubscriptionCheckout: vi.fn(async () => ({ ok: true, purchaseUrl: 'https://whop.test/buy' })),
   whopConfigured: vi.fn(() => true),
+  // Needed by /pricing, which now reports per-tier purchasability. Returning null
+  // for free would make every paid tier read as unavailable.
+  planIdForTier: vi.fn((tier: string) => `plan_${tier}`),
   isActiveStatus: vi.fn(() => true),
 }));
 vi.mock('../src/services/subscription.service', () => ({
@@ -104,6 +107,28 @@ describe('public routes are registered ABOVE authenticate', () => {
     // And the authenticated ones come after, or they would be public by accident.
     expect(src.indexOf("router.get('/me'")).toBeGreaterThan(auth);
     expect(src.indexOf("router.post('/checkout'")).toBeGreaterThan(auth);
+  });
+
+  it('/pricing says whether a plan can actually be bought', async () => {
+    // The dead end this prevents: a merchant blocked at 50 clients, shown "Pro —
+    // $49", taps upgrade, and gets a 503. /pricing said nothing about that being
+    // possible.
+    const { body } = await call('get', '/api/v1/subscriptions/pricing');
+    expect(body?.data).toHaveProperty('purchasable');
+    for (const tier of body?.data?.tiers ?? []) {
+      expect(tier).toHaveProperty('available');
+      expect(typeof tier.available).toBe('boolean');
+    }
+  });
+
+  it('/pricing marks tiers unavailable when billing is not configured', async () => {
+    const { whopConfigured, planIdForTier } = await import('../src/services/whop.service');
+    vi.mocked(whopConfigured).mockReturnValueOnce(false as never);
+    const { body } = await call('get', '/api/v1/subscriptions/pricing');
+    expect(body?.data.purchasable).toBe(false);
+    // Still listed with a price — the UI decides how to present it — but explicitly
+    // not buyable.
+    expect(body?.data.tiers.every((t: any) => t.available === false)).toBe(true);
   });
 
   it('/pricing is served without a token', async () => {
