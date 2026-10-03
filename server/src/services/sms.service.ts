@@ -131,6 +131,30 @@ export class SMSService {
     return { error: 'Message not found' };
   }
 
+  /**
+   * Verify a Twilio request signature.
+   *
+   * The webhook is the only unauthenticated route in this file, so this is what stops
+   * anyone forging delivery confirmations. Twilio signs the full callback URL plus the
+   * POST fields with the account auth token; `validateRequest` recomputes and compares.
+   *
+   * The URL must be the one Twilio actually called, which is why the route rebuilds it
+   * from protocol/host/originalUrl rather than trusting a forwarded host header.
+   */
+  verifyTwilioSignature(
+    url: string,
+    params: Record<string, string>,
+    signature: string,
+    authToken: string,
+  ): boolean {
+    try {
+      return twilio.validateRequest(authToken, signature, url, params) === true;
+    } catch (err) {
+      logger.error('[SMS] Twilio signature validation threw:', err);
+      return false;
+    }
+  }
+
   async handleTwilioWebhook(payload: any): Promise<void> {
     const { MessageSid, MessageStatus, ErrorCode, ErrorMessage } = payload;
 

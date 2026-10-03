@@ -225,6 +225,17 @@ app.get('/health', (_req, res) => {
     // Presence of the key, NOT proof of delivery. Whop in particular needs real
     // plan ids to be useful; a key with no plans configured passes this check and
     // still cannot take a payment.
+    // Whether secrets are actually encrypted at rest.
+    //
+    // `protectToken` (square-connection.service) stores the token RAW when
+    // ENCRYPTION_KEY is missing, and only logs a warning. So a Square OAuth token — one
+    // that can move money — may be sitting in plaintext in the database, and nothing
+    // outside the process could tell. That is the same blind spot `smsConfigured` and
+    // `whopConfigured` were added to close: a boolean, never the key itself.
+    //
+    // This is a WARNING, not a hard failure. It reports what is true; whether to refuse
+    // to store tokens unencrypted is a separate, deliberate decision.
+    tokenEncryptionConfigured: Boolean((process.env.ENCRYPTION_KEY || '').trim()),
     smsConfigured: Boolean(
       (process.env.TWILIO_ACCOUNT_SID || '').trim() &&
       (process.env.TWILIO_AUTH_TOKEN || '').trim() &&

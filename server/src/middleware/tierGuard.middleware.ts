@@ -36,7 +36,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
-import { checkLimits, tierDefinition } from '../config/subscriptions';
+import { checkLimits, tierDefinition, tierLimits } from '../config/subscriptions';
 import { getSubscription } from '../services/subscription.service';
 import { CustomError } from '../middleware/errorHandler';
 
@@ -176,4 +176,107 @@ export function tierGuard(options: TierGuardOptions) {
       return next();
     }
   };
+}
+
+// ─── Feature entitlements ─────────────────────────────────────────────────────
+
+/** Boolean capabilities a tier can grant. Mirrors the flags on TierLimits. */
+export type TierFeature =
+  | 'smsReminders'
+  | 'emailReminders'
+  | 'analytics'
+  | 'apiAccess'
+  | 'webhooks'
+  | 'customFields'
+  | 'whiteLabel';
+
+/**
+ * Resolve the caller's business from SERVER-DERIVED identity only.
+ *
+ * Deliberately does not reuse the `resolveBusinessId` above, which falls back to
+ * `req.body.businessId` and `req.query.businessId`. That fallback is fine for
+ * counting usage against a limit and wrong for deciding what a caller may read or
+ * spend: a body-supplied id is an assertion by the caller, not a fact about them.
+ *
+ * Anything that touches another tenant's rows or bills a phone number must use this.
+ */
+export function resolveOwnedBusinessId(req: Request): string | null {
+  const fromCrm = (req as any).crm?.businessId;
+  if (fromCrm) return fromCrm as string;
+  // Set from the verified JWT. Enrollment reissues the token so this is populated for
+  // anyone who has completed Contact OS setup.
+  const fromToken = (req as any).user?.businessId;
+  if (typeof fromToken === 'string' && fromToken) return fromToken;
+  return null;
+}
+
+/**
+ * Refuse a request whose TIER does not include `feature`.
+ *
+ * WHY THIS EXISTS
+ * ---------------
+ * `smsReminders` was declared on every tier in config/subscriptions.ts, priced into
+ * the $49 plan, advertised on the pricing page — and read by nothing. `POST /sms/send`
+ * had no tier check, so a free account could send billed SMS. The tier said "SMS is a
+ * paid feature" and the server did not agree.
+ *
+ * Fails CLOSED, unlike the numeric `tierGuard` above which fails open on its own
+ * errors. The asymmetry is deliberate: an unmetered CRM write is a bookkeeping problem,
+ * whereas an unmetered SMS send spends real money with a third party on every call.
+ * When in doubt about this guard, close it.
+ *
+ * 402 rather than 403, for the same reason as tierGuard: the request is authorised and
+ * refused because of what it would cost, not because they may not do it at all.
+ */
+export function tierFeature(feature: TierFeature) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const businessId = resolveOwnedBusinessId(req);
+      if (!businessId) {
+        // No tenant means no tier to check, and no tenant to bill or log against.
+        // Defaulting to the cheapest tier here is the safe direction.
+        return next(
+          new CustomError(
+            'No business is associated with this request. Finish setting up your business first.',
+            403,
+          ),
+        );
+      }
+
+      const subscription = await getSubscription(businessId);
+      const tier = subscription.tier;
+      const limits = tierLimits(tier) as unknown as Record<string, unknown>;
+
+      if (limits[feature] === true) return next();
+
+      logger.info(
+        `[TierFeature] blocked ${feature} for ${businessId} on ${tier}`,
+      );
+      return next(
+        new CustomError(
+          `${labelFor(feature)} is not included on the ${tier} plan. ` +
+            'Upgrade to enable it — your existing records are unaffected.',
+          402,
+        ),
+      );
+    } catch (err) {
+      logger.error(`[TierFeature] failed to evaluate ${feature}, refusing request`, err);
+      return next(
+        new CustomError('Could not verify your plan for this action. Please try again.', 503),
+      );
+    }
+  };
+}
+
+function labelFor(feature: TierFeature): string {
+  const labels: Record<TierFeature, string> = {
+    smsReminders: 'SMS reminders',
+    emailReminders: 'Email reminders',
+    analytics: 'Analytics',
+    apiAccess: 'API access',
+    webhooks: 'Webhooks',
+    customFields: 'Custom fields',
+    whiteLabel: 'White label',
+  };
+  return labels[feature];
 }

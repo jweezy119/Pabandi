@@ -31,6 +31,19 @@ export const registrationRateLimiter = rateLimit({
   message: 'Too many accounts created from this network. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  // Skipped under test ONLY.
+  //
+  // The integration suites register a dozen or more throwaway businesses from one
+  // address, which trips this and fails them with a 429 that has nothing to do with
+  // what they assert — it cost real debugging time on tests/sms-security.
+  //
+  // The tempting fix is to raise `max`, and that would be wrong: this limiter exists
+  // because a script was found creating accounts in bulk. Raising the ceiling to suit a
+  // test suite removes the protection in production, where NODE_ENV is never 'test'.
+  //
+  // Keyed on NODE_ENV rather than an env var so it cannot be misconfigured into being
+  // off in production by a stray variable.
+  skip: () => process.env.NODE_ENV === 'test',
 });
 
 /**

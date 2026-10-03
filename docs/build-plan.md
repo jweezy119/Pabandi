@@ -472,3 +472,70 @@ otherwise a merchant is being asked to pay for something they can already get.
    onto the CRM tier feature sets. Only the price and the checkout were wired to the
    tier system; the marketing copy still needs to be reconciled with what each tier
    actually includes.
+
+## /api/v1/sms was unauthenticated (fixed 2026-10-03)
+
+The router had **no authentication, no authorisation and no tier check on any route**,
+and took `businessId` from the request body:
+
+```ts
+router.post('/send', ...)  ->  smsService.sendSMS(to, message, req.body.businessId)
+```
+
+So the moment `TWILIO_ACCOUNT_SID` existed, anyone on the internet could send SMS
+through Pabandi's account, attribute it to any business id, and we paid the bill.
+Latent only because no credentials were configured — `smsConfigured` has been false in
+`/health` throughout.
+
+It also meant `smsReminders`, priced into the $49 plan and advertised on the pricing
+page, was read by **nothing**: a free account could send billed SMS. The tier said "SMS
+is a paid feature" and the server did not agree.
+
+### Fixed
+
+- `authenticate` on every user-facing route.
+- New `tierFeature('smsReminders')` gate — the numeric `tierGuard` could not express a
+  boolean entitlement. It fails **closed**, unlike `tierGuard` which fails open on its
+  own errors: an unmetered CRM write is a bookkeeping problem, an unmetered SMS send
+  spends real money on every call.
+- Tenant resolved from the verified token or CRM context, never the body. A mismatched
+  body id is **rejected**, not ignored — preferring it would let a caller bill another
+  tenant, and ignoring it hides the caller's own bug.
+- 500-number ceiling on one bulk request.
+- `POST /sms/credentials` **removed**. It accepted a Twilio SID and auth token, stored
+  nothing, and replied "Credentials saved" — a false confirmation on the one route where
+  a false confirmation costs money. Per-business provider credentials are the next
+  change, with a real verified flow.
+- Twilio webhook now verifies `X-Twilio-Signature` and fails closed (503 when no auth
+  token is configured). It previously accepted any callback and wrote whatever delivery
+  status it claimed onto any message id.
+
+`tests/sms-security.integration.test.ts` — 14 tests. Bite-checked: reverting the route
+to the original fails 6 of them.
+
+### Related, found while doing it
+
+- `tierGuard`'s own `resolveBusinessId` falls back to `req.body.businessId` and
+  `req.query.businessId`. That is acceptable for counting usage against a limit and
+  wrong for deciding what a caller may read or spend. `resolveOwnedBusinessId` was added
+  for that distinction and is what the SMS routes use. **The tierGuard fallback is still
+  there** and is a latent cross-tenant issue for any future route that trusts it.
+- The registration rate limiter (10 per 15 min per IP) now skips under NODE_ENV=test.
+  The integration suites register a dozen businesses from one address and were failing
+  on a 429 unrelated to what they assert. Raising `max` instead would have removed a
+  protection that exists because a script was found creating accounts in bulk, so it is
+  keyed on NODE_ENV — which is never `test` in production — rather than an env var.
+
+### Square tokens: encrypted, and now observable
+
+`protectToken` stores the Square OAuth token **raw** when `ENCRYPTION_KEY` is unset,
+warning rather than failing. Whether that was happening in production was unobservable.
+
+It is not happening. `utils/encryption.ts` throws at import time in production without
+the key, and `auth.controller` imports it — and the auth router is registered with
+`directRoute`, so it loads eagerly at boot. A production process missing `ENCRYPTION_KEY`
+would not have started. Verified by reproducing both ways with `.env` hidden.
+
+`/health` now reports `tokenEncryptionConfigured` as a boolean, never the key, so this
+is observed rather than inferred — the same reasoning already documented for
+`smsConfigured` and `whopConfigured`.
