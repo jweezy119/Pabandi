@@ -414,3 +414,61 @@ mirroring `agentSignup.routes.ts`.
 - `vitest.config.ts` item 3.2, the Prisma flake — see 3.2 above for the root cause.
 - `PersonalGuard` redirected to `/contact`, which is itself mode-guarded. Covered by the
   client test suite, not this one.
+
+## Pricing ladder: free / $29 / $49 / $149 (2026-10-03)
+
+Free → $49 was a $49 step, and the first thing a free user needs is not a feature —
+it is the 50-client cap coming off. That cap is a wall rather than a tax: past it a
+solo operator cannot record work they have already done. Charging $49 to remove a wall
+is why the ladder read as three evenly spaced numbers rather than a path.
+
+Each rung now adds exactly one thing:
+
+| tier | price | what it adds over the one below |
+|---|---|---|
+| free | $0 | 50 clients, 100 invoices/mo, 1 seat, no reminders |
+| starter | $29 | cap removed, 2 seats, email reminders |
+| pro | $49 | + SMS reminders, analytics, 5 seats, priority support |
+| business | $149 | + API, webhooks, custom fields, white label, 20 seats |
+
+SMS is above the entry rung deliberately: it is a real per-message cost, so it belongs
+where it can be paid for. Seat count is the other separator, set at 2 because that is a
+limit a solo merchant notices and a two-person shop feels.
+
+`$29 → $49` buys SMS plus analytics. That has to be worth $20 to someone, and it is the
+honest test of the ladder: if $29 converts and almost nobody climbs to Pro, then SMS
+and analytics are not worth $20 and the middle rung should move rather than the prices.
+
+**No migration needed.** `CrmServiceBusiness.subscriptionTier` is a `String`, not an
+enum, so a new tier is a config change.
+
+Tests assert the ladder's *shape*, not just its prices: paid tiers publish
+cheapest-first, and every rung must add at least one capability the rung below lacks —
+otherwise a merchant is being asked to pay for something they can already get.
+
+### Two pricing bugs found while doing this
+
+1. **A paying customer could not be detected as paying.** `OutreachCRMPage` computed
+   `user?.tier === 'PRO' || user?.subscriptionTier === 'PRO'`. The login payload
+   includes neither field, so `isPro` was permanently false — for genuine Pro
+   subscribers too. The casing was wrong besides: the tier config is lowercase while
+   `CrmServiceBusiness.subscriptionTier` defaults to `"FREE"` in the schema.
+
+   Now `GET /api/v1/subscriptions/me` is the source of truth, interpreted by
+   `client/src/utils/subscriptionTier.ts`, which compares by rank rather than by tier
+   name — so adding the $29 rung did not require touching a boolean called `isPro`, and
+   the next rung will not either. Neither endpoint had a client method at all.
+
+2. **`BusinessJoinPage` charged through a booking endpoint.** Its $29 Growth plan called
+   `POST /api/payments` with a fabricated `reservationId: 'sub_growth'` — a
+   reservation-payment route handed a subscription id that does not exist. Even had it
+   succeeded, the money would not have been attributed to a subscription. It now calls
+   `subscriptionService.checkout('starter')` and reads its price from
+   `/subscriptions/pricing`, with the button disabled and labelled "coming soon" while
+   `purchasable` is false, rather than a live control that charges nothing.
+
+   **Not changed, needs a decision:** that page's plan copy describes a *venue* product
+   (dynamic deposit capture, webhook integration, advanced analytics) which does not map
+   onto the CRM tier feature sets. Only the price and the checkout were wired to the
+   tier system; the marketing copy still needs to be reconciled with what each tier
+   actually includes.

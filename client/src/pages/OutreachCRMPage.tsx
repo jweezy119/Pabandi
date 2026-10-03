@@ -12,6 +12,8 @@ import {
   ClipboardDocumentCheckIcon
 } from '@heroicons/react/24/outline';
 import { tokens } from '../design-system';
+import { subscriptionService } from '../services/api';
+import { isPaidTier, normalizeTier, type ClientTier } from '../utils/subscriptionTier';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -88,7 +90,9 @@ interface Summary {
 }
 
 const OutreachCRMPage: React.FC = () => {
-  const { token, user } = useAuthStore();
+  // `user` is deliberately not destructured: it was only read for the tier guess that
+  // was always false. The tier comes from the server now.
+  const { token } = useAuthStore();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -112,7 +116,31 @@ const OutreachCRMPage: React.FC = () => {
   const [aiCampaignOpen, setAiCampaignOpen] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  const isPro = (user as any)?.tier === 'PRO' || (user as any)?.subscriptionTier === 'PRO';
+  // Was `user?.tier === 'PRO' || user?.subscriptionTier === 'PRO'`, which was always
+  // false: the login payload carries neither field, and the casing was wrong besides.
+  // A paying customer was gated as free. The tier now comes from
+  // GET /api/v1/subscriptions/me and is compared by rank, so the $29 rung counts as
+  // paying without this needing to learn its name.
+  const [tier, setTier] = useState<ClientTier>('free');
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await subscriptionService.me();
+        const next = normalizeTier(res.data?.data?.tier);
+        if (!cancelled) setTier(next);
+      } catch (err) {
+        // Fail closed to 'free'. A failed lookup must not grant paid capabilities.
+        console.error('Could not resolve subscription tier:', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const isPro = isPaidTier(tier);
 
   const authHeaders = useMemo(() => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }), [token]);
 

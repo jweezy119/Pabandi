@@ -86,11 +86,67 @@ beforeEach(() => {
 
 describe('tier definitions', () => {
   it('matches the pricing a merchant has been quoted', () => {
-    // Free / $49 / $149, positioned against Square Appointments ($29-69),
+    // Free / $29 / $49 / $149, positioned against Square Appointments ($29-69),
     // Jobber ($39-249) and Housecall Pro ($49-199).
+    expect(SUBSCRIPTION_TIERS.starter.monthlyPrice).toBe(29);
     expect(SUBSCRIPTION_TIERS.pro.monthlyPrice).toBe(49);
     expect(SUBSCRIPTION_TIERS.business.monthlyPrice).toBe(149);
     expect(SUBSCRIPTION_TIERS.free.monthlyPrice).toBeNull();
+  });
+
+  it('publishes the paid tiers cheapest-first', () => {
+    // Ordering is the contract: PAID_TIERS is what the pricing endpoint iterates, so a
+    // pricing page renders in this order. Cheapest-first is what a merchant scanning
+    // the page expects, and it is the order the ladder was designed to be read in.
+    expect(PAID_TIERS).toEqual(['starter', 'pro', 'business']);
+    const prices = PAID_TIERS.map((k) => SUBSCRIPTION_TIERS[k].monthlyPrice ?? 0);
+    expect(prices).toEqual([...prices].sort((a, b) => a - b));
+  });
+
+  it('gives every rung exactly one reason to exist over the one below it', () => {
+    // The $29 tier is only defensible if it is a step, not a discount. Each rung must
+    // add at least one capability the rung below does not have — otherwise a merchant
+    // is being asked to pay for something they can already get.
+    const ladder = ['free', 'starter', 'pro', 'business'] as const;
+    const capabilityKeys = [
+      'maxClients',
+      'maxInvoicesPerMonth',
+      'maxUsers',
+      'emailReminders',
+      'smsReminders',
+      'analytics',
+      'apiAccess',
+      'webhooks',
+      'customFields',
+      'whiteLabel',
+      'support',
+    ];
+
+    for (let i = 1; i < ladder.length; i += 1) {
+      const below = SUBSCRIPTION_TIERS[ladder[i - 1]].limits as Record<string, unknown>;
+      const here = SUBSCRIPTION_TIERS[ladder[i]].limits as Record<string, unknown>;
+      const gained = capabilityKeys.filter((k) => JSON.stringify(here[k]) !== JSON.stringify(below[k]));
+      expect(gained.length, `${ladder[i]} adds nothing over ${ladder[i - 1]}`).toBeGreaterThan(0);
+    }
+  });
+
+  it('puts the 50-client cap on free and nowhere else', () => {
+    // The reason the $29 rung exists: the cap coming off is the cheapest thing worth
+    // selling, and it is what a free user hits first.
+    expect(SUBSCRIPTION_TIERS.free.limits.maxClients).toBe(50);
+    for (const key of PAID_TIERS) {
+      expect(SUBSCRIPTION_TIERS[key].limits.maxClients, key).toBeNull();
+    }
+  });
+
+  it('resolves an unknown or differently-cased tier to free, never to a paid rung', () => {
+    expect(tierDefinition('starter').tier).toBe('starter');
+    expect(tierDefinition('STARTER').tier).toBe('starter');
+    expect(tierDefinition('Starter').tier).toBe('starter');
+    expect(tierDefinition('enterprise').tier).toBe('free');
+    expect(tierDefinition(null).tier).toBe('free');
+    expect(tierDefinition(undefined).tier).toBe('free');
+    expect(tierDefinition('').tier).toBe('free');
   });
 
   it('carries no usage-fee multiplier any more', () => {
@@ -164,7 +220,7 @@ describe('tier definitions', () => {
     expect(serialised).not.toMatch(/50%\\s*off/i);
     expect(serialised).not.toMatch(/discount/i);
     expect(serialised).not.toMatch(/usageFeeMultiplier/);
-    expect(pricing.tiers.map((t) => t.monthlyPrice)).toEqual([49, 149]);
+    expect(pricing.tiers.map((t) => t.monthlyPrice)).toEqual([29, 49, 149]);
     expect(pricing.free.monthlyPrice).toBeNull();
   });
 });

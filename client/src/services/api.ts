@@ -641,6 +641,22 @@ export const tenantService = {
  * resolves the caller's business from the auth token, so passing one was both
  * unnecessary and a way to address another business.
  */
+/**
+ * Subscription endpoints.
+ *
+ * `me` and `pricing` existed on the server and nothing in the client called either, so
+ * no page could know what tier the account was on or what the tiers cost. Anything
+ * gating on a paid plan was guessing — see utils/subscriptionTier.ts for what that
+ * looked like in practice.
+ */
+export const subscriptionService = {
+  /** Authoritative tier + usage for the caller's business. */
+  me: () => apiClient.get('/subscriptions/me'),
+  /** Public price list, with `purchasable` so the UI can say "coming soon". */
+  pricing: () => apiClient.get('/subscriptions/pricing'),
+  checkout: (tier: string) => apiClient.post('/subscriptions/checkout', { tier }),
+};
+
 export const crmService = {
   // Enrollment
   enroll: (payload: {

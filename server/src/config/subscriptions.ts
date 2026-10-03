@@ -24,13 +24,33 @@
  * paid whether or not the month went well.
  *
  * PRICING SOURCE
- * Free / $49 / $149, positioned against Square Appointments ($29–69), Jobber
+ * Free / $29 / $49 / $149, positioned against Square Appointments ($29–69), Jobber
  * ($39–249) and Housecall Pro ($49–199). These are the numbers a merchant has
  * been quoted, so they are the numbers to charge. If the pricing page and this
  * file ever disagree, that is a decision to make in both places deliberately.
+ *
+ * WHY A $29 RUNG EXISTS
+ * Free -> $49 was a $49 step, and the thing a free user first needs is not a
+ * feature — it is the 50-client cap coming off. That is the ceiling a solo operator
+ * actually hits, and it is a wall rather than a tax: past it they cannot record work
+ * they have already done. Charging $49 for the removal of a wall, before any
+ * capability, is why the ladder felt like three evenly spaced numbers rather than a
+ * path.
+ *
+ * So each rung now adds exactly one thing:
+ *
+ *   free    $0    50 clients, 100 invoices, 1 seat, no reminders
+ *   starter $29   cap removed, 2 seats, email reminders
+ *   pro     $49   + SMS reminders, analytics, 5 seats, priority support
+ *   business $149 + API, webhooks, custom fields, white label, 20 seats
+ *
+ * $29 -> $49 buys SMS plus analytics. That has to be worth $20 to someone, and it is
+ * the honest test of whether this ladder is right: if the $29 tier converts but almost
+ * nobody climbs to Pro, then SMS and analytics are not worth $20 and the middle rung
+ * should move rather than the prices.
  */
 
-export type SubscriptionTier = 'free' | 'pro' | 'business';
+export type SubscriptionTier = 'free' | 'starter' | 'pro' | 'business';
 
 export interface TierLimits {
   /** Clients a business may have before the tier blocks more. Null = unlimited. */
@@ -52,7 +72,7 @@ export interface TierLimits {
   webhooks: boolean;
   customFields: boolean;
   whiteLabel: boolean;
-  support: 'community' | 'priority' | 'dedicated';
+  support: 'community' | 'standard' | 'priority' | 'dedicated';
 }
 
 export interface TierDefinition {
@@ -94,6 +114,41 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierDefinition> = {
       'Deposits and escrow',
     ],
     planEnvVar: 'WHOP_PLAN_FREE',
+  },
+  starter: {
+    tier: 'starter',
+    monthlyPrice: 29,
+    limits: {
+      // The one thing worth buying at $29 is the cap coming off. 50 clients is the
+      // ceiling a solo operator actually hits, and it is a wall rather than a tax:
+      // past it they cannot record the work they have already done.
+      maxClients: null,
+      maxInvoicesPerMonth: null,
+      // 2, not 5. Team seats are the clearest separator between this and Pro, and the
+      // limit has to be one a solo merchant notices and a two-person shop feels.
+      maxUsers: 2,
+      depositsEnabled: true,
+      bookingPageEnabled: true,
+      trustScoringEnabled: true,
+      // Email but not SMS: SMS is a real per-message cost, so it belongs above the
+      // entry rung. Analytics is the other Pro hook.
+      emailReminders: true,
+      smsReminders: false,
+      analytics: false,
+      apiAccess: false,
+      webhooks: false,
+      customFields: false,
+      whiteLabel: false,
+      support: 'standard',
+    },
+    headline: [
+      'Unlimited clients and invoices',
+      '2 team members',
+      'Email reminders',
+      'Booking page and deposits',
+      'Standard support',
+    ],
+    planEnvVar: 'WHOP_PLAN_STARTER',
   },
   pro: {
     tier: 'pro',
@@ -154,7 +209,7 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierDefinition> = {
   },
 };
 
-export const PAID_TIERS: SubscriptionTier[] = ['pro', 'business'];
+export const PAID_TIERS: SubscriptionTier[] = ['starter', 'pro', 'business'];
 
 /** Whop bills in days; monthly is 30. */
 export const BILLING_PERIOD_DAYS = 30;

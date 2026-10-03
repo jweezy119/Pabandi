@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '../services/api';
 import { tokens } from '../design-system';
 import toast from 'react-hot-toast';
-import { getAuthToken } from '../utils/authToken';
-import { API_HOST } from '../utils/apiHost';
+import { subscriptionService } from '../services/api';
 
 // ── Icons ──────────────────────────────────────────────────────────────
 const CheckIcon = () => (
@@ -45,36 +44,58 @@ export default function BusinessJoinPage() {
   const [error, setError] = useState('');
   const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
 
-  const handlePlanCheckout = async (planName: string, price: number) => {
-    if (price === 0) {
-      window.location.hash = '#join-form';
-      return;
-    }
-    setIsProcessingCheckout(true);
-    try {
-      const token = getAuthToken();
-      const res = await fetch(`${API_HOST}/api/payments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({
-          amount: price, // $29
-          paymentMethod: 'safepay',
-          reservationId: `sub_${planName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`
-        })
-      });
-      
-      const data = await res.json();
-      if (data.paymentUrl || data.data?.checkoutUrl) {
-        window.location.href = data.paymentUrl || data.data.checkoutUrl;
-      } else {
-        setError('Payment checkout unavailable. Please try again.');
+  // Prices and purchasability come from the server; the tier ladder lives in
+  // server/src/config/subscriptions.ts and this page used to restate $29 by hand.
+  //
+  // It also used to charge through POST /api/payments with a fabricated
+  // `reservationId: 'sub_growth'` — a booking-payment endpoint handed a subscription
+  // id that does not exist. Even had that succeeded, the money would not have been
+  // attributed to a subscription. It now goes through the real subscription checkout,
+  // which is gated on Whop being configured and says so rather than pretending.
+  const [starterPrice, setStarterPrice] = useState<number | null>(null);
+  const [purchasable, setPurchasable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await subscriptionService.pricing();
+        const data = res.data?.data ?? res.data;
+        const starter = (data?.tiers ?? []).find((t: any) => t.tier === 'starter');
+        if (cancelled) return;
+        setStarterPrice(typeof starter?.monthlyPrice === 'number' ? starter.monthlyPrice : null);
+        setPurchasable(data?.purchasable === true);
+      } catch (err) {
+        console.error('Could not load pricing:', err);
+        if (!cancelled) setPurchasable(false);
       }
-    } catch (e) {
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handlePlanCheckout = async () => {
+    setIsProcessingCheckout(true);
+    setError('');
+    try {
+      const res = await subscriptionService.checkout('starter');
+      const url = res.data?.data?.checkoutUrl ?? res.data?.checkoutUrl ?? null;
+      if (url) {
+        window.location.href = url;
+        return;
+      }
+      setError('Payment checkout unavailable. Please try again.');
+    } catch (e: any) {
+      // 503 here means subscriptions are not configured yet. Say that plainly rather
+      // than "checkout unavailable", which reads as a temporary glitch.
+      const status = e?.response?.status;
       console.error(e);
-      setError('Payment checkout failed. Please try again.');
+      setError(
+        status === 503
+          ? 'Paid plans are not available right now. Please join free and we will enable billing.'
+          : 'Payment checkout failed. Please try again.',
+      );
     }
     setIsProcessingCheckout(false);
   };
@@ -505,7 +526,10 @@ export default function BusinessJoinPage() {
             <div className="bg-gradient-to-b from-[var(--cream)] to-[#080e17] rounded-3xl p-5 sm:p-8 border border-[var(--sky-wash)] flex flex-col relative shadow-[0_0_50px_rgba(59,130,246,0.1)] scale-105 z-10">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[var(--sky-wash)] text-[var(--warm-ink)] px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">Most Popular</div>
               <h3 className="text-2xl font-bold text-[var(--warm-ink)] mb-2">Growth</h3>
-              <div className="text-2xl sm:text-3xl font-black text-[var(--warm-ink)] mb-4">$29 <span className="text-base sm:text-lg text-[var(--soft-stone)] font-normal">/ month</span></div>
+              <div className="text-2xl sm:text-3xl font-black text-[var(--warm-ink)] mb-4">
+                {starterPrice === null ? '—' : `$${starterPrice}`}{' '}
+                <span className="text-base sm:text-lg text-[var(--soft-stone)] font-normal">/ month</span>
+              </div>
               <p className="text-sm text-[var(--soft-stone)] mb-8 h-10">For active venues that need full protection and automation.</p>
               <ul className="space-y-4 mb-10 flex-1">
                 <li className="flex items-center gap-3 text-sm text-[var(--soft-stone)]"><span className="text-[var(--sky-wash)]">✓</span> Unlimited bookings</li>
@@ -514,9 +538,26 @@ export default function BusinessJoinPage() {
                 <li className="flex items-center gap-3 text-sm text-[var(--soft-stone)]"><span className="text-[var(--sky-wash)]">✓</span> Advanced analytics + exports</li>
                 <li className="flex items-center gap-3 text-sm text-[var(--soft-stone)]"><span className="text-[var(--sky-wash)]">✓</span> Priority support (WhatsApp)</li>
               </ul>
-              <button onClick={() => handlePlanCheckout('Growth', 29)} disabled={isProcessingCheckout} className="w-full text-center py-4 rounded-xl font-bold bg-[var(--sky-wash)] text-[var(--warm-ink)] hover:bg-[var(--sky-wash)] transition-colors shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2">
-                {isProcessingCheckout ? 'Processing...' : 'Pay with Safepay →'}
+              {/* Disabled with a reason while billing is unconfigured, rather than a live
+                  button that charges nothing. The server reports this as
+                  `purchasable: false` — see the note on GET /subscriptions/pricing. */}
+              <button
+                onClick={handlePlanCheckout}
+                disabled={isProcessingCheckout || purchasable === false || starterPrice === null}
+                title={purchasable === false ? 'Paid plans are not available right now' : undefined}
+                className="w-full text-center py-4 rounded-xl font-bold bg-[var(--sky-wash)] text-[var(--warm-ink)] hover:bg-[var(--sky-wash)] transition-colors shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isProcessingCheckout
+                  ? 'Processing...'
+                  : purchasable === false
+                    ? 'Paid plans coming soon'
+                    : 'Upgrade →'}
               </button>
+              {purchasable === false && (
+                <p className="text-xs mt-2 text-center" style={{ color: 'var(--soft-stone)' }}>
+                  Start free below and we will enable billing shortly.
+                </p>
+              )}
             </div>
 
             {/* Enterprise */}
