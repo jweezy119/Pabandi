@@ -30,6 +30,12 @@ export function initializeTrustCore(): void {
     'escrow.funded',
     'escrow.released',
     'escrow.disputed',
+    // Delivery outcomes move a PROVIDER's score. An event emitted and lost is a
+    // real worker who turned up and got nothing, or one who no-showed and kept
+    // their standing — the same silent-disadvantage class as above.
+    'delivery.on_time',
+    'delivery.late',
+    'delivery.missed',
   ]) {
     eventBus.markDurable(type);
   }
@@ -145,6 +151,74 @@ export function initializeTrustCore(): void {
       logger.error(`[TrustCore] Checkin verify failed for ${jobId}: ${err.message}`);
     }
   });
+
+  /**
+   * Delivery outcomes → the WORKER's deliveryScore.
+   *
+   * These three events were emitted by jobLifecycle and crm.service and had no
+   * subscriber, so a provider who completed every job on time and one who
+   * no-showed repeatedly carried the same deliveryScore. Not a small gap: delivery
+   * is the signal the whole reputation product is built on, and it was inert.
+   *
+   * The passport is read from the job, then from the assigned employee, because a
+   * job may carry its own (an independent worker) or belong to staff (an employee
+   * with a passport). Without either there is no one to score, and we log rather
+   * than invent a subject — attributing a penalty to an arbitrary worker would be
+   * worse than not scoring.
+   */
+  const applyDeliveryDelta = async (
+    event: TrustEvent,
+    eventType: 'delivery.on_time' | 'delivery.late' | 'delivery.missed',
+  ) => {
+    const jobId = event.jobId || event.data?.jobId;
+    if (!jobId) return;
+
+    const DELTA = { 'delivery.on_time': 10, 'delivery.late': -5, 'delivery.missed': -20 };
+
+    try {
+      const job = await prisma.crmJob.findFirst({
+        where: { id: jobId },
+        select: {
+          passportId: true,
+          employee: { select: { passportId: true } },
+        },
+      });
+      if (!job) return;
+
+      const passportId = job.passportId ?? job.employee?.passportId ?? null;
+      if (!passportId) {
+        logger.warn(
+          `[TrustCore] ${eventType} for job ${jobId} had no worker passport; score not updated.`,
+        );
+        return;
+      }
+
+      const passport = await prisma.trustPassport.findUnique({
+        where: { id: passportId },
+        select: { deliveryScore: true },
+      });
+      if (!passport) return;
+
+      // Clamped to the same 0–1000 band every other delta uses. Without the clamp
+      // a long run of on-time jobs could exceed the scale the rest of the system
+      // assumes.
+      const next = Math.max(0, Math.min(1000, (passport.deliveryScore ?? 500) + DELTA[eventType]));
+      const applied = next - (passport.deliveryScore ?? 500);
+
+      await prisma.trustPassport.update({
+        where: { id: passportId },
+        data: { deliveryScore: next },
+      });
+
+      logger.info(`[TrustCore] ${eventType} job ${jobId} → deliveryScore ${applied >= 0 ? '+' : ''}${applied} (${next}).`);
+    } catch (err: any) {
+      logger.error(`[TrustCore] ${eventType} failed for job ${jobId}: ${err.message}`);
+    }
+  };
+
+  eventBus.subscribe('delivery.on_time', (event: TrustEvent) => applyDeliveryDelta(event, 'delivery.on_time'));
+  eventBus.subscribe('delivery.late', (event: TrustEvent) => applyDeliveryDelta(event, 'delivery.late'));
+  eventBus.subscribe('delivery.missed', (event: TrustEvent) => applyDeliveryDelta(event, 'delivery.missed'));
 
   // passport.linked → enrich client with cross-module data
   eventBus.subscribe('passport.linked', async (event: TrustEvent) => {
