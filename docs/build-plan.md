@@ -226,6 +226,43 @@ perfect provider and a chronic no-show carried the same deliveryScore. Fixed in
 - **0.4** Square `INVOICES_WRITE`. Blocked on merchants re-consenting: code change
   plus a product decision, not something to close unilaterally.
 
+## Progress
+
+Phase 0 and 1 items 1.2/1.3 are shipped. Recorded because the order was the point:
+every one of these was revenue already built but not switched on.
+
+| Task | Commit | Verified by |
+|---|---|---|
+| 0.1 Enforce tier limits | `620ddfaa3` | 10 tests. The boundary test caught an off-by-one in my own guard. |
+| 0.2 Fees on Square checkout | `2f658576e` | 11 tests. Both fixes fail when reverted. |
+| 0.3 CRM read/write split | `07b0f9030` | 9 tests. 4 fail against the pre-fix code. |
+| 0.5 Kill dead module routes | `8185f30cc` | 7 tests. 2 fail against the original routes. |
+| 1.2 Whop checkout + webhooks | `1ab5251f3` | 13 tests, including a behavioural /pricing 401. |
+| 1.3 Billing reconciliation | `8ced3484f` | 9 tests. 3 fail if provider errors downgrade rows. |
+
+**Found while testing 1.1:** delivery scores were emitted into a void. Nothing
+subscribed to `delivery.on_time`, `delivery.late` or `delivery.missed`, so a perfect
+provider and a chronic no-show carried the same deliveryScore. Delivery is the
+signal the reputation product is sold on. Fixed in `dd4973a0d`; 8 of 12 new tests
+fail without it.
+
+### Still open
+
+- **1.1 remainder.** 12 of 19 `crm.service` functions have no test:
+  `enrollBusiness`, `addEmployee`, `addClient`, `createJob`, `assignEmployee`,
+  `updateJobStatus`, `recordPayroll`, `recordExpense`, `getPayrollHistory`,
+  `getExpenses`, `checkInJob`, `checkOutJob`. `recordPayroll` and `recordExpense`
+  write money rows and go first.
+- **1.4** The 26 type errors: `checkin.routes` (6), `booking.service` (3),
+  `bookingAvailability.routes` (3) are customer-facing.
+- **3.2** `pab-supply.test.ts` flakes ~1 run in 4 on Prisma client resolution.
+  Pre-existing, never a false pass, but it invites "my change broke it".
+- **3.3** Two CRMs, one brand. `CrmBusiness` and `CrmServiceBusiness` coexist.
+  0.3 made reads span both, so this is now safe to do — and it is the cause of the
+  dual-column design that caused the empty dashboard.
+- **0.4** Square `INVOICES_WRITE`. Code plus a merchant re-consent. **Blocked on a
+  product decision**, not on engineering.
+
 ## Order, and why
 
 Phase 0 first because each item is cheap, individually revenue-positive, and currently
