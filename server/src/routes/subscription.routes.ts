@@ -78,6 +78,7 @@ function callerBusinessId(req: AuthRequest): string {
  * act on. A non-2xx makes Whop retry, and retrying an event we deliberately
  * ignored is pure noise.
  */
+
 router.post('/webhook', async (req: Request, res: Response) => {
   // The signature covers the exact bytes Whop sent, so this must be the raw
   // capture and never a re-stringified object — re-serialising changes the bytes
@@ -189,6 +190,33 @@ function membershipStatus(eventType: string, rawStatus: unknown): SubscriptionSt
 
 // ── Authenticated ──────────────────────────────────────────────────────────
 
+/**
+ * GET /api/v1/subscriptions/pricing
+ * The public price table, generated from the same definitions checkout is built
+ * from, so what a merchant reads and what they are charged cannot differ.
+ *
+ * PUBLIC, and it must stay above `router.use(authenticate)`. It was registered
+ * below it, which returned 401 to unauthenticated callers — and a pricing page
+ * that needs a login is a pricing page nobody can read before deciding to log in.
+ */
+router.get('/pricing', (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    data: {
+      currency: 'USD',
+      tiers: PAID_TIERS.map((key) => {
+        const t = SUBSCRIPTION_TIERS[key];
+        return {
+          tier: t.tier,
+          monthlyPrice: t.monthlyPrice,
+          limits: t.limits,
+          headline: t.headline,
+        };
+      }),
+    },
+  });
+});
+
 router.use(authenticate);
 
 /**
@@ -248,29 +276,6 @@ router.post('/checkout', async (req: AuthRequest, res: Response) => {
   } catch (err) {
     next(err, res);
   }
-});
-
-/**
- * GET /api/v1/subscriptions/pricing
- * The public price table, generated from the same definitions checkout is built
- * from, so what a merchant reads and what they are charged cannot differ.
- */
-router.get('/pricing', (_req: Request, res: Response) => {
-  res.json({
-    success: true,
-    data: {
-      currency: 'USD',
-      tiers: PAID_TIERS.map((key) => {
-        const t = SUBSCRIPTION_TIERS[key];
-        return {
-          tier: t.tier,
-          monthlyPrice: t.monthlyPrice,
-          limits: t.limits,
-          headline: t.headline,
-        };
-      }),
-    },
-  });
 });
 
 /** Operational counters. No PII, and useful for confirming billing is working. */

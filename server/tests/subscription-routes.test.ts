@@ -91,8 +91,31 @@ describe('the webhook is public and signature-gated', () => {
   });
 });
 
+describe('public routes are registered ABOVE authenticate', () => {
+  // Ordering is the whole point. A pricing page behind a login is a pricing page
+  // nobody can read before deciding to log in, and the webhook behind one never
+  // activates because Whop has no token.
+  it('/pricing and /webhook come before router.use(authenticate)', () => {
+    const src = SRC.split('\n').filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*')).join('\n');
+    const auth = src.indexOf('router.use(authenticate)');
+    expect(auth).toBeGreaterThan(-1);
+    expect(src.indexOf("router.get('/pricing'")).toBeLessThan(auth);
+    expect(src.indexOf("router.post('/webhook'")).toBeLessThan(auth);
+    // And the authenticated ones come after, or they would be public by accident.
+    expect(src.indexOf("router.get('/me'")).toBeGreaterThan(auth);
+    expect(src.indexOf("router.post('/checkout'")).toBeGreaterThan(auth);
+  });
+
+  it('/pricing is served without a token', async () => {
+    const { status, body } = await call('get', '/api/v1/subscriptions/pricing');
+    expect(status).toBe(200);
+    expect(body?.success).toBe(true);
+    expect(Array.isArray(body?.data?.tiers)).toBe(true);
+  });
+});
+
 describe('authenticated subscription routes', () => {
-  for (const [m, p] of [['get', '/me'], ['post', '/checkout'], ['get', '/pricing'], ['get', '/stats']] as const) {
+  for (const [m, p] of [['get', '/me'], ['post', '/checkout'], ['get', '/stats']] as const) {
     it(`${m.toUpperCase()} ${p} exists`, () => expect(layer(p, m)).toBeDefined());
   }
 
