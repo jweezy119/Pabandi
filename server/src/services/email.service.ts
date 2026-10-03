@@ -227,6 +227,42 @@ export const emailService = {
     });
   },
 
+  /**
+   * Email a login/verification code.
+   *
+   * This method DID NOT EXIST. auth.controller called it via
+   * `const { sendVerificationEmail } = require('../services/email.service')` and
+   * every "sign in with email code" attempt returned
+   * `{"success":false,"message":"sendCode is not a function"}`. The account was
+   * created and the code written to the database first, so the flow looked almost
+   * correct right up to the send — which is why it read as "email login is flaky"
+   * rather than "it has never worked".
+   *
+   * Returns whether a message actually went out. `sendEmail` returns
+   * `{ skipped: true }` when no provider is configured and `{ error }` on a
+   * provider failure, so a truthy return here genuinely means SENT — the caller
+   * branches on 503 vs 500 and cannot tell them apart otherwise.
+   */
+  async sendVerificationEmail(email: string, code: string, firstName?: string) {
+    const html = renderTemplate('verification-code', {
+      firstName: firstName || 'there',
+      code,
+      // Minutes, not a duration string: the template shows "expires in 15 minutes"
+      // and the controller decides the real expiry window.
+      expiryMinutes: '15',
+      supportEmail: process.env.SUPPORT_EMAIL || 'support@pabandi.com',
+    });
+    const result = await sendEmail({
+      to: email,
+      subject: `${code} is your Pabandi code`,
+      html,
+    });
+    if (result && typeof result === 'object' && ('skipped' in result || 'error' in result)) {
+      return null;
+    }
+    return result;
+  },
+
   async sendWelcome(user: any) {
     const html = renderTemplate('welcome', {
       userName: user.name || 'there',

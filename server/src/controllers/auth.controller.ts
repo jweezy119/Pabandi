@@ -29,14 +29,37 @@ const createWalletNonce = () => `${Date.now()}_${crypto.randomBytes(24).toString
 // Email helper functions (inline since no email util)
 const generateVerificationCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-const sendVerificationEmail = async (email: string, code: string, firstName: string): Promise<boolean> => {
-  const { sendVerificationEmail: sendCode } = require('../services/email.service');
-  return sendCode(email, code, firstName);
+/**
+ * Send a login/verification code.
+ *
+ * The old version was a `require()` of a function that did not exist, so EVERY
+ * call threw `sendCode is not a function` and email-code login had never worked.
+ * The account and the code were written first, so the flow looked healthy right up
+ * to the send.
+ *
+ * A top-level import rather than a lazy require: a missing export should fail at
+ * boot, not on the first customer who tries to sign in.
+ */
+const sendVerificationEmail = async (
+  email: string,
+  code: string,
+  firstName: string,
+): Promise<boolean> => {
+  const { emailService } = await import('../services/email.service');
+  const result = await emailService.sendVerificationEmail(email, code, firstName);
+  return result != null;
 };
 
-const isEmailConfigured = (): boolean => {
-  return true; // Force true so that LOGGED emails succeed in dev
-};
+/**
+ * Whether a real provider is configured.
+ *
+ * This returned a hardcoded `true` with the comment "Force true so that LOGGED
+ * emails succeed in dev". Its only caller used it to choose between 500 ("we tried
+ * and failed") and 503 ("not configured, try a password instead") — so with this
+ * lying, an unconfigured deployment told every customer that sending had failed and
+ * invited them to keep retrying, instead of saying which alternative works.
+ */
+const isEmailConfigured = (): boolean => Boolean((process.env.RESEND_API_KEY || '').trim());
 
 interface LoginBody {
   email: string;

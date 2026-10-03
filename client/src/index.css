@@ -379,11 +379,44 @@ a[role="button"]:not(:disabled):active {
 }
 
 /* ── Safe area padding for iOS notched devices ─────────────────── */
+
+/*
+ * The mobile bottom nav is fixed, so page content has to reserve its height or it
+ * sits underneath it. That height was hardcoded as `pb-16` (64px) on <main>, and it
+ * was wrong on every notched phone: the real height is ~97px once the home
+ * indicator's safe-area inset is added, so the last ~33px of every page — a form's
+ * submit button, a list's final row — was hidden behind the nav.
+ *
+ * These two custom properties are the single source of truth: the nav sets the
+ * height it actually occupies, and content reserves exactly that. Editing the tab
+ * row can no longer silently under-reserve, which is what the hardcoded value
+ * guaranteed.
+ *
+ * --pab-mobile-nav-content is the tallest tab's box: 22px icon + 2px gap +
+ * ~14px label + 12px padding, plus the row's own 12px and the 1px top border.
+ */
+:root {
+  --pab-mobile-nav-content: 75px;
+  /* env() resolves to 0 on desktop and on browsers without the inset, so this is
+     harmless there; the nav itself is md:hidden. */
+  --pab-mobile-nav-safe: max(0.375rem, env(safe-area-inset-bottom));
+  --pab-mobile-nav-height: calc(
+    var(--pab-mobile-nav-content) + var(--pab-mobile-nav-safe)
+  );
+}
+
+/* Reserve the nav's real height. Only on mobile — above md the nav is hidden. */
+@media (max-width: 767px) {
+  .mobile-safe-bottom {
+    padding-bottom: var(--pab-mobile-nav-height);
+  }
+}
+
 .safe-area-pb {
-  padding-bottom: max(0.375rem, env(safe-area-inset-bottom));
+  padding-bottom: var(--pab-mobile-nav-safe);
 }
 .safe-area-bottom {
-  padding-bottom: max(0.375rem, env(safe-area-inset-bottom));
+  padding-bottom: var(--pab-mobile-nav-safe);
 }
 
 /* ── Hide scrollbar on mobile nav ──────────────────────────────── */

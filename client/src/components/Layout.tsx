@@ -396,7 +396,7 @@ export default function Layout() {
         </header>
       )}
 
-      <main className={`flex-grow mobile-safe-bottom ${isStandalone ? 'pt-0 pb-0' : 'pt-14 sm:pt-16 pb-16 sm:pb-0 md:pb-0'}`}>
+      <main className={`flex-grow mobile-safe-bottom ${isStandalone ? 'pt-0 pb-0' : 'pt-14 sm:pt-16 md:pb-0'}`}>
         <PageTransition>
           <Outlet />
         </PageTransition>
@@ -404,7 +404,7 @@ export default function Layout() {
       </main>
 
       {!isAuthPage && !isStandalone && (
-        <nav className="fixed bottom-0 w-full z-50 bg-surface-bright/80 backdrop-blur-xl border-t border-outline-variant/10 md:hidden safe-area-pb">
+        <nav className="fixed bottom-0 w-full z-50 bg-surface-bright/80 backdrop-blur-xl border-t border-outline-variant/10 md:hidden safe-area-pb" style={{ height: 'var(--pab-mobile-nav-height)' }}>
           <div className="flex justify-around items-center px-1 py-1.5 max-w-md mx-auto">
             <MobileTab to="/" icon="explore" label="Home" current={location.pathname === '/'} />
             <MobileTab to="/contact" icon="trending_up" label="CRM" current={location.pathname.startsWith('/contact')} />
