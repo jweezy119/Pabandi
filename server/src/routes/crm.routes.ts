@@ -270,8 +270,8 @@ router.patch('/invoices/:id/status', async (req: AuthRequest, res: Response) => 
 // POST /api/v1/crm/jobs/:id/checkin — Check in for a job
 router.post('/jobs/:id/checkin', async (req: AuthRequest, res: Response) => {
   try {
-    const { serviceBusinessId, userId } = requireCrmContext(req);
-    const job = await crmService.checkInJob(req.params.id, userId, req.body.latitude, req.body.longitude, serviceBusinessId);
+    const { serviceBusinessId, businessId, userId } = requireCrmContext(req);
+    const job = await crmService.checkInJob(req.params.id, userId, req.body.latitude, req.body.longitude, serviceBusinessId, businessId);
     res.json({ success: true, data: job });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -281,8 +281,8 @@ router.post('/jobs/:id/checkin', async (req: AuthRequest, res: Response) => {
 // POST /api/v1/crm/jobs/:id/checkout — Check out from a job
 router.post('/jobs/:id/checkout', async (req: AuthRequest, res: Response) => {
   try {
-    const { serviceBusinessId, userId } = requireCrmContext(req);
-    const result = await crmService.checkOutJob(req.params.id, userId, serviceBusinessId);
+    const { serviceBusinessId, businessId, userId } = requireCrmContext(req);
+    const result = await crmService.checkOutJob(req.params.id, userId, serviceBusinessId, businessId);
     res.json({ success: true, data: result });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -293,7 +293,8 @@ router.post('/jobs/:id/checkout', async (req: AuthRequest, res: Response) => {
 router.post('/jobs/:id/noshow', async (req: AuthRequest, res: Response) => {
   try {
     const { id: jobId } = req.params;
-    await crmService.handleNoShow(jobId);
+    const crm = requireCrmContext(req);
+    await crmService.handleNoShow(jobId, crm.serviceBusinessId, crm.businessId);
     res.json({ success: true, message: 'No-show processed' });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });

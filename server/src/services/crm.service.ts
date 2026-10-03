@@ -37,6 +37,61 @@ function resolveCategory(serviceType: string): BusinessCategory {
  * account with a placeholder password would hand every enrollee a credential
  * they never chose.
  */
+/**
+ * The predicate that decides which CRM rows belong to the caller.
+ *
+ * WHY THIS EXISTS — the defect it fixes
+ * ------------------------------------
+ * Two independent CRMs write the same tables against two different keys:
+ *
+ *   Writers                            Column set
+ *   bookings.routes.ts:401,425         businessId        (the booking flow)
+ *   job.service.ts:24                  businessId
+ *   team.service.ts:29                 businessId
+ *   crm.service.ts:129,254,386,432     serviceBusinessId (Contact OS)
+ *
+ * Every read filtered on `serviceBusinessId` alone. So a business taking ordinary
+ * bookings — which writes `businessId` — saw an EMPTY dashboard: zero jobs, zero
+ * clients, zero revenue. The product looked broken for anyone using it the normal
+ * way, and no test existed to say otherwise.
+ *
+ * The merge made both FKs optional so neither writer would fail. That fixed writes
+ * and created this read gap. Same shape as the invoice-delete regression: a
+ * constraint satisfied at the boundary but not carried through.
+ *
+ * WHY A SHARED PREDICATE RATHER THAN FIXING EACH QUERY
+ * ---------------------------------------------------
+ * Seven reads had this bug. Fixing them one at a time means the eighth gets missed,
+ * and a missed one is invisible: it returns empty rather than erroring. One
+ * predicate used by all of them makes the correct thing the default.
+ *
+ * THE TENANT-ISOLATION PROPERTY
+ * ----------------------------
+ * Spanning two columns is only safe because this is a disjunction bounded by the
+ * caller's OWN two ids. A row is included only if its serviceBusinessId equals the
+ * caller's service business OR its businessId equals the caller's platform
+ * business. A third tenant's row matches neither branch. `crm-read-scope.test.ts`
+ * asserts that explicitly, because a scope matching too much would be worse than
+ * the bug it replaces.
+ *
+ * With no service business (a business that has not enrolled in Contact OS), the
+ * platform business alone is the scope. It must not become "match everything" —
+ * that would leak another tenant's P&L.
+ */
+export function crmScope(
+  serviceBusinessId?: string | null,
+  businessId?: string | null,
+): { OR: Array<Record<string, unknown>> } {
+  const clauses: Array<Record<string, unknown>> = [];
+  if (serviceBusinessId) clauses.push({ serviceBusinessId });
+  if (businessId) clauses.push({ businessId });
+  // Neither identity resolved: an impossible predicate rather than a match-all. A
+  // caller with no tenant gets nothing, which is correct — there is nothing to
+  // attribute their rows to.
+  if (clauses.length === 0) return { OR: [{ __noTenant: null }] };
+  return { OR: clauses };
+}
+
 export async function enrollBusiness(data: {
   ownerId: string;
   businessName: string;
@@ -139,9 +194,9 @@ export async function addEmployee(
   return employee;
 }
 
-export async function getEmployees(serviceBusinessId: string) {
+export async function getEmployees(serviceBusinessId: string, businessId?: string | null) {
   return prisma.crmEmployee.findMany({
-    where: { serviceBusinessId },
+    where: crmScope(serviceBusinessId, businessId),
     orderBy: { createdAt: 'desc' },
   });
 }
@@ -178,9 +233,9 @@ export async function addClient(
   return client;
 }
 
-export async function getClients(serviceBusinessId: string) {
+export async function getClients(serviceBusinessId: string, businessId?: string | null) {
   const clients = await prisma.crmClient.findMany({
-    where: { serviceBusinessId },
+    where: crmScope(serviceBusinessId, businessId),
     orderBy: { createdAt: 'desc' },
   });
 
@@ -215,7 +270,8 @@ export async function createJob(
     notes?: string;
     price: number;
     employeeId?: string;
-  }
+  },
+  businessId?: string | null,
 ) {
   const { clientId, clientName, serviceType, scheduledDate, scheduledTime, durationMinutes = 60, address, notes, price, employeeId } = data;
 
@@ -232,7 +288,7 @@ export async function createJob(
   // Resolve the client within this business. Without the scope check a caller
   // could book work against another business's client by id.
   const client = await prisma.crmClient.findFirst({
-    where: { id: clientId, serviceBusinessId },
+    where: { AND: [{ id: clientId }, crmScope(serviceBusinessId, businessId)] },
     select: { id: true, name: true },
   });
   if (!client) {
@@ -241,7 +297,7 @@ export async function createJob(
 
   if (employeeId) {
     const employee = await prisma.crmEmployee.findFirst({
-      where: { id: employeeId, serviceBusinessId },
+      where: { AND: [{ id: employeeId }, crmScope(serviceBusinessId, businessId)] },
       select: { id: true },
     });
     if (!employee) {
@@ -278,17 +334,17 @@ export async function createJob(
   return job;
 }
 
-export async function assignEmployee(jobId: string, employeeId: string, serviceBusinessId?: string) {
+export async function assignEmployee(jobId: string, employeeId: string, serviceBusinessId?: string, businessId?: string | null) {
   // Both sides must belong to the same business as the job, otherwise an
   // assignment could bridge two businesses' workforces.
   const job = await prisma.crmJob.findFirst({
-    where: { id: jobId, ...(serviceBusinessId && { serviceBusinessId }) },
+    where: { AND: [{ id: jobId }, crmScope(serviceBusinessId, businessId)] },
     select: { id: true },
   });
   if (!job) throw new CustomError('Job not found', 404);
 
   const employee = await prisma.crmEmployee.findFirst({
-    where: { id: employeeId, ...(serviceBusinessId && { serviceBusinessId }) },
+    where: { AND: [{ id: employeeId }, crmScope(serviceBusinessId, businessId)] },
     select: { id: true },
   });
   if (!employee) throw new CustomError('Employee not found', 404);
@@ -299,7 +355,7 @@ export async function assignEmployee(jobId: string, employeeId: string, serviceB
   });
 }
 
-export async function updateJobStatus(jobId: string, status: string, serviceBusinessId?: string) {
+export async function updateJobStatus(jobId: string, status: string, serviceBusinessId?: string, businessId?: string | null) {
   if (!['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'].includes(status)) {
     throw new CustomError('Invalid status', 400);
   }
@@ -307,7 +363,7 @@ export async function updateJobStatus(jobId: string, status: string, serviceBusi
   // Scoped update: an unscoped `update` by id would let any authenticated caller
   // rewrite the status of any job on the platform.
   const existing = await prisma.crmJob.findFirst({
-    where: { id: jobId, ...(serviceBusinessId && { serviceBusinessId }) },
+    where: { AND: [{ id: jobId }, crmScope(serviceBusinessId, businessId)] },
     select: { id: true },
   });
   if (!existing) {
@@ -345,9 +401,10 @@ export async function updateJobStatus(jobId: string, status: string, serviceBusi
 
 export async function getJobs(
   serviceBusinessId: string,
-  filters?: { status?: string; employeeId?: string; clientId?: string; dateFrom?: string; dateTo?: string }
+  filters?: { status?: string; employeeId?: string; clientId?: string; dateFrom?: string; dateTo?: string },
+  businessId?: string | null,
 ) {
-  const where: any = { serviceBusinessId };
+  const where: any = crmScope(serviceBusinessId, businessId);
 
   if (filters?.status) where.status = filters.status;
   if (filters?.clientId) where.clientId = filters.clientId;
@@ -398,8 +455,8 @@ export async function recordPayroll(
   });
 }
 
-export async function getPayrollHistory(serviceBusinessId: string, employeeId?: string) {
-  const where: any = { serviceBusinessId };
+export async function getPayrollHistory(serviceBusinessId: string, employeeId?: string, businessId?: string | null) {
+  const where: any = { ...crmScope(serviceBusinessId, businessId) };
   if (employeeId) where.employeeId = employeeId;
 
   return prisma.crmPayroll.findMany({
@@ -439,8 +496,8 @@ export async function recordExpense(
   });
 }
 
-export async function getExpenses(serviceBusinessId: string, filters?: { category?: string; dateFrom?: string; dateTo?: string }) {
-  const where: any = { serviceBusinessId };
+export async function getExpenses(serviceBusinessId: string, filters?: { category?: string; dateFrom?: string; dateTo?: string }, businessId?: string | null) {
+  const where: any = { ...crmScope(serviceBusinessId, businessId) };
   if (filters?.category) where.category = filters.category;
   if (filters?.dateFrom) where.date = { ...where.date, gte: new Date(filters.dateFrom) };
   if (filters?.dateTo) where.date = { ...where.date, lte: new Date(filters.dateTo) };
@@ -453,22 +510,24 @@ export async function getExpenses(serviceBusinessId: string, filters?: { categor
 
 // ─── Dashboard Statistics ───────────────────────────────────────────────────
 
-export async function getDashboardStats(serviceBusinessId: string) {
+export async function getDashboardStats(serviceBusinessId: string, businessId?: string | null) {
+  const scope = crmScope(serviceBusinessId, businessId);
   const now = new Date();
   const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-  const totalJobs = await prisma.crmJob.count({ where: { serviceBusinessId } });
+  const totalJobs = await prisma.crmJob.count({ where: scope });
   const completedJobs = await prisma.crmJob.count({
-    where: { serviceBusinessId, status: 'COMPLETED' },
+    where: { AND: [scope, { status: 'COMPLETED' }] },
   });
-  const activeClients = await prisma.crmClient.count({ where: { serviceBusinessId } });
+  const activeClients = await prisma.crmClient.count({ where: scope });
 
   const completedJobsThisMonth = await prisma.crmJob.findMany({
     where: {
-      serviceBusinessId,
-      status: 'COMPLETED',
-      scheduledDate: { gte: firstDayOfMonth, lte: lastDayOfMonth },
+      AND: [
+        scope,
+        { status: 'COMPLETED', scheduledDate: { gte: firstDayOfMonth, lte: lastDayOfMonth } },
+      ],
     },
     select: { price: true },
   });
@@ -476,8 +535,7 @@ export async function getDashboardStats(serviceBusinessId: string) {
 
   const monthlyExpensesData = await prisma.crmExpense.findMany({
     where: {
-      serviceBusinessId,
-      date: { gte: firstDayOfMonth, lte: lastDayOfMonth },
+      AND: [scope, { date: { gte: firstDayOfMonth, lte: lastDayOfMonth } }],
     },
     select: { amount: true },
   });
@@ -485,16 +543,17 @@ export async function getDashboardStats(serviceBusinessId: string) {
 
   const payrollCostsData = await prisma.crmPayroll.findMany({
     where: {
-      serviceBusinessId,
-      periodStart: { gte: firstDayOfMonth },
-      periodEnd: { lte: lastDayOfMonth },
+      AND: [
+        scope,
+        { periodStart: { gte: firstDayOfMonth }, periodEnd: { lte: lastDayOfMonth } },
+      ],
     },
     select: { netPay: true },
   });
   const payrollCosts = payrollCostsData.reduce((sum, p) => sum + p.netPay, 0);
 
   const employees = await prisma.crmEmployee.findMany({
-    where: { serviceBusinessId, isActive: true },
+    where: { AND: [scope, { isActive: true }] },
     orderBy: { jobsCompleted: 'desc' },
     take: 5,
   });
@@ -518,12 +577,13 @@ export async function checkInJob(
   userId: string,
   latitude?: number,
   longitude?: number,
-  serviceBusinessId?: string
+  serviceBusinessId?: string,
+  businessId?: string | null,
 ) {
   // Scoped lookup: without serviceBusinessId a caller could check in any job on
   // the platform just by guessing an id.
   const job = await prisma.crmJob.findFirst({
-    where: { id: jobId, ...(serviceBusinessId && { serviceBusinessId }) },
+    where: { AND: [{ id: jobId }, crmScope(serviceBusinessId, businessId)] },
     include: { client: true },
   });
 
@@ -568,10 +628,11 @@ export async function checkInJob(
 export async function checkOutJob(
   jobId: string,
   userId: string,
-  serviceBusinessId?: string
+  serviceBusinessId?: string,
+  businessId?: string | null,
 ) {
   const job = await prisma.crmJob.findFirst({
-    where: { id: jobId, ...(serviceBusinessId && { serviceBusinessId }) },
+    where: { AND: [{ id: jobId }, crmScope(serviceBusinessId, businessId)] },
     include: { client: true }
   });
 
@@ -625,9 +686,12 @@ export async function checkOutJob(
   return { updatedJob, isLate, actualDurationMinutes };
 }
 
-export async function handleNoShow(jobId: string) {
-  const job = await prisma.crmJob.findUnique({
-    where: { id: jobId },
+export async function handleNoShow(jobId: string, serviceBusinessId?: string | null, businessId?: string | null) {
+  // Was findUnique by id alone — no tenant check at all. Routed at
+  // POST /crm/jobs/:id/noshow, so any caller could mark ANY job on the platform as
+  // a no-show and trigger its score penalty. Now scoped like every other read.
+  const job = await prisma.crmJob.findFirst({
+    where: { AND: [{ id: jobId }, crmScope(serviceBusinessId, businessId)] },
     include: { client: true }
   });
 

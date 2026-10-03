@@ -56,7 +56,8 @@ export async function addEmployeeHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = requireCrmContext(req).serviceBusinessId;
+    const crm = requireCrmContext(req);
+    const businessId = crm.serviceBusinessId;
     const { name, email, phone, role, payRate, payType } = req.body;
     const employee = await addEmployee(businessId, { name, email, phone, role, payRate, payType });
     res.status(201).json({ success: true, data: employee });
@@ -71,8 +72,9 @@ export async function getEmployeesHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = requireCrmContext(req).serviceBusinessId;
-    const employees = await getEmployees(businessId);
+    const crm = requireCrmContext(req);
+    const businessId = crm.serviceBusinessId;
+    const employees = await getEmployees(businessId, crm.businessId);
     res.json({ success: true, data: employees });
   } catch (error) {
     next(error);
@@ -87,7 +89,8 @@ export async function addClientHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = requireCrmContext(req).serviceBusinessId;
+    const crm = requireCrmContext(req);
+    const businessId = crm.serviceBusinessId;
     const { name, email, phone, address, notes } = req.body;
     const client = await addClient(businessId, { name, email, phone, address, notes });
     res.status(201).json({ success: true, data: client });
@@ -102,8 +105,9 @@ export async function getClientsHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = requireCrmContext(req).serviceBusinessId;
-    const clients = await getClients(businessId);
+    const crm = requireCrmContext(req);
+    const businessId = crm.serviceBusinessId;
+    const clients = await getClients(businessId, crm.businessId);
     res.json({ success: true, data: clients });
   } catch (error) {
     next(error);
@@ -118,7 +122,8 @@ export async function createJobHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = requireCrmContext(req).serviceBusinessId;
+    const crm = requireCrmContext(req);
+    const businessId = crm.serviceBusinessId;
     const { clientId, clientName, serviceType, scheduledDate, scheduledTime, duration, durationMinutes, address, notes, price } = req.body;
     const job = await createJob(businessId, {
       clientId,
@@ -148,7 +153,8 @@ export async function assignEmployeeHandler(
     if (!employeeId) {
       throw new CustomError('employeeId is required', 400);
     }
-    const job = await assignEmployee(jobId, employeeId, requireCrmContext(req).serviceBusinessId);
+    const crm = requireCrmContext(req);
+    const job = await assignEmployee(jobId, employeeId, crm.serviceBusinessId, crm.businessId);
     res.json({ success: true, data: job });
   } catch (error) {
     next(error);
@@ -166,7 +172,8 @@ export async function updateJobStatusHandler(
     if (!status) {
       throw new CustomError('status is required', 400);
     }
-    const job = await updateJobStatus(jobId, status, requireCrmContext(req).serviceBusinessId);
+    const crm = requireCrmContext(req);
+    const job = await updateJobStatus(jobId, status, crm.serviceBusinessId, crm.businessId);
     res.json({ success: true, data: job });
   } catch (error) {
     next(error);
@@ -179,7 +186,8 @@ export async function getJobsHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = requireCrmContext(req).serviceBusinessId;
+    const crm = requireCrmContext(req);
+    const businessId = crm.serviceBusinessId;
     const { dateFrom, dateTo, status, employeeId, clientId } = req.query;
     const jobs = await getJobs(businessId, {
       dateFrom: dateFrom as string | undefined,
@@ -187,7 +195,7 @@ export async function getJobsHandler(
       status: status as string | undefined,
       employeeId: employeeId as string | undefined,
       clientId: clientId as string | undefined,
-    });
+    }, crm.businessId);
     res.json({ success: true, data: jobs });
   } catch (error) {
     next(error);
@@ -202,7 +210,8 @@ export async function recordPayrollHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = requireCrmContext(req).serviceBusinessId;
+    const crm = requireCrmContext(req);
+    const businessId = crm.serviceBusinessId;
     const { employeeId, periodStart, periodEnd, hoursWorked, jobsCompleted, grossPay, deductions, netPay } = req.body;
     const payroll = await recordPayroll(businessId, {
       employeeId,
@@ -226,9 +235,10 @@ export async function getPayrollHistoryHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = requireCrmContext(req).serviceBusinessId;
+    const crm = requireCrmContext(req);
+    const businessId = crm.serviceBusinessId;
     const { employeeId } = req.query;
-    const payrolls = await getPayrollHistory(businessId, employeeId as string | undefined);
+    const payrolls = await getPayrollHistory(businessId, employeeId as string | undefined, crm.businessId);
     res.json({ success: true, data: payrolls });
   } catch (error) {
     next(error);
@@ -243,7 +253,8 @@ export async function recordExpenseHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = requireCrmContext(req).serviceBusinessId;
+    const crm = requireCrmContext(req);
+    const businessId = crm.serviceBusinessId;
     const { category, amount, description, date, vendor } = req.body;
     const expense = await recordExpense(businessId, { category, amount, description, date, vendor });
     res.status(201).json({ success: true, data: expense });
@@ -258,13 +269,14 @@ export async function getExpensesHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = requireCrmContext(req).serviceBusinessId;
+    const crm = requireCrmContext(req);
+    const businessId = crm.serviceBusinessId;
     const { category, dateFrom, dateTo } = req.query;
     const expenses = await getExpenses(businessId, {
       category: category as string | undefined,
       dateFrom: dateFrom as string | undefined,
       dateTo: dateTo as string | undefined,
-    });
+    }, crm.businessId);
     res.json({ success: true, data: expenses });
   } catch (error) {
     next(error);
@@ -279,8 +291,9 @@ export async function getDashboardStatsHandler(
   next: NextFunction
 ) {
   try {
-    const businessId = requireCrmContext(req).serviceBusinessId;
-    const stats = await getDashboardStats(businessId);
+    const crm = requireCrmContext(req);
+    const businessId = crm.serviceBusinessId;
+    const stats = await getDashboardStats(businessId, crm.businessId);
     res.json({ success: true, data: stats });
   } catch (error) {
     next(error);
