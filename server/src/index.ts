@@ -207,6 +207,16 @@ app.get('/health', (_req, res) => {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
     googleOAuth: !!process.env.GOOGLE_CLIENT_ID,
+    // Whether transactional email is CONFIGURED. Not whether it works — that needs
+    // a live send. Added because `forgot-password` writes an in-app notification
+    // and unconditionally reports success, so it can never surface a delivery
+    // failure, and the only other email path (`request-code`) was returning
+    // `sendCode is not a function` until recently. Between those, nothing reported
+    // whether email worked at all.
+    //
+    // A boolean, never the key itself. `emailConfigured: false` is actionable;
+    // the presence of a secret in a public health endpoint is not.
+    emailConfigured: Boolean((process.env.RESEND_API_KEY || '').trim()),
     // The build identity, not a hand-maintained label.
     //
     // This used to be a hardcoded string that had not changed since 2026-09-08,

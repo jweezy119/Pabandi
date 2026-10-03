@@ -33,7 +33,15 @@ export async function sendEmail({ to, subject, html }: SendEmailArgs) {
     console.log('[email] sent', result.id);
     return result;
   } catch (err) {
-    console.error('[email] failed', err);
+    // Log the provider's own message. Resend's most common rejection here is an
+    // unverified `from` domain, and "Failed to send code. Please try again." with
+    // nothing behind it is undiagnosable from the outside — the customer retries,
+    // the operator has no idea why, and the feature stays broken.
+    const resendDetail =
+      (err as { data?: { message?: string }; message?: string })?.data?.message ??
+      (err as { message?: string })?.message ??
+      String(err);
+    console.error(`[email] failed for ${to} from ${FROM}: ${resendDetail}`);
     // err is unknown, so it has no `.message`. Reading one off it was the second
     // error in this function, and it would have thrown inside the catch — turning
     // a failed send into an unhandled rejection.
