@@ -1,12 +1,20 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MessageCircle, X, Search, FileText } from 'lucide-react';
 import { ClayButton } from './clay/ClayButton';
 import { ClayCard } from './clay/ClayCard';
 import api from '../services/api';
 
-const navigate = (path: string) => window.location.assign(path);
-
 export function SupportWidget() {
+  // react-router navigation, not window.location.assign.
+  //
+  // `assign` performs a full document load: the bundle is re-fetched and re-parsed,
+  // every in-memory store resets, and the transition is a white flash. It also
+  // makes the back button feel broken — the entry is there, but going back is a
+  // cold boot rather than the instant restore a customer expects from a drawer that
+  // closed a moment ago.
+  const navigate = useNavigate();
+
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [articles, setArticles] = useState<any[]>([]);

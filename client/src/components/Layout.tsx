@@ -1,4 +1,4 @@
-import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, Link, useNavigate, useLocation, useNavigationType } from 'react-router-dom';
 import { PageTransition } from './PageTransition';
 import GlobalAIConciergeWidget from './GlobalAIConciergeWidget';
 import { NotificationBell } from './NotificationBell';
@@ -209,6 +209,51 @@ export default function Layout() {
   const { isAuthenticated, user, logout, fetchWalletData } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const navType = useNavigationType();
+
+  // Restore the previous scroll offset on BACK/FORWARD, and start at the top on a
+  // NEW navigation.
+  //
+  // React Router deliberately does not do this, and the browser's own restoration
+  // only applies to a full document load — not to client-side history changes. So
+  // without it: scroll a long list, tap a row, press back, and you land at the top
+  // of the list. The route changed correctly; it reads as a broken back button.
+  //
+  // Scroll is saved before a POP event, so this component has to be mounted before
+  // the browser fires popstate. It is — the router sits above Layout.
+  const scrollPositions = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    if (navType === 'POP') {
+      const saved = scrollPositions.current[location.key];
+      // requestAnimationFrame: the previous page's DOM is not laid out during the
+      // render, so restoring synchronously measures a container that is still empty
+      // and scrolls to 0.
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: saved ?? 0, behavior: 'auto' });
+      });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  }, [location.key, navType]);
+
+  // Record the offset for the page being LEFT, keyed by its route so POP can find
+  // it. Scroll events fire at high frequency, so this is rAF-throttled.
+  useEffect(() => {
+    let frame = 0;
+    const onScroll = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        scrollPositions.current[location.key] = window.scrollY;
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [location.key]);
   const [offline, setOffline] = useState(!navigator.onLine);
   const [showInstall, setShowInstall] = useState(false);
   const deferredInstall = useRef<any>(null);
