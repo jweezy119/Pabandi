@@ -191,45 +191,9 @@ migration and should follow 0.3, not precede it.
 
 ## Progress
 
-Phase 0 and Phase 1 are done. Recorded because the order was the point — the first
-three items were all revenue already built but not switched on.
-
-| Task | State | Verified by |
-|---|---|---|
-| 0.1 Enforce tier limits | done `620ddfaa3` | 10 tests; the boundary test caught an off-by-one in my own guard |
-| 0.3 CRM read/write split | done `07b0f9030` | 9 tests; 4 fail against the pre-fix code |
-| 1.1 CRM suite (partial) | done `dd4973a0d` | surfaced the delivery-score gap below |
-| 0.2 Fees on Square checkout | done `2f658576e` | 11 tests; both fixes fail when reverted |
-| 0.5 Kill dead module routes | done `8185f30cc` | 7 tests; 2 fail against the original routes |
-| 1.2 Whop checkout + webhooks | done `1ab5251f3` | 13 tests; includes a behavioural /pricing 401 |
-| 1.3 Billing reconciliation | done `8ced3484f` | 9 tests; 3 fail if errors downgrade rows |
-
-**Found while testing 1.1:** delivery scores were emitted into a void. Nothing
-subscribed to `delivery.on_time`, `delivery.late` or `delivery.missed`, so a
-perfect provider and a chronic no-show carried the same deliveryScore. Fixed in
-`dd4973a0d`; 8 of 12 new tests fail without it.
-
-### Still open
-
-- **1.1 remainder.** 12 of 19 `crm.service` functions still have no test:
-  `enrollBusiness`, `addEmployee`, `addClient`, `createJob`, `assignEmployee`,
-  `updateJobStatus`, `recordPayroll`, `recordExpense`, `getPayrollHistory`,
-  `getExpenses`, `checkInJob`, `checkOutJob`, `handleNoShow`. `recordPayroll` and
-  `recordExpense` write money rows and are the priority.
-- **1.4** The 26 type errors, concentrated in `checkin.routes` (6),
-  `email.service` (now 0 — fixed separately), `booking.service` (3).
-- **3.2** `pab-supply.test.ts` flakes ~1 run in 4 on Prisma client resolution.
-  Pre-existing, never a false pass, but it invites "my change broke it".
-- **3.3** Two CRMs, one brand. `CrmBusiness` and `CrmServiceBusiness` coexist.
-  Consolidation is a migration and should follow 0.3 — which is done, so this is
-  now the natural next structural task.
-- **0.4** Square `INVOICES_WRITE`. Blocked on merchants re-consenting: code change
-  plus a product decision, not something to close unilaterally.
-
-## Progress
-
-Phase 0 and 1 items 1.2/1.3 are shipped. Recorded because the order was the point:
-every one of these was revenue already built but not switched on.
+Phase 0 and Phase 1 are shipped. Recorded because the order was the point: every one
+of these was revenue already built but not switched on — the code existed and
+nothing called it.
 
 | Task | Commit | Verified by |
 |---|---|---|
@@ -237,31 +201,51 @@ every one of these was revenue already built but not switched on.
 | 0.2 Fees on Square checkout | `2f658576e` | 11 tests. Both fixes fail when reverted. |
 | 0.3 CRM read/write split | `07b0f9030` | 9 tests. 4 fail against the pre-fix code. |
 | 0.5 Kill dead module routes | `8185f30cc` | 7 tests. 2 fail against the original routes. |
-| 1.2 Whop checkout + webhooks | `1ab5251f3` | 13 tests, including a behavioural /pricing 401. |
+| 1.1 CRM suite (complete) | `eda08e81f` | All 18 `crm.service` functions covered. Surfaced two more bugs. |
+| 1.2 Whop checkout + webhooks | `1ab5251f3` | 13 tests, including a behavioural `/pricing` 401. |
 | 1.3 Billing reconciliation | `8ced3484f` | 9 tests. 3 fail if provider errors downgrade rows. |
 
-**Found while testing 1.1:** delivery scores were emitted into a void. Nothing
-subscribed to `delivery.on_time`, `delivery.late` or `delivery.missed`, so a perfect
-provider and a chronic no-show carried the same deliveryScore. Delivery is the
-signal the reputation product is sold on. Fixed in `dd4973a0d`; 8 of 12 new tests
-fail without it.
+### Bugs found by writing the tests, not by reviewing the code
+
+Four defects that were present and invisible:
+
+- **Delivery scores went nowhere.** Nothing subscribed to `delivery.on_time`,
+  `delivery.late` or `delivery.missed`, so a perfect provider and a chronic no-show
+  carried the same `deliveryScore`. Delivery is what the reputation product is sold
+  on. Fixed `dd4973a0d`; 8 of 12 tests fail without it.
+- **Payroll could name any tenant's employee.** No ownership check, and
+  `employeeId` is a real FK. Fixed `4e49d48cf`.
+- **The no-show route never ran.** `new Date(`${date}T${time}`)` where `date` is a
+  `DateTime` column — always `Invalid Date`, so `NaN > 30` was always false. The
+  cron did the same job correctly, which is why it went unnoticed. Fixed `eda08e81f`.
+- **Email-code login had never worked.** The controller required a method from
+  `email.service` that did not exist. Because the account and code were written
+  before the send, every step before the failure succeeded — which is why it read as
+  flaky email rather than a feature that had never shipped. Fixed `27a3daeca`.
+
+### Mobile and login
+
+| Fix | Commit | Was |
+|---|---|---|
+| Bottom nav hid ~33px of every page | `27a3daeca` | `pb-16` (64px) against a ~97px nav. `mobile-safe-bottom` was applied to 3 elements and **defined nowhere**. |
+| Back/forward | `adb07b1a6` | `window.location.assign` (full reload) and no scroll restoration on `POP`. |
+| Email failure diagnosability | `9d092ce41` | The provider's rejection reason was discarded, so a failure was undiagnosable from outside. |
 
 ### Still open
 
-- **1.1 remainder.** 12 of 19 `crm.service` functions have no test:
-  `enrollBusiness`, `addEmployee`, `addClient`, `createJob`, `assignEmployee`,
-  `updateJobStatus`, `recordPayroll`, `recordExpense`, `getPayrollHistory`,
-  `getExpenses`, `checkInJob`, `checkOutJob`. `recordPayroll` and `recordExpense`
-  write money rows and go first.
-- **1.4** The 26 type errors: `checkin.routes` (6), `booking.service` (3),
-  `bookingAvailability.routes` (3) are customer-facing.
+- **1.4** 26 server type errors (`checkin.routes` 6, `booking.service` 3) and a
+  separate 539 in the client. All pre-existing; neither surface gained any.
 - **3.2** `pab-supply.test.ts` flakes ~1 run in 4 on Prisma client resolution.
   Pre-existing, never a false pass, but it invites "my change broke it".
 - **3.3** Two CRMs, one brand. `CrmBusiness` and `CrmServiceBusiness` coexist.
-  0.3 made reads span both, so this is now safe to do — and it is the cause of the
-  dual-column design that caused the empty dashboard.
+  0.3 made reads span both, so consolidation is now safe — and it is the cause of
+  the dual-column design that caused the empty dashboard.
 - **0.4** Square `INVOICES_WRITE`. Code plus a merchant re-consent. **Blocked on a
-  product decision**, not on engineering.
+  product decision.**
+- **Email delivery is configured but NOT verified working.** `request-code` returns
+  500, which now means Resend rejected the send rather than our code being broken —
+  most likely an unverified `from` domain. Confirming needs the Resend dashboard or
+  a send to the account owner's address. `/health` now reports `emailConfigured`.
 
 ## Order, and why
 
