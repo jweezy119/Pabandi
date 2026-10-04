@@ -912,7 +912,7 @@ function isDealStage(value: unknown): value is DealStage {
  * a deal in a column the kanban does not render, and it would look like data loss to the
  * user. A 400 naming the valid stages is recoverable; a deal stuck off the board is not.
  */
-function parseStage(value: unknown, fallback: DealStage = 'LEAD'): DealStage {
+export function parseStage(value: unknown, fallback: DealStage = 'LEAD'): DealStage {
   if (value === undefined || value === null || value === '') return fallback;
   if (!isDealStage(value)) {
     throw new CustomError(
@@ -923,7 +923,7 @@ function parseStage(value: unknown, fallback: DealStage = 'LEAD'): DealStage {
   return value;
 }
 
-function parseProbability(value: unknown, fallback: number): number {
+export function parseProbability(value: unknown, fallback: number): number {
   if (value === undefined || value === null || value === '') return fallback;
   const n = Number(value);
   if (!Number.isFinite(n) || n < 0 || n > 100) {
@@ -939,7 +939,7 @@ function parseProbability(value: unknown, fallback: number): number {
  * means the client sent a malformed date, and dropping it would file the deal with no close
  * date and no warning, which then reads as "no deadline set" in the forecast.
  */
-function parseOptionalDate(value: unknown): Date | null {
+export function parseOptionalDate(value: unknown): Date | null {
   if (value === undefined || value === null || value === '') return null;
   const d = new Date(value as string);
   if (Number.isNaN(d.getTime())) {
@@ -948,7 +948,7 @@ function parseOptionalDate(value: unknown): Date | null {
   return d;
 }
 
-function parseValue(value: unknown): number {
+export function parseValue(value: unknown): number {
   if (value === undefined || value === null || value === '') return 0;
   const n = Number(value);
   if (!Number.isFinite(n)) throw new CustomError('value must be a number', 400);
@@ -1124,4 +1124,277 @@ export async function deleteDeal(
   if (!existing) throw new CustomError('Deal not found', 404);
   await prisma.crmDeal.delete({ where: { id: dealId } });
   return { id: dealId };
+}
+
+// ── CSV import ──────────────────────────────────────────────────────────────
+
+/**
+ * Limits for CSV import.
+ *
+ * Not decoration. A CSV import is an unbounded write: the request body is caller-supplied,
+ * so without a byte cap a single request can allocate whatever the body limit allows, and
+ * without a row cap 50,000 well-formed rows turn one request into 50,000 inserts inside
+ * one transaction — a long lock on CrmDeal and a timeout that leaves the caller unsure
+ * whether it landed.
+ */
+export const CSV_IMPORT_LIMITS = {
+  maxBytes: 1_000_000,
+  maxRows: 1_000,
+  maxColumns: 50,
+  /** Returned per-row errors are capped; a 1000-row bad file must not produce a huge response. */
+  maxReportedErrors: 20,
+} as const;
+
+/**
+ * Parse RFC 4180 CSV.
+ *
+ * Written out rather than pulled in as a dependency, and modelled on the parser the deals
+ * modal already uses for its preview, because the two have to agree on quoting rules.
+ *
+ * The server MUST parse this itself even though the client already parsed it for the
+ * preview: the client's row count and preview are untrusted input, and a parser is exactly
+ * where trusting the client would let a crafted file describe rows that were never in it.
+ * Handles quoted fields, escaped quotes (""), embedded newlines and CRLF. Rejects rather
+ * than truncates on the limits, so a truncated import never looks like a complete one.
+ */
+export function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let current: string[] = [];
+  let field = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+
+    if (inQuotes) {
+      if (char === '"') {
+        if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += char;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inQuotes = true;
+    } else if (char === ',') {
+      current.push(field);
+      field = '';
+      if (current.length > CSV_IMPORT_LIMITS.maxColumns) {
+        throw new CustomError(
+          `Too many columns (limit ${CSV_IMPORT_LIMITS.maxColumns})`,
+          400,
+        );
+      }
+    } else if (char === '\n' || char === '\r') {
+      if (char === '\r' && text[i + 1] === '\n') i++;
+      current.push(field);
+      field = '';
+      // Blank lines are skipped rather than imported as empty deals, which would otherwise
+      // be reported as hundreds of validation failures the user cannot act on.
+      if (current.some((c) => c.trim() !== '')) rows.push(current);
+      current = [];
+      // +1 for the header row, which is not a data row. Compared on the data-row count so
+      // the message matches the limit the caller is told about.
+      if (rows.length - 1 > CSV_IMPORT_LIMITS.maxRows) {
+        throw new CustomError(
+          `Too many rows (limit ${CSV_IMPORT_LIMITS.maxRows} data rows)`,
+          400,
+        );
+      }
+    } else {
+      field += char;
+    }
+  }
+
+  current.push(field);
+  if (current.some((c) => c.trim() !== '')) rows.push(current);
+
+  if (inQuotes) {
+    throw new CustomError('Unbalanced quote: a quoted field is never closed', 400);
+  }
+  return rows;
+}
+
+export interface ImportDealsResult {
+  imported: number;
+  skipped: number;
+  errors: string[];
+}
+
+/**
+ * Import deals from CSV.
+ *
+ * ALL-OR-NOTHING. The file is fully validated first, and nothing is written unless every
+ * row passes. A partial import is the wrong trade here: a pipeline's value column feeds the
+ * forecast, so 400 of 500 rows landing silently produces a forecast that is wrong by 20% and
+ * looks entirely plausible. Refusing the file with a row-by-row list is recoverable in a way
+ * a half-written pipeline is not.
+ *
+ * Every row goes through the SAME validators as the single-create path, so CSV cannot be a
+ * way around the rules the form enforces — an import that accepted a stage the UI rejects
+ * would leave deals stranded in a column the kanban does not render.
+ *
+ * `client` is resolved by name (or email) WITHIN the caller's tenant only. A name that does
+ * not resolve, or that is ambiguous, is a row error rather than a guessed match: silently
+ * attaching a deal to the wrong client is worse than refusing the row.
+ */
+export async function importDeals(
+  serviceBusinessId: string,
+  csvText: string,
+): Promise<ImportDealsResult> {
+  if (typeof csvText !== 'string' || csvText.trim() === '') {
+    throw new CustomError('csvData is required', 400);
+  }
+  // Byte length, not string length: a multi-byte character is more than one byte on the
+  // wire, and the limit is about memory, not characters.
+  const bytes = Buffer.byteLength(csvText, 'utf8');
+  if (bytes > CSV_IMPORT_LIMITS.maxBytes) {
+    throw new CustomError(
+      `CSV is too large (${bytes} bytes, limit ${CSV_IMPORT_LIMITS.maxBytes})`,
+      413,
+    );
+  }
+
+  const rows = parseCsv(csvText);
+  if (rows.length < 2) {
+    throw new CustomError(
+      'CSV needs a header row and at least one data row',
+      400,
+    );
+  }
+
+  const header = rows[0].map((h) => h.trim().toLowerCase());
+  if (!header.includes('title')) {
+    throw new CustomError(
+      `CSV must have a "title" column. Found: ${header.join(', ') || '(none)'}`,
+      400,
+    );
+  }
+  const col = (name: string) => header.indexOf(name);
+
+  // The row cap is enforced by parseCsv, which throws as soon as it passes the limit. An
+  // earlier version also checked it here — dead code, because the parser always tripped
+  // first — and it made the cap impossible to mutation-test: removing this copy left the
+  // suite green, so the limit looked covered while nothing actually guarded it.
+  const dataRows = rows.slice(1);
+
+  // Resolve candidate clients once, for this tenant only, rather than a query per row.
+  const clients = await prisma.crmClient.findMany({
+    where: { serviceBusinessId },
+    select: { id: true, name: true, email: true },
+  });
+  const byLowerName = new Map<string, { id: string; ambiguous: boolean }>();
+  const byLowerEmail = new Map<string, string>();
+  for (const c of clients) {
+    const key = c.name.trim().toLowerCase();
+    const existing = byLowerName.get(key);
+    if (existing) existing.ambiguous = true;
+    else byLowerName.set(key, { id: c.id, ambiguous: false });
+    if (c.email) byLowerEmail.set(c.email.trim().toLowerCase(), c.id);
+  }
+
+  const errors: string[] = [];
+  const pushError = (line: number, message: string) => {
+    if (errors.length < CSV_IMPORT_LIMITS.maxReportedErrors) {
+      // 1-based and counting the header, so the number matches what the user sees in a
+      // spreadsheet or a text editor.
+      errors.push(`Row ${line}: ${message}`);
+    }
+  };
+
+  const prepared: Array<{
+    title: string;
+    value: number;
+    stage: DealStage;
+    probability: number;
+    expectedCloseDate: Date | null;
+    notes: string | null;
+    clientId: string | null;
+  }> = [];
+
+  dataRows.forEach((row, index) => {
+    const line = index + 2;
+    const cell = (name: string) => {
+      const i = col(name);
+      return i === -1 ? '' : (row[i] ?? '').trim();
+    };
+
+    // Validate the whole row before mutating anything, so one bad row cannot leave a
+    // half-populated prepared list that later rows would append to.
+    try {
+      const title = cell('title');
+      if (!title) throw new CustomError('title is required', 400);
+
+      const stage = parseStage(cell('stage'));
+      const value = parseValue(cell('value'));
+      const probability = parseProbability(cell('probability'), STAGE_PROBABILITY[stage]);
+      const expectedCloseDate = parseOptionalDate(cell('expectedCloseDate'));
+
+      let clientId: string | null = null;
+      const clientRef = cell('client');
+      if (clientRef) {
+        const byEmail = byLowerEmail.get(clientRef.toLowerCase());
+        const byName = byLowerName.get(clientRef.toLowerCase());
+        if (byEmail) {
+          clientId = byEmail;
+        } else if (!byName) {
+          // Checked against this tenant's clients only, so a name from another business
+          // cannot attach — it fails to resolve, which is the correct and safe outcome.
+          throw new CustomError(`client "${clientRef}" not found in this business`, 400);
+        } else if (byName.ambiguous) {
+          throw new CustomError(
+            `client "${clientRef}" matches more than one client — use their email instead`,
+            400,
+          );
+        } else {
+          clientId = byName.id;
+        }
+      }
+
+      prepared.push({
+        title,
+        value,
+        stage,
+        probability,
+        expectedCloseDate,
+        notes: cell('notes') || null,
+        clientId,
+      });
+    } catch (err: any) {
+      pushError(line, err?.message ?? 'Invalid row');
+    }
+  });
+
+  if (errors.length) {
+    return {
+      imported: 0,
+      skipped: dataRows.length,
+      errors:
+        errors.length >= CSV_IMPORT_LIMITS.maxReportedErrors
+          ? [
+              ...errors,
+              `…and more. Fix the listed rows and re-upload; nothing was imported.`,
+            ]
+          : [...errors, 'Nothing was imported — fix these rows and re-upload.'],
+    };
+  }
+
+  // businessId is null for the same reason as createDeal: it is the legacy CrmBusiness
+  // anchor with no tenant mapping. serviceBusinessId is the anchor every read uses.
+  await prisma.crmDeal.createMany({
+    data: prepared.map((d) => ({
+      ...d,
+      businessId: null,
+      serviceBusinessId,
+      ...(d.stage === 'WON' || d.stage === 'LOST' ? { closedAt: new Date() } : {}),
+    })),
+  });
+
+  return { imported: prepared.length, skipped: 0, errors: [] };
 }

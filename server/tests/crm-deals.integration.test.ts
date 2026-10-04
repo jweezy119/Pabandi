@@ -59,6 +59,16 @@ vi.mock('../src/services/email.service', () => {
   return { emailService, default: { emailService } };
 });
 
+// The global /api/ limiter allows 100 requests per 15 minutes per IP, and every
+// seedBusiness() here costs a register + enroll + create. Raised for this file only.
+//
+// Deliberately NOT a NODE_ENV=test bypass in the limiter itself:
+// tests/rate-limit-integration.test.ts asserts that ordinary API traffic IS still limited,
+// so making the limiter skip under test would delete that coverage. Raising a limit in one
+// test file is local; changing the middleware is global.
+process.env.RATE_LIMIT_MAX_REQUESTS = process.env.RATE_LIMIT_MAX_REQUESTS || '100000';
+process.env.RATE_LIMIT_WINDOW_MS = process.env.RATE_LIMIT_WINDOW_MS || '900000';
+
 function assertIsolatedDatabase() {
   const url = process.env.DATABASE_URL || '';
   let name = '';
@@ -394,6 +404,201 @@ describe('crm deals: pipeline CRUD', () => {
     const { token } = await seedBusiness('ghost');
     const res = await api(token, 'PATCH', '/api/v1/crm/deals/does-not-exist', { stage: 'WON' });
     expect(res.status).toBe(404);
+  });
+
+  it('imports deals from CSV', async () => {
+    const { token, clientId } = await seedBusiness('import');
+    const clientName = 'Client import';
+
+    const csv = [
+      'title,value,stage,probability,expectedCloseDate,client,notes',
+      `"Quoted job, with comma",1200,PROPOSAL,60,2026-12-01,${clientName},"multi\nline note"`,
+      `Small job${MARKER},250,LEAD,,,,`,
+      `Won job${MARKER},900,WON,,,,`,
+    ].join('\n');
+
+    const res = await api(token, 'POST', '/api/v1/crm/import/deals', { csvData: csv });
+    expect(res.status, JSON.stringify(res.json)).toBe(201);
+    expect(res.json.data.imported, JSON.stringify(res.json.data)).toBe(3);
+    expect(res.json.data.skipped).toBe(0);
+    expect(res.json.data.errors).toEqual([]);
+
+    const list = await api(token, 'GET', '/api/v1/crm/deals');
+    const byTitle = new Map(list.json.data.map((d: any) => [d.title, d]));
+
+    // A quoted field containing a comma must stay one field, and an embedded newline must
+    // not split the row. A naive split(',') would create four columns of nonsense here.
+    const quoted = byTitle.get('Quoted job, with comma');
+    expect(quoted, 'quoted comma field must survive parsing').toBeTruthy();
+    expect(quoted.value).toBe(1200);
+    expect(quoted.stage).toBe('PROPOSAL');
+    expect(quoted.probability).toBe(60);
+    expect(quoted.clientId).toBe(clientId);
+
+    // Blank probability falls back to the stage default rather than becoming 0 or NaN.
+    expect(byTitle.get(`Small job${MARKER}`).probability).toBe(10);
+
+    const won = byTitle.get(`Won job${MARKER}`);
+    expect(won.probability).toBe(100);
+    expect(won.closedAt).not.toBeNull();
+  });
+
+  it('is all-or-nothing: one bad row imports nothing', async () => {
+    const { token } = await seedBusiness('atomic');
+    const clientName = 'Client atomic';
+
+    const csv = [
+      'title,value,stage,client',
+      `Good one${MARKER},100,LEAD,${clientName}`,
+      `Bad stage${MARKER},100,NOT_A_STAGE,${clientName}`,
+      `Negative${MARKER},-50,LEAD,${clientName}`,
+      `Good two${MARKER},200,QUALIFIED,${clientName}`,
+    ].join('\n');
+
+    const res = await api(token, 'POST', '/api/v1/crm/import/deals', { csvData: csv });
+    expect(res.status, JSON.stringify(res.json)).toBe(201);
+    expect(res.json.data.imported).toBe(0);
+    expect(res.json.data.skipped).toBe(4);
+    expect(res.json.data.errors.length).toBeGreaterThanOrEqual(2);
+    expect(res.json.data.errors.join(' ')).toMatch(/NOT_A_STAGE|stage/i);
+    expect(res.json.data.errors.join(' ')).toMatch(/negative/i);
+
+    // The point of all-or-nothing: 2 of 4 rows were VALID, and they still must not land.
+    // A pipeline whose value column feeds the forecast cannot be left 50% populated by a
+    // bad file and still look right.
+    const list = await api(token, 'GET', '/api/v1/crm/deals');
+    expect(list.json.data).toEqual([]);
+  });
+
+  it('reports the failing row number as the user sees it', async () => {
+    const { token } = await seedBusiness('rownum');
+    const csv = [
+      'title,value,stage',
+      `Fine${MARKER},100,LEAD`,
+      `Broken${MARKER},abc,LEAD`,
+    ].join('\n');
+
+    const res = await api(token, 'POST', '/api/v1/crm/import/deals', { csvData: csv });
+    // Row 3 in a spreadsheet = header + 2 data rows.
+    expect(res.json.data.errors.join(' ')).toMatch(/Row 3/);
+  });
+
+  it("refuses to attach another tenant's client by name", async () => {
+    const a = await seedBusiness('imp-a');
+    const b = await seedBusiness('imp-b');
+
+    const csv = [
+      'title,value,stage,client',
+      `Borrowed${MARKER},100,LEAD,Client imp-b`,
+    ].join('\n');
+
+    const res = await api(a.token, 'POST', '/api/v1/crm/import/deals', { csvData: csv });
+    expect(res.status).toBe(201);
+    expect(res.json.data.imported).toBe(0);
+    // Resolved against the caller's tenant only, so the other business's client name simply
+    // does not exist here. Failing to resolve is the safe outcome; guessing a match would
+    // put a deal on someone else's client.
+    expect(res.json.data.errors.join(' ')).toMatch(/not found in this business/i);
+  });
+
+  it('rejects an ambiguous client name and accepts the email', async () => {
+    const { token } = await seedBusiness('ambig');
+    const client = await api(token, 'POST', '/api/v1/crm/clients', {
+      name: `Duplicate${MARKER}`,
+      email: `dup1${MARKER}`,
+    });
+    expect(client.status, JSON.stringify(client.json)).toBe(201);
+    // A second client with the same name, different email.
+    const dupe = await token;
+    void dupe;
+    const { prisma } = await import('../src/utils/database');
+    await prisma.crmClient.create({
+      data: {
+        name: `Duplicate${MARKER}`,
+        email: `dup2${MARKER}`,
+        serviceBusinessId: (
+          await prisma.crmServiceBusiness.findFirst({
+            where: { owner: { email: { contains: `ambig${MARKER}` } } },
+            select: { id: true },
+          })
+        )!.id,
+      },
+    });
+
+    const ambiguous = await api(token, 'POST', '/api/v1/crm/import/deals', {
+      csvData: ['title,value,stage,client', `By name${MARKER},100,LEAD,Duplicate${MARKER}`].join('\n'),
+    });
+    expect(ambiguous.json.data.imported).toBe(0);
+    expect(ambiguous.json.data.errors.join(' ')).toMatch(/more than one/i);
+
+    const byEmail = await api(token, 'POST', '/api/v1/crm/import/deals', {
+      csvData: ['title,value,stage,client', `By email${MARKER},100,LEAD,dup1${MARKER}`].join('\n'),
+    });
+    expect(byEmail.json.data.imported, JSON.stringify(byEmail.json)).toBe(1);
+  });
+
+  it('rejects an oversized payload instead of truncating it', async () => {
+    const { token } = await seedBusiness('toobig');
+
+    const res = await api(token, 'POST', '/api/v1/crm/import/deals', {
+      // A body over the byte cap must be refused outright. Truncating would import an
+      // arbitrary prefix and report success, which is the worst outcome available.
+      csvData: 'x'.repeat(1_100_000),
+    });
+    expect(res.status, JSON.stringify(res.json)).toBe(413);
+  });
+
+  it('rejects too many rows rather than importing a prefix', async () => {
+    const { token } = await seedBusiness('toomany');
+
+    const lines = ['title,value,stage'];
+    for (let i = 0; i < 1005; i++) lines.push(`Row ${i}${MARKER},10,LEAD`);
+    const res = await api(token, 'POST', '/api/v1/crm/import/deals', { csvData: lines.join('\n') });
+
+    expect(res.status, JSON.stringify(res.json)).toBe(400);
+    expect(String(res.json?.message ?? res.json?.error ?? '')).toMatch(/too many rows/i);
+
+    const list = await api(token, 'GET', '/api/v1/crm/deals');
+    expect(list.json.data).toEqual([]);
+  });
+
+  it('requires a title column and at least one data row', async () => {
+    const { token } = await seedBusiness('shape');
+
+    const noTitle = await api(token, 'POST', '/api/v1/crm/import/deals', {
+      csvData: 'name,amount\nSomething,10',
+    });
+    expect(noTitle.status, JSON.stringify(noTitle.json)).toBe(400);
+    expect(String(noTitle.json?.message ?? noTitle.json?.error ?? '')).toMatch(/title/i);
+
+    const headerOnly = await api(token, 'POST', '/api/v1/crm/import/deals', {
+      csvData: 'title,value,stage',
+    });
+    expect(headerOnly.status, JSON.stringify(headerOnly.json)).toBe(400);
+  });
+
+  it('rejects an unbalanced quote instead of importing a mangled row', async () => {
+    const { token } = await seedBusiness('quote');
+
+    const res = await api(token, 'POST', '/api/v1/crm/import/deals', {
+      csvData: ['title,value,stage', `"Never closed,100,LEAD`].join('\n'),
+    });
+    expect(res.status, JSON.stringify(res.json)).toBe(400);
+    expect(String(res.json?.message ?? res.json?.error ?? '')).toMatch(/quote/i);
+  });
+
+  it('caps the number of reported row errors', async () => {
+    const { token } = await seedBusiness('caperr');
+
+    const lines = ['title,value,stage'];
+    for (let i = 0; i < 60; i++) lines.push(`Bad ${i}${MARKER},abc,LEAD`);
+    const res = await api(token, 'POST', '/api/v1/crm/import/deals', { csvData: lines.join('\n') });
+
+    expect(res.status).toBe(201);
+    expect(res.json.data.imported).toBe(0);
+    // Capped, so a 1000-row bad file cannot turn into a multi-megabyte error response.
+    expect(res.json.data.errors.length).toBeLessThanOrEqual(21);
+    expect(res.json.data.errors.join(' ')).toMatch(/nothing was imported/i);
   });
 
   it('reports the pipeline grouped by stage', async () => {

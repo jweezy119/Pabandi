@@ -18,6 +18,7 @@ import {
   getExpensesHandler,
   getDashboardStatsHandler,
   getDealsHandler,
+  importDealsHandler,
   createDealHandler,
   updateDealHandler,
   deleteDealHandler,
@@ -161,6 +162,14 @@ router.post('/deals', createDealHandler);
 
 // PATCH /api/v1/crm/deals/:id — Update stage, value, probability
 router.patch('/deals/:id', updateDealHandler);
+
+// POST /api/v1/crm/import/deals — Bulk import deals from CSV.
+//
+// No tierGuard: tierGuard meters clients/invoices/jobs against a plan quota, and an import
+// is not a metered unit. The bounds that matter here are in CSV_IMPORT_LIMITS (bytes, rows,
+// columns) and the all-or-nothing transaction, which is what stops one request from turning
+// into fifty thousand inserts.
+router.post('/import/deals', importDealsHandler);
 
 // DELETE /api/v1/crm/deals/:id
 router.delete('/deals/:id', deleteDealHandler);

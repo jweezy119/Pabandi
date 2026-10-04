@@ -117,9 +117,22 @@ export default function CSVImportModal({
       const res = await onImport(csvData);
       setResult(res);
       setStep('done');
-      toast.success(`Imported ${res.imported} records`);
+      // The import is all-or-nothing, so `imported: 0` with a non-empty `errors` list is a
+      // REJECTED file, not a successful no-op. Showing a green "Imported 0 records" toast
+      // for it tells the user their data went in when nothing did — and the row errors,
+      // which are the only useful thing on screen at that point, arrive under a success
+      // notification. The done step still lists every failing row either way.
+      if (res.imported > 0) {
+        toast.success(`Imported ${res.imported} records`);
+      } else {
+        toast.error(
+          res.errors?.length
+            ? `Nothing imported — ${res.errors.length} problem${res.errors.length === 1 ? '' : 's'} to fix`
+            : 'Nothing was imported',
+        );
+      }
     } catch (err) {
-      toast.error('Import failed');
+      toast.error(err instanceof Error && err.message ? err.message : 'Import failed');
       setStep('mapping');
     }
   };

@@ -81,7 +81,12 @@ export default function ContactDealsPage() {
   }
 
   async function handleImportDeals(csvData: string) {
-    const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/import/deals`, {
+    // Same baseUrl as every other call in this file (see fetchDealsAndClients). This one
+    // used to fall back to 'https://pabandi.onrender.com' — PRODUCTION — while the rest of
+    // the page falls back to localhost. With VITE_API_URL unset, a developer's test import
+    // would have written deals into the live database.
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const res = await fetch(`${baseUrl}/api/v1/crm/import/deals`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -94,7 +99,10 @@ export default function ContactDealsPage() {
       fetchDealsAndClients();
       return data.data;
     }
-    throw new Error(data.error || 'Import failed');
+    // The API error shape is { success: false, message }. Reading `data.error` — which only
+    // exists in development — meant every real reason (no title column, too many rows,
+    // unbalanced quote, oversized file) surfaced as a bare "Import failed".
+    throw new Error(data.message || data.error || 'Import failed');
   }
 
   async function handleUpdateStage(dealId: string, newStage: string) {

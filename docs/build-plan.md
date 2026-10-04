@@ -1308,3 +1308,102 @@ defects:
   status string lagged.
 
 Full server suite 724 passed / 50 files (was 712 / 49). Client 42. tsc 26, unchanged.
+
+## POST /api/v1/crm/import/deals — built and hardened (2026-10-03)
+
+`CSVImportModal` and the deals page have called `/api/v1/crm/import/deals` for some time. The
+endpoint did not exist, so the import button 404'd. The page handled that honestly (it
+threw), but the feature was dead.
+
+Contract, taken from the modal rather than invented: columns `title, value, stage,
+probability, expectedCloseDate, client, notes`, and the response the modal expects is
+`{ imported, skipped, errors }`.
+
+### Hardening
+
+A CSV import is an unbounded, caller-supplied write, so the interesting work is all in what
+it refuses.
+
+- **Byte cap, 1 MB**, measured with `Buffer.byteLength` rather than `.length` — the limit is
+  about memory, and a multi-byte character is more than one byte on the wire.
+- **Row cap, 1,000** and **column cap, 50**. Without the row cap, 50,000 well-formed rows
+  become 50,000 inserts inside one transaction: a long lock on `CrmDeal` and a timeout that
+  leaves the caller unsure whether it landed.
+- **Truncation is never an option.** Both caps reject the file. Importing an arbitrary
+  prefix and reporting success is the worst outcome available, because the numbers look
+  right.
+- **Per-row errors carry the row number the user sees** (1-based, counting the header, so it
+  matches a spreadsheet), and the error list is capped at 20 so a 1000-row bad file cannot
+  become a multi-megabyte response.
+- **The same validators as the form.** Every row goes through the exported `parseStage`,
+  `parseValue`, `parseProbability` and `parseOptionalDate`. An import that accepted a stage
+  the UI rejects would strand deals in a column the kanban does not render — CSV must not be
+  a way around the rules.
+- **`client` resolves by name or email, within the caller's tenant only.** A name that does
+  not resolve is a row error; so is an ambiguous one, with the email offered as the
+  disambiguator. A name from another business simply does not exist here, and silently
+  attaching a deal to the wrong client is worse than refusing the row.
+- **Unbalanced quotes are rejected.** A quoted field that never closes would otherwise be
+  swallowed into the next field and produce a mangled row that looks imported.
+- **A `title` column and at least one data row are required**, and the error names the
+  columns actually found.
+
+### All-or-nothing, deliberately
+
+The file is fully validated and nothing is written unless every row passes. A partial import
+is the wrong trade here: `value` feeds the pipeline forecast, so 400 of 500 rows landing
+produces a forecast that is wrong by 20% and looks entirely plausible. Refusing the file
+with a row-by-row list is recoverable; a half-written pipeline is not.
+
+### The server parses the CSV itself
+
+The modal already parses client-side for its preview, so it was tempting to accept parsed
+rows. The server parses anyway, on purpose: the client's row count and preview are
+untrusted input, and the parser is exactly where trusting the client would let a crafted
+file describe rows that were never in it. The parser is RFC 4180 (quoted fields, `""`
+escapes, embedded newlines, CRLF) and mirrors the one in the modal, because the two have to
+agree on quoting rules — `split(',')` would turn `"Quoted job, with comma"` into four
+columns of nonsense.
+
+No CSV dependency was added; there is no parser in `server/package.json` today.
+
+### Tests: 10 import cases, mutation-checked eight ways
+
+| mutation | result |
+|---|---|
+| make the import partial | 5 failed |
+| skip the byte cap | 1 failed |
+| skip the row cap (parser) | 1 failed |
+| resolve clients across all tenants | 1 failed |
+| accept an unbalanced quote | 1 failed |
+| skip per-row stage validation | 1 failed |
+| remove the error cap | 1 failed |
+| drop the ambiguous-client guard | 1 failed |
+
+The row-cap mutation initially did **not** fail: `parseCsv` and `importDeals` both enforced
+it, the parser always tripped first, and the service-level copy was dead code. Same
+duplicate-validation smell as the date-range fix in the previous commit. It now has one
+owner — the parser.
+
+### Three client bugs fixed alongside
+
+- `handleImportDeals` fell back to **`https://pabandi.onrender.com`** when `VITE_API_URL`
+  was unset, while every other call in that file falls back to `localhost`. A developer's
+  test import would have written deals into the live database.
+- It read `data.error`, but the API error shape is `{ success: false, message }` — `error`
+  only exists in development. Every real reason (no title column, too many rows, unbalanced
+  quote, oversized file) surfaced as a bare "Import failed".
+- `CSVImportModal` fired a **green `Imported ${res.imported} records` toast even when
+  `imported` was 0**. Since the import is all-or-nothing, a rejected file is the common
+  failure, and it was announcing success while the only useful information — the row errors
+  — arrived underneath. Now an error toast naming how many problems to fix.
+
+Server 734 passed / 50 files (was 724 / 50). Client 42. Client tsc 534 and server tsc 26,
+both unchanged. Client build exit 0.
+
+### Known remaining gap
+
+The modal's generic 5 MB pre-check is looser than the server's 1 MB deals cap. A 2 MB file
+passes the client check and is then refused by the server — now with the actual reason
+visible, rather than as an unexplained failure. The modal is shared with other imports, so
+its limit was left generic rather than tightened to the deals cap.

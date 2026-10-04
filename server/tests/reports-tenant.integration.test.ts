@@ -41,6 +41,16 @@ vi.mock('../src/services/subscriptionReconcileCron.service', () => ({
 }));
 vi.mock('../src/services/reminderCron.service', () => ({ startReminderCron: vi.fn() }));
 
+// The global /api/ limiter allows 100 requests per 15 minutes per IP, and every
+// seedBusiness() here costs a register + enroll + create. Raised for this file only.
+//
+// Deliberately NOT a NODE_ENV=test bypass in the limiter itself:
+// tests/rate-limit-integration.test.ts asserts that ordinary API traffic IS still limited,
+// so making the limiter skip under test would delete that coverage. Raising a limit in one
+// test file is local; changing the middleware is global.
+process.env.RATE_LIMIT_MAX_REQUESTS = process.env.RATE_LIMIT_MAX_REQUESTS || '100000';
+process.env.RATE_LIMIT_WINDOW_MS = process.env.RATE_LIMIT_WINDOW_MS || '900000';
+
 function assertIsolatedDatabase() {
   const url = process.env.DATABASE_URL || '';
   let name = '';

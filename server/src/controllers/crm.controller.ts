@@ -30,6 +30,7 @@ import {
   createDeal,
   updateDeal,
   deleteDeal,
+  importDeals,
 } from '../services/crm.service';
 
 // ─── Enroll Business ─────────────────────────────────────────────────────────
@@ -426,6 +427,26 @@ export async function deleteDealHandler(
     const crm = requireCrmContext(req);
     const result = await deleteDeal(crm.serviceBusinessId, crm.businessId, req.params.id);
     res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * POST /api/v1/crm/import/deals
+ *
+ * The tenant comes from the resolved CRM context, never from the body, so an import cannot
+ * be aimed at another business. `importDeals` is all-or-nothing and reports per-row errors.
+ */
+export async function importDealsHandler(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const crm = requireCrmContext(req);
+    const result = await importDeals(crm.serviceBusinessId, req.body?.csvData);
+    res.status(201).json({ success: true, data: result });
   } catch (error) {
     next(error);
   }
