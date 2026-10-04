@@ -1907,3 +1907,83 @@ and it is listed below rather than stubbed.
 - `docs/crm-enhancement-plan.md` still describes a ~3,000-line in-memory client-only CRM that
   nothing imports. It makes tags, notes, CSV import and a discount engine look shipped.
 - The Abode-era `Deal` / `AbodeManager` schema is dead weight and should not be deleted casually.
+
+## Root error boundary (2026-10-03)
+
+Reported alongside the earlier routing report: the app "works" but feels like a shell, with
+nothing clickable.
+
+### What I checked and ruled out
+
+- **CSS not loading.** Both stylesheets serve correctly (`index-*.css` 192,937 bytes and
+  `heavy-*.css` 15,037 bytes, `text/css`, HTTP 200) and `index.html` links both.
+  I initially misread this as missing — I grepped only the first 20 lines of the served HTML
+  and the `<link>` tags sit lower. Worth recording, because it is the second time today a
+  plausible story collapsed on verification.
+- **A permanent overlay swallowing clicks.** `Layout.tsx` has four `fixed inset-0` elements;
+  three are behind `{open && …}` or a modal's `onClose`, and the fourth is `z-[-1]
+  pointer-events-none` decoration.
+- **A guard redirecting.** `BusinessGuard` → `/login` or `<BusinessModeGate />`;
+  `PersonalGuard` → `/login` or `/dashboard`. Neither sends anyone to `/`.
+
+### What was actually wrong
+
+**There was no `ErrorBoundary` at the root.** `<App />` mounted bare inside `StrictMode`, and
+the only boundary in the codebase wrapped `BusinessPage`. A throw during render therefore
+reached the React root, unmounted the entire tree, and left a blank page with nothing
+clickable and no way back but a hard refresh.
+
+Before route-level code splitting the app was a single bundle, so a failed load could not
+leave a page half-alive. There are now ~258 chunks, and a dynamic `import()` that fails — a
+network blip, a CDN 404, a deploy that renamed a chunk while a tab still held the previous
+HTML — throws during render. **Splitting introduced this failure mode and nothing caught it.**
+
+That is a self-inflicted risk, so fixing it does not depend on confirming it is the reported
+symptom.
+
+### The fix
+
+`client/src/components/AppErrorBoundary.tsx`, mounted as the outermost element inside
+`StrictMode` — above the router, the auth gate and every provider.
+
+Two distinct states, because they are different problems with different fixes:
+
+- **Chunk-load failure** (recognised by shape, since the browser messages differ by engine and
+  are not a stable API): "Loading the latest version" with a Reload. A stale bundle is not a
+  code bug, and showing "something went wrong" would send the user hunting for a bug that is
+  not in the code they can see.
+- **Anything else**: a real error state with Try again and Go to home, and the stack stays in
+  the console rather than being swallowed.
+
+An ordinary render bug is deliberately **not** treated as a stale bundle — reloading would mask
+it and hide the stack from whoever has to fix it. There is a test asserting exactly that.
+
+The reload is guarded by a sessionStorage flag so it fires **at most once per session**.
+Without that guard a genuinely broken deploy reloads forever, which is worse than the blank
+screen it replaces, so the guard is the difference between a fix and a new trap.
+
+### Tests: 6
+
+Children render when nothing throws; a render error offers a way back; a chunk failure offers
+a reload; all four engine-specific chunk-failure phrasings are recognised; an ordinary bug is
+NOT classified as stale; and the reload fires once and not twice.
+
+Client 48 passed / 5 files (was 42 / 4). Client tsc 534, unchanged. Build exit 0, both
+stylesheets linked.
+
+### Still open — I could not reproduce the reported symptom
+
+I fixed a real defect, but I cannot confirm it is *the* thing being seen, and I am not going to
+claim it is. To close it out I need:
+
+1. **Which page** — `/crm`, `/dashboard`, `/contact`, `/me`, a settings page?
+2. **Whether the browser console shows a red error** — with the boundary in place that error is
+   now visible instead of a blank page, which makes the next report far easier to act on.
+3. **Whether "no substance" means unstyled, or styled-but-empty.** These have completely
+   different causes, and I have already guessed wrong once today.
+
+The systemic pattern is worth naming: a large share of this app's pages are wired to endpoints
+that 404 or to handlers that were never written, so a page can render correctly and still have
+nothing in it. That is what this session has been fixing one surface at a time — dashboard,
+onboarding, deals, reports, jobs, invoices, passport, CSV import. The remaining pages have not
+been audited.
