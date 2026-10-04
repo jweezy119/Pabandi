@@ -155,6 +155,10 @@ jobs:
         env:
           SMOKE_SITE_URL: https://pabandi.com
           SMOKE_API_URL: https://pabandi.onrender.com
+          # This workflow only runs when client/** changed, so the published bundle MUST
+          # be from this commit. That is the one place the assertion is meaningful, so
+          # that is the one place it is a failure rather than a warning.
+          SMOKE_STRICT_BUNDLE: '1'
           # This workflow's path filter only matches client-side and deploy-config
           # files, so this commit cannot have changed the API. Render deploys on its
           # own cadence, so requiring the same commitSha here only produces false

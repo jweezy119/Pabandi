@@ -171,12 +171,24 @@ async function checkSite() {
   if (EXPECTED_COMMIT && bundleRes.ok) {
     const shortSha = EXPECTED_COMMIT.slice(0, 7);
     const builtFrom = bundle.includes(shortSha);
+    // STRICT only where the assertion is meaningful.
+    //
+    // deploy-site.yml runs on a `client/**` path filter, so when it triggers, the site
+    // bundle MUST be from this commit. Everywhere else — a server-only commit, or an
+    // ad-hoc local run — the bundle is legitimately from an earlier commit because no
+    // client code changed, and failing there is a false alarm.
+    //
+    // The first version failed unconditionally and immediately went red on a server-only
+    // commit. A check that cries wolf is worse than no check, because people learn to
+    // ignore the colour.
+    const strict = process.env.SMOKE_STRICT_BUNDLE === '1';
     record(
       'bundle was built from the expected commit',
-      builtFrom ? 'PASS' : 'FAIL',
+      builtFrom ? 'PASS' : strict ? 'FAIL' : 'WARN',
       builtFrom
         ? shortSha
-        : `${shortSha} not found in ${bundlePath} — this bundle is from a different commit`,
+        : `${shortSha} not found in ${bundlePath} — this bundle is from a different commit` +
+          (strict ? '' : ' (no client change in this commit, so this is expected)'),
     );
   }
 
