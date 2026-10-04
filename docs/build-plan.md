@@ -1407,3 +1407,107 @@ The modal's generic 5 MB pre-check is looser than the server's 1 MB deals cap. A
 passes the client check and is then refused by the server — now with the actual reason
 visible, rather than as an unexplained failure. The modal is shared with other imports, so
 its limit was left generic rather than tightened to the deals cap.
+
+## CRM invoices now go through invoice.service (2026-10-03)
+
+I wrote last turn that routing CRM invoices through `invoice.service.createInvoice` would
+recover "paymentLink, fee assessment and trust events". **That was wrong on all three
+counts**, and checking it before acting is the only reason it did not become a regression.
+
+- Nothing in the server creates a `paymentLink`. There is no such write path.
+- Fees are not assessed at invoice creation. They live in unrelated services
+  (`trustGuarantee`, `pabond`, `agentMarketplace`).
+- Trust events fire on invoice **status change** (`invoiceTrustService.processInvoiceStatusChange`),
+  and the CRM route already called that.
+
+So the two paths were not "canonical vs incomplete". Measured side by side, **the hand-rolled
+route was better on four counts and the service was worse on all four**:
+
+| | CRM route (hand-rolled) | `invoice.service.createInvoice` |
+|---|---|---|
+| client ownership check | verified `serviceBusinessId` | **none** |
+| number | `INV-YYYY-NNNN`, scoped, collision retry | **`INV-<random 6 digits>`**, unscoped, no retry |
+| tenant source | `resolveCrmBusiness` (server-derived) | `req.user.businessId` (a JWT claim that goes stale) |
+| plan quota | `tierGuard({ resource: 'invoices' })` | unmetered |
+
+Consolidating as originally described would have imported every one of those weaknesses into
+the CRM's money path.
+
+### The actual bug: anyone could invoice anyone
+
+`POST /api/v1/invoices` passed `req.body` straight to `createInvoice`, which performed **no
+ownership check at all**. `Invoice.clientId` is a required FK to `CrmClient`, so any
+authenticated user could raise an invoice against **any other tenant's client**. That invoice
+then appears on the victim client's record and in the money trail under someone else's
+business — a cross-tenant integrity hole on the payment path, reachable from the public
+invoice API.
+
+`assertClientInBusiness()` now proves ownership via the only chain that can be proven:
+platform `Business.id` → `CrmServiceBusiness` → `CrmClient`. `CrmClient.businessId` is a
+foreign key to the legacy `CrmBusiness` table, which has no `ownerId` and no mapping to a
+platform `Business`, so it cannot be used for this.
+
+It **fails closed**: a client whose `serviceBusinessId` is null cannot be shown to belong to
+the business, so it is refused rather than trusted — consistent with legacy CRM rows not
+being surfaced in the CRM UI either. Accepting it would reopen the hole.
+
+### 404, not 400
+
+Cross-tenant and unknown clients both return **404 "client not found"**. The old route
+returned 400 "does not belong", which confirms the id *exists* and is merely someone else's
+— one request per candidate turns the endpoint into an oracle for enumerating another
+tenant's client list. 404 is indistinguishable from a real miss. This is a deliberate change
+to an existing test's expectation, for the same reason cross-tenant deals return 404.
+
+### Invoice numbers: two wrong answers, one right one
+
+`Invoice.number` is `@unique` **globally**. Both previous implementations were wrong:
+
+- **Random 6 digits**: 10^6 against a global index, so by the birthday bound a collision is
+  likely past ~1000 invoices platform-wide, with no retry — a P2002 500 on a customer.
+- **Per-business counter** (the obvious fix): I wrote a comment claiming it "fails quietly"
+  and exhausts the retry budget with a 503. **Mutation testing proved that wrong.** With the
+  retry loop, a per-business counter still yields unique numbers — it just walks forward past
+  clashes (B1 takes 0001, B2 clashes and takes 0002, …), so the real cost is gapped,
+  out-of-order numbers and extra queries per attempt. Eight businesses colliding in one year
+  still resolve, because each consumes a number.
+
+So the global counter is a **sequence and efficiency choice, not a correctness one**, and the
+comment now says so. Numbers stay contiguous and each attempt is one cheap lookup.
+
+**Tradeoff, stated plainly:** a platform-wide sequence means a business's first invoice of
+the year reveals roughly how many invoices the whole platform issued that year. That is
+ordinary sequential-invoice behaviour and exposes no customer data, but it is a real (small)
+cross-tenant volume signal. The alternative — a per-business discriminator such as
+`INV-2026-A7K3-0001` — removes it and is still unique by construction, at the cost of
+changing the number format on every invoice, template and document that embeds it. Not done
+here; worth revisiting only if it ever matters.
+
+### The notes envelope is load-bearing — do not "clean it up"
+
+`createInvoice` stores `notes` as `JSON.stringify({ text, metadata })` because
+`requireEscrow` has no column. Two consumers `JSON.parse` it — `invoicePublic.routes` and
+`money-flow.service` (`metadata.currency`) — and I had intended to remove the envelope as
+"corrupting user notes". Both readers are `try`/`catch`-guarded and fall back cleanly, so
+plain text is safe, but the envelope is how escrow and currency travel. **Left alone
+deliberately.**
+
+### Tests: 3 new in money-flow, mutation-checked seven ways
+
+| mutation | result |
+|---|---|
+| remove the client ownership check | 2 failed |
+| scope the ownership check to any service business | 1 failed |
+| fail open on an unknown clientId | 2 failed |
+| revert to the random 6-digit number | 2 failed |
+| per-business counter against the global index | **0 failed — claim was wrong** |
+| drop the collision-retry loop | 1 failed |
+| skip the clash check | 1 failed |
+| re-introduce the raw insert in the CRM route | 7 failed |
+
+The occupied-number test needed two attempts. Squatting `INV-<year>-0001` did **not**
+collide: the global COUNT includes the squatted row, so the count rose to 1 and the
+allocator returned 0002 happily — leaving both number mutations green. Squatting **0002**,
+the number the counter actually computes, forces the collision and pins the loop.
+
+Server 737 passed / 50 files (was 734 / 50). Client 42. tsc 26 unchanged.

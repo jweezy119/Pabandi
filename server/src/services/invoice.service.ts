@@ -22,15 +22,114 @@ type InvoiceCreateData = {
   requireEscrow?: boolean;
 };
 
+/**
+ * Allocate the next invoice number.
+ *
+ * `Invoice.number` is @unique GLOBALLY — not per business. That single fact drove the design
+ * here, and the obvious implementation is wrong.
+ *
+ * The previous version generated `INV-${random 6 digits}`: six digits is 10^6 against a
+ * global unique index, so by the birthday bound a collision is likely somewhere past a
+ * thousand invoices platform-wide, and with no retry it surfaced as a P2002 500 on a
+ * customer creating an invoice.
+ *
+ * The obvious replacement is to count PER BUSINESS. That was tried and measured, and an
+ * earlier version of this comment claimed it "fails quietly" and exhausts the retry budget.
+ * That claim was WRONG, and testing it is what showed it: with the retry loop below, a
+ * per-business counter still produces unique numbers — it just walks forward past clashes
+ * (B1 takes 0001, B2 clashes and takes 0002, ...), so the failure mode is gapped,
+ * out-of-order numbers and extra COUNT/SELECT queries per attempt, not a 503. Eight
+ * businesses colliding in one year still resolve, because each one consumes a number.
+ *
+ * So the global counter is a SEQUENCE and efficiency choice, not a correctness one: it keeps
+ * numbers contiguous and makes each attempt a single cheap lookup. That is the honest
+ * reason for it.
+ *
+ * The counter is GLOBAL within the year: `count(number startsWith INV-<year>-) + 1`.
+ * Numbers are then unique by construction and the retry loop is only a guard against the
+ * genuine race of two concurrent creates reading the same count.
+ *
+ * Tradeoff, stated plainly: a platform-wide sequential number means a business's first
+ * invoice of the year can reveal roughly how many invoices the whole platform issued that
+ * year. That is ordinary sequential-invoice behaviour and reveals no customer data, but it
+ * is a real (small) cross-tenant volume signal. The alternative — embedding a per-business
+ * discriminator, e.g. INV-2026-A7K3-0001 — removes the signal and is still unique by
+ * construction, at the cost of changing the number format on every invoice, template and
+ * document that embeds it. Not done here; worth revisiting if it ever matters.
+ */
+async function nextInvoiceNumber(): Promise<string> {
+  const year = new Date().getFullYear();
+  const prefix = `INV-${year}-`;
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const count = await prisma.invoice.count({ where: { number: { startsWith: prefix } } });
+    const candidate = `${prefix}${String(count + 1 + attempt).padStart(4, '0')}`;
+    const clash = await prisma.invoice.findUnique({ where: { number: candidate }, select: { id: true } });
+    if (!clash) return candidate;
+  }
+  // Eight genuine races on one sequence means something is badly wrong. Widening the suffix
+  // is a better outcome here than failing the customer's invoice.
+  const suffix = Math.floor(Math.random() * 1_000_000).toString().padStart(6, '0');
+  const fallback = `${prefix}${suffix}`;
+  if (!(await prisma.invoice.findUnique({ where: { number: fallback }, select: { id: true } }))) {
+    return fallback;
+  }
+  throw new CustomError('Could not allocate an invoice number, please retry', 503);
+}
+
+/**
+ * Prove the client belongs to the business, or throw.
+ *
+ * WHY THIS IS NEW. This function had NO ownership check. Invoice.clientId is a required FK
+ * to CrmClient, and createInvoice accepted whatever clientId it was handed, so
+ * `POST /api/v1/invoices` let any authenticated user raise an invoice against ANY other
+ * tenant's client. That invoice then shows up on the victim client's record and in the
+ * money trail under someone else's business — a cross-tenant integrity hole on the payment
+ * path, reachable from the public invoice API.
+ *
+ * The lookup goes platform Business.id -> CrmServiceBusiness -> CrmClient, because that is
+ * the only provable chain: CrmClient.businessId is a foreign key to the LEGACY CrmBusiness
+ * table, which has no ownerId and no mapping to a platform Business, so it cannot be used
+ * to prove ownership.
+ *
+ * Fails CLOSED. A client whose serviceBusinessId is null cannot be shown to belong to this
+ * business, so it is refused rather than trusted — the same reason legacy CRM rows are not
+ * surfaced in the CRM UI. Accepting it would reopen exactly the hole this closes.
+ */
+async function assertClientInBusiness(businessId: string, clientId: string) {
+  const serviceBusiness = await prisma.crmServiceBusiness.findUnique({
+    where: { businessId },
+    select: { id: true },
+  });
+  if (!serviceBusiness) {
+    throw new CustomError('No service business enrolled for this account', 403);
+  }
+  const client = await prisma.crmClient.findFirst({
+    where: { id: clientId, serviceBusinessId: serviceBusiness.id },
+    select: { id: true },
+  });
+  if (!client) {
+    // 404, not 403: whether the id exists at all is not this endpoint's business to reveal.
+    throw new CustomError('client not found', 404);
+  }
+}
+
 export async function createInvoice(businessId: string, data: InvoiceCreateData) {
   const { clientId, dateDue, lineItems, subtotal, notes, status, requireEscrow } = data;
   if (!clientId || !dateDue) throw new CustomError('clientId and dateDue are required', 400);
+  if (!businessId) {
+    throw new CustomError('Business is not linked to a platform business yet', 400);
+  }
 
-  // Use notes to store metadata if needed, since schema doesn't have escrow/transaction fields
+  await assertClientInBusiness(businessId, clientId);
+
+  // requireEscrow has no column, so it rides in the notes envelope. The envelope IS
+  // load-bearing: invoicePublic.routes and money-flow.service both JSON.parse(notes) to
+  // read metadata, and both fall back cleanly when it is not JSON. So the envelope stays
+  // and the caller's text is preserved inside it as `text`.
   const metadata = { requireEscrow: !!requireEscrow };
   const combinedNotes = JSON.stringify({ text: notes || '', metadata });
 
-  const number = `INV-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`;
+  const number = await nextInvoiceNumber();
 
   const invoice = await prisma.invoice.create({
     data: {

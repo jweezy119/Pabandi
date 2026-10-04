@@ -1,6 +1,7 @@
 import { Router, type Response } from 'express';
 import { prisma } from '../utils/database';
 import { authenticate, type AuthRequest } from '../middleware/auth.middleware';
+import { createInvoice } from '../services/invoice.service';
 import { resolveCrmBusiness, requireCrmContext } from '../middleware/crmContext.middleware';
 import {
   enrollBusinessHandler,
@@ -241,52 +242,34 @@ router.get('/invoices/:id', async (req: AuthRequest, res: Response) => {
   }
 });
 
+// POST /api/v1/crm/invoices — Create an invoice.
+//
+// Delegates to invoice.service.createInvoice. This used to be a second, hand-rolled insert
+// living in the route, and the two had drifted apart:
+//
+//   number        route: INV-YYYY-NNNN, business-scoped, collision retry
+//                 service: INV-<random 6 digits>, unscoped, no retry (500 on a P2002)
+//   client check  route: verifies serviceBusinessId
+//                 service: NONE — any tenant's clientId was accepted
+//   tenant source route: resolveCrmBusiness (server-derived)
+//                 service: req.user.businessId (a JWT claim that goes stale)
+//
+// One code path, so the better behaviour is the only behaviour. tierGuard stays here: it
+// meters invoice creation against the plan quota, which is a CRM-plan concern and not part
+// of creating a document.
 router.post('/invoices', tierGuard({ resource: 'invoices' }), async (req: AuthRequest, res: Response) => {
   try {
-    const { businessId, serviceBusinessId } = requireCrmContext(req);
-    if (!businessId) return res.status(400).json({ success: false, error: 'Business is not linked to a platform business yet' });
-
-    const { clientId, dateDue, lineItems, subtotal, notes } = req.body;
-    if (!clientId || !dateDue) return res.status(400).json({ success: false, error: 'clientId and dateDue are required' });
-
-    // Reject clients from another business before spending a number on them.
-    const client = await prisma.crmClient.findFirst({
-      where: { id: clientId, serviceBusinessId },
-      select: { id: true },
-    });
-    if (!client) return res.status(400).json({ success: false, error: 'clientId does not belong to this business' });
-
-    // Number scoped to the business, not global. A count+1 sequence races under
-    // concurrent creates, so the unique index is the real guard: a collision
-    // retries with the next candidate rather than 500ing.
-    const year = new Date().getFullYear();
-    const prefix = `INV-${year}-`;
-    let number = '';
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      const count = await prisma.invoice.count({
-        where: { businessId, number: { startsWith: prefix } },
-      });
-      number = `${prefix}${String(count + 1 + attempt).padStart(4, '0')}`;
-      const clash = await prisma.invoice.findUnique({ where: { number }, select: { id: true } });
-      if (!clash) break;
-    }
-
-    const invoice = await prisma.invoice.create({
-      data: {
-        number,
-        businessId,
-        clientId,
-        dateDue: new Date(dateDue),
-        status: 'draft',
-        lineItems: lineItems ?? [],
-        subtotal: subtotal || 0,
-        notes: notes || null,
-      },
-      include: { client: true },
-    });
+    const { businessId } = requireCrmContext(req);
+    const invoice = await createInvoice(businessId as string, req.body ?? {});
     res.status(201).json({ success: true, data: invoice });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    // Previously a bare 500 with err.message, so a 400 from the service (no title, unknown
+    // client, missing dateDue) came back as a server error with no usable status.
+    const status = Number(err?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      ...(status >= 500 ? { error: 'Failed to create invoice' } : { error: err.message }),
+    });
   }
 });
 

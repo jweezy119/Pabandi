@@ -205,8 +205,95 @@ describe('money: invoicing and payment', () => {
     const b = await seedBusiness('crossb');
 
     const res = await createInvoice(a.token, b.clientId, 100);
-    expect(res.status).toBe(400);
-    expect(String(res.json.error)).toMatch(/does not belong/i);
+
+    // DELIBERATE CHANGE from 400 "does not belong" to 404 "not found".
+    //
+    // 400 + "does not belong" confirms the client id EXISTS and is merely someone else's,
+    // which turns this endpoint into an oracle for enumerating another tenant's client
+    // list — one request per candidate id. 404 is indistinguishable from a real miss, so
+    // the refusal leaks nothing. This is the same reasoning used for cross-tenant deals.
+    expect(res.status).toBe(404);
+    expect(String(res.json.error)).toMatch(/client not found/i);
+
+    // And nothing was created against the victim client.
+    const { prisma } = await import('../src/utils/database');
+    const leaked = await prisma.invoice.count({ where: { clientId: b.clientId } });
+    expect(leaked, 'no invoice may exist against another tenant client').toBe(0);
+  });
+
+  it('refuses an invoice for an unknown client id', async () => {
+    const a = await seedBusiness('unknownclient');
+    const res = await createInvoice(a.token, 'no-such-client', 100);
+    // Same status as the cross-tenant case on purpose: an attacker must not be able to
+    // tell "this id is someone else's" from "this id does not exist".
+    expect(res.status).toBe(404);
+  });
+
+  it('allocates business-scoped, collision-checked invoice numbers', async () => {
+    const a = await seedBusiness('numbers');
+    const b = await seedBusiness('numbersb');
+
+    const first = await createInvoice(a.token, a.clientId, 100);
+    const second = await createInvoice(a.token, a.clientId, 100);
+    expect(first.json.data.number).toMatch(/^INV-\d{4}-\d{4}$/);
+    expect(second.json.data.number).toMatch(/^INV-\d{4}-\d{4}$/);
+    // Sequential and unique platform-wide. Invoice.number is @unique GLOBALLY, so the
+    // counter is global too.
+    //
+    // Note: a PER-BUSINESS counter is not a correctness bug -- with the retry loop it still
+    // yields unique numbers, just gapped and with extra queries. An earlier version of this
+    // test asserted otherwise and mutation-testing proved the assertion wrong.
+    expect(Number(second.json.data.number.slice(-4))).toBe(
+      Number(first.json.data.number.slice(-4)) + 1,
+    );
+
+    const other = await createInvoice(b.token, b.clientId, 100);
+    expect(other.json.data.number).not.toBe(first.json.data.number);
+    expect(Number(other.json.data.number.slice(-4))).toBe(
+      Number(second.json.data.number.slice(-4)) + 1,
+    );
+
+    // Interleaved multi-tenant creation stays unique and contiguous.
+    for (let i = 0; i < 6; i++) {
+      const r = await createInvoice(i % 2 ? a.token : b.token, i % 2 ? a.clientId : b.clientId, 50);
+      expect(r.status, `interleaved create ${i}: ${JSON.stringify(r.json)}`).toBe(201);
+    }
+  });
+
+  it('walks past an occupied number instead of failing', async () => {
+    const a = await seedBusiness('occupied');
+    const { prisma } = await import('../src/utils/database');
+    const year = new Date().getFullYear();
+
+    // Occupy the number the allocator is ABOUT TO COMPUTE. With a global counter the COUNT
+    // includes this row, so after inserting one invoice the count is 1 and the candidate is
+    // 0002 — so 0002 is the number to squat, not 0001.
+    //
+    // (Squating 0001 was the first attempt and it did not collide: the count rose to 1 and
+    // the allocator returned 0002 happily. Both the retry-loop mutation and the
+    // no-clash-check mutation stayed green, which is how this got found.)
+    const squatted = await prisma.invoice.create({
+      data: {
+        number: `INV-${year}-0002`,
+        businessId: a.businessId,
+        clientId: a.clientId,
+        dateDue: new Date(Date.now() + 864e5),
+        status: 'draft',
+        subtotal: 0,
+        lineItems: [],
+        notes: null,
+      },
+      select: { id: true },
+    });
+
+    const res = await createInvoice(a.token, a.clientId, 100);
+    // Must skip 0001 rather than throw P2002 as a 500 on the customer.
+    expect(res.status, JSON.stringify(res.json)).toBe(201);
+    // Walked past the occupied 0002 instead of throwing P2002 as a 500 on the customer.
+    expect(res.json.data.number).not.toBe(`INV-${year}-0002`);
+    expect(res.json.data.number).toMatch(new RegExp(`^INV-${year}-000[3-9]$`));
+
+    await prisma.invoice.delete({ where: { id: squatted.id } });
   });
 
   it('marks an invoice paid and stamps paidAt exactly once', async () => {
