@@ -17,7 +17,7 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
-const SQL_FILES = ['agent-tables.sql', 'reconciliation-tables.sql', 'fee-tables.sql', 'sms-provider-tables.sql', 'crm-deal-tenant.sql'];
+const SQL_FILES = ['agent-tables.sql', 'reconciliation-tables.sql', 'fee-tables.sql', 'sms-provider-tables.sql', 'crm-deal-tenant.sql', 'availability-tables.sql'];
 const SQL_DIR_CANDIDATES = [
   path.join(__dirname, '..', 'sql'),
   path.join(__dirname, '..', 'dist', 'sql'),

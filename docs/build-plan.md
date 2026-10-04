@@ -1721,3 +1721,110 @@ Left alone rather than stubbed: a fake `/onboarding/complete` that returns succe
 report a business as onboarded when nothing was persisted — the same failure mode as the
 fabricated trust-insight constants, and worse, because onboarding is what everything else
 depends on.
+
+## Availability model + the onboarding endpoint (2026-10-03)
+
+`OnboardingWizard` is routed at `/onboarding` and POSTs
+`{ profile, services, availability, employees }` to `/api/v1/onboarding/complete`. That endpoint
+did not exist, and the `availability` half of the payload had **nowhere to go** — there was no
+availability model anywhere in the schema.
+
+The double-booking work added conflict *detection*: it stops one employee being booked twice.
+It says nothing about whether a job is inside the hours the business is open, because nothing
+recorded those hours. Those are different questions and conflating them would make availability
+look like it was doing conflict detection while quietly not doing it.
+
+### The model: business-level recurring weekly hours
+
+```prisma
+model CrmAvailability {
+  serviceBusinessId String
+  weekday           Int      // 0-6, 0 = Sunday
+  startTime         String   // "09:00"
+  endTime           String   // "17:00"
+  slotMinutes       Int      @default(60)
+  bufferMinutes     Int      @default(15)
+  @@unique([serviceBusinessId, weekday, startTime])
+}
+```
+
+**Business-level, not per-employee**, because that is the shape the wizard collects — one
+weekly window applied to the whole business. Modelling it per employee would have meant
+inventing per-employee semantics the product has not decided, which is how the previous wrong
+turns happened.
+
+`weekday` is 0-6 with 0 = Sunday, matching both `getUTCDay()` and the wizard's own day keys. An
+off-by-one here silently opens the wrong day, so it is stated in three places: the model, the
+SQL, and the check.
+
+A row means "open between these times on this weekday". There is deliberately **no `available`
+boolean**: a row that exists and a row that does not is a distinction the database already
+makes correctly, and a boolean lets the two disagree.
+
+`setAvailability` is delete-then-insert, not an upsert. The wizard *toggles days off*, and an
+upsert keyed on (business, weekday) would keep the removed window forever.
+
+### Two defaults worth arguing for
+
+- **No hours recorded means no restriction.** Defaulting to "closed" would silently break
+  scheduling for every existing tenant the moment this shipped. A business that has not opted
+  into hours keeps the behaviour it had before the table existed.
+- **A job is checked on its whole window, not its start.** A 16:30 job for 60 minutes runs
+  past a 17:00 close even though it *starts* in hours. Checking only the start is the bug that
+  assertion exists for.
+
+Overnight windows (`22:00`–`02:00`) are supported, including a job at 01:00 tested against
+*yesterday's* window. `endTime <= startTime` is therefore not an error, and treating it as
+same-day would produce an empty window that silently blocks every booking.
+
+### Onboarding is all-or-nothing, and validates first
+
+Employees are validated *before* the transaction — including a duplicate-name check, because
+`CrmEmployee` has no uniqueness and two crew members with the same name appear identically in
+every list and assignment dropdown. The crew is **replaced, not appended**: re-opening the
+wizard would otherwise double the roster each time.
+
+`claimSlug` sanitises the requested name and appends a suffix on collision, so two businesses
+cannot share a public handle. The `slug` lives on `CrmServiceBusiness` because the legacy
+`AbodeManager.slug` belongs to the orphaned Abode-era model nothing writes to — which is what
+the wizard has always been calling a slug while waiting for somewhere to put one.
+
+**Services are stored as JSON, deliberately and temporarily.** `CrmServiceBusiness.serviceCatalog`
+holds them because no model exists for a service catalogue and nothing else in the platform
+references one. A table would be an unused relation plus a second tenant-anchor decision; the
+JSON is lossless so the wizard's input is not dropped. Promote it to `CrmServiceOffering` when
+something actually reads it.
+
+### Two client bugs, both of which made this worse than a 404
+
+- **No `Authorization` header.** Even with the endpoint in place the wizard would have 401'd.
+  That was a client bug, not a missing route.
+- **It failed silently.** A non-success response fell through the `if` and did *nothing* — no
+  error, no navigation, no state change. The user clicked Complete and the wizard sat there,
+  with the reason only ever reaching the console. There is now a visible `role="alert"` banner
+  carrying the server's reason.
+
+### Tests: 10, mutation-checked six ways
+
+| mutation | result |
+|---|---|
+| check only the start time, ignore the end | 1 failed |
+| default to closed when no hours exist | 2 failed |
+| ignore the tenant when reading hours | 1 failed |
+| allow a duplicate slug | 1 failed |
+| append the crew instead of replacing it | 1 failed |
+| accept malformed hours | 1 failed |
+
+One pre-existing suite (`crm-lifecycle.test.ts`) broke, because its hand-built prisma mock had
+no `crmAvailability` and `createJob` now reads it. The mock was extended with an empty result
+— the "no hours" case, i.e. no restriction — so that suite still asserts job creation rather
+than quietly inheriting opening-hours behaviour.
+
+### Migration note
+
+`db push` warns that a unique constraint on `slug` "might cause data loss". It is benign:
+every existing row has `slug IS NULL`, and Postgres does not treat NULLs as conflicting in a
+unique index. No backfill, nothing dropped.
+
+Server 770 passed / 53 files (was 760 / 52). Client 42. Server tsc 23, client tsc 534, both
+unchanged. Client build exit 0.

@@ -39,6 +39,13 @@ vi.mock('../src/utils/database', () => ({
       findMany: vi.fn(async () => clients),
       create: vi.fn(async (a: any) => { clients.push(a.data); return a.data; }),
     },
+    // crmAvailability backs the opening-hours check inside createJob. Empty by default, which
+    // is the "no hours recorded" case and therefore no restriction -- so this suite is
+    // asserting job creation behaviour, not opening hours (see
+    // tests/onboarding-availability.integration.test.ts for that).
+    crmAvailability: {
+      findMany: vi.fn(async () => []),
+    },
     crmJob: {
       findFirst: vi.fn(async () => jobs[0] ?? null),
       findMany: vi.fn(async () => jobs),

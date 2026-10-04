@@ -365,6 +365,24 @@ export async function createJob(
     );
   }
 
+  // Opening hours, checked independently of any employee: a business can be closed and a job
+  // still get created with nobody assigned. Refuses with the actual window so it is
+  // actionable, and overridable for the same reason the clash check is.
+  if (data.allowConflict !== true) {
+    const hours = await checkAvailabilityWindow(
+      serviceBusinessId,
+      new Date(scheduledDate),
+      scheduledTime,
+      durationMinutes,
+    );
+    if (!hours.ok) {
+      throw Object.assign(
+        new CustomError(`Outside opening hours: ${hours.reason}`, 409),
+        { availability: hours.windows ?? [] },
+      );
+    }
+  }
+
   const job = await prisma.crmJob.create({
     data: {
       serviceBusinessId,
@@ -1601,4 +1619,197 @@ export async function assertNoConflict(
       { conflicts },
     );
   }
+}
+
+// ── Availability ────────────────────────────────────────────────────────────
+
+const HHMM = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+/** Minutes since midnight for an "HH:mm" string, or null if it is not one. */
+export function minutesOfDay(value: unknown): number | null {
+  if (typeof value !== 'string') return null;
+  const m = HHMM.exec(value.trim());
+  if (!m) return null;
+  return Number(m[1]) * 60 + Number(m[2]);
+}
+
+const MINUTES_IN_DAY = 24 * 60;
+
+/**
+ * Replace a business's weekly hours in one shot.
+ *
+ * Delete-then-insert rather than a diff, so re-running onboarding cannot leave a stale day
+ * behind: the wizard toggles days off, and an upsert keyed on (business, weekday) would keep
+ * the removed window forever.
+ */
+export async function setAvailability(
+  serviceBusinessId: string,
+  availability: {
+    days?: unknown;
+    startTime?: unknown;
+    endTime?: unknown;
+    slotMinutes?: unknown;
+    bufferMinutes?: unknown;
+  },
+) {
+  const start = minutesOfDay(availability?.startTime);
+  const end = minutesOfDay(availability?.endTime);
+  if (start === null || end === null) {
+    throw new CustomError('startTime and endTime must be HH:mm', 400);
+  }
+  // endTime before startTime is allowed ONLY as an overnight window (a 22:00-02:00 shift).
+  // Treating it as invalid would reject legitimate late shifts; treating it as same-day would
+  // produce an empty window that silently blocks every booking.
+  const overnight = end <= start;
+
+  const slotMinutes = Number(availability?.slotMinutes ?? 60);
+  const bufferMinutes = Number(availability?.bufferMinutes ?? 15);
+  if (!Number.isFinite(slotMinutes) || slotMinutes < 5 || slotMinutes > 24 * 60) {
+    throw new CustomError('slotMinutes must be between 5 and 1440', 400);
+  }
+  if (!Number.isFinite(bufferMinutes) || bufferMinutes < 0 || bufferMinutes > 24 * 60) {
+    throw new CustomError('bufferMinutes must be between 0 and 1440', 400);
+  }
+
+  const days = Array.isArray(availability?.days) ? availability.days : [];
+  const parsed = days.map(Number);
+  if (parsed.some((d) => !Number.isInteger(d) || d < 0 || d > 6)) {
+    throw new CustomError('days must be weekday numbers 0-6 (0 = Sunday)', 400);
+  }
+  // De-duplicate rather than trusting the caller: a repeated day would violate the unique
+  // index and surface as a P2002 500 on their input.
+  const uniqueDays = [...new Set(parsed)].sort((a, b) => a - b);
+
+  await prisma.$transaction([
+    prisma.crmAvailability.deleteMany({ where: { serviceBusinessId } }),
+    ...uniqueDays.map((weekday) =>
+      prisma.crmAvailability.create({
+        data: {
+          serviceBusinessId,
+          weekday,
+          startTime: String(availability.startTime).trim(),
+          endTime: String(availability.endTime).trim(),
+          slotMinutes,
+          bufferMinutes,
+        },
+      }),
+    ),
+  ]);
+
+  return prisma.crmAvailability.findMany({
+    where: { serviceBusinessId },
+    orderBy: { weekday: 'asc' },
+  });
+}
+
+export async function getAvailability(serviceBusinessId: string) {
+  return prisma.crmAvailability.findMany({
+    where: { serviceBusinessId },
+    orderBy: { weekday: 'asc' },
+  });
+}
+
+/**
+ * Whether a job's window sits inside the business's opening hours.
+ *
+ * A BUSINESS-LEVEL rule, not per-employee: the model records one weekly window, so this
+ * answers "are we open then", not "is this person free then". Free-vs-busy is the separate
+ * conflict check (findJobConflicts); conflating the two would make availability look like it
+ * does double-booking detection and quietly stop doing so.
+ *
+ * NO HOURS RECORDED MEANS NO RESTRICTION. A business that has never set availability keeps
+ * the behaviour it had before this table existed. Defaulting to "closed" would silently break
+ * every existing tenant's scheduling the moment this shipped, which is a far worse failure
+ * than a business that has not opted into hours.
+ */
+export async function checkAvailabilityWindow(
+  serviceBusinessId: string,
+  scheduledDate: Date,
+  scheduledTime: string | null | undefined,
+  durationMinutes: number,
+): Promise<{ ok: boolean; reason?: string; windows?: unknown[] }> {
+  const start = composeJobStart(scheduledDate, scheduledTime);
+  if (!start) return { ok: true }; // unparseable start: not this check's business to judge
+
+  const hours = await prisma.crmAvailability.findMany({
+    where: { serviceBusinessId },
+    orderBy: { weekday: 'asc' },
+  });
+  if (!hours.length) return { ok: true };
+
+  const weekday = start.getUTCDay();
+  const dayStart = start.getUTCHours() * 60 + start.getUTCMinutes();
+  const span = durationMinutes > 0 ? durationMinutes : 60;
+  // Compare on the shifted window so a job starting 17:30 with a 90-minute duration is
+  // checked against the closing time, not against its start.
+  const dayEnd = dayStart + span;
+
+  const todays = hours.filter((h) => h.weekday === weekday);
+  if (!todays.length) {
+    return { ok: false, reason: `The business is not open on this day (weekday ${weekday})` };
+  }
+
+  for (const w of todays) {
+    const opens = minutesOfDay(w.startTime);
+    const closes = minutesOfDay(w.endTime);
+    if (opens === null || closes === null) continue;
+    const overnight = closes <= opens;
+    const effectiveClose = overnight ? closes + MINUTES_IN_DAY : closes;
+    // An overnight window that started yesterday still covers this morning, so a job at
+    // 01:00 must be tested against yesterday's window too.
+    const effectiveOpen = dayStart < closes && overnight ? opens - MINUTES_IN_DAY : opens;
+    if (dayStart >= effectiveOpen && dayEnd <= effectiveClose) {
+      return { ok: true };
+    }
+  }
+
+  return {
+    ok: false,
+    reason: `Outside opening hours (${todays[0].startTime}-${todays[0].endTime})`,
+    windows: todays.map((w) => ({ weekday: w.weekday, startTime: w.startTime, endTime: w.endTime })),
+  };
+}
+
+/** Slugify a business name into something URL-safe and unlikely to collide. */
+export function slugify(input: string): string {
+  const base = input
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48);
+  return base || 'business';
+}
+
+/**
+ * Claim a unique slug, appending a numeric suffix on collision.
+ *
+ * Never trusts the caller's preferred slug beyond a sanitised form: a shared handle would
+ * let one business appear at another business's public URL.
+ */
+export async function claimSlug(serviceBusinessId: string, preferred: string): Promise<string> {
+  const base = slugify(preferred);
+  for (let attempt = 0; attempt < 25; attempt += 1) {
+    const candidate = attempt === 0 ? base : `${base}-${attempt + 1}`;
+    const clash = await prisma.crmServiceBusiness.findUnique({
+      where: { slug: candidate },
+      select: { id: true },
+    });
+    if (!clash) {
+      await prisma.crmServiceBusiness.update({
+        where: { id: serviceBusinessId },
+        data: { slug: candidate },
+      });
+      return candidate;
+    }
+    if (clash.id === serviceBusinessId) return candidate;
+  }
+  // 25 collisions on one stem means the stem is heavily taken; a random suffix is better than
+  // failing the customer's onboarding.
+  const candidate = `${base}-${Math.floor(Math.random() * 100000).toString(36)}`;
+  await prisma.crmServiceBusiness.update({
+    where: { id: serviceBusinessId },
+    data: { slug: candidate },
+  });
+  return candidate;
 }

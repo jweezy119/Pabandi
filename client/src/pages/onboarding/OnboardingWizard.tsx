@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { tokens } from '../../design-system';
 import { API_HOST } from '../../utils/apiHost';
+import { getAuthToken } from '../../utils/authToken';
 
 interface ServiceItem {
   id: string;
@@ -46,6 +47,7 @@ export default function OnboardingWizard() {
   const [employees, setEmployees] = useState<EmployeeItem[]>([]);
   const [slug, setSlug] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -117,21 +119,34 @@ export default function OnboardingWizard() {
 
   const handleComplete = async () => {
     setSubmitting(true);
+    setSubmitError(null);
     try {
       const payload = { profile, services, availability, employees };
       const res = await fetch(`${API_HOST}/api/v1/onboarding/complete`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          // This header was MISSING, so the request was anonymous and would have 401'd even
+          // once the endpoint existed. Every other call in the app sends it.
+          Authorization: `Bearer ${getAuthToken() || ''}`,
+        },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      if (data.success) {
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.success) {
         setSlug(data.data.slug);
         localStorage.removeItem(STORAGE_KEY);
         setStep(5);
+      } else {
+        // Previously a non-success response fell through the `if` and did NOTHING: no error,
+        // no navigation, no state change. The user clicked Complete and the wizard simply sat
+        // there, with the reason only ever reaching the console.
+        setSubmitError(
+          data?.error || data?.message || `Onboarding failed (${res.status})`,
+        );
       }
     } catch (err) {
-      console.error('Onboarding failed:', err);
+      setSubmitError(err instanceof Error ? err.message : 'Onboarding failed');
     }
     setSubmitting(false);
   };
@@ -328,6 +343,17 @@ export default function OnboardingWizard() {
               <Button variant="ghost" onClick={prevStep}>← Back</Button>
               <Button onClick={handleComplete} disabled={submitting}>{submitting ? 'Setting up...' : 'Complete Setup →'}</Button>
             </div>
+
+            {/* A refused onboarding used to be completely silent: no error, no navigation,
+                nothing but a console line. The reason is the only thing the user can act on. */}
+            {submitError && (
+              <div
+                role="alert"
+                style={{ marginTop: 12, padding: '8px 10px', borderRadius: 8, background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#b91c1c', fontSize: 13 }}
+              >
+                {submitError}
+              </div>
+            )}
           </div>
         )}
 

@@ -8050,6 +8050,21 @@ model CrmModuleInstall {
 model CrmServiceBusiness {
   id               String    @id @default(cuid())
   businessId       String?   @unique
+  // Shareable public handle, e.g. pabandi.com/p/acme-cleaning.
+  //
+  // Distinct from the legacy AbodeManager.slug: that lived on the orphaned Abode-era model
+  // which nothing writes to, and it is what the onboarding wizard has always called a "slug"
+  // while waiting for somewhere to put one. Nullable and unique so a business without one
+  // still works; the column is indexed for the public lookup path.
+  slug             String?   @unique
+  // Provisional service catalogue captured at onboarding.
+  //
+  // JSON, not a table, and that is a deliberate interim choice rather than an oversight: the
+  // onboarding wizard collects services but nothing else in the platform references them
+  // yet (no job points at a service). A table here would be an unused relation plus a second
+  // tenant-anchor decision, and the JSON is lossless so the data is not lost. Promote it to
+  // CrmServiceOffering when something actually reads it.
+  serviceCatalog   Json?
   business         Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
   ownerId          String
   owner            User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
@@ -8063,6 +8078,7 @@ model CrmServiceBusiness {
   clients          CrmClient[]
   deals            CrmDeal[]
   activities       CrmActivity[]
+  availability     CrmAvailability[]
   jobs             CrmJob[]
   payrolls         CrmPayroll[]
   expenses         CrmExpense[]
@@ -8073,6 +8089,44 @@ model CrmServiceBusiness {
   @@index([ownerId])
   @@index([serviceType])
   @@map("crm_service_businesses")
+}
+
+/// Recurring weekly opening hours for a service business.
+///
+/// WHY THIS IS BUSINESS-LEVEL, NOT PER-EMPLOYEE
+/// The onboarding wizard collects one weekly window (`days`, `startTime`, `endTime`) plus a
+/// slot length and a buffer, applied to the whole business. Modelling it per employee would
+/// mean inventing per-employee semantics the product has not decided — and an availability
+/// model that nothing can populate correctly is how the double-booking work ended up needing
+/// a separate conflict check in the first place.
+///
+/// `weekday` is 0-6 with 0 = Sunday, matching both JavaScript's `getUTCDay()` and the wizard's
+/// own day keys. Storing that convention explicitly matters: an off-by-one here silently
+/// opens the wrong day.
+///
+/// A row means "open between startTime and endTime on this weekday". Closing a day is
+/// deleting its row, not a flag — `available` was dropped because a row that exists and a
+/// row that does not is a distinction the database already makes correctly, and a boolean
+/// lets the two disagree.
+model CrmAvailability {
+  id                String @id @default(cuid())
+  serviceBusinessId String
+  weekday           Int
+  startTime         String
+  endTime           String
+  /// Booking slot granularity, in minutes. Bookings snap to these.
+  slotMinutes       Int    @default(60)
+  /// Gap enforced between consecutive bookings, in minutes.
+  bufferMinutes     Int    @default(15)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  serviceBusiness CrmServiceBusiness @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceBusinessId, weekday, startTime])
+  @@index([serviceBusinessId, weekday])
+  @@map("crm_availability")
 }
 
 model ProviderAvailability {

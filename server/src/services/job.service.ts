@@ -2,7 +2,7 @@ import { prisma } from '../utils/database';
 import { trustCore } from '../trust/trust-core';
 import { invoiceGenerationService } from './invoiceGeneration.service';
 import { CustomError } from '../middleware/errorHandler';
-import { assertNoConflict } from './crm.service';
+import { assertNoConflict, checkAvailabilityWindow } from './crm.service';
 
 type JobCreateData = {
   clientId?: string;
@@ -61,6 +61,22 @@ export async function createJob(serviceBusinessId: string, data: JobCreateData) 
       durationMinutes ?? 60,
       { allowConflict: (data as { allowConflict?: boolean }).allowConflict === true },
     );
+  }
+
+  // Opening hours apply whether or not an employee is named.
+  if ((data as { allowConflict?: boolean }).allowConflict !== true) {
+    const hours = await checkAvailabilityWindow(
+      serviceBusinessId,
+      new Date(scheduledDate),
+      scheduledTime,
+      durationMinutes ?? 60,
+    );
+    if (!hours.ok) {
+      throw Object.assign(
+        new CustomError(`Outside opening hours: ${hours.reason}`, 409),
+        { availability: hours.windows ?? [] },
+      );
+    }
   }
 
   const job = await prisma.crmJob.create({

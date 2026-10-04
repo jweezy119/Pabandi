@@ -354,7 +354,12 @@ const routeMap: [string, string][] = [
   // menu), so a visible 404 on the main screen is not a resting state. The six endpoints it
   // needed are now implemented in dashboard.routes.ts against data that already exists.
   [`/api/${v}/dashboard`, './routes/dashboard.routes'],
-  // REMOVED: `/api/${v}/onboarding` -> './routes/onboarding.routes'.
+  // REINSTATED: `/api/${v}/onboarding`. OnboardingWizard is routed at /onboarding and has
+  // always POSTed { profile, services, availability, employees } here. Implemented together
+  // with the CrmAvailability model, which finally gives somewhere to put the weekly hours
+  // the wizard collects: the double-booking work added conflict DETECTION, which never knew
+  // what hours the business was open.
+  [`/api/${v}/onboarding`, './routes/onboarding.routes'],
   //
   // Neither module exists, so both answered 500 "Route module failed to load" on every
   // request. Found by tests/route-registration.test.ts, which asserts that every lazily
