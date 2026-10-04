@@ -597,3 +597,83 @@ fails exactly the two tests written to catch it.
   (unauthenticated) and 403 (authenticated, nothing set up), which the old code conflated.
 
 601 server tests (40 files), 16 client, tsc unchanged at 26 / 539.
+
+## Bring-your-own SMS provider (2026-10-03)
+
+Reselling SMS means Pabandi pays ~$0.005 a message and the cost lands on our margin: at
+5,000 messages that is ~$25 against a $49 subscription. Connecting the merchant's own
+provider makes it their bill and our COGS zero — the model already used for Square, where
+the money never touches Pabandi at all.
+
+### Schema: a raw SQL file, because nothing runs `migrate deploy`
+
+`BusinessSmsProvider` is created by `sql/sms-provider-tables.sql`, applied by the deploy
+hook and again by the runtime bootstrap. Render's `preDeployCommand` runs
+`ensure-agent-tables.cjs`, the Dockerfile runs no `prisma migrate deploy` and no
+`db push`, and the `migrate` folder cannot rebuild this schema anyway (271 of 338 models
+have no migration). A table that exists only in a migration folder **does not exist in
+production**. Added to `SQL_FILES` in both the hook and `tableBootstrap.ts`.
+
+### THE DEPLOY HOOK WAS ALREADY BROKEN
+
+Wiring the new file surfaced it. `ensure-agent-tables.cjs` split DDL with a naive
+`.split(';')`. Postgres has no `ADD CONSTRAINT IF NOT EXISTS`, so guarded foreign keys
+must be `DO $$ ... $$` blocks — which contain semicolons. The naive split cut them in
+half and the hook exited 1:
+
+```
+ERROR: unterminated dollar-quoted string at or near "$$ BEGIN"
+```
+
+`fee-tables.sql` had **8** such statements and the new file had 2, so the hook was already
+dying on `fee-tables.sql` and never reached anything after it.
+
+Deploys kept succeeding because `src/utils/tableBootstrap.ts` runs the *same* SQL at boot
+with the correct splitter from `src/utils/ddl.ts`. So the deploy hook was silently
+contributing nothing — and a file added to `SQL_FILES` but not to `tableBootstrap.ts`
+would have been a table that never appeared at all.
+
+The hook now uses a faithful port of the tested `splitStatements`, because preDeploy runs
+from the repo root before `npm run compile` and cannot import the TS module.
+`tests/ddl-splitter.test.ts` asserts the two agree, file by file, so the port cannot
+drift. Bite-checked: restoring the naive split fails exactly the two `$$` tests.
+
+### The credential handling
+
+Three rules, each with a test:
+
+1. **Fail closed on encryption.** `square-connection.service.protectToken` stores the
+   secret RAW when `ENCRYPTION_KEY` is missing, warning rather than failing. Repeating
+   that would put a credential that spends money into the database in plaintext, so this
+   path **refuses to save** and says why. Bite-checked: reverting to fail-open fails the
+   test and the "nothing was written" assertion with it.
+2. **Verify before trusting.** The credential is checked against the provider first, so a
+   merchant who pastes a mistyped token does not see "connected" and then find every
+   reminder silently failing. A failure is stored as `FAILED` **with the provider's own
+   message**, because "Invalid username or password" is the single most useful thing we
+   can tell them.
+3. **The secret never leaves.** The public view is a whitelist, not a projection — a
+   secret smuggled in through a wider `SELECT` does not survive it.
+
+`requireCredentials` on the send path **throws** rather than returning null, so a business
+with no provider is distinguishable from a misconfigured one and neither can silently
+become a platform-billed send.
+
+### Webhooks are per-tenant
+
+The status callback URL carries the business id, and the signature is verified against
+**that merchant's auth token**. Twilio signs with the token of the account that sent the
+message, so verifying every callback against one platform-wide token would reject every
+legitimate callback the moment a second merchant connects. When the credential is gone or
+unverified the callback is refused rather than falling back to the platform token, which
+would accept a callback nobody can attribute.
+
+### Deliberately not done
+
+- **No client UI yet.** `GET/POST/DELETE /api/v1/settings/sms` is the whole contract; the
+  settings screen is the next piece.
+- **The `smsReminders` tier gate still applies.** Bring-your-own removes the *cost*, not
+  the *entitlement*: a merchant on the free tier still needs to upgrade to send. That is a
+  pricing decision, not a technical one, so it is unchanged.
+- **Platform credentials remain** for system notifications, which have no merchant to
+  bill.

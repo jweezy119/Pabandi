@@ -5,6 +5,7 @@ import { logger } from '../utils/logger';
 import { authenticate } from '../middleware/auth.middleware';
 import { tierFeature } from '../middleware/tierGuard.middleware';
 import { resolvePlatformBusinessId } from '../middleware/tenant.middleware';
+import { requireCredentials } from '../services/sms-provider.service';
 import { CustomError } from '../middleware/errorHandler';
 
 /**
@@ -186,17 +187,35 @@ router.get('/logs', authenticate, async (req: Request, res: Response, next: Next
  * our delivery records — would let anyone forge delivery confirmations for any message
  * id. An unconfigured provider means no callbacks, not open ones.
  */
-router.post('/webhook/twilio', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/webhook/twilio/:businessId?', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authToken = (process.env.TWILIO_AUTH_TOKEN || '').trim();
+    const businessId = req.params.businessId as string | undefined;
+    const url = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+    const signature = req.header('X-Twilio-Signature');
+
+    // A callback for a business means it was sent through that merchant's own Twilio
+    // account, so it is verified against THEIR auth token — not the platform's. Twilio
+    // signs with the token of the account that sent the message, so using the wrong one
+    // would reject every legitimate callback the moment a second merchant connects.
+    let authToken = (process.env.TWILIO_AUTH_TOKEN || '').trim();
+    if (businessId) {
+      try {
+        const { creds } = await requireCredentials(businessId);
+        authToken = creds.authToken || '';
+      } catch (err: any) {
+        // The credential is gone or unverified. Refuse rather than falling back to the
+        // platform token: that would accept a callback nobody can attribute.
+        logger.warn(`[SMS] rejected Twilio webhook: no usable credential for business ${businessId}`);
+        res.status(503).type('text/xml').send('<Response/>');
+        return;
+      }
+    }
+
     if (!authToken) {
-      logger.warn('[SMS] rejected Twilio webhook: TWILIO_AUTH_TOKEN is not configured');
+      logger.warn('[SMS] rejected Twilio webhook: no auth token to verify against');
       res.status(503).type('text/xml').send('<Response/>');
       return;
     }
-
-    const signature = req.header('X-Twilio-Signature');
-    const url = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
 
     if (!signature || !smsService.verifyTwilioSignature(url, req.body as Record<string, string>, signature, authToken)) {
       logger.warn('[SMS] rejected Twilio webhook with an invalid signature');

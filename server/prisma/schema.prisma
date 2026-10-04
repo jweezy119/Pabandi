@@ -205,6 +205,9 @@ model Business {
   id                     String                   @id @default(cuid())
   ownerId                String?                  @unique
   name                   String
+
+  /// The merchant's own SMS provider credentials, if connected.
+  smsProvider            BusinessSmsProvider?
   stripeAccountId        String?                  @unique
   description            String?
   category               BusinessCategory
@@ -6824,6 +6827,47 @@ model ChannelMessage {
   @@index([channel])
   @@index([status])
   @@index([createdAt])
+}
+
+// A merchant's own SMS provider credentials (bring your own).
+//
+// WHY THIS EXISTS
+// Reselling SMS means Pabandi pays ~$0.005/message and the cost lands on our margin:
+// at 5,000 messages that is ~$25 against a $49 subscription. Connecting the merchant's
+// own provider makes it their bill and our COGS zero — the same model already used for
+// Square, where the money never touches Pabandi at all.
+//
+// `credentials` holds an AES-256-GCM blob (`iv:authTag:ciphertext`) produced by
+// utils/encryption.ts, never a plaintext secret and never returned to the client.
+//
+// One provider per business: `businessId` is unique. A merchant with two SMS providers
+// has no use for both, and a second row would make "which credential do I use" ambiguous
+// on the send path.
+//
+// Table created by sql/sms-provider-tables.sql via the deploy hook, because nothing in
+// the deploy path runs `prisma migrate deploy` — see the note at the top of
+// sql/fee-tables.sql for the full reasoning.
+model BusinessSmsProvider {
+  id             String   @id @default(cuid())
+  businessId     String   @unique
+  business       Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  /// TWILIO | VONAGE
+  provider       String
+  /// AES-256-GCM blob. Written once, never read back to the client.
+  credentials    String
+  /// The number messages are sent from, held separately because it is displayed on
+  /// every outbound message and so is safe to return — unlike the secret.
+  fromNumber     String
+  /// PENDING until verified against the provider, then VERIFIED or FAILED.
+  status         String   @default("PENDING")
+  /// Why verification failed, so the settings page can explain rather than shrug.
+  lastError      String?
+  lastVerifiedAt DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([businessId])
+  @@index([status])
 }
 
 model SMSLog {

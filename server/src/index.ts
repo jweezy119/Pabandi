@@ -493,6 +493,10 @@ const routeMap: [string, string][] = [
   [`/api/${v}/cod`, './routes/codEscrow.routes'],
   [`/api/${v}/telegram`, './routes/telegram.routes'],
   [`/api/${v}/sms`, './routes/sms.routes'],
+  // Settings for the merchant's OWN SMS provider (bring your own). Registered before
+  // `/sms` would be matched by it, since `app.use('/api/v1/sms')` also matches
+  // `/api/v1/sms/...` — but this path is `/settings/sms`, so there is no overlap.
+  [`/api/${v}/settings/sms`, './routes/settings.sms.routes'],
   [`/api/${v}/channels`, './routes/channel.routes'],
   [`/api/${v}/trust-profile`, './routes/trustProfile.routes'],
   [`/api/${v}/badge`, './routes/badge.routes'],
