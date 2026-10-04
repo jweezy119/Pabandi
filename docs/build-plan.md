@@ -733,3 +733,75 @@ just `enabledFeatures`, so ticking SMS for an event changes nothing and survives
 reload nor a logout. Wiring it needs a server-side model for per-event channel
 preferences, which is a real feature rather than a fix. Left alone rather than made to
 look functional.
+
+## WhatsApp / OpenWA reachability (2026-10-03)
+
+Finishing the question "are the OpenWA routes still ready for WhatsApp". The answer was
+**no**, in three separate ways.
+
+### A dead registration was shadowing the working routes
+
+`/api/v1/whatsapp` pointed at `./routes/whatsapp.routes`, which has never existed.
+Because routes mount with `app.use` — which matches subpaths — the lazy stub swallowed
+every `/api/v1/whatsapp/**` request with a 500, **including the working
+`/whatsapp/advanced/*` registered on the very next line**. Verified on production: opt-in,
+smart and advanced/capabilities all returned the same "Cannot find module" 500.
+
+### …and those advanced routes had no authentication either
+
+They were unreachable only by accident. Unblocking them without adding auth first would
+have turned a broken endpoint into an **open** one — `POST /smart-action` sends real
+WhatsApp messages to real customer phone numbers. So auth went on first, along with a
+tenant check so a logged-in user with no business cannot send as nobody.
+
+### AND TWO MORE DEAD REGISTRATIONS
+
+`tests/route-registration.test.ts` asserts that every lazily registered module exists on
+disk. It found two more on its first run:
+
+| registration | module | live client caller |
+|---|---|---|
+| `/api/v1/onboarding` | `onboarding.routes` | `OnboardingWizard` → `POST /onboarding/complete` |
+| `/api/v1/dashboard` | `dashboard.routes` | `BusinessDashboard` → 4 endpoints |
+
+**`/dashboard` is a routed page and is currently non-functional.** All three
+registrations removed, so they 404 honestly instead of 500 mysteriously. Reinstating them
+means writing the APIs — a feature, not a fix.
+
+The test also had to be corrected. My first version asserted that no registered prefix
+shadows another, which produced **24 false positives**: `app.use('/a', …)` matches `/a/b`,
+but the stub delegates with `next()`, so the child is still reached. The WhatsApp case was
+fatal for a different reason — the parent module failed to load, so it never delegated. The
+assertion now tests the compound property that actually breaks routes: *a registration
+whose module is missing, and which has children.*
+
+### Client features that called endpoints which never existed
+
+Three WhatsApp client features were calling 404s:
+
+- `smartAction` posted to `/api/v1/waitlist/lead/:id/smart-action` — no such route. Now
+  points at `/api/v1/whatsapp/advanced/smart-action`, which exists and takes exactly the
+  `{ intent }` body it was already sending.
+- `saveAutomations` posted to `/api/v1/whatsapp/smart` and then alerted **"Automation
+  rules saved" without looking at the response** — a false confirmation on a control whose
+  entire purpose is to report whether a save happened. It checks the response now, and
+  says the toggles are not persisted.
+- `WhatsAppOptIn` said "Failed to save. Please try again." for an endpoint that has never
+  existed, so retrying could never succeed. Consent capture needs its own stored record —
+  and for WhatsApp marketing, not having one is a compliance problem rather than a missing
+  endpoint — so it now says the feature is unavailable rather than implying a transient
+  fault.
+
+### OpenWA was reporting numbers it invented
+
+`GET /api/v1/openwa/stats` returned hardcoded `messageDeliveryRate: 0.98` and
+`uptime: '99.9%'` with a 200, whether or not a message had ever been sent. Anyone reading
+that would conclude the gateway was healthy and 98% of messages were landing — the
+opposite of the truth in every environment this has run.
+
+Now `null`, with `deliveryStatsAvailable: false` explaining why. Session counts stay real.
+`/stats` and `/sessions` also answer **503 naming the configured gateway URL** instead of
+an opaque "Internal Server Error", because "point it somewhere else" is the actual fix and
+the usual cause is still the default `localhost:2785` in a deployed environment.
+
+637 server tests (44 files), 27 client, tsc unchanged at 26 / 539.

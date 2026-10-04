@@ -85,7 +85,11 @@ export const WhatsAppOptIn: React.FC<WhatsAppOptInProps> = ({
         throw new Error('Failed to save');
       }
     } catch (err) {
-      setError('Failed to save. Please try again.');
+      // "Please try again" was wrong: `/api/v1/whatsapp/opt-in` has never existed, so
+      // retrying could never succeed. Consent capture needs its own stored record —
+      // WhatsApp marketing without one is a compliance problem, not a missing endpoint —
+      // so this says what is actually true rather than implying a transient fault.
+      setError('Opt-in cannot be recorded right now. This feature is not available yet.');
     } finally {
       setIsLoading(false);
     }

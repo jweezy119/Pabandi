@@ -4,6 +4,17 @@ import { WhatsAppProvider } from './whatsapp.provider';
 
 const OPENWA_BASE_URL = (process.env.OPENWA_API_URL || 'http://localhost:2785/api').replace(/\/$/, '');
 const OPENWA_API_KEY = process.env.OPENWA_API_KEY || '';
+
+/**
+ * The configured gateway URL, for error messages.
+ *
+ * Safe to show: it is a host an operator configured, not a secret. It is the single most
+ * useful thing to put in a "cannot reach OpenWA" response, because the usual cause is
+ * still pointing at the default localhost:2785 from a deployed environment.
+ */
+export function openwaBaseUrl(): string {
+  return OPENWA_BASE_URL;
+}
 const OPENWA_SESSION_ID = process.env.OPENWA_SESSION_ID || process.env.OPENWA_SESSION || 'default';
 
 export type OpenWAEngine = 'baileys' | 'whatsapp-web.js';

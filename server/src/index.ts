@@ -333,8 +333,36 @@ const routeMap: [string, string][] = [
   [`/api/${v}/checkout`, './routes/checkout.routes'],
   [`/api/${v}/escrow`, './routes/escrow.routes'],
   [`/api/${v}/crypto`, './routes/crypto.routes'],
-  [`/api/${v}/whatsapp`, './routes/whatsapp.routes'],
+  // REMOVED: `/api/${v}/whatsapp` -> './routes/whatsapp.routes'.
+  //
+  // That module does not exist. Because routes are mounted with `app.use`, which matches
+  // subpaths, the lazy stub swallowed every `/api/v1/whatsapp/**` request — including the
+  // working `/whatsapp/advanced/*` registered on the next line — and answered 500 with
+  // "Cannot find module './routes/whatsapp.routes'".
+  //
+  // Verified on production before this change: opt-in, smart and advanced/capabilities all
+  // returned that same 500. The advanced routes are now authenticated and reachable.
+  //
+  // A client still POSTs to `/api/v1/whatsapp/opt-in`, which has never existed. That is
+  // consent capture and needs its own model — flagged in docs/build-plan.md rather than
+  // stubbed here, because a fake opt-in that reports success is worse than a 404.
   [`/api/${v}/whatsapp/advanced`, './routes/whatsapp.advanced.routes'],
+
+  // REMOVED: `/api/${v}/onboarding` -> './routes/onboarding.routes' and
+  // `/api/${v}/dashboard` -> './routes/dashboard.routes'.
+  //
+  // Neither module exists, so both answered 500 "Route module failed to load" on every
+  // request. Found by tests/route-registration.test.ts, which asserts that every lazily
+  // registered module is on disk — a property no unit test could reach, since the suite
+  // imports route modules directly and never reads this list.
+  //
+  // Both have live client callers, so removing the registration turns a 500 into a 404
+  // and those screens are visibly broken rather than mysteriously so:
+  //   OnboardingWizard   POST /api/v1/onboarding/complete
+  //   BusinessDashboard  GET  /api/v1/dashboard/:businessId/{today,calendar,customers,employees}
+  //
+  // `/dashboard` is a routed page, so it is currently non-functional. Reinstating these
+  // means writing the APIs, which is a feature rather than a fix — see docs/build-plan.md.
   [`/api/${v}/admin/api-clients`, './routes/apiClients.routes'],
   [`/api/${v}/api-keys`, './routes/apiKey.routes'],
   [`/api/${v}/trust`, './routes/trust.routes'],
@@ -475,8 +503,6 @@ const routeMap: [string, string][] = [
   [`/api/${v}/settlement`, './routes/settlement.routes'],
   [`/api/${v}/compounding`, './routes/compounding.routes'],
   [`/api/${v}/pab-dex`, './routes/pabDex.routes'],
-  [`/api/${v}/onboarding`, './routes/onboarding.routes'],
-  [`/api/${v}/dashboard`, './routes/dashboard.routes'],
   [`/api/${v}/jev`, './routes/jev.routes'],
   [`/api/${v}/frictionless`, './routes/frictionless.routes'],
   [`/api/${v}/recommendations`, './routes/recommendation.routes'],

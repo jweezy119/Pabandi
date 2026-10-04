@@ -1,16 +1,43 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { openwaService } from '../services/whatsapp.service';
+import { openwaService, openwaBaseUrl } from '../services/whatsapp.service';
 import { listAdminPlugins, getAdminPlugin, updateAdminPlugin } from '../services/openwa_admin.service';
 import { getPluginCatalog } from '../services/openwa.plugins.service';
 
 const router = Router();
+
+/**
+ * Is this failure "the gateway is not there"?
+ *
+ * axios reports a connection failure as ECONNREFUSED / ENOTFOUND / ETIMEDOUT, or as a
+ * 5xx from the gateway itself. All of them mean the same thing to an operator: OpenWA is
+ * not answering. Left unclassified they surfaced as "Internal Server Error", which says
+ * nothing and is indistinguishable from a bug in our own code.
+ */
+function isGatewayUnreachable(error: any): boolean {
+  const code = error?.code ?? error?.cause?.code;
+  if (typeof code === 'string' && /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|EHOSTUNREACH|ECONNRESET/.test(code)) {
+    return true;
+  }
+  const status = error?.response?.status;
+  return typeof status === 'number' && status >= 500;
+}
+
 
 // GET /api/v1/openwa/sessions - list active OpenWA sessions
 router.get('/sessions', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const sessions = await openwaService.listSessions();
     res.json({ success: true, data: sessions });
-  } catch (error) {
+  } catch (error: any) {
+    // Same treatment as /stats: an unreachable gateway is a configuration state, not an
+    // internal error, and "Internal Server Error" gave an operator nothing to act on.
+    if (isGatewayUnreachable(error)) {
+      return res.status(503).json({
+        success: false,
+        message: `OpenWA gateway is not reachable at ${openwaBaseUrl()}. ` +
+          'Set OPENWA_API_URL and OPENWA_API_KEY, or start the gateway.',
+      });
+    }
     next(error);
   }
 });
@@ -82,20 +109,50 @@ router.get('/health', async (_req: Request, res: Response, next: NextFunction) =
   }
 });
 
-// GET /api/v1/openwa/stats - Get message delivery stats
+/**
+ * GET /api/v1/openwa/stats
+ *
+ * The delivery-rate and uptime figures used to be hardcoded:
+ *
+ *   messageDeliveryRate: 0.98,
+ *   uptime: '99.9%',
+ *
+ * Invented numbers in an ops dashboard, returned with a 200 whether or not a single
+ * message had ever been sent. Anyone reading them would conclude the gateway was healthy
+ * and 98% of messages were landing, which is the opposite of the truth in every
+ * environment where this has run.
+ *
+ * They are now `null`, with `deliveryStatsAvailable: false` explaining why. A dashboard
+ * that shows a dash is honest; one that shows a confident 98% is not.
+ *
+ * Session counts are still real, and still fail loudly below when the gateway is
+ * unreachable rather than pretending to be empty.
+ */
 router.get('/stats', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const sessions = await openwaService.listSessions();
     res.json({
       success: true,
       data: {
-        activeSessions: sessions.filter(s => s.status === 'connected' || s.connected).length,
+        activeSessions: sessions.filter((s: any) => s.status === 'connected' || s.connected).length,
         totalSessions: sessions.length,
-        messageDeliveryRate: 0.98,
-        uptime: '99.9%',
-      }
+        // Not measurable through this API — the gateway does not expose them.
+        messageDeliveryRate: null,
+        uptime: null,
+        deliveryStatsAvailable: false,
+      },
     });
-  } catch (error) {
+  } catch (error: any) {
+    // `listSessions` throws when the gateway is unreachable, which produced an opaque
+    // "Internal Server Error". Say what is actually wrong so an operator can tell an
+    // unreachable gateway from a broken one.
+    if (isGatewayUnreachable(error)) {
+      return res.status(503).json({
+        success: false,
+        message: `OpenWA gateway is not reachable at ${openwaBaseUrl()}. ` +
+          'Set OPENWA_API_URL and OPENWA_API_KEY, or start the gateway.',
+      });
+    }
     next(error);
   }
 });

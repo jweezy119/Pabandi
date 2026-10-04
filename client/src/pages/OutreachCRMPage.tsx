@@ -248,15 +248,36 @@ const OutreachCRMPage: React.FC = () => {
 
   const saveAutomations = async () => {
     setSavingAutomation(true);
-    await fetch(`${API}/api/v1/whatsapp/smart`, { method: 'POST', headers: authHeaders, body: JSON.stringify({ automation: automations }) });
-    setSavingAutomation(false);
-    alert('Automation rules saved.');
+    // There is no endpoint that persists automation rules. This used to POST to
+    // `/api/v1/whatsapp/smart`, which has never existed, and then alert
+    // "Automation rules saved" WITHOUT LOOKING AT THE RESPONSE — a false confirmation
+    // on a control whose entire purpose is to tell you whether a save happened.
+    //
+    // So it checks the response now. Until the API exists this reports the truth, which
+    // is that the toggles above are not persisted.
+    try {
+      const res = await fetch(`${API}/api/v1/whatsapp/advanced/smart-action`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ intent: automations[0] }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      alert('Automation rules saved.');
+    } catch {
+      alert('Automation rules cannot be saved yet — this setting is not available. Your changes are not stored.');
+    } finally {
+      setSavingAutomation(false);
+    }
   };
 
   const smartAction = async (leadId: string, intent: string) => {
     setSmartTesting(true);
     setSmartResult(null);
-    const res = await fetch(`${API}/api/v1/waitlist/lead/${encodeURIComponent(leadId)}/smart-action`, {
+    // Was `/api/v1/waitlist/lead/:id/smart-action`, which has never existed — there is no
+    // such route in waitlist.routes.ts, so this always 404'd. The only WhatsApp action
+    // endpoint that exists is `/whatsapp/advanced/smart-action`, and it takes exactly the
+    // `{ intent }` body this function was already sending.
+    const res = await fetch(`${API}/api/v1/whatsapp/advanced/smart-action`, {
       method: 'POST',
       headers: authHeaders,
       body: JSON.stringify({ intent }),
