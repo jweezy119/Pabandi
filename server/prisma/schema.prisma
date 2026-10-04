@@ -193,8 +193,8 @@ model User {
   agentRewards            AgentReward[]
   socialLinks             SocialLink[]
   portfolioItems          PortfolioItem[]
-ownedCrmBusinesses      CrmServiceBusiness[]
-customerAppointments    Appointment[]
+  ownedCrmBusinesses      CrmServiceBusiness[]
+  customerAppointments    Appointment[]
 
   @@index([email])
   @@index([phone])
@@ -202,9 +202,9 @@ customerAppointments    Appointment[]
 }
 
 model Business {
-  id                     String                   @id @default(cuid())
-  ownerId                String?                  @unique
-  name                   String
+  id      String  @id @default(cuid())
+  ownerId String? @unique
+  name    String
 
   /// The merchant's own SMS provider credentials, if connected.
   smsProvider            BusinessSmsProvider?
@@ -315,15 +315,15 @@ model Business {
   // Fees Pabandi has earned from this business and not yet collected. Payments
   // settle into the merchant's own account, so this is an accrual rather than a
   // deduction — see FeeAssessment.
-  feeAssessments FeeAssessment[]
-  feeStatements  MerchantFeeStatement[]
-  subscription   MerchantSubscription?
-crmServiceBusiness     CrmServiceBusiness?
-providers      BusinessProvider[]
-resources      BusinessResource[]
-appointments   Appointment[]
-serviceEscrows ServiceEscrow[]
-invoices               Invoice[]
+  feeAssessments     FeeAssessment[]
+  feeStatements      MerchantFeeStatement[]
+  subscription       MerchantSubscription?
+  crmServiceBusiness CrmServiceBusiness?
+  providers          BusinessProvider[]
+  resources          BusinessResource[]
+  appointments       Appointment[]
+  serviceEscrows     ServiceEscrow[]
+  invoices           Invoice[]
 
   @@index([ownerId])
   @@index([city])
@@ -1664,36 +1664,36 @@ model SystemAuditLog {
 }
 
 model BusinessService {
-  id                  String               @id @default(cuid())
-  businessId          String
-  name                String
-  description         String?
-  price               Float
-  duration            Int // Duration in minutes
-  isActive            Boolean              @default(true)
-  category            String?
-  imageUrl            String?
-  tags                Json?
-  metadata            Json?
-  discountPrice       Float?
-  bookingLeadTime     Int?
-  maxBookingsPerDay   Int?
-  locationType        String?
-  requirements        String?
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  business            Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  reservationServices ReservationService[]
-requiredResourceKind String?
-requiresProvider Boolean @default(false)
-genderPolicy String @default("UNSPECIFIED")
-retainerBps Int @default(0)
-cancellationNoticeHours Int @default(24)
-cancellationCostAmount Float @default(0)
-noShowForfeitsRetainer Boolean @default(true)
-minNoticeHours Int @default(0)
-turnaroundMinutes Int @default(0)
-appointmentServices AppointmentService[]
+  id                      String               @id @default(cuid())
+  businessId              String
+  name                    String
+  description             String?
+  price                   Float
+  duration                Int // Duration in minutes
+  isActive                Boolean              @default(true)
+  category                String?
+  imageUrl                String?
+  tags                    Json?
+  metadata                Json?
+  discountPrice           Float?
+  bookingLeadTime         Int?
+  maxBookingsPerDay       Int?
+  locationType            String?
+  requirements            String?
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+  business                Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  reservationServices     ReservationService[]
+  requiredResourceKind    String?
+  requiresProvider        Boolean              @default(false)
+  genderPolicy            String               @default("UNSPECIFIED")
+  retainerBps             Int                  @default(0)
+  cancellationNoticeHours Int                  @default(24)
+  cancellationCostAmount  Float                @default(0)
+  noShowForfeitsRetainer  Boolean              @default(true)
+  minNoticeHours          Int                  @default(0)
+  turnaroundMinutes       Int                  @default(0)
+  appointmentServices     AppointmentService[]
 
   @@index([businessId])
   @@index([businessId, category])
@@ -4255,11 +4255,11 @@ model TrustPassport {
   vector               PassportVector?
   invoiceTrustEvents   InvoiceTrustEvent[]
   locationAttestations LocationAttestation[]
-crmEmployee   CrmEmployee?
-crmJob        CrmJob[]
-crmPayroll    CrmPayroll[]
-crmExpense    CrmExpense[]
-businessProviders   BusinessProvider[]
+  crmEmployee          CrmEmployee?
+  crmJob               CrmJob[]
+  crmPayroll           CrmPayroll[]
+  crmExpense           CrmExpense[]
+  businessProviders    BusinessProvider[]
 
   @@index([handle])
   @@index([agentId])
@@ -6848,9 +6848,9 @@ model ChannelMessage {
 // the deploy path runs `prisma migrate deploy` — see the note at the top of
 // sql/fee-tables.sql for the full reasoning.
 model BusinessSmsProvider {
-  id             String   @id @default(cuid())
-  businessId     String   @unique
-  business       Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  id             String    @id @default(cuid())
+  businessId     String    @unique
+  business       Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
   /// TWILIO | VONAGE
   provider       String
   /// AES-256-GCM blob. Written once, never read back to the client.
@@ -6859,12 +6859,12 @@ model BusinessSmsProvider {
   /// every outbound message and so is safe to return — unlike the secret.
   fromNumber     String
   /// PENDING until verified against the provider, then VERIFIED or FAILED.
-  status         String   @default("PENDING")
+  status         String    @default("PENDING")
   /// Why verification failed, so the settings page can explain rather than shrug.
   lastError      String?
   lastVerifiedAt DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@index([businessId])
   @@index([status])
@@ -6910,7 +6910,7 @@ model WalletPassport {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   pipelineLeads PipelineLead[]
-contactLeads ContactLead[]
+  contactLeads  ContactLead[]
 
   @@map("wallet_passports")
 }
@@ -6996,8 +6996,8 @@ model Invoice {
   updatedAt             DateTime              @updatedAt
   trustEvents           InvoiceTrustEvent[]
   reconciliationMatches ReconciliationMatch[]
-business        Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
-currency        String    @default("USDC")
+  business              Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  currency              String                @default("USDC")
 
   @@index([businessId, status])
   @@index([clientId])
@@ -7403,7 +7403,7 @@ model CrmBusiness {
 
   // Opposite side of CrmAlert.business, added when the Contact OS branch's
   // alerts.service began writing alerts scoped by businessId.
-  crmAlerts          CrmAlert[]
+  crmAlerts CrmAlert[]
 
   @@index([ownerEmail])
   @@index([serviceType])
@@ -7427,17 +7427,17 @@ model CrmEmployee {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  business CrmBusiness?  @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  jobs     CrmJob[]     @relation("JobAssignments")
-  payrolls CrmPayroll[]
-serviceBusinessId String?
-serviceBusiness   CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
-rating            Float              @default(5.0)
-jobsCompleted     Int                @default(0)
-lastBookingAt     DateTime?
-passportId        String?            @unique
-passport          TrustPassport?     @relation(fields: [passportId], references: [id])
-assignments CrmJobAssignment[]
+  business          CrmBusiness?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  jobs              CrmJob[]            @relation("JobAssignments")
+  payrolls          CrmPayroll[]
+  serviceBusinessId String?
+  serviceBusiness   CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
+  rating            Float               @default(5.0)
+  jobsCompleted     Int                 @default(0)
+  lastBookingAt     DateTime?
+  passportId        String?             @unique
+  passport          TrustPassport?      @relation(fields: [passportId], references: [id])
+  assignments       CrmJobAssignment[]
 
   @@index([businessId])
   @@index([isActive])
@@ -7460,20 +7460,20 @@ model CrmClient {
   passportId       String?        @unique
   passport         TrustPassport? @relation("CrmClientTrustPassport", fields: [passportId], references: [id])
 
-  business   CrmBusiness?   @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  jobs       CrmJob[]
-  bookings   Booking[]
-  invoices   Invoice[]
-  deals      CrmDeal[]
-  activities CrmActivity[]
-  files      CrmFile[]
-serviceBusinessId String?
-serviceBusiness   CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
-totalJobs         Int                @default(0)
-totalSpent        Float              @default(0)
-lastJobAt         DateTime?
-stage             String             @default("lead") // lead | verified | booked | repeat | vip | at_risk
-phoneVerified     Boolean            @default(false)
+  business          CrmBusiness?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  jobs              CrmJob[]
+  bookings          Booking[]
+  invoices          Invoice[]
+  deals             CrmDeal[]
+  activities        CrmActivity[]
+  files             CrmFile[]
+  serviceBusinessId String?
+  serviceBusiness   CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
+  totalJobs         Int                 @default(0)
+  totalSpent        Float               @default(0)
+  lastJobAt         DateTime?
+  stage             String              @default("lead") // lead | verified | booked | repeat | vip | at_risk
+  phoneVerified     Boolean             @default(false)
 
   @@index([passportId])
   @@index([businessId])
@@ -7482,7 +7482,17 @@ phoneVerified     Boolean            @default(false)
 
 model CrmDeal {
   id                String    @id @default(cuid())
-  businessId        String
+  // Both anchors are optional because a deal can be created before the platform Business
+  // exists (personal mode / ContactOS onboarding). At least one is always set: a row with
+  // neither is unattributable and would be invisible to every scoped read. createDeal
+  // enforces that, rather than trusting the database to.
+  businessId        String?
+  // Anchor to the CURRENT tenant (CrmServiceBusiness) as well as the legacy
+  // CrmBusiness. Without this a deal is only reachable by a caller who happens to hold a
+  // matching CrmBusiness row, and there is no path from CrmServiceBusiness to CrmBusiness
+  // -- so every deal-scoped endpoint would silently return nothing for a correctly
+  // enrolled business. CrmClient already carries both ids; deals now match it.
+  serviceBusinessId String?
   clientId          String?
   title             String
   value             Float     @default(0)
@@ -7497,11 +7507,13 @@ model CrmDeal {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  client     CrmClient?    @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  business   CrmBusiness   @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  activities CrmActivity[]
+  client          CrmClient?          @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  business        CrmBusiness?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  serviceBusiness CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
+  activities      CrmActivity[]
 
   @@index([businessId])
+  @@index([serviceBusinessId])
   @@index([clientId])
   @@index([stage])
 }
@@ -7570,7 +7582,7 @@ model CrmJob {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  business   CrmBusiness?  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business   CrmBusiness? @relation(fields: [businessId], references: [id], onDelete: Cascade)
   client     CrmClient    @relation(fields: [clientId], references: [id], onDelete: Cascade)
   employeeId String?
   employee   CrmEmployee? @relation("JobAssignments", fields: [employeeId], references: [id], onDelete: SetNull)
@@ -7578,19 +7590,19 @@ model CrmJob {
   booking    Booking?
 
   // Location verification
-  checkinLat       Float?
-  checkinLng       Float?
-  checkinDistanceM Float?
-  locationVerified Boolean @default(false)
-serviceBusinessId     String?
-serviceBusiness       CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
-clientName            String // denormalized snapshot of client name at booking time
-rating                Int?
-feedback              String?
-actualDurationMinutes Int?
-passportId            String?
-passport              TrustPassport?     @relation(fields: [passportId], references: [id])
-assignments CrmJobAssignment[]
+  checkinLat            Float?
+  checkinLng            Float?
+  checkinDistanceM      Float?
+  locationVerified      Boolean             @default(false)
+  serviceBusinessId     String?
+  serviceBusiness       CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
+  clientName            String // denormalized snapshot of client name at booking time
+  rating                Int?
+  feedback              String?
+  actualDurationMinutes Int?
+  passportId            String?
+  passport              TrustPassport?      @relation(fields: [passportId], references: [id])
+  assignments           CrmJobAssignment[]
 
   @@index([businessId])
   @@index([status])
@@ -7615,13 +7627,13 @@ model CrmPayroll {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  business CrmBusiness? @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  employee CrmEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-serviceBusinessId String?
-serviceBusiness   CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
-status            String             @default("PENDING") // PENDING | PAID
-passportId        String?
-passport          TrustPassport?     @relation(fields: [passportId], references: [id])
+  business          CrmBusiness?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  employee          CrmEmployee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  serviceBusinessId String?
+  serviceBusiness   CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
+  status            String              @default("PENDING") // PENDING | PAID
+  passportId        String?
+  passport          TrustPassport?      @relation(fields: [passportId], references: [id])
 
   @@index([businessId])
   @@index([employeeId])
@@ -7639,11 +7651,11 @@ model CrmExpense {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  business CrmBusiness? @relation(fields: [businessId], references: [id], onDelete: Cascade)
-serviceBusinessId String?
-serviceBusiness   CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
-passportId        String?
-passport          TrustPassport?     @relation(fields: [passportId], references: [id])
+  business          CrmBusiness?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  serviceBusinessId String?
+  serviceBusiness   CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
+  passportId        String?
+  passport          TrustPassport?      @relation(fields: [passportId], references: [id])
 
   @@index([businessId])
   @@index([category])
@@ -7970,12 +7982,12 @@ model ContactLead {
 }
 
 model CrmAlert {
-  id                String             @id @default(cuid())
+  id                String              @id @default(cuid())
   // alerts.service.ts (main) filters and writes CrmAlert by businessId, while the
   // Contact OS branch uses serviceBusinessId. Both writers set exactly one, so both
   // columns are optional — a required FK on either side would reject the other's rows.
-  businessId       String?
-  business         CrmBusiness? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId        String?
+  business          CrmBusiness?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
   serviceBusinessId String?
   serviceBusiness   CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
   type              String // info | warning | critical | opportunity
@@ -7984,10 +7996,10 @@ model CrmAlert {
   entityType        String // client | job | payment | provider | module
   entityId          String
   moduleId          String?
-  dismissed         Boolean            @default(false)
+  dismissed         Boolean             @default(false)
   dismissedAt       DateTime?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 
   @@unique([entityId, title])
   @@index([serviceBusinessId, dismissed])
@@ -8041,6 +8053,7 @@ model CrmServiceBusiness {
 
   employees        CrmEmployee[]
   clients          CrmClient[]
+  deals            CrmDeal[]
   jobs             CrmJob[]
   payrolls         CrmPayroll[]
   expenses         CrmExpense[]
@@ -8128,4 +8141,3 @@ model ServiceEscrow {
   @@index([businessId, status])
   @@index([status, createdAt])
 }
-

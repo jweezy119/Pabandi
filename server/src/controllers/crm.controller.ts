@@ -26,6 +26,10 @@ import {
   recordExpense,
   getExpenses,
   getDashboardStats,
+  getDeals,
+  createDeal,
+  updateDeal,
+  deleteDeal,
 } from '../services/crm.service';
 
 // ─── Enroll Business ─────────────────────────────────────────────────────────
@@ -351,6 +355,77 @@ export async function getDashboardStatsHandler(
     const businessId = crm.serviceBusinessId;
     const stats = await getDashboardStats(businessId, crm.businessId);
     res.json({ success: true, data: stats });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ── Deal Pipeline ───────────────────────────────────────────────────────────
+
+/**
+ * GET /api/v1/crm/deals
+ *
+ * Scoped from the server-resolved CRM context, so no query parameter can widen it.
+ */
+export async function getDealsHandler(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const crm = requireCrmContext(req);
+    const deals = await getDeals(crm.serviceBusinessId, crm.businessId);
+    res.json({ success: true, data: deals });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** POST /api/v1/crm/deals */
+export async function createDealHandler(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const crm = requireCrmContext(req);
+    const deal = await createDeal(crm.serviceBusinessId, crm.businessId, req.body ?? {});
+    res.status(201).json({ success: true, data: deal });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** PATCH /api/v1/crm/deals/:id */
+export async function updateDealHandler(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const crm = requireCrmContext(req);
+    const deal = await updateDeal(
+      crm.serviceBusinessId,
+      crm.businessId,
+      req.params.id,
+      req.body ?? {}
+    );
+    res.json({ success: true, data: deal });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** DELETE /api/v1/crm/deals/:id */
+export async function deleteDealHandler(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const crm = requireCrmContext(req);
+    const result = await deleteDeal(crm.serviceBusinessId, crm.businessId, req.params.id);
+    res.json({ success: true, data: result });
   } catch (error) {
     next(error);
   }

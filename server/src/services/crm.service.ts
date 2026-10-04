@@ -870,3 +870,258 @@ export async function findOrCreateClient(
     },
   });
 }
+
+// ── Deal Pipeline ───────────────────────────────────────────────────────────
+
+/**
+ * The six pipeline stages, in order, with the probability the UI assumes for each.
+ *
+ * `probability` is stored on the row rather than derived, because a sales team will
+ * override it — "this proposal is 90% likely" is judgement, not arithmetic. But a stage
+ * change with no explicit probability still moves it to the stage default, so the kanban
+ * forecast and the probability column cannot drift apart.
+ */
+export const DEAL_STAGES = [
+  'LEAD',
+  'QUALIFIED',
+  'PROPOSAL',
+  'NEGOTIATION',
+  'WON',
+  'LOST',
+] as const;
+
+export type DealStage = (typeof DEAL_STAGES)[number];
+
+const STAGE_PROBABILITY: Record<string, number> = {
+  LEAD: 10,
+  QUALIFIED: 30,
+  PROPOSAL: 60,
+  NEGOTIATION: 80,
+  WON: 100,
+  LOST: 0,
+};
+
+function isDealStage(value: unknown): value is DealStage {
+  return typeof value === 'string' && (DEAL_STAGES as readonly string[]).includes(value);
+}
+
+/**
+ * Coerce a caller-supplied stage to a real one.
+ *
+ * Rejects rather than defaults: silently storing "won" (lowercase) or "WONNING" would put
+ * a deal in a column the kanban does not render, and it would look like data loss to the
+ * user. A 400 naming the valid stages is recoverable; a deal stuck off the board is not.
+ */
+function parseStage(value: unknown, fallback: DealStage = 'LEAD'): DealStage {
+  if (value === undefined || value === null || value === '') return fallback;
+  if (!isDealStage(value)) {
+    throw new CustomError(
+      `Invalid stage. Expected one of: ${DEAL_STAGES.join(', ')}`,
+      400,
+    );
+  }
+  return value;
+}
+
+function parseProbability(value: unknown, fallback: number): number {
+  if (value === undefined || value === null || value === '') return fallback;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0 || n > 100) {
+    throw new CustomError('probability must be a number between 0 and 100', 400);
+  }
+  return Math.round(n);
+}
+
+/**
+ * Parse an optional date, returning null for absent input.
+ *
+ * An unparseable string is a 400 rather than a silent null: "2026-13-45" almost always
+ * means the client sent a malformed date, and dropping it would file the deal with no close
+ * date and no warning, which then reads as "no deadline set" in the forecast.
+ */
+function parseOptionalDate(value: unknown): Date | null {
+  if (value === undefined || value === null || value === '') return null;
+  const d = new Date(value as string);
+  if (Number.isNaN(d.getTime())) {
+    throw new CustomError('expectedCloseDate must be a valid date', 400);
+  }
+  return d;
+}
+
+function parseValue(value: unknown): number {
+  if (value === undefined || value === null || value === '') return 0;
+  const n = Number(value);
+  if (!Number.isFinite(n)) throw new CustomError('value must be a number', 400);
+  // A negative deal value is not a discount, it is a data-entry error, and it would quietly
+  // deflate every pipeline forecast that sums the column.
+  if (n < 0) throw new CustomError('value cannot be negative', 400);
+  return n;
+}
+
+/**
+ * Tenant scope for deals.
+ *
+ * NOT crmScope(). That helper ORs `{ serviceBusinessId }` with `{ businessId }`, which is
+ * right for CrmClient — but on CrmDeal the `businessId` column is a foreign key to the
+ * legacy CrmBusiness table, while the `businessId` on the resolved context is the PLATFORM
+ * Business id. Different id spaces: passing it produced
+ * `CrmDeal_businessId_fkey (index)` violations on every create.
+ *
+ * CrmBusiness cannot be mapped to a tenant at all — it has no businessId and no ownerId,
+ * only an ownerEmail. So there is no sound way to resolve a CrmBusiness id for the caller,
+ * and guessing one would either violate the FK or, worse, match someone else's.
+ *
+ * Therefore: anchor on serviceBusinessId alone. The `businessId` column stays on the model
+ * for rows written before this change, but no scoped read may filter on it, because an id
+ * from that column cannot be attributed to a tenant.
+ */
+function dealScope(serviceBusinessId: string) {
+  return { serviceBusinessId };
+}
+
+const DEAL_SELECT = {
+  id: true,
+  title: true,
+  value: true,
+  currency: true,
+  stage: true,
+  probability: true,
+  expectedCloseDate: true,
+  closedAt: true,
+  lostReason: true,
+  notes: true,
+  clientId: true,
+  ownerName: true,
+  createdAt: true,
+  updatedAt: true,
+  client: { select: { id: true, name: true, email: true } },
+} as const;
+
+export async function getDeals(serviceBusinessId: string, businessId?: string | null) {
+  return prisma.crmDeal.findMany({
+    where: dealScope(serviceBusinessId),
+    orderBy: [{ stage: 'asc' }, { createdAt: 'desc' }],
+    select: DEAL_SELECT,
+  });
+}
+
+/**
+ * Create a deal for the resolved tenant.
+ *
+ * The tenant ids come from the arguments (the server-resolved context), never from the
+ * body. A body-supplied `serviceBusinessId` would let a caller file a deal into another
+ * business's pipeline, so it is dropped even if present.
+ */
+export async function createDeal(
+  serviceBusinessId: string,
+  businessId: string | undefined | null,
+  data: Record<string, unknown>,
+) {
+  const title = typeof data.title === 'string' ? data.title.trim() : '';
+  if (!title) throw new CustomError('title is required', 400);
+
+  const stage = parseStage(data.stage);
+  const clientId = typeof data.clientId === 'string' && data.clientId ? data.clientId : null;
+
+  // A deal must belong to the same tenant as the client it points at, otherwise the kanban
+  // would leak the client's name into another business. Checked here rather than trusted.
+  if (clientId) {
+    const client = await prisma.crmClient.findFirst({
+      where: { id: clientId, ...dealScope(serviceBusinessId) },
+      select: { id: true },
+    });
+    if (!client) throw new CustomError('client not found', 404);
+  }
+
+  return prisma.crmDeal.create({
+    data: {
+      title,
+      value: parseValue(data.value),
+      stage,
+      probability: parseProbability(data.probability, STAGE_PROBABILITY[stage]),
+      expectedCloseDate: parseOptionalDate(data.expectedCloseDate),
+      notes: typeof data.notes === 'string' && data.notes ? data.notes : null,
+      lostReason: typeof data.lostReason === 'string' && data.lostReason ? data.lostReason : null,
+      ownerName: typeof data.ownerName === 'string' && data.ownerName ? data.ownerName : null,
+      clientId,
+      // businessId is deliberately null: it is the legacy CrmBusiness anchor, which has no
+      // tenant mapping (see dealScope). serviceBusinessId is the anchor every scoped read
+      // uses, and resolveCrmBusiness guarantees it.
+      businessId: null,
+      serviceBusinessId,
+      ...(stage === 'WON' || stage === 'LOST' ? { closedAt: new Date() } : {}),
+    },
+    select: DEAL_SELECT,
+  });
+}
+
+/**
+ * Fetch a deal the caller is allowed to see, or return null.
+ *
+ * Filtering in the query rather than fetching-then-checking keeps it to one round trip and
+ * makes "not yours" indistinguishable from "does not exist", so the endpoint cannot be used
+ * to probe which deal ids are real.
+ */
+async function ownDeal(serviceBusinessId: string, businessId: string | undefined | null, dealId: string) {
+  return prisma.crmDeal.findFirst({
+    where: { id: dealId, ...dealScope(serviceBusinessId) },
+    select: DEAL_SELECT,
+  });
+}
+
+export async function updateDeal(
+  serviceBusinessId: string,
+  businessId: string | undefined | null,
+  dealId: string,
+  data: Record<string, unknown>,
+) {
+  const existing = await ownDeal(serviceBusinessId, businessId, dealId);
+  if (!existing) throw new CustomError('Deal not found', 404);
+
+  const stage = data.stage === undefined ? (existing.stage as DealStage) : parseStage(data.stage, existing.stage as DealStage);
+
+  // closedAt is derived from the stage transition, not taken from the body: a client that
+  // sends closedAt for an open deal would otherwise show a closed date on an open column.
+  const closedAt =
+    stage === 'WON' || stage === 'LOST'
+      ? existing.closedAt ?? new Date()
+      : null;
+
+  return prisma.crmDeal.update({
+    where: { id: dealId },
+    data: {
+      ...(data.title !== undefined && { title: String(data.title).trim() || existing.title }),
+      ...(data.value !== undefined && { value: parseValue(data.value) }),
+      ...(stage !== existing.stage && { stage }),
+      // Probability follows the stage unless the caller states one explicitly.
+      ...(data.probability !== undefined
+        ? { probability: parseProbability(data.probability, existing.probability) }
+        : stage !== existing.stage
+          ? { probability: STAGE_PROBABILITY[stage] }
+          : {}),
+      ...(data.expectedCloseDate !== undefined && {
+        expectedCloseDate: parseOptionalDate(data.expectedCloseDate),
+      }),
+      ...(data.notes !== undefined && { notes: data.notes ? String(data.notes) : null }),
+      ...(data.lostReason !== undefined && {
+        lostReason: data.lostReason ? String(data.lostReason) : null,
+      }),
+      ...(data.ownerName !== undefined && {
+        ownerName: data.ownerName ? String(data.ownerName) : null,
+      }),
+      ...(closedAt !== existing.closedAt && { closedAt }),
+    },
+    select: DEAL_SELECT,
+  });
+}
+
+export async function deleteDeal(
+  serviceBusinessId: string,
+  businessId: string | undefined | null,
+  dealId: string,
+) {
+  const existing = await ownDeal(serviceBusinessId, businessId, dealId);
+  if (!existing) throw new CustomError('Deal not found', 404);
+  await prisma.crmDeal.delete({ where: { id: dealId } });
+  return { id: dealId };
+}

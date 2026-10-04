@@ -17,6 +17,10 @@ import {
   recordExpenseHandler,
   getExpensesHandler,
   getDashboardStatsHandler,
+  getDealsHandler,
+  createDealHandler,
+  updateDealHandler,
+  deleteDealHandler,
 } from '../controllers/crm.controller';
 import {
   getAlertsHandler,
@@ -142,6 +146,24 @@ router.post('/clients', tierGuard({ resource: 'clients' }), addClientHandler);
 
 // GET /api/v1/crm/clients — List clients
 router.get('/clients', getClientsHandler);
+
+// ── Deal Pipeline ───────────────────────────────────────────────────────────
+// authenticate and resolveCrmBusiness are registered router-wide above, so every route
+// here is authenticated AND tenant-resolved. There is no tierGuard on deals: tierGuard
+// meters clients/invoices/jobs against a plan quota, and a pipeline stage is not a
+// metered unit — adding a limit here would gate a core sales surface for no revenue reason.
+
+// GET /api/v1/crm/deals — List the pipeline
+router.get('/deals', getDealsHandler);
+
+// POST /api/v1/crm/deals — Create a deal
+router.post('/deals', createDealHandler);
+
+// PATCH /api/v1/crm/deals/:id — Update stage, value, probability
+router.patch('/deals/:id', updateDealHandler);
+
+// DELETE /api/v1/crm/deals/:id
+router.delete('/deals/:id', deleteDealHandler);
 
 // ── Job Management ──────────────────────────────────────────────────────────
 

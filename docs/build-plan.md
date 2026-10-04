@@ -1097,3 +1097,97 @@ a real look at what is actually in it before it can be split meaningfully.
 Client 42 tests (4 files), tsc unchanged at 534, build exit 0, no service worker emitted,
 258 chunks in place of 2. `chunkSizeWarningLimit` raised to 1200 KB so that a genuine
 regression in a deliberate chunk is still visible.
+
+## CRM deals: the endpoint the pages were already built for (2026-10-03)
+
+`ContactDealsPage` and `ContactDealDetailPage` have been complete for some time —
+`DealKanbanBoard`, `DealListTable`, `DealFormModal`, `CSVImportModal` — and all of them
+fetch `/api/v1/crm/deals`. That endpoint did not exist. Every load 404'd and both pages
+rendered empty. Not a polish item: an entire feature wired to nothing.
+
+### There were three Deal models
+
+| model | anchor | status |
+|---|---|---|
+| `Deal` | legacy Abode, via `AbodeManager` | **orphaned** — 0 reads, 0 writes, `prisma.deal` used 0 times, and nothing ever created an `AbodeManager` row |
+| `ContactDeal` | `lead.ownerId` — personal, not per-business | live, but wrong granularity and missing `probability`/`lostReason` |
+| `CrmDeal` | `businessId` | **already business-scoped, and a field-for-field match for the client** |
+
+`CrmDeal` is what the UI was written against: `clientId` → `CrmClient`, the same six-stage
+vocabulary (`LEAD…LOST`), `probability`, `lostReason`, `notes`, `expectedCloseDate`. No
+client change was needed at all — the pages were already correct, the server was empty.
+
+I first set out to consolidate onto `ContactDeal` per the earlier plan. `CrmDeal` turned out
+to dominate it on every axis, so the target changed. `ContactDeal` would have needed `leadId`
+relaxed to nullable plus five new columns; `CrmDeal` needed one.
+
+### The actual bug: an endpoint alone would still have been empty
+
+`CrmDeal` had **no `serviceBusinessId`**, and there is no path from `CrmServiceBusiness` to
+the legacy `CrmBusiness`. So scoping it the way every other CRM endpoint is scoped matched
+nothing for a correctly enrolled business — adding routes without the column would have
+left both pages just as blank, and looked like the fix didn't work.
+
+This is the same `businessId` vs `serviceBusinessId` split that makes `/contact/reports`
+empty. It is not one bug in one file; it is a pattern.
+
+Two id spaces collide here, and it is worth writing down because it is not obvious:
+
+- `req.crm.businessId` is the **platform `Business.id`**.
+- `CrmDeal.businessId` is a foreign key to the **legacy `CrmBusiness.id`**.
+
+Passing one where the other is expected produced `CrmDeal_businessId_fkey (index)` on every
+create — caught by the integration test, not by reading the code. And `CrmBusiness` cannot
+be mapped to a tenant at all: no `businessId`, no `ownerId`, only an `ownerEmail`.
+
+So deals are scoped by `serviceBusinessId` **alone**, via a `dealScope()` helper rather than
+the usual `crmScope()`. `crmScope()` ORs in `{ businessId }`, which is right for `CrmClient`
+and meaningless for `CrmDeal`. `CrmDeal.businessId` is left null on write and never filtered
+on, because an id from that column cannot be attributed to a tenant — guessing one would
+either violate the FK or match someone else's.
+
+Consequence to be aware of: any `CrmDeal` row written before this change carries only the
+legacy `businessId` and is therefore invisible to the CRM deals UI. There were no such rows
+to lose — `prisma.crmDeal` had zero write paths, so nothing could have created one through
+the app.
+
+### Schema change
+
+One nullable column (`CrmDeal.serviceBusinessId`) plus `businessId` relaxed to nullable, and
+`db push` applies exactly this. Nullable with no backfill, so nothing is dropped. Mirrored in
+`server/sql/crm-deal-tenant.sql` and registered in `ensure-agent-tables.cjs`, because nothing
+in the deploy path runs `prisma migrate deploy` — a column that exists only in a migration
+folder does not exist in production.
+
+### Tests: 16, mutation-checked five ways
+
+`server/tests/crm-deals.integration.test.ts`, real HTTP against a disposable database.
+Reverting each fix makes a test fail, so the suite is worth something:
+
+| mutation | result |
+|---|---|
+| drop tenant scoping from the deals list | 2 failed |
+| trust a body-supplied `serviceBusinessId` | 1 failed |
+| skip the cross-tenant client check | 1 failed |
+| accept any stage | 1 failed |
+| stop clearing `closedAt` on reopen | 2 failed |
+
+Full server suite 712 passed / 49 files (was 696 / 48). Client 42. Server tsc 26, unchanged.
+
+Two things the tests corrected in my own assumptions, both worth keeping:
+
+- `resolveCrmBusiness` **does** read a body `businessId`, as an owner-scoped selector, and
+  403s on a mismatch rather than ignoring it. My first test asserted it was ignored; it is
+  not, and the real behaviour is safe. `serviceBusinessId` is the one that is ignored.
+- The first email mock was hand-listed and broke registration on `sendWelcome`. The
+  existing suites use a `Proxy` for exactly this reason.
+
+### Still missing
+
+- `POST /api/v1/crm/import/deals` (CSV import) does not exist. `CSVImportModal` surfaces a
+  visible error rather than failing silently, so it is honest, but the button does not work.
+- `reports.service.ts` still filters `CrmDeal` on the platform `businessId`, so pipeline
+  figures in `/contact/reports` will not see these rows. That is the next item on the list and
+  needs the same `dealScope()` treatment.
+- `Deal`, `AbodeManager` and the rest of the Abode-era schema are dead weight. Deleting them
+  is a real migration and should not be done casually.
