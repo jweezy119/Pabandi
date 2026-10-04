@@ -123,6 +123,11 @@ describe('SMS is authenticated, tenant-scoped, and gated by tier', () => {
     const { prisma } = await import('../src/utils/database');
     await prisma.merchantSubscription.deleteMany({ where: { business: { owner: { email: { contains: MARKER } } } } } as never);
     await prisma.sMSLog.deleteMany({ where: { business: { owner: { email: { contains: MARKER } } } } } as never);
+    // Notifications first. Registering/enrolling a business emits them (e.g.
+    // `trust_score_changed`), and Notification.userId has no cascade — so without this
+    // the user delete is refused and every later test in the file fails on an error that
+    // has nothing to do with what it asserts.
+    await prisma.notification.deleteMany({ where: { user: { email: { contains: MARKER } } } });
     await prisma.crmClient.deleteMany({ where: { email: { contains: MARKER } } });
     await prisma.user.deleteMany({ where: { email: { contains: MARKER } } });
   });

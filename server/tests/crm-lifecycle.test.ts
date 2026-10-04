@@ -264,9 +264,35 @@ describe('handleNoShow', () => {
   });
 
   it('marks a SCHEDULED past its start as missed', async () => {
-    jobs.push({ id: 'job_1', status: 'SCHEDULED', clientId: 'cli_1', scheduledDate: new Date(Date.now() - 3600_000), scheduledTime: '10:00' });
+    // Two days ago at 10:00 UTC, not "an hour ago at 10:00".
+    //
+    // composeJobStart calls setUTCHours on scheduledDate, so an hour-ago date with a
+    // fixed 10:00 only lands in the past when the suite runs after 10:00 UTC. This test
+    // therefore failed for a ten-hour window every day — a flake that looked like a
+    // product bug in the no-show penalty, and had nothing to do with either.
+    jobs.push({
+      id: 'job_1',
+      status: 'SCHEDULED',
+      clientId: 'cli_1',
+      scheduledDate: new Date(Date.now() - 2 * 86400_000),
+      scheduledTime: '10:00',
+    });
     await handleNoShow('job_1', 'csb_1', 'biz_1');
     expect(emitted.some((e) => e.type === 'delivery.missed')).toBe(true);
+  });
+
+  it('leaves a SCHEDULED job alone before its start time', async () => {
+    // The other half of the same boundary, and equally time-of-day sensitive if written
+    // carelessly: a job two days out at 10:00 UTC has not started whatever the hour.
+    jobs.push({
+      id: 'job_1',
+      status: 'SCHEDULED',
+      clientId: 'cli_1',
+      scheduledDate: new Date(Date.now() + 2 * 86400_000),
+      scheduledTime: '10:00',
+    });
+    await handleNoShow('job_1', 'csb_1', 'biz_1');
+    expect(emitted.some((e) => e.type === 'delivery.missed')).toBe(false);
   });
 });
 

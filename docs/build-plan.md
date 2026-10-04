@@ -677,3 +677,59 @@ would accept a callback nobody can attribute.
   pricing decision, not a technical one, so it is unchanged.
 - **Platform credentials remain** for system notifications, which have no merchant to
   bill.
+
+## SMS provider UI (2026-10-03)
+
+`SmsProviderSettings`, mounted in Contact OS → Settings → Notifications, above the
+per-event table — because the SMS column in that table is useless until a provider is
+connected.
+
+The rule the screen is written to: **never claim a state the server did not confirm.**
+That rule exists because the last attempt at this UI, `SMSSetup.tsx`, posted to an
+endpoint that stored nothing and replied "Credentials saved". It was unmounted, so
+nothing broke — but it is the reason this one is shaped differently:
+
+- "Connected" is shown only when the server says `status === 'VERIFIED'`.
+- A FAILED connection shows **the provider's own reason**. "Invalid username or password"
+  is the only useful thing to tell someone who just pasted the wrong token.
+- Credential fields are **never pre-filled**, and the token inputs are `type="password"`.
+  The server cannot read them back, so a pre-filled field would be a form implying it
+  holds a secret it does not have — the same lie in a new place.
+- The secret is cleared from component state as soon as it is saved.
+- A 503 says the key was **NOT saved**, rather than "try again", which would imply it
+  might have been.
+- Disconnect confirms first and says what it removes.
+- Failures render `role="alert"` instead of `alert()`, and leave a working control rather
+  than a disabled one.
+
+`smsSettingsService` has **no `businessId` parameter** anywhere — the server resolves the
+tenant from the session, so there is nothing to point at someone else's account.
+
+11 component tests. Bite-checked: showing the success notice regardless of the server's
+verdict fails the test written for exactly that.
+
+### Two pre-existing bugs fixed on the way
+
+- **`NotificationsPage` hung on "Loading…" forever** without a `businessId` in
+  localStorage. `loadConfig` only ran `if (businessId)`, and only its `finally` ever
+  cleared `loading`, so the early return below waited forever. That would have hidden the
+  new section from exactly the accounts least able to reach it.
+- **`tests/crm-lifecycle.test.ts` failed for a ten-hour window every day.** It set
+  `scheduledDate` to "an hour ago" with `scheduledTime: '10:00'`, but `composeJobStart`
+  calls `setUTCHours` on that date — so the job only started in the past when the suite
+  ran after 10:00 UTC. Now two days ago, plus a sibling test for the not-yet-started side
+  of the same boundary. This looked like a no-show penalty bug and was neither.
+
+The SMS suite also needed the same cleanup fix as the money suite: registering a business
+emits a `Notification`, whose FK to `User` has no cascade, so the user delete was refused
+and every later test failed on an error unrelated to what it asserted.
+
+623 server tests (42 files), 27 client, tsc unchanged at 26 / 539.
+
+### Still not honest
+
+The per-event **SMS checkbox column** in that table is local-only: `saveConfig` persists
+just `enabledFeatures`, so ticking SMS for an event changes nothing and survives neither a
+reload nor a logout. Wiring it needs a server-side model for per-event channel
+preferences, which is a real feature rather than a fix. Left alone rather than made to
+look functional.

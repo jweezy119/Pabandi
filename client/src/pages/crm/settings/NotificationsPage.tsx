@@ -3,6 +3,7 @@ import DashboardLayout from '../../../components/DashboardLayout';
 import { Card } from '../../../components/primitives/Card';
 import { Button } from '../../../components/primitives/Button';
 import { getAuthToken } from '../../../utils/authToken';
+import { SmsProviderSettings } from '../../../components/SmsProviderSettings';
 
 
 
@@ -15,7 +16,15 @@ export function NotificationsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (businessId) loadConfig();
+    if (businessId) {
+      loadConfig();
+    } else {
+      // Without this the page renders "Loading..." forever: the early return below waits
+      // on `loading`, and only loadConfig's `finally` ever cleared it. An account with no
+      // businessId in localStorage could not reach this page at all — including the SMS
+      // provider section mounted below.
+      setLoading(false);
+    }
   }, [businessId]);
 
   const loadConfig = async () => {
@@ -72,6 +81,10 @@ export function NotificationsPage() {
           </div>
           <Button variant="primary" onClick={() => saveConfig(config)}>Save Changes</Button>
         </div>
+
+        {/* Bring-your-own SMS credentials. Above the per-event table because the SMS
+            column below is useless until a provider is connected. */}
+        <SmsProviderSettings />
 
         <Card padding="lg" className="overflow-x-auto">
           <table className="w-full text-left">

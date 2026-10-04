@@ -649,6 +649,35 @@ export const tenantService = {
  * gating on a paid plan was guessing — see utils/subscriptionTier.ts for what that
  * looked like in practice.
  */
+/**
+ * The merchant's OWN SMS provider (bring your own).
+ *
+ * Note there is no `businessId` parameter anywhere in here, and that is deliberate: the
+ * server resolves the tenant from the verified session, so there is nothing for a caller
+ * to point at someone else's account. An earlier version of this area took businessId from
+ * a query string, which is the pattern the server no longer accepts.
+ *
+ * The credential is write-only. There is no read that returns it, so the UI never has a
+ * secret to accidentally render, log, or put in a component's state after a re-mount.
+ */
+export const smsSettingsService = {
+  /** Connection status. `connected: false` is a normal state, not an error. */
+  get: () => apiClient.get('/settings/sms'),
+  /** Verify against the provider, then store. Resolves even when verification fails. */
+  connect: (payload: {
+    provider: 'TWILIO' | 'VONAGE';
+    fromNumber: string;
+    accountSid?: string;
+    authToken?: string;
+    apiKey?: string;
+    apiSecret?: string;
+  }) => apiClient.post('/settings/sms', payload),
+  /** Re-check a stored credential. */
+  verify: () => apiClient.post('/settings/sms/verify'),
+  /** Remove the connection and the stored ciphertext. */
+  disconnect: () => apiClient.delete('/settings/sms'),
+};
+
 export const subscriptionService = {
   /** Authoritative tier + usage for the caller's business. */
   me: () => apiClient.get('/subscriptions/me'),
