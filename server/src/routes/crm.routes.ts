@@ -451,20 +451,19 @@ router.get('/settings', async (req: AuthRequest, res: Response) => {
 
     const row = await prisma.businessSettings.findUnique({
       where: { businessId },
-      select: { customFields: true, enabledFeatures: true },
+      select: { customFields: true },
     });
 
-    const direct = asRecord(row?.customFields);
-    const viaFeatures = asRecord(asRecord(row?.enabledFeatures).customFields);
-
-    // Prefer the dedicated column per entity, fall back to the nested one, merge rather than
-    // replace — so a row using either location produces a complete answer.
-    const merged: Record<string, unknown> = { ...viaFeatures };
-    for (const [entity, fields] of Object.entries(direct)) {
-      if (Array.isArray(fields) && fields.length) merged[entity] = fields;
-    }
-
-    res.json({ success: true, data: { customFields: merged } });
+    // ONE home. The dedicated column is canonical; `enabledFeatures` is a feature-flag bag
+    // and no longer carries field definitions.
+    //
+    // This previously merged the two, which made the writer/reader disagreement harmless
+    // rather than fixed — two places to look, and the next change would have had to guess
+    // which one a given row meant. The disagreement is now resolved at the write path
+    // (SettingsService.updateSettings normalises to this column) and at boot
+    // (sql/customfields-canonical.sql moves anything already in the bag), so this can read
+    // one column and mean it.
+    res.json({ success: true, data: { customFields: asRecord(row?.customFields) } });
   } catch (err: any) {
     res.status(Number(err?.statusCode) || 500).json({ success: false, error: 'Could not load settings' });
   }

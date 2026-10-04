@@ -134,39 +134,138 @@ describe('crm settings + files', () => {
     expect((await api('', 'GET', '/api/v1/crm/files')).status).toBe(401);
   });
 
-  it('returns a CRM-shaped customFields object', async () => {
+  it('reads customFields from the one canonical column', async () => {
     const b = await seedBusiness('shape');
     const { prisma } = await import('../src/utils/database');
     await prisma.businessSettings.create({
-      data: {
-        businessId: b.businessId,
-        // Written the way CustomFieldsPage writes it: nested under enabledFeatures.
-        enabledFeatures: { customFields: { client: [{ key: 'vip', label: 'VIP' }] } },
-      },
+      data: { businessId: b.businessId, customFields: { client: [{ key: 'vip', label: 'VIP' }] } },
     });
 
     const res = await api(b.token, 'GET', '/api/v1/crm/settings');
     expect(res.status, JSON.stringify(res.json)).toBe(200);
-    // ContactClientsPage reads exactly this path, and 404'd before.
+    // ContactClientsPage reads exactly this path, and it 404'd for two audit cycles.
     expect(res.json.data.customFields.client).toEqual([{ key: 'vip', label: 'VIP' }]);
   });
 
-  it('prefers the dedicated customFields column and still reads the nested one', async () => {
-    const b = await seedBusiness('merge');
+  it('accepts custom fields from either position on write, and always stores them in the column', async () => {
+    const b = await seedBusiness('canon');
+    const { prisma } = await import('../src/utils/database');
+
+    // The legacy position, which is what CustomFieldsPage used to send.
+    const legacy = await api(b.token, 'PUT', '/api/v1/settings/config', {
+      data: { enabledFeatures: { customFields: { client: [{ key: 'frombag', label: 'FromBag' }] } } },
+    });
+    expect(legacy.status, JSON.stringify(legacy.json)).toBe(200);
+
+    let row = await prisma.businessSettings.findUnique({
+      where: { businessId: b.businessId },
+      select: { customFields: true, enabledFeatures: true },
+    });
+    // The column is the only home now.
+    expect(row?.customFields).toEqual({ client: [{ key: 'frombag', label: 'FromBag' }] });
+    // And the flag bag no longer carries field definitions, so it cannot become a second home.
+    expect(JSON.stringify(row?.enabledFeatures)).not.toContain('customFields');
+
+    // The canonical position, which is what the page sends now.
+    const canonical = await api(b.token, 'PUT', '/api/v1/settings/config', {
+      data: { customFields: { job: [{ key: 'fromtop', label: 'FromTop' }] } },
+    });
+    expect(canonical.status, JSON.stringify(canonical.json)).toBe(200);
+
+    row = await prisma.businessSettings.findUnique({
+      where: { businessId: b.businessId },
+      select: { customFields: true },
+    });
+    expect(row?.customFields).toEqual({ job: [{ key: 'fromtop', label: 'FromTop' }] });
+  });
+
+  it('prefers the top-level customFields when a caller sends both positions', async () => {
+    const b = await seedBusiness('both');
+    const { prisma } = await import('../src/utils/database');
+
+    await api(b.token, 'PUT', '/api/v1/settings/config', {
+      data: {
+        customFields: { client: [{ key: 'winner', label: 'Winner' }] },
+        enabledFeatures: { customFields: { client: [{ key: 'loser', label: 'Loser' }] } },
+      },
+    });
+
+    const row = await prisma.businessSettings.findUnique({
+      where: { businessId: b.businessId },
+      select: { customFields: true },
+    });
+    // The explicit top-level value is the one a caller means when it sends both.
+    expect(JSON.stringify(row?.customFields)).toContain('Winner');
+    expect(JSON.stringify(row?.customFields)).not.toContain('Loser');
+  });
+
+  it('does not let a custom-fields save wipe notification preferences', async () => {
+    const b = await seedBusiness('nowipe');
     const { prisma } = await import('../src/utils/database');
     await prisma.businessSettings.create({
       data: {
         businessId: b.businessId,
-        customFields: { client: [{ key: 'direct', label: 'Direct' }] },
-        enabledFeatures: { customFields: { job: [{ key: 'nested', label: 'Nested' }] } },
+        customFields: { client: [{ key: 'keepme', label: 'KeepMe' }] },
+        enabledFeatures: { notifications: [{ event: 'invoice_paid', enabled: true }] },
       },
     });
 
-    const res = await api(b.token, 'GET', '/api/v1/crm/settings');
-    // Merged, not replaced: a row using either location must produce a complete answer, or the
-    // endpoint silently returns nothing depending on which writer last touched the row.
-    expect(res.json.data.customFields.client).toEqual([{ key: 'direct', label: 'Direct' }]);
-    expect(res.json.data.customFields.job).toEqual([{ key: 'nested', label: 'Nested' }]);
+    // Every settings page sends the whole bag it loaded. Replacing it rather than merging
+    // would let CustomFieldsPage saving a field silently delete a business's notification
+    // preferences -- the same failure shape as a partial CSV import.
+    await api(b.token, 'PUT', '/api/v1/settings/config', {
+      data: { customFields: { client: [{ key: 'added', label: 'Added' }] } },
+    });
+
+    const row = await prisma.businessSettings.findUnique({
+      where: { businessId: b.businessId },
+      select: { customFields: true, enabledFeatures: true },
+    });
+    // The bag survives: every settings page sends the whole bag it loaded, so REPLACING it
+    // would let a custom-fields save silently delete a business's notification preferences --
+    // the same failure shape as a partial CSV import.
+    expect(JSON.stringify(row?.enabledFeatures)).toContain('invoice_paid');
+
+    // customFields itself is replaced wholesale, not merged. That matches how every other
+    // column in updateSettings behaves, and the page always sends the complete object it
+    // loaded. Merging would be worse: a field the user just deleted would reappear, because
+    // the incoming object still lacks it and a merge would keep the stored one.
+    expect(row?.customFields).toEqual({ client: [{ key: 'added', label: 'Added' }] });
+  });
+
+  it('merges the flag bag when a request carries both custom fields and flags', async () => {
+    const b = await seedBusiness('bothbag');
+    const { prisma } = await import('../src/utils/database');
+    await prisma.businessSettings.create({
+      data: {
+        businessId: b.businessId,
+        customFields: { client: [{ key: 'seeded', label: 'Seeded' }] },
+        enabledFeatures: { notifications: [{ event: 'invoice_paid', enabled: true }], contact: ['crm'] },
+      },
+    });
+
+    // One request carrying BOTH. The earlier test only ever sent customFields, so the merge
+    // branch never ran and replacing the bag wholesale was invisible to it -- replacing is
+    // what silently deletes another page's settings.
+    const res = await api(b.token, 'PUT', '/api/v1/settings/config', {
+      data: {
+        customFields: { client: [{ key: 'new', label: 'New' }] },
+        enabledFeatures: { trust: { enabled: true } },
+      },
+    });
+    expect(res.status, JSON.stringify(res.json)).toBe(200);
+
+    const row = await prisma.businessSettings.findUnique({
+      where: { businessId: b.businessId },
+      select: { customFields: true, enabledFeatures: true },
+    });
+    // The incoming flag is added...
+    expect(JSON.stringify(row?.enabledFeatures)).toContain('trust');
+    // ...and the keys the caller did not send survive. A page that only knows about its own
+    // flags must not be able to delete the rest.
+    expect(JSON.stringify(row?.enabledFeatures)).toContain('invoice_paid');
+    expect(JSON.stringify(row?.enabledFeatures)).toContain('contact');
+    expect(JSON.stringify(row?.customFields)).toContain('New');
   });
 
   it('returns an empty object rather than another business settings', async () => {
@@ -174,10 +273,7 @@ describe('crm settings + files', () => {
     const b = await seedBusiness('settb');
     const { prisma } = await import('../src/utils/database');
     await prisma.businessSettings.create({
-      data: {
-        businessId: b.businessId,
-        customFields: { client: [{ key: 'secret', label: 'Secret' }] },
-      },
+      data: { businessId: b.businessId, customFields: { client: [{ key: 'secret', label: 'Secret' }] } },
     });
 
     const res = await api(a.token, 'GET', `/api/v1/crm/settings?businessId=${b.businessId}`);

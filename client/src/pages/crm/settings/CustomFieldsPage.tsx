@@ -21,8 +21,15 @@ export function CustomFieldsPage() {
 
   const loadConfig = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/settings/config?businessId=${businessId}`, { headers: getHeaders() });
-      if (res.ok) setConfig(await res.json());
+      // No businessId: the server resolves the tenant from the session now.
+      const res = await fetch(`${API_BASE}/api/v1/settings/config`, { headers: getHeaders() });
+      if (res.ok) {
+        const body = await res.json();
+        // The route returns the settings ROW, not a { data } envelope, so there is nothing to
+        // unwrap here -- but guard anyway, because the sibling CRM routes DO wrap and a future
+        // change to either side would otherwise read as "no custom fields configured".
+        setConfig(body?.data ?? body ?? {});
+      }
     } finally {
       setLoading(false);
     }
@@ -30,26 +37,43 @@ export function CustomFieldsPage() {
 
   const saveConfig = async (newConfig: any) => {
     try {
-      await fetch(`${API_BASE}/api/v1/settings/config`, {
+      // Sends `customFields` at the TOP level, which is the canonical location
+      // (BusinessSettings.customFields). It used to nest the definitions under
+      // `enabledFeatures.customFields`, while GET /crm/settings read the column -- so the
+      // writer and the reader disagreed and the CRM rendered no custom fields at all.
+      //
+      // `enabledFeatures` is a feature-flag bag and is not sent: this page has no business
+      // rewriting flags, and sending the whole bag it loaded would risk clobbering another
+      // page's settings. The server merges that bag rather than replacing it regardless.
+      //
+      // `businessId` is no longer sent either. The server derives the tenant from the
+      // session; it used to be required, and passing one is now ignored.
+      const res = await fetch(`${API_BASE}/api/v1/settings/config`, {
         method: 'PUT',
         headers: getHeaders(),
-        body: JSON.stringify({ businessId, data: { enabledFeatures: newConfig.enabledFeatures } })
+        body: JSON.stringify({ data: { customFields: newConfig.customFields ?? {} } })
       });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || `Save failed (${res.status})`);
+      }
       setConfig(newConfig);
       alert('Custom fields saved!');
     } catch (err) {
       console.error(err);
-      alert('Error saving custom fields');
+      // Previously every failure looked identical to success in the console while the user
+      // was told nothing -- and `alert` fired only on a thrown network error, not on a 4xx.
+      alert(err instanceof Error ? err.message : 'Error saving custom fields');
     }
   };
 
   const addField = (entity: string) => {
     const updated = { ...config };
     if (!updated.enabledFeatures) updated.enabledFeatures = {};
-    if (!updated.enabledFeatures.customFields) updated.enabledFeatures.customFields = {};
-    if (!updated.enabledFeatures.customFields[entity]) updated.enabledFeatures.customFields[entity] = [];
+    if (!updated.customFields) updated.customFields = {};
+    if (!updated.customFields[entity]) updated.customFields[entity] = [];
     
-    updated.enabledFeatures.customFields[entity].push({
+    updated.customFields[entity].push({
       id: Math.random().toString(36).substring(7),
       name: 'New Field',
       type: 'text',
@@ -61,14 +85,14 @@ export function CustomFieldsPage() {
 
   const updateField = (entity: string, index: number, field: any) => {
     const updated = { ...config };
-    updated.enabledFeatures.customFields[entity][index] = field;
+    updated.customFields[entity][index] = field;
     setConfig(updated);
   };
 
   if (loading) return <div className="p-8">Loading...</div>;
 
   const entities = ['Client', 'Deal', 'Job', 'Invoice'];
-  const fieldsConfig = config.enabledFeatures?.customFields || {};
+  const fieldsConfig = config.customFields || {};
 
   return (
     <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" >
@@ -143,7 +167,7 @@ export function CustomFieldsPage() {
                     </label>
                     <Button variant="ghost" onClick={() => {
                       const updated = { ...config };
-                      updated.enabledFeatures.customFields[entity].splice(idx, 1);
+                      updated.customFields[entity].splice(idx, 1);
                       setConfig(updated);
                     }} whileTap={{ scale: 0.95 }}>
                       <span className="material-symbols-outlined text-[var(--rose)]">delete</span>
