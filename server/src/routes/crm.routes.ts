@@ -25,6 +25,7 @@ import {
 } from '../controllers/revenue.controller';
 import { invoiceTrustService } from '../services/invoice-trust.service';
 import * as crmService from '../services/crm.service';
+import { crmScope } from '../services/crm.service';
 import { CustomError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 import { tierGuard } from '../middleware/tierGuard.middleware';
@@ -75,11 +76,34 @@ router.use(resolveCrmBusiness);
 router.post('/employees', addEmployeeHandler);
 
 // PUT /api/v1/crm/employees/:id — Update employee
+// Scoped by tenant, not by id alone.
+//
+// These two handlers updated and deleted `crmEmployee` by primary key with no tenant
+// predicate, so ANY authenticated caller could rewrite or delete ANY CRM employee on the
+// platform — including changing someone's `payRate`. Changing a colleague's pay rate is
+// about as consequential as a cross-tenant write gets, and it needed nothing more than an
+// employee id.
+//
+// crm.service.ts documents this exact bug class at length for payroll and fixes it there;
+// these two inline handlers were written afterwards and missed it.
+//
+// 404 rather than 403 when the row is not theirs, so a caller cannot probe for the
+// existence of another tenant's employee ids.
 router.put('/employees/:id', async (req, res) => {
   try {
+    const { serviceBusinessId, businessId } = requireCrmContext(req);
     const { name, email, phone, role, payRate, payType, isActive } = req.body;
+
+    const existing = await prisma.crmEmployee.findFirst({
+      where: { id: req.params.id, ...crmScope(serviceBusinessId, businessId) },
+      select: { id: true },
+    });
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Employee not found' });
+    }
+
     const employee = await prisma.crmEmployee.update({
-      where: { id: req.params.id },
+      where: { id: existing.id },
       data: { name, email, phone, role, payRate: payRate ? Number(payRate) : undefined, payType, isActive },
     });
     res.json({ success: true, data: employee });
@@ -91,7 +115,17 @@ router.put('/employees/:id', async (req, res) => {
 // DELETE /api/v1/crm/employees/:id — Delete employee
 router.delete('/employees/:id', async (req, res) => {
   try {
-    await prisma.crmEmployee.delete({ where: { id: req.params.id } });
+    const { serviceBusinessId, businessId } = requireCrmContext(req);
+
+    const existing = await prisma.crmEmployee.findFirst({
+      where: { id: req.params.id, ...crmScope(serviceBusinessId, businessId) },
+      select: { id: true },
+    });
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Employee not found' });
+    }
+
+    await prisma.crmEmployee.delete({ where: { id: existing.id } });
     res.json({ success: true, message: 'Employee deleted' });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });

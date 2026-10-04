@@ -949,3 +949,76 @@ sprinkling per-route limiters on routes that have one is churn that breaks provi
 callbacks. If specific routes need tighter budgets than 100/15min, the ones that justify it
 are auth (`authRateLimiter`, `strictApiLimiter` exist for this) and money writes
 (`writeLimiter` exists). That is a prioritisation pass, not a bulk edit, and it is not done.
+
+## CRM P0: a dead page and three missing security gates (2026-10-03)
+
+An audit of the CRM surfaced more broken and insecure wiring than missing features. The
+three most severe were verified by hand before acting.
+
+### 1. `/crm` threw on every request
+
+`ServiceBusinessDashboard.tsx` referenced three identifiers that were never declared in the
+file:
+
+```
+${API}${path}          line 20   — ReferenceError before the fetch
+${PM_API}${path}       line 28   — ReferenceError before the fetch
+unwrapError(err, ...)  line 100  — ReferenceError in the catch that reports failures
+```
+
+The page is mounted at `/crm`, so it threw on every call and rendered nothing. Because the
+throw happened *before* the fetch, it looked like a network problem rather than a code one.
+
+`pmApi` had a second bug: it did `return res.data` on a `fetch` Response, which has no
+`.data` — so it always resolved to `undefined` and every property/tenant/maintenance list
+rendered empty even once the base URL existed.
+
+Client tsc went 539 → 534: the undefined globals were counted errors all along.
+
+### 2. Cross-tenant employee writes
+
+`PUT /crm/employees/:id` and `DELETE /crm/employees/:id` updated and deleted `crmEmployee`
+**by primary key with no tenant predicate**. Any authenticated caller could rewrite any
+employee on the platform — including changing someone's `payRate`, which needs nothing more
+than an employee id.
+
+`crm.service.ts` documents this exact bug class at length for payroll and fixes it there;
+these two inline handlers were written afterwards and missed it. Now scoped with
+`crmScope`, answering **404** for both "not yours" and "does not exist" so the endpoint
+cannot be used to enumerate ids across tenants.
+
+### 3. Thirty-two routes with no authentication at all
+
+| router | mount | routes |
+|---|---|---|
+| `reports.routes.ts` | `/api/v1/reports` | 6 |
+| `apiKey.routes.ts` | `/api/v1/api-keys` | 3 |
+| `paymentMethods.routes.ts` | `/api/v1/payment-methods` | 4 |
+| `crmAdvanced.routes.ts` | `/api/v1/crm-advanced` | 19 |
+
+Rent generation, late fees, lease renewal, inspections, maintenance vendors, cashflow, API
+keys, payment methods, revenue and trust reports — each taking a tenant from the query
+string, with no caller identity. All 32 are business-scoped reads/writes; none is a webhook
+or otherwise public, so all now require a session via `router.use(authenticate)` rather than
+per-handler, so a route added later is covered by default.
+
+`tests/router-auth-regression.test.ts` probes **every** route in all four files rather than
+one per router, and asserts the probe list matches the number of routes declared in the
+source — so the list cannot silently fall behind as routes are added.
+
+Bite-checked: removing `router.use(authenticate)` fails 27 of the 33.
+
+### Also noted, not fixed
+
+`/api/v1/api-keys` is registered twice in `index.ts` (lines 367 and 425). Harmless — the
+first lazy stub handles it — but it should be one line.
+
+**Reports still read a tenant from the query string.** Authentication is now required, but
+an authenticated caller can still pass another tenant's `businessId`. That is the next thing
+to close here, and it needs the `serviceBusinessId` split below resolved first, because
+`reports.service.ts` filters on the platform `businessId` while `crm.service.ts` writes only
+`serviceBusinessId` — which is also why `/contact/reports` is always empty for CRM data.
+
+### Verified
+
+696 server tests (48 files), 42 client, server tsc 26, client tsc 534 (improved from 539).

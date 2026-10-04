@@ -4,7 +4,7 @@ import { FiUsers, FiDollarSign, FiCalendar, FiTrendingUp, FiTool, FiFileText, Fi
 import ContactsPipelineTab from './ContactsPipelineTab';
 import EmployeesTab from './EmployeesTab';
 import ReliabilityChip from '../../components/reliability/ReliabilityChip';
-import { apiClient, crmService, propertyManagerService } from '../../services/api';
+import { crmService, propertyManagerService } from '../../services/api';
 import { getAuthToken } from '../../utils/authToken';
 
 /** Badge colour per invoice status. */
@@ -15,6 +15,34 @@ const STATUS_COLORS: Record<string, string> = {
   overdue: 'bg-amber-100 text-amber-800',
   defaulted: 'bg-red-100 text-red-800',
 };
+
+// These two helpers were written against base URLs that were never declared in this
+// file, so `${API}` and `${PM_API}` were ReferenceErrors and EVERY call through them
+// threw — on a page mounted at `/crm`. The dashboard was dead and looked like a network
+// problem, because the throw happened before the fetch.
+//
+// Declared relative, matching the sibling CRM pages, so it follows whatever host the app
+// is served from instead of hard-coding pabandi.onrender.com.
+/**
+ * Pull a useful message out of whatever was thrown.
+ *
+ * `fetch` rejects with a TypeError whose message is "Failed to fetch", and an axios error
+ * hides the server's message under `err.response.data.message`. A dashboard that reports
+ * "Failed to fetch" when the server said "No business is associated with this account"
+ * sends the reader to the wrong problem entirely.
+ */
+function unwrapError(err: unknown, fallback: string): string {
+  const e = err as any;
+  return (
+    e?.response?.data?.message ||
+    e?.response?.data?.error ||
+    e?.message ||
+    fallback
+  );
+}
+
+const API = '/api/v1/crm';
+const PM_API = '/api/v1/property-manager';
 
 async function api(path: string, options: RequestInit = {}) {
   const res = await fetch(`${API}${path}`, {
@@ -29,7 +57,11 @@ async function pmApi(path: string, options: RequestInit = {}) {
     ...options,
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() || ''}`, ...(options.headers || {}) },
   });
-  return res.data;
+  // Was `return res.data` on a fetch Response, which has no `.data` — so this resolved to
+  // undefined and every caller rendered an empty list. Fixed to parse the body, with the
+  // same ok-check as `api` so a failure is not silently an empty array.
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `property-manager ${res.status}`);
+  return res.json();
 }
 
 // A second pmApi (apiClient-based) also arrived with the Contact OS branch. Kept
