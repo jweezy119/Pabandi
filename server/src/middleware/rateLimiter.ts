@@ -1,11 +1,63 @@
 import rateLimit from 'express-rate-limit';
 
+/**
+ * Paths that must NEVER be rate limited.
+ *
+ * Provider callbacks — payment rails, WhatsApp, bank rails — arrive from the provider's
+ * own infrastructure, not from a user. They are authenticated by a signature check, not by
+ * an IP budget, and they are counted against the SAME per-IP bucket as every human request
+ * because `app.use('/api/', rateLimiter)` covers all of `/api/`.
+ *
+ * That is a money defect. Square emits an event per payment state change, from shared
+ * Square IPs, so a busy merchant's webhook traffic competes with every other request from
+ * the same address and can exhaust a 100-per-15-minute budget. When that happens Square
+ * gets a 429, retries later, and in the meantime we have not recorded the payment event.
+ *
+ * Measured on production before this change: a 105-request burst at
+ * `/api/v1/square-checkout/webhook` left the shared bucket partly spent, and a following
+ * burst at `/api/v1/health` was refused at request 64 rather than 100 — the two paths
+ * demonstrably share one counter.
+ *
+ * Skipping them is safe: they are not a DoS surface, because an unauthenticated flood of
+ * webhook POSTs cannot do anything — the handler rejects it on the signature. They are also
+ * not a place where a 429 is a useful answer: the provider cannot fix it and will not
+ * stop retrying.
+ *
+ * `/callback` is matched too, which pulls in OAuth redirects
+ * (`/auth/google/callback`, `/oauth/callback`). That is deliberate rather than incidental:
+ * they are user-initiated, they are protected by the OAuth `state` parameter rather than by
+ * an IP budget, the volume is one request per login, and a 429 there produces a confusing
+ * broken sign-in with no way for the user to retry successfully. If a callback is ever added
+ * that is genuinely provider-to-provider, it is still correct to skip it for the same
+ * reasons as any other webhook.
+ */
+// Anchored on SEGMENT boundaries, not on substrings.
+//
+// The first version used `\/webhook-` as a clause, which also matched
+// `/api/v1/webhook-templates` and `/api/v1/notifications/webhook-settings` — routes that
+// are not provider callbacks and would silently have lost their rate limiting. Caught by
+// the test that asserts ordinary API traffic is still limited.
+//
+// Matches: `/webhook`, `/webhooks/…`, `/webhook/…`, anything ending in `-webhook`,
+// `-webhook/…` (e.g. `/rail-webhook/bank`, `/paypal-webhook`), and `/callback/…`.
+const WEBHOOK_PATH = /\/webhook(\/|$)|\/webhooks\/|-webhook(\/|$)|\/callback(\/|$)/i;
+
+// `/webhooks` in the PLURAL requires a subpath, so a merchant-facing management route
+// like `/api/v1/subscriptions/webhooks` keeps its rate limit. Only the singular
+// `/webhook` may stand alone, because that is the shape providers actually post to
+// (`/square-checkout/webhook`).
+
+export function isProviderWebhookPath(path: string): boolean {
+  return WEBHOOK_PATH.test(path);
+}
+
 export const rateLimiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'), // Limit each IP to 100 requests per windowMs
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => isProviderWebhookPath(req.originalUrl || req.url || ''),
 });
 
 export const authRateLimiter = rateLimit({

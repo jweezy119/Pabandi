@@ -883,3 +883,69 @@ deployed before this change it fails correctly:
 
 A hard refresh. The fix for the Contact OS bounce was deployed at `13954c7c6`; a tab that
 predates it will keep reproducing the old behaviour no matter what else changes.
+
+## Payment webhooks were sharing a rate-limit bucket with human traffic (2026-10-03)
+
+The 95 `js/missing-rate-limiting` CodeQL alerts look alarming and are largely
+misleading: `app.use('/api/', rateLimiter)` covers every route under `/api/`, and
+CodeQL cannot see a global `app.use`. So the real severity was much lower than "95 high".
+
+Following that thread found something worse.
+
+### The measurement
+
+```
+POST /api/v1/square-checkout/webhook   x105   -> all 401, no 429
+GET  /api/v1/health                    x120   -> 429 at request #64
+```
+
+`/health` should have allowed 100 requests. It refused at 64 — because the webhook burst
+had already spent part of the **same counter**. The two paths share one per-IP budget of
+100 requests per 15 minutes.
+
+### Why that is a money defect
+
+Square emits an event per payment state change, from shared Square IPs. A busy merchant's
+webhook traffic therefore competes with every other request from the same address, and all
+Square merchants share Square's addresses. When the bucket empties Square gets a 429, and
+until it retries we have not recorded the payment event.
+
+Provider callbacks are not a DoS surface — an unauthenticated flood of webhook POSTs
+cannot do anything, because the handler rejects it on the signature. And a 429 is not a
+useful answer to a provider: it cannot fix it and will not stop retrying.
+
+### Fixed
+
+The global limiter now skips provider callback paths. Skipped: `/webhook` (with or without
+a subpath), `/webhooks/<subpath>`, anything ending in `-webhook` or `-webhook/<subpath>`,
+and `/callback/<subpath>` — the last because OAuth redirects are user-initiated, protected
+by the `state` parameter rather than an IP budget, one request per login, and a 429 there
+is a confusing broken sign-in the user cannot retry out of.
+
+Every ordinary `/api/` route keeps its limit, including ones that merely contain the word:
+`/api/v1/webhook-templates`, `/api/v1/notifications/webhook-settings` and
+`/api/v1/subscriptions/webhooks` — the last being a real merchant-facing write surface.
+
+### Two tests, because the first one could not fail
+
+`tests/rate-limit-webhooks.test.ts` asserts the path predicate. Its bite check — delete
+`skip:` from the limiter and re-run — **passed**, because nothing connected the predicate
+to the middleware. That is the failure mode this project keeps hitting: a test that looks
+like coverage and cannot fail.
+
+`tests/rate-limit-integration.test.ts` therefore fires real requests through the real app
+with `RATE_LIMIT_MAX_REQUESTS=2`, and asserts the asymmetry: `/health` and
+`/subscriptions/webhooks` get 429, `/square-checkout/webhook` and `/openwa/webhook/incoming`
+never do. Removing `skip:` now fails exactly those two.
+
+The first version of the regex also over-matched — `\/webhook-` caught
+`webhook-templates` and `notifications/webhook-settings`, quietly unmetering them. Caught
+by the test asserting ordinary traffic is still limited, and by a probe over 18 real paths.
+
+### The remaining 95 alerts
+
+Not fixed by adding 95 limiters. Every route already sits behind the global limiter, and
+sprinkling per-route limiters on routes that have one is churn that breaks provider
+callbacks. If specific routes need tighter budgets than 100/15min, the ones that justify it
+are auth (`authRateLimiter`, `strictApiLimiter` exist for this) and money writes
+(`writeLimiter` exists). That is a prioritisation pass, not a bulk edit, and it is not done.
