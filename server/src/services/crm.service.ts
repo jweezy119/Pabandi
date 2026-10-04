@@ -314,6 +314,8 @@ export async function createJob(
     notes?: string;
     price: number;
     employeeId?: string;
+    /** Set true to book over a clash deliberately. A 409 should not be a hard wall. */
+    allowConflict?: boolean;
   },
   businessId?: string | null,
 ) {
@@ -349,6 +351,20 @@ export async function createJob(
     }
   }
 
+  // Before the insert, so a clashing booking is refused rather than created and reported.
+  // Only checked when an employee is named: a job with nobody assigned cannot double-book
+  // anyone, and refusing unassigned jobs over a phantom conflict would be noise.
+  if (employeeId) {
+    await assertNoConflict(
+      serviceBusinessId,
+      employeeId,
+      new Date(scheduledDate),
+      scheduledTime,
+      durationMinutes,
+      { allowConflict: data.allowConflict === true },
+    );
+  }
+
   const job = await prisma.crmJob.create({
     data: {
       serviceBusinessId,
@@ -378,7 +394,13 @@ export async function createJob(
   return job;
 }
 
-export async function assignEmployee(jobId: string, employeeId: string, serviceBusinessId?: string, businessId?: string | null) {
+export async function assignEmployee(
+  jobId: string,
+  employeeId: string,
+  serviceBusinessId?: string,
+  businessId?: string | null,
+  allowConflict = false,
+) {
   // Both sides must belong to the same business as the job, otherwise an
   // assignment could bridge two businesses' workforces.
   const job = await prisma.crmJob.findFirst({
@@ -393,10 +415,40 @@ export async function assignEmployee(jobId: string, employeeId: string, serviceB
   });
   if (!employee) throw new CustomError('Employee not found', 404);
 
+  // Reassignment is the easiest way to create a double-booking after the fact, so the new
+  // employee is checked against the job's own window. The job itself is excluded, otherwise
+  // re-assigning the job to the employee it is already assigned to would always "conflict"
+  // with itself.
+  const full = await prisma.crmJob.findUnique({
+    where: { id: jobId },
+    select: {
+      scheduledDate: true,
+      scheduledTime: true,
+      durationMinutes: true,
+      duration: true,
+    },
+  });
+  if (full) {
+    await assertNoConflict(
+      serviceBusinessId!,
+      employeeId,
+      full.scheduledDate,
+      full.scheduledTime,
+      jobDurationMinutes(full),
+      { excludeJobId: jobId, allowConflict: allowConflict === true },
+    );
+  }
+
   await prisma.crmJobAssignment.deleteMany({ where: { jobId } });
-  return prisma.crmJobAssignment.create({
+  const assignment = await prisma.crmJobAssignment.create({
     data: { jobId, employeeId },
   });
+  // CrmJob.employeeId is never written by crm.service, but job.service READS it as
+  // `include: { employee: true }`. Leaving it null made every job look unassigned on the
+  // /api/v1/jobs read path while looking assigned on /api/v1/crm/jobs. Kept in step here so
+  // both surfaces agree.
+  await prisma.crmJob.update({ where: { id: jobId }, data: { employeeId } });
+  return assignment;
 }
 
 export async function updateJobStatus(jobId: string, status: string, serviceBusinessId?: string, businessId?: string | null) {
@@ -1397,4 +1449,156 @@ export async function importDeals(
   });
 
   return { imported: prepared.length, skipped: 0, errors: [] };
+}
+
+// ── Double-booking ──────────────────────────────────────────────────────────
+
+/**
+ * Default job length when a row carries neither duration column.
+ *
+ * CrmJob has BOTH `duration` and `durationMinutes`. Nothing keeps them in step, so a job
+ * written through one path may have only one of them. Falling back to 60 rather than
+ * treating a missing duration as zero matters: a zero-length job overlaps nothing, so
+ * treating "unknown" as "instant" silently disables the whole check for those rows.
+ */
+const DEFAULT_JOB_MINUTES = 60;
+
+function jobDurationMinutes(job: { durationMinutes?: number | null; duration?: number | null }): number {
+  const raw = job.durationMinutes ?? job.duration ?? DEFAULT_JOB_MINUTES;
+  // A negative or absurd duration would make the window invalid (end before start), which
+  // turns every overlap test false. Clamp rather than trust the column.
+  if (!Number.isFinite(raw) || raw <= 0) return DEFAULT_JOB_MINUTES;
+  return Math.min(raw, 24 * 60);
+}
+
+export interface ScheduleConflict {
+  jobId: string;
+  serviceType: string;
+  scheduledDate: string;
+  scheduledTime: string | null;
+  startsAt: string;
+  endsAt: string;
+}
+
+/**
+ * Find jobs that would overlap this employee.
+ *
+ * WHY BOTH ASSIGNMENT SOURCES ARE CHECKED
+ * Assignment is written to `CrmJobAssignment` by crm.service and to `CrmJob.employeeId` by
+ * job.service — two parallel representations of the same fact, and neither writes the
+ * other. Checking only one makes the guard trivially bypassable: create the clashing job
+ * through the other endpoint and the check sees nothing. So both are matched.
+ *
+ * CANCELLED jobs are ignored: a cancelled booking does not occupy the employee. COMPLETED
+ * ones are NOT ignored — a completed job still occupied that window, and letting it overlap
+ * is how a "double-booked" diary happens.
+ *
+ * Only jobs assigned to THIS employee in THIS tenant are considered. The tenant check is
+ * what stops a business learning that one of its employees is booked at another.
+ *
+ * Overlap is half-open, [start, end): a 09:00-10:00 job and a 10:00-11:00 job do not
+ * conflict, because back-to-back appointments are the normal case. Treating the boundary
+ * as shared would reject every schedule where someone works back to back.
+ */
+export async function findJobConflicts(
+  serviceBusinessId: string,
+  employeeId: string,
+  scheduledDate: Date,
+  scheduledTime: string | null | undefined,
+  durationMinutes: number,
+  excludeJobId?: string,
+): Promise<ScheduleConflict[]> {
+  const start = composeJobStart(scheduledDate, scheduledTime);
+  if (!start) {
+    // An unparseable start cannot be proven to conflict with anything. Refusing the write
+    // instead would break jobs whose time is absent but which are otherwise fine, so this
+    // is a no-op and the caller still gets a created job.
+    return [];
+  }
+  const span = jobDurationMinutes({ durationMinutes });
+  const end = new Date(start.getTime() + span * 60000);
+
+  // A day of slack either side, because a job late in the evening can run past midnight and
+  // a job starting just before dawn can belong to the previous calendar day.
+  const windowStart = new Date(start.getTime() - 864e5);
+  const windowEnd = new Date(end.getTime() + 864e5);
+
+  const candidates = await prisma.crmJob.findMany({
+    where: {
+      serviceBusinessId,
+      status: { not: 'CANCELLED' },
+      scheduledDate: { gte: windowStart, lte: windowEnd },
+      ...(excludeJobId ? { id: { not: excludeJobId } } : {}),
+      OR: [{ employeeId }, { assignments: { some: { employeeId } } }],
+    },
+    select: {
+      id: true,
+      serviceType: true,
+      scheduledDate: true,
+      scheduledTime: true,
+      durationMinutes: true,
+      duration: true,
+      status: true,
+    },
+  });
+
+  const conflicts: ScheduleConflict[] = [];
+  for (const job of candidates) {
+    const otherStart = composeJobStart(job.scheduledDate, job.scheduledTime);
+    if (!otherStart) continue;
+    const otherEnd = new Date(
+      otherStart.getTime() + jobDurationMinutes(job) * 60000,
+    );
+    // Half-open overlap: touching endpoints are not a conflict.
+    if (start < otherEnd && otherStart < end) {
+      conflicts.push({
+        jobId: job.id,
+        serviceType: job.serviceType,
+        scheduledDate: job.scheduledDate.toISOString(),
+        scheduledTime: job.scheduledTime,
+        startsAt: otherStart.toISOString(),
+        endsAt: otherEnd.toISOString(),
+      });
+    }
+  }
+  return conflicts;
+}
+
+/**
+ * Throw a 409 if this employee is already booked.
+ *
+ * 409 rather than 400: the request is well-formed and the resource does not exist yet, so
+ * this is a conflict with current state. The response carries the clashing job so the UI can
+ * show "already booked 09:00-10:00 on <job>" rather than a bare refusal the user cannot act
+ * on. Overridable via `allowConflict` — a business may genuinely want to double-book, and
+ * the decision belongs to them, not to a 409.
+ */
+export async function assertNoConflict(
+  serviceBusinessId: string,
+  employeeId: string,
+  scheduledDate: Date,
+  scheduledTime: string | null | undefined,
+  durationMinutes: number,
+  opts: { excludeJobId?: string; allowConflict?: boolean } = {},
+): Promise<void> {
+  if (opts.allowConflict) return;
+  const conflicts = await findJobConflicts(
+    serviceBusinessId,
+    employeeId,
+    scheduledDate,
+    scheduledTime,
+    durationMinutes,
+    opts.excludeJobId,
+  );
+  if (conflicts.length) {
+    const first = conflicts[0];
+    throw Object.assign(
+      new CustomError(
+        `Employee is already booked (${conflicts.length} overlapping job${conflicts.length === 1 ? '' : 's'}). ` +
+          `First clash: ${first.serviceType} on ${first.startsAt} for ${first.endsAt}.`,
+        409,
+      ),
+      { conflicts },
+    );
+  }
 }

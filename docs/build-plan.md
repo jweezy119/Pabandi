@@ -1511,3 +1511,112 @@ allocator returned 0002 happily — leaving both number mutations green. Squatti
 the number the counter actually computes, forces the collision and pins the loop.
 
 Server 737 passed / 50 files (was 734 / 50). Client 42. tsc 26 unchanged.
+
+## Job scheduling: double-booking, and a second cross-tenant leak (2026-10-03)
+
+### The leak is worse than the financials one
+
+`job.routes.ts` read its tenant like this, with only `authenticate` on the router:
+
+```ts
+const businessId = req.body?.businessId || req.query?.businessId;
+```
+
+So any logged-in user could read another business's job schedule — client names, service
+**addresses**, appointment times — and create jobs in it. Jobs carry physical addresses, so
+this leaks more sensitive material than the revenue leak did.
+
+Worse, `checkInJob`, `checkOutJob` and `handleNoShow` took **no tenant at all**:
+`findUnique({ where: { id: jobId } })`. Anyone could check in, complete, or mark missed any
+job in the platform. `checkOutJob` also calls `invoiceGenerationService`, so it was a
+money-path write too.
+
+It also used the wrong id space (`CrmJob.businessId` → legacy `CrmBusiness`), so these reads
+matched nothing for a correctly enrolled business — the same bug that hid the reports leak.
+
+Fixed the same way: `resolveCrmBusiness` + `requireCrmContext`, everything scoped on
+`serviceBusinessId`, state transitions failing closed. Every handler also stopped flattening
+errors to 500, so a 404 or a 409 finally reaches the client as itself.
+
+### Why double-booking was invisible
+
+**Nothing stopped an employee being booked twice.** But the deeper problem is that
+`createJobHandler` destructured a fixed field list and **never forwarded `employeeId`** — so
+every job created through `POST /api/v1/crm/jobs` had *no employee at all*. Double-booking was
+impossible only because nobody was ever assigned; the assignment control did nothing, stored
+jobs had `employeeId: null` and no assignment row, and any conflict check gated on
+`employeeId` could never fire.
+
+This is the same shape as the deal work: the *symptom* (no conflicts) and the *cause* (a field
+dropped at the controller boundary) looked like different problems.
+
+### Assignment lives in two places
+
+`CrmJobAssignment` (written by `crm.service`) and `CrmJob.employeeId` (written by
+`job.service`). Neither writes the other. So:
+
+- `crm.service.getJobs` reads `assignments` → assigned.
+- `job.service.getJobs` reads `employee` → **always null**, because that column is never
+  written by the CRM path.
+
+A conflict check looking at only one is bypassed by choosing the other endpoint, so
+`findJobConflicts` matches both. There is a test for each direction.
+
+`assignEmployee` now also keeps `CrmJob.employeeId` in step, so both read paths agree.
+
+### Rules chosen, and why
+
+- **Half-open window `[start, end)`.** A 09:00–10:00 job and a 10:00–11:00 job do **not**
+  conflict. Back-to-back appointments are the normal case; a shared boundary would reject
+  every schedule where someone works consecutively.
+- **CANCELLED jobs are ignored; COMPLETED ones are not.** A cancelled booking occupies
+  nobody; a completed one did occupy that window, and allowing the overlap is exactly how a
+  double-booked diary happens.
+- **409, not 400**, carrying the clashing job's window. A bare refusal the user cannot act on
+  gets worked around. The detail survives via the global error handler, which now passes a
+  `conflicts` array through when one is attached.
+- **`allowConflict` overrides it.** Double-booking is sometimes correct; that decision belongs
+  to the business, not to a 409.
+- **A day of slack either side** of the window, because a late-evening job can run past
+  midnight and an early-morning one belongs to the previous calendar day.
+- **Missing duration falls back to 60 minutes, not zero.** `CrmJob` has both `duration` and
+  `durationMinutes` and nothing keeps them in step; treating "unknown" as zero makes the
+  window empty and silently disables the check for those rows.
+
+### Reschedules are checked too
+
+Booking cleanly and then dragging the job on top of another one is the easiest way to defeat a
+create-time check, so `updateJob` runs the same guard. Two bugs there, both found by tests:
+
+- It was gated on `scheduledDate` being present, so the commonest edit of all — changing only
+  the **time** — skipped the check entirely.
+- It read the assignee from `CrmJob.employeeId` only, so for a CRM-created job it found nobody
+  and skipped the check. It now resolves both sources.
+
+### Tests: 14, mutation-checked six ways
+
+| mutation | result |
+|---|---|
+| never report a conflict | 4 failed |
+| check only the `employeeId` column | 3 failed |
+| treat the window as closed | 1 failed |
+| count CANCELLED jobs as blockers | 1 failed |
+| trust the caller's `businessId` in the route | 3 failed |
+| drop the tenant check from checkIn/checkOut | 1 failed |
+
+Also fixed in passing: `CrmJob.clientName` is a **required** column and `job.service` never
+set it — only surfaced once the create was type-checked properly. It is now a denormalized
+snapshot, as in `crm.service`, so a later client rename cannot rewrite job history.
+
+Server 751 passed / 51 files (was 737 / 50). Client 42. **Server tsc 26 → 23** — the tenant
+fixes cleared three pre-existing type errors. Client build exit 0.
+
+### Still open (not done in this pass)
+
+- `job.service.handleNoShow` has **zero callers** and is now dead code. Left in place rather
+  than deleted; it is tenant-scoped so it is no longer a hazard.
+- `jobLifecycleService.handleNoShow` is a fourth no-show implementation used by the cron. It
+  is cron-internal and the ids come from the cron's own query, so it is acceptable, but the
+  duplication is real.
+- `/api/v1/dashboard/*` and `/api/v1/onboarding/*` still 404 behind routed pages.
+- Partial payments / split tender not started.

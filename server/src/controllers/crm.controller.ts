@@ -185,7 +185,7 @@ export async function createJobHandler(
   try {
     const crm = requireCrmContext(req);
     const businessId = crm.serviceBusinessId;
-    const { clientId, clientName, serviceType, scheduledDate, scheduledTime, duration, durationMinutes, address, notes, price } = req.body;
+    const { clientId, clientName, serviceType, scheduledDate, scheduledTime, duration, durationMinutes, address, notes, price, employeeId, allowConflict } = req.body;
     const job = await createJob(businessId, {
       clientId,
       clientName,
@@ -196,6 +196,13 @@ export async function createJobHandler(
       address,
       notes,
       price,
+      // employeeId and allowConflict were NOT forwarded here, so every job created through
+      // this endpoint had NO employee: the assignment dropdown had no effect, the stored job
+      // had employeeId null and no assignment row, and the double-booking check could never
+      // fire because it only runs when an employee is named. Silent, and invisible until a
+      // clash test failed for the wrong reason.
+      employeeId,
+      allowConflict,
     });
     res.status(201).json({ success: true, data: job });
   } catch (error) {

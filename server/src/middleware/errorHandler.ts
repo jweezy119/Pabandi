@@ -42,6 +42,12 @@ export const errorHandler = (
   res.status(statusCode).json({
     success: false,
     message,
+    // Carried through so a refusal can be actionable. A schedule clash attaches the
+    // clashing jobs to the error; without this the client sees a bare 409 and cannot tell
+    // the user what is in the way. Only ever set by the code that raises it.
+    ...(Array.isArray((err as unknown as { conflicts?: unknown })?.conflicts)
+      ? { conflicts: (err as unknown as { conflicts: unknown[] }).conflicts }
+      : {}),
     ...(process.env.NODE_ENV === 'development' && {
       stack: err.stack,
       error: err,
