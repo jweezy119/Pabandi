@@ -38,6 +38,47 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
   }
 });
 
+/* ROUTE ORDER IS LOAD-BEARING HERE.
+ *
+ * `/:handle` is a public passport lookup, and it was declared BEFORE `/me` and
+ * `/user/:userId`. Express matches in declaration order, so `/api/v1/trust-passport/me`
+ * was captured as a passport whose handle is literally "me": getPublic('me') threw and the
+ * caller got a 404 -- even though a correct, authenticated `/me` handler existed twenty
+ * lines below it and had never been reachable.
+ *
+ * Every literal path must be declared before `/:handle`. Adding one below it will look
+ * correct and 404, which is exactly what happened here.
+ */
+
+router.get('/me', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    let passport = await prisma.trustPassport.findFirst({ where: { userId } });
+    if (!passport) {
+      const handle = `user-${userId.slice(0, 8)}`;
+      passport = await prisma.trustPassport.create({
+        data: {
+          userId,
+          handle,
+          displayName: (req as any).user?.firstName || 'User',
+          visibility: 'PRIVATE',
+        },
+      });
+
+router.get('/user/:userId', authenticate, async (req: Request, res: Response) => {
+  try {
+    const targetUserId = req.params.userId;
+    const passport = await prisma.trustPassport.findFirst({ where: { userId: targetUserId } });
+    if (!passport) return res.status(404).json({ success: false, error: 'Passport not found' });
+    if (passport.visibility === 'PRIVATE') {
+      return res.status(403).json({ success: false, error: 'Passport is private' });
+    }
+    res.json({ success: true, data: passport });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 router.get('/:handle', async (req: Request, res: Response) => {
   try {
     const snap = await trustPassportService.getPublic(req.params.handle);
@@ -56,34 +97,6 @@ router.get('/:handle/request', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/me', authenticate, async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user?.id;
-    let passport = await prisma.trustPassport.findFirst({ where: { userId } });
-    if (!passport) {
-      const handle = `user-${userId.slice(0, 8)}`;
-      passport = await prisma.trustPassport.create({
-        data: {
-          userId,
-          handle,
-          displayName: (req as any).user?.firstName || 'User',
-          visibility: 'PRIVATE',
-        },
-      });
-    }
-    res.json({ success: true, data: passport });
-  } catch (e: any) {
-    res.status(500).json({ success: false, error: e.message });
-  }
-});
-
-router.get('/user/:userId', authenticate, async (req: Request, res: Response) => {
-  try {
-    const targetUserId = req.params.userId;
-    const passport = await prisma.trustPassport.findFirst({ where: { userId: targetUserId } });
-    if (!passport) return res.status(404).json({ success: false, error: 'Passport not found' });
-    if (passport.visibility === 'PRIVATE') {
-      return res.status(403).json({ success: false, error: 'Passport is private' });
     }
     res.json({ success: true, data: passport });
   } catch (e: any) {
