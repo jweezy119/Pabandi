@@ -49,3 +49,32 @@ BEGIN
     ON DELETE CASCADE ON UPDATE CASCADE;
 END
 $$;
+
+-- CrmActivity.serviceBusinessId — the same anchor for activity metrics.
+--
+-- An activity can be reached through its client or deal, but a standalone note has
+-- neither, and those were the rows the activity report silently dropped: it filtered on the
+-- legacy CrmBusiness id, which a correctly enrolled tenant does not have.
+--
+-- Nullable, no backfill, idempotent — same reasoning as CrmDeal above.
+
+ALTER TABLE "CrmActivity" ADD COLUMN IF NOT EXISTS "serviceBusinessId" TEXT;
+ALTER TABLE "CrmActivity" ALTER COLUMN "businessId" DROP NOT NULL;
+
+CREATE INDEX IF NOT EXISTS "CrmActivity_serviceBusinessId_idx" ON "CrmActivity"("serviceBusinessId");
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'CrmActivity_serviceBusinessId_fkey'
+  ) THEN
+    ALTER TABLE "CrmActivity" DROP CONSTRAINT "CrmActivity_serviceBusinessId_fkey";
+  END IF;
+
+  ALTER TABLE "CrmActivity"
+    ADD CONSTRAINT "CrmActivity_serviceBusinessId_fkey"
+    FOREIGN KEY ("serviceBusinessId") REFERENCES "CrmServiceBusiness"("id")
+    ON DELETE CASCADE ON UPDATE CASCADE;
+END
+$$;

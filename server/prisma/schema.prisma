@@ -7519,26 +7519,34 @@ model CrmDeal {
 }
 
 model CrmActivity {
-  id          String    @id @default(cuid())
-  businessId  String
-  clientId    String?
-  dealId      String?
-  type        String    @default("NOTE") // CALL | EMAIL | MEETING | NOTE | TASK
-  title       String
-  description String?
-  dueDate     DateTime?
-  completed   Boolean   @default(false)
-  status      String    @default("TODO") // TODO | IN_PROGRESS | DONE
-  priority    String    @default("MEDIUM") // LOW | MEDIUM | HIGH
-  authorName  String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id                String    @id @default(cuid())
+  // Legacy anchor (CrmBusiness). Nullable because an activity recorded in personal mode,
+  // or one attached only to a deal/client, may have no legacy business row behind it.
+  businessId        String?
+  // Current tenant anchor, so activity metrics scope the same way as every other CRM
+  // read. An activity IS reachable through its client or deal, but standalone notes have
+  // neither -- and those were exactly the rows the activity report silently dropped.
+  serviceBusinessId String?
+  clientId          String?
+  dealId            String?
+  type              String    @default("NOTE") // CALL | EMAIL | MEETING | NOTE | TASK
+  title             String
+  description       String?
+  dueDate           DateTime?
+  completed         Boolean   @default(false)
+  status            String    @default("TODO") // TODO | IN_PROGRESS | DONE
+  priority          String    @default("MEDIUM") // LOW | MEDIUM | HIGH
+  authorName        String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  client   CrmClient?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  deal     CrmDeal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  business CrmBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client          CrmClient?          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  deal            CrmDeal?            @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  serviceBusiness CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
+  business        CrmBusiness?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
+  @@index([serviceBusinessId])
   @@index([clientId])
   @@index([dealId])
   @@index([type])
@@ -8054,6 +8062,7 @@ model CrmServiceBusiness {
   employees        CrmEmployee[]
   clients          CrmClient[]
   deals            CrmDeal[]
+  activities       CrmActivity[]
   jobs             CrmJob[]
   payrolls         CrmPayroll[]
   expenses         CrmExpense[]

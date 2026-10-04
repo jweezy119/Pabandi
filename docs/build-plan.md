@@ -1191,3 +1191,120 @@ Two things the tests corrected in my own assumptions, both worth keeping:
   needs the same `dealScope()` treatment.
 - `Deal`, `AbodeManager` and the rest of the Abode-era schema are dead weight. Deleting them
   is a real migration and should not be done casually.
+
+## P0: /api/v1/reports was a cross-tenant financial leak (2026-10-03)
+
+Found while fixing the empty reports page. It is not a display bug.
+
+### The hole
+
+`reports.routes.ts` read its tenant from the query string and handed it to the service:
+
+```ts
+const businessId = String(req.query.businessId);   // all six routes
+```
+
+The router had `router.use(authenticate)`, added in the earlier auth sweep, so the routes
+*looked* protected. But authentication establishes **who** the caller is; it says nothing
+about **which tenant** they may read. There was no ownership check anywhere on the router.
+
+So any authenticated user could read any other business's:
+
+- `/pipeline` — deal values, the sales forecast
+- `/revenue` — billed, collected, outstanding
+- `/expenses` — spend by category
+- `/client-health` — client names, statuses
+- `/trust-insights`
+- `/activity-metrics` — the activity feed
+
+Six routes of business financials, cross-tenant, by putting an id in the query string.
+
+### What was masking it
+
+The routes also produced *empty* reports, which is why nobody noticed. One `businessId`
+parameter was being handed to five models that disagree on what it means:
+
+| model | `businessId` means |
+|---|---|
+| `Invoice` | platform `Business.id` |
+| `CrmDeal`, `CrmExpense`, `CrmClient`, `CrmActivity` | legacy `CrmBusiness.id` |
+
+No single value satisfies all five. The client sent the platform id, so the four CRM reports
+matched nothing. **The bug that hid the security hole was the same bug that made the page
+look empty.** Fixing only the emptiness would have shipped the leak with a populated UI —
+which is worse, because it would have looked like it worked.
+
+### The fix
+
+- `businessId` is now ignored. The tenant comes from `resolveCrmBusiness`, which pairs a
+  requested id with `ownerId: userId`, so a foreign id resolves to nothing and the request is
+  **refused (403)** rather than silently falling back to the caller's own business.
+- `ReportsService` takes a `ReportsContext { serviceBusinessId, businessId }` instead of a
+  bare string, and scopes each model on the anchor it actually owns. `CrmActivity` gained
+  `serviceBusinessId` (with the matching SQL in `sql/crm-deal-tenant.sql`) because a
+  standalone note has no client or deal to be reached through — those were exactly the rows
+  the activity report dropped.
+- Revenue scopes on the platform `businessId`, and returns an **impossible predicate** when
+  the tenant has no platform business. An empty filter there would be a match-all, and a
+  match-all on a revenue report is the worst available failure direction.
+- 500s no longer echo `err.message`, which included raw Prisma text (table and column names).
+
+### Also removed: fabricated numbers
+
+`getTrustInsights` returned a **literal object** and queried nothing:
+
+```ts
+scoreDistribution: { '80-100': 15, '60-79': 8, '40-59': 3, '0-39': 1 },
+events: [{ type: 'activity.task_completed', count: 42 }, ...],
+escalations: 2,
+```
+
+Every business saw identical numbers, and no test could catch it because the values were
+never derived from anything. Now computed from real rows: score quartiles from the tenant's
+own `CrmClient.reliabilityScore`, real `CrmActivity` counts by type, escalations from
+`AT_RISK` clients. With no clients the distribution is empty rather than four invented
+buckets.
+
+Buckets are labelled by the observed min/max rather than fixed 0-100 boundaries:
+`reliabilityScore` defaults to **750** and nothing in the codebase establishes a scale, so
+hardcoding "80-100" would have put every client in the bottom quartile by accident.
+
+### Two more real bugs found on the way
+
+- **`getRevenue` reported paid invoices as outstanding.** `collected` required
+  `status === 'paid'`; `paidAt` was ignored. `paidAt` is now authoritative. Both status
+  casings are compared as defence in depth — every current `Invoice` write is lowercase, so
+  this is not a live bug, but UPPERCASE `'PAID'` is the convention on sibling payment models
+  (`Booking`, `PropertyLease`, the Stripe/PayLio webhooks), and an invoice arriving through
+  one of those paths would read as outstanding forever.
+- **`client-health` returned every client under a heading called "new".** The filter was
+  `clients.filter(c => startDate && ...)`, which evaluates `startDate` for truthiness — so
+  with no range selected it returned the entire client list labelled as new. With no range
+  there is no notion of new, so it is now empty.
+
+### Tests: 12, mutation-checked six ways
+
+`server/tests/reports-tenant.integration.test.ts`, real HTTP against a disposable database.
+
+| mutation | result |
+|---|---|
+| trust `req.query.businessId` again (the original exploit) | 4 failed |
+| drop `serviceBusinessId` scoping from the CRM reports | 4 failed |
+| restore the hardcoded trust constants | 1 failed |
+| remove the date-range validation | 1 failed |
+| stop honouring `paidAt` | 1 failed |
+| return every client as "new" | 1 failed |
+
+Two mutations initially did **not** fail, and both were test defects rather than code
+defects:
+
+- The range check existed in the route *and* the service. Deleting the route's copy left the
+  suite green, because the service still threw. Duplicated validation is how a check rots
+  without anyone noticing, so it now has one owner — the service, which knows what a range
+  means — and the route only parses.
+- The `paidAt` and `newClients` branches were unreachable from the API (the status endpoint
+  sets `paidAt` *and* status together), so neither was actually pinned. Both now have tests,
+  the first by setting `paidAt` through Prisma to model a payment rail that settled while the
+  status string lagged.
+
+Full server suite 724 passed / 50 files (was 712 / 49). Client 42. tsc 26, unchanged.
