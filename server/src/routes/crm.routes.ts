@@ -404,6 +404,121 @@ router.get('/clients/:id/invoices', async (req: AuthRequest, res: Response) => {
 
 // ── Dashboard ───────────────────────────────────────────────────────────────
 
+// ── CRM settings and client files ───────────────────────────────────────────
+//
+// Two endpoints the CRM has called since they were first written, neither of which existed.
+// Both are read-only, and that is a deliberate scoping decision rather than an omission.
+//
+// `/settings`
+// ContactClientsPage reads this expecting `{ customFields: { client: [...] } }` — a
+// CRM-shaped view. The only writer of custom fields is CustomFieldsPage, which PUTs to
+// `/settings/config` and nests them under `enabledFeatures.customFields`. So one piece of
+// data has two locations and two shapes.
+//
+// Rather than introduce a third store, this reads BOTH existing BusinessSettings columns and
+// prefers the dedicated `customFields` one — `enabledFeatures` is where the writer puts it
+// today, and `customFields` is the column the name implies. Reading both means the endpoint
+// answers correctly whichever one a given row happens to use.
+//
+// `/files`
+// `CrmFile` has NO `serviceBusinessId` — it is anchored to the legacy `CrmBusiness` table,
+// the same id-space trap that made deals and reports invisible until they were fixed. Rather
+// than add a nullable column to a table with a fragile migration story, for a feature with one
+// consumer and no write path yet, the tenant check goes through the relation instead: every
+// file has a required `clientId`, and `CrmClient.serviceBusinessId` resolves. That is provable
+// ownership with no schema change.
+//
+// WHEN WRITES ARE ADDED, `CrmFile` needs `serviceBusinessId`. Writing through
+// `client.serviceBusinessId` is not enough, because a row created with only the legacy
+// `businessId` could never be listed by a query that filters the new column.
+//
+// Neither route reads a businessId from the query or body — that is how reports leaked revenue
+// and jobs leaked client addresses.
+
+/** Read a JSON column that may legitimately be null, without trusting its shape. */
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+router.get('/settings', async (req: AuthRequest, res: Response) => {
+  try {
+    const { businessId } = requireCrmContext(req);
+    // No platform business means no BusinessSettings row. An empty object is the honest
+    // answer; a match-all here would report another business's configuration.
+    if (!businessId) return res.json({ success: true, data: { customFields: {} } });
+
+    const row = await prisma.businessSettings.findUnique({
+      where: { businessId },
+      select: { customFields: true, enabledFeatures: true },
+    });
+
+    const direct = asRecord(row?.customFields);
+    const viaFeatures = asRecord(asRecord(row?.enabledFeatures).customFields);
+
+    // Prefer the dedicated column per entity, fall back to the nested one, merge rather than
+    // replace — so a row using either location produces a complete answer.
+    const merged: Record<string, unknown> = { ...viaFeatures };
+    for (const [entity, fields] of Object.entries(direct)) {
+      if (Array.isArray(fields) && fields.length) merged[entity] = fields;
+    }
+
+    res.json({ success: true, data: { customFields: merged } });
+  } catch (err: any) {
+    res.status(Number(err?.statusCode) || 500).json({ success: false, error: 'Could not load settings' });
+  }
+});
+
+/**
+ * GET /api/v1/crm/files
+ *
+ * Optional `?clientId=`, applied ON TOP OF the tenant scope rather than instead of it, so
+ * another business's client id returns an empty list rather than their files. Bounded,
+ * because a client detail page wants the recent handful, not the complete archive.
+ */
+router.get('/files', async (req: AuthRequest, res: Response) => {
+  try {
+    const { serviceBusinessId } = requireCrmContext(req);
+    const clientId = typeof req.query.clientId === 'string' ? req.query.clientId : undefined;
+
+    const files = await prisma.crmFile.findMany({
+      where: {
+        client: { serviceBusinessId },
+        ...(clientId ? { clientId } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      select: {
+        id: true, clientId: true, fileName: true, fileUrl: true,
+        fileSize: true, fileType: true, createdAt: true,
+      },
+    });
+
+    res.json({ success: true, data: files });
+  } catch (err: any) {
+    res.status(Number(err?.statusCode) || 500).json({ success: false, error: 'Could not list files' });
+  }
+});
+
+/** GET /api/v1/crm/files/:id — 404 rather than 403, so the response cannot confirm an id exists. */
+router.get('/files/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const { serviceBusinessId } = requireCrmContext(req);
+    const file = await prisma.crmFile.findFirst({
+      where: { id: req.params.id, client: { serviceBusinessId } },
+      select: {
+        id: true, clientId: true, fileName: true, fileUrl: true,
+        fileSize: true, fileType: true, createdAt: true,
+      },
+    });
+    if (!file) return res.status(404).json({ success: false, error: 'File not found' });
+    res.json({ success: true, data: file });
+  } catch (err: any) {
+    res.status(Number(err?.statusCode) || 500).json({ success: false, error: 'Could not load file' });
+  }
+});
+
 // GET /api/v1/crm/dashboard — Get dashboard statistics
 router.get('/dashboard', getDashboardStatsHandler);
 
