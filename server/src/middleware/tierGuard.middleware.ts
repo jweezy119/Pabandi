@@ -39,6 +39,7 @@ import { logger } from '../utils/logger';
 import { checkLimits, tierDefinition, tierLimits } from '../config/subscriptions';
 import { getSubscription } from '../services/subscription.service';
 import { CustomError } from '../middleware/errorHandler';
+import { resolvePlatformBusinessId } from './tenant.middleware';
 
 /**
  * Usage counts for the two limits that gate writes.
@@ -79,31 +80,6 @@ export interface TierGuardOptions {
 }
 
 /**
- * Resolve the caller's business. Prefers an explicit service business (the Contact OS
- * identity) and falls back to the platform business on the request.
- */
-async function resolveBusinessId(
-  req: Request,
-  serviceBusinessId: string | null | undefined,
-): Promise<string | null> {
-  if (serviceBusinessId) return serviceBusinessId;
-
-  const fromCrm = (req as any).crm?.businessId;
-  if (fromCrm) return fromCrm as string;
-
-  const fromBody = req.body?.businessId;
-  if (typeof fromBody === 'string' && fromBody) return fromBody;
-
-  const fromQuery = req.query?.businessId;
-  if (typeof fromQuery === 'string' && fromQuery) return fromQuery as string;
-
-  const userBusinessId = (req as any).user?.businessId;
-  if (typeof userBusinessId === 'string' && userBusinessId) return userBusinessId;
-
-  return null;
-}
-
-/**
  * Express middleware enforcing a tier limit.
  *
  * Usage: `router.post('/clients', tierGuard({ resource: 'clients' }), handler)`
@@ -111,7 +87,7 @@ async function resolveBusinessId(
 export function tierGuard(options: TierGuardOptions) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const businessId = await resolveBusinessId(req, options.serviceBusinessId);
+      const businessId = await resolvePlatformBusinessId(req, { serviceBusinessId: options.serviceBusinessId });
       if (!businessId) {
         // No tenant to evaluate. Refusing is right: without a tenant there is nothing
         // to bill, and guessing one would apply some other business's limit.
@@ -168,6 +144,17 @@ export function tierGuard(options: TierGuardOptions) {
         ),
       );
     } catch (err) {
+      // A DELIBERATE REFUSAL is not an internal error, and must never be failed open.
+      //
+      // The catch below used to swallow everything, including the 401/403 that tenant
+      // resolution raises for "not signed in" and "no business". That silently turned an
+      // authentication failure into an ALLOWED request — the exact inverse of what the
+      // guard is for, and invisible because the request then succeeded.
+      //
+      // So: forward anything that carries a 4xx, and only fail open on a genuine fault
+      // (a database timeout, say), where the trade-off really is availability.
+      if (isRefusal(err)) return next(err);
+
       // A guard that throws on its own must not become an outage. Fail open and log:
       // the cost is one unmetered write, the cost of failing closed is a paying
       // merchant unable to invoice. Chosen deliberately, and worth revisiting if the
@@ -176,6 +163,17 @@ export function tierGuard(options: TierGuardOptions) {
       return next();
     }
   };
+}
+
+/**
+ * Is this error a decision rather than a fault?
+ *
+ * Anything with a 4xx status is the guard saying "no" on purpose. It has to reach the
+ * caller intact, or the guard's own refusal becomes an unexplained success.
+ */
+function isRefusal(err: unknown): boolean {
+  const code = (err as { statusCode?: number })?.statusCode;
+  return typeof code === 'number' && code >= 400 && code < 500;
 }
 
 // ─── Feature entitlements ─────────────────────────────────────────────────────
@@ -189,26 +187,6 @@ export type TierFeature =
   | 'webhooks'
   | 'customFields'
   | 'whiteLabel';
-
-/**
- * Resolve the caller's business from SERVER-DERIVED identity only.
- *
- * Deliberately does not reuse the `resolveBusinessId` above, which falls back to
- * `req.body.businessId` and `req.query.businessId`. That fallback is fine for
- * counting usage against a limit and wrong for deciding what a caller may read or
- * spend: a body-supplied id is an assertion by the caller, not a fact about them.
- *
- * Anything that touches another tenant's rows or bills a phone number must use this.
- */
-export function resolveOwnedBusinessId(req: Request): string | null {
-  const fromCrm = (req as any).crm?.businessId;
-  if (fromCrm) return fromCrm as string;
-  // Set from the verified JWT. Enrollment reissues the token so this is populated for
-  // anyone who has completed Contact OS setup.
-  const fromToken = (req as any).user?.businessId;
-  if (typeof fromToken === 'string' && fromToken) return fromToken;
-  return null;
-}
 
 /**
  * Refuse a request whose TIER does not include `feature`.
@@ -231,14 +209,16 @@ export function resolveOwnedBusinessId(req: Request): string | null {
 export function tierFeature(feature: TierFeature) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const businessId = resolveOwnedBusinessId(req);
+      // Throws a 401/403 with a usable message when there is no tenant, so this gate
+      // does not have to invent its own version of that answer.
+      const businessId = await resolvePlatformBusinessId(req);
       if (!businessId) {
-        // No tenant means no tier to check, and no tenant to bill or log against.
-        // Defaulting to the cheapest tier here is the safe direction.
+        // Enrolled, but no platform Business row to bill or log against. There is no
+        // tier to evaluate, and guessing one would apply some other business's limits.
         return next(
           new CustomError(
-            'No business is associated with this request. Finish setting up your business first.',
-            403,
+            'This action needs a linked platform business. Complete business setup and try again.',
+            409,
           ),
         );
       }
@@ -260,6 +240,10 @@ export function tierFeature(feature: TierFeature) {
         ),
       );
     } catch (err) {
+      // Forward a refusal (401/403/409) unchanged. Reporting it as a 503 would tell the
+      // caller to retry something that will never succeed.
+      if (isRefusal(err)) return next(err);
+
       logger.error(`[TierFeature] failed to evaluate ${feature}, refusing request`, err);
       return next(
         new CustomError('Could not verify your plan for this action. Please try again.', 503),

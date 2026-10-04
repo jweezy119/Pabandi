@@ -515,11 +515,9 @@ to the original fails 6 of them.
 
 ### Related, found while doing it
 
-- `tierGuard`'s own `resolveBusinessId` falls back to `req.body.businessId` and
-  `req.query.businessId`. That is acceptable for counting usage against a limit and
-  wrong for deciding what a caller may read or spend. `resolveOwnedBusinessId` was added
-  for that distinction and is what the SMS routes use. **The tierGuard fallback is still
-  there** and is a latent cross-tenant issue for any future route that trusts it.
+- `tierGuard`'s own `resolveBusinessId` fell back to `req.body.businessId` and
+  `req.query.businessId`. Acceptable for counting usage, wrong for deciding what a caller
+  may read or spend. **Now removed** — see "One tenant resolver" below.
 - The registration rate limiter (10 per 15 min per IP) now skips under NODE_ENV=test.
   The integration suites register a dozen businesses from one address and were failing
   on a 429 unrelated to what they assert. Raising `max` instead would have removed a
@@ -539,3 +537,63 @@ would not have started. Verified by reproducing both ways with `.env` hidden.
 `/health` now reports `tokenEncryptionConfigured` as a boolean, never the key, so this
 is observed rather than inferred — the same reasoning already documented for
 `smsConfigured` and `whopConfigured`.
+
+## One tenant resolver, and a guard that could not fail closed (2026-10-03)
+
+Follow-up to the SMS work, which turned up two more problems in the same area.
+
+### Three answers to "which tenant is this", and the dangerous one
+
+| resolver | trusted body/query? | ownership-checked? |
+|---|---|---|
+| `resolveCrmBusiness` | yes | **yes** — pairs the id with `ownerId: userId` |
+| `tierGuard.resolveBusinessId` | yes | **no** |
+| `resolveOwnedBusinessId` (added with SMS) | no | n/a — server-derived only |
+
+Three answers means a new route picks one at random, and the wrong one is silent. The
+`tierGuard` fallback was unreachable today — all three callers run after
+`resolveCrmBusiness`, so it never fired — but it was a loaded gun: the next route to
+mount `tierGuard` outside the CRM router inherits it, and a limit evaluated against
+someone else's usage is not an error anyone would notice.
+
+**`src/middleware/tenant.middleware.ts` replaces all of it.** Body and query are not
+consulted at all. The one caller-influenced input — an explicit `serviceBusinessId` — is
+paired with `ownerId`, so it is checked rather than trusted.
+
+The two business identities are named explicitly rather than conflated, which is item 3.3
+on the backlog: `serviceBusinessId` (`CrmServiceBusiness`, for jobs/clients/payroll) and
+`businessId` (platform `Business`, for invoices/`SMSLog`/bookings). A tenant resolver that
+returns both makes the dual-CRM split visible at every call site instead of implicit.
+
+`resolvePlatformBusinessId` is split out from `resolveTenant` on purpose: the tier gates
+and the SMS router need only the platform id, and making them call the full resolver
+forced a `crmServiceBusiness` query on every CRM write to obtain an id they already had.
+A limit check should not depend on the CRM tables existing.
+
+`attachTenant()` attaches the result so handlers read `req.tenant` instead of
+re-deriving an id — which is how the SMS router ended up billing a caller-supplied
+tenant, and how nine call sites ended up reading a JWT claim enrollment had not set.
+
+### A guard that turned "no" into "yes"
+
+`tierGuard`'s catch block failed open on any internal error. That was reasonable when the
+resolver could only return null. Once resolution can *throw* — 401 for signed out, 403 for
+no business — the catch swallowed the refusal and **allowed the request**. An
+authentication failure became an unexplained success, silently, and the request then
+worked.
+
+Both guards now forward anything carrying a 4xx and only fail open on a genuine fault.
+`tierFeature` does the same rather than reporting a 401 as a retryable 503.
+
+Bite-checked: restoring the swallow fails the 401 test; restoring the body/query fallback
+fails exactly the two tests written to catch it.
+
+### Tests
+
+- `tests/tenant-resolution.test.ts` — 14, including the negative: a test that fails when
+  a dangerous fallback returns is the only thing that makes removing it stick.
+- `tests/tier-guard.test.ts` — its fixture gained `user.id`, which every real JWT has and
+  the old resolver never looked at. Its single "no tenant" case split into 401
+  (unauthenticated) and 403 (authenticated, nothing set up), which the old code conflated.
+
+601 server tests (40 files), 16 client, tsc unchanged at 26 / 539.

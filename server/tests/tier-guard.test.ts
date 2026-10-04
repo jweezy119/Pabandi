@@ -45,7 +45,11 @@ type Captured = { error?: { statusCode: number; message: string }; nextCalled: b
 function run(options: { resource: 'clients' | 'invoices' | 'jobs' }, overrides: Record<string, any> = {}): Promise<Captured> {
   const guard = tierGuard(options);
   return new Promise((resolve) => {
-    const req: any = { user: { businessId: 'biz_1' }, body: {}, query: {}, ...overrides };
+    // `id` is required as well as `businessId`: it is the ownership key the tenant
+    // resolver checks an explicit serviceBusinessId against, and every real JWT carries
+    // it. The fixture previously omitted it and only passed because the old resolver
+    // never looked at anything but `businessId`.
+    const req: any = { user: { id: 'user_1', businessId: 'biz_1' }, body: {}, query: {}, ...overrides };
     guard(req, {} as any, (err?: any) => {
       resolve({ error: err, nextCalled: !err });
     });
@@ -122,16 +126,26 @@ describe('jobs are never capped', () => {
 });
 
 describe('safety properties', () => {
-  it('refuses when there is no tenant to bill', async () => {
-    // Without a business there is nothing to attribute usage to, and guessing one
-    // would apply another business's limit.
+  it('refuses an unauthenticated request with 401', async () => {
+    // No user at all is unauthenticated, which is 401 — not 403. The two used to be
+    // conflated, because the old resolver asked only for `businessId` and had no way to
+    // tell "signed out" from "signed in with nothing set up".
     const guard = tierGuard({ resource: 'clients' });
     const r = await new Promise<Captured>((resolve) => {
       guard({ body: {}, query: {} } as any, {} as any, (err?: any) =>
         resolve({ error: err, nextCalled: !err }),
       );
     });
+    expect(r.error?.statusCode).toBe(401);
+    expect(r.nextCalled).toBe(false);
+  });
+
+  it('refuses an authenticated caller with no business', async () => {
+    // Signed in, but setup was never completed: nothing to attribute usage to, and
+    // guessing a tenant would apply another business's limit.
+    const r = await run({ resource: 'clients' }, { user: { id: 'user_1' } });
     expect(r.error?.statusCode).toBe(403);
+    expect(r.nextCalled).toBe(false);
   });
 
   it('fails open if the tier lookup itself breaks', async () => {

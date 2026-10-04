@@ -3,7 +3,8 @@ import { smsService } from '../services/sms.service';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { authenticate } from '../middleware/auth.middleware';
-import { tierFeature, resolveOwnedBusinessId } from '../middleware/tierGuard.middleware';
+import { tierFeature } from '../middleware/tierGuard.middleware';
+import { resolvePlatformBusinessId } from '../middleware/tenant.middleware';
 import { CustomError } from '../middleware/errorHandler';
 
 /**
@@ -51,20 +52,23 @@ const MAX_BULK = 500;
  * Preferring it would let a caller with a valid session read or bill another tenant;
  * silently ignoring it hides the caller's own bug. Either way it must never be trusted.
  */
-function ownedBusiness(req: Request): string {
-  const resolved = resolveOwnedBusinessId(req);
-  if (!resolved) {
+async function ownedBusiness(req: Request): Promise<string> {
+  const businessId = await resolvePlatformBusinessId(req);
+  if (!businessId) {
     throw new CustomError(
-      'No business is associated with this account. Finish setting up your business first.',
-      403,
+      'This action needs a linked platform business. Complete business setup and try again.',
+      409,
     );
   }
 
+  // The resolver never reads body or query — a caller-supplied id is an assertion, not a
+  // fact. Rejecting a mismatch rather than ignoring it turns a caller's own bug into a
+  // clear error instead of silently billing the wrong tenant.
   const claimed = (req.body?.businessId ?? req.query?.businessId) as unknown;
-  if (typeof claimed === 'string' && claimed && claimed !== resolved) {
+  if (typeof claimed === 'string' && claimed && claimed !== businessId) {
     throw new CustomError('businessId does not match the authenticated account', 403);
   }
-  return resolved;
+  return businessId;
 }
 
 // POST /api/v1/sms/send — Send one SMS
@@ -74,7 +78,7 @@ router.post(
   tierFeature('smsReminders'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const businessId = ownedBusiness(req);
+      const businessId = await ownedBusiness(req);
       const { to, message } = req.body;
 
       if (!to || !message) {
@@ -105,7 +109,7 @@ router.post(
   tierFeature('smsReminders'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const businessId = ownedBusiness(req);
+      const businessId = await ownedBusiness(req);
       const { numbers, message } = req.body;
 
       if (!Array.isArray(numbers) || numbers.length === 0 || !message) {
@@ -134,7 +138,7 @@ router.get(
   authenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const businessId = ownedBusiness(req);
+      const businessId = await ownedBusiness(req);
 
       // Scoped to the caller. Without this, any authenticated business could poll the
       // delivery status of any message id it could guess or obtain.
@@ -158,7 +162,7 @@ router.get(
 // GET /api/v1/sms/logs — This business's messages only
 router.get('/logs', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const businessId = ownedBusiness(req);
+    const businessId = await ownedBusiness(req);
     const { limit, offset } = req.query as { limit?: string; offset?: string };
 
     const take = Math.min(Math.max(parseInt(limit || '50', 10) || 50, 1), 200);
