@@ -31,6 +31,7 @@ import {
   updateDeal,
   deleteDeal,
   importDeals,
+  importClients,
 } from '../services/crm.service';
 
 // ─── Enroll Business ─────────────────────────────────────────────────────────
@@ -453,6 +454,26 @@ export async function importDealsHandler(
   try {
     const crm = requireCrmContext(req);
     const result = await importDeals(crm.serviceBusinessId, req.body?.csvData);
+    res.status(201).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * POST /api/v1/crm/import/clients
+ *
+ * Same tenant rule as the deals import: the tenant comes from the resolved CRM context, never
+ * the body, so an import cannot be aimed at another business.
+ */
+export async function importClientsHandler(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const crm = requireCrmContext(req);
+    const result = await importClients(crm.serviceBusinessId, req.body?.csvData);
     res.status(201).json({ success: true, data: result });
   } catch (error) {
     next(error);

@@ -20,6 +20,7 @@ import {
   getDashboardStatsHandler,
   getDealsHandler,
   importDealsHandler,
+  importClientsHandler,
   createDealHandler,
   updateDealHandler,
   deleteDealHandler,
@@ -171,6 +172,13 @@ router.patch('/deals/:id', updateDealHandler);
 // columns) and the all-or-nothing transaction, which is what stops one request from turning
 // into fifty thousand inserts.
 router.post('/import/deals', importDealsHandler);
+
+// POST /api/v1/crm/import/clients — Bulk import clients from CSV.
+//
+// ContactClientsPage has called this since the CSV importer existed; only the deals side was
+// ever written, so the button 404'd while the neighbouring page's identical button worked.
+// Same caps, same all-or-nothing rule, same error format as the deals import.
+router.post('/import/clients', importClientsHandler);
 
 // DELETE /api/v1/crm/deals/:id
 router.delete('/deals/:id', deleteDealHandler);

@@ -1987,3 +1987,70 @@ that 404 or to handlers that were never written, so a page can render correctly 
 nothing in it. That is what this session has been fixing one surface at a time — dashboard,
 onboarding, deals, reports, jobs, invoices, passport, CSV import. The remaining pages have not
 been audited.
+
+## CRM surface audit: "the whole CRM has no substance" (2026-10-03)
+
+Scoping the report to "the whole CRM" turned the vague complaint into a finite audit: 28 CRM
+and Contact OS routes, every API path they call, and whether each exists.
+
+### Not a styling problem
+
+The shared shell is fine — `DashboardLayout.tsx` is 20 KB, uses the design tokens in 43 places,
+and wraps 10 Contact OS pages. Both stylesheets serve (192,937 and 15,037 bytes, `text/css`,
+200) and `index.html` links both.
+
+The complaint is real and it is **accumulated missing endpoints**. A page renders correctly and
+simply has nothing in it, which reads as "no substance" rather than as breakage. That is why
+this was worth auditing rather than eyeballing.
+
+### Fixed here
+
+| gap | detail |
+|---|---|
+| `GET /reports/trust` → 404 | server registered `/trust-insights` |
+| `GET /reports/activities` → 404 | server registered `/activity-metrics` |
+| `POST /crm/import/clients` → 404 | only the deals importer was ever written |
+
+**The report names are the interesting one.** `tests/router-auth-regression.test.ts` already
+listed `/trust` and `/activities` — the names the *client* calls — while the router registered
+`/trust-insights` and `/activity-metrics`. The staleness guard in that test compares **counts
+only**, so 6 declared against 6 expected passed happily while two of the six report cards were
+silently 404ing. Count parity is not name parity. Both spellings are now served, both are in
+the probe list, and the test comment records why.
+
+`importClients` mirrors `importDeals` exactly — same byte/row/column caps, same all-or-nothing
+transaction, same spreadsheet row numbering, same capped error list. Two importers with
+different rules would mean a file accepted in one place and rejected in the other.
+
+It deduplicates on **name and email, within the file and against the tenant**, case-insensitively
+and in application code, because `CrmClient.email` has no unique constraint. A partial client
+import is worse than a refused one: duplicates are exactly what an import is meant to avoid, and
+re-uploading a corrected file on top of a partial one doubles the list.
+
+`company` — a column in the wizard's own template — is folded into the notes rather than
+silently dropped, since the user typed it deliberately.
+
+### Still missing, not fixed here
+
+- **`GET /crm/settings`** and **`GET /crm/files`** are not mounted at all. `crm.routes.ts` has
+  no `settings` or `files` route and neither prefix is registered in `index.ts`.
+- `docs/crm-enhancement-plan.md` describes a ~3,000-line in-memory client-only CRM that nothing
+  imports. It makes tags, notes, CSV import and a discount engine look shipped.
+- The Abode-era `Deal` / `AbodeManager` schema is dead weight.
+
+### A latent test flake, found and not fixed
+
+`reports-tenant.integration.test.ts` failed once with `Notification_userId_fkey` on the user
+delete, then passed in isolation and on a full re-run. A notification is written
+asynchronously and can land *between* that suite's notification delete and its user delete.
+Deleting the notifications first is the right order; it is not sufficient when the write is
+fire-and-forget. A retry around the user delete would close it. It is a test-harness race, not
+a product defect, and it is recorded rather than papered over.
+
+### Environment note
+
+The `pabandi_it` test-database container had stopped, which surfaced as a wall of
+`PrismaClientInitializationError`. Recreated and the schema re-pushed.
+
+Server 778 passed / 54 files. Client 48 passed / 5 files. Server tsc 23, client tsc 534, both
+unchanged.

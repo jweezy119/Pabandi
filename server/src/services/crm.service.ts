@@ -1813,3 +1813,164 @@ export async function claimSlug(serviceBusinessId: string, preferred: string): P
   });
   return candidate;
 }
+
+// ── CSV import: clients ─────────────────────────────────────────────────────
+
+export interface ImportClientsResult {
+  imported: number;
+  skipped: number;
+  errors: string[];
+}
+
+/**
+ * Import clients from CSV.
+ *
+ * Mirrors importDeals deliberately: the same byte/row/column caps, the same all-or-nothing
+ * transaction, the same "row N" error numbering the user sees in their spreadsheet, and the
+ * same capped error list. Two importers with different rules would mean a file accepted in one
+ * place and rejected in the other, with no way for the user to predict which.
+ *
+ * ALL-OR-NOTHING here because a partially imported client list is worse than a refused file:
+ * duplicates and half-created records are exactly what an import is meant to avoid, and a
+ * customer who re-uploads a corrected file on top of a partial one gets duplicates.
+ *
+ * Email is deduplicated WITHIN the file and against the tenant's existing clients. Both matter:
+ * an in-file duplicate creates two rows the user cannot tell apart, and an existing duplicate
+ * turns a "restore my data" import into a second copy of everyone. Compared per row (case
+ * -insensitively, since email local parts are conventionally case-insensitive) rather than
+ * trusting the database, because CrmClient.email has no unique constraint.
+ */
+export async function importClients(
+  serviceBusinessId: string,
+  csvText: string,
+): Promise<ImportClientsResult> {
+  if (typeof csvText !== 'string' || csvText.trim() === '') {
+    throw new CustomError('csvData is required', 400);
+  }
+  const bytes = Buffer.byteLength(csvText, 'utf8');
+  if (bytes > CSV_IMPORT_LIMITS.maxBytes) {
+    throw new CustomError(
+      `CSV is too large (${bytes} bytes, limit ${CSV_IMPORT_LIMITS.maxBytes})`,
+      413,
+    );
+  }
+
+  const rows = parseCsv(csvText);
+  if (rows.length < 2) throw new CustomError('CSV needs a header row and at least one data row', 400);
+
+  const header = rows[0].map((h) => h.trim().toLowerCase());
+  if (!header.includes('name')) {
+    throw new CustomError(
+      `CSV must have a "name" column. Found: ${header.join(', ') || '(none)'}`,
+      400,
+    );
+  }
+  const col = (name: string) => header.indexOf(name);
+
+  const dataRows = rows.slice(1);
+  const errors: string[] = [];
+  const pushError = (line: number, message: string) => {
+    if (errors.length < CSV_IMPORT_LIMITS.maxReportedErrors) {
+      errors.push(`Row ${line}: ${message}`);
+    }
+  };
+
+  // Existing emails for THIS tenant only, so an address from another business is neither
+  // matched nor reported as a duplicate -- it simply is not ours.
+  const existing = await prisma.crmClient.findMany({
+    where: { serviceBusinessId },
+    select: { email: true },
+  });
+  const seenEmails = new Set(
+    existing.map((c) => (c.email ?? '').trim().toLowerCase()).filter(Boolean),
+  );
+  // Also keyed by name, since a CSV may identify a person by name only.
+  const existingNames = new Set(
+    (await prisma.crmClient.findMany({
+      where: { serviceBusinessId },
+      select: { name: true },
+    })).map((c) => c.name.trim().toLowerCase()),
+  );
+
+  const VALID_STATUS = new Set(['ACTIVE', 'AT_RISK', 'VIP', 'INACTIVE']);
+
+  const prepared: Array<{
+    name: string;
+    email: string | null;
+    phone: string | null;
+    address: string | null;
+    notes: string | null;
+    status: string;
+    serviceBusinessId: string;
+    businessId: null;
+  }> = [];
+
+  dataRows.forEach((row, index) => {
+    const line = index + 2;
+    const cell = (name: string) => {
+      const i = col(name);
+      return i === -1 ? '' : (row[i] ?? '').trim();
+    };
+
+    try {
+      const name = cell('name');
+      if (!name) throw new CustomError('name is required', 400);
+
+      // A very small shape check rather than a full RFC 5322 validation: the goal is to catch
+      // a column-shift (a name landing in the email column), not to adjudicate real addresses,
+      // and a strict regex would reject legitimate ones.
+      const email = cell('email').toLowerCase() || null;
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        throw new CustomError(`"${email}" does not look like an email address`, 400);
+      }
+
+      const nameKey = name.toLowerCase();
+      if (existingNames.has(nameKey)) {
+        throw new CustomError(`a client named "${name}" already exists in this business`, 400);
+      }
+      if (email && seenEmails.has(email)) {
+        throw new CustomError(`${email} already exists in this business`, 400);
+      }
+
+      const rawStatus = cell('status').toUpperCase();
+      const status = rawStatus && VALID_STATUS.has(rawStatus) ? rawStatus : 'ACTIVE';
+
+      // Register immediately so a duplicate LATER in the same file is caught too.
+      existingNames.add(nameKey);
+      if (email) seenEmails.add(email);
+
+      prepared.push({
+        name,
+        email,
+        phone: cell('phone') || null,
+        // `company` is what the wizard's template advertises, so it is accepted and folded
+        // into the notes rather than silently dropped -- the user typed it for a reason.
+        address: cell('address') || null,
+        notes: [cell('notes'), cell('company') && `Company: ${cell('company')}`]
+          .filter(Boolean)
+          .join('\n') || null,
+        status,
+        serviceBusinessId,
+        businessId: null,
+      });
+    } catch (err: any) {
+      pushError(line, err?.message ?? 'Invalid row');
+    }
+  });
+
+  if (errors.length) {
+    return {
+      imported: 0,
+      skipped: dataRows.length,
+      errors: [
+        ...errors,
+        errors.length >= CSV_IMPORT_LIMITS.maxReportedErrors
+          ? '…and more. Fix the listed rows and re-upload; nothing was imported.'
+          : 'Nothing was imported — fix these rows and re-upload.',
+      ],
+    };
+  }
+
+  await prisma.crmClient.createMany({ data: prepared });
+  return { imported: prepared.length, skipped: 0, errors: [] };
+}

@@ -38,6 +38,13 @@ const ROUTERS: Array<{ name: string; mount: string; routes: Array<[string, strin
     routes: [
       ['GET', '/pipeline'], ['GET', '/revenue'], ['GET', '/expenses'],
       ['GET', '/client-health'], ['GET', '/trust'], ['GET', '/activities'],
+      // Both spellings are declared on the server, so both are probed. This list was ALWAYS
+      // written as /trust and /activities -- the names the client calls -- while the router
+      // registered /trust-insights and /activity-metrics. The staleness check below compares
+      // COUNTS only, so 6 declared against 6 expected passed while two of the six report
+      // cards on the CRM reports page were silently 404ing. Count parity is not name parity;
+      // that is why the aliases exist and why both spellings are listed here.
+      ['GET', '/trust-insights'], ['GET', '/activity-metrics'],
     ],
   },
   {

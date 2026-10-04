@@ -87,4 +87,20 @@ router.get('/client-health', handle((ctx, s, e) => ReportsService.getClientHealt
 router.get('/trust-insights', handle((ctx, s, e) => ReportsService.getTrustInsights(ctx, s, e)));
 router.get('/activity-metrics', handle((ctx, s, e) => ReportsService.getActivityMetrics(ctx, s, e)));
 
+/**
+ * Aliases for the two names the CRM actually calls.
+ *
+ * The client asks for `/reports/trust` and `/reports/activities`. These were originally
+ * registered as `/trust-insights` and `/activity-metrics`, so both requests 404'd and two of
+ * the six report cards on the CRM reports page rendered empty — while four of six worked,
+ * which is exactly the "renders correctly but has nothing in it" symptom rather than an
+ * obvious breakage.
+ *
+ * Both spellings are kept: the client is the consumer, and an alias is cheaper than renaming
+ * a public route that something else may already call. If the pair is ever consolidated, make
+ * it an explicit decision rather than letting two names drift apart again.
+ */
+router.get('/trust', handle((ctx, s, e) => ReportsService.getTrustInsights(ctx, s, e)));
+router.get('/activities', handle((ctx, s, e) => ReportsService.getActivityMetrics(ctx, s, e)));
+
 export default router;

@@ -601,6 +601,85 @@ describe('crm deals: pipeline CRUD', () => {
     expect(res.json.data.errors.join(' ')).toMatch(/nothing was imported/i);
   });
 
+it('imports clients from CSV and refuses duplicates', async () => {
+    const { token, clientName } = { ...(await seedBusiness('impc')), clientName: 'Client impc' };
+    const { prisma } = await import('../src/utils/database');
+
+    // The button has been wired to this endpoint since the CSV importer existed; only the
+    // deals side was ever written, so it 404'd while the neighbouring page's worked.
+    const ok = await api(token, 'POST', '/api/v1/crm/import/clients', {
+      csvData: [
+        'name,email,phone,company,address,notes,status',
+        `Ada Lovelace${MARKER},ada${MARKER},555,Analytical Engines,12 Bridge St,First invoice,VIP`,
+        `Grace Hopper${MARKER},grace${MARKER},556,,,Second,`,
+      ].join('\n'),
+    });
+    expect(ok.status, JSON.stringify(ok.json)).toBe(201);
+    expect(ok.json.data.imported).toBe(2);
+    expect(ok.json.data.errors).toEqual([]);
+
+    const created = await prisma.crmClient.findMany({
+      where: { serviceBusiness: { is: { owner: { email: { contains: `impc${MARKER}` } } } } },
+    });
+    expect(created).toHaveLength(3); // 2 imported + the seeded one
+    const ada = created.find((c) => c.name.startsWith('Ada'))!;
+    expect(ada.status).toBe('VIP');
+    // `company` is in the wizard's template, so it is kept rather than silently dropped.
+    expect(ada.notes).toContain('Company: Analytical Engines');
+
+    // Duplicates inside the file, and against a client the business already has.
+    const dupes = await api(token, 'POST', '/api/v1/crm/import/clients', {
+      csvData: [
+        'name,email',
+        `Fresh One${MARKER},fresh${MARKER}`,
+        `Fresh One${MARKER},other${MARKER}`,
+        clientName, // already exists in this business
+      ].join('\n'),
+    });
+    expect(dupes.status, JSON.stringify(dupes.json)).toBe(201);
+    expect(dupes.json.data.imported, JSON.stringify(dupes.json.data)).toBe(0);
+    expect(dupes.json.data.skipped).toBe(3);
+    const msg = dupes.json.data.errors.join(' ');
+    expect(msg).toMatch(/Row 4/);
+    expect(msg).toMatch(/already exists/i);
+
+    // And nothing partial landed.
+    const after = await prisma.crmClient.findMany({
+      where: { serviceBusiness: { is: { owner: { email: { contains: `impc${MARKER}` } } } } },
+    });
+    expect(after).toHaveLength(3);
+  });
+
+  it("refuses another tenant's clients on import", async () => {
+    const a = await seedBusiness('impca');
+    const b = await seedBusiness('impcb');
+
+    // Same tenant rule as the deals import: the id space is the context's, never the body's.
+    const res = await api(a.token, 'POST', '/api/v1/crm/import/clients', {
+      csvData: ['name,email', `Injected${MARKER},inj${MARKER}`].join('\n'),
+      serviceBusinessId: 'someone-elses',
+    });
+    expect(res.status, JSON.stringify(res.json)).toBe(201);
+
+    const { prisma } = await import('../src/utils/database');
+    const inB = await prisma.crmClient.count({
+      where: { name: `Injected${MARKER}`, serviceBusiness: { is: { owner: { email: { contains: `impcb${MARKER}` } } } } },
+    });
+    expect(inB, 'an import must never land in another tenant').toBe(0);
+    void b;
+  });
+
+  it('serves both spellings of the two report routes the CRM calls', async () => {
+    const { token } = await seedBusiness('alias');
+    // The client asks for /reports/trust and /reports/activities; the server originally
+    // registered /trust-insights and /activity-metrics, so two of six report cards were
+    // silently empty while four worked.
+    for (const path of ['trust', 'trust-insights', 'activities', 'activity-metrics']) {
+      const res = await api(token, 'GET', `/api/v1/reports/${path}`);
+      expect(res.status, `${path}: ${JSON.stringify(res.json)}`).toBe(200);
+    }
+  });
+
   it('reports the pipeline grouped by stage', async () => {
     const { token } = await seedBusiness('forecast');
 

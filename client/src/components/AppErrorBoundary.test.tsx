@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { ReactNode } from 'react';
 import { render, screen, cleanup } from '@testing-library/react';
 import { AppErrorBoundary } from './AppErrorBoundary';
 
@@ -14,7 +15,14 @@ import { AppErrorBoundary } from './AppErrorBoundary';
  * blank screen it replaces — so that guard is the difference between a fix and a new trap.
  */
 
-function Boom({ error }: { error: Error }) {
+/**
+ * Always throws, to drive the boundary.
+ *
+ * The explicit `ReactNode` return type matters: a function that only ever throws infers
+ * `never`, and TypeScript then rejects it as a JSX component (TS2786) -- an error about the
+ * test double, not about the code under test.
+ */
+function Boom({ error }: { error: Error }): ReactNode {
   throw error;
 }
 
