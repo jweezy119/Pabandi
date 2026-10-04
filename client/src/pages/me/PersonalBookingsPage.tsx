@@ -8,7 +8,7 @@ export default function PersonalBookingsPage() {
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/bookings/me`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/bookings/my-bookings`, {
           headers: { Authorization: `Bearer ${getAuthToken()}` },
         });
         if (res.ok) {

@@ -16,7 +16,7 @@ export default function PersonalDashboardPage() {
         
         const [passportRes, bookingsRes, rewardsRes] = await Promise.all([
           fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/trust-passport/me`, { headers }),
-          fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/bookings/me`, { headers }),
+          fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/bookings/my-bookings`, { headers }),
           fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/rewards/me`, { headers }),
         ]);
 

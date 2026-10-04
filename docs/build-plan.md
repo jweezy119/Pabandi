@@ -1828,3 +1828,82 @@ unique index. No backfill, nothing dropped.
 
 Server 770 passed / 53 files (was 760 / 52). Client 42. Server tsc 23, client tsc 534, both
 unchanged. Client build exit 0.
+
+## /trust-passport/me was unreachable behind its own catch-all (2026-10-03)
+
+Reported as: clicking CRM redirects to the landing page, with three 404s in the console
+(`/rewards/me`, `/bookings/me`, `/trust-passport/me`) after a *successful* mode toggle.
+
+### What the 404s actually were
+
+| endpoint | verdict | detail |
+|---|---|---|
+| `/api/v1/trust-passport/me` | **shadowed — fixed** | the handler existed but was unreachable |
+| `/api/v1/bookings/me` | **wrong path** | the real endpoint is `/bookings/my-bookings` |
+| `/api/v1/rewards/me` | **never built** | `partnerRewards.routes.ts` has `/rewards`, `/stats`, `/offers/*` — no `/me` |
+
+### The real bug: declaration order
+
+```ts
+router.get('/:handle', ...)         // declared FIRST — public passport lookup
+router.get('/me', authenticate)     // declared after, therefore unreachable
+router.get('/user/:userId', ...)
+```
+
+Express matches in declaration order, so `/me` was captured as a passport whose handle is
+literally the string `"me"`. `trustPassportService.getPublic('me')` threw and its catch turned
+that into a 404. **The caller's own passport has never been reachable**; only the public handle
+lookup worked. Every literal path is now declared before the catch-all, with a comment saying
+why — adding another one below it will look correct and 404 identically.
+
+`/bookings/me` is the same shape of mistake: `/:id` is declared after `/my-bookings`, so
+`/my-bookings` is fine but `/me` falls into `/:id` and looks up a booking with the id `"me"`.
+The client was calling the wrong name; both call sites now use `/bookings/my-bookings`, whose
+response is already `{ success, data: bookings }` — the shape the client expected.
+
+### Why an HTTP test cannot catch this, and what does
+
+A 404 from `/me` is indistinguishable from a 404 for a handle that genuinely does not exist.
+That is exactly why this survived. The only place the difference is visible is the order of the
+declarations, so `tests/trust-passport-routing.test.ts` reads the source and asserts:
+
+1. every literal path precedes `/:handle`;
+2. no route is declared twice — the reorder initially produced duplicate handlers, which
+   TypeScript accepted and which would have run only the second;
+3. the reorder did not swap middleware between them, since `/:handle` is public and `/me` is
+   authenticated.
+
+Mutation-checked both ways: moving `/me` back below `/:handle` fails, stripping `authenticate`
+from `/me` fails.
+
+Production after deploy: `/trust-passport/me` 404 → **401**, i.e. the handler is reached and the
+401 is the expected unauthenticated response.
+
+### The redirect is NOT caused by the 404s
+
+This is the part worth being direct about, because the reported theory was that a failing data
+fetch bounces the user to `/`. It does not:
+
+- `BusinessGuard` sends an unauthenticated user to `/login`; an authenticated user in personal
+  mode gets `<BusinessModeGate />`, an inline panel — the `<Navigate to="/" replace />` that used
+  to do this was removed in earlier work and its absence is documented at `RouteGuards.tsx:18`.
+- `PersonalGuard` sends to `/login` or `/dashboard`, never `/`.
+- `NotFoundPage` does not redirect.
+- `PersonalDashboardPage` already guards every read with `if (res.ok)`, so a 404 leaves the
+  state null and renders `—`. The three fetches it makes cannot cause a redirect.
+
+So the landing-page bounce is a separate symptom, and reproducing it needs the exact URL and the
+guard that fires. **Still open, and not fixed here.**
+
+`/rewards/me` is deliberately still 404. The personal dashboard and rewards page degrade to an
+empty state, which is honest. Building it is a feature (a personal rewards balance), not a fix,
+and it is listed below rather than stubbed.
+
+### Still open
+
+- **The landing-page redirect itself.** Needs the exact route clicked and the URL landed on.
+- `/rewards/me` is not built. `partnerRewards.routes.ts` exposes partner offers, redemptions and
+  `/stats`, but nothing for a personal customer's own rewards balance.
+- `docs/crm-enhancement-plan.md` still describes a ~3,000-line in-memory client-only CRM that
+  nothing imports. It makes tags, notes, CSV import and a discount engine look shipped.
+- The Abode-era `Deal` / `AbodeManager` schema is dead weight and should not be deleted casually.
