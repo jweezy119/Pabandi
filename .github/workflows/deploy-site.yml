@@ -77,6 +77,13 @@ jobs:
 
       - name: Build client
         working-directory: client
+        # BUILD_SHA is compiled into the bundle as __BUILD_SHA__ and used by
+        # src/utils/staleTab.ts to notice when an open tab is running an older build than
+        # the server is serving. Without a real value here it is 'dev', and the detector
+        # disables itself — which would silently remove the protection in production while
+        # every local test still passed.
+        env:
+          BUILD_SHA: ${{ github.sha }}
         run: npm run build
 
       - name: Assert the shell references a bundle that exists

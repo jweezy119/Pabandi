@@ -805,3 +805,81 @@ an opaque "Internal Server Error", because "point it somewhere else" is the actu
 the usual cause is still the default `localhost:2785` in a deployed environment.
 
 637 server tests (44 files), 27 client, tsc unchanged at 26 / 539.
+
+## The stale-tab problem, and a detector for it (2026-10-03)
+
+Reported again: clicking Contact OS bounces to the homepage, after that had been fixed and
+verified in the deployed bundle. The console named a bundle hash,
+`assets/index-Dop2oh0W.js`, that **no longer existed on the server**.
+
+### What was actually happening
+
+`curl https://pabandi.com/assets/index-Dop2oh0W.js` returns **HTML**, not JavaScript —
+Firebase rewrites `**` to `/index.html`, so a request for an asset that is gone comes back
+with a 200 and an HTML body. The trace's only API call was
+`GET /api/v1/trust-profile/stats/count`, which exists in exactly one place:
+`LandingPage.tsx`. So the tab was on the landing page — which is precisely where the old
+`BusinessGuard` sent a personal-mode account, before it was changed to render the mode
+gate.
+
+The live bundle contained the gate's strings, so **the fix was deployed and the tab was
+not running it.** Two settings that are individually correct combine to cause this:
+
+- `assets/**` is served `max-age=31536000, immutable` — correct, because filenames are
+  content-hashed, so a cached bundle can never be stale *for its own hash*.
+- `**` rewrites to `/index.html` — correct for client-side routing, and the reason a
+  missing chunk is HTML instead of a 404.
+
+Nothing told the open tab to reload. This project has been bitten by this shape of problem
+repeatedly: the two-day site drift where the API was current and the site was not, and a
+Save button that "did nothing" because the browser ran pre-fix code.
+
+### `client/src/utils/staleTab.ts`
+
+Fetches the server's `index.html` with `no-store`, reads which bundle it references, and
+compares that with the bundle this tab loaded. If they differ, it reloads **once**, with
+`location.replace` so the stale entry is not left in history for Back. It also re-checks on
+`focus` and `visibilitychange`, so a tab left open across a deploy picks it up on return
+rather than needing a manual refresh.
+
+Three properties, each tested:
+
+- **Never a loop.** Guarded by `sessionStorage`, keyed on the server build, so it reloads
+  once per deploy and again only when the server moves to a *further* build.
+- **Never reloads when the check itself fails.** A network blip must not lose someone
+  mid-transaction, and a refresh loop is worse than a stale tab.
+- **Never guesses.** No bundle on either side means no decision.
+
+15 tests. Bite-checked: removing the loop guard fails the once-per-build test.
+
+Two bugs found while writing it, both mine:
+
+1. **It would have reloaded on every page load.** The normalisation stripped `^index-` from
+   a value that is a full `/assets/index-X.js` path, so the two sides never matched. The
+   once-per-build guard hid it — it fired once and then looked like it was working.
+2. **`buildSha` was tree-shaken.** Exported but imported by nothing in the app, so Rollup
+   dropped it and the sha never reached the bundle. It is now written to
+   `<html data-build>`, which is both the fix and a useful answer to "which build are you
+   running?" — the bundle hash is unreadable, a short sha is not.
+
+### The smoke check that was missing
+
+`scripts/smoke.mjs` verified the API's `commitSha` and that the shell was uncached. It did
+**not** verify that the artifact the customer downloads was built from that commit — which
+is the exact gap this episode fell through.
+
+It now asserts the published bundle contains the expected sha. Run against the bundle
+deployed before this change it fails correctly:
+
+```
+✗ bundle was built from the expected commit
+  ca597f7 not found in assets/index-CasA4obP.js — this bundle is from a different commit
+```
+
+`BUILD_SHA` is wired from `github.sha` in both workflows. Without a real value it is
+`'dev'` and the marker would be missing in production while every local test still passed.
+
+### The immediate unblock
+
+A hard refresh. The fix for the Contact OS bounce was deployed at `13954c7c6`; a tab that
+predates it will keep reproducing the old behaviour no matter what else changes.

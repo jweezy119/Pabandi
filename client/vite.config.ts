@@ -7,6 +7,14 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
   base: env.VITE_BASE || '/',
+  // The commit this bundle was built from, compiled in.
+  //
+  // Used by src/utils/staleTab.ts to notice when the tab is running an older build than
+  // the server is serving, and to reload instead. See that file for why a customer kept
+  // hitting a fixed bug for several deploys.
+  define: {
+    __BUILD_SHA__: JSON.stringify(process.env.BUILD_SHA || 'dev'),
+  },
   plugins: [
     react(),
     // Precache OFF, and the service worker disabled entirely.

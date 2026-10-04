@@ -158,6 +158,28 @@ async function checkSite() {
   record('site references a bundle', 'PASS', bundlePath);
 
   const { res: bundleRes, text: bundle } = await getText(`${TARGETS.site}/${bundlePath}`);
+
+  // Is the artifact the customer downloads actually built from the commit we think?
+  //
+  // A fix was shipped, verified present in this file, and a customer still hit the bug —
+  // because their tab was running an older bundle. Nothing here could see that, and the
+  // confusion was real: the console named a bundle hash the server no longer had.
+  //
+  // BUILD_SHA is compiled into every client bundle by vite.config.ts, so this compares
+  // the shell, the bundle it references, and the commit both were built from. A mismatch
+  // means the published artifact is not the one this pipeline built.
+  if (EXPECTED_COMMIT && bundleRes.ok) {
+    const shortSha = EXPECTED_COMMIT.slice(0, 7);
+    const builtFrom = bundle.includes(shortSha);
+    record(
+      'bundle was built from the expected commit',
+      builtFrom ? 'PASS' : 'FAIL',
+      builtFrom
+        ? shortSha
+        : `${shortSha} not found in ${bundlePath} — this bundle is from a different commit`,
+    );
+  }
+
   if (!bundleRes.ok) {
     // The exact symptom reported: the shell named a bundle the server does not
     // have. The customer is running a copy from their own cache.

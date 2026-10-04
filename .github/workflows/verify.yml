@@ -186,6 +186,8 @@ jobs:
 
       - name: Build client
         working-directory: client
+        env:
+          BUILD_SHA: ${{ github.sha }}
         run: npm run build
 
       - name: Assert no service worker is emitted
