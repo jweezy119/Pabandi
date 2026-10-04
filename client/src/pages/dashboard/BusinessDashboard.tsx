@@ -52,6 +52,13 @@ interface Financials {
   totalExpenses: number;
   netProfit: number;
   paylioBalance: number;
+  /**
+   * False when no provider balance could actually be fetched. PayLio has create-payment,
+   * payment-status and webhook endpoints but no balance endpoint, so there is no truthful
+   * number to show. Rendering $0.00 would assert the business holds no money, when the truth
+   * is that we do not know — so the card says "not connected" instead.
+   */
+  paylioBalanceAvailable?: boolean;
   recentExpenses: Expense[];
 }
 
@@ -323,6 +330,7 @@ function MoneyTab({ businessId }: { businessId: string }) {
   const [financials, setFinancials] = useState<Financials | null>(null);
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [expenseForm, setExpenseForm] = useState({ category: '', amount: '', description: '' });
+  const [expenseError, setExpenseError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadFinancials = () => {
@@ -342,7 +350,7 @@ function MoneyTab({ businessId }: { businessId: string }) {
 
   const addExpense = async () => {
     if (!expenseForm.category || !expenseForm.amount) return;
-    await fetch(`${API_HOST}/api/v1/dashboard/${businessId}/expense`, {
+    const res = await fetch(`${API_HOST}/api/v1/dashboard/${businessId}/expense`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -350,6 +358,18 @@ function MoneyTab({ businessId }: { businessId: string }) {
       },
       body: JSON.stringify(expenseForm),
     });
+    const data = await res.json().catch(() => null);
+
+    // Was fire-and-forget: the form cleared and the list reloaded whatever happened, so a
+    // rejected expense (bad amount, missing category, no auth) looked exactly like a
+    // successful one and the user was told their spend was recorded when it was not.
+    if (!res.ok || !data?.success) {
+      setExpenseError(
+        data?.error || data?.message || `Could not save the expense (${res.status})`,
+      );
+      return;
+    }
+    setExpenseError(null);
     setExpenseForm({ category: '', amount: '', description: '' });
     setShowAddExpense(false);
     loadFinancials();
@@ -373,7 +393,11 @@ function MoneyTab({ businessId }: { businessId: string }) {
       {/* PayLio Balance */}
       <div style={{ background: '#0f172a', borderRadius: 12, padding: 16, border: '1px solid rgba(255,255,255,0.08)', marginBottom: 24 }}>
         <div style={{ fontSize: 13, color: '#64748b', marginBottom: 4 }}>PayLio Balance</div>
-        <div style={{ fontSize: 24, fontWeight: 800, color: '#818cf8' }}>${financials.paylioBalance.toFixed(2)}</div>
+        <div style={{ fontSize: 24, fontWeight: 800, color: '#818cf8' }}>
+          {financials.paylioBalanceAvailable === false
+            ? 'Not connected'
+            : `$${financials.paylioBalance.toFixed(2)}`}
+        </div>
       </div>
 
       {/* Expenses */}
@@ -386,6 +410,22 @@ function MoneyTab({ businessId }: { businessId: string }) {
 
       {showAddExpense && (
         <div style={{ background: '#0f172a', borderRadius: 12, padding: 16, border: '1px solid rgba(255,255,255,0.08)', marginBottom: 16 }}>
+          {expenseError && (
+            <div
+              role="alert"
+              style={{
+                marginBottom: 12,
+                padding: '8px 10px',
+                borderRadius: 8,
+                background: 'rgba(248,113,113,0.12)',
+                border: '1px solid rgba(248,113,113,0.35)',
+                color: '#fca5a5',
+                fontSize: 13,
+              }}
+            >
+              {expenseError}
+            </div>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             <input
               value={expenseForm.category}

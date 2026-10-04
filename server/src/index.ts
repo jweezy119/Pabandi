@@ -348,8 +348,13 @@ const routeMap: [string, string][] = [
   // stubbed here, because a fake opt-in that reports success is worse than a 404.
   [`/api/${v}/whatsapp/advanced`, './routes/whatsapp.advanced.routes'],
 
-  // REMOVED: `/api/${v}/onboarding` -> './routes/onboarding.routes' and
-  // `/api/${v}/dashboard` -> './routes/dashboard.routes'.
+  // REINSTATED: `/api/${v}/dashboard`. It was removed above because the module was never on
+  // disk, which correctly turned a 500 into a 404 -- but `/dashboard` is the primary nav
+  // target for a business owner (AppShell logo, breadcrumb root, command palette, avatar
+  // menu), so a visible 404 on the main screen is not a resting state. The six endpoints it
+  // needed are now implemented in dashboard.routes.ts against data that already exists.
+  [`/api/${v}/dashboard`, './routes/dashboard.routes'],
+  // REMOVED: `/api/${v}/onboarding` -> './routes/onboarding.routes'.
   //
   // Neither module exists, so both answered 500 "Route module failed to load" on every
   // request. Found by tests/route-registration.test.ts, which asserts that every lazily

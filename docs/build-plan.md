@@ -1620,3 +1620,104 @@ fixes cleared three pre-existing type errors. Client build exit 0.
   duplication is real.
 - `/api/v1/dashboard/*` and `/api/v1/onboarding/*` still 404 behind routed pages.
 - Partial payments / split tender not started.
+
+## The business dashboard API (2026-10-03)
+
+`/api/v1/dashboard/*` and `/api/v1/onboarding/*` both 404'd behind routed pages. They are not
+equivalent problems, so they were treated separately.
+
+### Dashboard: had to be implemented, not de-routed
+
+`/dashboard` is the **primary navigation target** for a business owner — the AppShell logo, the
+breadcrumb root, the command palette and the avatar menu in `Layout` all point at it. Every
+screen behind it fetched six endpoints that did not exist:
+
+```
+GET  /api/v1/dashboard/:businessId/today
+GET  /api/v1/dashboard/:businessId/calendar
+GET  /api/v1/dashboard/:businessId/customers
+GET  /api/v1/dashboard/:businessId/employees
+GET  /api/v1/dashboard/:businessId/money
+POST /api/v1/dashboard/:businessId/expense
+```
+
+The registration pointed at `dashboard.routes.ts`, which was never on disk, so every request
+500'd with "Route module failed to load". An earlier pass removed the registration — correctly
+turning a mysterious 500 into a visible 404 — but de-routing was not an option here, because
+that would break navigation for every business owner. So the six endpoints are now written in
+`dashboard.routes.ts` against data that already exists: `CrmJob`, `CrmClient`, `CrmEmployee`,
+`Invoice`, `CrmExpense`.
+
+### The `:businessId` path parameter is ignored — deliberately
+
+Every route is declared `/:businessId/...` purely so the client's existing URLs resolve, and
+the parameter is **never read**. The tenant comes from `resolveCrmBusiness`, which pairs a
+requested id with `ownerId: userId`.
+
+This is the whole point. Two cross-tenant leaks in this codebase came from reading a
+caller-supplied `businessId` out of a path or query: reports leaked revenue, jobs leaked
+client **addresses**. Honouring it here would reintroduce both — on the one screen every
+business owner lands on. The path segment is kept only as a shape the client already sends.
+
+### PayLio: no fabricated balance
+
+The dashboard shows a "PayLio Balance" card. PayLio has create-payment, payment-status and
+webhook endpoints — and **no balance endpoint**. So there is nothing truthful to return.
+
+The client renders the value with `.toFixed(2)`, so it has to be a number, but returning `0`
+alone would assert the business holds no money when the truth is that we do not know. It is
+therefore sent as `0` **with `paylioBalanceAvailable: false`**, and the card renders "Not
+connected" instead of "$0.00".
+
+### Two client bugs fixed alongside
+
+- **The expense POST was fire-and-forget.** No response check, and the form cleared and the
+  list reloaded regardless — so a rejected expense (bad amount, missing category, no auth)
+  looked exactly like a successful one and the user was told their spend was recorded when it
+  was not. It now checks the response and shows the server's reason.
+- **`BusinessDashboard` and `OnboardingWizard` both send no `Authorization` header** to
+  onboarding. See below.
+
+### Tests: 9, mutation-checked six ways
+
+| mutation | result |
+|---|---|
+| honour the caller's `businessId` path param | 4 failed |
+| drop the `serviceBusinessId` filter from customers | 1 failed |
+| accept a non-numeric expense amount | 1 failed |
+| claim the PayLio balance is available | 1 failed |
+| drop the calendar range validation | 1 failed |
+| remove the router registration again | 9 failed |
+
+Expense validation is deliberately strict: `Number('abc')` is `NaN`, and a `NaN` reaching the
+`SUM` in `/money` silently poisons the net-profit figure the user is looking at. Negative and
+zero amounts are refused too — a negative expense is not a refund, it is an entry error that
+would understate total spend on the same card.
+
+Calendar ranges are validated (400 on inverted or unparseable dates) and capped at a year, so
+a dashboard query cannot be turned into a data export.
+
+Server 760 passed / 52 files (was 751 / 51). Client 42. Server tsc 23, client tsc 534, both
+unchanged. Client build exit 0.
+
+### Onboarding: still open, and it is a worse bug than the 404
+
+`OnboardingWizard` **is** routed at `/onboarding` and POSTs `{ profile, services,
+availability, employees }` to `/api/v1/onboarding/complete`, which does not exist.
+
+Implementing it is more than adding a route, and two things need deciding first:
+
+1. **It sends no `Authorization` header.** So even with the endpoint in place it would 401.
+   That is a client bug, not a missing route.
+2. **It fails silently.** `catch` only `console.error`s — no error state, no toast. The user
+   completes the wizard and **nothing happens**, with no indication of why.
+
+It also needs an owner decision: the payload includes `employees` and `availability`, which
+means creating `CrmEmployee` rows and defining what "availability" means. There is **no
+availability model in the schema** (the double-booking work added conflict detection, not
+working-hours data), so `availability` currently has nowhere to go.
+
+Left alone rather than stubbed: a fake `/onboarding/complete` that returns success would
+report a business as onboarded when nothing was persisted — the same failure mode as the
+fabricated trust-insight constants, and worse, because onboarding is what everything else
+depends on.
