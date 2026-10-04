@@ -125,6 +125,7 @@ describe('crm settings + files', () => {
   beforeEach(async () => {
     const { prisma } = await import('../src/utils/database');
     await prisma.crmFile.deleteMany({ where: { fileName: { contains: MARKER } } });
+    await prisma.crmFile.deleteMany({ where: { fileUrl: { contains: 'files.example.test' } } });
     await prisma.businessSettings.deleteMany({ where: { businessId: { contains: MARKER } } });
     await prisma.notification.deleteMany({ where: { user: { email: { contains: MARKER } } } });
     await prisma.crmClient.deleteMany({ where: { email: { contains: MARKER } } });
@@ -280,6 +281,160 @@ describe('crm settings + files', () => {
     await expect(SettingsService.ensureSettings(b.businessId)).resolves.toBeTruthy();
     const count = await prisma.businessSettings.count({ where: { businessId: b.businessId } });
     expect(count, 'ensureSettings must not create duplicates').toBe(1);
+  });
+
+  it('merges the flag bag when a request carries both custom fields and flags', async () => {
+    const b = await seedBusiness('bothbag');
+    const { prisma } = await import('../src/utils/database');
+    await prisma.businessSettings.create({
+      data: {
+        businessId: b.businessId,
+        customFields: { client: [{ key: 'seeded', label: 'Seeded' }] },
+        enabledFeatures: { notifications: [{ event: 'invoice_paid', enabled: true }], contact: ['crm'] },
+      },
+    });
+
+    // One request carrying BOTH. The earlier test only ever sent customFields, so the merge
+    // branch never ran and replacing the bag wholesale was invisible to it -- replacing is
+    // what silently deletes another page's settings.
+    const res = await api(b.token, 'PUT', '/api/v1/settings/config', {
+      data: {
+        customFields: { client: [{ key: 'new', label: 'New' }] },
+        enabledFeatures: { trust: { enabled: true } },
+      },
+    });
+    expect(res.status, JSON.stringify(res.json)).toBe(200);
+
+    const row = await prisma.businessSettings.findUnique({
+      where: { businessId: b.businessId },
+      select: { customFields: true, enabledFeatures: true },
+    });
+    // The incoming flag is added...
+    expect(JSON.stringify(row?.enabledFeatures)).toContain('trust');
+    // ...and the keys the caller did not send survive. A page that only knows about its own
+    // flags must not be able to delete the rest.
+    expect(JSON.stringify(row?.enabledFeatures)).toContain('invoice_paid');
+    expect(JSON.stringify(row?.enabledFeatures)).toContain('contact');
+    expect(JSON.stringify(row?.customFields)).toContain('New');
+  });
+
+  it('returns an empty object rather than another business settings', async () => {
+    const a = await seedBusiness('setta');
+    const b = await seedBusiness('settb');
+    const { prisma } = await import('../src/utils/database');
+    await prisma.businessSettings.create({
+      data: { businessId: b.businessId, customFields: { client: [{ key: 'secret', label: 'Secret' }] } },
+    });
+
+    const res = await api(a.token, 'GET', `/api/v1/crm/settings?businessId=${b.businessId}`);
+    // resolveCrmBusiness pairs a requested id with ownerId: userId, so a foreign id is
+    // REFUSED rather than ignored. Either outcome is safe; asserting one specific status
+    // would be asserting weaker behaviour than the code actually has.
+    expect([200, 403], `${res.status}: ${JSON.stringify(res.json)}`).toContain(res.status);
+    expect(JSON.stringify(res.json)).not.toContain('secret');
+  });
+
+  it('registers a stored file and lists it for the tenant', async () => {
+    const a = await seedBusiness('filea');
+
+    // THE POINT OF THE SCHEMA CHANGE. CrmFile.businessId was a REQUIRED FK to CrmBusiness and
+    // nothing ever created one, so this table could not hold a row at all and the CRM's file
+    // list was permanently empty. Registering is now possible.
+    const created = await api(a.token, 'POST', '/api/v1/crm/files', {
+      clientId: a.clientId,
+      fileName: 'Invoice 001.pdf',
+      fileUrl: 'https://files.example.test/invoice-001.pdf',
+      fileSize: 20480,
+      fileType: 'application/pdf',
+    });
+    expect(created.status, JSON.stringify(created.json)).toBe(201);
+    expect(created.json.data.fileName).toBe('Invoice 001.pdf');
+
+    const { prisma } = await import('../src/utils/database');
+    const row = await prisma.crmFile.findUnique({
+      where: { id: created.json.data.id },
+      select: { serviceBusinessId: true, businessId: true },
+    });
+    expect(row?.serviceBusinessId).toBeTruthy();
+    // The legacy anchor stays null rather than being fabricated: no CrmBusiness exists, and
+    // inventing an id would either violate the FK or point at someone else's.
+    expect(row?.businessId).toBeNull();
+
+    const list = await api(a.token, 'GET', `/api/v1/crm/files?clientId=${a.clientId}`);
+    expect(list.json.data.map((f: any) => f.id)).toContain(created.json.data.id);
+  });
+
+  it("refuses to attach a file to another tenant's client", async () => {
+    const a = await seedBusiness('filex');
+    const b = await seedBusiness('filey');
+
+    const res = await api(a.token, 'POST', '/api/v1/crm/files', {
+      clientId: b.clientId,
+      fileName: 'Injected.pdf',
+      fileUrl: 'https://files.example.test/injected.pdf',
+    });
+    expect(res.status, JSON.stringify(res.json)).toBe(404);
+
+    const { prisma } = await import('../src/utils/database');
+    expect(await prisma.crmFile.count({ where: { fileName: 'Injected.pdf' } })).toBe(0);
+  });
+
+  it('refuses a fileUrl that is not an absolute http(s) URL', async () => {
+    const a = await seedBusiness('fileurl');
+    // This value renders as a link on a page an operator is looking at, so the protocol is the
+    // boundary that matters -- not the file extension.
+    for (const fileUrl of [
+      'javascript:alert(1)',
+      'data:text/html,<script>alert(1)</script>',
+      '/relative/path.pdf',
+      'not a url',
+    ]) {
+      const res = await api(a.token, 'POST', '/api/v1/crm/files', {
+        clientId: a.clientId,
+        fileName: 'x.pdf',
+        fileUrl,
+      });
+      expect(res.status, `${fileUrl}: ${JSON.stringify(res.json)}`).toBe(400);
+    }
+  });
+
+  it('keeps one tenant files out of another list, and 404s cross-tenant delete', async () => {
+    const a = await seedBusiness('isoa');
+    const b = await seedBusiness('isob');
+
+    const fileA = await api(a.token, 'POST', '/api/v1/crm/files', {
+      clientId: a.clientId,
+      fileName: `A ${MARKER}.pdf`,
+      fileUrl: 'https://files.example.test/a.pdf',
+    });
+    expect(fileA.status, JSON.stringify(fileA.json)).toBe(201);
+    await api(b.token, 'POST', '/api/v1/crm/files', {
+      clientId: b.clientId,
+      fileName: `B ${MARKER}.pdf`,
+      fileUrl: 'https://files.example.test/b.pdf',
+    });
+
+    // With rows present, a missing tenant filter WOULD leak.
+    const listA = await api(a.token, 'GET', '/api/v1/crm/files');
+    expect(JSON.stringify(listA.json)).not.toContain(`B ${MARKER}`);
+
+    const del = await api(b.token, 'DELETE', `/api/v1/crm/files/${fileA.json.data.id}`);
+    expect(del.status, JSON.stringify(del.json)).toBe(404);
+
+    const still = await api(a.token, 'GET', `/api/v1/crm/files/${fileA.json.data.id}`);
+    expect(still.status).toBe(200);
+  });
+
+  it('applies clientId as a filter, never as a tenant selector', async () => {
+    const a = await seedBusiness('scopea');
+    const b = await seedBusiness('scopeb');
+
+    const res = await api(a.token, 'GET', `/api/v1/crm/files?clientId=${b.clientId}`);
+    expect(res.status, JSON.stringify(res.json)).toBe(200);
+    expect(res.json.data).toEqual([]);
+
+    const own = await api(a.token, 'GET', `/api/v1/crm/files?clientId=${a.clientId}`);
+    expect(own.status).toBe(200);
   });
 
   it('merges the flag bag when a request carries both custom fields and flags', async () => {

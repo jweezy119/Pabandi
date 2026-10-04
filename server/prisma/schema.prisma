@@ -7553,19 +7553,27 @@ model CrmActivity {
 }
 
 model CrmFile {
-  id         String   @id @default(cuid())
-  businessId String
-  clientId   String
-  fileName   String
-  fileUrl    String
-  fileSize   String?
-  fileType   String?
-  createdAt  DateTime @default(now())
+  id                String   @id @default(cuid())
+  // Legacy anchor (CrmBusiness). Nullable because NOTHING creates a CrmBusiness row --
+  // enrollment only makes a CrmServiceBusiness -- so while this column was required,
+  // CrmFile was structurally unwriteable and the CRM's file list could never return a row.
+  businessId        String?
+  // Current tenant anchor, matching CrmClient/CrmJob/CrmDeal/CrmActivity. This is what every
+  // scoped read filters on.
+  serviceBusinessId String?
+  clientId          String
+  fileName          String
+  fileUrl           String
+  fileSize          String?
+  fileType          String?
+  createdAt         DateTime @default(now())
 
-  client   CrmClient   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  business CrmBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client          CrmClient?          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  business        CrmBusiness?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  serviceBusiness CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
+  @@index([serviceBusinessId])
   @@index([clientId])
 }
 
@@ -8079,6 +8087,7 @@ model CrmServiceBusiness {
   deals            CrmDeal[]
   activities       CrmActivity[]
   availability     CrmAvailability[]
+  files            CrmFile[]
   jobs             CrmJob[]
   payrolls         CrmPayroll[]
   expenses         CrmExpense[]

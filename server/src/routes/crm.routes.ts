@@ -481,7 +481,10 @@ router.get('/files', async (req: AuthRequest, res: Response) => {
 
     const files = await prisma.crmFile.findMany({
       where: {
-        client: { serviceBusinessId },
+        // New rows carry the tenant themselves. Rows written before CrmFile had the column
+        // only have the legacy `businessId`, so they are matched through the client relation
+        // instead -- that keeps them visible without leaving a second id space in play.
+        OR: [{ serviceBusinessId }, { client: { serviceBusinessId } }],
         ...(clientId ? { clientId } : {}),
       },
       orderBy: { createdAt: 'desc' },
@@ -498,12 +501,123 @@ router.get('/files', async (req: AuthRequest, res: Response) => {
   }
 });
 
+/**
+ * POST /api/v1/crm/files — register a stored file against a client.
+ *
+ * THIS REGISTERS A FILE THAT IS ALREADY STORED. It does not accept bytes.
+ *
+ * There is no blob-storage integration on this platform and no upload UI, so "accept a
+ * multipart upload" would mean inventing both. What this does instead is the half that can be
+ * correct today: the caller uploads to storage by whatever means it has, then records the
+ * resulting URL here. That makes the table writable, which it was not, and gives the client
+ * detail page something real to list.
+ *
+ * The URL is validated as an absolute http(s) URL. A `javascript:` or `data:` value here
+ * would render as a link on a page an operator is looking at, so this is the boundary that
+ * matters — not the file extension.
+ *
+ * The client must belong to the caller's tenant, proved by lookup rather than trusted from
+ * the body: otherwise a file could be attached to another business's client and surface on
+ * their record.
+ */
+router.post('/files', async (req: AuthRequest, res: Response) => {
+  try {
+    const { serviceBusinessId } = requireCrmContext(req);
+    const { clientId, fileName, fileUrl, fileSize, fileType } = req.body ?? {};
+
+    const name = typeof fileName === 'string' ? fileName.trim() : '';
+    if (!name) return res.status(400).json({ success: false, error: 'fileName is required' });
+    if (name.length > 255) {
+      return res.status(400).json({ success: false, error: 'fileName is too long' });
+    }
+
+    const url = typeof fileUrl === 'string' ? fileUrl.trim() : '';
+    let parsed: URL;
+    try {
+      parsed = new URL(url);
+    } catch {
+      return res.status(400).json({ success: false, error: 'fileUrl must be an absolute URL' });
+    }
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return res.status(400).json({ success: false, error: 'fileUrl must be http or https' });
+    }
+
+    if (!clientId) return res.status(400).json({ success: false, error: 'clientId is required' });
+    const client = await prisma.crmClient.findFirst({
+      where: { id: String(clientId), serviceBusinessId },
+      select: { id: true },
+    });
+    // 404 not 403: whether the client id exists is not this endpoint's business to reveal.
+    if (!client) return res.status(404).json({ success: false, error: 'Client not found' });
+
+    const size = fileSize === undefined || fileSize === null || fileSize === ''
+      ? null
+      : Number(fileSize);
+    if (size !== null && (!Number.isFinite(size) || size < 0)) {
+      return res.status(400).json({ success: false, error: 'fileSize must be a number' });
+    }
+
+    const file = await prisma.crmFile.create({
+      data: {
+        serviceBusinessId,
+        // The legacy anchor is deliberately null: nothing creates a CrmBusiness, and writing a
+        // fabricated id here would either violate the FK or point at someone else's.
+        businessId: null,
+        clientId: client.id,
+        fileName: name,
+        fileUrl: url,
+        fileSize: size === null ? null : String(size),
+        fileType:
+          typeof fileType === 'string' && fileType.trim() ? fileType.trim().slice(0, 120) : null,
+      },
+      select: {
+        id: true, clientId: true, fileName: true, fileUrl: true,
+        fileSize: true, fileType: true, createdAt: true,
+      },
+    });
+
+    res.status(201).json({ success: true, data: file });
+  } catch (err: any) {
+    const status = Number(err?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      error: status >= 500 ? 'Could not register the file' : err?.message ?? 'Invalid request',
+    });
+  }
+});
+
+/** DELETE /api/v1/crm/files/:id — tenant-scoped, 404 rather than 403. */
+router.delete('/files/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const { serviceBusinessId } = requireCrmContext(req);
+    const existing = await prisma.crmFile.findFirst({
+      where: {
+        id: req.params.id,
+        OR: [{ serviceBusinessId }, { client: { serviceBusinessId } }],
+      },
+      select: { id: true },
+    });
+    if (!existing) return res.status(404).json({ success: false, error: 'File not found' });
+    await prisma.crmFile.delete({ where: { id: existing.id } });
+    res.json({ success: true, data: { id: existing.id } });
+  } catch (err: any) {
+    const status = Number(err?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      error: status >= 500 ? 'Could not delete the file' : err?.message ?? 'Invalid request',
+    });
+  }
+});
+
 /** GET /api/v1/crm/files/:id — 404 rather than 403, so the response cannot confirm an id exists. */
 router.get('/files/:id', async (req: AuthRequest, res: Response) => {
   try {
     const { serviceBusinessId } = requireCrmContext(req);
     const file = await prisma.crmFile.findFirst({
-      where: { id: req.params.id, client: { serviceBusinessId } },
+      where: {
+        id: req.params.id,
+        OR: [{ serviceBusinessId }, { client: { serviceBusinessId } }],
+      },
       select: {
         id: true, clientId: true, fileName: true, fileUrl: true,
         fileSize: true, fileType: true, createdAt: true,
