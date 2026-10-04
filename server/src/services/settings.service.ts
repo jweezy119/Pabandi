@@ -87,6 +87,68 @@ export class SettingsService {
     });
   }
 
+  /**
+   * Create the settings row if it is missing, otherwise return the existing one.
+   *
+   * Three call sites used to `prisma.businessSettings.create(...)` directly. That is not just
+   * duplication: a bare `create` on a table with a UNIQUE businessId throws P2002 the second
+   * time a business is set up again, so "ensure the row exists" and "create the row" were
+   * being treated as the same operation when they are not. Going through
+   * `updateSettings` keeps this table behind one owner, which is the whole point — the
+   * custom-fields normalisation in `updateSettings` is silently bypassed by any direct write.
+   */
+  static async ensureSettings(businessId: string, defaults: Record<string, unknown> = {}) {
+    return this.updateSettings(businessId, defaults);
+  }
+
+  /**
+   * The canonical custom-field definitions, per entity.
+   *
+   * A reader, so it cannot corrupt anything -- but it lives here so the ONE place that knows
+   * how this table is shaped is the one place that touches it. Leaving a single direct
+   * `findUnique` in a route is how the next bypass gets written: the pattern looks harmless
+   * because the last one was a read too.
+   */
+  static async getCustomFields(businessId: string): Promise<Record<string, unknown>> {
+    const row = await prisma.businessSettings.findUnique({
+      where: { businessId },
+      select: { customFields: true },
+    });
+    const value = row?.customFields;
+    return value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
+  }
+
+  /** Dashboard layout + theme, defaulted so callers never handle null. */
+  static async getDashboardLayout(businessId: string) {
+    const settings = await prisma.businessSettings.findUnique({
+      where: { businessId },
+      select: { dashboardLayout: true, dashboardTheme: true },
+    });
+    return {
+      layout: settings?.dashboardLayout ?? [],
+      theme: settings?.dashboardTheme ?? {},
+    };
+  }
+
+  /**
+   * Save the dashboard layout and/or theme.
+   *
+   * Routed through `updateSettings` rather than its own upsert so the flag-bag merge and the
+   * custom-fields normalisation apply here too. A dashboard save must not be able to wipe a
+   * business's notification preferences by replacing the whole row.
+   */
+  static async updateDashboardLayout(
+    businessId: string,
+    patch: { layout?: unknown; theme?: unknown },
+  ) {
+    return this.updateSettings(businessId, {
+      ...(patch.layout !== undefined ? { dashboardLayout: patch.layout } : {}),
+      ...(patch.theme !== undefined ? { dashboardTheme: patch.theme } : {}),
+    });
+  }
+
   static async getBusinessProfile(businessId: string) {
     return await prisma.crmBusiness.findUnique({
       where: { id: businessId }

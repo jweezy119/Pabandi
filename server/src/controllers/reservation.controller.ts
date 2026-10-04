@@ -1,5 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
+import { SettingsService } from '../services/settings.service';
 import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
 // Lazy-load noShowPredictor to avoid runtime crash when @tensorflow/tfjs is not installed
@@ -116,11 +117,9 @@ export const createReservation = async (
               include: { settings: true }
             });
 
-            await prisma.businessSettings.create({
-              data: {
-                businessId: business.id,
-              },
-            });
+            // See business.controller: a bare create on a UNIQUE businessId throws P2002 if
+            // the row already exists, and bypasses the normalisation updateSettings owns.
+            await SettingsService.ensureSettings(business.id);
           }
         } catch (detailsErr) {
           console.error('Failed to import dynamic place on reservation create:', detailsErr);

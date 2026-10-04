@@ -97,14 +97,9 @@ router.get('/dashboard-layout', async (req: Request, res: Response) => {
   try {
     const businessId = await tenantOf(req);
 
-    const settings = await prisma.businessSettings.findUnique({ where: { businessId } });
-    return res.json({
-      success: true,
-      data: {
-        layout: settings?.dashboardLayout || [],
-        theme: settings?.dashboardTheme || {},
-      },
-    });
+    // Through the service, not a direct findUnique: one owner for this table, so the
+    // custom-fields normalisation and the flag-bag merge cannot be bypassed by a new route.
+    return res.json({ success: true, data: await SettingsService.getDashboardLayout(businessId) });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return res.status(500).json({ success: false, error: message });
@@ -116,14 +111,10 @@ router.put('/dashboard-layout', async (req: Request, res: Response) => {
     const businessId = await tenantOf(req);
 
     const { layout, theme } = req.body;
-    const settings = await prisma.businessSettings.upsert({
-      where: { businessId },
-      create: { businessId, dashboardLayout: layout || [], dashboardTheme: theme || {} },
-      update: {
-        ...(layout !== undefined && { dashboardLayout: layout }),
-        ...(theme !== undefined && { dashboardTheme: theme }),
-      },
-    });
+    // Was its own upsert against prisma directly. Replacing the whole row on a dashboard save
+    // is the failure mode the custom-fields work just fixed for /config; going through the
+    // service means both routes share one merge.
+    const settings = await SettingsService.updateDashboardLayout(businessId, { layout, theme });
 
     return res.json({ success: true, data: settings });
   } catch (error: unknown) {

@@ -1,6 +1,7 @@
 import { Response, NextFunction } from 'express';
 import axios from 'axios';
 import { prisma } from '../utils/database';
+import { SettingsService } from '../services/settings.service';
 import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { BusinessCategory, UserRole } from '@prisma/client';
@@ -87,12 +88,10 @@ export const createBusiness = async (
       },
     });
 
-    // Create default business settings
-    await prisma.businessSettings.create({
-      data: {
-        businessId: business.id,
-      },
-    });
+    // Default business settings. Through SettingsService, not a bare create: businessId is
+    // UNIQUE, so a second setup for the same business throws P2002 here, and a direct write
+    // bypasses the custom-fields normalisation that updateSettings owns.
+    await SettingsService.ensureSettings(business.id);
 
     const user = await prisma.user.update({
       where: { id: req.user!.id },

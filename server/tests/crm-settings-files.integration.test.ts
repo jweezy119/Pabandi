@@ -58,6 +58,8 @@ let baseUrl: string;
 let server: Server;
 const MARKER = '@cs.pabandi.dev';
 
+import { SettingsService } from '../src/services/settings.service';
+
 async function api(token: string, method: string, path: string, body?: unknown) {
   const res = await fetch(`${baseUrl}${path}`, {
     method,
@@ -231,6 +233,53 @@ describe('crm settings + files', () => {
     // loaded. Merging would be worse: a field the user just deleted would reappear, because
     // the incoming object still lacks it and a merge would keep the stored one.
     expect(row?.customFields).toEqual({ client: [{ key: 'added', label: 'Added' }] });
+  });
+
+  it('a dashboard save does not wipe custom fields or flags', async () => {
+    const b = await seedBusiness('dashsave');
+    const { prisma } = await import('../src/utils/database');
+    await prisma.businessSettings.create({
+      data: {
+        businessId: b.businessId,
+        customFields: { client: [{ key: 'survive', label: 'Survive' }] },
+        enabledFeatures: { notifications: [{ event: 'invoice_paid', enabled: true }] },
+      },
+    });
+
+    // The dashboard-layout route used to run its OWN prisma upsert against this table, which
+    // is the same bypass the custom-fields normalisation exists to prevent: a save on one
+    // screen silently reverting or wiping another screen's data.
+    const res = await api(b.token, 'PUT', '/api/v1/settings/dashboard-layout', {
+      layout: [{ i: 'revenue', w: 6 }],
+      theme: { accent: 'clay' },
+    });
+    expect(res.status, JSON.stringify(res.json)).toBe(200);
+
+    const row = await prisma.businessSettings.findUnique({
+      where: { businessId: b.businessId },
+      select: { dashboardLayout: true, dashboardTheme: true, customFields: true, enabledFeatures: true },
+    });
+    expect(row?.dashboardLayout).toEqual([{ i: 'revenue', w: 6 }]);
+    expect(row?.dashboardTheme).toEqual({ accent: 'clay' });
+    // The point: the layout landed AND the other two survived.
+    expect(JSON.stringify(row?.customFields)).toContain('Survive');
+    expect(JSON.stringify(row?.enabledFeatures)).toContain('invoice_paid');
+
+    // And it reads back through the service too.
+    const read = await api(b.token, 'GET', '/api/v1/settings/dashboard-layout');
+    expect(read.status).toBe(200);
+    expect(read.json.data.layout).toEqual([{ i: 'revenue', w: 6 }]);
+  });
+
+  it('creating a business twice does not throw on the unique businessId', async () => {
+    const b = await seedBusiness('twice');
+    const { prisma } = await import('../src/utils/database');
+    // businessId is UNIQUE, so the old bare `create` threw P2002 the second time a business
+    // was set up. ensureSettings must be idempotent.
+    await expect(SettingsService.ensureSettings(b.businessId)).resolves.toBeTruthy();
+    await expect(SettingsService.ensureSettings(b.businessId)).resolves.toBeTruthy();
+    const count = await prisma.businessSettings.count({ where: { businessId: b.businessId } });
+    expect(count, 'ensureSettings must not create duplicates').toBe(1);
   });
 
   it('merges the flag bag when a request carries both custom fields and flags', async () => {

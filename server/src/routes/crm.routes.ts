@@ -2,6 +2,7 @@ import { Router, type Response } from 'express';
 import { prisma } from '../utils/database';
 import { authenticate, type AuthRequest } from '../middleware/auth.middleware';
 import { createInvoice } from '../services/invoice.service';
+import { SettingsService } from '../services/settings.service';
 import { resolveCrmBusiness, requireCrmContext } from '../middleware/crmContext.middleware';
 import {
   enrollBusinessHandler,
@@ -449,10 +450,7 @@ router.get('/settings', async (req: AuthRequest, res: Response) => {
     // answer; a match-all here would report another business's configuration.
     if (!businessId) return res.json({ success: true, data: { customFields: {} } });
 
-    const row = await prisma.businessSettings.findUnique({
-      where: { businessId },
-      select: { customFields: true },
-    });
+    const customFields = await SettingsService.getCustomFields(businessId);
 
     // ONE home. The dedicated column is canonical; `enabledFeatures` is a feature-flag bag
     // and no longer carries field definitions.
@@ -463,7 +461,7 @@ router.get('/settings', async (req: AuthRequest, res: Response) => {
     // (SettingsService.updateSettings normalises to this column) and at boot
     // (sql/customfields-canonical.sql moves anything already in the bag), so this can read
     // one column and mean it.
-    res.json({ success: true, data: { customFields: asRecord(row?.customFields) } });
+    res.json({ success: true, data: { customFields } });
   } catch (err: any) {
     res.status(Number(err?.statusCode) || 500).json({ success: false, error: 'Could not load settings' });
   }
