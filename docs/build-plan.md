@@ -1022,3 +1022,78 @@ to close here, and it needs the `serviceBusinessId` split below resolved first, 
 ### Verified
 
 696 server tests (48 files), 42 client, server tsc 26, client tsc 534 (improved from 539).
+
+## Route-level code splitting (2026-10-03)
+
+Asked what would make the site smoother on mobile. The answer turned out to be one
+mechanical problem, measured rather than guessed.
+
+### Before
+
+```
+entry bundle   3,853 KB raw  →  930 KB gzipped,  in ONE file
+JS files in dist                2
+eager page imports in App.tsx  221
+```
+
+221 static imports meant every page, and everything they pull in, shipped as one bundle a
+phone had to download before anything rendered. On a mid-range device over 3G that is
+roughly twenty seconds of blank screen. Nothing about the CSS, images or rendering was
+worth touching first — this was.
+
+### After
+
+```
+entry bundle     182 KB raw  →   37 KB gzipped
+JS chunks          258       (was 2)
+first load       512 KB gzipped across 7 files   (was 930 KB in 1)
+```
+
+**First-load weight down 45%, entry down 96%.** Each route now downloads only itself.
+
+### What was done
+
+- All 221 page imports became `lazy()`, with a `<Suspense>` boundary inside
+  `AnimatePresence` so the fallback participates in the same transition as the page it
+  replaces. Outside it, every navigation would play the exit animation and then hold on a
+  blank frame.
+- The 9 non-page imports stay **eager on purpose**: providers, auth store, API client and
+  the layout shell are needed by nearly every route, so splitting them would add a
+  waterfall and save nothing.
+- Four heavy *components* (`TrustStakingPortal`, `StakingInterface`, `EscrowInterface`,
+  `AgentInterface`) also deferred. They render on one route each and drag in the wallet,
+  Solana, QR and map libraries — the largest thing still in the first load after route
+  splitting.
+- `manualChunks` in `vite.config.ts` groups React, the router, motion and the heavy vendor
+  libs, so they are fetched once and cached independently of app code instead of being
+  duplicated into every lazy chunk.
+
+### The lesson in the chunk config, learned twice
+
+A manual chunk is a unit, so putting a small always-needed library in the same bucket as a
+large rarely-needed one makes the bucket cost the sum of both, on every visit.
+
+- `react-icons` shared a bucket with solana/leaflet, so the single `react-icons` import in
+  the eager graph pulled in 345 KB of wallet libraries.
+- `axios` shared that bucket too, and `apiClient` is used by the eager auth store — so
+  axios being needed meant solana came along for the ride.
+
+Both are now separate chunks (`icons`, `http`). This is the same shape as the deploy-hook
+splitter bug: a grouping decision that looks free and quietly costs everyone.
+
+### What is still on the critical path
+
+`heavy` (81 KB gz) is still preloaded, and the reason is **not** the entry chunk — the
+entry does not import it. Vite preloads the dependency chain of the **initial route**, so
+`heavy` is reachable from the landing page's own closure, most likely a map or wallet
+component in it. Trimming that means deferring those inside the landing page, which is a
+separate, deliberate change.
+
+`vendor` is 282 KB gzipped and is the catch-all for everything not matched above. It needs
+a real look at what is actually in it before it can be split meaningfully.
+
+### Verified
+
+Client 42 tests (4 files), tsc unchanged at 534, build exit 0, no service worker emitted,
+258 chunks in place of 2. `chunkSizeWarningLimit` raised to 1200 KB so that a genuine
+regression in a deliberate chunk is still visible.

@@ -15,6 +15,48 @@ export default defineConfig(({ mode }) => {
   define: {
     __BUILD_SHA__: JSON.stringify(process.env.BUILD_SHA || 'dev'),
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Split the libraries that are large, stable and always needed into their own
+        // long-lived chunks.
+        //
+        // Without this, route-level splitting alone leaves React, react-router, axios and
+        // framer-motion duplicated across the lazy chunks, so a visitor pays for them
+        // again on every navigation. Grouping them means they download once, in parallel
+        // with the first route, and are then cached independently of app code.
+        //
+        // Keys are matched in order, so the specific libraries are listed before the
+        // catch-all `vendor` — otherwise everything would land in one bucket and the
+        // split would achieve nothing.
+        manualChunks(id: string) {
+          if (!id.includes('node_modules')) return undefined;
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'react';
+          if (/[\\/]node_modules[\\/](react-router|react-router-dom|react-query|@tanstack)[\\/]/.test(id)) return 'router';
+          if (/[\\/]node_modules[\\/](framer-motion|motion-dom|motion-utils)[\\/]/.test(id)) return 'motion';
+          // react-icons is split OUT of `heavy` on purpose.
+          //
+          // Grouping it with solana/leaflet meant that the single react-icons import in
+          // the eager graph dragged the entire 345 KB `heavy` chunk into the first load —
+          // one symbol pulled in a wallet library nobody on the CRM had asked for. The
+          // general lesson: a manual chunk is a unit, so putting a small always-needed
+          // library in the same bucket as a large rarely-needed one makes the bucket cost
+          // the sum of both, on every visit.
+          if (/[\\/]node_modules[\\/]react-icons[\\/]/.test(id)) return 'icons';
+          // axios split out too, for the same reason as react-icons: `apiClient` is used by
+          // the eager auth store, so axios was in the first load — and sharing a bucket
+          // with solana/leaflet/qrcode meant those came with it.
+          if (/[\\/]node_modules[\\/]axios[\\/]/.test(id)) return 'http';
+          if (/[\\/]node_modules[\\/](@solana|solana-web3|bs58|qrcode|leaflet)[\\/]/.test(id)) return 'heavy';
+          return 'vendor';
+        },
+      },
+    },
+    // The old 500 KB warning is calibrated for a bundle that is mostly application code.
+    // With deliberate chunking the entry chunk is small by design and a 3 MB vendor chunk
+    // is expected, so the limit is raised to make a REAL regression visible again.
+    chunkSizeWarningLimit: 1200,
+  },
   plugins: [
     react(),
     // Precache OFF, and the service worker disabled entirely.
