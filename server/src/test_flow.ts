@@ -6,9 +6,20 @@ async function main() {
   console.log('--- DB TEST SCRIPT ---');
   
   // 1. Find or create Business
-  let business = await prisma.crmBusiness.findFirst();
+  //
+  // Was `prisma.crmBusiness`, which has no table. CrmServiceBusiness is the
+  // surviving CRM business model and is what crmClient.serviceBusinessId
+  // references.
+  let business = await prisma.business.findFirst();
   if (!business) {
-    business = await prisma.crmBusiness.create({ data: { id: 'test_biz_' + Date.now(), businessName: 'Test Biz', ownerEmail: 'test@example.com', ownerName: 'Test Owner', serviceType: 'Test Service' } });
+    business = await prisma.business.create({ data: { name: 'Test Biz', email: 'test@example.com', category: 'OTHER', address: 'test' } });
+  }
+
+  let crmBusiness = await prisma.crmServiceBusiness.findFirst({ where: { businessId: business.id } });
+  if (!crmBusiness) {
+    const owner = await prisma.user.findFirst();
+    if (!owner) throw new Error('test_flow needs at least one User for the CrmServiceBusiness owner FK');
+    crmBusiness = await prisma.crmServiceBusiness.create({ data: { businessId: business.id, ownerId: owner.id, serviceType: 'Test Service' } });
   }
 
   // 2. Find or create TrustPassport and Client
@@ -20,7 +31,7 @@ async function main() {
   let client = await prisma.crmClient.findFirst({ where: { passportId: passport.id } });
   if (!client) {
     client = await prisma.crmClient.create({ 
-      data: { name: 'Test Client', businessId: business.id, passportId: passport.id } 
+      data: { name: 'Test Client', serviceBusinessId: crmBusiness.id, passportId: passport.id } 
     });
   }
 

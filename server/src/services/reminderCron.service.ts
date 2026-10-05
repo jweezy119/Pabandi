@@ -27,7 +27,11 @@ export async function runBookingReminderCron() {
     },
     include: {
       client: true,
-      business: true,
+      // Was `business`, which resolved to CrmBusiness — a model with no table.
+      // The name a customer sees in a reminder should be the platform business's
+      // name, and `serviceBusiness` is the relation that exists, so the display
+      // name comes from the linked Business row.
+      serviceBusiness: { include: { business: true } },
     },
   });
 
@@ -39,7 +43,10 @@ export async function runBookingReminderCron() {
     try {
       await emailService.sendBookingReminder({
         to: job.client.email,
-        businessName: job.business?.businessName || 'Pabandi',
+        // `businessName` no longer exists anywhere in the CRM models; the
+        // unified business-OS work moved the name onto the platform Business
+        // row, which is what `serviceBusiness.business` is.
+        businessName: job.serviceBusiness?.business?.name || 'Pabandi',
         date: new Date(job.scheduledDate).toLocaleDateString(),
         time: job.scheduledTime || '',
         guests: 1,

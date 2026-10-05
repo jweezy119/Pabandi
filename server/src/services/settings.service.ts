@@ -149,16 +149,55 @@ export class SettingsService {
     });
   }
 
+  /**
+   * Fields a client is allowed to change on its own business profile.
+   *
+   * The caller used to pass `req.body.data` straight into a Prisma update, which
+   * is mass assignment: it would have accepted `id`, `createdAt`, `ownerId` and
+   * nested relation writes. That was tolerable only in the sense that the target
+   * table did not exist, so the request could not have succeeded anyway.
+   *
+   * Now that the write lands on a real table it has to be bounded. `businessId`
+   * is deliberately absent: it is the tenant key, and letting a request move its
+   * own profile onto another tenant's row is the whole class of bug this file's
+   * caller is guarding against one layer up.
+   */
+  static readonly WRITABLE_BUSINESS_PROFILE_FIELDS = [
+    'serviceType',
+    'slug',
+    'serviceCatalog',
+    'teamSize',
+    'subscriptionTier',
+  ] as const;
+
+  /**
+   * The caller's CRM business profile, resolved from its platform Business id.
+   *
+   * Was `prisma.crmBusiness.findUnique({ where: { id: businessId } })`, which
+   * looked the row up by CRM id while being handed a platform Business id, and
+   * pointed at a table that does not exist. CrmServiceBusiness carries the real
+   * `businessId` foreign key, so the two id spaces are joined by a column rather
+   * than by an email match.
+   */
   static async getBusinessProfile(businessId: string) {
-    return await prisma.crmBusiness.findUnique({
-      where: { id: businessId }
+    return await prisma.crmServiceBusiness.findUnique({
+      where: { businessId },
     });
   }
 
-  static async updateBusinessProfile(businessId: string, data: any) {
-    return await prisma.crmBusiness.update({
-      where: { id: businessId },
-      data
+  static async updateBusinessProfile(businessId: string, data: unknown) {
+    const patch: Record<string, unknown> = {};
+
+    if (data && typeof data === 'object') {
+      const incoming = data as Record<string, unknown>;
+      for (const field of SettingsService.WRITABLE_BUSINESS_PROFILE_FIELDS) {
+        if (incoming[field] !== undefined) patch[field] = incoming[field];
+      }
+    }
+
+    return await prisma.crmServiceBusiness.update({
+      where: { businessId },
+      data: patch,
     });
   }
 

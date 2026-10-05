@@ -18,12 +18,10 @@ import { refreshClientTrust, getClientStage } from '../services/crm-reliability.
  * that client's trust score. getBusinessId in crm.routes.ts and
  * crm.controller.ts was already hardened; this is the same rule.
  *
- * Also note the indirection below: these handlers look the tenant up in
- * CrmBusiness (the service-business record, keyed by ownerEmail) rather than
- * using businessId directly, because alerts.service and crm-reliability.service
- * are written against CrmBusiness ids. That is a second id space from the
- * Business.id the token carries, which is itself worth untangling, but the
- * ownership check is what prevents a cross-tenant read.
+ * The handlers below then resolve that id to a CrmServiceBusiness, because
+ * alerts.service and crm-reliability.service are written against service-business
+ * ids rather than platform Business ids. That is a second id space, and the
+ * ownership check above is what prevents a cross-tenant read across it.
  */
 function requireOwnBusinessId(req: AuthRequest): string {
   const tokenBusinessId = req.user?.businessId ?? req.user?.activeBusinessId;
@@ -40,30 +38,35 @@ function requireOwnBusinessId(req: AuthRequest): string {
 }
 
 /**
- * Resolve the CrmBusiness row for the caller's tenant.
+ * Resolve the CrmServiceBusiness row for the caller's tenant.
  *
- * WHY THIS LOOKS UP BY EMAIL
- * CrmBusiness has no `businessId` column — it is a separate id space from
- * Business, and the only thing joining them is ownerEmail (crm.service.ts
- * creates both from the same owner). The original code did
- * `crmBusiness.findUnique({ where: { businessId } })`, which Prisma rejects
- * because CrmBusiness has no such field: these three endpoints were throwing a
- * validation error and 500ing on every call. They were never working, so this
- * is a fix rather than a hardening.
+ * ─── HISTORY, BECAUSE IT IS THE REASON THIS FUNCTION IS STRANGER THAN IT LOOKS ─
  *
- * Email is a weak join and is worth replacing with an explicit relation. That is
- * a schema migration, not a hotfix, so it is flagged rather than done here.
+ * This resolved a `CrmBusiness` row, which has no table:
+ * `The table public.CrmBusiness does not exist in the current database`. All
+ * three endpoints below returned 500 on every call, for their entire life.
+ *
+ * Before that it did `crmBusiness.findUnique({ where: { businessId } })`, which
+ * Prisma rejects because CrmBusiness had no `businessId` field at all — so the
+ * code was already non-functional, and someone "fixed" it by looking the row up
+ * by `ownerEmail`. The comment at the time called that "a weak join ... worth
+ * replacing with an explicit relation. That is a schema migration, not a
+ * hotfix, so it is flagged rather than done here."
+ *
+ * This is that migration. `CrmServiceBusiness` has a real `businessId` column
+ * with a foreign key to `Business`, so the email round-trip through the platform
+ * business is gone and the lookup is the explicit relation the old comment asked
+ * for.
+ *
+ * Returning `id` is now the CrmServiceBusiness primary key, which is what
+ * `serviceBusinessId` on crmClient / crmJob / crmAlert references. Previously
+ * callers passed this same value into a column called `businessId`, which was
+ * correct only while CrmBusiness and CrmServiceBusiness were different tables.
  */
 async function requireCrmBusiness(businessId: string) {
-  const business = await prisma.business.findUnique({
-    where: { id: businessId },
-    select: { email: true },
+  const crmBusiness = await prisma.crmServiceBusiness.findFirst({
+    where: { businessId },
   });
-  if (!business?.email) {
-    throw new CustomError('No CRM business is associated with this account', 404);
-  }
-
-  const crmBusiness = await prisma.crmBusiness.findFirst({ where: { ownerEmail: business.email } });
   if (!crmBusiness) {
     throw new CustomError('CRM business not found for this business', 404);
   }
@@ -113,7 +116,7 @@ export async function getClientStageHandler(
     const crmBusiness = await requireCrmBusiness(requireOwnBusinessId(req));
 
     const client = await prisma.crmClient.findFirst({
-      where: { id: clientId, businessId: crmBusiness.id },
+      where: { id: clientId, serviceBusinessId: crmBusiness.id },
       include: { jobs: true },
     });
     if (!client) {

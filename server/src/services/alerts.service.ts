@@ -17,14 +17,29 @@ type AlertSeed = Omit<Alert, 'id' | 'createdAt' | 'dismissed'>;
 /**
  * Generate alerts for a business based on client, job, and employee data.
  * This is the core rule engine of the trust-aware revenue system.
+ *
+ * ─── THE PARAMETER IS A CrmServiceBusiness ID ─────────────────────────────────
+ *
+ * This used to be called `businessId` and was documented as a CrmBusiness id,
+ * reached by joining platform `Business.email` to `CrmBusiness.ownerEmail`. That
+ * model had no table — `The table public.CrmBusiness does not exist` — so this
+ * rule engine could never have run against it, and the email join it depended on
+ * was already described in the code as "a weak join".
+ *
+ * Now that CrmBusiness is gone in favour of CrmServiceBusiness, this takes a
+ * CrmServiceBusiness id and scopes by `serviceBusinessId`, which is a real
+ * foreign key to a table that exists. The rename is the point: a parameter called
+ * `businessId` that actually holds a service-business id is how the wrong scope
+ * gets passed to the wrong column, which is a cross-tenant read waiting to
+ * happen.
  */
-export async function generateAlerts(businessId: string): Promise<AlertSeed[]> {
+export async function generateAlerts(serviceBusinessId: string): Promise<AlertSeed[]> {
   const alerts: AlertSeed[] = [];
   const now = new Date();
 
   // ── Client-based alerts ─────────────────────────────────────────────────────
   const clients = await prisma.crmClient.findMany({
-    where: { businessId },
+    where: { serviceBusinessId },
     include: { jobs: true },
   });
 
@@ -91,7 +106,7 @@ export async function generateAlerts(businessId: string): Promise<AlertSeed[]> {
 
   // ── Job-based alerts ────────────────────────────────────────────────────────
   const jobs = await prisma.crmJob.findMany({
-    where: { businessId },
+    where: { serviceBusinessId },
   });
 
   for (const job of jobs) {
@@ -112,7 +127,7 @@ export async function generateAlerts(businessId: string): Promise<AlertSeed[]> {
 
   // ── Employee/Provider alerts ────────────────────────────────────────────────
   const employees = await prisma.crmEmployee.findMany({
-    where: { businessId, isActive: true },
+    where: { serviceBusinessId, isActive: true },
   });
 
   for (const emp of employees) {
@@ -140,13 +155,17 @@ export async function generateAlerts(businessId: string): Promise<AlertSeed[]> {
  * Get active (non-dismissed) alerts for a business.
  * Generates fresh alerts from current data and merges with stored ones.
  */
-export async function getActiveAlerts(businessId: string): Promise<any[]> {
+export async function getActiveAlerts(serviceBusinessId: string): Promise<any[]> {
   // Generate seeds from current data
-  const seeds = await generateAlerts(businessId);
+  const seeds = await generateAlerts(serviceBusinessId);
 
-  // Upsert alerts — avoid duplicates by entityId + title key
+  // Upsert alerts — avoid duplicates by entityId + title key.
+  //
+  // Scoped by serviceBusinessId, which is the only alert tenancy that has a
+  // backing table. `CrmAlert.businessId` points at the deleted CrmBusiness and
+  // is now an unconstrained column nothing writes.
   const existingAlerts = await prisma.crmAlert.findMany({
-    where: { businessId, dismissed: false },
+    where: { serviceBusinessId, dismissed: false },
   });
 
   const existingKeys = new Set(
@@ -158,7 +177,7 @@ export async function getActiveAlerts(businessId: string): Promise<any[]> {
   if (newSeeds.length > 0) {
     await prisma.crmAlert.createMany({
       data: newSeeds.map(s => ({
-        businessId,
+        serviceBusinessId,
         ...s,
       })),
     });
@@ -166,7 +185,7 @@ export async function getActiveAlerts(businessId: string): Promise<any[]> {
 
   // Return all active alerts
   return prisma.crmAlert.findMany({
-    where: { businessId, dismissed: false },
+    where: { serviceBusinessId, dismissed: false },
     orderBy: { createdAt: 'desc' },
   });
 }
@@ -174,9 +193,12 @@ export async function getActiveAlerts(businessId: string): Promise<any[]> {
 /**
  * Dismiss an alert by ID.
  */
-export async function dismissAlert(alertId: string, businessId: string): Promise<any> {
+export async function dismissAlert(alertId: string, serviceBusinessId: string): Promise<any> {
+  // Scoped by serviceBusinessId as above. The `serviceBusinessId` term is what
+  // stops one tenant dismissing another's alert by guessing an id, so it is
+  // load-bearing rather than decorative.
   return prisma.crmAlert.updateMany({
-    where: { id: alertId, businessId },
+    where: { id: alertId, serviceBusinessId },
     data: { dismissed: true, dismissedAt: new Date() },
   });
 }

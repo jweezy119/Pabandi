@@ -7341,35 +7341,6 @@ model LedgerExpense {
 // Employees, clients, jobs, payroll, and expenses for service businesses
 // (cleaning companies, contractors, maintenance services, etc.)
 
-model CrmBusiness {
-  id           String   @id @default(cuid())
-  businessName String
-  ownerEmail   String
-  ownerName    String
-  serviceType  String
-  phone        String?
-  address      String?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  employees  CrmEmployee[]
-  clients    CrmClient[]
-  jobs       CrmJob[]
-  payrolls   CrmPayroll[]
-  expenses   CrmExpense[]
-  deals      CrmDeal[]
-  activities CrmActivity[]
-  files      CrmFile[]
-
-  // Opposite side of CrmAlert.business, added when the Contact OS branch's
-  // alerts.service began writing alerts scoped by businessId.
-  crmAlerts CrmAlert[]
-
-  @@index([ownerEmail])
-  @@index([serviceType])
-}
-
 model CrmEmployee {
   id               String   @id @default(cuid())
   businessId       String?
@@ -7390,7 +7361,6 @@ model CrmEmployee {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  business          CrmBusiness?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
   jobs              CrmJob[]            @relation("JobAssignments")
   payrolls          CrmPayroll[]
   serviceBusinessId String?
@@ -7440,7 +7410,6 @@ model CrmClient {
   passportId       String?        @unique
   passport         TrustPassport? @relation("CrmClientTrustPassport", fields: [passportId], references: [id])
 
-  business          CrmBusiness?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
   jobs              CrmJob[]
   bookings          Booking[]
   invoices          Invoice[]
@@ -7504,7 +7473,6 @@ model CrmDeal {
   updatedAt         DateTime  @updatedAt
 
   client          CrmClient?          @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  business        CrmBusiness?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
   serviceBusiness CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
   activities      CrmActivity[]
 
@@ -7539,7 +7507,6 @@ model CrmActivity {
   client          CrmClient?          @relation(fields: [clientId], references: [id], onDelete: Cascade)
   deal            CrmDeal?            @relation(fields: [dealId], references: [id], onDelete: Cascade)
   serviceBusiness CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
-  business        CrmBusiness?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
   @@index([serviceBusinessId])
@@ -7565,7 +7532,6 @@ model CrmFile {
   createdAt         DateTime @default(now())
 
   client          CrmClient?          @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  business        CrmBusiness?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
   serviceBusiness CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
@@ -7594,7 +7560,6 @@ model CrmJob {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  business   CrmBusiness? @relation(fields: [businessId], references: [id], onDelete: Cascade)
   client     CrmClient    @relation(fields: [clientId], references: [id], onDelete: Cascade)
   employeeId String?
   employee   CrmEmployee? @relation("JobAssignments", fields: [employeeId], references: [id], onDelete: SetNull)
@@ -7655,7 +7620,6 @@ model CrmPayroll {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  business          CrmBusiness?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
   employee          CrmEmployee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   serviceBusinessId String?
   serviceBusiness   CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
@@ -7695,7 +7659,6 @@ model CrmExpense {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  business          CrmBusiness?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
   serviceBusinessId String?
   serviceBusiness   CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
   passportId        String?
@@ -8047,7 +8010,6 @@ model CrmAlert {
   // Contact OS branch uses serviceBusinessId. Both writers set exactly one, so both
   // columns are optional — a required FK on either side would reject the other's rows.
   businessId        String?
-  business          CrmBusiness?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
   serviceBusinessId String?
   serviceBusiness   CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
   type              String // info | warning | critical | opportunity

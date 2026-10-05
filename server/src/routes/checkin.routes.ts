@@ -17,22 +17,35 @@ router.use(authenticate);
  * and because a verified check-in is what releases a booking deposit, that made
  * the evidence the escrow model rests on self-certified by a third party.
  *
- * CrmBusiness is keyed by ownerEmail rather than owning a User row, so the join
- * is through the authenticated user's email. Email is the identity the whole
- * booking flow is already keyed on — findOrCreateClient matches clients the same
- * way — so this is consistent with how the booking was created rather than a
- * second, inconsistent notion of ownership.
+ * The owning business is identified by `CrmServiceBusiness.ownerId`, which is a
+ * foreign key to `User.id`.
  *
- * The worker's own client account is also accepted: some jobs are carried out
+ * This was `CrmBusiness.ownerEmail`, matched case-insensitively against the
+ * caller's email string. Two things were wrong with that. CrmBusiness has no
+ * table, so the include never resolved and this comparison could never have
+ * succeeded; and comparing a lowercased email string is a weaker identity than
+ * comparing a primary key, which matters because a verified check-in is what
+ * releases a booking's escrow.
+ *
+ * The comparison is now `ownerId === user.id`. That is stricter, not looser: an
+ * account cannot satisfy it by sharing an email address with the business owner.
+ * The only behaviour it could remove is a check-in that relied on the string
+ * match, and those could not have been reaching this code anyway.
+ *
+ * The worker's own client account is still accepted: some jobs are carried out
  * by a freelancer account acting as the second party, and rejecting them would
- * break the flow the geofence exists to support.
+ * break the flow the geofence exists to support. That leg still matches on email,
+ * because CrmClient has no owner foreign key — it is keyed by email at
+ * enrolment, the same way findOrCreateClient matches.
  */
-async function canCheckInToJob(req: AuthRequest, job: { business: { ownerEmail?: string | null }; client: { id: string; email?: string | null } }): Promise<boolean> {
+async function canCheckInToJob(req: AuthRequest, job: { serviceBusiness: { ownerId: string } | null; client: { id: string; email?: string | null } }): Promise<boolean> {
   const user = req.user;
   if (!user) return false;
+
+  if (job.serviceBusiness?.ownerId === user.id) return true;
+
   const email = String(user.email ?? '').toLowerCase();
   if (!email) return false;
-  if ((job.business.ownerEmail ?? '').toLowerCase() === email) return true;
   if ((job.client.email ?? '').toLowerCase() === email) return true;
   return false;
 }
@@ -50,7 +63,7 @@ router.post('/job/:jobId', async (req: AuthRequest, res: Response) => {
 
     const job = await prisma.crmJob.findUnique({
       where: { id: jobId },
-      include: { business: true, client: true, booking: true },
+      include: { serviceBusiness: true, client: true, booking: true },
     });
 
     if (!job) {
@@ -195,7 +208,7 @@ router.post('/job/:jobId/checkout', async (req: AuthRequest, res: Response) => {
 
     const job = await prisma.crmJob.findUnique({
       where: { id: jobId },
-      include: { business: true, client: true, booking: true },
+      include: { serviceBusiness: true, client: true, booking: true },
     });
 
     if (!job) {
@@ -339,9 +352,11 @@ router.get('/job/:jobId/map', async (req: AuthRequest, res: Response) => {
   try {
     const { jobId } = req.params;
 
+    // `business` dropped: it resolved to CrmBusiness, which has no table, and
+    // this handler never reads it — only `booking`, for the coordinates.
     const job = await prisma.crmJob.findUnique({
       where: { id: jobId },
-      include: { booking: true, business: true },
+      include: { booking: true },
     });
 
     if (!job) {
