@@ -8,6 +8,7 @@ import nacl from 'tweetnacl';
 import { solanaEscrowService } from './solana_escrow.service';
 import { TrustSignals } from '../services/trustSignal.service';
 import { TreasuryBucket } from '../services/treasury.service';
+import { clampReliabilityScore } from '../config/trust-weights';
 
 export const PAB_REWARD_RULES = {
   customer: {
@@ -86,7 +87,11 @@ export class CryptoService {
       if (!reservation) return;
 
       let amount: number = PAB_REWARD_RULES.customer.CHECK_IN;
-      const rScore = reservation.customer.reliabilityScore || 100;
+      // Was `|| 100`: a null score became the TOP of the scale, so a user with
+      // no score at all received the maximum reliability reward multiplier. Null
+      // here means unmeasured, and unmeasured is not perfect. Clamped, so a
+      // legacy 750 cannot mint a 7.5x reward either.
+      const rScore = clampReliabilityScore(reservation.customer.reliabilityScore);
       const reliabilityMultiplier = rScore / 100.0;
       const aiRisk = reservation.riskScore || 0;
       let aiBonus = 0;

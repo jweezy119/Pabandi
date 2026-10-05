@@ -14,6 +14,7 @@ import { odooService } from '../services/odoo.service';
 import { notificationService } from '../services/notification.service';
 import { emailService } from '../services/email.service';
 import { findOrCreateUser, getActiveBusinessId } from '../services/identity.service';
+import { seedColdStartScore } from '../services/trust-core.service';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -311,7 +312,18 @@ export const register = async (
         lastName,
         phone,
         role: resolvedRole,
-        reliabilityScore: 750,
+        // `reliabilityScore` is deliberately ABSENT.
+        //
+        // It used to be written here as a hardcoded 750, which resolved to
+        // "Gold" against the 0–1000 passport tier table and rendered as the
+        // public string "750/100" on social share cards. Every account was born
+        // claiming to be one of the most reliable people on the platform.
+        //
+        // The column default is now COLD_START_SCORE (50), so omitting the field
+        // produces the same value through a schema default rather than a second
+        // hardcoded literal in a controller — and `seedColdStartScore` below
+        // writes the audit row that makes it explainable. There is no path to
+        // 750 left in this handler.
         trustScore: 50.0,
         verificationTier: 'BASIC',
         gracePeriodUntil,
@@ -411,6 +423,14 @@ export const register = async (
     const registerBusinessId = (user.business as { id?: string } | null)?.id ?? null;
     const registerMode: 'business' | 'personal' =
       resolvedRole === UserRole.BUSINESS_OWNER ? 'business' : 'personal';
+
+    // Record the cold-start baseline on the audit trail.
+    //
+    // The value was already set in the write above; this is the receipt. It is
+    // what makes "why is my score 50?" answerable — the customer's first
+    // question, and the one a signup flow is least equipped to answer without
+    // a row saying so.
+    await seedColdStartScore('user', user.id);
 
     // Generate tokens
     const token = jwt.sign(
@@ -704,12 +724,14 @@ export const requestLoginCode = async (
           firstName: 'User',
           lastName: '',
           role: UserRole.CUSTOMER,
-          reliabilityScore: 750,
+          // No reliabilityScore: the column default is COLD_START_SCORE. See the
+          // note on the password-registration path.
           trustScore: 50.0,
           verificationTier: 'BASIC',
           gracePeriodUntil: new Date(Date.now() + 48 * 60 * 60 * 1000),
         },
       });
+      await seedColdStartScore('user', user.id);
     }
 
     // At this point, user is guaranteed to exist
@@ -1086,7 +1108,7 @@ export const getNonce = async (req: AuthRequest, res: Response, next: NextFuncti
           passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
           walletAddress,
           role: UserRole.CUSTOMER,
-          reliabilityScore: 750,
+          // Wallet sign-up: no explicit score either, for the same reason.
           trustScore: 50.0,
           verificationTier: 'BASIC',
           gracePeriodUntil: new Date(Date.now() + 48 * 60 * 60 * 1000),
@@ -1099,6 +1121,7 @@ export const getNonce = async (req: AuthRequest, res: Response, next: NextFuncti
           },
         },
       });
+      await seedColdStartScore('user', user.id);
     } else {
       user = await prisma.user.update({
         where: { id: user.id },

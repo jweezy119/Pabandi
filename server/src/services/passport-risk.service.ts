@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { clampReliabilityScore } from '../config/trust-weights';
 
 export type PassportCategory =
   | 'hospitality'
@@ -85,11 +86,16 @@ export interface PassportExportResult {
 
 const prisma = new PrismaClient();
 
+// Boundaries converted from 0-1000 to 0-100 to match the canonical scale of
+// `User.reliabilityScore`. A user scoring 92/100 was previously 'UNRATED' here
+// and 'EXCELLENT' in `badge.service` — the same person, two tiers, from two
+// files. Now they are the same tier everywhere.
 function normalizeTier(score: number): string {
-  if (score >= 850) return 'PLATINUM';
-  if (score >= 700) return 'GOLD';
-  if (score >= 500) return 'SILVER';
-  if (score >= 300) return 'BRONZE';
+  const s = clampReliabilityScore(score);
+  if (s >= 85) return 'PLATINUM';
+  if (s >= 70) return 'GOLD';
+  if (s >= 50) return 'SILVER';
+  if (s >= 30) return 'BRONZE';
   return 'UNRATED';
 }
 
@@ -103,7 +109,10 @@ export const computePassportScore = async (userId: string, category: PassportCat
     throw new Error('User not found');
   }
 
-  const baseScore = Math.round(user.reliabilityScore || 0);
+  // Clamped: `|| 0` turned a null into the BOTTOM of the scale, so a user with
+  // no score row read as maximally untrustworthy rather than unmeasured. The
+  // clamp maps absent to the cold-start baseline instead.
+  const baseScore = clampReliabilityScore(user.reliabilityScore);
   const penalty = 0;
   const stakeBonus = 0;
   const socialBonus = 0;
@@ -153,7 +162,7 @@ export const getMyPassport = async (userId: string): Promise<MyPassportResult> =
 
   if (!user) throw new Error('User not found');
 
-  const trustScore = Math.round(user.reliabilityScore || 0);
+  const trustScore = clampReliabilityScore(user.reliabilityScore);
   const axes = await Promise.all(
     (['hospitality', 'live_selling', 'freelance', 'gig', 'general'] as PassportCategory[]).map((category) =>
       computePassportScore(userId, category),
@@ -341,7 +350,7 @@ export interface DynamicEscrowResult {
 
 export async function calculateDynamicEscrow(input: DynamicEscrowInput): Promise<DynamicEscrowResult> {
   const axis = await computePassportScore(input.userId, input.category);
-  const score = Math.max(0, Math.min(1000, axis.compositeScore));
+  const score = clampReliabilityScore(axis.compositeScore);
   const tier = axis.tier;
 
   const basePercent = Math.max(0, (1000 - score) / 20);
@@ -367,8 +376,10 @@ export async function calculateDynamicEscrow(input: DynamicEscrowInput): Promise
   let finalPct = Math.max(tierFloor ?? 0, (basePercent * categoryMultiplier) - streakDiscount - web3Bonus);
   finalPct = Number(finalPct.toFixed(2));
 
+  // Boundaries converted from 0-1000 to 0-100. The /500 on transactionValue is
+  // a currency amount and is unrelated to the score scale — left alone.
   const friction =
-    score >= 850 ? 0 : score >= 700 ? 15 : score >= 500 ? 40 : 65 + Math.min(20, input.transactionValue / 500);
+    score >= 85 ? 0 : score >= 70 ? 15 : score >= 50 ? 40 : 65 + Math.min(20, input.transactionValue / 500);
 
   const reasons: string[] = [];
   if (tierFloor !== null && finalPct <= tierFloor) reasons.push(`${tier} floor applied`);

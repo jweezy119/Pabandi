@@ -4,7 +4,12 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['tests/**/*.test.ts'],
+    // `src/**/__tests__` holds tests that must live NEXT TO the code they
+    // constrain: `reliabilityScore.invariant.test.ts` greps `server/src` for
+    // writers of the field and asserts there are none outside trust-core. That
+    // assertion is about the source tree, so it has to sit in the source tree to
+    // read it with the same relative paths a reviewer would.
+    include: ['tests/**/*.test.ts', 'src/**/__tests__/**/*.test.ts'],
 
     // Runs before any test module is imported, which is the only point at which it can
     // supply values that src/ reads at module scope (auth.controller.ts captures

@@ -33,7 +33,17 @@ export type TrustEventType =
   | 'escrow.released'
   | 'escrow.disputed'
   | 'checkin.verified'
-  | 'passport.linked';
+  | 'passport.linked'
+  /**
+   * A business's review signals changed. Carries `googleRating` and
+   * `completionRate` (both 0–5) as INPUTS; `trust-core.service.ts` is the only
+   * subscriber and the only writer of the resulting score.
+   *
+   * Added when `reviewService` stopped writing `reliabilityScore` directly —
+   * see the header of that file for why the direct write had to go rather than
+   * be rescaled.
+   */
+  | 'business.reviews_synced';
 
 export interface TrustEvent {
   type: TrustEventType;

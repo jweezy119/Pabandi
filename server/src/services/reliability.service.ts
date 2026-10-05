@@ -1,6 +1,15 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { blockchainService } from './blockchain.service';
+import { writeReliabilityScore } from './trust-core.service';
+import {
+  COLD_START_SCORE,
+  REFERRAL_GRAPH_TRUST,
+  RELIABILITY_MAX,
+  RELIABILITY_MIN,
+  clampReliabilityScore,
+  reliabilityTier,
+} from '../config/trust-weights';
 
 export interface ScoreChangeReceipt {
   previousScore: number;
@@ -16,8 +25,12 @@ export interface ScoreChangeReceipt {
 }
 
 export class ReliabilityService {
-  private readonly SCORE_MAX = 100;
-  private readonly SCORE_MIN = 0;
+  // Bounds now come from the shared config rather than being redeclared here.
+  // They were `100`/`0` in this file, `1000`/`0` in `passport.service`, and
+  // unbounded in `reviewService`. Two identical-looking private constants in
+  // two files with different values is how a scale rots.
+  private readonly SCORE_MAX = RELIABILITY_MAX;
+  private readonly SCORE_MIN = RELIABILITY_MIN;
   
   // Elo K-factor: Maximum point swing base per interaction
   private readonly K_FACTOR = 25;
@@ -129,7 +142,14 @@ export class ReliabilityService {
       }
 
       // Elo Math
-      const S = user.reliabilityScore;
+      //
+      // `S` is clamped on read, not trusted. The column's default is 750 and
+      // every account created before the cold-start fix still holds it, so an
+      // unclamped read fed `E = 7.5` into an Elo expectation — every legacy
+      // user was treated as certain to ghost, which is precisely how the
+      // high-score penalty branch (`A < E && S > 80`) came to fire for people
+      // who had done nothing wrong.
+      const S = clampReliabilityScore(user.reliabilityScore);
       const E = S / 100.0;
       const A = this.getActualOutcome(status, isLateCancel, cancelReason);
       
@@ -169,9 +189,10 @@ export class ReliabilityService {
         }
       }
 
-      // Cap boundaries
+      // Cap boundaries. These now delegate to the shared clamp rather than
+      // re-deriving the range locally, so there is one definition of the scale.
       let newScore = S + totalChange;
-      newScore = Math.max(this.SCORE_MIN, Math.min(this.SCORE_MAX, newScore));
+      newScore = clampReliabilityScore(newScore);
       // Re-calculate actual applied change (due to caps)
       const actualAppliedChange = newScore - S;
 
@@ -188,17 +209,43 @@ export class ReliabilityService {
         reasoning
       };
 
-      const updateData: any = { reliabilityScore: receipt.newScore };
-      if (usedGracePeriod) {
-        updateData.firstOffenseGraceUsed = new Date();
-      }
-
-      await prisma.user.update({
-        where: { id: userId },
-        data: updateData
+      // Persist through the single writer.
+      //
+      // This used to be `prisma.user.update({ data: { reliabilityScore } })`,
+      // which made this the third file to write the column on a different
+      // assumption about its range. `writeReliabilityScore` is the only function
+      // permitted to do it, and it records an audit row carrying the Elo inputs
+      // — so a customer asking "why did my score drop 4 points" gets an
+      // answer derived from the same numbers that produced it.
+      const persistedScore = await writeReliabilityScore('user', userId, receipt.newScore, {
+        reason: reasoning,
+        component: 'ELO',
+        severity: receipt.totalChange < 0 ? 'negative' : receipt.totalChange > 0 ? 'positive' : 'neutral',
+        metadata: {
+          outcome: status,
+          actualOutcome: A,
+          expectedProbability: E,
+          kFactor: dynamicK,
+          contextWeight,
+          valueMultiplier,
+          streakBonus,
+          reservationId: reservationId ?? null,
+          usedGracePeriod,
+        },
       });
 
-      logger.info(`Global Trust Update | User ${userId} | ${S} -> ${receipt.newScore} | Outcome: ${A}`);
+      // The grace-period flag rides alongside the score. It is not a score
+      // field, so it does not belong in the writer — but splitting it into a
+      // second update after the score write would mean a crash between them
+      // grants the grace period twice.
+      if (usedGracePeriod) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { firstOffenseGraceUsed: new Date() }
+        });
+      }
+
+      logger.info(`Global Trust Update | User ${userId} | ${S} -> ${persistedScore} | Outcome: ${A}`);
       
       // Log cryptographic attestation on Solana (EAS Equivalent)
       let action: any = status === 'COMPLETED' ? 'COMPLETED_BOOKING' : (status === 'NO_SHOW' ? 'NO_SHOW' : 'LATE_CANCELLATION');
@@ -244,31 +291,36 @@ export class ReliabilityService {
     const completionCount = stats.find(s => s.status === 'COMPLETED')?._count.id || 0;
     const noShowCount = stats.find(s => s.status === 'NO_SHOW')?._count.id || 0;
 
-    let baseScore = user.reliabilityScore;
+    let baseScore = clampReliabilityScore(user.reliabilityScore);
     let graphTrustEffect = 0;
     let graphTrustReason = '';
 
     // Calculate Graph Trust (Sybil Resistance / Referral Bonus)
+    //
+    // Thresholds shared with `badge.service` via REFERRAL_GRAPH_TRUST. These two
+    // blocks were duplicated with the same numbers and the same 750-scale bug:
+    // `750 >= 90` fired the bonus for every legacy referrer.
     if (user.referredBy) {
-      if (user.referredBy.reliabilityScore >= 90) {
-        graphTrustEffect = 5;
-        graphTrustReason = 'Referred by a Highly Reliable user (+5 Boost)';
-      } else if (user.referredBy.reliabilityScore < 30) {
-        graphTrustEffect = -10;
-        graphTrustReason = 'Guilt by Association: Referred by an unreliable user (-10 Penalty)';
+      const referrerScore = clampReliabilityScore(user.referredBy.reliabilityScore);
+      if (referrerScore >= REFERRAL_GRAPH_TRUST.HIGH_REFERRER_THRESHOLD) {
+        graphTrustEffect = REFERRAL_GRAPH_TRUST.HIGH_REFERRER_BONUS;
+        graphTrustReason = `Referred by a Highly Reliable user (+${graphTrustEffect} Boost)`;
+      } else if (referrerScore < REFERRAL_GRAPH_TRUST.LOW_REFERRER_THRESHOLD) {
+        graphTrustEffect = -REFERRAL_GRAPH_TRUST.LOW_REFERRER_PENALTY;
+        graphTrustReason = `Guilt by Association: Referred by an unreliable user (${graphTrustEffect} Penalty)`;
       }
     }
 
-    let finalScore = Math.max(0, Math.min(100, baseScore + graphTrustEffect));
+    const finalScore = clampReliabilityScore(baseScore + graphTrustEffect);
 
     return {
       score: finalScore,
       baseScore: baseScore,
-      tier: finalScore >= 80 ? 'EXCELLENT' : (finalScore >= 50 ? 'AVERAGE' : 'RISKY'),
+      tier: reliabilityTier(finalScore),
       totalCompleted: completionCount,
       totalNoShows: noShowCount,
       graphTrust: user.referredBy ? {
-        referrerScore: user.referredBy.reliabilityScore,
+        referrerScore: clampReliabilityScore(user.referredBy.reliabilityScore),
         effect: graphTrustEffect,
         reason: graphTrustReason
       } : null
@@ -309,7 +361,12 @@ export class ReliabilityService {
       let updatedCount = 0;
       for (const user of usersToDecay) {
         // Asymmetric Decay: Bad scores recover slowly (forgiveness), good scores drift faster (reversion)
-        const S = user.reliabilityScore;
+        //
+        // `S` is clamped before the decay is applied. Unclamped, a legacy 750
+        // read as "high tier" and decayed by 2.0 forever without ever
+        // approaching the target — the row could not reach the neutral band the
+        // query was filtering for, so every scheduled run re-selected it.
+        const S = clampReliabilityScore(user.reliabilityScore);
         let newScore = S;
         
         if (S > 80) newScore -= 2.0; // High tier decays faster if inactive
@@ -317,9 +374,13 @@ export class ReliabilityService {
         else if (S < 30) newScore += 0.5; // Very bad scores slowly inch back to neutral
         else if (S < 50) newScore += 1.0;
 
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { reliabilityScore: newScore }
+        await writeReliabilityScore('user', user.id, newScore, {
+          reason: 'Inactivity decay toward neutral',
+          component: 'DECAY',
+          // Decay is neither a reward nor a punishment; it is the absence of
+          // recent evidence moving the score back toward "we do not know".
+          severity: 'neutral',
+          metadata: { previousUnclamped: user.reliabilityScore, decayTarget: COLD_START_SCORE },
         });
         updatedCount++;
       }
@@ -337,14 +398,15 @@ export const reliabilityService = new ReliabilityService();
 
 // ─── CRM Client Scoring ───────────────────────────────────────────────────────
 //
-// Scoring used to be implemented here as well as in `crm-reliability.service.ts`
-// and `trust-core.service.ts` — three copies that had already drifted apart, and
-// two of which returned hardcoded constants. The single implementation now lives
-// in `crm-reliability.service.ts`; re-export it so existing import paths keep
-// working without a second source of truth.
-export {
-  calculateClientScore,
-  updateClientScore,
-  refreshClientTrust,
-  getClientStage,
-} from './crm-reliability.service';
+// Scoring used to be implemented here, in `crm-reliability.service.ts` AND in
+// `trust-core.service.ts` — three copies that had already drifted apart, and two
+// of which returned hardcoded constants. All three are now empty of maths; the
+// single implementation lives in `trust-core.service.ts`.
+//
+// Re-exported so existing import paths keep working. Note `calculateClientScore`
+// and `updateClientScore` are NOT re-exported: both are gone, deliberately.
+// `calculateClientScore` was the fourth scoring variant (0–100, baseline 50,
+// different penalties again) and `updateClientScore` had no callers — it was
+// imported by `revenue.controller` and never invoked. Keeping their names
+// exported would keep the appearance of a supported path.
+export { refreshClientTrust, getClientStage } from './crm-reliability.service';

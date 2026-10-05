@@ -195,9 +195,13 @@ export class ReportsService {
    * saw identical numbers. These are derived:
    *
    *   - scoreDistribution: quartiles of the tenant's OWN client reliability scores. Buckets
-   *     are built from the observed min/max rather than fixed 0-100 boundaries, because
-   *     reliabilityScore defaults to 750 and nothing in the codebase establishes a scale —
-   *     hardcoding "80-100" would bucket a 750 into the top quartile by accident.
+   *     are built from the observed min/max rather than fixed 0-100 boundaries. That
+   *     caution was written when reliabilityScore defaulted to 750 and had no established
+   *     scale; the scale is now locked at 0-100 (config/trust-weights.ts), so fixed
+   *     boundaries would be defensible. Observed-range bucketing is kept because it is
+   *     still the more informative choice for a small tenant — a two-client list and a
+   *     two-hundred-client list both get a readable four-way split — but the reason has
+   *     changed and the old comment claiming no scale exists is now false.
    *   - events: real CrmActivity counts by type.
    *   - escalations: clients flagged AT_RISK.
    *

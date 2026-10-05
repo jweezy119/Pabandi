@@ -1,5 +1,7 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { writeReliabilityScore } from './trust-core.service';
+import { clampReliabilityScore } from '../config/trust-weights';
 
 // ── Passport Types ────────────────────────────────────────────────
 export interface PassportObject {
@@ -37,10 +39,20 @@ export interface VerifyResult {
 
 // ── Tier Boundaries ───────────────────────────────────────────────
 const TIER_BOUNDARIES: { tier: ScoreTier; min: number }[] = [
-  { tier: 'Platinum', min: 850 },
-  { tier: 'Gold', min: 700 },
-  { tier: 'Silver', min: 500 },
-  { tier: 'Bronze', min: 300 },
+  // ── SCALE CONVERSION (0–1000 → 0–100) ─────────────────────────────────────
+  //
+  // These were 850 / 700 / 500 / 300, calibrated against a 0–1000 scale. They sit
+  // beside `User.reliabilityScore`, which this codebase's own Elo path wrote on
+  // 0–100 and which defaulted to 750 at signup — so a genuinely reliable user
+  // scoring 92 out of 100 resolved to BRONZE, and a brand-new account resolving
+  // to the 750 default resolved to GOLD.
+  //
+  // Boundaries are now evenly spaced on the canonical scale. `Platinum` is still
+  // reachable, at 85 — but not by default any more, which is the point.
+  { tier: 'Platinum', min: 85 },
+  { tier: 'Gold', min: 70 },
+  { tier: 'Silver', min: 50 },
+  { tier: 'Bronze', min: 30 },
   { tier: 'Unrated', min: 0 },
 ];
 
@@ -52,24 +64,40 @@ const TIER_RANK: Record<ScoreTier, number> = {
   Unrated: 1,
 };
 
-// Score penalties for upheld disputes
+// Score penalties for upheld disputes, in POINTS on the 0–100 scale.
+//
+// These were 25/100/50/40/15/10, authored against 0–1000. Divided by ten so the
+// relative severity is unchanged: FRAUD was 100/1000, i.e. a tenth of the
+// scale, and is now 10/100, also a tenth. Not re-weighted, because changing the
+// severity of a fraud finding is a policy decision and not one this refactor
+// gets to make silently.
+//
+// NOTE THE CEILING THIS EXPOSES: `FRAUD: 10` means an upheld fraud dispute
+// costs ten points, which will not by itself move anybody out of EXCELLENT.
+// Before the scale was fixed, subtracting 100 from a 0–1000 score took a user
+// from, say, 800 to 700 — still GOLD. The fraud penalty has never actually
+// demoted anyone on its own, on either scale. What does is the `disputeRate`
+// term in the ensemble, which is unbounded in count and is the right place for
+// this. Raised here rather than quietly fixed, because quietly fixing it would
+// change outcomes for real disputes without anyone deciding to.
 const DISPUTE_PENALTIES: Record<string, number> = {
-  NO_SHOW: 25,
-  FRAUD: 100,
-  NON_PAYMENT: 50,
-  HARASSMENT: 40,
-  QUALITY_ISSUE: 15,
-  OTHER: 10,
+  NO_SHOW: 2.5,
+  FRAUD: 10,
+  NON_PAYMENT: 5,
+  HARASSMENT: 4,
+  QUALITY_ISSUE: 1.5,
+  OTHER: 1,
 };
 
-// ── Core Functions ────────────────────────────────────────────────
+// ── Core Functions ───────────────────────────────────────────────────────────
 
 /**
- * Derive the score tier from a 0–1000 trust score.
+ * Derive the score tier from a 0–100 trust score.
  */
 export function deriveScoreTier(score: number): ScoreTier {
+  const clamped = clampReliabilityScore(score);
   for (const { tier, min } of TIER_BOUNDARIES) {
-    if (score >= min) return tier;
+    if (clamped >= min) return tier;
   }
   return 'Unrated';
 }
@@ -135,8 +163,10 @@ export async function assemblePassport(
       ? Math.round(((totalActions - missedBookings) / totalActions) * 100) / 100
       : 1.0;
 
-    // Ensure score is on 0-1000 scale
-    const trustScore = Math.max(0, Math.min(1000, Math.round(user.reliabilityScore)));
+    // Canonical 0-100. Was clamped to 0-1000 here, against a column other
+    // writers filled on 0-100 — so the clamp was a no-op that let 750 through
+    // into a field the tier table then read as GOLD.
+    const trustScore = clampReliabilityScore(user.reliabilityScore);
     const scoreTier = deriveScoreTier(trustScore);
 
     return {
@@ -202,7 +232,7 @@ export async function checkEligibility(
     };
   }
 
-  const trustScore = Math.max(0, Math.min(1000, Math.round(user.reliabilityScore)));
+  const trustScore = clampReliabilityScore(user.reliabilityScore);
   const actualTier = deriveScoreTier(trustScore);
   const meetsThreshold = TIER_RANK[actualTier] >= TIER_RANK[requiredTier];
 
@@ -278,10 +308,17 @@ export async function recordIncident(
     });
 
     if (user) {
-      const newScore = Math.max(0, user.reliabilityScore - penalty);
-      await prisma.user.update({
-        where: { id: userId },
-        data: { reliabilityScore: newScore },
+      // Clamp on read before subtracting. `user.reliabilityScore - penalty`
+      // against an unclamped 750 produced 650 — a value that, on the canonical
+      // 0-100 scale, is a catastrophic score, applied as a "penalty" to an
+      // account that had done nothing. The dispute penalty is now subtracted
+      // from a score that is known to be on the scale it is meant for.
+      const currentScore = clampReliabilityScore(user.reliabilityScore);
+      const newScore = await writeReliabilityScore('user', userId, currentScore - penalty, {
+        reason: `Incident recorded: ${type}`,
+        component: 'DISPUTE',
+        severity: 'negative',
+        metadata: { disputeId: dispute.id, disputeType: type, penalty },
       });
 
       logger.info(

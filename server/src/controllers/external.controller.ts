@@ -7,6 +7,7 @@ async function getNoShowPredictor() {
 }
 import { trustScoreService } from '../services/trustScore.service';
 import { ApiKeyRequest } from '../middleware/apiKey.middleware';
+import { clampReliabilityScore } from '../config/trust-weights';
 import { ok, fail } from '../utils/apiResponse';
 import crypto from 'crypto';
 
@@ -42,7 +43,11 @@ export const getReliabilityScore = async (
         where: whereClause,
         select: { reliabilityScore: true },
       });
-      pabandiReliabilityScore = pabandiUser?.reliabilityScore ?? null;
+      // Clamped on the way into a THIRD-PARTY API response. An integrator
+      // reading this has no way to know that 750 once meant "good" here and
+      // "unusable" in our own passport code; publishing the raw column would
+      // hand them a number that is wrong for every possible interpretation.
+      pabandiReliabilityScore = pabandiUser ? clampReliabilityScore(pabandiUser.reliabilityScore) : null;
     }
 
     // Build feature set for the predictor

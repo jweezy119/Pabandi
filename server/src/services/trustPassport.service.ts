@@ -15,6 +15,7 @@
 
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { COLD_START_SCORE, clampReliabilityScore } from '../config/trust-weights';
 
 export class TrustPassportService {
   /** Create / update a passport for a provider. */
@@ -157,11 +158,19 @@ export class TrustPassportService {
         ? {
             trustBand: agent.trustBand,
             trustVelocity: agent.trustVelocity,
-            reliabilityScore: agent.reliabilityScore,
+            // Clamped on the way out: this is a public response, and
+            // Web3Agent.reliabilityScore is populated by onboarding code that
+            // predates the canonical scale.
+            reliabilityScore: clampReliabilityScore(agent.reliabilityScore),
             profileCompleteness: agent.profileCompleteness,
             connectionCount: agent.connectionCount,
           }
-        : { trustBand: 'D', trustVelocity: 0, reliabilityScore: 750, profileCompleteness: 0.5 },
+        // Unlinked-agent fallback. 750 was the schema default leaking into a
+        // PUBLIC response: every agent without a linked Web3Agent record
+        // published a reliability score that resolved to 'Gold' against the
+        // passport tier table. There is no observed behaviour behind this
+        // number at all, so it is the cold-start baseline — neutral, and true.
+        : { trustBand: 'D', trustVelocity: 0, reliabilityScore: COLD_START_SCORE, profileCompleteness: 0.5 },
       backgroundCheck: bc
         ? {
             recommendation: bc.recommendation,

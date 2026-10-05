@@ -6,6 +6,7 @@ import { badgeService } from '../services/badge.service';
 import { dashscopeService } from '../services/ai/dashscope.service';
 import { CustomError } from '../middleware/errorHandler';
 import { prisma } from '../utils/database';
+import { clampReliabilityScore } from '../config/trust-weights';
 
 export const getMyWallet = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -244,10 +245,18 @@ export const unstakeTokens = async (req: AuthRequest, res: Response, next: NextF
     if (user.wallet.totalStaked < amount) throw new CustomError('Insufficient loyalty pool balance', 400);
 
     // Hibah (Gift) Calculation based purely on Reliability Score, NOT time-locked interest
+    //
+    // Thresholds are already on the canonical 0-100 scale — verified, not
+    // assumed. They were previously unreachable in practice: the 750 column
+    // default satisfied `>= 95`, so every account that had never booked received
+    // the top 5% bonus. With the cold-start fix a new account scores 50 and gets
+    // nothing, which is the correct answer to "have you demonstrated
+    // reliability?" — no.
+    const reliability = clampReliabilityScore(user.reliabilityScore);
     let hibahBonusMultiplier = 0;
-    if (user.reliabilityScore >= 95) hibahBonusMultiplier = 0.05; // 5% flat bonus
-    else if (user.reliabilityScore >= 85) hibahBonusMultiplier = 0.02; // 2% flat bonus
-    else if (user.reliabilityScore >= 70) hibahBonusMultiplier = 0.01; // 1% flat bonus
+    if (reliability >= 95) hibahBonusMultiplier = 0.05; // 5% flat bonus
+    else if (reliability >= 85) hibahBonusMultiplier = 0.02; // 2% flat bonus
+    else if (reliability >= 70) hibahBonusMultiplier = 0.01; // 1% flat bonus
 
     const hibahGift = Number((amount * hibahBonusMultiplier).toFixed(2));
 

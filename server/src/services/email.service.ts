@@ -1,6 +1,7 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { Resend } from 'resend';
+import { clampReliabilityScore } from '../config/trust-weights';
 
 // Constructed lazily: `new Resend('')` throws, and this module is imported
 // during server boot, so an unset RESEND_API_KEY used to take the whole API
@@ -54,6 +55,22 @@ const fs = require('fs');
 const path = require('path');
 
 const TEMPLATE_DIR = path.join(__dirname, '../templates/emails');
+
+/**
+ * A reliability score for a customer-facing template, or `null` if there is none.
+ *
+ * Returns a string because the templates interpolate into HTML — the score is
+ * shown as "72/100", and the "/100" is in the template, not here, so the two
+ * cannot drift apart.
+ *
+ * Deliberately NOT `score || ''`. That idiom hides a legitimate 0, which is the
+ * score belonging to exactly the customer who most needs to see it on their
+ * invoice and most needs to be able to contest it.
+ */
+function formatScore(raw: number | null | undefined): string {
+  if (raw === null || raw === undefined) return '';
+  return String(Math.round(clampReliabilityScore(raw)));
+}
 
 function renderTemplate(templateName: string, data: Record<string, string>) {
   let base = '';
@@ -111,7 +128,11 @@ export const emailService = {
       invoiceNumber: invoice.number,
       dueDate: new Date(invoice.dateDue).toLocaleDateString(),
       payUrl: `${process.env.APP_URL || 'http://localhost:5173'}/pay/${invoice.id}`,
-      trustScore: client.reliabilityScore || null,
+      // `|| null` also swallowed a legitimate 0, hiding the score from a
+      // customer whose score is genuinely at the floor — i.e. exactly the person
+      // who most needs to see it, and most needs to be able to contest it. Now
+      // only an absent value is absent.
+      trustScore: formatScore(client.reliabilityScore),
     });
     return sendEmail({ to: client.email, subject: `Invoice ${invoice.number} from ${business.name}`, html });
   },
@@ -134,7 +155,7 @@ export const emailService = {
       clientName: client.name,
       amount: String(invoice.subtotal),
       invoiceNumber: invoice.number,
-      clientTrustScore: client.reliabilityScore || null,
+      clientTrustScore: formatScore(client.reliabilityScore),
     });
     return sendEmail({ to: business.email || 'business@example.com', subject: `Payment Received: Invoice ${invoice.number}`, html });
   },

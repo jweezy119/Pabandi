@@ -4,6 +4,7 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { CustomError } from '../middleware/errorHandler';
 import { cryptoService } from '../services/cryptoService';
 import { logger } from '../utils/logger';
+import { COLD_START_SCORE, clampReliabilityScore } from '../config/trust-weights';
 
 // Sitara OS: Star Power tier thresholds
 export const STAR_TIER_POINTS = {
@@ -258,6 +259,14 @@ export const getStarPower = async (req: Request, res: Response, next: NextFuncti
       throw new CustomError('Star Power not found for user', 404);
     }
 
+    // The card needs the reliability score, which lives on User rather than on
+    // StarPower. Read it here rather than hardcoding a placeholder below.
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { reliabilityScore: true },
+    });
+    const currentReliability = currentUser?.reliabilityScore ?? null;
+
     const tier = calculateStarTier(starPower.totalPoints);
     const tierInfo = STAR_TIER_POINTS[tier];
 
@@ -293,7 +302,12 @@ export const getStarPower = async (req: Request, res: Response, next: NextFuncti
           tierName: tierInfo.name,
           verifiedCheckIns: recentReviews.length,
           upvotesReceived,
-          reliabilityScore: 0, // will come from user profile
+          // Read the real score rather than hardcoding 0. The comment
+          // admitted this was a placeholder; a star card rendering "0" next to a
+          // verified-visit count reads as "this person is the worst customer we
+          // have", which is a different and much worse claim than "unknown".
+          reliabilityScore:
+            currentReliability === null ? COLD_START_SCORE : clampReliabilityScore(currentReliability),
         },
       },
     });

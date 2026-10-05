@@ -1,4 +1,5 @@
 import { prisma } from '../utils/database';
+import { clampReliabilityScore } from '../config/trust-weights';
 
 export interface Alert {
   id: string;
@@ -30,7 +31,7 @@ export async function generateAlerts(businessId: string): Promise<AlertSeed[]> {
   for (const client of clients) {
     const jobs = client.jobs;
     const completed = jobs.filter(j => j.status === 'COMPLETED');
-    const score = client.reliabilityScore ?? 50;
+    const score = clampReliabilityScore(client.reliabilityScore);
     const hasDefaulted = completed.some(j => j.escrowStatus === 'REFUNDED');
 
     // Client score < 30 → CRITICAL

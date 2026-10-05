@@ -34,9 +34,14 @@ export const discoverAgents = async (req: ApiKeyRequest, res: Response): Promise
       where: {
         category: isBeauty ? 'SALON' : (isLiveSeller ? 'LIVE_SELLER' : undefined),
         owner: {
+          // 0-100 scale. This was `gte: 700`, a 0-1000-scale threshold on a
+          // field this codebase writes on 0-100 — so it matched only rows still
+          // holding the old 750 default, i.e. it filtered for "has never had a
+          // score computed" while appearing to filter for "highly reliable".
+          // Every user whose score had actually been scored was excluded.
           reliabilityScore: {
-            gte: 700 // Assume the query implies highly reliable
-          }
+            gte: 80,
+          },
         }
       },
       select: {

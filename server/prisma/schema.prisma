@@ -60,7 +60,11 @@ model User {
   isPhoneVerified         Boolean                  @default(false)
   verificationCode        String? // 6-digit email verification code
   verificationCodeExpires DateTime? // Code expiration timestamp
-  reliabilityScore        Float                    @default(750)
+  /// CANONICAL SCALE 0-100. Sole writer: trust-core.service.ts.
+  /// Was @default(750) — a 0-1000-scale value in a 0-100 field, which made every
+  /// new account read as GOLD against the passport tier table and publish
+  /// "750/100" on social share cards.
+  reliabilityScore        Float                    @default(50)
   trustScore              Float                    @default(50.0)
   minimumSellerTrustScore Int                      @default(0)
   verificationTier        String                   @default("BASIC")
@@ -237,6 +241,10 @@ model Business {
   googlePlaceId          String?
   rating                 Float?
   reviewCount            Int                      @default(0)
+  /// CANONICAL SCALE 0-100. Sole writer: trust-core.service.ts.
+  /// Nullable because a business with no completed booking has no reliability
+  /// to speak of; readers must resolve null through the cold-start baseline
+  /// rather than defaulting to 0, which is the worst possible score.
   reliabilityScore       Float?
   karmaScore             Float                    @default(50.0)
   businessTier           String                   @default("STANDARD")
@@ -7422,7 +7430,9 @@ model CrmEmployee {
   hireDate         DateTime @default(now())
   inviteToken      String?  @unique
   inviteStatus     String   @default("PENDING") // PENDING | ACCEPTED
-  reliabilityScore Float    @default(100)
+  /// CANONICAL SCALE 0-100. Sole writer: trust-core.service.ts.
+  /// Was @default(100) — top of the scale for an employee who had not started.
+  reliabilityScore Float    @default(50)
   deliveryScore    Float    @default(100)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -7454,7 +7464,8 @@ model CrmClient {
   status           String         @default("ACTIVE") // ACTIVE | AT_RISK | VIP | INACTIVE
   isActive         Boolean        @default(true)
   customData       Json           @default("{}")
-  reliabilityScore Float          @default(750)
+  /// CANONICAL SCALE 0-100. Sole writer: trust-core.service.ts. See User.reliabilityScore.
+  reliabilityScore Float          @default(50)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   passportId       String?        @unique
