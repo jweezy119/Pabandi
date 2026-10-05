@@ -206,11 +206,19 @@ By leveraging the Solana network, the Pabandi Passport takes a user's real-world
 
 | Tier | Score Range | What It Means | Perks |
 |------|-------------|---------------|-------|
-| **Platinum** | 850–1000 | Elite reliability | Zero deposits everywhere, fastest check-in, exclusive partner perks |
-| **Gold** | 700–849 | Highly reliable | Minimal or zero deposits, priority support |
-| **Silver** | 500–699 | Solid track record | Reduced deposits, standard rewards |
-| **Bronze** | 200–499 | Building history | Standard deposits, guided improvement tips |
-| **Unrated** | 0–199 | New or unknown | Higher deposits until history is established |
+| **Platinum** | 85–100 | Elite reliability | Zero deposits everywhere, fastest check-in, exclusive partner perks |
+| **Gold** | 70–84 | Highly reliable | Minimal or zero deposits, priority support |
+| **Silver** | 50–69 | Solid track record | Reduced deposits, standard rewards |
+| **Bronze** | 30–49 | Building history | Standard deposits, guided improvement tips |
+| **Unrated** | 0–29 | New or unknown | Higher deposits until history is established |
+
+*These bands were 850–1000 / 700–849 / 500–699 / 200–499 / 0–199. That was a
+0–1000 scale, and the score itself was never on a 0–1000 scale — it was 0–100,
+with a schema default of 750. So a customer with an excellent record scoring 92
+resolved to "Bronze" here, and a brand-new account holding the 750 default
+resolved to "Gold." The two numbers in this table and the number in the database
+were on different scales and the table won, because a table is what people read.
+See §9.3.*
 
 **Pabandi Passport features:**
 - **Portable reputation:** One score, every property, every city, every country
@@ -412,50 +420,140 @@ Think of it like making chai. The final taste depends on several ingredients:
 
 **What we ignore:** Name, income, caste, address, contacts, messages, photos, location outside bookings.
 
-### 9.3 Four AI Models, One Fair Decision
+### 9.3 How Your Score Is Actually Calculated
 
-Instead of one mysterious algorithm, we use **four specialist models** that vote on your score. This is like asking four different experts and taking their average — fairer and more accurate.
+**Current state: a transparent, auditable weighted ensemble.**
 
-**Expert 1: The Pattern Detective (Gradient Boosted Trees)**
-- Looks at your booking history: attendance rate, lead time, day, venue type
-- Finds patterns like: *"People who book 3+ days ahead and show up 90% of the time rarely ghost"*
-- Fully explainable — shows you exactly what is helping or hurting your score
+We want to be precise here, because this section used to describe four AI
+models — the Pattern Detective, the Memory Keeper, the Subtle Cue Catcher and
+the Fair Arbiter. **Those models do not exist.** They were written into this
+document as a description of an intended design, and we are removing the claim
+rather than shipping around it. An earlier version of this whitepaper told you
+that four specialist neural networks were voting on your score. They were not.
+Everything below is what actually runs.
 
-**Expert 2: The Memory Keeper (Temporal Graph Neural Network)**
-- Sees your history as a web: you → places → time
-- Recognizes loyalty: *"This person has been to Salon X every 6 weeks for 2 years — they are reliable"*
-- Gives new users a fair chance by leaning on venue-level averages
+Your score today is a weighted sum of four things Pabandi already observes:
 
-**Expert 3: The Subtle Cue Catcher (Wide & Deep Neural Network)**
-- Catches rare combinations: *"New device + 30-minute lead time + restaurant booking = slightly higher risk"*
-- Catches patterns that are too subtle for traditional models
-- Regularly audited to ensure no unfair bias creeps in
+```
+reliabilityScore =
+    0.40 · punctuality         ← did you show up
+  + 0.30 · paymentBehaviour    ← did you pay, and on time
+  + 0.20 · (1 − disputeRate)   ← how often have you been in a dispute
+  − 0.10 · cancellations       ← how many bookings you cancelled
+```
 
-**Expert 4: The Fair Arbiter (Calibrated Meta-Learner)**
-- Takes the other three models' opinions and makes the final call
-- **Perfectly calibrated:** If it says 30% risk, that means exactly 30% — no more, no less
-- This is how we guarantee deposits are *fair* — never a rupee more than your actual risk
+Clamped to 0–100. Those four weights are in one config file
+(`server/src/config/trust-weights.ts`) with the reasoning for each written next
+to it, and you can read them today.
 
-### 9.4 Deposit Examples — Real Scenarios
+**What this buys you, concretely:**
+
+- **You can check the arithmetic.** Every number in that formula is something you
+  did. If you think your punctuality is wrong, it is wrong in a way we can show
+  you and correct, rather than wrong inside a model.
+- **You get an itemised explanation, not a verdict.** Every score change writes a
+  record containing the four signal values, the four weights, your previous score
+  and your new one. When you ask "why did this drop?", the answer is generated by
+  the same function that produced the number — not reconstructed afterwards from
+  logs, and not a paragraph written by a support agent guessing.
+- **Nobody can quietly change it.** A test reads the source tree on every build
+  and fails if any file other than one is allowed to write your score. The
+  historical version of this had seven writers on three different scales; we
+  found out that a business with a perfect 5-star rating was being stored as the
+  *worst possible score*, and that new accounts were being created claiming a
+  score of 750 out of 100. Both were invisible. Both are now structurally
+  impossible.
+
+**The honest limitation:** a weighted ensemble cannot find patterns nobody has
+thought to write down. It will not notice that a particular combination of
+booking patterns predicts a no-show, because nobody has told it to look. That is
+a real limitation, and it is the reason the next section exists.
+
+### 9.3.1 Roadmap: Four Learned Experts — Each Required to Beat the Ensemble
+
+We intend to build four specialist models. They are on the roadmap, not in
+production. The Pattern Detective (gradient boosted trees), the Memory Keeper
+(temporal graph networks), the Subtle Cue Catcher (wide & deep networks) and
+the Fair Arbiter (a calibrated meta-learner) are the design we are working
+towards.
+
+**The rule we are committing to, in public:**
+
+> The ensemble above is the baseline. **Each learned expert must outperform it on
+> a held-out dataset before it is allowed to influence a real customer's score.**
+> We do not deploy a model we cannot explain.
+
+Three things make that more than a slogan:
+
+1. **The gate exists in the repository today.**
+   `server/src/services/__tests__/expertHoldoutGate.test.ts` is written and
+   running *before* there is anything to gate, so the first expert cannot ship by
+   redefining what "better" means. It currently includes two negative controls —
+   a model that returns a constant, and a model that only looks at punctuality —
+   so we know the gate rejects things rather than waving everything through.
+
+2. **The gate is honest about its own limits.** That test file records a
+   limitation we measured: with the current five-row holdout, the aggregate
+   score does *not* catch an expert that ignores payment behaviour. We found that
+   by writing a test asserting it would, watching it fail, and recording the
+   failure instead of loosening the threshold until it passed. Five labelled
+   examples are enough to pin the baseline and not enough to evaluate a model
+   against it. The holdout grows as real dispute outcomes accumulate.
+
+3. **Explainability is not a stepping stone to ML. For a trust product it is the
+   product.** A model whose entire purpose is to tell a customer why their
+   reputation changed is a liability in a product where you cannot explain it.
+   So the explainable thing ships first and sets the bar. If a learned expert
+   cannot clear that bar *in a way we can still explain*, it does not ship — and
+   that is a stronger position than claiming four working models, because it is
+   one that survives being asked to justify itself.
+
+**What would make us change this section:** not a better demo, and not a
+benchmark win on a dataset we chose. Outcome data from resolved disputes,
+labelled, on a set we did not tune against.
+
+**One more honest note.** Our own documentation disagreed with itself for months:
+the whitepaper said four models, the engineering code contained none, and an
+internal reconciliation document had already flagged the discrepancy. That is
+recorded in `docs/whitepaper-reconciliation.md` and left in place. A trust
+product's credibility is not something we get to assert; it is something a
+reader can check. So the correction is public, dated, and kept.
+
+### 9.4 Deposit Examples — With The Arithmetic Shown
+
+*These examples used to quote scores of 92, 58 and 35 with no way to derive
+them. Now that §9.3 publishes the formula, every score below is worked out in
+full — you can check our arithmetic, which is the whole point of publishing it.
+Note also what changed: these were invented numbers before, and they are the
+numbers the actual formula produces now.*
 
 **Scenario A: You are a regular**
-- History: 18 bookings, 18 attended
-- Score: 92
+- History: 18 bookings, 18 attended, invoices paid on time, no disputes, no cancellations
+- `0.40(100) + 0.30(100) + 0.20(100) − 0.10(0)` = `40 + 30 + 20 − 0`
+- **Score: 90**
 - Deposit: **0%**
 - App says: *"You are exceptional. No deposit needed — see you at 3 PM."*
 
-**Scenario B: You booked last minute**
-- History: 10 bookings, 8 attended
-- Today's booking: 4 hours from now
-- Score: 58
+**Scenario B: You miss the occasional one**
+- History: 10 bookings, 8 attended (punctuality 80), payment behaviour 60, no disputes
+- `0.40(80) + 0.30(60) + 0.20(100) − 0.10(0)` = `32 + 18 + 20 − 0`
+- **Score: 70**
 - Deposit: **10%**
 - App says: *"Short notice booking. A small deposit holds your spot. Your history is good — book further ahead next time for zero deposit."*
 
-**Scenario C: You are new to this venue**
-- History: 2 bookings, 1 missed
-- Score: 35
+**Scenario C: You are new to us**
+- History: 2 bookings, 1 attended, 1 cancelled (punctuality 50)
+- `0.40(50) + 0.30(50) + 0.20(100) − 0.10(1/6)` = `20 + 15 + 20 − 1.7`
+- **Score: 53**
 - Deposit: **25%**
 - App says: *"We do not know you well yet. After 3 more successful visits, this drops to zero. Show up this time and build your streak."*
+
+**Why a perfect record is 90 and not 100.** The positive weights sum to 0.90, not
+1.00, and the remaining 0.10 belongs to the cancellation penalty. So the best
+possible score for someone who has never done anything wrong is 90. We are not
+willing to put 100 on a table for someone we have merely failed to catch. 100
+stays reachable — but only by a history that is both flawless and long enough to
+have been tested, and it is the cancellation term that closes the gap.
 
 ### 9.5 If You Think We Got It Wrong
 
@@ -465,9 +563,18 @@ If you feel a deposit was unfair:
 1. Tap **"I disagree with this deposit"** in the app
 2. A real human reviews it within **24 hours**
 3. If we agree, we adjust your score and refund the deposit
-4. Your feedback actually trains the models to be smarter
+4. We record the correction against your history, and it shows up in the next
+   score recomputation — because your score is computed from your history, not
+   from a stored opinion about you
 
 **We would rather be wrong and be corrected than be wrong and stay wrong.**
+
+*This section used to say your feedback "trains the models to be smarter." There
+are no models. What your correction actually does today is enter the evidence the
+weighted ensemble reads — a smaller claim than we used to make, and a true one.
+When the learned experts on the roadmap ship, this is the line where feedback
+will genuinely train them, and you will be able to tell the difference by checking
+whether a model's output is involved.*
 
 ---
 
@@ -907,7 +1014,7 @@ To provide deep liquidity and seamless cash-out paths for our users, the $PAB to
 | Date | What We Ship |
 |------|-------------|
 | **July 2026** | Pabandi Points system live. Seller dashboard v1. Global launch. Bitcoin wallet sign-in. Channex.io integration. |
-| **August 2026** | Referral program. Seller dashboard v2 with business scoring. Passport Trust Score 0–1000 rollout. |
+| **August 2026** | Referral program. Seller dashboard v2 with business scoring. Passport Trust Score rollout — **0–100, not 0–1000** (see §9.3; the earlier 0–1000 figure is withdrawn). |
 | **September 2026** | iOS + Android native apps. Hospitality module v1: hotels, rentals, 30 $PAB tokens/night. Property-branded perks engine. |
 | **October 2026** | Public API launch. Node.js, Python, PHP SDKs. Developer portal. Stripe + Safepay + Solana Web3 payments. |
 | **November 2026** | EMEA expansion. Live commerce beta. AI no-show prevention. WhatsApp automation via Meta Cloud API. |
@@ -915,6 +1022,7 @@ To provide deep liquidity and seamless cash-out paths for our users, the $PAB to
 | **Q1 2027** | Enterprise tier. On-prem deployment ready. Pabandi Passport alpha. Zero-knowledge attestations. |
 | **Q2 2027** | UAE + Saudi expansion. Rental/hospitality module v2. AI Arbitration Oracle for disputes. Account Abstraction for gasless onboarding. |
 | **Q4 2027** | Governance council. Community voting on rewards. Passport global rollout. Cross-chain state sync (Stretch goal). |
+| **Not scheduled** | Four learned trust experts (§9.3.1). Deliberately unscheduled: each one must beat the current weighted ensemble on a held-out dataset before it can affect a real customer's score, and the labels for that evaluation do not exist yet. We would rather ship the explainable thing late than the unexplainable thing on time. |
 
 ### Blockchain & AI Technical Roadmap
 
@@ -1000,7 +1108,7 @@ A: It is your portable, verifiable trust credential. It lets you prove your reli
 
 || Term | Simple Meaning |
 |--------|---------------|
-|| Trust Score | A number 0–1000 across tiers predicting how likely you are to show up |
+|| Trust Score | A number 0–100 across tiers, estimating how likely you are to show up. Computed by a weighted ensemble whose weights are public. (Earlier editions of this document said 0–1000. That was wrong — see §9.3.) |
 || $PAB token | Hibah reward token for showing up; spend like cash or redeem to bank |
 || Pabandi Passport | Your portable, blockchain-verified trust credential |
 || Hibah | Sharia-compliant gift/reward system for $PAB tokens |
@@ -1014,8 +1122,9 @@ A: It is your portable, verifiable trust credential. It lets you prove your reli
 || Cross-chain | Bridging state between Solana and EVM chains like BSC |
 || LayerZero | Permissionless cross-chain messaging protocol (optional, stretch goal) |
 || Chainlink CCIP | Cross-chain interoperability protocol for token and data transfers (optional) |
-|| Ensemble model | Four AI models working together for a fairer prediction |
-|| Meta-Learner | The "final judge" model that combines the four models |
+|| Weighted ensemble | What Pabandi's reliability score actually is today: a weighted sum of punctuality, payment behaviour, dispute rate and cancellations. Every weight is readable in one config file. (Live.) |
+|| Ensemble model | The planned mixture-of-experts design — four learned models that would vote on a score. Does not exist yet. (Roadmap; each expert must beat the weighted ensemble on a held-out set first.) |
+|| Meta-Learner | The planned "final judge" model that combines the four. (Roadmap.) |
 || Reason codes | Plain-English explanations of why a deposit was suggested |
 || Calibration | Guarantee that "30% risk" means exactly 30%, not 50% |
 || Federated learning | Training AI on your data without taking your data off your server |

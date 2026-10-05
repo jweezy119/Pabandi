@@ -126,7 +126,7 @@ export default function AboutPage() {
         <div className="bg-white/60 backdrop-blur-sm border border-[rgba(191,179,163,0.2)] rounded-3xl p-6 md:p-10 shadow-[var(--shadow-soft)]">
           <div className="text-center mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-[var(--warm-ink)] font-headline mb-3">Trust OS — The Reliability Engine</h2>
-            <p className="text-[var(--soft-stone)] max-w-2xl mx-auto">Four AI models vote on your score. Events stay in context. Only fraud transfers globally.</p>
+            <p className="text-[var(--soft-stone)] max-w-2xl mx-auto">A transparent weighted ensemble — every input and every weight readable. Events stay in context. Only fraud transfers globally.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div>
@@ -150,22 +150,44 @@ export default function AboutPage() {
               </div>
             </div>
             <div>
-              <h3 className="text-lg font-bold text-[var(--warm-ink)] font-headline mb-4">Four AI Models</h3>
+              {/*
+                WAS: four named AI models — Pattern Detective, Memory Keeper,
+                Subtle Cue Catcher, Fair Arbiter — presented as shipping.
+
+                None of them exist. This is the only marketing surface that
+                named them, so it is the only place the claim needed removing;
+                the technical description is in docs/whitepaper.md §9.3 and the
+                roadmap is §9.3.1.
+
+                Replaced with what actually computes the score. This is a
+                downgrade in adjectives and an upgrade in substance: a customer
+                who can see the four signals and ask why their score moved is
+                better served than one shown four model names.
+              */}
+              <h3 className="text-lg font-bold text-[var(--warm-ink)] font-headline mb-4">What Your Score Is Built From</h3>
               <div className="space-y-2">
                 {[
-                  { name: 'Pattern Detective', desc: 'Gradient boosted trees — booking history, lead time, day of week' },
-                  { name: 'Memory Keeper', desc: 'Temporal graph neural network — sees history as a web' },
-                  { name: 'Subtle Cue Catcher', desc: 'Wide & deep neural network — catches rare combinations' },
-                  { name: 'Fair Arbiter', desc: 'Calibrated meta-learner — makes the final call' },
-                ].map((model, i) => (
+                  { name: 'Punctuality (40%)', desc: 'Did you arrive when you said you would' },
+                  { name: 'Payment Behaviour (30%)', desc: 'Did you pay, and on time' },
+                  { name: 'Dispute-free record (20%)', desc: 'How often disputes have been filed against you' },
+                  { name: 'Cancellations (−10%)', desc: 'Capped at six, so the sixth costs no more than the first' },
+                ].map((signal, i) => (
                   <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-[var(--cream)]">
                     <Cpu size={16} className="text-[var(--clay)] shrink-0" />
                     <div>
-                      <p className="text-sm font-medium text-[var(--warm-ink)]">{model.name}</p>
-                      <p className="text-xs text-[var(--soft-stone)]">{model.desc}</p>
+                      <p className="text-sm font-medium text-[var(--warm-ink)]">{signal.name}</p>
+                      <p className="text-xs text-[var(--soft-stone)]">{signal.desc}</p>
                     </div>
                   </div>
                 ))}
+              </div>
+              <div className="p-4 rounded-2xl bg-[var(--clay)]/5 border border-[var(--clay)]/15 mt-4">
+                <p className="text-xs text-[var(--soft-stone)]">
+                  <strong className="text-[var(--warm-ink)]">Roadmap, not shipping:</strong>{' '}
+                  four learned models are planned. Each one must beat this weighted
+                  ensemble on a held-out dataset before it is allowed to affect your
+                  score. We do not deploy a model we cannot explain.
+                </p>
               </div>
             </div>
           </div>

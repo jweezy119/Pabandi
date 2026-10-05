@@ -9,6 +9,41 @@ to find the places where a reader who *checks* would find a different answer.
 
 ---
 
+## Addendum — finding #2 is now closed in the paper
+
+This document is kept rather than deleted, on purpose: the fact that we shipped a
+paper describing four models that did not exist, and that an internal review
+caught it before a customer did, is part of the record. A trust product's
+credibility is not something we get to assert; it is something a reader can
+check. Editing the finding away would remove the checkable part.
+
+**Finding #2 (the four AI models) has been resolved in `whitepaper.md`.** §9.3 now
+describes the weighted ensemble that actually computes the score, with the
+formula, the weights and a worked derivation for each example. §9.3.1 demotes the
+four models to a roadmap and attaches the gate they have to clear.
+
+What changed underneath, because it is the part that makes the paper true rather
+than merely reworded:
+
+- `reliabilityScore` had seven writers on three scales. There is now one
+  (`trust-core.service.ts`) on one scale (0–100), and a test that fails if a
+  second writer appears.
+- The specific harm this document predicted — "perfectly calibrated" being a
+  testable claim that a delta table cannot satisfy — is gone. We no longer claim
+  calibration anywhere.
+- The fix this document recommended, *"lead with explainability rather than model
+  count,"* is what §9.3 leads with.
+
+**The gate is weaker than it sounds, and the paper says so.** The holdout set is
+five labelled examples. That is enough to pin the baseline and not enough to
+evaluate a model against it — `expertHoldoutGate.test.ts` contains a test
+recording that its own aggregate metric does not catch an expert that ignores
+payment behaviour. That finding is published in the paper rather than resolved
+quietly, because the honest version of "each expert must beat the baseline" is
+"each expert must beat the baseline, on a holdout set we have not built yet."
+
+---
+
 ## Summary
 
 | | Count |

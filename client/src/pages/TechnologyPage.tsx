@@ -66,14 +66,29 @@ export default function TechnologyPage() {
         </div>
       </section>
 
-      {/* AI Risk Engine */}
+      {/*
+        WAS: "Breakthrough AI Risk Engine" / "Machine learning models analyze
+        booking behavior… to assign precise deposit logic."
+
+        There is no ML model behind deposit decisions. Deposits come from the
+        explainable weighted ensemble described in trust-weights.ts, plus the
+        business's own threshold setting. Claiming machine learning here is the
+        same misrepresentation as the four models, on a page whose audience is
+        technical — who will check.
+
+        Renamed to what it is. "Rule-based risk engine" is a less exciting
+        heading and an accurate one.
+      */}
       <Section
-        title="Breakthrough AI Risk Engine"
-        description="Predict no-show probability in real time, then apply safeguards only where the risk is real."
+        title="Risk Engine — Explainable By Design"
+        description="Estimate no-show risk from behaviour you can see, then apply safeguards only where the risk is real."
       >
         <Surface className="flex flex-col gap-3">
           <p className="text-sm leading-relaxed text-[var(--warm-ink)]">
-            Machine learning models analyze booking behavior, time patterns, and trust signals to assign precise deposit logic.
+            A weighted ensemble scores punctuality, payment behaviour, disputes and
+            cancellations. Deposits follow from that score and the threshold you
+            set — and every score change is logged with the inputs that produced
+            it, so a customer can be told exactly why.
           </p>
           <Stack>
             <div className="flex items-start gap-3">
@@ -201,20 +216,34 @@ export default function TechnologyPage() {
 
           <h2 className="mt-6 text-3xl font-bold tracking-tight text-[var(--warm-ink)]">The Pabandi Score</h2>
           <p className="mx-auto mt-3 max-w-2xl text-[var(--warm-ink)]">
-            A real-time reputation metric derived from reservations, deposits, on-chain behavior, and social verification.
+            A reputation metric from 0 to 100, computed from punctuality, payment
+            behaviour, dispute rate and cancellations. Every weight is published
+            in our codebase.
           </p>
 
+          {/*
+            WAS: 900+ / 700-899 / <700, labelled Elite / Reliable / Higher Risk.
+
+            Those bands are on the old 0-1000 passport scale, which nothing wrote
+            to any more. On the canonical 0-100 scale a customer with an
+            excellent record scored 92 and this table would have filed them
+            under "Higher Risk" — while a brand-new account sitting at the
+            default 750 would have been "Elite".
+
+            Converted to the real scale and the real boundaries (80 / 50), which
+            are the ones trust-weights.ts actually uses.
+          */}
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Surface className="flex flex-col items-center gap-2">
-              <div className="text-2xl font-bold text-[var(--warm-ink)]">900+</div>
-              <Chip tone="success">Elite</Chip>
+              <div className="text-2xl font-bold text-[var(--warm-ink)]">80-100</div>
+              <Chip tone="success">Reliable</Chip>
             </Surface>
             <Surface className="flex flex-col items-center gap-2">
-              <div className="text-2xl font-bold text-[var(--warm-ink)]">700-899</div>
-              <Chip tone="info">Reliable</Chip>
+              <div className="text-2xl font-bold text-[var(--warm-ink)]">50-79</div>
+              <Chip tone="info">Building</Chip>
             </Surface>
             <Surface className="flex flex-col items-center gap-2">
-              <div className="text-2xl font-bold text-[var(--warm-ink)]">&lt; 700</div>
+              <div className="text-2xl font-bold text-[var(--warm-ink)]">&lt; 50</div>
               <Badge tone="danger">Higher Risk</Badge>
             </Surface>
           </div>
