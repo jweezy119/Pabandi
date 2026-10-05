@@ -6917,56 +6917,9 @@ model WalletPassport {
   verified      Boolean        @default(false)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  pipelineLeads PipelineLead[]
   contactLeads  ContactLead[]
 
   @@map("wallet_passports")
-}
-
-model PipelineLead {
-  id         String             @id @default(cuid())
-  passportId String
-  passport   WalletPassport     @relation(fields: [passportId], references: [id])
-  name       String
-  email      String?
-  phone      String?
-  source     String?
-  stage      String             @default("new")
-  value      Float?
-  ownerId    String
-  businessId String
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
-  deals      PipelineDeal[]
-  activities PipelineActivity[]
-
-  @@index([businessId, stage])
-}
-
-model PipelineDeal {
-  id        String       @id @default(cuid())
-  leadId    String
-  lead      PipelineLead @relation(fields: [leadId], references: [id])
-  title     String
-  amount    Float
-  stage     String       @default("open")
-  closeDate DateTime?
-  escrowId  String?
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-
-  @@index([leadId, stage])
-}
-
-model PipelineActivity {
-  id          String       @id @default(cuid())
-  leadId      String
-  lead        PipelineLead @relation(fields: [leadId], references: [id])
-  type        String
-  content     String?
-  dueAt       DateTime?
-  completedAt DateTime?
-  createdAt   DateTime     @default(now())
 }
 
 model LedgerAccount {
@@ -7451,6 +7404,22 @@ model CrmEmployee {
 
   @@index([businessId])
   @@index([isActive])
+
+  // ── TABLE NAME ────────────────────────────────────────────────────────────
+  // This model maps to crm_employees, NOT the model's own name.
+  //
+  // The `@@map` was dropped by merge 1295e16d5 ("merge: Contact OS / CRM
+  // branch"), which took main's copy of these blocks — written before the
+  // snake_case rename — over the CRM branch's, which had the mapping. Prisma
+  // then emitted `FROM "CrmClient"` against a table that has never existed
+  // under that name, so every read and write through this model failed with
+  //   The table `public.CrmClient` does not exist in the current database.
+  //
+  // `prisma migrate status` reported every migration as applied throughout,
+  // because the migration that renamed the tables DID run — the schema simply
+  // stopped describing the result. Schema-only drift, so the fix is a schema
+  // edit and no DDL: the table is already there under this name.
+  @@map("crm_employees")
 }
 
 model CrmClient {
@@ -7489,6 +7458,22 @@ model CrmClient {
   @@index([passportId])
   @@index([businessId])
   @@index([name])
+
+  // ── TABLE NAME ────────────────────────────────────────────────────────────
+  // This model maps to crm_clients, NOT the model's own name.
+  //
+  // The `@@map` was dropped by merge 1295e16d5 ("merge: Contact OS / CRM
+  // branch"), which took main's copy of these blocks — written before the
+  // snake_case rename — over the CRM branch's, which had the mapping. Prisma
+  // then emitted `FROM "CrmClient"` against a table that has never existed
+  // under that name, so every read and write through this model failed with
+  //   The table `public.CrmClient` does not exist in the current database.
+  //
+  // `prisma migrate status` reported every migration as applied throughout,
+  // because the migration that renamed the tables DID run — the schema simply
+  // stopped describing the result. Schema-only drift, so the fix is a schema
+  // edit and no DDL: the table is already there under this name.
+  @@map("crm_clients")
 }
 
 model CrmDeal {
@@ -7637,6 +7622,22 @@ model CrmJob {
   @@index([clientId])
   @@index([employeeId])
   @@index([bookingId])
+
+  // ── TABLE NAME ────────────────────────────────────────────────────────────
+  // This model maps to crm_jobs, NOT the model's own name.
+  //
+  // The `@@map` was dropped by merge 1295e16d5 ("merge: Contact OS / CRM
+  // branch"), which took main's copy of these blocks — written before the
+  // snake_case rename — over the CRM branch's, which had the mapping. Prisma
+  // then emitted `FROM "CrmClient"` against a table that has never existed
+  // under that name, so every read and write through this model failed with
+  //   The table `public.CrmClient` does not exist in the current database.
+  //
+  // `prisma migrate status` reported every migration as applied throughout,
+  // because the migration that renamed the tables DID run — the schema simply
+  // stopped describing the result. Schema-only drift, so the fix is a schema
+  // edit and no DDL: the table is already there under this name.
+  @@map("crm_jobs")
 }
 
 model CrmPayroll {
@@ -7665,6 +7666,22 @@ model CrmPayroll {
   @@index([businessId])
   @@index([employeeId])
   @@index([periodStart])
+
+  // ── TABLE NAME ────────────────────────────────────────────────────────────
+  // This model maps to crm_payrolls, NOT the model's own name.
+  //
+  // The `@@map` was dropped by merge 1295e16d5 ("merge: Contact OS / CRM
+  // branch"), which took main's copy of these blocks — written before the
+  // snake_case rename — over the CRM branch's, which had the mapping. Prisma
+  // then emitted `FROM "CrmClient"` against a table that has never existed
+  // under that name, so every read and write through this model failed with
+  //   The table `public.CrmClient` does not exist in the current database.
+  //
+  // `prisma migrate status` reported every migration as applied throughout,
+  // because the migration that renamed the tables DID run — the schema simply
+  // stopped describing the result. Schema-only drift, so the fix is a schema
+  // edit and no DDL: the table is already there under this name.
+  @@map("crm_payrolls")
 }
 
 model CrmExpense {
@@ -7687,6 +7704,22 @@ model CrmExpense {
   @@index([businessId])
   @@index([category])
   @@index([date])
+
+  // ── TABLE NAME ────────────────────────────────────────────────────────────
+  // This model maps to crm_expenses, NOT the model's own name.
+  //
+  // The `@@map` was dropped by merge 1295e16d5 ("merge: Contact OS / CRM
+  // branch"), which took main's copy of these blocks — written before the
+  // snake_case rename — over the CRM branch's, which had the mapping. Prisma
+  // then emitted `FROM "CrmClient"` against a table that has never existed
+  // under that name, so every read and write through this model failed with
+  //   The table `public.CrmClient` does not exist in the current database.
+  //
+  // `prisma migrate status` reported every migration as applied throughout,
+  // because the migration that renamed the tables DID run — the schema simply
+  // stopped describing the result. Schema-only drift, so the fix is a schema
+  // edit and no DDL: the table is already there under this name.
+  @@map("crm_expenses")
 }
 
 model SupportTicket {
