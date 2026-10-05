@@ -2054,3 +2054,41 @@ The `pabandi_it` test-database container had stopped, which surfaced as a wall o
 
 Server 778 passed / 54 files. Client 48 passed / 5 files. Server tsc 23, client tsc 534, both
 unchanged.
+
+## Decisions taken 2026-10-04 (owner)
+
+Banked here so they are not re-litigated or lost.
+
+### 1. Client document access: CLIENT ACCOUNTS (not magic links)
+
+Chosen over per-document magic links. Documents are private to a business and its client, so
+revocable sessions and an auditable access trail are worth the extra build. Magic links would
+have been faster to ship, but a link that lives in an inbox forever is the weakest of the three
+options and cannot be revoked.
+
+Consequences to design against:
+- Clients need a portal identity distinct from a business user, and an ownership proof that
+  ties that identity to one `CrmClient`.
+- Every document read needs BOTH a tenant check and a client-ownership check. Tenant alone is
+  not sufficient: within one business, client A must not read client B's documents.
+- Revocation and "delete my portal access" have to exist, or the choice above is worth nothing.
+
+### 2. Snapshot loss of up to 24 hours: NOT ACCEPTABLE
+
+The Render disk captures a snapshot every 24 hours and retains 7 days, so the worst-case loss
+is up to 24 hours of uploads.
+
+**Important: this reopens the object-storage decision.** A disk can be attached to exactly ONE
+Render service and has no off-disk copy, so no amount of tuning gets below 24 hours. A nightly
+dump of file METADATA to Postgres would make a loss *auditable* — you would know exactly which
+documents existed and when — but it would not recover a single byte. That does not satisfy this
+answer.
+
+Recovering bytes needs a copy off the disk, which means object storage (Cloudflare R2 or AWS
+S3) and a nightly job that mirrors the mount. Credentials required, from the owner:
+
+    R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
+
+S3 equivalents: `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_BUCKET`.
+
+Until those exist, the disk remains the primary store and documents are at the stated risk.
