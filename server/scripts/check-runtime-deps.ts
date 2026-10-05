@@ -40,9 +40,23 @@ const files: string[] = [];
       // dist/src/public holds the built CLIENT bundle — its requires are the
       // browser's business, resolved by the client's own package.json.
       if (entry.name === 'public') continue;
+      // Test files, same reasoning. Nothing requires them at runtime: the
+      // entrypoint is dist/src/index.js and it does not import the suite, so a
+      // test's dependencies are not runtime dependencies.
+      //
+      // This exclusion is load-bearing rather than cosmetic. Colocating a test
+      // under src/ is the right thing to do for a test that asserts something
+      // about the source tree — `src/services/__tests__/
+      // reliabilityScore.invariant.test.ts` greps src/ for writers of the
+      // reliabilityScore field and has to sit next to what it inspects. Without
+      // this skip, that test's `import { describe } from 'vitest'` fails the
+      // Docker build, because vitest is a devDependency and adding it to
+      // `dependencies` would ship the test runner to production to satisfy a
+      // check about production.
+      if (entry.name === '__tests__') continue;
       walk(p);
     }
-    else if (entry.name.endsWith('.js')) files.push(p);
+    else if (entry.name.endsWith('.js') && !entry.name.endsWith('.test.js')) files.push(p);
   }
 })(DIST);
 
