@@ -161,7 +161,11 @@ export function reliabilityTier(score: number | null | undefined): ReliabilityTi
 // is a liability in a product where you cannot explain it. So the baseline ships
 // first, and any expert that cannot beat it in a way we can still explain does
 // not ship at all.
-
+//
+// The gate is `server/src/services/__tests__/expertHoldoutGate.test.ts`. Note
+// its own recorded limitation: the holdout is currently five rows, which is
+// enough to pin this baseline and not enough to evaluate a model against it. It
+// grows as dispute resolutions become usable labels.
 export interface TrustSignals {
   /** Share of deliveries completed on time, 0–100. */
   punctuality: number;

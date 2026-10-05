@@ -13,6 +13,10 @@ import {
   normalizeReliabilityScore,
 } from '../config/trust-weights';
 
+// Re-exported so callers can type a signal bundle without reaching into the
+// config module for a shape that is really part of this service's contract.
+export type { TrustSignals, TrustWeights };
+
 /**
  * trust-core.service.ts — the ONLY writer of `reliabilityScore`.
  *
@@ -43,12 +47,37 @@ import {
  *
  * It is not a learned model. It is a transparent weighted ensemble over signals
  * the platform already emits, and it is the BASELINE that any future learned
- * expert must beat on a held-out set before it is allowed to touch a real
- * customer's score. See `computeEnsembleScore` and `DEFAULT_TRUST_WEIGHTS`.
+ * expert must beat before it is allowed to touch a real customer's score.
+ *
+ * ─── THE BASELINE PROMISE, AND WHERE IT IS ENFORCED ──────────────────────────
+ *
+ * "Every future expert must beat this on a holdout set to ship" is a commitment
+ * that decays unless something checks it. Three things hold it up:
+ *
+ *   1. `computeEnsembleScore` is PURE — no I/O, no clock, no randomness — so a
+ *      candidate expert is scored against it directly and any disagreement is
+ *      attributable to the expert rather than to a moving fixture.
+ *   2. `explainScore` runs the SAME arithmetic, not a post-hoc narrative. An
+ *      expert that improves the score while making it unexplainable has made
+ *      the product worse, and that trade is not available here.
+ *   3. `src/services/__tests__/expertHoldoutGate.test.ts` is the gate, written
+ *      before there is anything to gate, so the first expert cannot ship by
+ *      redefining what "better" means.
+ *
+ * That gate file also records a measured limitation of its own: with the
+ * current five-row holdout, the aggregate agreement metric does NOT catch an
+ * expert that ignores payment behaviour. A named fixture catches it instead.
+ * The holdout set has to grow before the aggregate is load-bearing, and the
+ * test says so rather than leaving an impression of more assurance than exists.
+ *
+ * WHY NOT JUST SHIP THE MODELS
  *
  * A model whose entire purpose is to tell a customer why their trust score
  * changed is a liability in a product where you cannot explain it. So the
- * explainable thing ships first and sets the bar.
+ * explainable thing ships first and sets the bar. An expert that cannot clear
+ * that bar in a way we can still explain does not ship — which is a stronger
+ * position than "we have four models", because it is one that survives being
+ * asked to justify itself.
  */
 
 // ─── Subjects ────────────────────────────────────────────────────────────────
