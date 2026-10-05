@@ -103,3 +103,11 @@ server/.env
 client.env.production
 .agentWallets.json
 src/.agentWallets.json
+
+# Database dumps. A 45MB database restores in seconds, so these are a local
+# convenience rather than the backup of record — but committing a 2MB binary
+# that contains every user row and password hash to a git remote is not something
+# to do by accident.
+backups/
+*.dump
+*.sql.gz
