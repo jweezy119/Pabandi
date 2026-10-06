@@ -42,7 +42,6 @@
     "src/services/zkNullifier.service.ts",
     "src/services/zkPorProver.service.ts",
     "src/services/zkRealestateProver.service.ts",
-    "src/zk/buildZk.ts",
-    "src/mcp/**/*"
+    "src/zk/buildZk.ts"
   ]
 }

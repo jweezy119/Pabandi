@@ -1,8 +1,28 @@
 /**
- * mcp-worker/src/index.ts — Cloudflare Worker entry point for PabandiOS MCP.
+ * mcp-worker/src/index.ts — Cloudflare Worker edge for the PabandiOS MCP server.
  *
- * Handles JSON-RPC 2.0 over HTTP for the 7 engine tools.
- * Platform tools are proxied server-side to the canonical backend.
+ * WHAT THIS IS: a thin, stateless reverse proxy to the canonical MCP server at
+ * BACKEND_URL. It answers `initialize` and `resources/list` locally (cheap,
+ * no upstream needed) and forwards every `tools/*` call verbatim.
+ *
+ * WHAT THIS IS NOT, and why it used to be a problem:
+ *
+ * This file previously implemented 7 tools itself, and six of them returned
+ * invented data. `pabandi_verify_passport` returned `{ valid: true, riskBand: 'C' }`
+ * unconditionally for ANY token — including a forged one — because the comment
+ * read "In production: verify HMAC signature server-side". `pabandi_initiate_escrow`
+ * returned `status: 'ACTIVE'` and an `escrow_${Date.now()}` id for funds it never
+ * locked. `pabandi_get_ledger` returned `found: false` for every key.
+ *
+ * Every registry manifest pointed here. So the directory listing, the Cloudflare
+ * edge, and the API disagreed about what escrow was, and the least truthful of
+ * the three was the one a new developer would talk to first. For a product whose
+ * entire claim is verifiable trust, an escrow endpoint that reports success for
+ * money that was never held is the single most expensive possible bug.
+ *
+ * The rule now: this worker never asserts a fact about the world. It forwards,
+ * or it fails loudly. There is no fallback response, because a fabricated
+ * fallback is indistinguishable from a real one to the calling agent.
  */
 
 export interface Env {
@@ -13,24 +33,102 @@ export interface Env {
 
 const SERVER_NAME = 'pabandi-trust';
 const SERVER_VERSION = '1.0.0';
+const PROTOCOL_VERSION = '2024-11-05';
 
-const X402_PRICE_USDC: Record<string, number> = {
-  pabandi_issue_passport: 1.0,
-  pabandi_initiate_escrow: 0.5,
-  pabandi_create_booking: 0.25,
-};
+const UPSTREAM_TIMEOUT_MS = 30_000;
 
 function jsonRpc(id: any, result?: any, error?: any) {
   return { jsonrpc: '2.0', id, result, error };
 }
 
+function rpcError(id: any, code: number, message: string, data?: unknown) {
+  return jsonRpc(id, undefined, { code, message, ...(data !== undefined ? { data } : {}) });
+}
+
+/** JSON-RPC error codes. -32000 is the implementation-defined server-error range. */
+const RPC_INTERNAL = -32603;
+const RPC_UPSTREAM_UNAVAILABLE = -32000;
+
 function corsHeaders(origin?: string) {
   return {
     'Access-Control-Allow-Origin': origin || '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Payment',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Payment, Mcp-Session-Id, Mcp-Protocol-Version',
+    'Access-Control-Expose-Headers': 'Mcp-Session-Id',
     'Access-Control-Max-Age': '86400',
   };
+}
+
+function json(body: unknown, status: number, origin: string, extra: Record<string, string> = {}) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...corsHeaders(origin), ...extra },
+  });
+}
+
+/**
+ * Headers worth carrying through to the caller. `Mcp-Session-Id` is the one that
+ * matters for Streamable HTTP: if the edge silently drops it, a client that
+ * opened a session cannot correlate its follow-up calls and retries forever.
+ * `WWW-Authenticate` is forwarded so a 401 from the API reaches the agent as a
+ * 401 rather than an opaque edge failure.
+ */
+const FORWARDED_RESPONSE_HEADERS = ['mcp-session-id', 'www-authenticate', 'mcp-protocol-version'];
+
+async function forward(req: Request, env: Env, payload: unknown, origin: string): Promise<Response> {
+  const upstream = `${env.BACKEND_URL.replace(/\/+$/, '')}/mcp`;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    // The Streamable HTTP spec requires clients to offer both; some upstreams
+    // reject a request that does not.
+    Accept: 'application/json, text/event-stream',
+  };
+  // Forward caller credentials so the API — not the edge — decides authorization.
+  for (const h of ['authorization', 'x-payment', 'x-api-key', 'x-agent-passport']) {
+    const v = req.headers.get(h);
+    if (v) headers[h] = v;
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(upstream, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+  } catch (err: any) {
+    // Fail LOUDLY. Never synthesise a success here — an agent must be able to
+    // distinguish "escrow is funded" from "the edge could not reach the API".
+    const aborted = err?.name === 'AbortError';
+    return json(
+      rpcError(
+        (payload as any)?.id ?? null,
+        RPC_UPSTREAM_UNAVAILABLE,
+        aborted
+          ? `Pabandi API did not respond within ${UPSTREAM_TIMEOUT_MS}ms. No action was taken.`
+          : `Pabandi API is unreachable from the edge. No action was taken. (${err?.message ?? 'unknown error'})`,
+        { upstream, retryable: true },
+      ),
+      503,
+      origin,
+      { 'Retry-After': '5' },
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+
+  const passthrough: Record<string, string> = {};
+  for (const h of FORWARDED_RESPONSE_HEADERS) {
+    const v = res.headers.get(h);
+    if (v) passthrough[h] = v;
+  }
+  return new Response(res.body, {
+    status: res.status,
+    headers: { ...corsHeaders(origin), ...passthrough },
+  });
 }
 
 async function handleMCP(req: Request, env: Env): Promise<Response> {
@@ -39,296 +137,82 @@ async function handleMCP(req: Request, env: Env): Promise<Response> {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders(origin) });
   }
-
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify(jsonRpc(null, undefined, { code: -32600, message: 'Invalid Request' })), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
-    });
+    return json(rpcError(null, -32600, 'Invalid Request: this endpoint accepts POST only.'), 405, origin);
   }
 
   let body: any;
   try {
     body = await req.json();
   } catch {
-    return new Response(JSON.stringify(jsonRpc(null, undefined, { code: -32700, message: 'Parse error' })), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
-    });
+    return json(rpcError(null, -32700, 'Parse error: body is not valid JSON.'), 400, origin);
+  }
+  if (body?.jsonrpc !== '2.0' || !body.method) {
+    return json(rpcError(body?.id ?? null, -32600, 'Invalid Request: expected {"jsonrpc":"2.0","method":...}.'), 400, origin);
   }
 
-  if (body.jsonrpc !== '2.0' || !body.method) {
-    return new Response(JSON.stringify(jsonRpc(body.id, undefined, { code: -32600, message: 'Invalid Request' })), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
-    });
-  }
-
-  const id = body.id;
-  const params = body.params || {};
-  const method = body.method;
+  const { id, method, params } = body;
 
   try {
     switch (method) {
+      // Local-only handshake. Answering this without a round trip is the whole
+      // reason to have an edge at all.
       case 'initialize':
-        return new Response(JSON.stringify(jsonRpc(id, {
-          protocolVersion: '2024-11-05',
-          capabilities: { tools: {} },
-          serverInfo: { name: SERVER_NAME, version: SERVER_VERSION },
-        })), {
-          headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
-        });
+        return json(
+          jsonRpc(id, {
+            protocolVersion: params?.protocolVersion || PROTOCOL_VERSION,
+            capabilities: { tools: { listChanged: false } },
+            serverInfo: { name: SERVER_NAME, version: SERVER_VERSION },
+            instructions:
+              'PabandiOS — trust and settlement for AI agents. Call pabandi_platform_discovery first to learn every tool, its access tier, and the endpoint that serves it. Paid tools return a JSON-RPC 402 error with an x402 payment requirement; satisfy it and retry the same call.',
+          }),
+          200,
+          origin,
+        );
 
+      // Notifications take no response body per JSON-RPC. 202 + empty is correct.
+      case 'notifications/initialized':
+      case 'notifications/cancelled':
+        return new Response(null, { status: 202, headers: corsHeaders(origin) });
+
+      // This server has no resources. Saying so explicitly beats an empty result
+      // that a client may retry forever.
+      case 'resources/list':
+        return json(jsonRpc(id, { resources: [] }), 200, origin);
+      case 'resources/templates/list':
+        return json(jsonRpc(id, { resourceTemplates: [] }), 200, origin);
+      case 'prompts/list':
+        return json(jsonRpc(id, { prompts: [] }), 200, origin);
+
+      // Everything else — tools/list, tools/call, ping — is the API's business.
       case 'tools/list':
-        return new Response(JSON.stringify(jsonRpc(id, {
-          tools: [
-            {
-              name: 'pabandi_verify_passport',
-              description: 'Verify a Pabandi PTP attestation. Input a base64-encoded attestation and optionally require a capability. Returns valid, granted capabilities, risk band, expiry.',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  token: { type: 'string', description: 'Base64-encoded PTPAttestation' },
-                  need: { type: 'string', description: 'Optional capability required' },
-                },
-                required: ['token'],
-              },
-            },
-            {
-              name: 'pabandi_discover',
-              description: 'Return the Pabandi Trust Protocol discovery document.',
-              inputSchema: { type: 'object', properties: {} },
-            },
-            {
-              name: 'pabandi_get_ledger',
-              description: 'Public audit lookup of a passport issuance charge by idempotency key.',
-              inputSchema: {
-                type: 'object',
-                properties: { idempotencyKey: { type: 'string' } },
-                required: ['idempotencyKey'],
-              },
-            },
-            {
-              name: 'pabandi_issue_passport',
-              description: 'Issue a scoped Agent Capability Passport. Metered at 1.0 USDC per issue. Requires x402 payment.',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  agentId: { type: 'string' },
-                  capabilities: { type: 'array', items: { type: 'string' } },
-                  idempotencyKey: { type: 'string' },
-                },
-                required: ['agentId', 'capabilities'],
-              },
-            },
-            {
-              name: 'pabandi_verify_property',
-              description: 'Verify property documents and landlord/tenant trust scores against PLRA and SBCA databases.',
-              inputSchema: {
-                type: 'object',
-                properties: { property_id: { type: 'string' } },
-                required: ['property_id'],
-              },
-            },
-            {
-              name: 'pabandi_initiate_escrow',
-              description: 'Initiate a Solana escrow for conditional payment. Requires x402 payment of 0.5 USDC.',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  amount: { type: 'number' },
-                  currency: { type: 'string', default: 'USDC' },
-                  conditions: { type: 'string' },
-                  payer: { type: 'string' },
-                  payee: { type: 'string' },
-                },
-                required: ['amount', 'conditions', 'payer', 'payee'],
-              },
-            },
-            {
-              name: 'pabandi_create_booking',
-              description: 'Create a booking with AI trust scoring and escrow protection. Requires AP2 mandates and x402 payment of 0.25 USDC.',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  businessId: { type: 'string' },
-                  reservationDate: { type: 'string' },
-                  reservationTime: { type: 'string' },
-                  numberOfGuests: { type: 'number' },
-                  intentMandate: { type: 'object' },
-                  cartMandate: { type: 'object' },
-                  paymentMandate: { type: 'object' },
-                },
-                required: ['businessId', 'reservationDate', 'reservationTime', 'numberOfGuests', 'intentMandate', 'cartMandate', 'paymentMandate'],
-              },
-            },
-          ],
-        })), {
-          headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
-        });
-
-      case 'tools/call': {
-        const name = params?.name;
-        const args = params?.arguments || {};
-
-        const price = X402_PRICE_USDC[name];
-        if (price) {
-          const paymentProof = req.headers.get('X-Payment');
-          if (!paymentProof) {
-            return new Response(JSON.stringify(jsonRpc(id, undefined, {
-              code: 402,
-              message: 'Payment required',
-              data: {
-                x402: true,
-                scheme: 'x402',
-                price: `${price} USDC`,
-                network: 'solana',
-                recipient: env.SOLANA_USDC_ADDRESS || 'PABANDI_USDC_WALLET',
-                tool: name,
-                paymentMethods: ['solana-usdc', 'x402'],
-              },
-            })), {
-              status: 402,
-              headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
-            });
-          }
-        }
-
-        if (name === 'pabandi_verify_passport') {
-          if (!args.token) throw new Error('token (base64 attestation) required');
-          // In production: verify HMAC signature server-side
-          return new Response(JSON.stringify(jsonRpc(id, {
-            valid: true,
-            token: args.token,
-            capabilities: args.need ? [args.need] : [],
-            riskBand: 'C',
-            expiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-          })), {
-            headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
-          });
-        }
-
-        if (name === 'pabandi_discover') {
-          return new Response(JSON.stringify(jsonRpc(id, {
-            base_url: env.BACKEND_URL,
-            mcp_endpoint: `${env.BACKEND_URL}/mcp`,
-            openapi_spec: `${env.BACKEND_URL}/openapi.yaml`,
-            ptp_endpoint: `${env.BACKEND_URL}/api/v1/agent-passport/verify`,
-            public_key: 'PTP-PUBLIC-KEY',
-            supported_entity_types: ['individual', 'business', 'agent', 'freight', 'property'],
-            risk_bands: ['A', 'B', 'C', 'D', 'F'],
-          })), {
-            headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
-          });
-        }
-
-        if (name === 'pabandi_get_ledger') {
-          if (!args.idempotencyKey) throw new Error('idempotencyKey required');
-          return new Response(JSON.stringify(jsonRpc(id, {
-            idempotencyKey: args.idempotencyKey,
-            found: false,
-            message: 'No ledger record found for this key',
-          })), {
-            headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
-          });
-        }
-
-        if (name === 'pabandi_verify_property') {
-          if (!args.property_id) throw new Error('property_id required');
-          return new Response(JSON.stringify(jsonRpc(id, {
-            property_id: args.property_id,
-            verified: true,
-            documents: {
-              fard: 'verified',
-              noc: 'verified',
-              survey_number: 'verified',
-              encumbrance: 'clear',
-            },
-            landlord_trust_score: 78,
-            tenant_trust_score: 65,
-            plra_status: 'active',
-            sbca_status: 'compliant',
-          })), {
-            headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
-          });
-        }
-
-        if (name === 'pabandi_initiate_escrow') {
-          const { amount, currency = 'USDC', conditions, payer, payee } = args;
-          if (!amount || !conditions || !payer || !payee) throw new Error('amount, conditions, payer, payee required');
-          return new Response(JSON.stringify(jsonRpc(id, {
-            id: `escrow_${Date.now()}`,
-            status: 'ACTIVE',
-            amount,
-            currency: currency || 'USDC',
-            conditions,
-            payer,
-            payee,
-            createdAt: new Date().toISOString(),
-            network: 'solana',
-          })), {
-            headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
-          });
-        }
-
-        if (name === 'pabandi_create_booking') {
-          const { businessId, reservationDate, reservationTime, numberOfGuests, intentMandate, cartMandate, paymentMandate } = args;
-          if (!businessId || !reservationDate || !reservationTime || !numberOfGuests) throw new Error('businessId, reservationDate, reservationTime, numberOfGuests required');
-          if (!intentMandate || !cartMandate || !paymentMandate) throw new Error('AP2 mandates required: intentMandate, cartMandate, paymentMandate');
-
-          // Proxy to backend for real booking creation
-          const backendRes = await fetch(`${env.BACKEND_URL}/api/v1/booking/create`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              businessId,
-              reservationDate,
-              reservationTime,
-              numberOfGuests,
-              intentMandate,
-              cartMandate,
-              paymentMandate,
-            }),
-          });
-
-          const backendData = await backendRes.json();
-          return new Response(JSON.stringify(jsonRpc(id, {
-            ...backendData,
-            ap2_mandates_stored: true,
-          })), {
-            headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
-          });
-        }
-
-        return new Response(JSON.stringify(jsonRpc(id, undefined, {
-          code: -32601,
-          message: `Method not found: ${name}`,
-        })), {
-          status: 404,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
-        });
-      }
+      case 'tools/call':
+      case 'ping':
+        return await forward(req, env, body, origin);
 
       default:
-        return new Response(JSON.stringify(jsonRpc(id, undefined, { code: -32601, message: `Method not found: ${method}` })), {
-          status: 404,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
-        });
+        return json(
+          rpcError(id ?? null, -32601, `Method not found: ${method}. This server exposes tools/list, tools/call, and ping.`),
+          404,
+          origin,
+        );
     }
-  } catch (e: any) {
-    return new Response(JSON.stringify(jsonRpc(id, undefined, { code: -32603, message: e.message })), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
-    });
+  } catch (err: any) {
+    return json(rpcError(id ?? null, RPC_INTERNAL, `Edge handler failed: ${err?.message ?? 'unknown error'}`), 500, origin);
   }
 }
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
-    if (req.method === 'OPTIONS') {
-      const origin = req.headers.get('Origin') || '*';
-      return new Response(null, { headers: corsHeaders(origin) });
+    try {
+      return await handleMCP(req, env);
+    } catch (err: any) {
+      // Last-resort net: still a well-formed JSON-RPC error, never a bare 500
+      // that an agent would have to guess the meaning of.
+      return new Response(
+        JSON.stringify(rpcError(null, RPC_INTERNAL, 'Edge error.', { message: err?.message ?? 'unknown' })),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders(req.headers.get('Origin') || '*') } },
+      );
     }
-    return handleMCP(req, env);
   },
 };

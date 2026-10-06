@@ -26,10 +26,20 @@ const SERVER_NAME = 'pabandi-trust';
 const SERVER_VERSION = '1.0.0';
 const BACKEND = (process.env.BACKEND_URL || 'https://pabandi.onrender.com').replace(/\/+$/, '');
 
+/**
+ * x402 prices, keyed by the REAL tool names in TOOLS below.
+ *
+ * These keys were `pabandi_initiate_escrow` and `pabandi_create_booking` —
+ * names of tools that exist in no registry entry and in no tools/list response.
+ * `requireX402` looks up by the tool the caller actually asked for, so both
+ * prices were unreachable: escrow and booking ran unmetered while the directory
+ * copy advertised them as paid. A quoted price you never charge is worse than no
+ * price, because it implies a control that isn't there.
+ */
 const X402_PRICE_USDC: Record<string, number> = {
   pabandi_issue_passport: 1.0,
-  pabandi_initiate_escrow: 0.5,
-  pabandi_create_booking: 0.25,
+  pabandi_start_escrow: 0.5,
+  pabandi_book_stay: 0.25,
 };
 
 async function requireX402(toolName: string, req?: Request): Promise<void> {

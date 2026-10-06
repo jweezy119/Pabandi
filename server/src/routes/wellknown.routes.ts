@@ -2,11 +2,10 @@ import { Router, Request, Response } from 'express';
 import { ptpEngine } from '../protocol/ptp.spec';
 import path from 'path';
 import fs from 'fs';
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 import { apiLimiter } from '../middleware/rateLimit.middleware';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'pabandi-fallback-secret-2026';
+import { buildAgentsDoc } from '../mcp/agentsDoc';
+import { vcJwks } from '../trust/vcKeys';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -44,69 +43,36 @@ router.get('/ptp-key.pem', (_req: Request, res: Response) => {
 router.get('/agents.json', (req: Request, res: Response) => {
   const protocol = req.headers['x-forwarded-proto'] || req.protocol;
   const host = req.headers['x-forwarded-host'] || req.get('host');
-  const baseUrl = `${protocol}://${host}`;
-
-  const agentsDoc = {
-    name: 'PabandiOS',
-    version: '1.0.0',
-    description: 'The trust operating system for service businesses — bookings, freight, property, CRM, and finance with AI-powered reliability scoring and Solana escrow.',
-    base_url: baseUrl,
-    mcp_endpoint: `${baseUrl}/mcp`,
-    openapi_spec: `${baseUrl}/openapi.yaml`,
-    capabilities: [
-      'booking.create',
-      'booking.status',
-      'freight.quote',
-      'property.list',
-      'property.verify',
-      'crm.lead',
-      'crm.contact',
-      'ledger.invoice',
-      'ledger.cashflow',
-      'escrow.initiate',
-      'escrow.release',
-      'trust.verify',
-      'trust.score',
-      'passport.issue',
-      'passport.verify'
-    ],
-    payment: {
-      schemes: ['x402', 'solana-usdc'],
-      network: 'solana',
-      currency: 'USDC'
-    },
-    authorization: {
-      schemes: ['ap2', 'bearer', 'ptp'],
-      mandates: ['intent', 'cart', 'payment']
-    },
-    contact: 'agents@pabandi.com',
-    license: 'MIT'
-  };
 
   res.setHeader('Content-Type', 'application/json');
-  res.json(agentsDoc);
+  res.json(buildAgentsDoc(`${protocol}://${host}`));
 });
 
 /**
  * GET /.well-known/pabandi-keys.json
- * Public key for verifying Pabandi VC JWTs.
+ * Public keys for verifying Pabandi Verifiable Credentials (JWKS).
+ *
+ * Derived from VC_SIGNING_PRIVATE_KEY at request time rather than committed, so
+ * the published key cannot drift from the signing key and no private material
+ * lives in the repository.
+ *
+ * This endpoint previously called crypto.createPublicKey(JWT_SECRET) — deriving a
+ * public key from a symmetric HS256 secret — so it threw on every request and no
+ * third party could ever verify a credential. See trust/vcKeys.ts.
  */
 router.get('/pabandi-keys.json', (_req: Request, res: Response) => {
-  const publicKeyPem = crypto.createPublicKey(JWT_SECRET as any).export({ type: 'spki', format: 'pem' }).toString();
-  const jwks = {
-    keys: [
-      {
-        kty: 'EC',
-        crv: 'secp256k1',
-        x: Buffer.from(publicKeyPem).toString('base64url'),
-        alg: 'ES256',
-        use: 'sig',
-        kid: 'pabandi-1',
-      },
-    ],
-  };
   res.setHeader('Content-Type', 'application/json');
-  res.json(jwks);
+  // No-cache: this is a key document, and a cached stale copy would make a key
+  // rotation look like a credential forgery to a verifier that cached the old one.
+  res.setHeader('Cache-Control', 'no-cache');
+  try {
+    res.json(vcJwks());
+  } catch (err) {
+    // A missing key is a configuration fault, and saying so is more useful than a
+    // 500. But it must not imply verification is possible when it is not.
+    logger.error(`[WellKnown] VC key set unavailable: ${err instanceof Error ? err.message : 'unknown error'}`);
+    res.status(503).json({ success: false, error: 'Signing key is not configured on this server' });
+  }
 });
 
 export default router;

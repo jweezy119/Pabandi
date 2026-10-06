@@ -44,36 +44,59 @@
  */
 
 /** Bands are ordered worst-to-best. The letter is the customer-facing label. */
-export type TrustBand = 'D' | 'C' | 'B' | 'A';
+export type TrustBand = 'E' | 'D' | 'C' | 'B' | 'A';
 
 /**
- * Passport scores are 0–1000 (see TrustPassport). Thresholds are set so a new
- * passport defaulting to 500 lands in C — the standard amount — rather than
- * being handed the free tier on day one with no history to justify it, and
- * rather than landing in B and being rewarded for a record they do not have yet.
+ * THE CANONICAL SCALE IS 0–100.
+ *
+ * These thresholds were previously 0–1000, matching the raw
+ * `TrustPassport.showUpScore` column. That coupled a pricing policy to a storage
+ * column: the band a customer landed in was decided by how wide a range that
+ * column happened to use, so changing the column's range silently repriced every
+ * deposit in the marketplace. The policy now takes the canonical 0–100 score and
+ * converts at the boundary (`normalizeScore`), leaving the storage scale an
+ * implementation detail.
+ *
+ *   A  70–100   no deposit
+ *   B  40–69    reduced
+ *   C  20–39    standard
+ *   D   0–19    high
+ *   E  invalid  blocked
+ *
+ * These are deliberately NOT PTP's bands (A >=85, B >=70, C >=50, D >=30, else
+ * E). PTP bands carry fraud and no-show probabilities and feed attestation
+ * signing; these decide what one customer is asked to put up at one business.
+ * Reusing one set of letters for two different questions is how "band B" ends up
+ * meaning two things on the same screen.
+ *
+ * A brand-new passport — 500 on the 0–1000 storage scale, i.e. 50 — lands in B:
+ * a reduced deposit, not the standard ask, and still short of the free tier. It
+ * is not rewarded for a record it does not have.
  */
 const BAND_THRESHOLDS: Array<{ band: TrustBand; min: number }> = [
-  { band: 'A', min: 800 },
-  { band: 'B', min: 600 },
-  { band: 'C', min: 400 },
+  { band: 'A', min: 70 },
+  { band: 'B', min: 40 },
+  { band: 'C', min: 20 },
   { band: 'D', min: 0 },
 ];
 
 /**
  * How much of the base deposit each band actually pays.
  *
- * Upper bound is 1.25, not 2.0 or more, and deliberately so: this scales the
- * *business's own* number. A business that sets an absurd base deposit should
- * not be able to lean on the band to double it into something punitive, because
- * the band is a statement about the customer, not about the price. Capping at
- * 1.25 keeps the penalty legible and small relative to the ask, which is what
- * makes it fair to someone with a genuinely bad record.
+ * A pays nothing, B a reduced amount, C the standard ask, D a higher amount. E
+ * never reaches pricing: it is refused upstream by `isBlocked`.
+ *
+ * The upper bound stays at 1.25 deliberately. This scales the *business's own*
+ * number, and a business that sets an absurd base deposit should not be able to
+ * lean on the band to inflate it into something punitive, because the band is a
+ * statement about the customer, not about the price.
  */
 const BAND_MULTIPLIER: Record<TrustBand, number> = {
   A: 0,
   B: 0.5,
   C: 1,
   D: 1.25,
+  E: 1.25,
 };
 
 /**
@@ -108,12 +131,46 @@ export function ceilingApplies(serviceValue: number | null | undefined): boolean
   return Number.isFinite(Number(serviceValue)) && Number(serviceValue) > 0;
 }
 
+/**
+ * The canonical score range is 0–100. `TrustPassport.showUpScore` is stored on
+ * 0–1000, so this is the one place that knows both scales exist.
+ *
+ * Division by 10 is why the thresholds above are the canonical ones. It is a
+ * named function rather than something inlined at the call site because two
+ * scales for "trust score" in one codebase is exactly the ambiguity that
+ * produced three parallel scoring systems in the first place: a caller that
+ * passes a raw 0–1000 value straight to `bandForScore` lands in band A — the
+ * free tier — for every real customer, and nothing complains.
+ */
+export function normalizeScore(rawScore: number): number {
+  if (!Number.isFinite(rawScore)) return Number.NaN;
+  // Above the canonical ceiling means the 0–1000 storage scale; at or below it,
+  // the value is already canonical. The overlap is unambiguous because 100 is
+  // both "the best canonical score" and "one tenth of the storage scale".
+  return rawScore > 100 ? rawScore / 10 : rawScore;
+}
+
+/**
+ * E means "this cannot be priced", not "this customer is expensive".
+ *
+ * A missing, negative, NaN or non-numeric score used to fall through to band C —
+ * the standard ask — so an unreadable score quietly produced an ordinary quote.
+ * A deposit exists to hold a customer to a booking they might abandon, and an
+ * unknown is not evidence of trustworthiness, so E refuses the quote instead of
+ * pricing it.
+ */
 export function bandForScore(score: number): TrustBand {
-  if (!Number.isFinite(score)) return 'C';
+  const normalized = normalizeScore(score);
+  if (!Number.isFinite(normalized) || normalized < 0) return 'E';
   for (const { band, min } of BAND_THRESHOLDS) {
-    if (score >= min) return band;
+    if (normalized >= min) return band;
   }
-  return 'D';
+  return 'E';
+}
+
+/** True when a score cannot be priced and the transaction must not proceed. */
+export function isBlocked(band: TrustBand): boolean {
+  return band === 'E';
 }
 
 export function multiplierForBand(band: TrustBand): number {
@@ -137,6 +194,11 @@ export function bandExplanation(band: TrustBand): string {
       return 'The standard deposit applies, which is based on this business\'s usual amount.';
     case 'D':
       return 'A slightly higher deposit applies while we build your booking history with us.';
+    case 'E':
+      // This string is shown to a customer, so it must not leak that we could not
+      // read their score, and it must not read as an accusation either. "We cannot
+      // confirm" is true, actionable, and does not invent a judgement.
+      return 'We could not confirm your booking history, so this booking cannot be completed with a deposit quote right now. Please refresh and try again, or book without a deposit.';
   }
 }
 

@@ -1,9 +1,9 @@
 {
   "name": "pabandi-mcp",
   "slug": "pabandi-mcp",
-  "description": "PabandiOS MCP Server — Trust operating system for service businesses. x402-payable MCP tools for bookings, escrow, freight, property, and CRM.",
-  "url": "https://pabandi-mcp.workers.dev/mcp",
-  "mcp_url": "https://pabandi-mcp.workers.dev/mcp",
+  "description": "Trust and settlement layer for AI agents: portable trust attestations (PTP), reputation risk bands, escrow, and x402/USDC payments on Solana.",
+  "url": "https://api.pabandi.com/mcp",
+  "mcp_url": "https://api.pabandi.com/mcp",
   "payment": {
     "scheme": "x402",
     "network": "solana",
@@ -11,21 +11,38 @@
   },
   "authorization": {
     "scheme": "ap2",
-    "mandates": ["intent", "cart", "payment"]
+    "mandates": [
+      "intent",
+      "cart",
+      "payment"
+    ]
   },
   "pricing": {
-    "pabandi_issue_passport": "1.0 USDC",
-    "pabandi_initiate_escrow": "0.5 USDC",
-    "pabandi_create_booking": "0.25 USDC"
+    "pabandi_issue_passport": "1 USDC",
+    "pabandi_book_stay": "0.25 USDC",
+    "pabandi_start_escrow": "0.5 USDC"
   },
   "tools": [
     "pabandi_verify_passport",
     "pabandi_discover",
     "pabandi_get_ledger",
     "pabandi_issue_passport",
-    "pabandi_verify_property",
-    "pabandi_initiate_escrow",
-    "pabandi_create_booking"
+    "pabandi_discover_platform",
+    "pabandi_platform_access",
+    "pabandi_platform_discovery",
+    "pabandi_verify_trust_attestation",
+    "pabandi_search_services",
+    "pabandi_get_business",
+    "pabandi_list_properties",
+    "pabandi_book_stay",
+    "pabandi_connect_finance",
+    "pabandi_list_finance",
+    "pabandi_start_escrow",
+    "pabandi_finance_quote",
+    "pabandi_predict_booking",
+    "pabandi_predict_demand",
+    "pabandi_recommend_slots",
+    "pabandi_zk_realestate_proof"
   ],
   "repository": "https://github.com/jweezy119/Pabandi",
   "license": "MIT"

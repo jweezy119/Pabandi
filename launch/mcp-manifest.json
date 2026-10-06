@@ -8,12 +8,15 @@
     "url": "https://github.com/jweezy119/Pabandi",
     "source": "github"
   },
+  "homepage": "https://pabandi.com",
+  "documentation": "https://api.pabandi.com/llms.txt",
   "remotes": [
     {
       "type": "streamable-http",
       "url": "https://api.pabandi.com/mcp"
     }
   ],
+  "packages": [],
   "tools": [
     {
       "name": "pabandi_verify_passport",
@@ -95,6 +98,22 @@
       "name": "pabandi_zk_realestate_proof",
       "description": "Generate a zero-knowledge proof that an escrow split (deposit = price - commission, fee = deposit*rate, binding commitment to the valuation) is valid, WITHOUT revealing the private price/valuation/secret. Packs into a PTP attestation so the proof is verifiable offline by any third party. Real Noir circuit (compiled at startup); constraint-execution proof when no SNARK prover is available;…"
     }
+  ],
+  "keywords": [
+    "trust",
+    "escrow",
+    "reputation",
+    "agent-payments",
+    "x402",
+    "a2a",
+    "mcp",
+    "model-context-protocol",
+    "solana",
+    "usdc",
+    "verifiable-credentials",
+    "agent-economy",
+    "booking",
+    "kyc"
   ],
   "payment": {
     "scheme": "x402",

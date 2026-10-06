@@ -12,7 +12,7 @@
     "property.list",
     "property.verify",
     "crm.lead",
-    "crm.pipeline",
+    "crm.contact",
     "ledger.invoice",
     "ledger.cashflow",
     "escrow.initiate",
@@ -22,14 +22,33 @@
     "passport.issue",
     "passport.verify"
   ],
+  "risk_bands": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E"
+  ],
+  "risk_band_source": "PTP (Pabandi Trust Protocol) — the same bands used to sign attestations",
   "payment": {
-    "schemes": ["x402", "solana-usdc"],
+    "schemes": [
+      "x402",
+      "solana-usdc"
+    ],
     "network": "solana",
     "currency": "USDC"
   },
   "authorization": {
-    "schemes": ["ap2", "bearer", "ptp"],
-    "mandates": ["intent", "cart", "payment"]
+    "schemes": [
+      "ap2",
+      "bearer",
+      "ptp"
+    ],
+    "mandates": [
+      "intent",
+      "cart",
+      "payment"
+    ]
   },
   "contact": "agents@pabandi.com",
   "license": "MIT"

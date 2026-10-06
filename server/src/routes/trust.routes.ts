@@ -1,12 +1,11 @@
 import { Router, Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { apiLimiter, writeLimiter } from '../middleware/rateLimit.middleware';
 import { getAttestationsForPassport } from '../services/onchain-attestation.service';
+import { signVerifiableCredential } from '../trust/vcKeys';
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'pabandi-fallback-secret-2026';
 const VC_EXPIRY_HOURS = 24;
 
 function publicScores(passport: any) {
@@ -102,7 +101,14 @@ router.get('/credential/:passportId', writeLimiter, async (req: Request, res: Re
       expiresAt: expiresAt.toISOString(),
     };
 
-    const signedJwt = jwt.sign(payload, JWT_SECRET, { expiresIn: `${VC_EXPIRY_HOURS}h` });
+    // Signed with the ES256 VC keypair, not with JWT_SECRET.
+    //
+    // It used to be signed with the HS256 application secret, which is what made
+    // the credential unverifiable: the published public key was derived from that
+    // same secret (and threw), so a third party could only "verify" a credential
+    // by holding the application's signing secret. Anyone with it could mint a
+    // credential for any passport. See trust/vcKeys.ts.
+    const signedJwt = signVerifiableCredential(payload as Record<string, unknown>, VC_EXPIRY_HOURS * 60 * 60);
 
     return res.json({
       success: true,

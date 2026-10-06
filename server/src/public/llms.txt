@@ -1,7 +1,7 @@
 # Pabandi — Trust & Settlement Layer for AI Agents
 
 > Start here. One-curl signup. Here's the exact command:
-> curl -X POST https://pabandi.onrender.com/api/v1/agents/register -H "Content-Type: application/json" -d '{"agentHandle":"my-agent","ownerEmail":"you@example.com","name":"My Agent"}'
+> curl -X POST https://api.pabandi.com/api/v1/agents/register -H "Content-Type: application/json" -d '{"agentHandle":"my-agent","ownerEmail":"you@example.com","name":"My Agent"}'
 
 ## What is Pabandi?
 
@@ -10,7 +10,7 @@ Pabandi is the trust layer for the service economy and the settlement layer for 
 ## One-Curl Agent Signup
 
 ```bash
-curl -X POST https://pabandi.onrender.com/api/v1/agents/register \
+curl -X POST https://api.pabandi.com/api/v1/agents/register \
   -H "Content-Type: application/json" \
   -d '{"agentHandle":"my-agent","ownerEmail":"you@example.com","name":"My Agent","capabilities":["booking","trust-verification"]}'
 ```
@@ -24,11 +24,11 @@ x-api-key: pab_...
 Authorization: Bearer pab_...
 ```
 
-`GET https://pabandi.onrender.com/api/v1/agents/register` is not a thing — signup is POST-only.
+`GET https://api.pabandi.com/api/v1/agents/register` is not a thing — signup is POST-only.
 
 ## MCP Server
 
-Endpoint: `https://pabandi.onrender.com/mcp`
+Endpoint: `https://api.pabandi.com/mcp`
 Protocol: JSON-RPC 2.0 (Streamable HTTP)
 Auth: `Authorization: Bearer <api_key>`
 Rate limit: 30 requests/minute
@@ -133,5 +133,5 @@ GET /api/v1/pabandi/spec                  # Generated OpenAPI document
 ## Documentation
 
 - Whitepaper: https://pabandi.com/about
-- API Reference: https://pabandi.onrender.com/openapi.yaml
-- Agent Guide: https://pabandi.onrender.com/llms.txt
+- API Reference: https://api.pabandi.com/openapi.yaml
+- Agent Guide: https://api.pabandi.com/llms.txt

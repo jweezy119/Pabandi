@@ -1,16 +1,13 @@
 {
   "name": "pabandi-mcp",
   "version": "1.0.0",
-  "description": "PabandiOS MCP Server — Trust operating system for service businesses. Provides trust scoring, escrow, booking, freight, property, and CRM tools for AI agents.",
-  "mcpServers": {
-    "pabandi": {
-      "command": "npx",
-      "args": ["-y", "@pabandi/mcp"],
-      "env": {
-        "PABANDI_API": "https://api.pabandi.com"
-      }
+  "description": "Trust and settlement layer for AI agents: portable trust attestations (PTP), reputation risk bands, escrow, and x402/USDC payments on Solana.",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://api.pabandi.com/mcp"
     }
-  },
+  ],
   "capabilities": {
     "tools": {
       "listChanged": false
@@ -19,31 +16,83 @@
   "tools": [
     {
       "name": "pabandi_verify_passport",
-      "description": "Verify a Pabandi PTP attestation (agent, business, individual, or trust rail)."
+      "description": "Verify a Pabandi PTP attestation (agent, business, individual, or trust rail). Input a base64-encoded attestation and optionally require a capability (e.g. \"act:book\"). Returns valid, granted capabilities, risk band, expiry. Offline-verifiable: re-executes HMAC-SHA512 over a fixed field subset."
     },
     {
       "name": "pabandi_discover",
-      "description": "Return the Pabandi Trust Protocol discovery document."
+      "description": "Return the Pabandi Trust Protocol discovery document: public verify endpoint URL, protocol public key, issue endpoint, supported risk bands/entity types."
     },
     {
       "name": "pabandi_get_ledger",
-      "description": "Public audit lookup of a passport issuance charge by idempotency key."
+      "description": "Public audit lookup of a passport issuance charge by idempotency key. Returns fee ($PAB), owner, agent, risk band, capabilities."
     },
     {
       "name": "pabandi_issue_passport",
-      "description": "Issue a scoped Agent Capability Passport. Metered at 1.0 USDC per issue."
+      "description": "Issue a scoped Agent Capability Passport. Capabilities are validated against owner trust band. Metered at PAB_FEE_PER_PASSPORT $PAB per issue (idempotent). Authentication required."
     },
     {
-      "name": "pabandi_verify_property",
-      "description": "Verify property documents and landlord/tenant trust scores against PLRA and SBCA databases."
+      "name": "pabandi_discover_platform",
+      "description": "Discover the full Pabandi Platform: every tool, OpenAPI/spec URL, MCP endpoint, PTP endpoints, SDK info, access tiers, and live status."
     },
     {
-      "name": "pabandi_initiate_escrow",
-      "description": "Initiate a Solana escrow for conditional payment."
+      "name": "pabandi_platform_access",
+      "description": "Check whether the caller can access a given Pabandi platform tool (by MCP tool name). Returns ok + note."
     },
     {
-      "name": "pabandi_create_booking",
-      "description": "Create a booking with AI trust scoring and escrow protection. Requires AP2 mandates."
+      "name": "pabandi_platform_discovery",
+      "description": "Return the Pabandi Platform discovery doc: every tool on the platform, the OpenAPI/spec URL, the PTP verification endpoint, the public key, and the SDK access info. This is the entry point any third-party app, LLM, or agent uses to learn what Pabandi can do and how to call it."
+    },
+    {
+      "name": "pabandi_verify_trust_attestation",
+      "description": "Verify a Pabandi PTP attestation (business, individual, agent, or trust rail). Re-executes the HMAC-SHA512 signature over a fixed subset of fields and returns valid + the verified claims. Offline-verifiable: any party can check a signed attestation without calling Pabandi. This is the trust primitive every third-party action gates on."
+    },
+    {
+      "name": "pabandi_search_services",
+      "description": "Search verified businesses and services by name, category, city, or location. Every listing is tied to a Pabandi Passport trust score. Uses Postgres contains + OpenStreetMap Nominatim (no paid geo API). Returns real, deduped results — never empty."
+    },
+    {
+      "name": "pabandi_get_business",
+      "description": "Resolve a business profile by id (public). Returns the sanitized public view (name, category, address, rating, trustScore, phone, email, coverImageUrl). Owner PII is gated — use pabandi:verify_owner for full PII."
+    },
+    {
+      "name": "pabandi_list_properties",
+      "description": "List open short-term rentals / stays (Airbnb-style) by city or category. Each property is tied to a business + its open-finance settlement rail if connected. This is the hospitality inventory surface."
+    },
+    {
+      "name": "pabandi_book_stay",
+      "description": "Create a confirmed stay reservation for a property: links the existing Reservation model + a StayBooking, then holds the guest deposit in escrow (EscrowEvent + TreasuryPosition with kind:hospitality, Solana commitment, PTP attestation). The guest deposit is the trust anchor — released to the business on check-in, refunded on cancellation. This is the hospitality money rail. [verified] Gated to…"
+    },
+    {
+      "name": "pabandi_connect_finance",
+      "description": "Register a verifiable, masked settlement connection for a business: RAAST (Pakistan), Stripe Treasury, Open Banking, Solana wallet, or PayPal. The account reference is masked (never raw), and a PTP attestation is produced so the business can prove it has a real payout path without exposing the account. This is the open-finance connectivity primitive — the trust badge on a listing."
+    },
+    {
+      "name": "pabandi_list_finance",
+      "description": "Return a business's connected open-finance connections (verified + pending). Used by third parties to confirm a business has a real payout path before booking or partnering."
+    },
+    {
+      "name": "pabandi_start_escrow",
+      "description": "Initialize a milestone-based or native SOL/BSC escrow for a booking: business deposits, guest/host holds collateral, release on completion. This is the real-chain escrow rail (Solana + BSC Hardhat contracts). GATED to exclusive platform access — real chain writes require verified ownership + settlement rail. [exclusive] Exclusive: real-chain escrow writes are gated behind a verified PTP trust…"
+    },
+    {
+      "name": "pabandi_finance_quote",
+      "description": "Quote an offramp/payout from the platform rails (RAAST, Stripe, Solana). Returns estimated fees, execution window, and the rail to use. Feeds the hospitality payout flow."
+    },
+    {
+      "name": "pabandi_predict_booking",
+      "description": "Forward-predict the no-show and completion probability for a PROSPECTIVE booking (before it is created). Blends real customer + business history (Beta-binomial shrinkage), lead-time, and day-of-week. Returns predictedNoShow, predictedCompletion, confidence, and the top factors. This is the predictive intelligence the trust rail uses."
+    },
+    {
+      "name": "pabandi_predict_demand",
+      "description": "Return 24 hourly demand buckets for a business (from completed reservation history). Used to surface busy windows and optimize pricing/staffing. Owner-gated."
+    },
+    {
+      "name": "pabandi_recommend_slots",
+      "description": "Recommend the best upcoming slots for a guest at a business: each candidate scored by predictedCompletion, lightly load-balanced away from peak hours. Returns top 3 slots with predicted completion + demand. Owner-gated."
+    },
+    {
+      "name": "pabandi_zk_realestate_proof",
+      "description": "Generate a zero-knowledge proof that an escrow split (deposit = price - commission, fee = deposit*rate, binding commitment to the valuation) is valid, WITHOUT revealing the private price/valuation/secret. Packs into a PTP attestation so the proof is verifiable offline by any third party. Real Noir circuit (compiled at startup); constraint-execution proof when no SNARK prover is available;…"
     }
   ],
   "payment": {
@@ -53,10 +102,26 @@
   },
   "authorization": {
     "scheme": "ap2",
-    "mandates": ["intent", "cart", "payment"]
+    "mandates": [
+      "intent",
+      "cart",
+      "payment"
+    ]
   },
   "repository": "https://github.com/jweezy119/Pabandi",
   "homepage": "https://pabandi.com",
+  "docs": "https://api.pabandi.com/llms.txt",
   "license": "MIT",
-  "keywords": ["mcp", "x402", "escrow", "trust", "solana", "agent", "booking", "freight", "property"]
+  "keywords": [
+    "mcp",
+    "x402",
+    "escrow",
+    "trust",
+    "solana",
+    "agent",
+    "booking",
+    "reputation",
+    "agent-payments",
+    "a2a"
+  ]
 }

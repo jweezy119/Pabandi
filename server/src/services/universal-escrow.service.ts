@@ -1,6 +1,12 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { trustCore } from '../trust/trust-core';
+import { CustomError } from '../middleware/errorHandler';
+import {
+  canUniversalTransition,
+  explainTransition,
+  isUniversalEscrowStatus,
+} from './universal-escrow.rules';
 
 export interface EscrowParty {
   partyId: string;
@@ -47,9 +53,39 @@ export class UniversalEscrowService {
   }
 
   async updateStatus(referenceId: string, status: string) {
-    const valid = ['draft', 'funded', 'in_progress', 'conditions_met', 'released', 'disputed', 'refunded'];
-    if (!valid.includes(status)) {
+    if (!isUniversalEscrowStatus(status)) {
       throw new Error(`Invalid status: ${status}`);
+    }
+
+    // Read before write. The previous version updated blind and validated only
+    // the target string, so the current state was never consulted and every
+    // transition in the 7x7 grid was reachable.
+    const current = await prisma.universalEscrow.findUnique({
+      where: { referenceId },
+      select: { status: true },
+    });
+    if (!current) throw new CustomError(`Escrow not found: ${referenceId}`, 404);
+
+    // Self-transition is an idempotent no-op, not a transition. Two callers rely
+    // on this: failure-ownership.service.ts guards against released/refunded but
+    // not against an escrow that is ALREADY disputed, and one of its two call
+    // sites has no try/catch, so refusing `disputed -> disputed` would throw
+    // during dispute creation.
+    //
+    // Returning early rather than writing also stops a repeated dispute from
+    // emitting a second `escrow.disputed` trust event, which would double-count
+    // the negative signal against the counterparty.
+    if (current.status === status) {
+      return prisma.universalEscrow.findUnique({ where: { referenceId } });
+    }
+
+    // 409, not 400 or 500: the request was well-formed and the caller is a party,
+    // but the escrow's current state does not permit this move. The previous code
+    // had no such refusal at all; adding one as a bare Error would surface as a
+    // 500 and read as "the server is broken" rather than "that transition is not
+    // allowed from here".
+    if (!canUniversalTransition(current.status, status)) {
+      throw new CustomError(explainTransition(current.status, status), 409);
     }
 
     const escrow = await prisma.universalEscrow.update({

@@ -3,7 +3,9 @@ import {
   applyBand,
   bandForScore,
   bandExplanation,
+  isBlocked,
   multiplierForBand,
+  normalizeScore,
   quoteWithoutHistory,
   type TrustBand,
 } from '../src/services/deposit-policy.rules';
@@ -26,31 +28,93 @@ import {
  */
 
 describe('bandForScore', () => {
-  it('places a new passport in C, paying the standard amount', () => {
-    // New passports default to 500. Band A pays no deposit, so defaulting there
-    // would hand the top tier to everyone on day one with no history to justify
-    // it, and the score would stop meaning anything. 500 lands in C rather than B
-    // deliberately: a customer with no history should pay exactly what the
-    // business asked for, and B would already be a discount for existing
-    // customers only.
-    expect(bandForScore(500)).toBe('C');
+  it('places a new passport in B, on a reduced but not free deposit', () => {
+    // New passports default to 500 on the 0–1000 storage scale, which is 50 on
+    // the canonical scale, so bandForScore normalizes it. 50 falls in B (40–69).
+    //
+    // This is a deliberate change from C. Under the old 0–1000 thresholds, 500
+    // landed in C; under the canonical mapping it lands in B. The property the
+    // original test protected still holds: a brand-new passport does NOT get band
+    // A, because that pays no deposit and would hand the top tier to everyone on
+    // day one with no history to justify it. B is a reduced deposit, which is the
+    // documented consequence of the canonical mapping.
+    expect(bandForScore(500)).toBe('B');
+    expect(bandForScore(500)).not.toBe('A');
   });
 
-  it('maps the 0-1000 range to ordered bands', () => {
-    expect(bandForScore(1000)).toBe('A');
-    expect(bandForScore(800)).toBe('A');
-    expect(bandForScore(799)).toBe('B');
-    expect(bandForScore(600)).toBe('B');
-    expect(bandForScore(599)).toBe('C');
-    expect(bandForScore(400)).toBe('C');
-    expect(bandForScore(399)).toBe('D');
+  it('maps the canonical 0–100 range to the specified bands', () => {
+    // The canonical mapping, stated exactly.
+    expect(bandForScore(100)).toBe('A');
+    expect(bandForScore(70)).toBe('A');
+    expect(bandForScore(69)).toBe('B');
+    expect(bandForScore(40)).toBe('B');
+    expect(bandForScore(39)).toBe('C');
+    expect(bandForScore(20)).toBe('C');
+    expect(bandForScore(19)).toBe('D');
     expect(bandForScore(0)).toBe('D');
   });
 
-  it('treats a non-numeric score as neutral rather than worst', () => {
-    // Absence of data is not evidence of badness.
-    expect(bandForScore(NaN)).toBe('C');
-    expect(bandForScore(undefined as unknown as number)).toBe('C');
+  it('accepts the 0–1000 storage scale and lands on the same canonical band', () => {
+    // The conversion happens at the boundary, so a raw column value and its
+    // canonical equivalent must agree. This is the regression that matters: if
+    // normalization were dropped, a raw 500 would clear the 70 threshold and
+    // every real customer would silently be in band A, paying nothing.
+    expect(bandForScore(1000)).toBe(bandForScore(100));
+    expect(bandForScore(800)).toBe(bandForScore(80));
+    expect(bandForScore(700)).toBe(bandForScore(70));
+    expect(bandForScore(400)).toBe(bandForScore(40));
+    expect(bandForScore(200)).toBe(bandForScore(20));
+    expect(bandForScore(190)).toBe(bandForScore(19));
+    // And the boundary itself still holds at the top of the canonical range.
+    expect(bandForScore(1000)).toBe('A');
+    expect(bandForScore(700)).toBe('A');
+    expect(bandForScore(699)).toBe('B');
+    expect(bandForScore(690)).toBe('B');
+    expect(bandForScore(400)).toBe('B');
+    expect(bandForScore(399)).toBe('C');
+    expect(bandForScore(200)).toBe('C');
+    expect(bandForScore(199)).toBe('D');
+  });
+
+  it('treats a non-numeric score as unpriceable rather than neutral', () => {
+    // CHANGED BEHAVIOUR, deliberately. This used to assert the opposite:
+    // "absence of data is not evidence of badness", so an unreadable score fell
+    // to band C and produced an ordinary quote.
+    //
+    // Under the canonical mapping an invalid score is band E and the transaction
+    // is refused, because a deposit exists to hold a customer to a booking they
+    // might abandon, and an unknown score is not evidence they can be trusted to
+    // show up. Pricing an unknown as the standard ask is the specific outcome
+    // that makes the deposit meaningless in exactly the case it is for.
+    //
+    // The "no evidence" principle is not abandoned — it still applies to a
+    // customer with no passport at all, who goes through quoteWithoutHistory and
+    // is quoted the standard amount. The difference is that a *missing record* is
+    // different from an unreadable score on a record we do have.
+    expect(bandForScore(NaN)).toBe('E');
+    expect(bandForScore(undefined as unknown as number)).toBe('E');
+    expect(isBlocked(bandForScore(NaN))).toBe(true);
+  });
+
+  it('treats a negative score as unpriceable', () => {
+    expect(bandForScore(-1)).toBe('E');
+    expect(isBlocked(bandForScore(-0.5))).toBe(true);
+  });
+
+  it('never lets a valid score be blocked', () => {
+    for (const s of [0, 1, 19, 20, 39, 40, 69, 70, 100, 200, 500, 1000]) {
+      expect(isBlocked(bandForScore(s))).toBe(false);
+    }
+  });
+
+  it('has an explanation for every band, including E', () => {
+    // bandExplanation is customer-facing copy. An unhandled case returns
+    // undefined, which renders as a blank deposit reason in the UI.
+    for (const band of ['A', 'B', 'C', 'D', 'E'] as const) {
+      const text = bandExplanation(band);
+      expect(typeof text).toBe('string');
+      expect(text.length).toBeGreaterThan(0);
+    }
   });
 });
 

@@ -20,6 +20,8 @@ import fs from 'fs';
 import path from 'path';
 import { TOOLS } from '../src/mcp/pabandiMcpServer';
 import { pabandiToolsRegistry } from '../src/services/pabandiTools.service';
+import { AGENT_API_BASE, AGENT_MCP_URL } from '../src/mcp/agentEndpoint';
+import { PTP_RISK_BANDS } from '../src/protocol/ptp.spec';
 
 const ROOT = path.join(__dirname, '..', '..');
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), 'utf8');
@@ -53,6 +55,101 @@ const llms = read('llms.txt');
 const llmsToolNames = [...new Set(llms.match(/pabandi_[a-z0-9_]+/g) ?? [])];
 for (const n of llmsToolNames) {
   if (!seen.has(n)) fail(`llms.txt advertises unknown tool: ${n}`);
+}
+
+// ── 2b. the manifests you SUBMIT TO DIRECTORIES ──────────────────────────────
+//
+// server.json was checked. The three files you actually hand to Smithery,
+// pay.sh and Cloudflare were not — so they carried three tools the server has
+// never served (`pabandi_verify_property`, `pabandi_initiate_escrow`,
+// `pabandi_create_booking`) and the whole check still printed a green tick.
+// A directory listing is the most-read document in this repo; it gets the same
+// scrutiny as llms.txt, plus its own endpoint check.
+const MANIFESTS = [
+  'server.json',
+  'mcp-worker/server.json',
+  'registry/smithery.json',
+  'registry/pay-sh.json',
+  'registry/cloudflare-x402.json',
+  '.well-known/agents.json',
+  'launch/mcp-manifest.json',
+];
+
+for (const rel of MANIFESTS) {
+  if (!fs.existsSync(path.join(ROOT, rel))) {
+    fail(`manifest missing: ${rel}`);
+    continue;
+  }
+  let doc: any;
+  try {
+    doc = JSON.parse(read(rel));
+  } catch (e: any) {
+    fail(`manifest ${rel} is not valid JSON: ${e.message}`);
+    continue;
+  }
+
+  // Tool names: accept either the object form ({name,description}) or the bare
+  // string form, since directories disagree about which shape they want.
+  //
+  // Completeness is only asserted when the document actually declares `tools`.
+  // `.well-known/agents.json` declares `capabilities` instead, so it has no tool
+  // list to be incomplete about.
+  const listed: string[] = (doc.tools ?? []).map((t: any) => (typeof t === 'string' ? t : t?.name));
+  for (const n of listed) {
+    if (n && !seen.has(n)) fail(`${rel} advertises unknown tool: ${n}`);
+  }
+  if (Array.isArray(doc.tools)) {
+    const missing = [...seen].filter((n) => !listed.includes(n));
+    if (missing.length > 0) {
+      fail(`${rel} omits ${missing.length} live tool(s): ${missing.slice(0, 5).join(', ')}${missing.length > 5 ? ' …' : ''}`);
+    }
+  }
+
+  // Every endpoint this manifest hands to a directory must be the real one.
+  // A listing pointing at the dead host or at the SPA fallback is worse than no
+  // listing: it survives review and fails on the developer's first call.
+  const urls = JSON.stringify(doc).match(/https?:\/\/[^"'\\,\s]+/g) ?? [];
+  for (const u of urls) {
+    // workers.dev was the fabricated edge stub; it is not a published surface.
+    if (u.includes('workers.dev')) {
+      fail(`${rel} advertises a workers.dev endpoint (${u}) — the edge stub is not a published surface`);
+    }
+    // pabandi.com/mcp is the marketing SPA answering with index.html over a 200.
+    // Only URLs that CLAIM to be the MCP endpoint are checked for equality with
+    // the live one. `homepage: https://pabandi.com` is correct and must not be
+    // flagged — pabandi.com is the marketing site. What must not ship is
+    // pabandi.com/mcp, which no MCP client can speak to.
+    if (/\/mcp\b/.test(u) && u !== AGENT_MCP_URL) {
+      fail(`${rel} points its MCP endpoint at ${u}, but the configured endpoint is ${AGENT_MCP_URL}`);
+    }
+  }
+
+  // A price for a tool that does not exist, or a paid tool with no price.
+  const pricing = doc.pricing ?? Object.fromEntries(
+    (doc.tools ?? [])
+      .filter((t: any) => typeof t === 'object' && t.price && t.price !== 'free')
+      .map((t: any) => [t.name, t.price]),
+  );
+  for (const name of Object.keys(pricing ?? {})) {
+    if (!seen.has(name)) fail(`${rel} quotes a price for unknown tool: ${name}`);
+  }
+
+  // If a document publishes risk bands, they must be PTP's. `riskBand` once had
+  // four incompatible definitions, including an "F" that no engine produces, so
+  // an agent that learned the bands from the wrong source would be reasoning
+  // about a tier that does not exist.
+  if (doc.risk_bands) {
+    const canonical = Object.keys(PTP_RISK_BANDS);
+    const published = doc.risk_bands as string[];
+    const extra = published.filter((b) => !canonical.includes(b));
+    const absent = canonical.filter((b) => !published.includes(b));
+    if (extra.length > 0) {
+      fail(`${rel} publishes risk band(s) PTP does not define: ${extra.join(', ')} (canonical: ${canonical.join(', ')})`);
+    }
+    if (absent.length > 0) {
+      fail(`${rel} omits PTP risk band(s): ${absent.join(', ')}`);
+    }
+  }
 }
 
 // ── 4/5. advertised endpoints are mounted ─────────────────────────────────────
@@ -105,7 +202,7 @@ for (const m of signup.matchAll(/https:\/\/pabandi\.com(\/[^\s\\]*)/g)) {
 // points at a host that no longer resolves. Only runs with --live.
 async function liveProbe() {
   const llmsText = read('llms.txt');
-  const base = process.env.PUBLIC_API_URL || 'https://pabandi.onrender.com';
+  const base = AGENT_API_BASE;
   const targets: Array<[string, string]> = [
     ['GET', `${base}/llms.txt`],
     ['GET', `${base}/openapi.yaml`],

@@ -11,6 +11,7 @@ import fs from 'fs';
 import path from 'path';
 import { TOOLS } from '../src/mcp/pabandiMcpServer';
 import { pabandiToolsRegistry } from '../src/services/pabandiTools.service';
+import { AGENT_API_BASE } from '../src/mcp/agentEndpoint';
 
 const ROOT = path.join(__dirname, '..', '..');
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), 'utf8');
@@ -19,7 +20,7 @@ const write = (p: string, s: string) => fs.writeFileSync(path.join(ROOT, p), s);
 // The host that actually serves the API. pabandi.com is the marketing front end
 // on a static host — pointing agent docs at it produced curls that returned
 // HTML. Override with PUBLIC_API_URL once DNS points the domain at Render.
-const API_BASE = (process.env.PUBLIC_API_URL || 'https://pabandi.onrender.com').replace(/\/+$/, '');
+const API_BASE = AGENT_API_BASE;
 const resolveBase = (s: string) => s.replace(/\{\{API_BASE\}\}/g, API_BASE);
 
 const registryByName = new Map<string, any>(pabandiToolsRegistry.map((t: any) => [t.name, t]));

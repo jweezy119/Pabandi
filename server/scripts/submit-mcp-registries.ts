@@ -17,9 +17,15 @@
  */
 import fs from 'fs';
 import { TOOLS } from '../src/mcp/pabandiMcpServer';
+import { AGENT_MCP_URL, SITE_URL } from '../src/mcp/agentEndpoint';
 
-const MCP_URL = process.env.MCP_PUBLIC_URL || 'https://pabandi.com/mcp';
-const SITE = process.env.PUBLIC_SITE_URL || 'https://pabandi.com';
+// The default here was https://pabandi.com/mcp. That host is the marketing SPA:
+// its fallback answers any path with index.html, so the URL returns HTTP 200 and
+// passes a naive liveness probe while returning text/html to the JSON-RPC POST
+// that initialize actually sends. Submitting it would have published a listing
+// that passes review and then fails on the developer's first call.
+const MCP_URL = process.env.MCP_PUBLIC_URL || AGENT_MCP_URL;
+const SITE = process.env.PUBLIC_SITE_URL || SITE_URL;
 const VERSION = '1.0.0';
 
 const args = new Set(process.argv.slice(2));

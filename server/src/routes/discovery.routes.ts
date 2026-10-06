@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import express, { Request, Response } from 'express';
 import { logger } from '../utils/logger';
+import { AGENT_API_BASE, AGENT_MCP_URL } from '../mcp/agentEndpoint';
 
 /**
  * Agent discovery files, served by the API itself.
@@ -72,8 +73,8 @@ router.get('/.well-known/api-host', (_req: Request, res: Response) => {
   res.json({
     success: true,
     data: {
-      apiBaseUrl: process.env.PUBLIC_API_URL || `https://${process.env.RENDER_HOST || 'pabandi.onrender.com'}`,
-      mcpEndpoint: `${process.env.PUBLIC_API_URL || `https://${process.env.RENDER_HOST || 'pabandi.onrender.com'}`}/mcp`,
+      apiBaseUrl: AGENT_API_BASE,
+      mcpEndpoint: AGENT_MCP_URL,
       discovery: {
         llms: '/llms.txt',
         robots: '/robots.txt',

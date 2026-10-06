@@ -23,6 +23,8 @@
     "list:tokens": "ts-node scripts/list-wallet-tokens.ts",
     "burn:lp": "ts-node scripts/burn-lp.ts",
     "verify:agent-surface": "tsx scripts/verify-agent-surface.ts",
+    "generate:manifests": "tsx scripts/generate-agent-manifests.ts",
+    "generate:manifests:check": "tsx scripts/generate-agent-manifests.ts --check",
     "submit:registries": "tsx scripts/submit-mcp-registries.ts",
     "test": "vitest run",
     "test:watch": "vitest",

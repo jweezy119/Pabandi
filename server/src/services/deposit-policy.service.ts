@@ -11,9 +11,12 @@ import {
   applyBand,
   quoteWithoutHistory,
   bandForScore,
+  isBlocked,
+  bandExplanation,
   type TrustBand,
   type DepositQuote,
 } from './deposit-policy.rules';
+import { CustomError } from '../middleware/errorHandler';
 
 export * from './deposit-policy.rules';
 
@@ -91,6 +94,15 @@ export async function quoteDepositForClient(params: {
   }
 
   const { band, score } = await bandForCrmClient(params.crmClientId);
+
+  // A band of E means the score could not be read. Pricing it anyway would hand
+  // back an ordinary-looking quote for a customer whose history we do not have,
+  // which is the failure mode the band exists to prevent. 422 rather than 400:
+  // the request was well-formed, there is just nothing to price against yet.
+  if (isBlocked(band)) {
+    throw new CustomError(bandExplanation(band), 422);
+  }
+
   // Pass the booking value so the 50% ceiling can be enforced. Omitting it here
   // would make the whitepaper's promise unenforceable on exactly the bookings
   // where it matters.
