@@ -290,19 +290,55 @@ export function pabandiPlatformDoc() {
   };
 }
 
-export async function toolAccessOk(toolName: string, req?: any, options?: { ownerUserId?: string; businessId?: string; verifiedRail?: boolean }) {
-  // Normalize tool name: accept "pabandi:short", "pabandi_short", or raw "name"
-  const normalized = toolName
-    .replace(/^pabandi[:_]/, '')
-    .replace(/_/g, ' ')
-    .toLowerCase();
-  const mcptool = pabandiToolsRegistry.find(
-    (t) => {
-      const registrySlug = t.short.toLowerCase().replace(/[^a-z0-9]+/g, ' ');
-      const registryNameSlug = t.name.toLowerCase().replace(/[^a-z0-9]+/g, ' ');
-      return registrySlug === normalized || registryNameSlug === normalized || t.name === toolName;
-    },
+/**
+ * Resolve any published identifier for a registry tool to its entry.
+ *
+ * A tool can be named three ways and all three have to land on the same entry:
+ *
+ *   pabandi:discover                     the internal registry name
+ *   Pabandi platform discovery           the marketing label (`short`)
+ *   pabandi_platform_discovery           the published MCP name (`mcpName`)
+ *
+ * The third is the one that matters most and used to be missing. `callPlatformHttp`
+ * gates every call with the MCP name it advertises in tools/list, so matching on
+ * `short` and `pabandi:internal` alone meant the gate rejected the server's own
+ * published names: 19 of 20 tools answered "unknown tool" for the exact string the
+ * caller had just asked for. Only the one tool served by an inline handler rather
+ * than the proxy worked, which made the failure look like an access problem
+ * instead of a name-resolution one.
+ *
+ * `mcpName` is matched first and exactly, so a name published in tools/list can
+ * never be shadowed by a coincidental `short` label.
+ */
+export function findRegistryTool(toolName: string): PabandiTool | undefined {
+  const needle = String(toolName ?? '').trim();
+
+  // Exact match on the published MCP name.
+  const byMcpName = pabandiToolsRegistry.find((t) => t.mcpName === needle);
+  if (byMcpName) return byMcpName;
+
+  // Then the internal registry name, e.g. pabandi:verify_passport.
+  const byInternalName = pabandiToolsRegistry.find((t) => t.name === needle);
+  if (byInternalName) return byInternalName;
+
+  // Finally the marketing label, matched loosely: snake_case and spaces are
+  // interchangeable in these labels, and callers have used both.
+  //
+  // Only `short` is matched here, never `name`. Matching `name` loosely as well
+  // would resolve the engine tool `pabandi_discover` onto the registry entry
+  // `pabandi:discover` — the same entry as `pabandi_platform_discovery` — so two
+  // distinct published tools would share one access decision and the weaker tool
+  // would inherit the stronger one's tier. The internal name is already matched
+  // exactly above, which is the only correct way to reach it.
+  const normalized = needle.replace(/^pabandi[:_]/, '').replace(/[_-]+/g, ' ').trim().toLowerCase();
+  if (!normalized) return undefined;
+  return pabandiToolsRegistry.find(
+    (t) => t.short.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim() === normalized,
   );
+}
+
+export async function toolAccessOk(toolName: string, req?: any, options?: { ownerUserId?: string; businessId?: string; verifiedRail?: boolean }) {
+  const mcptool = findRegistryTool(toolName);
   if (!mcptool) return { ok: false, reason: `unknown tool: ${toolName}` };
   if (mcptool.access === 'public') return { ok: true, note: 'public tool' };
   if (mcptool.access === 'owner' && req?.user?.id) return { ok: true, note: 'owner-authenticated' };
