@@ -110,11 +110,20 @@ curl -s -X POST https://api.pabandi.com/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' \
   | jq '.result.tools | length'          # expect: 20
 
-# 2. credential keys must NOT 503
+# 2. a PUBLIC tool must return real data, not an error
+curl -s -X POST https://api.pabandi.com/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call",
+       "params":{"name":"pabandi_search_services","arguments":{"search":"salon"}}}' \
+  | jq -r '.result.content[0].text' | head -c 200
+# expect: JSON with results. NOT "access denied: unknown tool".
+
+# 3. credential keys must NOT 503
 curl -s -o /dev/null -w '%{http_code}\n' \
   https://api.pabandi.com/.well-known/pabandi-keys.json    # expect: 200
 
-# 3. a paid tool must return 402, proving x402 is live
+# 4. a paid tool must return 402 — this is what proves x402 is live
 curl -s -X POST https://api.pabandi.com/mcp \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
@@ -123,7 +132,12 @@ curl -s -X POST https://api.pabandi.com/mcp \
   | jq '.error.code'                     # expect: 402
 ```
 
-Check 2 fails with 503 until `VC_SIGNING_PRIVATE_KEY` is set on Render.
+Check 1 passing does not mean the tools work. `tools/list` enumerates what the
+server intends to expose; only check 2 proves a call reaches it. This is not
+hypothetical — all 20 tools were listed while 19 of them failed with `access
+denied: unknown tool` on first call.
+
+Check 3 fails with 503 until `VC_SIGNING_PRIVATE_KEY` is set on Render.
 
 ---
 

@@ -120,6 +120,12 @@ claude mcp add --transport http pabandi https://api.pabandi.com/mcp
       that passes review and then fails on the developer's first call is worse
       than a missing listing, and `pabandi.com/mcp` in particular returns HTML
       over a 200, so it looks healthy to a naive check
+- [ ] **A public tool returns real data when called**, not
+      `access denied: unknown tool`. `tools/list` returning 20 is not evidence any
+      of them work — enumeration and execution are separate code paths, and all 20
+      were listed once while 19 failed on first call. See the curl in
+      `RUNBOOK.md` step 4.
 - [ ] `GET /.well-known/pabandi-keys.json` returns a real P-256 key. It returns
       503 until `VC_SIGNING_PRIVATE_KEY` is set — if a directory crawler treats
       that as an error, set the key first
+- [ ] A paid tool returns `402`, confirming x402 is live end to end

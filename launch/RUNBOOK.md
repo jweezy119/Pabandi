@@ -62,11 +62,20 @@ curl -s -X POST https://api.pabandi.com/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' \
   | jq '.result.tools | length'          # expect: 20
 
-# 2. credential keys must NOT 503
+# 2. a PUBLIC tool must return real data, not an error
+curl -s -X POST https://api.pabandi.com/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call",
+       "params":{"name":"pabandi_search_services","arguments":{"search":"salon"}}}' \
+  | jq -r '.result.content[0].text' | head -c 200
+# expect: JSON with results. NOT "access denied: unknown tool".
+
+# 3. credential keys must NOT 503
 curl -s -o /dev/null -w '%{http_code}\n' \
   https://api.pabandi.com/.well-known/pabandi-keys.json    # expect: 200
 
-# 3. a paid tool must return 402 — this is what proves x402 is live
+# 4. a paid tool must return 402 — this is what proves x402 is live
 curl -s -X POST https://api.pabandi.com/mcp \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
@@ -74,14 +83,22 @@ curl -s -X POST https://api.pabandi.com/mcp \
        "params":{"name":"pabandi_issue_passport","arguments":{}}}' \
   | jq '.error.code'                     # expect: 402
 
-# 4. capability manifest must name the canonical bands
+# 5. capability manifest must name the canonical bands
 curl -s https://api.pabandi.com/.well-known/agents.json | jq '.risk_bands, .base_url'
 # expect: ["A","B","C","D","E"] and https://api.pabandi.com
 ```
 
-Do not proceed past a failure here. Check 2 in particular: the launch post's
-credibility rests on credential verification, and a 503 there means the
-differentiating feature is the one thing a developer finds broken.
+Do not proceed past a failure here.
+
+**Check 1 passing does not mean the tools work.** `tools/list` enumerates what the
+server *intends* to expose; it says nothing about whether a call reaches it. A
+recent bug had all 20 tools listed and 19 of them failing with `access denied:
+unknown tool` on first call, because the access gate could not resolve its own
+published names. Check 2 is the only one that would have caught it.
+
+Check 3 also matters disproportionately: the launch post's credibility rests on
+credential verification, and a 503 there means the differentiating feature is the
+one thing a developer finds broken.
 
 ## Step 5 — Official MCP Registry (do this one first)
 
@@ -141,7 +158,7 @@ until you edit them there.
 ## If something looks right but isn't
 
 The most likely failure is a listing that survived review and fails on first
-contact — which is why the launch gate is three curls rather than a ping. Check,
+contact — which is why the launch gate is five curls rather than a ping. Check,
 in order:
 
 1. `pabandi.com/mcp` returns **HTML over a 200**. The SPA fallback answers any
@@ -149,6 +166,15 @@ in order:
    JSON-RPC call. Never publish it as an MCP endpoint.
 2. A manifest names a tool that `tools/list` doesn't return.
 3. `/.well-known/pabandi-keys.json` returns 503 or a non-P-256 key.
+4. `tools/list` returns 20 but a **call** returns `access denied: unknown tool`.
+   Enumeration and execution are separate code paths. The access gate runs only on
+   the proxy path, so a tool served by an inline handler can work while every
+   proxied tool fails — which is exactly how 19 of 20 tools were broken while the
+   surface looked complete.
 
-Step 3's script catches all three. Run it before every submission, not once at the
-start.
+`npm run verify:agent-surface` catches 2 and 3. Only check 4's curl catches 4 —
+which is why it is in the gate rather than left to the test suite. The regression
+test `mcp-tool-access-resolution.test.ts` covers it in CI; the curl covers the
+deployed artifact, which CI cannot see.
+
+Run the gate before every submission, not once at the start.
