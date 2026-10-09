@@ -30,15 +30,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   });
 
   return (
-    <div className="flex flex-col h-screen bg-[var(--atmosphere)] overflow-hidden">
+    <div className="flex flex-col h-screen bg-[var(--bg-main)] overflow-hidden" data-mode={user?.preferredMode || 'business'}>
       {/* Top Navigation Bar */}
-      <header className="flex-none h-16 px-4 lg:px-6 flex items-center justify-between border-b border-[rgba(191,179,163,0.2)] bg-[rgba(245,239,230,0.92)] backdrop-blur-md z-50">
+      <header className="flex-none h-16 px-4 lg:px-6 flex items-center justify-between border-b border-[var(--border-color)] bg-[var(--bg-surface)]/90 backdrop-blur-md z-50">
         <div className="flex items-center gap-4">
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[var(--clay)] flex items-center justify-center text-white font-bold text-sm shadow-sm">
-              P
-            </div>
-            <span className="hidden sm:inline font-bold text-[var(--warm-ink)] font-headline">PabandiOS</span>
+          <Link to={isBusiness ? "/dashboard" : "/me"} className="flex items-center gap-2">
+            {isBusiness ? (
+              <>
+                <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)] flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                  P
+                </div>
+                <span className="hidden sm:inline font-bold text-[var(--text-main)] font-headline">PabandiOS</span>
+              </>
+            ) : (
+              <>
+                <div className="w-8 h-8 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                  {user?.firstName?.[0] || user?.name?.[0] || 'U'}
+                </div>
+                <span className="hidden sm:inline font-bold text-[var(--text-main)] font-headline">{user?.firstName || user?.name || 'Personal'}</span>
+              </>
+            )}
           </Link>
         </div>
 

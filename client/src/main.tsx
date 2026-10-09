@@ -12,6 +12,7 @@ import './i18n';
 // nothing clickable and no way back.
 import { AppErrorBoundary } from './components/AppErrorBoundary';
 import './index.css';
+import './styles/mode-themes.css';
 import { watchForStaleBuild, buildSha } from './utils/staleTab';
 
 // Notice when this tab is running an older build than the server is serving, and reload.

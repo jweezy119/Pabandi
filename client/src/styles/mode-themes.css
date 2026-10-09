@@ -1,0 +1,33 @@
+/* Mode-specific CSS variables for Business vs Personal environments */
+
+:root {
+  /* Default/fallback (Business) */
+  --bg-main: #FAFAFA;
+  --bg-surface: #FFFFFF;
+  --text-main: #1A1A1A;
+  --text-muted: #6B7280;
+  --border-color: #E5E7EB;
+  --border-radius: 0.5rem;
+  --color-primary: var(--clay);
+}
+
+[data-mode="business"] {
+  --bg-main: #FAFAFA;
+  --bg-surface: #FFFFFF;
+  --text-main: #1A1A1A;
+  --text-muted: #6B7280;
+  --border-color: #E5E7EB;
+  --border-radius: 0.5rem;
+  --color-primary: var(--clay);
+}
+
+[data-mode="personal"] {
+  /* Softer, slightly warmer feel for personal mode */
+  --bg-main: #FDFDFB;
+  --bg-surface: #FFFFFF;
+  --text-main: #2C2A29;
+  --text-muted: #847C77;
+  --border-color: #F1EFEA;
+  --border-radius: 1rem;
+  --color-primary: #C5A880; /* A warmer, softer tone */
+}
