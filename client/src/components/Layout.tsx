@@ -113,7 +113,7 @@ function MobileMoreSheet({ onClose, pathname }: { onClose: () => void; pathname:
           </button>
         </div>
         <div className="space-y-4">
-          {sections.map((sec) => (
+          {sections.filter(sec => sec.title !== 'Marketplace' && sec.title !== 'Trust & Safety' && sec.title !== 'Company').map((sec) => (
             <div key={sec.title}>
               <p className="text-[11px] uppercase tracking-widest opacity-50 px-1 mb-1.5">{sec.title}</p>
               <div className="grid grid-cols-2 gap-2">
@@ -372,37 +372,12 @@ export default function Layout() {
               <DropdownItem to="/freight">FreightOS</DropdownItem>
               <DropdownItem to="/capital">CapitalOS</DropdownItem>
             </Dropdown>
-            <Dropdown label="Marketplace" current={['/live-selling', '/hospitality', '/freelance', '/gigs', '/agent-dashboard', '/profiles'].some((p) => location.pathname.startsWith(p))}>
-              <DropdownItem to="/live-selling">Live Selling</DropdownItem>
-              <DropdownItem to="/hospitality">Hospitality</DropdownItem>
-              <DropdownItem to="/freelance">Freelancers</DropdownItem>
-              <DropdownItem to="/gigs">Gig Board</DropdownItem>
-              <DropdownItem to="/agent-dashboard">AI Agent Loop</DropdownItem>
-              <DropdownItem to="/promo">Promo Ambassadors</DropdownItem>
-              <DropdownItem to="/rewards">Rewards</DropdownItem>
-              <DropdownItem to="/promotions">Promotions</DropdownItem>
-            </Dropdown>
-            <Dropdown label="Trust & Safety" current={['/trust', '/background-check', '/protected-deposit', '/arbitration', '/agent-passport'].some((p) => location.pathname.startsWith(p))}>
-              <DropdownItem to="/trust">Trust Passports</DropdownItem>
-              <DropdownItem to="/agent-passport">Agent Passport</DropdownItem>
-              <DropdownItem to="/background-check">Background Check</DropdownItem>
-              <DropdownItem to="/protected-deposit">Protected Deposit</DropdownItem>
-              <DropdownItem to="/arbitration">Arbitration</DropdownItem>
-              <DropdownItem to="/sharia-transparency">Sharia Transparency</DropdownItem>
-            </Dropdown>
             <Dropdown label="Money" current={['/cashout', '/payroll', '/economy', '/web3', '/revenue', '/agent-passport'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/cashout">Cash Out</DropdownItem>
               <DropdownItem to="/payroll">Instant Pay</DropdownItem>
               <DropdownItem to="/economy">Economy</DropdownItem>
               <DropdownItem to="/revenue">Revenue</DropdownItem>
               <DropdownItem to="/web3">Web3</DropdownItem>
-            </Dropdown>
-            <Dropdown label="Company" current={['/about', '/sharia-compliance', '/technology', '/join', '/developer'].some((p) => location.pathname.startsWith(p))}>
-              <DropdownItem to="/about">About</DropdownItem>
-              <DropdownItem to="/sharia-compliance">Sharia Compliance</DropdownItem>
-              <DropdownItem to="/technology">Technology</DropdownItem>
-              <DropdownItem to="/join">List Business</DropdownItem>
-              <DropdownItem to="/developer">API Docs</DropdownItem>
             </Dropdown>
           </nav>
 
