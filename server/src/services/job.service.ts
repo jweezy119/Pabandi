@@ -247,7 +247,7 @@ export async function checkOutJob(serviceBusinessId: string, jobId: string, user
         await connectionService.upsertConnection(
           serviceBusiness.ownerId,
           clientUser.id,
-          serviceBusiness.businessId,
+          serviceBusiness.businessId || undefined,
           'crm_job_completed'
         ).catch(err => logger.error(`[JobService] Failed to upsert connection: ${err.message}`));
       }
