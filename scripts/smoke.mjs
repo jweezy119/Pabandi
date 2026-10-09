@@ -89,10 +89,24 @@ async function section(title, fn) {
 }
 
 // ── 1. The API is reachable and running the commit we think it is ──────────
+async function waitForApi() {
+  const maxRetries = 12; // 12 * 10s = 120s (2 minutes)
+  for (let i = 0; i < maxRetries; i++) {
+    const { res } = await getJson(`${TARGETS.api}/health`);
+    if (res?.ok) return true;
+    if (i < maxRetries - 1) {
+      console.log(`  API returned ${res?.status || 'network error'}, retrying in 10s...`);
+      await new Promise((r) => setTimeout(r, 10000));
+    }
+  }
+  return false;
+}
+
 async function checkApi() {
+  const ready = await waitForApi();
   const { res, body } = await getJson(`${TARGETS.api}/health`);
-  if (!res.ok) {
-    record('GET /health', 'FAIL', `status ${res.status}`);
+  if (!ready || !res.ok) {
+    record('GET /health', 'FAIL', `status ${res?.status || 'unreachable'}`);
     return;
   }
   record('GET /health', 'PASS', `status ${res.status}`);

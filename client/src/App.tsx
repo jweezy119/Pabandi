@@ -306,6 +306,20 @@ function AnimatedAppRoutes() {
   }, [isAuthenticated, fetchWalletData]);
 
   useEffect(() => {
+    // Migrate legacy local storage token
+    const legacyToken = localStorage.getItem('pabandi_token');
+    const legacyUserStr = localStorage.getItem('pabandi_user');
+    if (legacyToken && !useAuthStore.getState().token) {
+      try {
+        const user = legacyUserStr ? JSON.parse(legacyUserStr) : null;
+        useAuthStore.setState({ token: legacyToken, user, isAuthenticated: true });
+        localStorage.removeItem('pabandi_token');
+        localStorage.removeItem('pabandi_user');
+      } catch (e) {
+        // Migration failed
+      }
+    }
+
     const { token, logout } = useAuthStore.getState();
     if (!token) return;
     try {

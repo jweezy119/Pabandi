@@ -49,8 +49,7 @@ export const RegisterPage: React.FC = () => {
       const res = await authService.registerWithCode({ email, password, firstName, lastName, phone, code });
       const data = res.data?.data ?? res.data;
       if (!data?.accessToken) throw new Error(data?.message || 'Registration failed');
-      localStorage.setItem('pabandi_token', data.accessToken);
-      localStorage.setItem('pabandi_user', JSON.stringify(data.user));
+      useAuthStore.setState({ user: data.user, token: data.accessToken, isAuthenticated: true });
       window.location.href = isCrm ? '/contact?wizard=true' : '/onboarding';
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Registration failed');
