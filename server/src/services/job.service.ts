@@ -3,6 +3,8 @@ import { trustCore } from '../trust/trust-core';
 import { invoiceGenerationService } from './invoiceGeneration.service';
 import { CustomError } from '../middleware/errorHandler';
 import { assertNoConflict, checkAvailabilityWindow } from './crm.service';
+import { connectionService } from './connection.service';
+import { logger } from '../utils/logger';
 
 type JobCreateData = {
   clientId?: string;
@@ -235,6 +237,22 @@ export async function checkOutJob(serviceBusinessId: string, jobId: string, user
 
   // Auto-generate invoice
   await invoiceGenerationService.generateInvoiceFromJob(jobId);
+
+  // Upsert connection
+  if (job.client?.email) {
+    const serviceBusiness = await prisma.crmServiceBusiness.findUnique({ where: { id: serviceBusinessId } });
+    if (serviceBusiness?.ownerId) {
+      const clientUser = await prisma.user.findFirst({ where: { email: job.client.email } });
+      if (clientUser && clientUser.id !== serviceBusiness.ownerId) {
+        await connectionService.upsertConnection(
+          serviceBusiness.ownerId,
+          clientUser.id,
+          serviceBusiness.businessId,
+          'crm_job_completed'
+        ).catch(err => logger.error(`[JobService] Failed to upsert connection: ${err.message}`));
+      }
+    }
+  }
 
   return updatedJob;
 }

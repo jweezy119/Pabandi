@@ -199,6 +199,8 @@ model User {
   portfolioItems          PortfolioItem[]
   ownedCrmBusinesses      CrmServiceBusiness[]
   customerAppointments    Appointment[]
+  connections             Connection[]             @relation("UserConnections")
+  connectedTo             Connection[]             @relation("ConnectedTo")
 
   @@index([email])
   @@index([phone])
@@ -332,6 +334,7 @@ model Business {
   appointments       Appointment[]
   serviceEscrows     ServiceEscrow[]
   invoices           Invoice[]
+  Connection         Connection[]
 
   @@index([ownerId])
   @@index([city])
@@ -6909,15 +6912,15 @@ model UserChannelPreference {
 }
 
 model WalletPassport {
-  id            String         @id @default(cuid())
-  holderId      String         @unique
-  userId        String?        @unique
-  score         Float          @default(50)
-  level         String         @default("bronze")
-  verified      Boolean        @default(false)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  contactLeads  ContactLead[]
+  id           String        @id @default(cuid())
+  holderId     String        @unique
+  userId       String?       @unique
+  score        Float         @default(50)
+  level        String        @default("bronze")
+  verified     Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  contactLeads ContactLead[]
 
   @@map("wallet_passports")
 }
@@ -7374,7 +7377,6 @@ model CrmEmployee {
 
   @@index([businessId])
   @@index([isActive])
-
   // ── TABLE NAME ────────────────────────────────────────────────────────────
   // This model maps to crm_employees, NOT the model's own name.
   //
@@ -7427,7 +7429,6 @@ model CrmClient {
   @@index([passportId])
   @@index([businessId])
   @@index([name])
-
   // ── TABLE NAME ────────────────────────────────────────────────────────────
   // This model maps to crm_clients, NOT the model's own name.
   //
@@ -7587,7 +7588,6 @@ model CrmJob {
   @@index([clientId])
   @@index([employeeId])
   @@index([bookingId])
-
   // ── TABLE NAME ────────────────────────────────────────────────────────────
   // This model maps to crm_jobs, NOT the model's own name.
   //
@@ -7630,7 +7630,6 @@ model CrmPayroll {
   @@index([businessId])
   @@index([employeeId])
   @@index([periodStart])
-
   // ── TABLE NAME ────────────────────────────────────────────────────────────
   // This model maps to crm_payrolls, NOT the model's own name.
   //
@@ -7667,7 +7666,6 @@ model CrmExpense {
   @@index([businessId])
   @@index([category])
   @@index([date])
-
   // ── TABLE NAME ────────────────────────────────────────────────────────────
   // This model maps to crm_expenses, NOT the model's own name.
   //
@@ -8218,4 +8216,24 @@ model ServiceEscrow {
 
   @@index([businessId, status])
   @@index([status, createdAt])
+}
+
+model Connection {
+  id              String   @id @default(cuid())
+  userId          String
+  connectedUserId String
+  businessId      String?
+  originContext   String?
+  trustScore      Float    @default(50)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user          User      @relation("UserConnections", fields: [userId], references: [id], onDelete: Cascade)
+  connectedUser User      @relation("ConnectedTo", fields: [connectedUserId], references: [id], onDelete: Cascade)
+  business      Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, connectedUserId])
+  @@index([userId])
+  @@index([connectedUserId])
+  @@index([businessId])
 }

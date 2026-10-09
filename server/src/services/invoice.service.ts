@@ -5,6 +5,7 @@ import { emailService } from './email.service';
 import { notifyInvoicePaid, notifyInvoiceOverdue } from './notification.service';
 import { referralFeeShareService } from './referral-fee-share.service';
 import { logger } from '../utils/logger';
+import { connectionService } from './connection.service';
 
 type InvoiceLineItem = {
   service: string;
@@ -472,6 +473,18 @@ export async function markInvoicePaid(businessId: string, invoiceId: string, tra
   if (business) {
     emailService.sendPaymentReceived(business, updated, updated.client);
     await notifyInvoicePaid(business.ownerId || '', updated.id, updated.number, updated.subtotal);
+
+    if (business.ownerId && updated.client.email) {
+      const clientUser = await prisma.user.findFirst({ where: { email: updated.client.email } });
+      if (clientUser && clientUser.id !== business.ownerId) {
+        await connectionService.upsertConnection(
+          business.ownerId,
+          clientUser.id,
+          business.id,
+          'crm_invoice_paid'
+        ).catch(err => logger.error(`[InvoiceService] Failed to upsert connection: ${err.message}`));
+      }
+    }
   }
 
   return updated;
