@@ -1,33 +1,38 @@
-/* Mode-specific CSS variables for Business vs Personal environments */
-
-:root {
-  /* Default/fallback (Business) */
-  --bg-main: #FAFAFA;
-  --bg-surface: #FFFFFF;
-  --text-main: #1A1A1A;
-  --text-muted: #6B7280;
-  --border-color: #E5E7EB;
-  --border-radius: 0.5rem;
-  --color-primary: var(--clay);
-}
+/* mode-themes.css */
+/* Overrides for distinct mode environments */
 
 [data-mode="business"] {
-  --bg-main: #FAFAFA;
-  --bg-surface: #FFFFFF;
-  --text-main: #1A1A1A;
-  --text-muted: #6B7280;
-  --border-color: #E5E7EB;
-  --border-radius: 0.5rem;
   --color-primary: var(--clay);
+  --color-primary-light: #e8bea9;
+  --bg-main: var(--cream);
+  --bg-surface: white;
+  --border-color: rgba(191, 179, 163, 0.3);
+  --text-main: var(--warm-ink);
+  --text-muted: var(--soft-stone);
+  
+  --shadow-soft: 
+    0 1px 2px rgba(180, 130, 90, 0.06),
+    0 4px 12px rgba(180, 130, 90, 0.08),
+    0 12px 32px rgba(180, 130, 90, 0.06);
+    
+  --radius-card: 24px;
+  --space-section-gap: 20px;
 }
 
 [data-mode="personal"] {
-  /* Softer, slightly warmer feel for personal mode */
-  --bg-main: #FDFDFB;
-  --bg-surface: #FFFFFF;
-  --text-main: #2C2A29;
-  --text-muted: #847C77;
-  --border-color: #F1EFEA;
-  --border-radius: 1rem;
-  --color-primary: #C5A880; /* A warmer, softer tone */
+  --color-primary: var(--dusty-rose);
+  --color-primary-light: #E8C8C8;
+  --bg-main: var(--warm-sand);
+  --bg-surface: rgba(255, 255, 255, 0.6); /* Translucent cards for warmer feel */
+  --border-color: rgba(212, 165, 165, 0.2);
+  --text-main: var(--warm-ink);
+  --text-muted: var(--soft-stone);
+  
+  --shadow-soft: 
+    0 1px 2px rgba(180, 130, 90, 0.04),
+    0 4px 12px rgba(180, 130, 90, 0.06),
+    0 12px 32px rgba(180, 130, 90, 0.04); /* Softer shadows in personal */
+    
+  --radius-card: 32px;
+  --space-section-gap: 32px;
 }

@@ -43,15 +43,15 @@ export default function PersonalDashboardPage() {
 
       {/* Trust Passport Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-4 rounded-[var(--border-radius)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
+        <div className="p-4 rounded-[var(--radius-card)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
           <div className="text-xs text-[var(--text-muted)] mb-1">Trust Score</div>
           <div className="text-2xl font-bold text-[var(--color-primary)]">{passport?.data?.score || '—'}</div>
         </div>
-        <div className="p-4 rounded-[var(--border-radius)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
+        <div className="p-4 rounded-[var(--radius-card)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
           <div className="text-xs text-[var(--text-muted)] mb-1">Level</div>
           <div className="text-2xl font-bold text-[var(--sage)]">{passport?.data?.level || '—'}</div>
         </div>
-        <div className="p-4 rounded-[var(--border-radius)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
+        <div className="p-4 rounded-[var(--radius-card)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
           <div className="text-xs text-[var(--text-muted)] mb-1">Upcoming Bookings</div>
           <div className="text-2xl font-bold text-[var(--text-main)]">{bookings.length}</div>
         </div>
@@ -59,19 +59,19 @@ export default function PersonalDashboardPage() {
 
       {/* Quick Links */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Link to="/me/passport" className="p-4 rounded-[var(--border-radius)] bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--color-primary)] transition text-center">
+        <Link to="/me/passport" className="p-4 rounded-[var(--radius-card)] bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--color-primary)] transition text-center">
           <div className="text-2xl mb-2">🛂</div>
           <div className="text-sm font-medium text-[var(--text-main)]">Passport</div>
         </Link>
-        <Link to="/me/bookings" className="p-4 rounded-[var(--border-radius)] bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--color-primary)] transition text-center">
+        <Link to="/me/bookings" className="p-4 rounded-[var(--radius-card)] bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--color-primary)] transition text-center">
           <div className="text-2xl mb-2">📅</div>
           <div className="text-sm font-medium text-[var(--text-main)]">Bookings</div>
         </Link>
-        <Link to="/me/rewards" className="p-4 rounded-[var(--border-radius)] bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--color-primary)] transition text-center">
+        <Link to="/me/rewards" className="p-4 rounded-[var(--radius-card)] bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--color-primary)] transition text-center">
           <div className="text-2xl mb-2">💰</div>
           <div className="text-sm font-medium text-[var(--text-main)]">Rewards</div>
         </Link>
-        <button onClick={() => window.dispatchEvent(new CustomEvent('open-wallet-modal'))} className="p-4 rounded-[var(--border-radius)] bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--color-primary)] transition text-center w-full">
+        <button onClick={() => window.dispatchEvent(new CustomEvent('open-wallet-modal'))} className="p-4 rounded-[var(--radius-card)] bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--color-primary)] transition text-center w-full">
           <div className="text-2xl mb-2">👛</div>
           <div className="text-sm font-medium text-[var(--text-main)]">Wallet</div>
         </button>
@@ -87,7 +87,7 @@ export default function PersonalDashboardPage() {
             { id: 1, name: 'Alice Chen', role: 'Completed 3 Jobs with you', score: 98 },
             { id: 2, name: 'Marcus Johnson', role: 'Repeat VIP Client', score: 95 }
           ].map(client => (
-            <div key={client.id} className="flex items-center justify-between p-4 rounded-[var(--border-radius)] bg-[var(--bg-surface)] border border-[var(--border-color)] hover:shadow-sm transition">
+            <div key={client.id} className="flex items-center justify-between p-4 rounded-[var(--radius-card)] bg-[var(--bg-surface)] border border-[var(--border-color)] hover:shadow-sm transition">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[var(--sage)]/10 text-[var(--sage)] font-bold">
                   {client.name.charAt(0)}

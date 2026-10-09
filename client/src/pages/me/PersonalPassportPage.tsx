@@ -31,16 +31,16 @@ export default function PersonalPassportPage() {
       <h1 className="text-2xl font-bold text-[var(--text-main)]">My Trust Passport</h1>
       
       {!passport ? (
-        <div className="p-8 text-center rounded-[var(--border-radius)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
+        <div className="p-8 text-center rounded-[var(--radius-card)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
           <p className="text-[var(--text-muted)]">No passport yet. It will be created automatically.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 rounded-[var(--border-radius)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
+          <div className="p-4 rounded-[var(--radius-card)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
             <div className="text-xs text-[var(--text-muted)] mb-1">Score</div>
             <div className="text-3xl font-bold text-[var(--color-primary)]">{passport.score || '—'}</div>
           </div>
-          <div className="p-4 rounded-[var(--border-radius)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
+          <div className="p-4 rounded-[var(--radius-card)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
             <div className="text-xs text-[var(--text-muted)] mb-1">Level</div>
             <div className="text-3xl font-bold text-[var(--sage)]">{passport.level || '—'}</div>
           </div>

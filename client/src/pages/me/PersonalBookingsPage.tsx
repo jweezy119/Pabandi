@@ -29,13 +29,13 @@ export default function PersonalBookingsPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-[var(--text-main)]">My Bookings</h1>
       {bookings.length === 0 ? (
-        <div className="p-8 text-center rounded-[var(--border-radius)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
+        <div className="p-8 text-center rounded-[var(--radius-card)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
           <p style={{ color: 'var(--text-muted)' }}>No bookings yet.</p>
         </div>
       ) : (
         <div className="space-y-3">
           {bookings.map((booking: any) => (
-            <div key={booking.id} className="p-4 rounded-[var(--border-radius)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
+            <div key={booking.id} className="p-4 rounded-[var(--radius-card)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
               <div className="font-medium text-[var(--text-main)]">{booking.serviceType || 'Booking'}</div>
               <div className="text-sm text-[var(--text-muted)]">
                 {new Date(booking.slotStart).toLocaleDateString()} {booking.slotStart?.split('T')[1]?.slice(0,5) || ''}
