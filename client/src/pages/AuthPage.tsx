@@ -218,7 +218,7 @@ export default function AuthPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
-  const { login, register, loginWithWallet } = useAuthStore();
+  const { isAuthenticated, login, register, loginWithWallet } = useAuthStore();
   const navigate = useNavigate();
   const clearErrors = () => { setError(''); setFieldErrors({}); }
 
@@ -258,6 +258,10 @@ export default function AuthPage() {
 
     return effectiveMode(user) === 'business' ? '/contact' : '/me';
   };
+
+  if (isAuthenticated) {
+    return <Navigate to={getPostLoginTarget()} replace />;
+  }
 
   const handleWalletAuth = async () => {
     try {

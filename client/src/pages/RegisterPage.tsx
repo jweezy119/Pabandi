@@ -1,13 +1,19 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, Navigate } from 'react-router-dom';
 import { authService } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 
 type Step = 'details' | 'verify' | 'done';
 
 export const RegisterPage: React.FC = () => {
+  const { isAuthenticated } = useAuthStore();
   const location = useLocation();
   const query = new URLSearchParams(location.search);
   const isCrm = query.get('module') === 'contact';
+
+  if (isAuthenticated) {
+    return <Navigate to={isCrm ? '/contact?wizard=true' : '/onboarding'} replace />;
+  }
 
   const [step, setStep] = useState<Step>('details');
   const [email, setEmail] = useState('');
