@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
+import { useModeTransition } from '../hooks/useModeTransition';
 
 export function ModeToggle() {
   const [isLoading, setIsLoading] = useState(false);
@@ -11,6 +12,7 @@ export function ModeToggle() {
   const currentMode = user?.preferredMode || 'business';
   const isBusiness = currentMode === 'business';
 
+  const { startTransition } = useModeTransition();
   const [failed, setFailed] = useState(false);
 
   const handleToggle = async () => {
@@ -18,11 +20,12 @@ export function ModeToggle() {
     setFailed(false);
     try {
       const newMode = isBusiness ? 'personal' : 'business';
-      await toggleMode(newMode);
-      // Only navigate once the switch is confirmed. Navigating first would
-      // land the user on a route whose guard reads the OLD mode and bounces
-      // them straight back — the exact loop this switch must not create.
-      navigate(newMode === 'business' ? '/contact' : '/me');
+      
+      await startTransition(async () => {
+        await toggleMode(newMode);
+        navigate(newMode === 'business' ? '/contact' : '/me');
+      });
+      
     } catch (err) {
       console.error('Failed to toggle mode:', err);
       setFailed(true);

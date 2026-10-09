@@ -7,6 +7,7 @@ import { ModeToggle } from './ModeToggle';
 import { useAuthStore } from '../store/authStore';
 import { WalletModal } from './WalletModal';
 import { useWalletModal } from '../hooks/useWalletModal';
+import { ModeTransitionOverlay } from './ModeTransitionOverlay';
 
 const MOBILE_MODULES = [
   { id: 'contact', label: 'Contact', path: '/contact', icon: 'contacts', color: 'var(--clay)' },
@@ -93,6 +94,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Global Overlays */}
       <WalletModal />
+      <ModeTransitionOverlay />
     </div>
   );
 }

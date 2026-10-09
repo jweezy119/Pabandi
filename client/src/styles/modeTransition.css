@@ -1,0 +1,21 @@
+.mode-transition-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  pointer-events: none; /* Let clicks pass through if needed, though usually we want to block interactions during transition */
+}
+
+/* We want to block interactions during the transition */
+.mode-transition-overlay.phase-obscuring,
+.mode-transition-overlay.phase-revealing {
+  pointer-events: all;
+}
+
+.mode-transition-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
