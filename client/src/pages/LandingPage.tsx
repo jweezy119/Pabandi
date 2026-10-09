@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ClayGlobe } from '../components/ClayGlobe';
+import { useAuthStore } from '../store/authStore';
 
 const MODULES = [
   {
@@ -300,6 +301,7 @@ function TrustedBySection() {
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuthStore();
   const [scrollY, setScrollY] = useState(0);
   const [pageTint, setPageTint] = useState<string | null>(null);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
@@ -354,7 +356,11 @@ export default function LandingPage() {
             <Link to="/freight">Freight</Link>
             <Link to="/capital">Capital</Link>
           </nav>
-          <Link to="/signup?module=contact" className="cta-nav">Get Started</Link>
+          {isAuthenticated ? (
+            <Link to="/contact" className="cta-nav">Dashboard</Link>
+          ) : (
+            <Link to="/signup?module=contact" className="cta-nav">Get Started</Link>
+          )}
         </div>
       </header>
 
@@ -373,12 +379,20 @@ export default function LandingPage() {
                   Post your business. Get your CRM. Add your payment method. Get paid.
                 </p>
                 <div className="hero-actions">
-                  <MagneticButton className="btn btn-primary" onClick={() => navigate('/signup?module=contact')}>
-                    Get Your Free CRM
-                  </MagneticButton>
-                  <Link to="/signup" className="btn btn-secondary">
-                    Post Your Business
-                  </Link>
+                  {isAuthenticated ? (
+                    <MagneticButton className="btn btn-primary" onClick={() => navigate('/contact')}>
+                      Go to CRM Dashboard
+                    </MagneticButton>
+                  ) : (
+                    <>
+                      <MagneticButton className="btn btn-primary" onClick={() => navigate('/signup?module=contact')}>
+                        Get Your Free CRM
+                      </MagneticButton>
+                      <Link to="/signup" className="btn btn-secondary">
+                        Post Your Business
+                      </Link>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="hero-visual">
@@ -514,9 +528,15 @@ export default function LandingPage() {
               <p className="section-subtitle">Set up your business in five minutes. No crypto knowledge required.</p>
             </ScrollReveal>
             <ScrollReveal delay={300}>
-              <MagneticButton className="btn btn-large btn-primary" onClick={() => navigate('/signup?module=contact')}>
-                Start Free
-              </MagneticButton>
+              {isAuthenticated ? (
+                <MagneticButton className="btn btn-large btn-primary" onClick={() => navigate('/contact')}>
+                  Go to Dashboard
+                </MagneticButton>
+              ) : (
+                <MagneticButton className="btn btn-large btn-primary" onClick={() => navigate('/signup?module=contact')}>
+                  Start Free
+                </MagneticButton>
+              )}
             </ScrollReveal>
           </div>
         </section>

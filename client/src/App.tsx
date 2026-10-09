@@ -117,7 +117,7 @@ const MarketIntelligencePage = lazy(() => import('./pages/MarketIntelligencePage
 const PortfolioAnalyzerPage = lazy(() => import('./pages/PortfolioAnalyzerPage'));
 const AdvancedPropertyIntelligencePage = lazy(() => import('./pages/AdvancedPropertyIntelligencePage'));
 const TokenomicsPage = lazy(() => import('./pages/TokenomicsPage'));
-const WalletPage = lazy(() => import('./pages/WalletPage'));
+
 const OnRampPage = lazy(() => import('./pages/OnRampPage'));
 const OffRampPage = lazy(() => import('./pages/OffRampPage'));
 const TokenFlowPage = lazy(() => import('./pages/TokenFlowPage'));
@@ -346,7 +346,7 @@ function AnimatedAppRoutes() {
         <Route element={<AppShellLayout />}>
             <Route path="dashboard" element={<PlaceholderPage />} />
             <Route path="profile" element={<PlaceholderPage />} />
-          <Route path="wallet" element={<WalletPage />} />
+
           <Route path="business" element={<BusinessPage />} />
           {/* PropertyOS (formerly AbodeOS) - Property Management */}
           <Route path="property" element={<PropertyOSPage />} />
@@ -453,7 +453,7 @@ function AnimatedAppRoutes() {
             <Route path="trust/passports" element={<PlaceholderPage />} />
             <Route path="trust/deposits" element={<PlaceholderPage />} />
             <Route path="trust/escrow" element={<PlaceholderPage />} />
-            <Route path="wallet/cashout" element={<PlaceholderPage />} />
+
             <Route path="blog" element={<PlaceholderPage />} />
             <Route path="privacy" element={<PlaceholderPage />} />
             <Route path="terms" element={<PlaceholderPage />} />
@@ -478,7 +478,7 @@ function AnimatedAppRoutes() {
             <Route path="escrow" element={<PlaceholderPage />} />
             <Route path="escrow/:id" element={<PlaceholderPage />} />
             <Route path="tokenomics" element={<PlaceholderPage />} />
-            <Route path="my-wallet" element={<PlaceholderPage />} />
+
             <Route path="onramp" element={<PlaceholderPage />} />
             <Route path="offramp" element={<PlaceholderPage />} />
             <Route path="token" element={<PlaceholderPage />} />

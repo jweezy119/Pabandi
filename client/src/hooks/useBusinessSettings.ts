@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface BusinessSettings {
   vertical: string | null;
@@ -78,8 +79,10 @@ export const VERTICAL_PRESETS: Record<string, {
   },
 };
 
-export const useBusinessSettings = create<SettingsStore>((set) => ({
-  settings: {
+export const useBusinessSettings = create<SettingsStore>()(
+  persist(
+    (set) => ({
+      settings: {
     vertical: null,
     enabledModules: ['contact'],
     enabledFeatures: {
@@ -137,4 +140,4 @@ export const useBusinessSettings = create<SettingsStore>((set) => ({
     features[moduleId] = modFeatures;
     return { settings: { ...state.settings, enabledFeatures: features } };
   }),
-}));
+}), { name: 'business-settings-storage' }));

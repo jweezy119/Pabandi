@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
+import { useWalletModal } from '../hooks/useWalletModal';
 
 export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const { user, logout, toggleMode } = useAuthStore();
+  const { openModal } = useWalletModal();
   const navigate = useNavigate();
 
   const displayName = user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
@@ -36,10 +38,10 @@ export function UserMenu() {
   };
 
   const menuItems = [
-    { label: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
-    { label: 'Profile', path: '/profile', icon: 'person' },
-    { label: 'Wallet', path: '/wallet', icon: 'account_balance_wallet' },
-    { label: 'Business Settings', path: '/business', icon: 'storefront' },
+    { label: 'Dashboard', path: '/dashboard', icon: 'dashboard', onClick: () => setIsOpen(false) },
+    { label: 'Profile', path: '/profile', icon: 'person', onClick: () => setIsOpen(false) },
+    { label: 'Wallet', icon: 'account_balance_wallet', onClick: () => { setIsOpen(false); openModal(); } },
+    { label: 'Business Settings', path: '/business', icon: 'storefront', onClick: () => setIsOpen(false) },
   ];
 
   const currentMode = user?.preferredMode || 'business';
@@ -82,19 +84,34 @@ export function UserMenu() {
               </div>
               <div className="py-2">
                 {menuItems.map(item => (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2 hover:bg-[rgba(0,0,0,0.03)] transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-[18px] text-[var(--soft-stone)]">
-                      {item.icon}
-                    </span>
-                    <span className="text-sm font-medium text-[var(--warm-ink)]">
-                      {item.label}
-                    </span>
-                  </Link>
+                  item.path ? (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={item.onClick}
+                      className="flex items-center gap-3 px-4 py-2 hover:bg-[rgba(0,0,0,0.03)] transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-[var(--soft-stone)]">
+                        {item.icon}
+                      </span>
+                      <span className="text-sm font-medium text-[var(--warm-ink)]">
+                        {item.label}
+                      </span>
+                    </Link>
+                  ) : (
+                    <button
+                      key={item.label}
+                      onClick={item.onClick}
+                      className="w-full flex items-center gap-3 px-4 py-2 hover:bg-[rgba(0,0,0,0.03)] transition-colors text-left"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-[var(--soft-stone)]">
+                        {item.icon}
+                      </span>
+                      <span className="text-sm font-medium text-[var(--warm-ink)]">
+                        {item.label}
+                      </span>
+                    </button>
+                  )
                 ))}
                 <button
                   onClick={handleToggleMode}
