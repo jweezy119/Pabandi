@@ -127,6 +127,11 @@ export default function ContactClientDetailPage() {
             </div>
           </div>
           <div className="flex gap-2">
+            <Button variant="ghost" icon="handshake" onClick={() => {
+              alert(`Invitation sent! Once ${client.name} accepts, they will be added to your personal connections network.`);
+            }}>
+              Connect Personally
+            </Button>
             {client.passportId && (
               <Button variant="ghost" icon="share" onClick={() => {
                 const url = `${window.location.origin}/trust/${client.passportId}`;

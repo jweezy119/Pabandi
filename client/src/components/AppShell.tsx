@@ -5,6 +5,8 @@ import { UserMenu } from './UserMenu';
 import { SupportWidget } from './SupportWidget';
 import { ModeToggle } from './ModeToggle';
 import { useAuthStore } from '../store/authStore';
+import { WalletModal } from './WalletModal';
+import { useWalletModal } from '../hooks/useWalletModal';
 
 const MOBILE_MODULES = [
   { id: 'contact', label: 'Contact', path: '/contact', icon: 'contacts', color: 'var(--clay)' },
@@ -16,8 +18,10 @@ const MOBILE_MODULES = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-  const { user } = useAuthStore();
+  const { user, wallet } = useAuthStore();
+  const { openModal } = useWalletModal();
   const activeMode = (user?.preferredMode || 'business').toUpperCase();
+  const isBusiness = activeMode === 'BUSINESS';
   const visibleModules = MOBILE_MODULES.filter(m => {
     if (m.id === 'property' || m.id === 'freight' || m.id === 'capital') {
       return activeMode === 'BUSINESS';
@@ -42,7 +46,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <ModuleSwitcher />
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
+          <button onClick={openModal} className="flex flex-col items-end mr-2 hover:opacity-80 transition-opacity bg-transparent border-none cursor-pointer text-left">
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--soft-stone)' }}>Universal Balance</span>
+            <span className="font-bold text-sm" style={{ color: isBusiness ? 'var(--clay)' : 'var(--sage)' }}>{wallet.pabBalance} PAB</span>
+          </button>
           <ModeToggle />
           <UserMenu />
         </div>
@@ -71,6 +79,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           );
         })}
       </nav>
+
+      {/* Global Overlays */}
+      <WalletModal />
     </div>
   );
 }

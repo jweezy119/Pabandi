@@ -33,7 +33,6 @@ const PersonalDashboardPage = lazy(() => import('./pages/me/PersonalDashboardPag
 const PersonalPassportPage = lazy(() => import('./pages/me/PersonalPassportPage'));
 const PersonalBookingsPage = lazy(() => import('./pages/me/PersonalBookingsPage'));
 const PersonalRewardsPage = lazy(() => import('./pages/me/PersonalRewardsPage'));
-const PersonalWalletPage = lazy(() => import('./pages/me/PersonalWalletPage'));
 const PayInvoicePage = lazy(() => import('./pages/PayInvoicePage'));
 const CheckoutSuccessPage = lazy(() => import('./pages/CheckoutSuccessPage'));
 const CheckoutCancelPage = lazy(() => import('./pages/CheckoutCancelPage'));
@@ -624,7 +623,6 @@ function AnimatedAppRoutes() {
             <Route path="me/passport" element={<PersonalGuard><PersonalPassportPage /></PersonalGuard>} />
             <Route path="me/bookings" element={<PersonalGuard><PersonalBookingsPage /></PersonalGuard>} />
             <Route path="me/rewards" element={<PersonalGuard><PersonalRewardsPage /></PersonalGuard>} />
-            <Route path="me/wallet" element={<PersonalGuard><PersonalWalletPage /></PersonalGuard>} />
             <Route path="me/profile" element={<PersonalGuard><ProfileEditorPage /></PersonalGuard>} />
             <Route path="me/verification" element={<PersonalGuard><BusinessVerificationPage /></PersonalGuard>} />
             <Route path="me/quick-post" element={<PersonalGuard><QuickPostPage /></PersonalGuard>} />

@@ -76,6 +76,40 @@ export default function PersonalDashboardPage() {
           <div className="text-sm font-medium text-[var(--warm-ink)]">Wallet</div>
         </Link>
       </div>
+
+      {/* Network Bridge / Suggested Connections */}
+      <div className="mt-8">
+        <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-1">Your Network</h2>
+        <p className="text-sm text-[var(--soft-stone)] mb-4">Leverage your business relationships. Here are top-rated clients you can connect with personally.</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            { id: 1, name: 'Alice Chen', role: 'Completed 3 Jobs with you', score: 98 },
+            { id: 2, name: 'Marcus Johnson', role: 'Repeat VIP Client', score: 95 }
+          ].map(client => (
+            <div key={client.id} className="flex items-center justify-between p-4 rounded-xl bg-white border border-[rgba(191,179,163,0.2)] hover:shadow-sm transition">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[var(--sage)]/10 text-[var(--sage)] font-bold">
+                  {client.name.charAt(0)}
+                </div>
+                <div>
+                  <div className="font-bold text-[var(--warm-ink)] text-sm">{client.name}</div>
+                  <div className="text-xs text-[var(--soft-stone)]">{client.role}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <div className="text-[10px] uppercase text-[var(--soft-stone)] font-bold">Trust</div>
+                  <div className="text-sm font-bold text-[var(--clay)]">{client.score}</div>
+                </div>
+                <button className="w-8 h-8 rounded-full bg-[var(--clay)] text-white flex items-center justify-center hover:opacity-90 transition">
+                  <span className="material-symbols-outlined text-[16px]">add</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

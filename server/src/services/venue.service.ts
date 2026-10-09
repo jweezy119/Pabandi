@@ -185,30 +185,45 @@ export const venueService = {
   },
 
   /**
-   * Find venues near a geographic point
+   * Find venues near a geographic point.
+   *
+   * Was invalid SQL — `HAVING` without `GROUP BY`, plus unqualified
+   * `lat`/`lng` that were ambiguous with the query parameters — so every call
+   * threw and "venues near you" was silently dead. Now a bounding-box filter in
+   * SQL (index-friendly, no PostGIS required) with the precise Haversine
+   * distance applied as a WHERE condition, not a HAVING clause.
    */
   async getVenuesNearby(lat: number, lng: number, radiusKm: number = 5) {
-    // Using Haversine formula approximation via raw query
-    // For PostgreSQL, we use the earthdistance or manual calculation
+    const radius = Math.min(Math.max(radiusKm, 0.1), 500);
+
+    // NightlifeVenue stores coordinates as lat/lng (not latitude/longitude).
+    // Latitude degrees shrink by cos(lat); 1 degree of latitude ~= 111.32 km.
+    const latDelta = radius / 111.32;
+    const cosLat = Math.max(Math.cos((lat * Math.PI) / 180), 0.01);
+    const lngDelta = radius / (111.32 * cosLat);
+
     const venues = await prisma.$queryRaw`
-      SELECT *, (
-        6371 * acos(
-          cos(radians(${lat})) * cos(radians(lat)) *
-          cos(radians(lng) - radians(${lng})) +
-          sin(radians(${lat})) * sin(radians(lat))
-        )
-      ) AS distance
-      FROM "NightlifeVenue"
-      WHERE "isActive" = true
-      HAVING (
-        6371 * acos(
-          cos(radians(${lat})) * cos(radians(lat)) *
-          cos(radians(lng) - radians(${lng})) +
-          sin(radians(${lat})) * sin(radians(lat))
-        )
-      ) <= ${radiusKm}
+      SELECT *,
+        (6371 * acos(
+          LEAST(1, GREATEST(-1,
+            cos(radians(${lat})) * cos(radians(v."lat")) *
+            cos(radians(v."lng") - radians(${lng})) +
+            sin(radians(${lat})) * sin(radians(v."lat"))
+          ))
+        ))) AS distance
+      FROM "NightlifeVenue" v
+      WHERE v."isActive" = true
+        AND v."lat" BETWEEN ${lat - latDelta} AND ${lat + latDelta}
+        AND v."lng" BETWEEN ${lng - lngDelta} AND ${lng + lngDelta}
+        AND (6371 * acos(
+          LEAST(1, GREATEST(-1,
+            cos(radians(${lat})) * cos(radians(v."lat")) *
+            cos(radians(v."lng") - radians(${lng})) +
+            sin(radians(${lat})) * sin(radians(v."lat"))
+          ))
+        )) <= ${radius}
       ORDER BY distance
-      LIMIT 30;
+      LIMIT 30
     `;
 
     return venues;

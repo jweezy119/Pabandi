@@ -66,8 +66,40 @@ export const BookingOS: React.FC = () => {
   const [sortBy, setSortBy] = useState('rating');
   const [selectedVenue, setSelectedVenue] = useState<any>(null);
 
+  // Start the user where they actually are. Previously this hardcoded Times
+  // Square, so every visitor landed in New York regardless of where they were.
+  // Geolocation is opt-in by the browser and can be denied, so it degrades to a
+  // typed search rather than blocking the page.
   useEffect(() => {
-    setLocation({ lat: 40.7589, lng: -73.9851, name: 'Times Square, New York' });
+    let cancelled = false;
+    const fallback = () => {
+      if (!cancelled) setLocation({ lat: 40.7589, lng: -73.9851, name: 'Times Square, New York' });
+    };
+
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return fallback();
+
+    const timer = setTimeout(fallback, 5000);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        clearTimeout(timer);
+        if (cancelled) return;
+        setLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          name: 'Near you',
+        });
+      },
+      () => {
+        clearTimeout(timer);
+        fallback();
+      },
+      { timeout: 5000, maximumAge: 300000 }
+    );
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {
@@ -108,10 +140,17 @@ export const BookingOS: React.FC = () => {
     try {
       const res = await fetch(`${API_HOST}/api/v1/maps/geocode?q=${encodeURIComponent(searchQuery)}`);
       const data = await res.json();
-      if (data.data) {
-        setLocation({ lat: data.data.lat, lng: data.data.lng, name: data.data.displayName });
+      // GET /api/v1/maps/geocode returns { success, data: GeocodeResult[] } —
+      // an array of candidates. Reading data.data.lat always yielded undefined,
+      // so the location search could never succeed and always reported
+      // "Location not found". Accept either shape so a future single-result
+      // response still works.
+      const candidates = Array.isArray(data?.data) ? data.data : data?.data ? [data.data] : [];
+      const hit = candidates[0];
+      if (hit && typeof hit.lat === 'number' && typeof hit.lng === 'number') {
+        setLocation({ lat: hit.lat, lng: hit.lng, name: hit.displayName || searchQuery });
       } else {
-        setError('Location not found. Try "Chicago", "New York", etc.');
+        setError('Location not found. Try a city like "Chicago", "Karachi", or "Berlin".');
       }
     } catch (e: any) {
       setError('Geocoding failed. Please try again.');
