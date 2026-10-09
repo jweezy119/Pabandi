@@ -424,16 +424,16 @@ function AnimatedAppRoutes() {
           <Route path="/ledger/*" element={<Navigate to="/capital" replace />} />
 
           {/* Other standalone pages (Builder, Buyer, COD, Protocol) */}
-          <Route path="builder" element={<BuilderDashboard />} />
-          <Route path="builder/projects/:id" element={<BuilderProjectPage />} />
-          <Route path="buyer" element={<BuyerPortal />} />
-          <Route path="cod" element={<CODMarketplace />} />
-          <Route path="cod/create" element={<CreateEscrow />} />
-          <Route path="cod/:id" element={<EscrowDetail />} />
-          <Route path="protocol" element={<ProtocolDashboardPage />} />
-          <Route path="protocol/staking" element={<StakingInterface />} />
-          <Route path="protocol/escrow" element={<EscrowInterface />} />
-          <Route path="protocol/agents" element={<AgentInterface />} />
+          <Route path="builder" element={<PlaceholderPage />} />
+          <Route path="builder/projects/:id" element={<PlaceholderPage />} />
+          <Route path="buyer" element={<PlaceholderPage />} />
+          <Route path="cod" element={<PlaceholderPage />} />
+          <Route path="cod/create" element={<PlaceholderPage />} />
+          <Route path="cod/:id" element={<PlaceholderPage />} />
+          <Route path="protocol" element={<PlaceholderPage />} />
+          <Route path="protocol/staking" element={<PlaceholderPage />} />
+          <Route path="protocol/escrow" element={<PlaceholderPage />} />
+          <Route path="protocol/agents" element={<PlaceholderPage />} />
 
           {/* Landing page - standalone, no chrome */}
           <Route path="/" element={<LandingPage />} />
@@ -479,77 +479,77 @@ function AnimatedAppRoutes() {
               <Route path="history" element={<PaymentHistory />} />
             </Route>
             <Route path="documents" element={<DocumentsPage />} />
-            <Route path="marketplace" element={<MarketplacePage />} />
-            <Route path="listing/:id" element={<ListingDetailPage />} />
-            <Route path="escrow" element={<EscrowPage />} />
-            <Route path="escrow/:id" element={<EscrowDetailPage />} />
-            <Route path="tokenomics" element={<TokenomicsPage />} />
+            <Route path="marketplace" element={<PlaceholderPage />} />
+            <Route path="listing/:id" element={<PlaceholderPage />} />
+            <Route path="escrow" element={<PlaceholderPage />} />
+            <Route path="escrow/:id" element={<PlaceholderPage />} />
+            <Route path="tokenomics" element={<PlaceholderPage />} />
             <Route path="my-wallet" element={<WalletPage />} />
-            <Route path="onramp" element={<OnRampPage />} />
-            <Route path="offramp" element={<OffRampPage />} />
-            <Route path="token" element={<TokenFlowPage />} />
+            <Route path="onramp" element={<PlaceholderPage />} />
+            <Route path="offramp" element={<PlaceholderPage />} />
+            <Route path="token" element={<PlaceholderPage />} />
             <Route path="dashboard" element={<EnhancedDashboardPage />} />
             <Route path="profile" element={<ProfilePage />} />
-            <Route path="calculator" element={<CalculatorPage />} />
-            <Route path="smart-search" element={<SmartSearchPage />} />
-            <Route path="ai/chat" element={<AiChatPage />} />
-            <Route path="ai/analyze" element={<AiPropertyAnalyzerPage />} />
-            <Route path="ai/intelligence" element={<AdvancedPropertyIntelligencePage />} />
-            <Route path="ai/market" element={<MarketIntelligencePage />} />
-            <Route path="ai/portfolio" element={<PortfolioAnalyzerPage />} />
-            <Route path="ai/tenant-risk" element={<AITenantRiskPage />} />
-            <Route path="ai/lease-anomaly" element={<AILeaseAnomalyPage />} />
-            <Route path="ai/rent-optimizer" element={<AIRentOptimizerPage />} />
-            <Route path="passport" element={<TrustPassportPage />} />
-            <Route path="passport/dashboard" element={<PassportDashboardPage />} />
-            <Route path="passport/:sellerId" element={<PublicPassportPage />} />
-            <Route path="trust/:passportId" element={<TrustProfilePage />} />
-            <Route path="trust/:handle" element={<TrustPassportPage />} />
-            <Route path="trust" element={<PassportDirectoryPage />} />
-            <Route path="trust/pulse" element={<TrustPulsePage />} />
-            <Route path="trust/jury" element={<CommunityJuryPage />} />
-            <Route path="agent-passport" element={<AgentPassportPage />} />
-            <Route path="background-check" element={<BackgroundCheckPage />} />
-            <Route path="background-check/:id" element={<BackgroundCheckReportPage />} />
-            <Route path="protected-deposit" element={<PpdWizardPage />} />
-            <Route path="arbitration" element={<ArbitrationPage />} />
-            <Route path="safemeet" element={<SafeMeetPage />} />
-            <Route path="disputes" element={<DisputeCenterPage />} />
-            <Route path="cashout" element={<CashOutPage />} />
-            <Route path="payroll" element={<PayrollPage />} />
+            <Route path="calculator" element={<PlaceholderPage />} />
+            <Route path="smart-search" element={<PlaceholderPage />} />
+            <Route path="ai/chat" element={<PlaceholderPage />} />
+            <Route path="ai/analyze" element={<PlaceholderPage />} />
+            <Route path="ai/intelligence" element={<PlaceholderPage />} />
+            <Route path="ai/market" element={<PlaceholderPage />} />
+            <Route path="ai/portfolio" element={<PlaceholderPage />} />
+            <Route path="ai/tenant-risk" element={<PlaceholderPage />} />
+            <Route path="ai/lease-anomaly" element={<PlaceholderPage />} />
+            <Route path="ai/rent-optimizer" element={<PlaceholderPage />} />
+            <Route path="passport" element={<PlaceholderPage />} />
+            <Route path="passport/dashboard" element={<PlaceholderPage />} />
+            <Route path="passport/:sellerId" element={<PlaceholderPage />} />
+            <Route path="trust/:passportId" element={<PlaceholderPage />} />
+            <Route path="trust/:handle" element={<PlaceholderPage />} />
+            <Route path="trust" element={<PlaceholderPage />} />
+            <Route path="trust/pulse" element={<PlaceholderPage />} />
+            <Route path="trust/jury" element={<PlaceholderPage />} />
+            <Route path="agent-passport" element={<PlaceholderPage />} />
+            <Route path="background-check" element={<PlaceholderPage />} />
+            <Route path="background-check/:id" element={<PlaceholderPage />} />
+            <Route path="protected-deposit" element={<PlaceholderPage />} />
+            <Route path="arbitration" element={<PlaceholderPage />} />
+            <Route path="safemeet" element={<PlaceholderPage />} />
+            <Route path="disputes" element={<PlaceholderPage />} />
+            <Route path="cashout" element={<PlaceholderPage />} />
+            <Route path="payroll" element={<PlaceholderPage />} />
             <Route path="support" element={<SupportHomePage />} />
             <Route path="support/tickets" element={<SupportTicketsPage />} />
             <Route path="support/tickets/:id" element={<SupportTicketDetailPage />} />
             <Route path="support/kb" element={<SupportKbPage />} />
             <Route path="support/kb/:slug" element={<SupportKbArticlePage />} />
             <Route path="support/admin" element={<SupportAdminPage />} />
-            <Route path="economy" element={<EconomyDashboardPage />} />
-            <Route path="revenue" element={<RevenuePage />} />
-            <Route path="rewards" element={<RewardsPage />} />
-            <Route path="refer" element={<ReferAndEarnPage />} />
-            <Route path="verifier" element={<VerifierSandboxPage />} />
+            <Route path="economy" element={<PlaceholderPage />} />
+            <Route path="revenue" element={<PlaceholderPage />} />
+            <Route path="rewards" element={<PlaceholderPage />} />
+            <Route path="refer" element={<PlaceholderPage />} />
+            <Route path="verifier" element={<PlaceholderPage />} />
             <Route path="book" element={<BookingExperience />} />
             <Route path="book/:id" element={<BookingExperience />} />
             <Route path="reservations" element={<ReservationsPage />} />
             <Route path="reservations/new" element={<NewReservationPage />} />
-            <Route path="nightlife" element={<NightlifePage />} />
-            <Route path="promoter" element={<PromoterOS />} />
-            <Route path="agent-dashboard" element={<AgentControlPanel />} />
-            <Route path="agent-marketplace" element={<AgentMarketplacePage />} />
-            <Route path="agent-marketplace/agents/:slug" element={<AgentProfilePage />} />
-            <Route path="agent-marketplace/projects/:projectId" element={<ProjectDetailPage />} />
-            <Route path="live-sell" element={<LiveSellCustomerPage />} />
-            <Route path="live-selling" element={<LiveSellingPage />} />
-            <Route path="freelance" element={<FreelancePage />} />
-            <Route path="storefront" element={<FreelanceStorefrontPage />} />
-            <Route path="gigs" element={<JobDetailsPage />} />
-            <Route path="gigs/:id" element={<JobDetailsPage />} />
-            <Route path="jobs/:id" element={<JobDetailsPage />} />
-            <Route path="jobs" element={<ActiveJobsPage />} />
-            <Route path="workspace/:id" element={<JobWorkspacePage />} />
-            <Route path="hotels" element={<BrowseHotelsPage />} />
-            <Route path="hospitality" element={<HospitalityPage />} />
-            <Route path="real-estate/screening/:reservationId" element={<RealEstateScreeningPage />} />
+            <Route path="nightlife" element={<PlaceholderPage />} />
+            <Route path="promoter" element={<PlaceholderPage />} />
+            <Route path="agent-dashboard" element={<PlaceholderPage />} />
+            <Route path="agent-marketplace" element={<PlaceholderPage />} />
+            <Route path="agent-marketplace/agents/:slug" element={<PlaceholderPage />} />
+            <Route path="agent-marketplace/projects/:projectId" element={<PlaceholderPage />} />
+            <Route path="live-sell" element={<PlaceholderPage />} />
+            <Route path="live-selling" element={<PlaceholderPage />} />
+            <Route path="freelance" element={<PlaceholderPage />} />
+            <Route path="storefront" element={<PlaceholderPage />} />
+            <Route path="gigs" element={<PlaceholderPage />} />
+            <Route path="gigs/:id" element={<PlaceholderPage />} />
+            <Route path="jobs/:id" element={<PlaceholderPage />} />
+            <Route path="jobs" element={<PlaceholderPage />} />
+            <Route path="workspace/:id" element={<PlaceholderPage />} />
+            <Route path="hotels" element={<PlaceholderPage />} />
+            <Route path="hospitality" element={<PlaceholderPage />} />
+            <Route path="real-estate/screening/:reservationId" element={<PlaceholderPage />} />
             <Route path="business/join" element={<BusinessJoinPage />} />
             <Route path="business/join-claim" element={<BusinessJoinPage />} />
             <Route path="business/register" element={isAuthenticated ? <BusinessActivationPage /> : <Navigate to="/login" />} />
@@ -568,21 +568,21 @@ function AnimatedAppRoutes() {
             <Route path="checkout/:sessionId" element={<CheckoutSessionPage />} />
             <Route path="checkout-success" element={<CheckoutSuccessPage />} />
             <Route path="checkout-cancel" element={<CheckoutCancelPage />} />
-            <Route path="demo-checkout" element={<DemoCheckoutPage />} />
-            <Route path="s/:sellerId" element={<UniversalCheckoutPage />} />
-            <Route path="t/pay/:sellerId" element={<TapPayPage />} />
+            <Route path="demo-checkout" element={<PlaceholderPage />} />
+            <Route path="s/:sellerId" element={<PlaceholderPage />} />
+            <Route path="t/pay/:sellerId" element={<PlaceholderPage />} />
             <Route path="b/:slug" element={<CustomerBookingPage />} />
             <Route path="onboarding" element={<OnboardingWizard />} />
             <Route path="dashboard" element={<BusinessDashboard />} />
-            <Route path="web3" element={<Web3Page />} />
-            <Route path="lp-terminal" element={<LiquidityTerminalPage />} />
-            <Route path="usdy" element={<UsdyPage />} />
-            <Route path="solana-escrow" element={<SolanaEscrowPage />} />
-            <Route path="solana-escrow/:id" element={<SolanaEscrowPage />} />
-            <Route path="airdrop" element={<AirdropPage />} />
-            <Route path="payment-test" element={<PaymentTestPage />} />
-            <Route path="fiat/:reference" element={<FiatPaymentPage />} />
-            <Route path="fiat" element={<FiatPaymentPage />} />
+            <Route path="web3" element={<PlaceholderPage />} />
+            <Route path="lp-terminal" element={<PlaceholderPage />} />
+            <Route path="usdy" element={<PlaceholderPage />} />
+            <Route path="solana-escrow" element={<PlaceholderPage />} />
+            <Route path="solana-escrow/:id" element={<PlaceholderPage />} />
+            <Route path="airdrop" element={<PlaceholderPage />} />
+            <Route path="payment-test" element={<PlaceholderPage />} />
+            <Route path="fiat/:reference" element={<PlaceholderPage />} />
+            <Route path="fiat" element={<PlaceholderPage />} />
             <Route path="rent-roll" element={<RentRollPage />} />
             <Route path="leases" element={<LeaseGeneratorPage />} />
             <Route path="maintenance" element={<MaintenancePage />} />
@@ -590,17 +590,17 @@ function AnimatedAppRoutes() {
             <Route path="profiles" element={<AuthRequiredProfilesPage />} />
             <Route path="profiles/category/:category" element={<AuthRequiredProfilesPage />} />
             <Route path="profiles/:id" element={<AuthRequiredProfileDetailPage />} />
-            <Route path="technology" element={<TechnologyPage />} />
-            <Route path="contact-us" element={<ContactPage />} />
+            <Route path="technology" element={<PlaceholderPage />} />
+            <Route path="contact-us" element={<PlaceholderPage />} />
             <Route path="forgot-password" element={<ForgotPasswordPage />} />
             <Route path="reset-password/:token" element={<ResetPasswordPage />} />
-            <Route path="developer" element={<DeveloperPortalPage />} />
+            <Route path="developer" element={<PlaceholderPage />} />
             <Route path="developers" element={<Navigate to="/developer" replace />} />
-            <Route path="partners" element={<PartnerDirectoryPage />} />
-            <Route path="grants" element={<GrantsPage />} />
-            <Route path="promo" element={<PromoPage />} />
-            <Route path="promotions" element={<PromotionsPage />} />
-            <Route path="daraz-scanner" element={<DarazScannerPage />} />
+            <Route path="partners" element={<PlaceholderPage />} />
+            <Route path="grants" element={<PlaceholderPage />} />
+            <Route path="promo" element={<PlaceholderPage />} />
+            <Route path="promotions" element={<PlaceholderPage />} />
+            <Route path="daraz-scanner" element={<PlaceholderPage />} />
             <Route path="u/:username" element={<PublicProfilePage />} />
             <Route path="book/:businessSlug" element={<FluidBookingPage />} />
             <Route path="user/:id" element={<PublicCustomerProfilePage />} />
