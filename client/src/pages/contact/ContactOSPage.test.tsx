@@ -84,12 +84,21 @@ beforeEach(async () => {
   });
 });
 
+/**
+ * Generous on purpose. The assertions are about where the page ends up, not about
+ * how fast this machine is: vitest runs test files in parallel workers, and the
+ * default 1000 ms failed two of these whenever the suite ran alongside anything
+ * else heavy. A timeout that depends on load is a flaky test, not a strict one.
+ */
+const RENDER_TIMEOUT_MS = 10_000;
+
 describe('ContactOSPage redirect', () => {
   it('renders the workspace when the server says the account is enrolled', async () => {
     // THE regression. This used to render "setup wizard".
     renderContactOS(200);
 
-    await waitFor(() => expect(screen.getByText(/here's your business at a glance/i)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/here's your business at a glance/i)).toBeTruthy(),
+      { timeout: RENDER_TIMEOUT_MS });
     expect(screen.queryByText('setup wizard')).toBeNull();
     expect(screen.getByTestId('path').textContent).toBe('/contact');
   });
@@ -99,7 +108,8 @@ describe('ContactOSPage redirect', () => {
     // can fix it, because it is the thing that asks for a vertical and a name.
     renderContactOS(403);
 
-    await waitFor(() => expect(screen.getByText('setup wizard')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('setup wizard')).toBeTruthy(),
+      { timeout: RENDER_TIMEOUT_MS });
     expect(screen.getByTestId('path').textContent).toBe('/contact/setup');
   });
 
@@ -108,7 +118,8 @@ describe('ContactOSPage redirect', () => {
     // account into the wizard whenever the API had a bad minute.
     renderContactOS(500);
 
-    await waitFor(() => expect(screen.getByText(/here's your business at a glance/i)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/here's your business at a glance/i)).toBeTruthy(),
+      { timeout: RENDER_TIMEOUT_MS });
     expect(screen.queryByText('setup wizard')).toBeNull();
   });
 });

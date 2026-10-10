@@ -21,6 +21,27 @@
  *      bundle is fetched and grepped for the code we believe is live.
  *   2. Checks customer entry points and provider reachability, and says which
  *      host each belongs to.
+ *   3. Proves the SPA actually STARTS, in a real browser.
+ *
+ * WHY THE THIRD ONE
+ * -----------------
+ * On 2026-10-10 the whole site stopped working and every check in this file
+ * passed. React never mounted on any page — pabandi.com served a document with
+ * an empty <div id="root"> — because the entry chunk statically imported a
+ * 290 KB chunk of solana, leaflet and qrcode that throws
+ *
+ *     Uncaught TypeError: Cannot read properties of undefined (reading 'Buffer')
+ *
+ * while evaluating. A module that throws during evaluation fails the entire
+ * module graph, so the entry never ran. Every page returned 200, every chunk was
+ * fetchable, the shell referenced a bundle that existed, and the build was
+ * green. The customer reported it as "clicking anything just goes back to
+ * pabandi.com", because with no JavaScript a click does nothing and the browser
+ * keeps showing the page it already had.
+ *
+ * Nothing here could have caught that, because nothing here executed a single
+ * line of the client. HTTP 200 says a document was served; it says nothing about
+ * whether the app in it ran.
  *
  * WHAT IT DELIBERATELY DOES NOT DO
  * -------------------------------
@@ -31,6 +52,11 @@
  *
  * EXIT CODES: 0 = all pass, 1 = a failure, 2 = the target itself is unreachable.
  */
+
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+
+const execFileAsync = promisify(execFile);
 
 const TARGETS = {
   // The site the customer actually uses.
@@ -217,7 +243,195 @@ async function checkSite() {
   return { bundlePath, bundle };
 }
 
-// ── 3. The shipped fix is present in the bundle the site serves ───────────
+// ── 3. THE SPA MUST ACTUALLY START ───────────────────────────────────────
+// The section this file was missing. Everything above and below is a property of
+// documents and HTTP responses; this is the only part that runs client code, and
+// it is the only part that could have caught the failure described in the header.
+//
+// WHY A BROWSER AND NOT A NODE IMPORT
+// -----------------------------------
+// The crash was in evaluation order, not syntax, so parsing would not have found
+// it and a 404 would not have found it — every chunk was present and parseable.
+// Importing the bundle in Node instead does not work either: these are browser
+// bundles that touch `window` at module scope, so they fail in Node for reasons
+// that have nothing to do with a real defect, which is the definition of a check
+// that cannot fail meaningfully. A real browser is the only faithful test.
+//
+// GitHub's ubuntu runners ship Chrome; so does macOS. When none is installed the
+// check SKIPS and says so loudly, because a check that cannot run must not look
+// like a check that passed.
+
+const BROWSER_CANDIDATES = ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser'];
+// How long Chrome gets to fast-forward before dumping. The app mounts within a
+// second or two of the chunks arriving, so this is generous headroom for a cold
+// CDN, not a race we expect to lose often.
+const VIRTUAL_TIME_BUDGET_MS = 30_000;
+const MOUNT_ATTEMPTS = 3;
+
+/** React's mount point, with something rendered inside it. */
+const MOUNTED = /<div id="root">\s*<[a-zA-Z]/;
+
+async function resolveBrowser() {
+  for (const bin of BROWSER_CANDIDATES) {
+    // `--headless=new` is the current interface; older builds only accept the old
+    // one. Both are tried so a runner on an aged image still gets a real check
+    // rather than a silent SKIP.
+    for (const headless of ['=new', '']) {
+      try {
+        await execFileAsync(bin, [`--headless${headless}`, '--no-sandbox', '--disable-gpu', '--dump-dom', 'about:blank'],
+          { timeout: 60_000, maxBuffer: 8 * 1024 * 1024 });
+        return { bin, headless };
+      } catch {
+        /* not installed, or this headless spelling unsupported — try the next */
+      }
+    }
+  }
+  return null;
+}
+
+async function dumpDom(browser, url) {
+  const { bin, headless } = browser;
+  const { stdout } = await execFileAsync(
+    bin,
+    [
+      `--headless${headless}`,
+      '--no-sandbox',
+      '--disable-gpu',
+      // Containers have a small /dev/shm and Chrome crashes without this.
+      '--disable-dev-shm-usage',
+      // Deterministic: virtual time is spent only when there is work to do, so
+      // this does not simply burn 30 seconds on a page that is already ready.
+      `--virtual-time-budget=${VIRTUAL_TIME_BUDGET_MS}`,
+      '--dump-dom',
+      url,
+    ],
+    { timeout: 120_000, maxBuffer: 32 * 1024 * 1024 },
+  );
+  return stdout;
+}
+
+/**
+ * Load the site in a real browser and require that React rendered something.
+ *
+ * Retried before it is allowed to fail: a cold CDN edge can hand back the shell
+ * and then stall, which is not the same failure as the app never starting, and
+ * colour that turns red on a slow network teaches people to ignore it.
+ */
+async function checkAppMounts() {
+  const browser = await resolveBrowser();
+  if (!browser) {
+    record(
+      'app mounts in a browser',
+      'SKIP',
+      'no Chrome/Chromium available — the SPA was NOT verified to start',
+    );
+    return;
+  }
+
+  for (const route of ['/', '/contact']) {
+    const url = `${TARGETS.site}${route}`;
+    let mounted = false;
+    let lastDetail = '';
+
+    for (let attempt = 1; attempt <= MOUNT_ATTEMPTS && !mounted; attempt++) {
+      try {
+        const html = await dumpDom(browser, url);
+        mounted = MOUNTED.test(html);
+        if (!mounted) {
+          lastDetail = attempt === MOUNT_ATTEMPTS
+            ? `#root is still empty after ${MOUNT_ATTEMPTS} attempts — React never mounted`
+            : `#root empty on attempt ${attempt}, retrying`;
+        }
+      } catch (err) {
+        lastDetail = `browser failed on attempt ${attempt}: ${err instanceof Error ? err.message : String(err)}`;
+      }
+    }
+
+    record(
+      `app mounts at ${route}`,
+      mounted ? 'PASS' : 'FAIL',
+      mounted ? `rendered by ${browser.bin}` : lastDetail,
+    );
+  }
+}
+
+// ── 4. LAZY-ONLY LIBRARIES MUST NOT BE IN THE EAGER GRAPH ────────────────
+// A structural guard against the same regression, for runs with no browser. It
+// cannot prove the app works, but it can prove the wallet and map libraries are
+// not being downloaded by every visitor — which is what put the throwing chunk
+// into the entry in the first place.
+//
+// The walk is over HTTP against the DEPLOYED bundle, matching the entry's own
+// imports, for the same reason the rest of this file fetches rather than reasons:
+// the artifact the customer downloads is the only thing that matters.
+
+/** Code identifiers that exist only inside these libraries, deliberately not
+ *  route strings — `"/crypto/wallet/solana"` appears in the entry legitimately. */
+const LAZY_ONLY_MARKERS = ['LAMPORTS_PER_SOL', 'SystemProgram', 'leaflet-container'];
+
+async function fetchText(url) {
+  const res = await fetchWithTimeout(url);
+  return { res, text: await res.text() };
+}
+
+async function eagerClosure() {
+  const shell = await fetchText(TARGETS.site);
+  const entry = shell.text.match(/assets\/index-[A-Za-z0-9_-]+\.js/);
+  if (!entry) return null;
+
+  const cache = new Map();
+  const read = async (path) => {
+    if (!cache.has(path)) {
+      const { res, text } = await fetchText(`${TARGETS.site}/${path}`);
+      cache.set(path, res.ok ? text : '');
+    }
+    return cache.get(path);
+  };
+
+  const closure = new Set([entry[0]]);
+  const stack = [entry[0]];
+  while (stack.length) {
+    const body = await read(stack.pop());
+    for (const m of body.matchAll(/from"(\.\/[A-Za-z0-9_.-]+\.js)"|import"(\.\/[A-Za-z0-9_.-]+\.js)"/g)) {
+      const dep = `assets/${(m[1] || m[2]).replace('./', '')}`;
+      if (!closure.has(dep)) { closure.add(dep); stack.push(dep); }
+    }
+  }
+  return { entry: entry[0], closure, cache };
+}
+
+async function checkEagerGraphStaysSmall() {
+  let info;
+  try {
+    info = await eagerClosure();
+  } catch (err) {
+    record('eager graph is small', 'WARN', `could not walk imports: ${err instanceof Error ? err.message : String(err)}`);
+    return;
+  }
+  if (!info) {
+    record('eager graph is small', 'SKIP', 'no hashed bundle in the shell to walk');
+    return;
+  }
+
+  const { entry, closure, cache } = info;
+  const bytes = [...closure].reduce((n, f) => n + (cache.get(f) || '').length, 0);
+  record(
+    'entry + its static imports',
+    'PASS',
+    `${(bytes / 1024).toFixed(0)}kb across ${closure.size} chunk(s): ${[...closure].map((f) => f.replace('assets/', '').replace(/\.[a-f0-9]{8,}\.js$/, '.js')).join(', ')}`,
+  );
+
+  const leaking = [...closure].filter((f) => LAZY_ONLY_MARKERS.some((m) => (cache.get(f) || '').includes(m)));
+  record(
+    'lazy-only libraries stay out of the eager graph',
+    leaking.length === 0 ? 'PASS' : 'FAIL',
+    leaking.length === 0
+      ? 'wallet/map code is behind a dynamic import'
+      : `${leaking.join(', ')} contain wallet/map code and are loaded on first paint`,
+  );
+}
+
+// ── 6. The shipped fix is present in the bundle the site serves ───────────
 async function checkBundleContainsFix(bundleInfo) {
   if (!bundleInfo) {
     record('shipped fix present in live bundle', 'SKIP', 'no bundle to inspect');
@@ -242,7 +456,7 @@ async function checkBundleContainsFix(bundleInfo) {
   );
 }
 
-// ── 4. Customer entry points must not 500 ─────────────────────────────────
+// ── 7. Customer entry points must not 500 ─────────────────────────────────
 // A 500 on a page a customer opens is the loudest possible failure, and it is what
 // /health was reporting `ok` alongside.
 async function checkEntryPoints() {
@@ -272,7 +486,7 @@ async function checkEntryPoints() {
   }
 }
 
-// ── 5. Route modules must LOAD, not just exist ───────────────────────────
+// ── 8. Route modules must LOAD, not just exist ───────────────────────────
 // The lazy-route wrapper turns an import-time throw into a 500 with a `cause`. A
 // missing env var took down six route modules this way and /health still said ok.
 async function checkRouteModulesLoad() {
@@ -304,7 +518,7 @@ async function checkRouteModulesLoad() {
   }
 }
 
-// ── 6. Webhook endpoints must reject forged input ─────────────────────────
+// ── 9. Webhook endpoints must reject forged input ─────────────────────────
 // These are public by design; the signature is the authentication. A 200 here
 // would mean anyone can mint a paid subscription.
 async function checkWebhooksRejectForgeries() {
@@ -332,7 +546,7 @@ async function checkWebhooksRejectForgeries() {
   }
 }
 
-// ── 7. Providers: configured is not the same as working ───────────────────
+// ── 10. Providers: configured is not the same as working ──────────────────
 // `emailConfigured: true` has been true the whole time Resend has been rejecting
 // every send. Reporting the key's presence as readiness is what let an email flow
 // stay broken while health stayed green.
@@ -389,6 +603,10 @@ async function main() {
 
   await section('API', checkApi);
   await section('Site', async () => { bundleInfo = await checkSite(); });
+  // Before the artifact checks, because they answer a narrower question: this
+  // one asks whether anything the customer loads runs at all.
+  await section('The SPA starts', checkAppMounts);
+  await section('Eager graph', checkEagerGraphStaysSmall);
   await section('Deployed artifact', () => checkBundleContainsFix(bundleInfo));
   await section('Customer entry points', checkEntryPoints);
   await section('Route modules load', checkRouteModulesLoad);
