@@ -366,7 +366,13 @@ function AnimatedAppRoutes() {
       >
       <Routes location={location} key={location.pathname}>
         <Route element={<AppShellLayout />}>
-            <Route path="dashboard" element={<PlaceholderPage />} />
+            {/* /dashboard is where every signed-in surface sends you: the AppShell
+                wordmark, UserMenu, the marketing header's avatar. It was swept to
+                a PlaceholderPage alongside the legacy routes, so each of those
+                landed on "Undergoing Integration" whose only CTA pointed back at
+                itself — a dead end with no way into ContactOS. The business-aware
+                dashboard is restored here for that reason. */}
+            <Route path="dashboard" element={<EnhancedDashboardPage />} />
             <Route path="profile" element={<PlaceholderPage />} />
 
           <Route path="business" element={<BusinessPage />} />

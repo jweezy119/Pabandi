@@ -92,6 +92,31 @@ const colorKeys: Record<string, string> = {
   'sky-wash': 'sky-wash',
 };
 
+/**
+ * Where the sidebar brand sends you, per OS.
+ *
+ * It used to be a hard-coded `to="/"`, which is the marketing homepage. The
+ * brand block is the loudest thing in the sidebar — the OS icon, the OS name
+ * ("Contact OS") and "by Pabandi" — so it reads as the way back to that OS's
+ * dashboard. Clicking it instead dropped a signed-in user onto the landing
+ * page, which is the "clicking Contact OS bounces me back to pabandi.com"
+ * report: from there the only route back into the CRM is a nav item that is
+ * easy to miss, so the OS appears to have no way back.
+ *
+ * Each OS now points at its own root. Unknown names keep "/" — several of
+ * these dashboards (Pabandi Pay, Protocol, Haq OS) have no OS root of their
+ * own and the marketing page is the honest destination for them.
+ */
+const OS_ROOT: Record<string, string> = {
+  'Contact OS': '/contact',
+  'ContactOS': '/contact',
+  'FreightOS': '/freight',
+  'SafOS': '/freight',
+  'PropertyOS': '/property',
+  'BookingOS': '/booking',
+  'CapitalOS': '/capital',
+};
+
 import { useBusinessSettings } from '../hooks/useBusinessSettings';
 
 function buildNavFromSettings(settings: any, osName: string, defaultNav?: NavItem[]): NavItem[] {
@@ -140,6 +165,7 @@ export default function DashboardLayout({
   const [navItemsMounted, setNavItemsMounted] = useState(false);
   const colorKey = colorKeys[osColor] || 'clay';
   const colors = colorMap[colorKey] || colorMap.clay;
+  const osRoot = OS_ROOT[osName] || '/';
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const isActive = (item: NavItem) =>
@@ -197,7 +223,7 @@ export default function DashboardLayout({
       >
         {/* Brand */}
         <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid rgba(191,179,163,0.2)' }}>
-          <Link to="/" className="flex items-center gap-3">
+          <Link to={osRoot} className="flex items-center gap-3">
             <div
               className={`w-10 h-10 rounded-xl ${colors.icon} flex items-center justify-center text-white font-bold text-lg`}
               style={{ boxShadow: '0 2px 8px rgba(180, 130, 90, 0.20)' }}
