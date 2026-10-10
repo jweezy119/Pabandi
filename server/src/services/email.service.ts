@@ -186,6 +186,46 @@ export const emailService = {
     });
   },
 
+  /**
+   * A payment failed and we have moved the invoice to another rail.
+   *
+   * Distinct from `sendPaymentDidntArrive`, which is a dunning email about an
+   * invoice nobody has paid. This one is about an attempted payment that failed
+   * at the processor, and the client's problem is fixed by the time it lands —
+   * so it leads with the working link rather than the failure, and says
+   * explicitly that nothing was charged. Sending a client an alarming overdue
+   * notice when their card was merely declined is how you lose them.
+   *
+   * The link is the invoice's own pay page rather than a raw rail URL, so the
+   * invoice stays the single source of truth for what a client is asked to pay
+   * and a further retry can move it again without re-issuing the email.
+   */
+  async sendPaymentRetryLink(
+    client: any,
+    invoice: any,
+    business: any,
+    opts: { previousRail: string; newRail: string; reason?: string },
+  ) {
+    if (!client?.email) return { skipped: true, reason: 'client has no email' };
+    const currency = business?.currency || 'USD';
+    const html = renderTemplate('payment-retry-link', {
+      businessName: business?.name || 'Your service provider',
+      clientName: client.name,
+      invoiceNumber: invoice.number,
+      amount: String(invoice.subtotal),
+      currency,
+      previousRail: opts.previousRail,
+      newRail: opts.newRail,
+      retryReason: opts.reason ? `Reason: ${opts.reason}` : '',
+      payUrl: `${process.env.APP_URL || 'http://localhost:5173'}/pay/${invoice.id}`,
+    });
+    return sendEmail({
+      to: client.email,
+      subject: `Payment didn't go through — alternative link for ${invoice.number}`,
+      html,
+    });
+  },
+
   /** Both parties are notified when a dispute case opens. */
   async sendDisputeOpened(party: any, invoice: any, business: any, disputeId: string, reason?: string) {
     if (!party?.email) return { skipped: true, reason: 'party has no email' };

@@ -259,7 +259,16 @@ export function readNotesEnvelope(notes: string | null): {
  * back. It never throws into the send path: an invoice must still be sendable
  * if a payment provider is having a bad day.
  */
-async function createSquareInvoiceLink(
+/**
+ * Build a Square payment link priced for THIS invoice.
+ *
+ * Exported so the retry path can reuse it. Square links are the one rail where
+ * the generic `getPaymentUrl` cannot produce a correct amount, so any code that
+ * re-prices an invoice on Square has to come through here — and a second,
+ * subtly different implementation would put the same "wrong amount collected"
+ * bug back.
+ */
+export async function createSquareInvoiceLink(
   businessId: string,
   invoice: { id: string; number: string; subtotal: number; client?: { email?: string | null } },
   currency: string,
@@ -324,7 +333,16 @@ async function createSquareInvoiceLink(
 export async function sendInvoice(businessId: string, invoiceId: string) {
   const invoice = await prisma.invoice.findFirst({
     where: { id: invoiceId, businessId },
-    include: { client: { include: { passport: { select: { paymentScore: true } } } } },
+    // walletAddress and verified are load-bearing here, not incidental: Solana
+    // is only offered to a client who has a wallet, and PayPal only to one
+    // whose passport is verified. Selecting paymentScore alone would leave both
+    // rails permanently ineligible and silently route every invoice to a card
+    // rail, which is exactly the behaviour the eligibility gate exists to fix.
+    include: {
+      client: {
+        include: { passport: { select: { paymentScore: true, walletAddress: true, verified: true } } },
+      },
+    },
   });
   if (!invoice) throw new CustomError('Invoice not found', 404);
 

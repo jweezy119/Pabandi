@@ -52,7 +52,12 @@ export async function buildTermsRecommendation(
 ): Promise<TermsRecommendationView | null> {
   const client = await prisma.crmClient.findUnique({
     where: { id: clientId },
-    include: { passport: { select: { paymentScore: true, paymentSampleSize: true } } },
+    // walletAddress and verified gate the crypto and PayPal rails in the rail
+    // preview below. Without them the preview would omit Solana for every client
+    // and overstate Square's suitability.
+    include: {
+      passport: { select: { paymentScore: true, paymentSampleSize: true, walletAddress: true, verified: true } },
+    },
   });
   if (!client) return null;
 

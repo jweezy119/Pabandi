@@ -3,6 +3,7 @@ import { prisma } from '../utils/database';
 export type NotificationType =
   | 'invoice_paid'
   | 'invoice_overdue'
+  | 'invoice_payment_retry'
   | 'trust_score_changed'
   | 'job_completed'
   | 'task_due'

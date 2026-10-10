@@ -7,6 +7,7 @@ import { reconcileIncomingPayment, resolveQueuedMatch, ReconciliationStatus } fr
 import { fileInvoiceDispute, runFailureOwnership } from '../services/failure-ownership.service';
 import { getMoneyFlow } from '../services/money-flow.service';
 import { isRailId, RailId } from '../services/rail-router.service';
+import { handlePaymentFailed, type FailedPayment } from '../services/payment-retry.service';
 import { paypalService } from '../services/paypal.service';
 
 /**
@@ -192,7 +193,103 @@ function normaliseBody(rail: RailId, body: Record<string, unknown>): NormalisedP
 
 // ── Public webhook mount (no auth — the rail calls us) ──────────────────────
 
-router.post('/webhook/:rail', async (req: Request, res: Response) => {
+/**
+ * Reduce a rail's FAILURE payload to what retry needs.
+ *
+ * Separate from `normaliseBody` because a failure and a success disagree about
+ * almost everything: a failure has no amount worth trusting (the charge may
+ * never have been attempted), no settled date, and a reason. It does have a
+ * payment reference, and that is the field everything else hangs off.
+ *
+ * Returns undefined rather than guessing when there is no reference, because a
+ * retry keyed on an absent reference would create a fresh claim for every
+ * redelivery — which is the double-retry this whole path is guarded against.
+ */
+function normaliseFailure(rail: RailId, body: Record<string, unknown>): FailedPayment | undefined {
+  const asRecord = body as Record<string, unknown>;
+
+  // Square wraps in `payment`, everything else is flatter.
+  const squarePayment = asRecord.payment as Record<string, unknown> | undefined;
+  const detail = squarePayment as Record<string, unknown> | undefined;
+
+  const reference =
+    (typeof detail?.id === 'string' && detail.id) ||
+    (typeof asRecord.paymentId === 'string' && asRecord.paymentId) ||
+    (typeof asRecord.orderId === 'string' && asRecord.orderId) ||
+    (typeof asRecord.transactionId === 'string' && asRecord.transactionId) ||
+    (typeof asRecord.signature === 'string' && asRecord.signature) ||
+    (typeof asRecord.id === 'string' && asRecord.id) ||
+    '';
+
+  if (!reference) return undefined;
+
+  const squareMoney = detail?.amount_money as Record<string, unknown> | undefined;
+  const squareMoneyAlt = detail?.amountMoney as Record<string, unknown> | undefined;
+  const squareCurrency = squareMoney?.currency ?? squareMoneyAlt?.currency;
+
+  // The amount is best-effort. A declined charge may report zero, and the retry
+  // path only uses it to locate an invoice — which it will not do on a guess,
+  // because resolveInvoice requires a single exact match.
+  const rawAmount = squareMoney?.amount ?? squareMoneyAlt?.amount ?? asRecord.amount;
+  const amount = rail === 'square' && rawAmount != null ? Number(rawAmount) / 100 : Number(rawAmount ?? 0);
+
+  const error = (detail?.error ?? asRecord.error ?? asRecord.failure ?? asRecord.reason) as
+    | Record<string, unknown>
+    | string
+    | undefined;
+  const reason =
+    typeof error === 'string'
+      ? error
+      : typeof error?.message === 'string'
+        ? error.message
+        : typeof error?.code === 'string'
+          ? error.code
+          : typeof asRecord.failureReason === 'string'
+            ? asRecord.failureReason
+            : undefined;
+
+  return {
+    paymentRef: `${rail}:${reference}`,
+    rail,
+    amount: Number.isFinite(amount) ? amount : 0,
+    clientId:
+      (typeof detail?.reference_id === 'string' && detail.reference_id) ||
+      (typeof asRecord.clientId === 'string' && asRecord.clientId) ||
+      undefined,
+    invoiceId: typeof asRecord.invoiceId === 'string' ? asRecord.invoiceId : undefined,
+    businessId: typeof asRecord.businessId === 'string' ? asRecord.businessId : undefined,
+    currency:
+      (typeof asRecord.currency === 'string' && asRecord.currency) ||
+      (typeof squareCurrency === 'string' ? squareCurrency : undefined),
+    reason,
+  };
+}
+
+/**
+ * Does this payload describe a failure?
+ *
+ * Checked before `normaliseBody` rather than after: the two disagree about
+ * which payloads they recognise, and a Square `payment.failed` still carries
+ * the same `id` and `amount_money` as the completed payment, so the success
+ * normaliser would happily read a declined card as money received. Testing
+ * intent first is what keeps a failure from being reconciled as a payment.
+ *
+ * Matched on the processor's own event names rather than on the shape of the
+ * body, because the shape is identical between the two.
+ */
+function isFailureEvent(body: Record<string, unknown>): boolean {
+  const type = String(body.type ?? body.event ?? body.event_type ?? body.eventType ?? '').toLowerCase();
+  if (!type) return false;
+  if (type.includes('fail') || type.includes('declin') || type.includes('cancel') || type.includes('expire')) {
+    return true;
+  }
+  // PayPal puts the outcome on the resource rather than the event name.
+  const resource = body.resource as Record<string, unknown> | undefined;
+  const status = String(resource?.status ?? '').toLowerCase();
+  return status === 'failed' || status === 'declined';
+}
+
+router.post('/webhook/:rail', async (req, res) => {
   const railParam = String(req.params.rail ?? '').toLowerCase();
 
   if (!isRailId(railParam)) {
@@ -210,6 +307,31 @@ router.post('/webhook/:rail', async (req: Request, res: Response) => {
     if (!verification.ok) {
       logger.warn(`[ReconcileWebhook:${rail}] Rejected webhook: ${verification.reason}`);
       return res.status(401).json({ error: verification.reason });
+    }
+
+    // ── Failure branch ───────────────────────────────────────────────────────
+    // Before reconciliation, and never after: a declined payment must not be
+    // able to reach `reconcileIncomingPayment`, which marks invoices paid.
+    // Handled here so the existing endpoint serves both outcomes rather than
+    // adding a second one to keep in sync.
+    if (isFailureEvent((req.body ?? {}) as Record<string, unknown>)) {
+      const failure = normaliseFailure(rail, (req.body ?? {}) as Record<string, unknown>);
+      if (!failure) {
+        logger.info(`[ReconcileWebhook:${rail}] Failure payload had no usable reference; ignored.`);
+        return res.status(200).json({ received: true, retried: false, reason: 'failure payload had no reference' });
+      }
+
+      const outcome = await handlePaymentFailed(failure);
+      logger.info(`[ReconcileWebhook:${rail}] payment.failed ${failure.paymentRef} → ${outcome.action}.`);
+      return res.status(200).json({
+        received: true,
+        action: outcome.action,
+        retried: outcome.action === 'retried',
+        duplicate: outcome.action === 'duplicate',
+        retryCount: 'retryCount' in outcome ? outcome.retryCount : undefined,
+        toRail: outcome.action === 'retried' ? outcome.toRail : undefined,
+        reasoning: 'reasoning' in outcome ? outcome.reasoning : undefined,
+      });
     }
 
     const payment = normaliseBody(rail, (req.body ?? {}) as Record<string, unknown>);

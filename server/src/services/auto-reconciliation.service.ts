@@ -4,6 +4,7 @@ import { logger } from '../utils/logger';
 import { markInvoicePaid } from './invoice.service';
 import { createNotification } from './notification.service';
 import { isRailId, RailId } from './rail-router.service';
+import { settlementDecision } from '../config/rail-cost';
 
 /**
  * Auto-Reconciliation — match an inbound rail payment to an invoice.
@@ -344,6 +345,8 @@ async function settleClaimedInvoice(
 ): Promise<ReconciliationOutcome> {
   await markInvoicePaid(businessId, invoiceId, payment.paymentRef);
 
+  const finality = settlementDecision(payment.rail, new Date());
+
   await prisma.reconciliationMatch.update({
     where: { id: claimId },
     data: {
@@ -351,6 +354,10 @@ async function settleClaimedInvoice(
       invoiceId,
       confidence,
       matchedAt: new Date(),
+      // The invoice is marked paid above and stays paid. What varies by rail is
+      // whether that word is currently the whole truth — see settlementDecision.
+      settlementStatus: finality.status,
+      settlesAt: finality.settlesAt,
       ...(candidates ? { candidates } : {}),
       note: payment.invoiceId
         ? `Matched by rail-supplied invoice reference (${invoiceNumber}).`
@@ -359,7 +366,9 @@ async function settleClaimedInvoice(
   });
 
   logger.info(
-    `[Reconcile] Matched ${payment.rail} paymentRef=${payment.paymentRef} → ${invoiceNumber} (confidence ${confidence}${payment.invoiceId ? ', by invoice reference' : ''}).`,
+    `[Reconcile] Matched ${payment.rail} paymentRef=${payment.paymentRef} → ${invoiceNumber} ` +
+      `(confidence ${confidence}${payment.invoiceId ? ', by invoice reference' : ''}). ` +
+      `Settlement: ${finality.status}${finality.settlesAt ? ` until ${finality.settlesAt.toISOString()}` : ''}.`,
   );
   await notifyAutoMatch(businessId, invoiceNumber, payment);
 
@@ -485,7 +494,8 @@ export async function resolveQueuedMatch(
   };
 }
 
-/** Trust-event guard used by the webhook routes: does this reference exist? */
+/**
+ * Trust-event guard used by the webhook routes: does this reference exist? */
 export async function alreadyReconciled(paymentRef: string): Promise<boolean> {
   const found = await prisma.reconciliationMatch.findUnique({
     where: { paymentRef },

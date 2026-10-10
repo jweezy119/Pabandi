@@ -7278,12 +7278,50 @@ model ReconciliationMatch {
   /// Free-text note: why it was orphaned, or which candidate a human chose.
   note       String?
   matchedAt  DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+
+  // ── Retry ────────────────────────────────────────────────────────────────
+  // A failed payment opens a retry chain rather than ending the invoice. These
+  // count it, and they are per-paymentRef so two payments against one invoice
+  // retry independently.
+  /// Retries already attempted for THIS payment. Compared against MAX_RETRIES
+  /// to decide between trying the next rail and escalating to failure
+  /// ownership. Incremented with a guarded update so a redelivered webhook
+  /// cannot double-count.
+  retryCount Int @default(0)
+  /// The rail the payment was first attempted on. Kept after a retry moves it
+  /// to another rail, so the audit trail still shows where it started.
+  originalRail String?
+  /// The rail this attempt was made on, which differs from `originalRail` after
+  /// the first retry.
+  lastRetryRail String?
+  /// Why the last attempt failed, as the rail reported it. Free text because
+  /// every processor words its decline reasons differently; the fields that
+  /// drive decisions are extracted, not parsed back out of this.
+  lastFailureReason String?
+  /// How the failure is classified for retry purposes: "insufficient_funds" is
+  /// a hard failure (retrying the same payer on another rail will fail the same
+  /// way), "congestion" is a queue and is retried on the SAME rail with a
+  /// higher priority fee.
+  failureKind String?
+
+  // ── Settlement finality ───────────────────────────────────────────────────
+  // "paid" and "final" are different claims. A card payment is received before
+  // it can be charged back; a confirmed Solana transfer cannot be reversed at
+  // all. Reporting both as the same thing is how an escrow gets released
+  // against funds the platform may have to find again.
+  settlementStatus String    @default("pending") // "settled" | "pending" | "reversible"
+  /// When settlement stops being provisional. Null means already final — an
+  /// on-chain confirmation has no window to wait out.
+  settlesAt        DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([invoiceId])
   @@index([status])
   @@index([createdAt])
+  /// Serves the sweep that promotes reversals and re-checks retry budgets.
+  @@index([settlementStatus, settlesAt])
 }
 
 model InvoiceTrustEvent {
