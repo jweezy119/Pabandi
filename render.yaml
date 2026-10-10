@@ -20,10 +20,16 @@ services:
         sync: false
       - key: GITHUB_CLIENT_SECRET
         sync: false
+      # The SPA, not this service. These pointed at the API origin, which serves
+      # the built app as well — so every OAuth callback redirected to
+      # https://pabandi.onrender.com/auth/callback, the session was written into
+      # that origin's localStorage, and the user was signed out again the moment
+      # they used pabandi.com. The OAuth routes now take the origin from the
+      # client instead (utils/oauthRedirect.ts), so this is defence in depth.
       - key: CLIENT_URL
-        value: https://pabandi.onrender.com
+        value: https://pabandi.com
       - key: FRONTEND_URL
-        value: https://pabandi.onrender.com
+        value: https://pabandi.com
       - key: API_URL
         value: https://pabandi.onrender.com
       - key: JWT_SECRET

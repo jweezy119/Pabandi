@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { effectiveMode, safeInternalPath } from '../utils/accountMode';
 import { authService } from '../services/api';
@@ -296,7 +296,17 @@ export default function AuthPage() {
   const handleGitHubAuth = () => {
     setOauthLoading('github');
     const backendUrl = getBackendUrl();
-    window.location.href = `${backendUrl}/api/v1/auth/social/github?role=${role}`;
+    // Send the origin this tab is actually on. The OAuth callback used to
+    // redirect to the API's CLIENT_URL, which serves the built SPA as well, so
+    // the session landed in the API origin's localStorage — signed in on
+    // pabandi.onrender.com, still signed out on pabandi.com, and back to the
+    // login page on the next click. That loop is what this parameter ends.
+    const params = new URLSearchParams({
+      role,
+      origin: window.location.origin,
+      return_to: `${location.pathname}${location.search}`,
+    });
+    window.location.href = `${backendUrl}/api/v1/auth/social/github?${params.toString()}`;
   };
 
   const isSignup = mode === 'signup';

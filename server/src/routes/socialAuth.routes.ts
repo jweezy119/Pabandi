@@ -6,13 +6,29 @@ import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../utils/logger';
 import { findOrCreateUser, getActiveBusinessId } from '../services/identity.service';
+import { resolveFrontendOrigin } from '../utils/oauthRedirect';
+import { safeReturnPath } from '../utils/url';
 
 const prisma = new PrismaClient();
 const router = Router();
 
 const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || JWT_SECRET;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '30d';
 if (!JWT_SECRET) {
   logger.error('JWT_SECRET is not configured');
+}
+
+/**
+ * Both providers used to hard-code `process.env.CLIENT_URL`, which on this
+ * deployment is the API origin. That origin serves the built SPA too, so the
+ * login "succeeded" — in that origin's localStorage. pabandi.com, where the
+ * user actually was, kept them signed out, and clicking "Sign in with GitHub"
+ * again began the same trip: the reported loop. See utils/oauthRedirect.ts.
+ */
+function frontendOrigin(req: any) {
+  return resolveFrontendOrigin(typeof req.query?.origin === 'string' ? req.query.origin : req.get?.('origin'));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -74,9 +90,11 @@ router.get('/github/callback',
     const token = jwt.sign(
       { id: user.id, email: user.email, activeBusinessId: getActiveBusinessId(user), mode: user.preferredMode || 'personal' },
       JWT_SECRET!,
-      { expiresIn: '7d' }
+      { expiresIn: JWT_EXPIRES_IN as any }
     );
-    res.redirect(`${process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://pabandi.com'}/auth/callback?token=${token}`);
+    const refreshToken = jwt.sign({ id: user.id }, JWT_REFRESH_SECRET!, { expiresIn: JWT_REFRESH_EXPIRES_IN as any });
+    const params = new URLSearchParams({ token, refreshToken, returnTo: safeReturnPath(req.query?.return_to as string) });
+    res.redirect(`${frontendOrigin(req)}/auth/callback?${params.toString()}`);
   }
 );
 
@@ -129,9 +147,11 @@ router.get('/twitter/callback',
     const token = jwt.sign(
       { id: user.id, email: user.email, activeBusinessId: getActiveBusinessId(user), mode: user.preferredMode || 'personal' },
       JWT_SECRET!,
-      { expiresIn: '7d' }
+      { expiresIn: JWT_EXPIRES_IN as any }
     );
-    res.redirect(`${process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://pabandi.com'}/auth/callback?token=${token}`);
+    const refreshToken = jwt.sign({ id: user.id }, JWT_REFRESH_SECRET!, { expiresIn: JWT_REFRESH_EXPIRES_IN as any });
+    const params = new URLSearchParams({ token, refreshToken, returnTo: safeReturnPath(req.query?.return_to as string) });
+    res.redirect(`${frontendOrigin(req)}/auth/callback?${params.toString()}`);
   }
 );
 

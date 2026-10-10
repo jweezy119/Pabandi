@@ -2,8 +2,10 @@ import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
-/** Decode the (public) JWT payload without verifying the signature — we only need the claims
- *  (id, email, role, names) to seed the auth store. The backend already authenticated the user. */
+/**
+ * Decode the (public) JWT payload without verifying the signature — we only need the claims
+ * (id, email, role, names) to seed the auth store. The backend already authenticated the user.
+ */
 function decodeJwtPayload(token: string): any | null {
   try {
     const part = token.split('.')[1];
@@ -32,6 +34,7 @@ export default function AuthCallbackPage() {
     done.current = true;
 
     const token = params.get('token');
+    const refreshToken = params.get('refreshToken');
     const role = params.get('role');
     const returnTo = params.get('returnTo');
 
@@ -39,6 +42,12 @@ export default function AuthCallbackPage() {
       navigate('/login?error=oauth_failed', { replace: true });
       return;
     }
+
+    // The credentials are in the URL. Leaving them there means they live on in
+    // history, in the address bar and in any screen sharing — and a reload of
+    // this page would re-run the same redirect. Strip the query now that the
+    // session is in the store.
+    window.history.replaceState({}, '', window.location.pathname);
 
     const claims = decodeJwtPayload(token);
     const user = {
@@ -57,7 +66,10 @@ export default function AuthCallbackPage() {
       business: null,
     };
 
-    setAuth(user as any, token);
+    // Pass the refresh token through. OAuth sessions used to get an access
+    // token only, so they could never be renewed and every one of them died
+    // with its 7-day token.
+    setAuth(user as any, token, refreshToken || undefined);
     navigate(returnTo || '/dashboard', { replace: true });
   }, [params, navigate, setAuth]);
 
