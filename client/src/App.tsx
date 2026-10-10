@@ -214,6 +214,16 @@ const SetupWizardPage = lazy(() => import('./pages/contact/SetupWizardPage'));
 const CapitalOSPage = lazy(() => import('./pages/ledger/LedgerOSPage'));
 const LedgerInvoicesPage = lazy(() => import('./pages/ledger/LedgerInvoicesPage'));
 const InvoicesPage = lazy(() => import('./pages/crm/InvoicesPage'));
+// Jobs, like every other route. These two were the only pages in this file still
+// imported statically, and that was load-breaking rather than merely wasteful:
+// their position in the eager graph produced a cycle in which every lazy route
+// chunk ended up importing the entry, and the entry statically imported the
+// 290 KB `heavy` chunk of solana/leaflet/qrcode. That chunk throws
+// `Cannot read properties of undefined (reading 'Buffer')` while evaluating, so
+// the entire module graph failed and React never mounted on any page — a blank
+// pabandi.com on which every click did nothing.
+const ContactJobsPage = lazy(() => import('./pages/crm/ContactJobsPage').then((m) => ({ default: m.ContactJobsPage })));
+const ContactJobDetailPage = lazy(() => import('./pages/crm/ContactJobDetailPage').then((m) => ({ default: m.ContactJobDetailPage })));
 const ContactInvoiceDetailPage = lazy(() => import('./pages/crm/ContactInvoiceDetailPage'));
 const ContactMoneyFlowPage = lazy(() => import('./pages/contact/ContactMoneyFlowPage'));
 const LedgerExpensesPage = lazy(() => import('./pages/ledger/LedgerExpensesPage'));
@@ -278,9 +288,7 @@ import { useEffect } from 'react';
 // PropertyOS
 // FreightOS
 // BookingOS
-// Contact OS
-import { ContactJobsPage } from "./pages/crm/ContactJobsPage";
-import { ContactJobDetailPage } from "./pages/crm/ContactJobDetailPage";
+// ContactOS
 // CapitalOS
 
 // Support

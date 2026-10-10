@@ -27,30 +27,46 @@ export default defineConfig(({ mode }) => {
         // with the first route, and are then cached independently of app code.
         //
         // Keys are matched in order, so the specific libraries are listed before the
-        // catch-all `vendor` — otherwise everything would land in one bucket and the
-        // split would achieve nothing.
-        manualChunks(id: string) {
-          if (!id.includes('node_modules')) return undefined;
-          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'react';
-          if (/[\\/]node_modules[\\/](react-router|react-router-dom|react-query|@tanstack)[\\/]/.test(id)) return 'router';
-          if (/[\\/]node_modules[\\/](framer-motion|motion-dom|motion-utils)[\\/]/.test(id)) return 'motion';
-          // react-icons is split OUT of `heavy` on purpose.
-          //
-          // Grouping it with solana/leaflet meant that the single react-icons import in
-          // the eager graph dragged the entire 345 KB `heavy` chunk into the first load —
-          // one symbol pulled in a wallet library nobody on the CRM had asked for. The
-          // general lesson: a manual chunk is a unit, so putting a small always-needed
-          // library in the same bucket as a large rarely-needed one makes the bucket cost
-          // the sum of both, on every visit.
-          if (/[\\/]node_modules[\\/]react-icons[\\/]/.test(id)) return 'icons';
-          // axios split out too, for the same reason as react-icons: `apiClient` is used by
-          // the eager auth store, so axios was in the first load — and sharing a bucket
-          // with solana/leaflet/qrcode meant those came with it.
-          if (/[\\/]node_modules[\\/]axios[\\/]/.test(id)) return 'http';
-          if (/[\\/]node_modules[\\/](@solana|solana-web3|bs58|qrcode|leaflet)[\\/]/.test(id)) return 'heavy';
-          return 'vendor';
-        },
-      },
+         // Only libraries that are in the EAGER graph get a named bucket. The rule is
+         // reachability, not size, and it has to be checked rather than assumed: see the
+         // note on `heavy` below for what happens when a lazy-only library is forced into
+         // a manual chunk.
+         //
+         // Everything else deliberately returns undefined and is left to Rollup's
+         // automatic chunking. There is no catch-all `vendor` bucket any more, and that
+         // removal is the point rather than an oversight — see the comment on `heavy`.
+         manualChunks(id: string) {
+           if (!id.includes('node_modules')) return undefined;
+           if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'react';
+           if (/[\\/]node_modules[\\/](react-router|react-router-dom|react-query|@tanstack)[\\/]/.test(id)) return 'router';
+           if (/[\\/]node_modules[\\/](framer-motion|motion-dom|motion-utils)[\\/]/.test(id)) return 'motion';
+           if (/[\\/]node_modules[\\/]react-icons[\\/]/.test(id)) return 'icons';
+           if (/[\\/]node_modules[\\/]axios[\\/]/.test(id)) return 'http';
+           // Solana, leaflet and qrcode must NOT be named here.
+           //
+           // They lived in a `heavy` bucket until 2026-10-10, and it was load-breaking as
+           // well as wasteful. Nothing in the eager graph reaches them — only four pages
+           // do, via utils/web3.ts (AuthPage, BookingPage, BusinessProfilePage,
+           // NewReservationPage) and the two leaflet maps — yet with the bucket in place
+           // the ENTRY chunk statically imported `heavy-Ng0mja7S.js`, and so did 203 of
+           // the 260 route chunks. That put 290 KB of wallet and map code in every
+           // visitor's first paint.
+           //
+           // Worse, `heavy` threw
+           //     Uncaught TypeError: Cannot read properties of undefined (reading 'Buffer')
+           // while evaluating — its commonjs `safe-buffer` interop read a module before
+           // it was initialised. A module that throws during evaluation fails the whole
+           // graph, so React never mounted on ANY page: pabandi.com served a blank
+           // document, and every click did nothing, which users reported as being
+           // "sent back to pabandi.com". Verified against the deployed bundle.
+           //
+           // Returning undefined leaves these to automatic chunking, which puts them in a
+           // dynamic chunk that only the four pages load, and evaluates it only after the
+           // rest of the graph. Leaving them in the catch-all instead is equally wrong:
+           // that lands them in `vendor`, which the entry does import statically.
+           return undefined;
+         },
+       },
     },
     // The old 500 KB warning is calibrated for a bundle that is mostly application code.
     // With deliberate chunking the entry chunk is small by design and a 3 MB vendor chunk

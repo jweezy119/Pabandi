@@ -427,7 +427,7 @@ export default function Layout() {
         <nav className="fixed bottom-0 w-full z-50 bg-surface-bright/80 backdrop-blur-xl border-t border-outline-variant/10 md:hidden safe-area-pb" style={{ height: 'var(--pab-mobile-nav-height)' }}>
           <div className="flex justify-around items-center px-1 py-1.5 max-w-md mx-auto">
             <MobileTab to="/" icon="explore" label="Home" current={location.pathname === '/'} />
-            <MobileTab to="/contact" icon="trending_up" label="CRM" current={location.pathname.startsWith('/contact')} />
+            <MobileTab to="/contact" icon="trending_up" label="Contact" current={location.pathname.startsWith('/contact')} />
             <MobileTab to="/booking" icon="event" label="Booking" current={location.pathname.startsWith('/booking')} />
             <MobileTab to="/property" icon="apartment" label="Property" current={location.pathname.startsWith('/property')} />
             <MobileTab to="/freight" icon="local_shipping" label="Freight" current={location.pathname.startsWith('/freight')} />
