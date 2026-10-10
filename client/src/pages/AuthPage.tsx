@@ -124,7 +124,7 @@ const EmailCodeLogin = ({ email, onEmailChange, onVerified, onError }: {
         // Persist the session — without this the user "verifies" but stays logged out.
         const payload = data.data ?? data;
         if (payload?.token && payload?.user) {
-          useAuthStore.getState().setAuth(payload.user, payload.token);
+          useAuthStore.getState().setAuth(payload.user, payload.token, payload.refreshToken);
         }
         onVerified();
       } else {

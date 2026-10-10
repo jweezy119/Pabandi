@@ -48,11 +48,55 @@ apiClient.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Response interceptor for error handling
+/**
+ * One in-flight refresh, shared.
+ *
+ * A page that makes five calls gets five 401s at once. Without this, each one
+ * refreshes independently, hammers /auth/refresh, and they can land out of
+ * order — so a response written by an older token overwrites a newer one.
+ */
+let refreshInFlight: Promise<string | null> | null = null;
+
+async function refreshAccessToken(): Promise<string | null> {
+  const store = useAuthStore.getState();
+  if (!store.refreshToken) return null;
+  try {
+    const response = await authService.refreshToken(store.refreshToken);
+    const payload = response.data?.data ?? response.data;
+    if (!payload?.token) return null;
+    useAuthStore.setState({ token: payload.token, isAuthenticated: true });
+    return payload.token;
+  } catch {
+    return null;
+  }
+}
+
+// Response interceptor for error handling.
+//
+// 401 means the access token is stale, not that the account is signed out —
+// the access token is short-lived by design and the refresh token (30d) is
+// still good. So refresh once and replay the request. Only a refresh that the
+// server refuses ends the session, and that is the guard's decision to make,
+// not the network layer's: auto-logging-out here is what turned a stale token
+// into "clicking ContactOS dumps me on the login page".
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // Do not auto-logout on 401 to avoid redirect loops; let pages handle it
+  async (error) => {
+    const original = error.config as (typeof error.config & { _retry?: boolean }) | undefined;
+    const isRefreshCall = original?.url?.includes('/auth/refresh');
+    if (error.response?.status === 401 && original && !original._retry && !isRefreshCall) {
+      original._retry = true;
+      refreshInFlight = refreshInFlight || refreshAccessToken();
+      const token = await refreshInFlight;
+      refreshInFlight = null;
+      if (token) {
+        original.headers = {
+          ...(original.headers || {}),
+          Authorization: `Bearer ${token}`,
+        };
+        return apiClient(original);
+      }
+    }
     return Promise.reject(error);
   }
 );

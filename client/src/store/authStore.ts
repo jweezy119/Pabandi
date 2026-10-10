@@ -42,6 +42,12 @@ interface WalletState {
 interface AuthState {
   user: User | null;
   token: string | null;
+  /**
+   * Long-lived session credential (30d server-side). The access token above is
+   * short-lived, so without this an expired access token means a dead session
+   * even though the server would happily reissue one. See refreshSession().
+   */
+  refreshToken: string | null;
   isAuthenticated: boolean;
   wallet: WalletState;
   login: (email: string, password: string) => Promise<void>;
@@ -50,7 +56,16 @@ interface AuthState {
   logout: () => void;
   setUser: (user: User) => void;
   setToken: (token: string) => void;
-  setAuth: (user: User, token: string) => void;
+  setAuth: (user: User, token: string, refreshToken?: string) => void;
+  /**
+   * Trade the refresh token for a new access token, keeping the session alive.
+   * Resolves false when there is nothing to trade or the server refuses it; the
+   * caller decides what a failure means. It deliberately does NOT log out:
+   * a failed refresh while offline is not the same statement as "this account
+   * is signed out", and clearing the session on a flaky network is how users
+   * get silently ejected from the app.
+   */
+  refreshSession: () => Promise<boolean>;
   connectWallet: (address: string, type: 'phantom' | 'metamask') => void;
   disconnectWallet: () => void;
   setPabBalance: (balance: number, totalEarned?: number) => void;
@@ -87,6 +102,7 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       token: null,
+      refreshToken: null,
       isAuthenticated: false,
       wallet: { ...defaultWallet },
       login: async (email: string, password: string) => {
@@ -98,6 +114,7 @@ export const useAuthStore = create<AuthState>()(
         set({
           user: payload.user,
           token: payload.token,
+          refreshToken: payload.refreshToken ?? get().refreshToken,
           isAuthenticated: true,
         });
       },
@@ -107,6 +124,7 @@ export const useAuthStore = create<AuthState>()(
         set({
           user: payload.user,
           token: payload.token,
+          refreshToken: payload.refreshToken ?? get().refreshToken,
           isAuthenticated: true,
         });
       },
@@ -123,14 +141,34 @@ export const useAuthStore = create<AuthState>()(
         set({
           user: null,
           token: null,
+          refreshToken: null,
           isAuthenticated: false,
           wallet: { ...defaultWallet },
         });
       },
       setUser: (user: User) => set({ user }),
       setToken: (token: string) => set({ token, isAuthenticated: true }),
-      setAuth: (user: User, token: string) =>
-        set({ user, token, isAuthenticated: true }),
+      setAuth: (user: User, token: string, refreshToken?: string) =>
+        set({
+          user,
+          token,
+          ...(refreshToken ? { refreshToken } : {}),
+          isAuthenticated: true,
+        }),
+
+      refreshSession: async () => {
+        const { refreshToken: current } = get();
+        if (!current) return false;
+        try {
+          const response = await authService.refreshToken(current);
+          const payload = response.data?.data ?? response.data;
+          if (!payload?.token) return false;
+          set({ token: payload.token, isAuthenticated: true });
+          return true;
+        } catch {
+          return false;
+        }
+      },
       connectWallet: (address: string, type: 'phantom' | 'metamask') =>
         set((state) => ({
           wallet: { ...state.wallet, address, type },

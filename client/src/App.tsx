@@ -328,11 +328,22 @@ function AnimatedAppRoutes() {
       }
     }
 
-    const { token, logout } = useAuthStore.getState();
+    const { token, refreshSession, logout } = useAuthStore.getState();
     if (!token) return;
     try {
       const exp = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))?.exp;
-      if (exp && Date.now() >= exp * 1000) logout();
+      if (exp && Date.now() >= exp * 1000) {
+        // The access token is stale — it is short-lived (15m in this repo's
+        // server/.env, 7d by the code default), so this fires for anyone who
+        // left the tab open. This used to call logout() outright, which is why
+        // a returning user's next click on ContactOS bounced them to the login
+        // page: the session was destroyed before anything asked the server
+        // whether it was still valid. Trade the refresh token (30d) for a new
+        // access token first; only a server that refuses it ends the session.
+        void refreshSession().then((ok) => {
+          if (!ok) logout();
+        });
+      }
     } catch { /* malformed */ }
   }, []);
 
