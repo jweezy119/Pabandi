@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 import DashboardLayout from '../../components/DashboardLayout';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useBusinessSettings } from '../../hooks/useBusinessSettings';
 import { Card } from '../../components/primitives';
@@ -48,23 +48,29 @@ function StatCard({ icon, value, label, color = 'clay', delay = 0 }: {
 export default function ContactOSPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [enrolled, setEnrolled] = useState(false);
+  const [healed, setHealed] = useState(false);
+  /**
+   * Has the server confirmed this account can use the CRM?
+   *
+   * Tri-state on purpose. `null` means "not answered yet" — a two-state boolean
+   * starting at false would let the redirect below fire on mount, before
+   * anything is known, for every account including the ones that are fine.
+   */
+  const [enrolled, setEnrolled] = useState<boolean | null>(null);
   const navigate = useNavigate();
-  const { settings } = useBusinessSettings();
   const { user } = useAuthStore();
   const businessId = (user as any)?.business?.id || (user as any)?.businessId || localStorage.getItem('businessId') || 'default';
 
   /**
    * Create the service-business row this account is missing, then reload.
    *
-   * Self-healing because the setup wizard is not reachable for an account whose
-   * local hasCompletedSetup is already set — which is exactly the population that
-   * is broken now. redirecting to setup would loop.
-   *
-   * Silent on failure: the dashboard still renders, just empty. A modal here would
-   * block someone whose CRM is fine but whose network is not.
+   * Self-healing because an account that finished the wizard before enrollment
+   * existed, or whose local settings were lost, has no row and every /crm route
+   * 403s. Silent on failure: the dashboard still renders, just empty, and the
+   * caller decides what a failure means. A modal here would block someone whose
+   * CRM is fine but whose network is not.
    */
-  const enrollNow = async (fallbackName: string) => {
+  const enrollNow = async (fallbackName: string): Promise<boolean> => {
     try {
       const user = useAuthStore.getState().user;
       const name =
@@ -77,30 +83,28 @@ export default function ContactOSPage() {
         // falls back to a default category for anything unrecognised.
         serviceType: (useBusinessSettings.getState?.() as any)?.vertical || 'general',
       });
-      setEnrolled(true);
+      setHealed(true);
+      return true;
     } catch (err) {
       // Not fatal to the page. Logged so it is diagnosable, not shown so it does
       // not become a wall.
       console.error('[ContactOS] could not enroll this account:', err);
+      return false;
     }
   };
 
-  // Redirect new users to the setup wizard
   useEffect(() => {
-    if (!settings.hasCompletedSetup && !settings.vertical) {
-      navigate('/contact/setup', { replace: true });
-    }
-  }, [settings.hasCompletedSetup, settings.vertical, navigate]);
-
-  useEffect(() => {
+    let cancelled = false;
     const fetchLeads = async () => {
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
           headers: { Authorization: `Bearer ${getAuthToken()}` },
         });
+        if (cancelled) return;
         if (res.ok) {
           const data = await res.json();
           setLeads(data.data || []);
+          setEnrolled(true);
           return;
         }
 
@@ -109,30 +113,72 @@ export default function ContactOSPage() {
         // which is why an unenrolled account saw a blank dashboard and a Save
         // button that did nothing, with no indication of why.
         //
-        // Enroll rather than redirect to setup: an account whose local
-        // hasCompletedSetup is already true never sees the wizard, so routing there
-        // would loop straight back here. Self-healing is the only path that works
-        // for those accounts.
+        // Which of the two fixes applies depends on whether this account has been
+        // through setup already, and that is a local question because only the
+        // client knows whether it ever asked for a vertical and a business name.
         if (res.status === 403) {
-          await enrollNow('Your workspace');
-        } else {
-          console.error('Failed to fetch clients:', res.status);
+          // Read from the store rather than from a captured `settings`: this
+          // effect runs once on mount, and the value it closes over would be the
+          // one from that first render.
+          const local = useBusinessSettings.getState().settings;
+          const looksSetUp = local.hasCompletedSetup || Boolean(local.vertical);
+          if (looksSetUp) {
+            // Enroll in place. This is the population that finished the wizard
+            // before enrollment existed, or whose stored settings were lost: the
+            // local record says done, the server has no row. Self-healing is the
+            // only path that works for them, because sending them back to the
+            // wizard would ask for a vertical they already chose.
+            const ok = await enrollNow('Your workspace');
+            if (!cancelled) setEnrolled(ok);
+            return;
+          }
+          // Never set up. Send them to the wizard, which is the only place that
+          // asks for a vertical and a business name — pre-seeding 'general' here
+          // would silently give them the catch-all preset instead of their own.
+          if (!cancelled) setEnrolled(false);
+          return;
         }
+        // Anything else says nothing about enrollment. Treating a 500 or a
+        // network error as "not enrolled" would push a working account to the
+        // setup wizard because the API had a bad minute.
+        console.error('Failed to fetch clients:', res.status);
+        setEnrolled(true);
       } catch (err) {
         console.error('Failed to fetch leads:', err);
+        if (cancelled) return;
         setLeads([]);
+        setEnrolled(true);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchLeads();
   }, []);
 
+  // Send new users to the setup wizard — but only once the server has agreed.
+  //
+  // This used to read `settings.hasCompletedSetup` and `settings.vertical` alone.
+  // Those are local state, and a session that predates the store being persisted
+  // has nothing stored at all, so the condition was true on every load for every
+  // account: /contact was answered with a `replace` hop to the wizard for people
+  // who had already set up. `replace` destroyed the URL they asked for, so Back
+  // dropped them wherever they had been — usually the marketing homepage, which
+  // is precisely the "clicking Contact OS bounces me back to pabandi.com" report.
+  //
+  // resolveCrmBusiness is the same question answered server-side on every /crm
+  // route, so a 200 settles it: the workspace renders, whatever the local record
+  // says. Only a 403 that the self-heal could not fix sends anyone to setup.
+  useEffect(() => {
+    if (enrolled === false) {
+      navigate('/contact/setup', { replace: true });
+    }
+  }, [enrolled, navigate]);
+
   // Refetch once enrollment lands, so the dashboard is populated rather than
   // sitting empty after a successful self-heal.
   useEffect(() => {
-    if (!enrolled) return;
+    if (!healed) return;
     let cancelled = false;
     (async () => {
       try {
@@ -147,9 +193,7 @@ export default function ContactOSPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [enrolled]);
-
-  const location = useLocation();
+  }, [healed]);
 
   if (loading) {
     return (

@@ -1,6 +1,25 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+/**
+ * The account's business settings, persisted.
+ *
+ * THIS STORE MUST STAY PERSISTED
+ * ------------------------------
+ * `vertical` and `hasCompletedSetup` are what answer "has this account been
+ * through setup?". As a plain store they reset to null/false on every page
+ * load, and ContactOSPage redirected to /contact/setup on exactly that
+ * condition — so every load of /contact, for an account that had already
+ * enrolled, was sent to the setup wizard. Because the redirect was `replace`,
+ * the requested URL was destroyed too, so Back landed on whatever came before:
+ * usually the marketing homepage.
+ *
+ * DashboardLayout also gates the sidebar on `enabledFeatures`, so a reset store
+ * silently disagreed with the menus about which features the account has.
+ *
+ * If persistence is ever removed, ContactOSPage must not fall back to reading
+ * these flags on their own — see the comment there.
+ */
 interface BusinessSettings {
   vertical: string | null;
   enabledModules: string[];
