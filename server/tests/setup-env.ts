@@ -35,6 +35,42 @@ function defaultIfMissing(name: string, value: string) {
   }
 }
 
+/**
+ * Load `server/.env` so DATABASE_URL is visible to tests.
+ *
+ * ─── WHY ────────────────────────────────────────────────────────────────────
+ * The integration suites read `process.env.DATABASE_URL` directly and refuse to
+ * run unless the database name matches /test|integration|ci/. In CI that worked
+ * because the job sets DATABASE_URL in its own env. Locally nothing did, so
+ * every integration suite failed with `Refusing to run ... "<unknown>"` —
+ * eleven files, which had been easy to misread as "the DB is broken" when in
+ * fact it was "there is no database configured".
+ *
+ * ─── WHY THIS IS SAFE ───────────────────────────────────────────────────────
+ * Loading .env here does not weaken the tests' own guard. That guard is
+ * evaluated inside each suite at runtime and still requires a disposable
+ * database name, so a .env pointing at production would be refused by
+ * `assertIsolatedDatabase()` — exactly as it is today when DATABASE_URL is
+ * simply absent. This only turns "no configuration" into "the configuration
+ * on this machine", and adds a second check rather than removing one.
+ *
+ * `.env` is also no longer able to point at production — the production URL
+ * lives in `.env.production`, which nothing loads automatically. See
+ * `scripts/assert-local-db.js`.
+ *
+ * dotenv does not override variables already set, so an explicitly exported
+ * DATABASE_URL (as CI does) still wins. That is what keeps CI deterministic
+ * and stops it from silently preferring a developer's local file.
+ */
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  require('dotenv').config({ path: require('node:path').join(__dirname, '..', '.env') });
+} catch {
+  // No .env is a supported setup — CI provides the environment directly, and
+  // unit tests need no database at all. The integration suites will say so with
+  // a clearer message than anything this file could produce.
+}
+
 // Signing keys. Both are read at module scope with no fallback, so a missing value is a
 // runtime 500 rather than a clear startup error.
 defaultIfMissing('JWT_SECRET', 'test-jwt-secret');

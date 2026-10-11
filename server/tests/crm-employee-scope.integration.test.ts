@@ -109,8 +109,25 @@ describe('CRM employee writes are tenant-scoped', () => {
   beforeEach(async () => {
     const { prisma } = await import('../src/utils/database');
     await prisma.crmEmployee.deleteMany({ where: { email: { contains: '@crew.example' } } });
-    await prisma.notification.deleteMany({ where: { user: { email: { contains: MARKER } } } });
-    await prisma.user.deleteMany({ where: { email: { contains: MARKER } } });
+
+    // Resolve the marker users' ids first and delete notifications by id, rather
+    // than filtering notifications through the `user` relation.
+    //
+    // The relation filter did not match every notification belonging to these
+    // users, so the following user.deleteMany hit Notification_userId_fkey and
+    // the suite failed in beforeEach — after every test, not just one. The
+    // failure was invisible until this suite could reach a database at all: in
+    // CI the container is discarded per run so nothing survives between tests,
+    // while a persistent local database accumulates rows and exposes it.
+    const markerUsers = await prisma.user.findMany({
+      where: { email: { contains: MARKER } },
+      select: { id: true },
+    });
+    const markerIds = markerUsers.map((u) => u.id);
+    if (markerIds.length > 0) {
+      await prisma.notification.deleteMany({ where: { userId: { in: markerIds } } });
+      await prisma.user.deleteMany({ where: { id: { in: markerIds } } });
+    }
   });
 
   it('lets a business edit its own employee', async () => {

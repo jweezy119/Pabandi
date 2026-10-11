@@ -111,3 +111,9 @@ src/.agentWallets.json
 backups/
 *.dump
 *.sql.gz
+
+# Production database URL, deliberately named so Prisma/dotenv does not auto-load it.
+# Added 2026-10-10 alongside moving that URL out of server/.env. It holds the
+# production password and must never be committed — check-ignore verified.
+server/.env.production
+.env.production
