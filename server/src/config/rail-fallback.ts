@@ -287,20 +287,6 @@ export function walkFallbackChain(chain: readonly Rail[], ctx: EligibilityContex
   return { rail: null, chosen: null, steps };
 }
 
-/**
- * Why a chain produced no usable rail.
- *
- * Only reached when every rail failed `canHandle`, which should be close to
- * impossible because `bank` is unconditionally eligible. It is still worth
- * saying out loud: a silent "no rail" here would surface as an unexplained
- * failure to send an invoice.
- */
-export function describeExhaustion(steps: ChainStep[]): string {
-  if (steps.length === 0) return 'no rails remained in the fallback chain';
-  const reasons = steps.map((s) => `${s.rail} (${s.verdict.blocked?.reason ?? 'ineligible'})`);
-  return `every rail in the chain was ineligible: ${reasons.join('; ')}`;
-}
-
 // ── Failure classification ───────────────────────────────────────────────────
 
 /**

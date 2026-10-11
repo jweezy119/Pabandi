@@ -177,6 +177,28 @@ export interface RailScore {
 }
 
 /**
+ * Rails that cost nothing but also collect nothing by themselves.
+ *
+ * `bank.rail` returns `''` from `getPaymentUrl` — a bank transfer has no URL,
+ * and its `validateTarget` only checks that the string is longer than ten
+ * characters. It is a legitimate way for a client to pay (that is the entire
+ * point of the rail) but it cannot complete a payment on its own.
+ *
+ * It is excluded from the cost tiebreaker for exactly that reason. Its cost is
+ * structurally zero, so it sits at the bottom of every comparison and would
+ * win any band it appeared in — which meant that adding cost-aware selection
+ * made "bank transfer" the answer to nearly every invoice, handing the client
+ * a dead invoice with no payment link. Cost is only a meaningful signal among
+ * rails that can actually take the money, so the comparison happens among
+ * those.
+ *
+ * Bank still wins when it genuinely should: when it is the only rail the
+ * business has registered, or when trust and geography put it far ahead. That
+ * is the "final fallback" role the chain gives it, and it is unaffected.
+ */
+const NON_AUTOMATABLE_RAILS: ReadonlySet<RailId> = new Set<RailId>(['bank']);
+
+/**
  * How close two scores have to be before cost is allowed to break the tie.
  *
  * The scoring below produces integers on a scale where the factors are worth
@@ -505,7 +527,9 @@ export function selectRail(
   let costDecided = false;
   if (scored.length > 1) {
     const topScore = scored[0].score;
-    const band = scored.filter((s) => topScore - s.score <= COST_TIEBREAK_BAND);
+    const band = scored.filter(
+      (s) => topScore - s.score <= COST_TIEBREAK_BAND && !NON_AUTOMATABLE_RAILS.has(s.railId),
+    );
     if (band.length > 1) {
       const cheapest = [...band].sort(
         (a, b) => a.estimatedCostUsd - b.estimatedCostUsd || a.railId.localeCompare(b.railId),

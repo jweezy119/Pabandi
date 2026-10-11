@@ -200,7 +200,24 @@ async function resolveInvoice(payment: FailedPayment): Promise<ResolvedInvoice |
   // the ambiguity that sends a real payment to a human review queue elsewhere
   // in this system; introducing it into a path that also moves a live payment
   // link would be strictly worse.
-  return withinOnePercent.length === 1 ? withinOnePercent[0] : null;
+  if (withinOnePercent.length === 1) return withinOnePercent[0];
+
+  // Nothing outstanding at this amount. Before calling it unattributable, check
+  // whether the payment simply belongs to an invoice that has ALREADY been
+  // paid — a decline can arrive after a retry succeeded. Reporting that as
+  // "unmatched, a human will place it" would put a real payment into a review
+  // queue for a transaction that is finished and correct.
+  const settled = await prisma.invoice.findMany({
+    where: { clientId: payment.clientId },
+    orderBy: { dateIssued: 'desc' },
+    take: 10,
+    select: { ...RESOLVE_SELECT, subtotal: true },
+  });
+  const settledMatch = settled.filter((c) => PAID_STATUSES.has(c.status) && Number(c.subtotal ?? 0) > 0
+    && Math.abs(Number(c.subtotal) - amount) / Number(c.subtotal) <= 0.01);
+  if (settledMatch.length === 1) return settledMatch[0];
+
+  return null;
 }
 
 // ── Link generation ──────────────────────────────────────────────────────────
@@ -311,21 +328,51 @@ export async function handlePaymentFailed(payment: FailedPayment): Promise<Retry
     };
   }
 
-  // ── Step 2: spend one retry, atomically. ───────────────────────────────────
-  // Compare-and-swap on retryCount. Two concurrent deliveries of the same
-  // failure both read 0; both try to write 1 with `retryCount: 0` in the
-  // filter; the database lets exactly one through. The loser returns
-  // `duplicate` and sends nothing.
+// ── Step 2: count this invoice's attempts, and spend one. ─────────────────
+  // WHY THE BUDGET IS COUNTED PER INVOICE, NOT PER PAYMENT REF
+  //
+  // Each failed payment gets its own ReconciliationMatch row, because
+  // paymentRef is unique and each attempt is a distinct fact. That makes a
+  // per-row counter useless as a budget: every retry produced a new row with
+  // retryCount 0, spent its first retry, and the count reset. The budget could
+  // never be exhausted and the chain would walk forever — Square, then PayPal,
+  // then bank, then Square again on the next new row.
+  //
+  // So the counter on the row records this invoice's attempt POSITION, and the
+  // budget is decided against how many failed attempts the invoice has in
+  // total. The two uses are the same number, which is why one column serves
+  // both.
+  //
+  // The CAS on retryCount stays, but as defence in depth rather than the
+  // primary gate: `paymentRef` being unique already means only one handler can
+  // own a given failure, and the create-first claim is what enforces that.
   const current = await prisma.reconciliationMatch.findUnique({
     where: { id: matchId },
     select: { retryCount: true },
   });
   const fromRetryCount = current?.retryCount ?? 0;
 
+  // Every rail this invoice has already been attempted on, INCLUDING the rail
+  // that just failed.
+  //
+  // The current attempt is included explicitly rather than relying on the query
+  // to find it. Its own row has no `invoiceId` at this point — it is only
+  // written further down, once we know the retry succeeded — so it is invisible
+  // to a query scoped by invoice, and leaving it out meant the exclusion list
+  // was always empty on the first failure. The retry then landed back on the
+  // rail that had just declined: a silent repeat, not a retry.
+  const priorAttempts = await prisma.reconciliationMatch.findMany({
+    where: { invoiceId: invoice.id, status: 'failed' },
+    select: { rail: true },
+  });
+  const failedRails = [...new Set([payment.rail, ...priorAttempts.map((r) => r.rail)].filter(isRailId))];
+
+  const attemptCount = priorAttempts.length + 1;
+
   const spent = await prisma.reconciliationMatch.updateMany({
     where: { id: matchId, retryCount: fromRetryCount },
     data: {
-      retryCount: fromRetryCount + 1,
+      retryCount: attemptCount,
       lastRetryRail: payment.rail,
       lastFailureReason: payment.reason ?? null,
       failureKind,
@@ -336,16 +383,7 @@ export async function handlePaymentFailed(payment: FailedPayment): Promise<Retry
     return { action: 'duplicate', matchId, retryCount: fromRetryCount };
   }
 
-  const retryCount = fromRetryCount + 1;
-
-  // Every rail this invoice has already been attempted on. Derived from the
-  // attempt rows rather than tracked separately, so it cannot drift from the
-  // history that actually happened.
-  const priorAttempts = await prisma.reconciliationMatch.findMany({
-    where: { invoiceId: invoice.id, status: 'failed' },
-    select: { rail: true },
-  });
-  const failedRails = [...new Set(priorAttempts.map((r) => r.rail).filter(isRailId))];
+  const retryCount = attemptCount;
 
   // ── Step 3: retry or escalate. ─────────────────────────────────────────────
   if (retryCount > MAX_RETRIES) {
@@ -360,7 +398,18 @@ export async function handlePaymentFailed(payment: FailedPayment): Promise<Retry
       subtotal: true,
       clientId: true,
       businessId: true,
-      client: { select: { id: true, name: true, email: true, passportId: true } },
+      client: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          passportId: true,
+          // Eligibility on this path needs the same three fields the invoice
+          // send path reads. Loading them here is what keeps a retry able to
+          // reach the crypto and PayPal rails at all.
+          passport: { select: { paymentScore: true, walletAddress: true, verified: true } },
+        },
+      },
       business: { select: { id: true, name: true, ownerId: true, address: true, currency: true } },
     },
   });
@@ -418,13 +467,19 @@ export async function handlePaymentFailed(payment: FailedPayment): Promise<Retry
           businessAddress: full.business?.address ?? null,
           currency,
           excludeRails: failedRails,
-          // The passport is not loaded on this path, so wallet and verification
-          // state are unknown. Left null rather than guessed: `canHandle` fails
-          // closed on both, so an unknown client simply does not get offered
-          // Solana or PayPal here. Loading the passport would be better, and is
-          // the obvious follow-up — the retry is exactly when eligibility
-          // matters most, because it is the path that runs after a failure.
-          passport: null,
+          // Loaded for the same reason invoice send loads it: `canHandle` reads
+          // `walletAddress` to decide whether Solana is reachable and `verified`
+          // to decide whether PayPal can send a request. Both fail closed, so
+          // leaving them null would not crash — it would quietly make every
+          // retry route to bank, which on a retry path is the one outcome
+          // guaranteed to need another human.
+          passport: full.client.passport
+            ? {
+                paymentScore: full.client.passport.paymentScore,
+                walletAddress: full.client.passport.walletAddress,
+                verified: full.client.passport.verified,
+              }
+            : null,
         },
       );
     } catch (err) {

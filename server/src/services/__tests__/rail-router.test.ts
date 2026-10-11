@@ -154,58 +154,91 @@ describe('rail cost model', () => {
 
 describe('Pattern 1: cost breaks ties, it does not lead', () => {
   /**
-   * PayPal and bank are the pair that actually ties.
+   * PayPal and Solana are the pair that actually ties.
    *
-   * Chosen deliberately rather than reaching for an obvious one like Square
-   * versus SafePay: those two do NOT tie. SafePay is penalised 60 points for
-   * not settling USD, so they are 107 points apart and cost never gets a say.
-   * A test built on them would pass for the wrong reason — it would look like
-   * proof that cost works when in fact cost was never consulted.
+   * Chosen by working the arithmetic rather than by picking an obvious pair.
+   * Square versus SafePay does NOT tie — SafePay is penalised 60 points for not
+   * settling USD, so they sit 107 apart and cost is never consulted. A test
+   * built on those two would pass for the wrong reason: it would look like
+   * proof that cost works while demonstrating nothing about it.
    *
-   * PayPal (affinity 20, currency +12 = 32) and bank (affinity 10, +12 = 22)
-   * are 10 apart, inside COST_TIEBREAK_BAND, with PayPal the more expensive
-   * one. That is exactly the situation cost exists to resolve.
+   * On a $2,000 ticket PayPal scores 20 (affinity) + 15 (large ticket) + 12
+   * (currency) = 47, and Solana 22 + 8 (large ticket) + 12 = 42. Five points
+   * apart, inside the band, with PayPal both the higher score AND the far more
+   * expensive rail — which is the only shape in which cost has anything to
+   * decide.
    */
-  const tiedMethods = [method('paypal', PAYPAL_LINK), method('bank', 'IBAN GB29 NWBK 6016 1331 9268 19')];
-
-  /**
-   * A verified passport, so PayPal is eligible. Without `verified: true` the
-   * router correctly refuses PayPal and the test would pass by accident — with
-   * one candidate instead of two, there is no tie for cost to break.
-   */
-  const verified = { paymentScore: 500, walletAddress: null, verified: true } as const;
+  const tiedMethods = [method('paypal', PAYPAL_LINK), method('solana', WALLET)];
+  const walleted = { paymentScore: 500, walletAddress: WALLET, verified: true } as const;
+  const TIE_AMOUNT = 2000;
 
   it('selects the cheaper of two otherwise-equal rails', () => {
-    const selection = selectRail(invoice(50), client(null), tiedMethods, { currency: 'USD', passport: verified });
+    const selection = selectRail(invoice(TIE_AMOUNT), client(null), tiedMethods, {
+      currency: 'USD',
+      passport: walleted,
+    });
 
     expect(selection.costDecided).toBe(true);
-    // PayPal costs 2.9% + 49¢ on $50. Bank costs nothing at all.
-    expect(selection.method.railId).toBe('bank');
-    expect(selection.estimatedCostUsd).toBe(0);
-  });
-
-  it('explains the choice with a cost comparison', () => {
-    const selection = selectRail(invoice(50), client(null), tiedMethods, { currency: 'USD', passport: verified });
-    // The reasoning has to carry the comparison, or a merchant who notices a
-    // rail change has no way to find out why.
-    expect(selection.reasoning).toMatch(/cheapest for this amount/);
-    expect(selection.reasoning).toMatch(/\$0\.00 on Bank Transfer/);
-    expect(selection.reasoning).toMatch(/\$1\.94 on PayPal/); // 2.9% of $50 + $0.49
-  });
-
-  it('reports estimated cost on every candidate, not just the winner', () => {
-    const selection = selectRail(invoice(50), client(null), tiedMethods, { currency: 'USD', passport: verified });
-    const costs = Object.fromEntries(selection.candidates.map((c) => [c.railId, c.estimatedCostUsd]));
-    expect(costs.paypal).toBeCloseTo(estimateRailCost('paypal', 50), 5);
-    expect(costs.bank).toBe(0);
+    expect(selection.method.railId).toBe('solana');
+    expect(selection.estimatedCostUsd).toBeCloseTo(estimateRailCost('solana', TIE_AMOUNT), 5);
   });
 
   it('puts the cost winner first, not merely somewhere in the list', () => {
     // A tiebreaker that reorders the tail and leaves the head alone computes
     // the right answer and then never uses it.
-    const selection = selectRail(invoice(50), client(null), tiedMethods, { currency: 'USD', passport: verified });
-    expect(selection.candidates[0].railId).toBe('bank');
+    const selection = selectRail(invoice(TIE_AMOUNT), client(null), tiedMethods, {
+      currency: 'USD',
+      passport: walleted,
+    });
+    expect(selection.candidates[0].railId).toBe('solana');
     expect(selection.method.railId).toBe(selection.candidates[0].railId);
+  });
+
+  it('ranks the dearer rail first on score, so the cost tie is real', () => {
+    // Guards the fixture itself. If PayPal did not out-score Solana here there
+    // would be no tie and the cost tests would be proving nothing.
+    const selection = selectRail(invoice(TIE_AMOUNT), client(null), tiedMethods, {
+      currency: 'USD',
+      passport: walleted,
+    });
+    const paypal = selection.candidates.find((c) => c.railId === 'paypal')!.score;
+    const solana = selection.candidates.find((c) => c.railId === 'solana')!.score;
+    expect(paypal).toBeGreaterThan(solana);
+    expect(paypal - solana).toBeLessThanOrEqual(COST_TIEBREAK_BAND);
+  });
+
+  it('explains the choice with a cost comparison', () => {
+    const selection = selectRail(invoice(TIE_AMOUNT), client(null), tiedMethods, {
+      currency: 'USD',
+      passport: walleted,
+    });
+    // The reasoning has to carry the comparison, or a merchant who notices a
+    // rail change has no way to find out why.
+    expect(selection.reasoning).toMatch(/cheapest for this amount/);
+    expect(selection.reasoning).toMatch(/\$58\.49 on PayPal/); // 2.9% of 2000 + 49¢
+  });
+
+  it('reports estimated cost on every candidate, not just the winner', () => {
+    const selection = selectRail(invoice(TIE_AMOUNT), client(null), tiedMethods, {
+      currency: 'USD',
+      passport: walleted,
+    });
+    const costs = Object.fromEntries(selection.candidates.map((c) => [c.railId, c.estimatedCostUsd]));
+    expect(costs.paypal).toBeCloseTo(estimateRailCost('paypal', TIE_AMOUNT), 5);
+    expect(costs.solana).toBeCloseTo(estimateRailCost('solana', TIE_AMOUNT), 5);
+  });
+
+  it('moves the cost figures with the amount, not just the winner', () => {
+    // Same two rails, same client, two ticket sizes on the same side of the
+    // small-ticket threshold so the affinity scores — and the tie — hold. Only
+    // the money moves.
+    const small = selectRail(invoice(600), client(null), tiedMethods, { currency: 'USD', passport: walleted });
+    const large = selectRail(invoice(4000), client(null), tiedMethods, { currency: 'USD', passport: walleted });
+
+    expect(small.method.railId).toBe('solana');
+    expect(large.method.railId).toBe('solana');
+    const paypalCost = (s: typeof small) => s.candidates.find((c) => c.railId === 'paypal')!.estimatedCostUsd;
+    expect(paypalCost(large)).toBeGreaterThan(paypalCost(small));
   });
 
   it('never lets cost outvote a trust or geography difference wider than the band', () => {
@@ -216,13 +249,19 @@ describe('Pattern 1: cost breaks ties, it does not lead', () => {
     const methods = [method('square', SQUARE_LINK), method('paypal', PAYPAL_LINK)];
     const selection = selectRail(invoice(50), client('500 Market St, San Francisco, United States'), methods, {
       currency: 'USD',
+      // Verified, or PayPal is ineligible and there is no second candidate to
+      // compare Square against — the assertion below would pass vacuously.
+      passport: { paymentScore: 500, walletAddress: null, verified: true },
     });
 
     expect(selection.method.railId).toBe('square');
     expect(selection.costDecided).toBe(false);
-    const squareScore = selection.candidates.find((c) => c.railId === 'square')?.score ?? 0;
-    const paypalScore = selection.candidates.find((c) => c.railId === 'paypal')?.score ?? 0;
-    expect(squareScore - paypalScore).toBeGreaterThan(COST_TIEBREAK_BAND);
+    const squareScore = selection.candidates.find((c) => c.railId === 'square')?.score;
+    const paypalScore = selection.candidates.find((c) => c.railId === 'paypal')?.score;
+    // Both must be present, or "Square won" proves nothing about cost.
+    expect(squareScore).toBeDefined();
+    expect(paypalScore).toBeDefined();
+    expect((squareScore as number) - (paypalScore as number)).toBeGreaterThan(COST_TIEBREAK_BAND);
   });
 
   it('keeps the band narrow enough that cost cannot become the primary signal', () => {
@@ -233,26 +272,38 @@ describe('Pattern 1: cost breaks ties, it does not lead', () => {
     expect(COST_TIEBREAK_BAND).toBeLessThanOrEqual(20);
   });
 
-  it('moves the cost figures with the amount, not just the winner', () => {
-    // Same two rails, same client, two ticket sizes on the SAME side of the
-    // small-ticket threshold so the affinity scores — and therefore the tie —
-    // are unchanged. Only the money moves.
-    const small = selectRail(invoice(20), client(null), tiedMethods, { currency: 'USD', passport: verified });
-    const large = selectRail(invoice(400), client(null), tiedMethods, { currency: 'USD', passport: verified });
+  it('never picks bank transfer on cost, however free it looks', () => {
+    // bank.rail returns '' from getPaymentUrl — there is no URL for a bank
+    // transfer. Its cost is structurally zero, so it would win every band it
+    // appeared in and hand the client an invoice with no way to pay it. This
+    // is the bug cost-aware selection introduced before the exclusion existed.
+    const selection = selectRail(invoice(50), client(null), [
+      method('paypal', PAYPAL_LINK),
+      method('bank', 'IBAN GB29 NWBK 6016 1331 9268 19'),
+    ], { currency: 'USD', passport: { paymentScore: 500, walletAddress: null, verified: true } });
 
-    expect(small.method.railId).toBe('bank');
-    expect(large.method.railId).toBe('bank');
-    const paypalCost = (s: typeof small) => s.candidates.find((c) => c.railId === 'paypal')!.estimatedCostUsd;
-    expect(paypalCost(large)).toBeGreaterThan(paypalCost(small));
+    expect(selection.method.railId).not.toBe('bank');
   });
 
-  it('lets PayPal win above the small-ticket threshold, where affinity says so', () => {
-    // Crosses SMALL_TICKET_MAX, which adds +15 to PayPal and nothing to bank.
-    // That is a genuine 25-point gap, outside the band, so cost does not get a
-    // say — the router is allowed to prefer PayPal on a large ticket, and does.
-    const selection = selectRail(invoice(5000), client(null), tiedMethods, { currency: 'USD', passport: verified });
-    expect(selection.method.railId).toBe('paypal');
-    expect(selection.costDecided).toBe(false);
+  it('still chooses bank when it is the only rail there is', () => {
+    // The exclusion is from the COST comparison, not from selection. Bank is a
+    // legitimate way to pay, and being the only option makes it the answer.
+    const selection = selectRail(invoice(50), client(null), [
+      method('bank', 'IBAN GB29 NWBK 6016 1331 9268 19'),
+    ], { currency: 'USD' });
+
+    expect(selection.method.railId).toBe('bank');
+  });
+
+  it('still chooses bank when trust puts it far ahead of every alternative', () => {
+    // A low-trust client moves bank +20 on the score, which is outside the
+    // band — and it is the whole reason bank carries that bonus.
+    const selection = selectRail(invoice(50), client(null), [
+      method('paypal', PAYPAL_LINK),
+      method('bank', 'IBAN GB29 NWBK 6016 1331 9268 19'),
+    ], { currency: 'USD', passport: { paymentScore: 200, walletAddress: null, verified: true } });
+
+    expect(selection.method.railId).toBe('bank');
   });
 });
 

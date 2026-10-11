@@ -8,6 +8,7 @@ import { fileInvoiceDispute, runFailureOwnership } from '../services/failure-own
 import { getMoneyFlow } from '../services/money-flow.service';
 import { isRailId, RailId } from '../services/rail-router.service';
 import { handlePaymentFailed, type FailedPayment } from '../services/payment-retry.service';
+import { verifySolanaPayment, type ObservedTransfer } from '../services/solana-payment-verification.service';
 import { paypalService } from '../services/paypal.service';
 
 /**
@@ -56,6 +57,7 @@ function verifyHmacHex(rawBody: string, signature: string | undefined, secret: s
 async function verifyRailSignature(
   rail: RailId,
   req: Request,
+  opts: { failureEvent?: boolean } = {},
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
   const rawBody = typeof (req as Request & { rawBody?: string }).rawBody === 'string'
     ? (req as Request & { rawBody?: string }).rawBody as string
@@ -96,19 +98,112 @@ async function verifyRailSignature(
   }
 
   if (rail === 'solana') {
-    // Solana has no shared secret. The signature of record is the on-chain
-    // transaction, so the reference must look like a real signature and the
-    // amount must be confirmed against the chain before we trust it.
-    const ref = String(req.body?.signature ?? req.body?.transactionId ?? '');
-    if (!/^[1-9A-HJ-NP-Za-km-z]{64,90}$/.test(ref)) {
-      return { ok: false, reason: 'missing or malformed Solana transaction signature' };
+    // Solana has no shared secret to HMAC against: there is no second party,
+    // the payment IS a transaction on a public ledger. Authentication is
+    // therefore replaced by verification — and verification has to be real.
+    //
+    // This used to be a base58 shape test, which proved nothing, and a comment
+    // beside it claiming the amount was confirmed on-chain when it was not.
+    // The endpoint settled any invoice named in the body for any amount, given
+    // a string of the right length.
+    //
+    // What is checked now: the transaction exists, it did not fail, and it
+    // moved the claimed amount of an accepted token. The recipient check is
+    // layered on by the caller, which knows which business it belongs to.
+    const signature = String(req.body?.signature ?? req.body?.transactionId ?? '');
+    if (!signature) {
+      return { ok: false, reason: 'missing Solana transaction signature' };
     }
+    // A `payment.failed` report describes a transaction that legitimately has
+    // `meta.err` set, so verifying it against the settlement rules would reject
+    // every real decline and the retry would never fire. Existence is still
+    // checked: a forged failure spends one of the client's retries, and a
+    // budget burned by invention leaves the real payment no second chance.
+    //
+    // Detected BEFORE verification rather than after, because the verification
+    // itself is what distinguishes the two cases.
+    const isFailure = opts.failureEvent === true;
+    const claimed = Number(req.body?.amount ?? req.body?.lamports ?? NaN);
+    const result = await verifySolanaPayment({
+      signature,
+      claimedAmount: isFailure || !Number.isFinite(claimed) ? null : claimed,
+      requireSuccess: !isFailure,
+    });
+    if (!result.ok) {
+      logger.warn(`[ReconcileWebhook:solana] Rejected payment: ${result.reason}`);
+      return { ok: false, reason: result.reason };
+    }
+
+    // Nothing transferred in a failure, so there is no destination to check.
+    const destination = isFailure
+      ? ({ ok: true } as const)
+      : await solanaDestinationIsRegistered(
+          typeof req.body?.businessId === 'string' ? req.body.businessId : null,
+          result.transfers,
+        );
+    if (!destination.ok) {
+      logger.warn(`[ReconcileWebhook:solana] Rejected payment: ${destination.reason}`);
+      return { ok: false, reason: destination.reason };
+    }
+
     return { ok: true };
   }
 
   // Bank transfers arrive by manual confirmation, not by callback. They are
   // authenticated like any other write instead.
   return { ok: false, reason: 'bank payments must be submitted through the authenticated endpoint' };
+}
+
+/**
+ * Did this payment land at a wallet the business actually collects on?
+ *
+ * ─── WHY THIS IS A SEPARATE LAYER ──────────────────────────────────────────
+ * On-chain verification above answers "is this a real transfer of the right
+ * amount". It does not answer "was it a transfer to US", and the difference is
+ * the whole attack: pointing the endpoint at a real, successful transaction
+ * that paid somebody else settles the invoice perfectly.
+ *
+ * Existence plus success is not proof of settlement. Only the destination is.
+ *
+ * The `businessId` in the body is attacker-controlled, which does not weaken
+ * this: naming a business makes the check STRICTER, because the transfer then
+ * has to arrive at that business's registered wallet. There is no business
+ * whose wallet the caller can choose that they could not simply have paid.
+ */
+async function solanaDestinationIsRegistered(
+  businessId: string | null,
+  transfers: ObservedTransfer[],
+): Promise<{ ok: true } | { ok: false; reason: string }> {
+  if (!businessId) {
+    // Cannot be checked, and the caller must know that rather than assume it
+    // was. Reconciliation still requires the amount to match an open invoice,
+    // so this is a gap rather than an open door — but it is a gap.
+    logger.warn(
+      '[ReconcileWebhook:solana] Payment carried no businessId, so the destination could not be checked against a registered wallet.',
+    );
+    return { ok: true };
+  }
+
+  const targets = await prisma.businessPaymentMethod.findMany({
+    where: { businessId, railId: 'solana' },
+    select: { target: true },
+  });
+
+  if (targets.length === 0) {
+    return { ok: false, reason: `business ${businessId} has no registered Solana payment method` };
+  }
+
+  const expected = new Set(targets.map((t) => t.target));
+  const landed = transfers.map((t) => t.destination).filter(Boolean);
+
+  if (!landed.some((d) => expected.has(d))) {
+    return {
+      ok: false,
+      reason: `payment landed at ${landed.join(', ') || 'an unknown address'}, which is not a registered destination for this business`,
+    };
+  }
+
+  return { ok: true };
 }
 
 // ── Body normalisation per rail ─────────────────────────────────────────────
@@ -303,7 +398,12 @@ router.post('/webhook/:rail', async (req, res) => {
       return res.status(400).json({ error: 'Bank transfers are confirmed manually, not by webhook.' });
     }
 
-    const verification = await verifyRailSignature(rail, req);
+    // Computed before verification, because for Solana the verification is
+    // what distinguishes a failure report from a payment claim.
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const failureEvent = isFailureEvent(body);
+
+    const verification = await verifyRailSignature(rail, req, { failureEvent });
     if (!verification.ok) {
       logger.warn(`[ReconcileWebhook:${rail}] Rejected webhook: ${verification.reason}`);
       return res.status(401).json({ error: verification.reason });
@@ -314,7 +414,7 @@ router.post('/webhook/:rail', async (req, res) => {
     // able to reach `reconcileIncomingPayment`, which marks invoices paid.
     // Handled here so the existing endpoint serves both outcomes rather than
     // adding a second one to keep in sync.
-    if (isFailureEvent((req.body ?? {}) as Record<string, unknown>)) {
+    if (failureEvent) {
       const failure = normaliseFailure(rail, (req.body ?? {}) as Record<string, unknown>);
       if (!failure) {
         logger.info(`[ReconcileWebhook:${rail}] Failure payload had no usable reference; ignored.`);
