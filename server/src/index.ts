@@ -200,6 +200,20 @@ app.use('/api/', (req: any, res: any, next: any) => {
 // Firebase App Check Middleware for API routes — disabled to reduce startup memory (imports firebase-admin)
 app.use('/api/', (_req: any, _res: any, next: any) => next());
 
+/**
+ * Latest schema check, for /health to report.
+ *
+ * Re-checked at boot and on an interval rather than per request: the answer
+ * changes on a deploy, not on a user action, and one query to
+ * information_schema against a remote database on every /health call would be
+ * a self-inflicted outage during a traffic spike.
+ *
+ * Defaults to a failing state rather than a passing one. Before the first check
+ * completes, "ok: false" is the honest answer — the process has not confirmed
+ * its schema is right, and a green default would say it had.
+ */
+let lastSchemaCheck: { ok: boolean; checked: number } = { ok: false, checked: 0 };
+
 // Health check endpoints
 app.get('/health', (_req, res) => {
   res.status(200).json({
@@ -245,6 +259,29 @@ app.get('/health', (_req, res) => {
     // PTP attestation signing. Its absence used to throw at module load and 500 six
     // route modules; it is now a per-request 503, so this is how anyone finds out.
     ptpSigningConfigured: Boolean((process.env.PTP_SIGNING_SECRET || '').trim()),
+    // Whether the database this process is attached to has the columns the
+    // running code depends on.
+    //
+    // Added because of a failure that was invisible from outside. This project
+    // has two databases in its history — a Render-managed Postgres named
+    // `pabandi-db`, and Aliyun RDS — and nothing in the deployment could say
+    // which one a running service was using. render.yaml sources DATABASE_URL
+    // from the former, server/.env and the manual-migrate workflow from the
+    // latter.
+    //
+    // That matters because autoDeploy is on: a commit that adds a column ships
+    // immediately, and if it reaches the other database then every request
+    // touching those tables fails, with nothing to distinguish "the database is
+    // broken" from "the database is not the one you think it is".
+    //
+    // A boolean and a count, never the hostname — that goes to the log via
+    // logSchemaCheck(), which is private. `false` here means the running code
+    // is querying columns this database does not have, and `prisma migrate
+    // deploy` needs to run against THIS database.
+    schema: {
+      ok: lastSchemaCheck.ok,
+      checked: lastSchemaCheck.checked,
+    },
     // The build identity, not a hand-maintained label.
     //
     // This used to be a hardcoded string that had not changed since 2026-09-08,
@@ -657,6 +694,35 @@ import { compoundingService } from './services/compounding.service';
 import { startInvoiceTrustCron } from './utils/invoiceTrustCron';
 compoundingService.startPeriodicCompounding();
 startInvoiceTrustCron();
+
+// ── Schema self-check ─────────────────────────────────────────────────────────
+//
+// Verifies this process's database has the columns the running code queries,
+// and says which database that is in the log.
+//
+// The interval is because the answer can change without a deploy: someone can
+// run `prisma migrate deploy` against the database by hand and fix a broken
+// service, and until /health reflects that, the only evidence is the log. Ten
+// minutes is frequent enough to notice and rare enough to be irrelevant.
+//
+// Not run before `app.listen`, so a database problem never delays startup and
+// never takes the service down — it is reported, and requests that need the
+// missing columns fail on their own with a clear Prisma error.
+import { logSchemaCheck } from './services/schema-check.service';
+void logSchemaCheck().then((result) => {
+  lastSchemaCheck = { ok: result.ok, checked: result.checked };
+});
+setInterval(() => {
+  void logSchemaCheck().then((result) => {
+    const was = lastSchemaCheck.ok;
+    lastSchemaCheck = { ok: result.ok, checked: result.checked };
+    // Only log transitions. Ten minutes of silence is the normal case, and a
+    // repeated identical failure is noise that hides a state change.
+    if (was !== result.ok) {
+      logger.info(`[SchemaCheck] state changed: ${was ? 'ok' : 'failed'} → ${result.ok ? 'ok' : 'failed'}.`);
+    }
+  });
+}, 10 * 60 * 1000).unref();
 logger.info('✅ Compounding service auto-started (hourly fee reinvestment)');
 
 // Monthly referral payout cron (1st of every month at midnight)

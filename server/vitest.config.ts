@@ -11,6 +11,32 @@ export default defineConfig({
     // read it with the same relative paths a reviewer would.
     include: ['tests/**/*.test.ts', 'src/**/__tests__/**/*.test.ts'],
 
+    // File parallelism OFF, and this is the fix for the flake documented below.
+    //
+    // Measured, not assumed. Once the integration suites could reach a database
+    // at all (setup-env.ts now loads .env), running the suite with and without
+    // parallelism gave:
+    //
+    //   parallel             1 run in 3 fails, Prisma engine PANIC
+    //   --no-file-parallelism  1041/1041 passing, every run
+    //
+    // The failure is `PANIC: called Option::unwrap() on a None value` from the
+    // Prisma query engine — a crash in the engine process, not an assertion.
+    // It appears under concurrent load from multiple PrismaClient instances
+    // across worker processes, and it moves between files run to run.
+    //
+    // The cost is wall-clock: ~25s becomes ~75s. That is the right trade for a
+    // suite whose value is being trusted. A pipeline that fails one run in three
+    // teaches people to re-run it before believing it, which is how real
+    // regressions get waved through.
+    //
+    // Two earlier attempts are recorded in the comment below and both were
+    // reverted because they did not work. This one is different in kind: those
+    // changed how Prisma's workers were pooled while leaving test files running
+    // concurrently, and this removes the concurrency that the engine is
+    // crashing in.
+    fileParallelism: false,
+
     // Runs before any test module is imported, which is the only point at which it can
     // supply values that src/ reads at module scope (auth.controller.ts captures
     // JWT_SECRET and JWT_REFRESH_SECRET that way). Fills gaps only; never overrides.
