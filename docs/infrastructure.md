@@ -9,29 +9,78 @@ intuition.
 | Piece | Where | Plan | Cost |
 |---|---|---|---|
 | API (`server/`) | Render web service | `starter` (`render.yaml:6`) | **$7/mo** |
-| Database | Render Postgres `pabandi-db` | **unknown — see below** | $0–$6/mo |
+| Database | **Aliyun RDS, Singapore** | **confirmed 2026-10-11** | ~$15–30/mo |
 | Site (`client/dist`) | Firebase Hosting | Spark | **$0** |
 | CI | GitHub Actions | public repo | **$0** |
 
-**Known floor: $7/mo.** Total is $7–13/mo depending on the database tier.
+**Known floor: ~$7/mo for compute.** The database is no longer the free Render
+Postgres this doc previously described — see the correction below.
 
-## ⚠️ The one thing that actually matters: is the database free?
+## CORRECTION (2026-10-11): the database is Aliyun RDS, not Render Postgres
 
-Render's docs are explicit:
+This document previously said the database was a Render-managed Postgres named
+`pabandi-db`, and rated it "unknown — see below". That was wrong, and so was
+`render.yaml`, which declared:
 
-> **Free Render Postgres databases expire 30 days after creation.** An expired Free
-> database is inaccessible unless you upgrade it to a paid compute plan. After a grace
-> period of 14 days, Render **deletes the database (along with all of its data)**.
+```yaml
+- key: DATABASE_URL
+  fromDatabase:
+    name: pabandi-db
+    property: connectionString
+```
 
-Free Postgres also has **no form of backups** and a fixed **1 GB** cap.
+Neither matched reality. The deployed service connects to **Aliyun RDS,
+Singapore**, which is also what `server/.env` and the `manual-migrate.yml`
+workflow's secret pointed at.
 
-`render.yaml` has no `databases:` block — the database was created by hand in the
-Render dashboard, so its plan is not visible from the repository.
+**How it was established, rather than assumed.** It was not resolved by reading
+config — both sources disagreed and neither is authoritative for what a running
+process uses. It was resolved by asking the running service. `schema-check`
+(reported on `/health` as `schema.ok`) verifies that the columns the deployed
+code queries actually exist in the database it is attached to, including whether
+`InvoiceTrustEvent.invoiceId` is nullable — a property that became true only on
+Aliyun, when migration `20261010_trust_event_null_scope` ran there. The live
+service returns `schema.ok: true`. A Render database would have returned false.
 
-**I cannot check this from here and it is the single highest-risk unknown in the
-infrastructure.** If it is on the free tier it has either already been migrated or is
-counting down. Either way: **check it this week**, and confirm a `pg_dump` exists
-somewhere that is not on Render.
+**Why it mattered.** `fromDatabase` makes the blueprint authoritative, so any
+re-apply of `render.yaml` would have pointed the service at a database holding
+none of its 338 tables — an immediate total outage rather than a slow one. The
+entry is now `sync: false`, which preserves the working dashboard value and
+cannot be silently overwritten.
+
+**Two lessons worth keeping.** First, a config file is a statement of intent; a
+health check is a statement of fact, and only one of them tells you what a
+deployed process is really doing. Second, this ambiguity survived precisely
+because the database has no invoices, no clients and no trust events in it — 352
+users and 95 passports, but no traffic through the billing path. Nothing broke,
+so nothing was noticed.
+
+## ⚠️ The one thing that actually matters: is the database backed up?
+
+*(This section used to ask whether the database was on Render's free tier, which
+expires after 30 days and deletes the data. That was the right question for the
+wrong database — it is Aliyun RDS now, and the expiry risk does not apply.)*
+
+The equivalent risk here is backup, and it is **unverified**.
+
+Aliyun RDS does automated backups, and they are not part of this repository, so
+nothing here can prove they are enabled, that they are being retained, or that
+anyone has ever restored one. An untested backup is a belief, not a safeguard.
+
+**What to do this week:**
+
+1. Confirm automated backups are enabled on the Aliyun instance, and how many
+   days are retained.
+2. Take a `pg_dump` and put it somewhere that is not Aliyun. The one in
+   `server/backups/` was written by hand during a migration and is not on any
+   schedule, so it will silently go stale.
+3. Restore it somewhere and confirm the row counts. An unverified backup is
+   indistinguishable from no backup until the day it is needed.
+
+The database currently holds 352 users and 95 passports, and **no invoices** —
+which is worth stating plainly here, because it means the data loss exposure
+today is small and the temptation to defer this is correspondingly high. That
+will not stay true.
 
 ## Is a VPS cheaper? No.
 

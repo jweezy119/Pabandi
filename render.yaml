@@ -10,7 +10,28 @@ services:
     autoDeploy: true
     buildCommand: echo "Build handled by Dockerfile"
     # NB: preDeploy runs from the repo root, not /app/server.
-    preDeployCommand: cd server && node scripts/ensure-agent-tables.cjs
+    # NB: preDeploy runs from the repo root, not /app/server.
+    #
+    # `prisma migrate deploy` runs BEFORE ensure-agent-tables.cjs, and the order
+    # matters. autoDeploy is on, so a commit that adds a column ships
+    # immediately — and code that reads that column fails on requests that touch
+    # the affected tables until the schema catches up. That is not hypothetical:
+    # the rail-retry work shipped reading ReconciliationMatch.retryCount and
+    # settlementStatus, and InvoiceTrustEvent's nullable scopes, all applied by
+    # migrations rather than by the deploy itself.
+    #
+    # Safe to add now, and only now, because it is verified that this service's
+    # DATABASE_URL points at the database that `prisma migrate deploy` was
+    # actually being run against — see the DATABASE_URL note below. Had that
+    # been a Render database instead, this command would have attempted all 43
+    # migrations against a database that has never had them run.
+    #
+    # `migrate deploy` applies only unapplied migrations, each in a
+    # transaction, so a bad migration fails the deploy rather than leaving the
+    # schema half-moved. Deliberately NOT `migrate dev` or `db push`: both can
+    # drop tables, and `db push` would reconcile against the 67-statement
+    # divergence between schema.prisma and this database.
+    preDeployCommand: cd server && npx prisma migrate deploy && node scripts/ensure-agent-tables.cjs
     envVars:
       - key: NODE_ENV
         value: production
@@ -36,10 +57,29 @@ services:
         generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
+      # THE LIVE SERVICE DOES NOT USE A RENDER DATABASE. It connects to Aliyun RDS.
+      #
+      # This entry previously read `fromDatabase: { name: pabandi-db }`, which
+      # was wrong and actively dangerous: `fromDatabase` makes the blueprint
+      # authoritative, so any re-apply of this file would point the service at a
+      # Render-managed Postgres instead of the database it actually reads. That
+      # would not be a slow degradation — the new database has none of the 338
+      # tables, so every authenticated request would fail at once.
+      #
+      # How this was established rather than assumed: `schema-check.service`
+      # added in 8fa0ddd8f reports on /health whether the columns the running
+      # code queries exist. The deployed service returns `schema.ok: true`,
+      # including for `InvoiceTrustEvent.invoiceId` being NULLABLE — a property
+      # that became true only on Aliyun RDS, when migration
+      # 20261010_trust_event_null_scope ran there on 2026-10-11. A Render
+      # database would have returned false.
+      #
+      # `sync: false` keeps the dashboard value, so the working configuration
+      # cannot be silently overwritten. If the database is ever genuinely moved,
+      # change it in the dashboard and update this comment — do not restore a
+      # `fromDatabase` block without verifying which database the service reads.
       - key: DATABASE_URL
-        fromDatabase:
-          name: pabandi-db
-          property: connectionString
+        sync: false
       - key: DIRECT_URL
         fromDatabase:
           name: pabandi-db
