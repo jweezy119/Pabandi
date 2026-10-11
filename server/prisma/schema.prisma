@@ -7326,19 +7326,33 @@ model ReconciliationMatch {
 
 model InvoiceTrustEvent {
   id          String   @id @default(cuid())
-  invoiceId   String
-  passportId  String
+  /// Optional, and genuinely so: most trust events have no invoice. Booking
+  /// lifecycle, delivery check-ins, escrow movements and review activity are
+  /// all real trust events that belong to a booking or an escrow, not to an
+  /// invoice. See the migration for why the fallback that used to fill this in
+  /// was worse than a null.
+  invoiceId   String?
+  /// Optional for the same reason — a system or platform event may have no
+  /// party attached to it.
+  passportId  String?
   eventType   String // "invoice.sent" | "invoice.paid_on_time" | "invoice.paid_late" | "invoice.overdue" | "invoice.defaulted"
   scoreBefore Int?
   scoreAfter  Int?
   createdAt   DateTime @default(now())
 
-  invoice  Invoice       @relation(fields: [invoiceId], references: [id])
-  passport TrustPassport @relation(fields: [passportId], references: [id])
+  invoice  Invoice?      @relation(fields: [invoiceId], references: [id])
+  passport TrustPassport? @relation(fields: [passportId], references: [id])
 
+  /// Idempotency for invoice-scoped events: one `invoice.paid_on_time` per
+  /// invoice. Deliberately left as a plain unique constraint rather than given
+  /// a partial index — in Postgres, NULLs are distinct under a unique
+  /// constraint, so an event with no invoice (a booking, a check-in) is not
+  /// deduplicated at all, which is the correct behaviour: those events
+  /// genuinely repeat and each one is a fact.
   @@unique([invoiceId, eventType])
   @@index([invoiceId])
   @@index([passportId])
+  @@index([eventType])
   @@index([createdAt])
 }
 

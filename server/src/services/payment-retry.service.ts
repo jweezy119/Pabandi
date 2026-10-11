@@ -103,43 +103,42 @@ export type RetryOutcome =
 // ── Trust events ─────────────────────────────────────────────────────────────
 
 /**
- * Fire a retry trust event without tripping the audit table's unique index.
+ * Fire a retry trust event.
  *
- * `InvoiceTrustEvent` is `@@unique([invoiceId, eventType])`, and
- * `trustCore.emit` rethrows on a failed insert. So emitting
- * `payment.retry_attempted` a second time for one invoice — which is the normal
- * case, since MAX_RETRIES is more than one — throws. It does not fail loudly in
- * a useful place either: the caller is a webhook that swallows the rejection,
- * so the retry silently stops after the first attempt.
+ * The event type is scoped to the attempt — `payment.retry_attempted.2` for the
+ * second — for a reason that has nothing to do with the bug it used to work
+ * around.
  *
- * Two fixes, applied together:
+ * `InvoiceTrustEvent` is `@@unique([invoiceId, eventType])`, so one invoice can
+ * hold one `payment.retry_attempted` and no more. When emit() still threw on
+ * that constraint, the suffix was forced: without it the second retry hit the
+ * unique index and died. emit() no longer throws (a repeat is now a no-op that
+ * reports `recorded: false`), so the suffix is no longer required — but it is
+ * still the better behaviour. Silently dropping the second attempt would leave
+ * no record that a retry happened, and "this invoice was attempted three times
+ * on three rails" is exactly the history this table exists to hold.
  *
- *   1. Scope the event type to the attempt (`payment.retry_attempted.2`), so a
- *      second retry is a genuinely distinct fact worth its own row rather than
- *      a duplicate write. Attempt 1 keeps the bare name so the event is
- *      greppable by its documented name.
- *   2. Swallow the unique violation if one still occurs. Belt and braces, and
- *      it means a future event type added here degrades to a no-op instead of
- *      breaking the retry chain.
- *
- * Neither event appears in trust-core's delta map, so neither moves a score —
- * a client whose card was declined must not be penalised for it. That is the
- * intended behaviour, not an omission.
+ * Neither event appears in trust-core's delta map, so neither moves a score. A
+ * client whose card was declined must not be penalised for it, and that is the
+ * intended behaviour rather than an omission.
  */
-async function emitRetryEvent(baseType: string, attempt: number, invoiceId: string, payload: Record<string, unknown>): Promise<void> {
+async function emitRetryEvent(
+  baseType: string,
+  attempt: number,
+  invoiceId: string,
+  payload: Record<string, unknown>,
+): Promise<void> {
   const eventType = attempt === 1 ? baseType : `${baseType}.${attempt}`;
   try {
     await trustCore.emit(eventType, {
       invoiceId,
-      amount: payload.amount,
-      reason: payload.reason ?? null,
+      amount: typeof payload.amount === 'number' ? payload.amount : undefined,
+      reason: typeof payload.reason === 'string' ? payload.reason : null,
       metadata: { ...payload },
-    } as Parameters<typeof trustCore.emit>[1]);
+    });
   } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
-      logger.info(`[Retry] Trust event ${eventType} already recorded for ${invoiceId}; not repeating.`);
-      return;
-    }
+    // A trust event failing must not fail the retry that produced it. The
+    // payment is the thing that matters; the note about it is not.
     logger.warn(`[Retry] Trust event ${eventType} failed for ${invoiceId}: ${String(err)}`);
   }
 }

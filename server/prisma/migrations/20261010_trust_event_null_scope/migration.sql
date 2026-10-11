@@ -1,0 +1,51 @@
+-- Let InvoiceTrustEvent record events that have no invoice and no passport.
+--
+-- ─── WHY THIS IS A BUG FIX AND NOT A SCHEMA TIDY-UP ──────────────────────────
+-- trustCore.emit() papered over a missing invoiceId like this:
+--
+--   let finalInvoiceId = payload.invoiceId;
+--   if (!finalInvoiceId) {
+--     const fallback = await prisma.invoice.findFirst();
+--     finalInvoiceId = fallback?.id || '';
+--   }
+--
+-- so a `booking.created` was filed against whichever invoice happened to be
+-- first in the table. Twenty-one of the thirty-two emit call sites pass no
+-- invoiceId, so this was the common case rather than the exception.
+--
+-- It is worse than writing nothing. It corrupts somebody else's record:
+-- `escrow.released` appears in an unrelated invoice's trust history, and a
+-- booking event can collide with that invoice's own `invoice.sent` on the
+-- @@unique([invoiceId, eventType]) index and throw. A booking's trust trail
+-- becomes unreadable, and the invoice it was misfiled against gains events it
+-- never had.
+--
+-- ─── WHY passportId GOES NULLABLE TOO ────────────────────────────────────────
+-- Eleven call sites pass no passport, so emit sent '' for it. The foreign key
+-- to TrustPassport rejects that, and emit's catch block rethrows — so those
+-- eleven events failed to record at all, and because their callers `await`
+-- emit() without a catch, the failure propagated into the business operation
+-- that triggered it. A booking that creates no trust event should not fail to
+-- be created.
+--
+-- ─── WHY THE UNIQUE CONSTRAINT IS LEFT ALONE ─────────────────────────────────
+-- It looks like it should change. It should not. In Postgres NULLs are
+-- distinct under a unique constraint, so an event with no invoice is simply
+-- never deduplicated — which is right: `booking.attended` can happen many
+-- times and each occurrence is a real fact, while `invoice.paid_on_time` still
+-- collapses to one row per invoice. Adding a partial index to do this
+-- explicitly would be a rewrite of a constraint that is already correct.
+--
+-- Verified safe: dropping NOT NULL only ever turns a rejected write into an
+-- accepted one. No existing row changes, and rows already written keep the
+-- invoice they were misfiled against — repairing history is a separate
+-- judgement call, not something a schema migration should decide.
+
+ALTER TABLE "InvoiceTrustEvent" ALTER COLUMN "invoiceId" DROP NOT NULL;
+ALTER TABLE "InvoiceTrustEvent" ALTER COLUMN "passportId" DROP NOT NULL;
+
+-- The eventType index is new. Every repeated-event investigation so far has
+-- been a question of the form "which events exist for X", and answering it
+-- means reading eventType out of rows that were supposed to be keyed by
+-- invoiceId and are not.
+CREATE INDEX "InvoiceTrustEvent_eventType_idx" ON "InvoiceTrustEvent"("eventType");
