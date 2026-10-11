@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getAuthToken } from '../../utils/authToken';
+import { HalalBadge } from '../../components/halal';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
 
@@ -331,6 +332,14 @@ export default function FluidBookingPage() {
           <div className="space-y-6">
             <h2 className="text-lg font-bold text-[var(--warm-ink)] font-headline">Your Details</h2>
 
+            {/* Escrow / Amanah notice */}
+            <div className="p-3 rounded-xl bg-[var(--sage)]/8 border border-[var(--sage)]/20 flex items-start gap-2">
+              <Shield size={14} className="text-[var(--sage)] mt-0.5 shrink-0" />
+              <p className="text-xs text-[var(--soft-stone)] leading-relaxed">
+                Your payment is held in <strong className="text-[var(--sage)]">Sharia-compliant escrow</strong> until the service is fulfilled. No interest accrues — funds are only released to the business after your visit. <HalalBadge size="sm" />
+              </p>
+            </div>
+
             <div className="p-4 rounded-2xl bg-white/60 border border-[rgba(191,179,163,0.2)] space-y-3">
               <div className="flex items-center gap-2 text-sm text-[var(--soft-stone)]">
                 <Calendar size={14} />
@@ -450,6 +459,18 @@ export default function FluidBookingPage() {
                 </p>
               </div>
             )}
+
+            {/* Sharia-compliant booking card */}
+            <div className="p-4 rounded-2xl bg-emerald-500/8 border border-emerald-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">🛡️</span>
+                <span className="text-sm font-semibold text-emerald-300">Sharia-Compliant Booking</span>
+                <HalalBadge size="sm" />
+              </div>
+              <p className="text-xs text-[var(--soft-stone)] leading-relaxed">
+                This transaction follows Islamic principles: <strong>no interest</strong>, transparent pricing, escrow-protected deposit. Profit-sharing (Mudarabah) applies to all platform fees.
+              </p>
+            </div>
 
             <Link to="/" className="inline-block px-6 py-3 rounded-xl bg-[var(--clay)] text-white font-semibold hover:bg-[var(--terracotta)] transition-colors">
               Back to Home

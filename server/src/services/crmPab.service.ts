@@ -3,9 +3,9 @@ import { getAssociatedTokenAddress, createTransferInstruction, createAssociatedT
 import bs58 from 'bs58';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { getPabMint } from '../config/pabToken';
 
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
-const PAB_MINT = 'G811FHWiZrqY1DZKz6dQySpJFPTDfe21B8LRnDqa1z5Y';
 const PAB_DISCOUNT_RATE = 0.05; // 5% discount for PAB payments
 const AUTO_STAKE_RATE = 0.10; // 10% auto-stake for trust score
 const PAB_PRICE_USDC = 1.0; // 1 PAB = 1 USDC (simplified; in production use oracle)
@@ -350,7 +350,7 @@ export async function distributeBulkPabReward(rewardId: string): Promise<any> {
   if (!platformKey) return { success: false, error: 'Platform wallet not configured' };
 
   const connection = getConnection();
-  const mintKey = new PublicKey(PAB_MINT);
+  const mintKey = new PublicKey(getPabMint());
   const fromKey = platformKey.publicKey;
   const fromTokenAccount = await getAssociatedTokenAddress(mintKey, fromKey);
 

@@ -29,7 +29,7 @@ export interface ActusContract {
   contractId: string;
   tenantId: string;
   landlordId: string;
-  principalUSD: number;     // rent held in yield-bearing RWA (Ondo USDY)
+  principalUSD: number;     // rent held in a halal Musharakah profit-share
   apyPct: number;           // yield APY
   termMonths: number;
   startDate: string;
@@ -48,7 +48,7 @@ export class ActusEngine {
     tenantId: string; landlordId: string; principalUSD: number;
     apyPct?: number; termMonths?: number; startDate?: string;
   }): Promise<ActusContract> {
-    const apy = input.apyPct ?? 4.5;          // Ondo USDY default
+    const apy = input.apyPct ?? 5.0;          // Musharakah projection (not guaranteed)
     const term = input.termMonths ?? 12;
     const start = input.startDate ? new Date(input.startDate) : new Date();
     const monthlyYield = (input.principalUSD * (apy / 100)) / 12;
@@ -59,7 +59,7 @@ export class ActusEngine {
     // INITIAL_EXCHANGE: tenant deposits rent principal into the yield RWA.
     schedule.push({
       eventType: 'INITIAL_EXCHANGE', date: start.toISOString().slice(0, 10),
-      amount: -input.principalUSD, currency: 'USD', payer: input.tenantId, payee: 'OndoUSDY',
+      amount: -input.principalUSD, currency: 'USD', payer: input.tenantId, payee: 'MUSHARAKAH_POOL',
       status: 'SCHEDULED',
     });
     // 11 monthly PAYMENTs (yield split) — last month's principal handled at REDEMPTION.
@@ -68,7 +68,7 @@ export class ActusEngine {
       schedule.push({
         eventType: 'PAYMENT', date: d.toISOString().slice(0, 10),
         amount: +(tenantShare + landlordShare).toFixed(4), currency: 'USD',
-        payer: 'OndoUSDY', payee: `${input.tenantId}+${input.landlordId}`,
+        payer: 'MUSHARAKAH_POOL', payee: `${input.tenantId}+${input.landlordId}`,
         status: 'SCHEDULED',
       });
     }
@@ -77,12 +77,12 @@ export class ActusEngine {
     const fd = new Date(start); fd.setMonth(fd.getMonth() + term);
     schedule.push({
       eventType: 'FEE', date: fd.toISOString().slice(0, 10), amount: fee, currency: 'USD',
-      payer: 'OndoUSDY', payee: 'PABANDI_TREASURY', status: 'SCHEDULED',
+      payer: 'MUSHARAKAH_POOL', payee: 'PABANDI_TREASURY', status: 'SCHEDULED',
     });
     // REDEMPTION: principal returned to tenant at term end.
     schedule.push({
       eventType: 'REDEMPTION', date: fd.toISOString().slice(0, 10), amount: input.principalUSD,
-      currency: 'USD', payer: 'OndoUSDY', payee: input.tenantId, status: 'SCHEDULED',
+      currency: 'USD', payer: 'MUSHARAKAH_POOL', payee: input.tenantId, status: 'SCHEDULED',
     });
 
     const contractId = `act_${createHashLocal(input.tenantId + input.landlordId + input.principalUSD + start.toISOString())}`;

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { getAuthToken } from '../../utils/authToken';
+import { HalalBanner } from '../../components/halal';
 
 const LEDGER_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/capital`;
 
@@ -146,6 +147,8 @@ export default function CapitalOSPage() {
             </div>
           ))}
         </div>
+
+        <HalalBanner compact />
 
         <div className="flex gap-2">
           {(['month', 'year'] as const).map((p) => (

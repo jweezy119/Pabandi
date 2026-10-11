@@ -14,7 +14,7 @@ const vcService = new VCService();
  * Validates the "Trust-As-Infrastructure" loop end-to-end.
  * Provisions 1 Landlord, 50 Tenants.
  * Issues Property DIDs.
- * Processes 3 months of Tokenized Rent streams (Ondo USDY).
+ * Processes 3 months of Tokenized Rent streams (Musharakah profit-share).
  * Generates ZK Proofs of Rent (PoR).
  * Outputs a clean JSON metric report for investor pitches.
  */
@@ -52,7 +52,7 @@ async function seedPilotProgram() {
   // 2. Provision 50 Tenants & Simulate 3 Months of Activity
   const NUM_TENANTS = 50;
   const MONTHLY_RENT = 1500; // $1,500 average rent
-  const RENT_HOLDING_DAYS = 5; // Rent held in Ondo USDY for 5 days per month
+  const RENT_HOLDING_DAYS = 5; // Rent held in the halal profit-share rail for 5 days per month
 
   for (let i = 1; i <= NUM_TENANTS; i++) {
     // Create Tenant
@@ -95,7 +95,7 @@ async function seedPilotProgram() {
       assetDescription: `Lease for Unit ${i}`,
       requiredAmountUSD: MONTHLY_RENT,
       yieldOptIn: true,
-      pool: 'ONDO_USDC'
+      pool: 'MUSHARAKAH'
     });
 
     // Simulate 3 Months of Tokenized Rent

@@ -30,10 +30,19 @@ router.get('/ptp.json', (req: Request, res: Response) => {
  * Public key for offline verification of PTP Attestations.
  */
 router.get('/ptp-key.pem', (_req: Request, res: Response) => {
-  const pem = ptpEngine.getPublicKeyPEM();
-  
-  res.setHeader('Content-Type', 'application/x-pem-file');
-  res.send(pem);
+  // Gracefully handle missing PTP_SIGNING_SECRET — this is a public key endpoint
+  // and should never 500, even when attestation signing isn't configured.
+  try {
+    const pem = ptpEngine.getPublicKeyPEM();
+    res.setHeader('Content-Type', 'application/x-pem-file');
+    res.send(pem);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(503).json({
+      error: 'PTP_SIGNING_SECRET not configured',
+      detail: message,
+    });
+  }
 });
 
 /**

@@ -40,7 +40,7 @@ export interface CreateMilestoneProjectInput {
   requiredAmountUSD: number;
   yieldOptIn?: boolean;
   communityPoolOptIn?: boolean;
-  pool?: 'JITO_STSOL' | 'ONDO_USDC' | 'MAPLE';
+  pool?: 'MUSHARAKAH' | 'MUDARABAH' | 'MURABAHAH';
   beneficiaryBackgroundCheckId?: string;
   milestones: MilestoneInput[];
   retentionPct?: number; // default 0.10 (10% held through warranty)

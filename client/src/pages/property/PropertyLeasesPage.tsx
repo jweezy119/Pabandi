@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../services/api';
+import { HalalBanner } from '../../components/halal';
 
 const navItems = [
   { path: '/property', label: 'Dashboard', icon: '📊', end: true },
@@ -43,6 +44,8 @@ export default function PropertyLeasesPage() {
             <button key={s} onClick={() => setFilter(s)} className={`px-3 py-1 rounded text-sm ${filter === s ? 'bg-[var(--sage)] text-[var(--warm-ink)]' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)]'}`}>{s === 'all' ? 'All' : s}</button>
           ))}
         </div>
+        <HalalBanner compact />
+
         {showForm && (
           <div className="bg-[var(--cream)] border border-[rgba(191,179,163,0.3)] rounded-xl p-4 space-y-3">
             <input placeholder="Tenant Email" className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded px-3 py-2 text-[var(--warm-ink)] text-sm" />
@@ -51,6 +54,14 @@ export default function PropertyLeasesPage() {
               <input type="date" placeholder="End Date" className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded px-3 py-2 text-[var(--warm-ink)] text-sm" />
             </div>
             <input placeholder="Rent Amount" type="number" className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded px-3 py-2 text-[var(--warm-ink)] text-sm" />
+            <div>
+              <label className="text-xs text-[var(--soft-stone)] block mb-1">Lease Structure</label>
+              <select className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded px-3 py-2 text-[var(--warm-ink)] text-sm">
+                <option value="STANDARD">Standard Lease</option>
+                <option value="IJARA">Ijara (Islamic Lease)</option>
+                <option value="MURABAHA">Murabaha (Cost-Plus Financing)</option>
+              </select>
+            </div>
             <button className="px-4 py-2 bg-[var(--sage)] text-[var(--warm-ink)] rounded text-sm" onClick={() => setShowForm(false)}>Create Lease</button>
           </div>
         )}

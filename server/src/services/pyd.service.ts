@@ -17,11 +17,14 @@ import { ptpEngine, PTP_RISK_BANDS, PTPRiskBand } from '../protocol/ptp.spec';
 import { web3AgentService } from './web3Agent.service';
 import { geoRiskOracle, RiskBand } from './geoRiskOracle.service';
 
-// Non-custodial yield pools (tenant opts in; Pabandi spreads the yield)
+// Halal profit-sharing pools (tenant opts in; Pabandi shares profit, never charges riba).
+// NOTE: every entry here must trace its return to REAL ECONOMIC ACTIVITY — trade margin,
+// rental income, or asset appreciation. Nothing may earn merely by the passage of time.
+// Target rates are projections for UI purposes, NOT guaranteed returns.
 export const YIELD_POOLS = {
-  JITO_STSOL: { label: 'Jito SOL (liquid staking)', expectedApy: 7.0, tenantApy: 5.5, spreadPct: 1.5 },
-  ONDO_USDC: { label: 'Ondo USDC Money Market', expectedApy: 4.5, tenantApy: 3.5, spreadPct: 1.0 },
-  MAPLE: { label: 'Maple Institutional USDC', expectedApy: 6.0, tenantApy: 4.5, spreadPct: 1.5 },
+  MUSHARAKAH: { label: 'Musharakah (joint-ownership trade)', expectedApy: 5.0, tenantApy: 4.0, spreadPct: 1.0 },
+  MUDARABAH: { label: 'Mudarabah (managed profit-share)', expectedApy: 6.0, tenantApy: 4.8, spreadPct: 1.2 },
+  MURABAHAH: { label: 'Murabahah (cost-plus trade sale)', expectedApy: 4.0, tenantApy: 3.2, spreadPct: 0.8 },
 } as const;
 
 export type YieldPoolKey = keyof typeof YIELD_POOLS;
@@ -136,7 +139,7 @@ export class PydService {
     depositId: string,
     tenantId: string,
     landlordId: string,
-    pool: YieldPoolKey = 'JITO_STSOL'
+    pool: YieldPoolKey = 'MUSHARAKAH'
   ): Promise<any> {
     const poolSpec = YIELD_POOLS[pool];
     const agreement = await prisma.yieldAgreement.create({
@@ -258,16 +261,17 @@ export class PydService {
     return geoRiskOracle.priceWithDualRisk({ baseRentUSD, geoRiskBand, tenantTrustBand });
   }
 
-  // ── TOKENIZED RENT STREAMS (Ondo USDY / DeFi Primitive) ─────────────────────
+  // ── TOKENIZED RENT STREAMS (Musharakah profit-share) ────────────────────────
 
   /**
    * Process a tokenized rent payment.
-   * Instead of a sunk cost, rent is held in a yield-bearing RWA (e.g., Ondo USDY) 
-   * for a short duration (e.g., paid on the 1st, settles on the 5th).
-   * The generated yield is split 50/50 using O(1) distribution logic.
+   * Instead of a sunk cost, rent participates in a halal Musharakah for a short
+   * duration (e.g., paid on the 1st, settles on the 5th).
+   * Profit from REAL economic activity is split 50/50 using O(1) distribution logic.
+   * The rate below is a PROJECTION, not a guaranteed return — no riba.
    */
   async processTokenizedRent(tenantId: string, landlordId: string, rentAmountUSD: number, holdingDays: number): Promise<any> {
-    const APY = YIELD_POOLS.ONDO_USDC.expectedApy; // e.g., 4.5%
+    const APY = YIELD_POOLS.MUSHARAKAH.expectedApy; // projection only, not guaranteed
     
     // Calculate total yield generated during the holding period
     const totalYieldUSD = rentAmountUSD * (APY / 100) * (holdingDays / 365);
@@ -281,8 +285,8 @@ export class PydService {
     // without iterating through arrays (saving gas).
 
     logger.info(
-      `[PYD-TokenizedRent] Processed $${rentAmountUSD} rent held for ${holdingDays} days in Ondo USDY. ` +
-      `Yield generated: $${totalYieldUSD.toFixed(4)}. Tenant Equity: $${tenantEquityUSD} | Landlord Bonus: $${landlordBonusUSD}`
+      `[PYD-TokenizedRent] Processed $${rentAmountUSD} rent held for ${holdingDays} days in Musharakah. ` +
+      `Projected profit: $${totalYieldUSD.toFixed(4)}. Tenant Equity: $${tenantEquityUSD} | Landlord Bonus: $${landlordBonusUSD}`
     );
 
     // Simulate updating the tenant's Renter Equity Wallet
@@ -311,7 +315,7 @@ export class PydService {
       totalYieldUSD: +totalYieldUSD.toFixed(4),
       tenantEquityUSD,
       landlordSettlementUSD: +(rentAmountUSD + landlordBonusUSD).toFixed(4),
-      asset: 'Ondo USDY'
+      asset: 'Musharakah',
     };
   }
 }

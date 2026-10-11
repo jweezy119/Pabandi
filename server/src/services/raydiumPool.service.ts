@@ -12,6 +12,7 @@ import { Connection, Keypair, PublicKey, Transaction, sendAndConfirmTransaction 
 import { createAssociatedTokenAccountInstruction, createTransferInstruction, getAssociatedTokenAddress, getAccount } from '@solana/spl-token';
 import bs58 from 'bs58';
 import { prisma } from '../utils/database';
+import { getPabMint } from '../config/pabToken';
 
 const TOKEN_DECIMALS = 9;
 const USDC_DECIMALS = 6;
@@ -47,8 +48,7 @@ function getKeypair(): Keypair {
 // ─── INITIALIZE POOL ────────────────────────────────────
 export async function initializePool(pabAmount: number, usdcAmount: number): Promise<{ success: boolean; error?: string }> {
   try {
-    const pabMintStr = process.env.PAB_MINT_ADDRESS || '';
-    if (!pabMintStr) return { success: false, error: 'PAB_MINT_ADDRESS not set' };
+    const pabMintStr = getPabMint();
 
     const connection = getConnection();
     const owner = getKeypair();

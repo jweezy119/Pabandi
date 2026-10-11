@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { Button } from '../../components/primitives';
 import { getAuthToken } from '../../utils/authToken';
+import { HalalBadge } from '../../components/halal';
 const LEDGER_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/capital`;
 
 const navItems = [
@@ -30,6 +31,13 @@ const FILTERS = [
   { key: 'sent', label: 'Sent' },
   { key: 'overdue', label: 'Overdue' },
   { key: 'paid', label: 'Paid' },
+] as const;
+
+const HALAL_INVOICE_TYPES = [
+  { key: 'standard', label: 'Standard' },
+  { key: 'mudarabah', label: 'Mudarabah (Profit-Sharing)' },
+  { key: 'musharakah', label: 'Musharakah (Joint Venture)' },
+  { key: 'ijarah', label: 'Ijarah (Leasing)' },
 ] as const;
 /**
  * The only CapitalOS page that already fetched real data, so most of this is
@@ -142,20 +150,37 @@ export default function LedgerInvoicesPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Invoices</h1>
-            {outstanding > 0 && (
-              <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>
-                ${outstanding.toLocaleString()} outstanding
-              </p>
-            )}
+            <div className="flex items-center gap-2 mt-1">
+              {outstanding > 0 && (
+                <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>
+                  ${outstanding.toLocaleString()} outstanding
+                </p>
+              )}
+              <HalalBadge size="sm" />
+            </div>
           </div>
-          <Link
-            to="/capital/invoices/new"
-            className="px-5 py-2.5 rounded-full font-medium transition hover:-translate-y-0.5"
-            style={{ background: 'var(--clay)', color: 'white', boxShadow: 'var(--shadow-soft)' }}
-          >
-            <span className="material-symbols-outlined text-[18px] mr-1.5 align-[-3px]" aria-hidden="true">add</span>
-            New Invoice
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/capital/invoices/new"
+              className="px-5 py-2.5 rounded-full font-medium transition hover:-translate-y-0.5"
+              style={{ background: 'var(--clay)', color: 'white', boxShadow: 'var(--shadow-soft)' }}
+            >
+              <span className="material-symbols-outlined text-[18px] mr-1.5 align-[-3px]" aria-hidden="true">add</span>
+              New Invoice
+            </Link>
+            <div className="relative group">
+              <button className="px-3 py-2.5 rounded-full text-sm font-medium transition border" style={{ borderColor: 'var(--sage)', color: 'var(--sage)' }}>
+                🛡️ Halal Types
+              </button>
+              <div className="absolute right-0 top-full mt-1 w-56 rounded-xl shadow-xl border border-[rgba(191,179,163,0.2)] bg-white p-2 hidden group-hover:block z-10">
+                {HALAL_INVOICE_TYPES.map((t) => (
+                  <div key={t.key} className="px-3 py-2 rounded-lg hover:bg-[var(--warm-sand)] cursor-pointer text-sm" style={{ color: 'var(--warm-ink)' }}>
+                    {t.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {error && (

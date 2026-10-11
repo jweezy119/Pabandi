@@ -4,6 +4,7 @@ import { prisma } from '../utils/database';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
 import { logger } from '../utils/logger';
+import { getPabMint } from '../config/pabToken';
 
 // Use the mainnet-beta RPC, or the one from ENV if set
 const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
@@ -31,7 +32,7 @@ export const getBalances = async (req: AuthRequest, res: Response) => {
     let onChainBalance = 0;
 
     // 2. Get On-Chain (Solana) Balance if they have linked a wallet
-    const mintAddress = process.env.SOLANA_PAB_MINT_ADDRESS || '4MLskKmcnz8bVaPfEuVbhZGsbeUMZqKjQYQQDEX6WQcQ';
+    const mintAddress = getPabMint();
     if (user.wallet?.address && mintAddress) {
       try {
         const userPubKey = new PublicKey(user.wallet.address);

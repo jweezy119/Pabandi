@@ -3933,10 +3933,10 @@ model YieldAgreement {
   // Both parties sign — Pabandi is infra, not counterparty
   tenantSignedAt   DateTime?
   landlordSignedAt DateTime?
-  // Yield pool config (tenant opts in; Pabandi takes spread, never principal risk)
-  pool             String           @default("JITO_STSOL") // JITO_STSOL | ONDO_USDC | MAPLE
-  expectedApy      Float            @default(7.0)
-  tenantApy        Float            @default(5.5) // what tenant receives
+  // Halal profit-share structure (tenant opts in; Pabandi shares profit, never charges riba)
+  pool             String           @default("MUSHARAKAH") // MUSHARAKAH | MUDARABAH | MURABAHAH
+  expectedApy      Float            @default(5.0)
+  tenantApy        Float            @default(4.0) // projected share to tenant (not guaranteed)
   pabandiSpreadPct Float            @default(1.5) // fee taken from yield (NOT from principal)
   status           String           @default("PROPOSED") // PROPOSED | AGREED | ACTIVE | TERMINATED
   createdAt        DateTime         @default(now())
@@ -3947,9 +3947,9 @@ model YieldAgreement {
 }
 
 // ── Renter Equity Wallet ─────────────────────────────────────────────────────
-// The "rent is not a sunk cost" primitive. Yield earned on held rent/deposit
-// accrues here, split 50/50 tenant/landlord. SIMULATED until an RWA adapter
-// (Ondo USDY / Jito) is live; Pabandi never custodies principal.
+// The "rent is not a sunk cost" primitive. Profit earned on held rent/deposit
+// accrues here, split 50/50 tenant/landlord. Profit traces to REAL ECONOMIC
+// ACTIVITY (halal Musharakah/Mudarabah), never to riba. Pabandi never custodies principal.
 model RenterEquityWallet {
   id            String   @id @default(cuid())
   userId        String   @unique
@@ -3971,8 +3971,8 @@ model RentStream {
   landlordId       String
   propertyId       String?
   rentAmountUSD    Float
-  pool             String    @default("ONDO_USDC") // ONDO_USDC | JITO_STSOL | MAPLE
-  expectedApy      Float     @default(4.5)
+  pool             String    @default("MUSHARAKAH") // MUSHARAKAH | MUDARABAH | MURABAHAH
+  expectedApy      Float     @default(5.0)
   holdingDays      Int       @default(4) // paid 1st, settles 5th
   // Computed at settlement
   totalYieldUSD    Float?
@@ -4525,24 +4525,6 @@ model ProgramTask {
 
   @@index([programId])
   @@index([status])
-}
-
-// Pre-registration interest for the Ondo USDY rent-yield rail (marketing/flywheel).
-// Captures landlord/property-manager intent BEFORE the rail goes live, so Pabandi can
-// show Ondo a growing, verifiable list of properties wanting tokenized-T-bill rent yield.
-model UsdyLead {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  name          String?
-  propertyType  String? // hotel | guesthouse | vacation_rental | serviced_apartment | other
-  portfolioSize Int? // number of units/properties the lead manages
-  country       String?
-  message       String?
-  source        String   @default("usdy_landing") // where the lead came from
-  createdAt     DateTime @default(now())
-
-  @@index([createdAt])
-  @@index([country])
 }
 
 // ── PAB Arcade Token Economy ─────────────────────────────────────────────────

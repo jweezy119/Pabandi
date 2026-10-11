@@ -22,6 +22,7 @@
  */
 
 import { logger } from '../utils/logger';
+import { getPabMint } from '../config/pabToken';
 import {
   BadgeTier,
   BADGE_TIER_NAMES,
@@ -312,7 +313,7 @@ export class BlockchainService {
       const bs58 = (await import('bs58')).default;
       
       const connection = new web3.Connection(SOLANA_RPC, 'confirmed');
-      const mintAddress = new web3.PublicKey(process.env.SOLANA_PAB_MINT_ADDRESS || '');
+      const mintAddress = new web3.PublicKey(getPabMint());
       const toWallet = new web3.PublicKey(walletAddress);
       
       const privateKeyStr = process.env.SOLANA_PRIVATE_KEY;

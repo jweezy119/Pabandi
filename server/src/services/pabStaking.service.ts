@@ -3,6 +3,7 @@ import { getAssociatedTokenAddress, createTransferInstruction, TOKEN_PROGRAM_ID 
 import bs58 from 'bs58';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { getPabMint } from '../config/pabToken';
 
 const LOCK_PERIOD_DAYS = 7;
 
@@ -35,9 +36,6 @@ function getPlatformKeypair(): Keypair | null {
   }
 }
 
-function getPabMint(): string {
-  return process.env.PAB_MINT_ADDRESS || 'G811FHWiZrqY1DZKz6dQySpJFPTDfe21B8LRnDqa1z5Y';
-}
 
 export async function stakePab(userId: string, tier: StakeTier): Promise<any> {
   const tierConfig = STAKE_TIERS[tier];

@@ -10,19 +10,8 @@ import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/auth.middleware';
 import { pydService, YieldPoolKey } from '../services/pyd.service';
 import { prisma } from '../utils/database';
-import { logger } from '../utils/logger';
-import { isValidEmailShape } from '../utils/validators';
 
 const router = Router();
-
-// Admin guard for internal/campaign operations (env-gated; no real admin login needed).
-function requireAdminKey(req: Request, res: Response, next: any) {
-  const key = process.env.ADMIN_API_KEY;
-  if (!key) return res.status(403).json({ success: false, message: 'Admin operations disabled (ADMIN_API_KEY unset).' });
-  const provided = req.headers['x-admin-key'] || (req.query as any).adminKey;
-  if (provided !== key) return res.status(401).json({ success: false, message: 'Unauthorized.' });
-  next();
-}
 
 /**
  * Create a security deposit (applies tenant's PTP band deposit reduction).
@@ -67,7 +56,7 @@ router.post('/deposit/:id/yield-agreement', authenticate, async (req: Request, r
       req.params.id,
       userId,
       req.body.landlordId,
-      (pool as YieldPoolKey) ?? 'JITO_STSOL'
+      (pool as YieldPoolKey) ?? 'MUSHARAKAH'
     );
     res.json({ success: true, data: agreement });
   } catch (err: any) {
@@ -186,136 +175,6 @@ router.get('/renter-equity/:userId', async (req: Request, res: Response): Promis
   }
 });
 
-/**
- * GET /api/v1/pyd/usdy/config
- * Public view of the Ondo USDY rail status (mint, live flag, APY) — no secrets.
- */
-router.get('/usdy/config', async (_req: Request, res: Response): Promise<any> => {
-  try {
-    const { ondoUsdyService } = await import('../services/ondoUsdy.service');
-    res.json({
-      success: true,
-      data: {
-        live: process.env.ONDO_RWA_LIVE === 'true',
-        usdyMint: process.env.ONDO_USDY_MINT || null,
-        settlementWalletConfigured: !!process.env.ONDO_SETTLEMENT_KEY,
-        apy: Number(process.env.ONDO_APY || 4.5),
-        note: process.env.ONDO_RWA_LIVE === 'true'
-          ? 'Real on-chain USDY holding + yield distribution active (settlement wallet).'
-          : 'SIMULATED: set ONDO_RWA_LIVE=true + ONDO_USDY_MINT + ONDO_SETTLEMENT_KEY to go live.',
-      },
-    });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-/**
- * POST /api/v1/pyd/usdy/hold
- * Hold a rent payment in USDY for the float window (real SPL transfer when live).
- */
-router.post('/usdy/hold', authenticate, async (req: Request, res: Response): Promise<any> => {
-  try {
-    const tenantId = (req as any).user?.id;
-    const { streamId, tenantWallet, amountUsd } = req.body ?? {};
-    if (!streamId || !tenantWallet || !amountUsd) {
-      return res.status(400).json({ success: false, error: 'streamId, tenantWallet, amountUsd required' });
-    }
-    const { ondoUsdyService } = await import('../services/ondoUsdy.service');
-    const result = await ondoUsdyService.holdInUsdy(streamId, tenantWallet, Number(amountUsd));
-    res.json({ success: true, data: result });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-/**
- * POST /api/v1/pyd/usdy/lead
- * Pre-registration capture for the Ondo USDY rent-yield rail. Public.
- * Builds a verifiable list of landlord/property interest to show Ondo.
- */
-router.post('/usdy/lead', async (req: Request, res: Response): Promise<any> => {
-  try {
-    const { email, name, propertyType, portfolioSize, country, message } = req.body || {};
-    if (!isValidEmailShape(email)) {
-      return res.status(400).json({ success: false, message: 'Valid email required to pre-register.' });
-    }
-    const lead = await prisma.usdyLead.upsert({
-      where: { email },
-      create: {
-        email,
-        name: name || null,
-        propertyType: propertyType || null,
-        portfolioSize: typeof portfolioSize === 'number' ? portfolioSize : null,
-        country: country || null,
-        message: message || null,
-        source: 'usdy_landing',
-      },
-      update: {
-        name: name || undefined,
-        propertyType: propertyType || undefined,
-        portfolioSize: typeof portfolioSize === 'number' ? portfolioSize : undefined,
-        country: country || undefined,
-        message: message || undefined,
-      },
-    });
-    const total = await prisma.usdyLead.count();
-    return res.json({
-      success: true,
-      data: { registered: true, leadId: lead.id, totalPreRegistered: total },
-      message: 'You are pre-registered for USDY rent yield on Pabandi. We will reach out when the rail goes live.',
-    });
-  } catch (err: any) {
-    logger.error(`[rentalDeposit] USDY lead capture failed: ${err.message}`);
-    return res.status(500).json({ success: false, message: 'Could not save pre-registration. Try again.' });
-  }
-});
-
-/**
- * GET /api/v1/pyd/usdy/leads/count  (public, lightweight)
- * Social proof for the campaign: how many properties are pre-registered for the USDY rail.
- */
-router.get('/usdy/leads/count', async (_req: Request, res: Response): Promise<any> => {
-  try {
-    const total = await prisma.usdyLead.count();
-    const byCountry = await prisma.usdyLead.groupBy({ by: ['country'], _count: { _all: true } });
-    return res.json({
-      success: true,
-      data: {
-        totalPreRegistered: total,
-        countries: byCountry.filter((c: any) => c.country).map((c: any) => ({ country: c.country, count: c._count._all })),
-      },
-    });
-  } catch (err: any) {
-    return res.json({ success: true, data: { totalPreRegistered: 0, countries: [] }, simulated: true });
-  }
-});
-
-/**
- * DELETE /api/v1/pyd/usdy/lead
- * Admin-only purge of pre-registration leads (e.g. remove test rows before showing the counter).
- * Guarded by ADMIN_API_KEY (header x-admin-key or ?adminKey=).
- */
-router.delete('/usdy/lead', requireAdminKey, async (req: Request, res: Response): Promise<any> => {
-  try {
-    const { email, all } = req.query as any;
-    let deleted = 0;
-    if (all === 'true') {
-      const r = await prisma.usdyLead.deleteMany({});
-      deleted = r.count;
-    } else if (email) {
-      const r = await prisma.usdyLead.deleteMany({ where: { email: String(email) } });
-      deleted = r.count;
-    } else {
-      return res.status(400).json({ success: false, message: 'Provide ?email= or ?all=true' });
-    }
-    logger.info(`[rentalDeposit] USDY leads purged by admin: ${deleted}`);
-    return res.json({ success: true, data: { deleted } });
-  } catch (err: any) {
-    logger.error(`[rentalDeposit] USDY lead purge failed: ${err.message}`);
-    return res.status(500).json({ success: false, message: 'Purge failed.' });
-  }
-});
 
 export default router;
 

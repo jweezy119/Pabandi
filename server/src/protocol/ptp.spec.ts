@@ -192,6 +192,8 @@ export interface PTPDiscoveryDocument {
   billing_endpoint: string;
   public_key_endpoint: string;
   public_key: string;
+  /** Whether attestation signing is currently configured (PTP_SIGNING_SECRET set). */
+  signing_enabled: boolean;
   supported_risk_bands: string[];
   supported_entity_types: string[];
   documentation_url: string;
@@ -291,6 +293,19 @@ export class PTPEngine {
    * Generate the PTP Discovery Document for `/.well-known/ptp.json`.
    */
   public getDiscoveryDocument(baseUrl: string): PTPDiscoveryDocument {
+    // The discovery document is a PUBLIC endpoint — it must be servable without
+    // the signing secret. getPublicKeyPEM() requires the secret, so we resolve it
+    // lazily and report signing status explicitly. A missing secret previously
+    // caused a 500 on /.well-known/ptp.json, which broke PTP discovery entirely.
+    let publicKey: string;
+    let signingEnabled: boolean;
+    try {
+      publicKey = this.getPublicKeyPEM();
+      signingEnabled = true;
+    } catch {
+      publicKey = 'NOT_CONFIGURED — set PTP_SIGNING_SECRET to enable attestation signing';
+      signingEnabled = false;
+    }
     return {
       protocol: PTP_PROTOCOL_NAME,
       version: PTP_VERSION,
@@ -301,7 +316,8 @@ export class PTPEngine {
       guarantee_claim_endpoint: `${baseUrl}/api/v1/guarantee/claim`,
       billing_endpoint: `${baseUrl}/api/v1/billing`,
       public_key_endpoint: `${baseUrl}/.well-known/ptp-key.pem`,
-      public_key: this.getPublicKeyPEM(),
+      public_key: publicKey,
+      signing_enabled: signingEnabled,
       supported_risk_bands: ['A', 'B', 'C', 'D', 'E'],
       supported_entity_types: ['INDIVIDUAL', 'BUSINESS', 'AGENT'],
       documentation_url: 'https://docs.pabandi.com/ptp',

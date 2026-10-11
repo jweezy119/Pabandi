@@ -2,6 +2,8 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { getAuthToken } from '../../utils/authToken';
+import { HalalBadge } from '../../components/halal';
+import { HalalBanner } from '../../components/halal';
 
 const NAV_ITEMS = [
   { path: '/booking', label: 'Discovery', icon: 'explore', end: true },
@@ -20,12 +22,12 @@ const CATEGORIES = [
 ];
 
 const BUSINESSES = [
-  { id: '1', name: 'The Golden Fork', category: 'Restaurant', rating: 4.8, reviews: 124, price: '$$', image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400', isOpen: true },
-  { id: '2', name: 'Bella Salon', category: 'Salon', rating: 4.9, reviews: 89, price: '$$', image: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400', isOpen: true },
-  { id: '3', name: 'Serenity Spa', category: 'Spa', rating: 4.7, reviews: 56, price: '$$$', image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400', isOpen: false },
-  { id: '4', name: 'Skyline Lounge', category: 'Nightlife', rating: 4.6, reviews: 203, price: '$$$', image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400', isOpen: true },
-  { id: '5', name: 'CozyNest Rentals', category: 'Apartment', rating: 4.5, reviews: 42, price: '$$', image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400', isOpen: true },
-  { id: '6', name: 'Grand Hotel', category: 'Hotel', rating: 4.8, reviews: 312, price: '$$$$', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400', isOpen: true },
+  { id: '1', name: 'The Golden Fork', category: 'Restaurant', rating: 4.8, reviews: 124, price: '$$', image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400', isOpen: true, halalCertified: true },
+  { id: '2', name: 'Bella Salon', category: 'Salon', rating: 4.9, reviews: 89, price: '$$', image: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400', isOpen: true, halalCertified: false },
+  { id: '3', name: 'Serenity Spa', category: 'Spa', rating: 4.7, reviews: 56, price: '$$$', image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400', isOpen: false, halalCertified: false },
+  { id: '4', name: 'Skyline Lounge', category: 'Nightlife', rating: 4.6, reviews: 203, price: '$$$', image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400', isOpen: true, halalCertified: false },
+  { id: '5', name: 'CozyNest Rentals', category: 'Apartment', rating: 4.5, reviews: 42, price: '$$', image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400', isOpen: true, halalCertified: true },
+  { id: '6', name: 'Grand Hotel', category: 'Hotel', rating: 4.8, reviews: 312, price: '$$$$', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400', isOpen: true, halalCertified: true },
 ];
 
 function ClayCard({ children, className = '', hover = true, ...props }: any) {
@@ -83,8 +85,15 @@ function BusinessCard({ business }: { business: typeof BUSINESSES[0] }) {
     <ClayCard className="overflow-hidden">
       <div className="relative h-40 overflow-hidden">
         <img src={business.image} alt={business.name} className="w-full h-full object-cover" />
-        <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: business.isOpen ? 'var(--sage)' : 'var(--soft-stone)', color: 'white' }}>
-          {business.isOpen ? 'Open' : 'Closed'}
+        <div className="absolute top-3 right-3 flex gap-1">
+          {business.halalCertified && (
+            <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: 'var(--sage)', color: 'white' }}>
+              🛡️ Halal
+            </span>
+          )}
+          <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: business.isOpen ? 'var(--sage)' : 'var(--soft-stone)', color: 'white' }}>
+            {business.isOpen ? 'Open' : 'Closed'}
+          </span>
         </div>
       </div>
       <div className="p-4">
@@ -93,9 +102,10 @@ function BusinessCard({ business }: { business: typeof BUSINESSES[0] }) {
           <span className="text-sm font-medium" style={{ color: 'var(--clay)' }}>{business.price}</span>
         </div>
         <p className="text-sm mb-2" style={{ color: 'var(--soft-stone)' }}>{business.category}</p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span style={{ color: 'var(--muted-ochre)' }}>★ {business.rating}</span>
           <span className="text-sm" style={{ color: 'var(--soft-stone)' }}>({business.reviews} reviews)</span>
+          {business.halalCertified && <HalalBadge size="sm" />}
         </div>
       </div>
     </ClayCard>
@@ -124,10 +134,17 @@ export default function BookingOSPage() {
     fetchClients();
   }, []);
 
-  const filteredClients = clients.filter(c => 
+  const filteredClients = clients.filter(c =>
     c.name?.toLowerCase().includes(clientSearch.toLowerCase()) ||
     c.email?.toLowerCase().includes(clientSearch.toLowerCase())
   );
+
+  const filteredBusinesses = selectedCategory === 'HALAL'
+    ? BUSINESSES.filter(b => b.halalCertified)
+    : BUSINESSES.filter(b =>
+        b.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
 
   return (
     <DashboardLayout osName="BookingOS" osIcon="◈" osColor="terracotta" navItems={NAV_ITEMS}>
@@ -138,12 +155,16 @@ export default function BookingOSPage() {
           <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Find restaurants, salons, spas, and more near you.</p>
         </div>
 
+        {/* Halal compliance banner */}
+        <HalalBanner compact />
+
         {/* Stats row */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <ClayStat icon="storefront" value="24" label="Businesses" trend="+3 this week" color="terracotta" />
           <ClayStat icon="calendar_month" value="12" label="Bookings" trend="+8 this month" color="sage" />
           <ClayStat icon="star" value="4.7" label="Avg Rating" color="ochre" />
           <ClayStat icon="account_balance_wallet" value="$0.00" label="Spending" color="sky-wash" />
+          <ClayStat icon="verified" value={String(BUSINESSES.filter(b => b.halalCertified).length)} label="Halal Businesses" color="sage" />
         </div>
 
         {/* Search and filters */}
@@ -164,6 +185,12 @@ export default function BookingOSPage() {
               <ClayButton variant={selectedCategory === null ? 'primary' : 'secondary'} onClick={() => setSelectedCategory(null)}>
                 All
               </ClayButton>
+              <ClayButton
+                variant={selectedCategory === 'HALAL' ? 'primary' : 'secondary'}
+                onClick={() => setSelectedCategory('HALAL')}
+              >
+                🛡️ Halal Only
+              </ClayButton>
               {CATEGORIES.slice(0, 4).map((cat) => (
                 <ClayButton
                   key={cat.id}
@@ -181,7 +208,7 @@ export default function BookingOSPage() {
         <div>
           <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--warm-ink)' }}>Near You</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {BUSINESSES.map((business) => (
+            {filteredBusinesses.map((business) => (
               <BusinessCard key={business.id} business={business} />
             ))}
           </div>

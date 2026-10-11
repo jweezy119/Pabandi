@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { getAuthToken } from '../../utils/authToken';
+import { HalalBadge } from '../../components/halal';
 
 const LEDGER_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/capital`;
 
@@ -97,14 +98,30 @@ export default function LedgerExpensesPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Expenses</h1>
-          <Link
-            to="/capital/expenses/new"
-            className="px-5 py-2.5 rounded-full font-medium transition hover:-translate-y-0.5"
-            style={{ background: 'var(--clay)', color: 'white', boxShadow: 'var(--shadow-soft)' }}
-          >
-            <span className="material-symbols-outlined text-[18px] mr-1.5 align-[-3px]" aria-hidden="true">add</span>
-            Add Expense
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/capital/expenses/new"
+              className="px-5 py-2.5 rounded-full font-medium transition hover:-translate-y-0.5"
+              style={{ background: 'var(--clay)', color: 'white', boxShadow: 'var(--shadow-soft)' }}
+            >
+              <span className="material-symbols-outlined text-[18px] mr-1.5 align-[-3px]" aria-hidden="true">add</span>
+              Add Expense
+            </Link>
+            <Link
+              to="/capital/expenses/new?type=zakat"
+              className="px-3 py-2.5 rounded-full text-sm font-medium transition border"
+              style={{ borderColor: 'var(--sage)', color: 'var(--sage)' }}
+            >
+              🛡️ Zakat Payment
+            </Link>
+            <Link
+              to="/capital/expenses/new?type=sadaqah"
+              className="px-3 py-2.5 rounded-full text-sm font-medium transition border"
+              style={{ borderColor: 'var(--muted-ochre)', color: 'var(--muted-ochre)' }}
+            >
+              🤝 Sadaqah
+            </Link>
+          </div>
         </div>
 
         {error && (
@@ -118,7 +135,7 @@ export default function LedgerExpensesPage() {
           </div>
         )}
 
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap items-center">
           {['all', ...categories].map((s) => (
             <button
               key={s}
@@ -133,6 +150,10 @@ export default function LedgerExpensesPage() {
               {s}
             </button>
           ))}
+          <div className="ml-auto flex items-center gap-2">
+            <HalalBadge size="sm" />
+            <span className="text-[10px] text-[var(--soft-stone)]">Halal Expense Tracking</span>
+          </div>
         </div>
 
         {loading ? (

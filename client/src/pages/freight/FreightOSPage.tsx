@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../services/api';
 import { getAuthToken } from '../../utils/authToken';
+import { HalalBanner, HalalBadge } from '../../components/halal';
 
 const navItems = [
   { path: '/freight', label: 'Dashboard', icon: 'dashboard', end: true },
@@ -107,6 +108,9 @@ export default function FreightOSPage() {
           </Link>
         </div>
 
+        {/* Halal compliance banner */}
+        <HalalBanner compact />
+
         {/* Stats row */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <ClayStat icon="local_shipping" value={String(loads.length)} label="Active Loads" color="sage" />
@@ -148,12 +152,15 @@ export default function FreightOSPage() {
                     <p className="font-medium" style={{ color: 'var(--warm-ink)' }}>{load.title || 'Load'}</p>
                     <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>{load.origin} → {load.destination}</p>
                   </div>
-                  <span
-                    className="px-3 py-1 rounded-full text-sm font-medium"
-                    style={{ background: 'rgba(138,154,123,0.15)', color: 'var(--sage)' }}
-                  >
-                    {load.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="px-3 py-1 rounded-full text-sm font-medium"
+                      style={{ background: 'rgba(138,154,123,0.15)', color: 'var(--sage)' }}
+                    >
+                      {load.status}
+                    </span>
+                    <HalalBadge size="sm" />
+                  </div>
                 </div>
               ))}
             </div>
@@ -212,7 +219,7 @@ export default function FreightOSPage() {
             <Link to="/" className="hover:underline transition" style={{ color: 'var(--sage)' }}>
               Pabandi
             </Link>{' '}
-            — The Global Trust Layer
+            — The Global Trust Layer · Sharia-Compliant Shipping
           </p>
           <p className="text-xs mt-2" style={{ color: 'var(--soft-stone)' }}>
             © 2026 Pabandi. All rights reserved.

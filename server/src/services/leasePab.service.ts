@@ -3,9 +3,9 @@ import { getAssociatedTokenAddress, createTransferInstruction, createAssociatedT
 import bs58 from 'bs58';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { getPabMint } from '../config/pabToken';
 
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
-const PAB_MINT = 'G811FHWiZrqY1DZKz6dQySpJFPTDfe21B8LRnDqa1z5Y';
 const PAB_DISCOUNT_RATE = 0.05;
 const AUTO_STAKE_RATE = 0.10;
 const LEASE_DEPOSIT_APY = 0.02;
@@ -250,7 +250,7 @@ export async function processPabPayment(params: {
       const connection = getConnection();
       const platformKey = getPlatformKeypair();
       if (platformKey) {
-        const mintKey = new PublicKey(PAB_MINT);
+        const mintKey = new PublicKey(getPabMint());
         const fromKey = new PublicKey(wallet.address || '');
         const toKey = platformKey.publicKey;
 

@@ -3,6 +3,7 @@ import { getAssociatedTokenAddress, createTransferInstruction, createAssociatedT
 import bs58 from 'bs58';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { getPabMint } from '../config/pabToken';
 
 const DEPOSIT_RATE = 0.10; // 10% deposit
 const REWARD_RATE = 0.01; // 1% reward on check-in
@@ -27,9 +28,6 @@ function getPlatformKeypair(): Keypair | null {
   }
 }
 
-function getPabMint(): string {
-  return process.env.PAB_MINT_ADDRESS || 'G811FHWiZrqY1DZKz6dQySpJFPTDfe21B8LRnDqa1z5Y';
-}
 
 export async function createBookingWithPab(params: {
   bookingId: string;

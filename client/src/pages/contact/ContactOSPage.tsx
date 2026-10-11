@@ -7,6 +7,7 @@ import { Card } from '../../components/primitives';
 import ModularDashboard from '../crm/components/ModularDashboard';
 import { useAuthStore } from '../../store/authStore';
 import { getAuthToken } from '../../utils/authToken';
+import { HalalBanner, HalalBadge } from '../../components/halal';
 
 
 
@@ -220,6 +221,15 @@ export default function ContactOSPage() {
             <p className="mt-1" style={{ color: 'var(--soft-stone)', fontSize: '15px' }}>
               Here's your business at a glance.
             </p>
+            <div className="mt-3 flex items-center gap-2">
+              <HalalBadge size="sm" />
+              <span className="text-[11px] text-[var(--soft-stone)]">Sharia-compliant deal &amp; invoice structures</span>
+            </div>
+          </div>
+
+          {/* ── Halal compliance ─────────────────────────────────── */}
+          <div className="mb-8">
+            <HalalBanner compact />
           </div>
 
           {/* ── Stat cards ───────────────────────────────────────── */}

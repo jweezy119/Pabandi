@@ -107,3 +107,12 @@ services:
       # Starter $PAB granted to a newly registered agent principal (0 = must be funded).
       - key: AGENT_SIGNUP_PAB_GRANT
         value: "0"
+      # Canonical $PAB mint (name "Pabandi", symbol "PAB"). Set explicitly so the
+      # service never falls back to a hardcoded default. sync:false means the
+      # dashboard value wins; the code default in config/pabToken.ts is the same mint.
+      - key: PAB_MINT_ADDRESS
+        sync: false
+      # Solana RPC. mainnet-beta is public and rate-limited; a paid RPC is
+      # recommended for real traffic.
+      - key: SOLANA_RPC_URL
+        value: https://api.mainnet-beta.solana.com

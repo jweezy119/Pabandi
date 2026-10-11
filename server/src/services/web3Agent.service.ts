@@ -6,9 +6,12 @@ import bs58 from 'bs58';
 import crypto from 'crypto';
 import { feeCollectionService } from './feeCollection.service';
 import { SOL_FEE_PER_BOOKING, computeFee } from '../config/tokenomics';
+import { getPabMint } from '../config/pabToken';
 
 // ── Config ─────────────────────────────────────────────────────
-const MINT_ADDRESS = process.env.SOLANA_PAB_MINT_ADDRESS || '4MLskKmcnz8bVaPfEuVbhZGsbeUMZqKjQYQQDEX6WQcQ';
+// Mint resolved centrally so this file can never disagree with staking/rewards
+// about which token $PAB is (see config/pabToken.ts for the two-mint incident).
+const MINT_ADDRESS = getPabMint();
 const TREASURY_WALLET = process.env.PABANDI_TREASURY_WALLET || 'GBMhejbFVGQB7yXYxHpXCmcjWL7xk17FgyPCvPo2uSQH';
 const RPC_URL = process.env.SOLANA_RPC_URL || process.env.ALCHEMY_RPC_URL || 'https://api.mainnet-beta.solana.com';
 const TOKEN_DECIMALS = 9;

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import { getAuthToken } from '../../utils/authToken';
+import { HalalBadge } from '../../components/halal';
 
 const LEDGER_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/capital`;
 
@@ -110,7 +111,7 @@ export default function LedgerReportsPage() {
           </div>
         )}
 
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap items-center">
           {[
             { id: 'pnl', label: 'Profit & Loss' },
             { id: 'cashflow', label: 'Cash Flow' },
@@ -129,6 +130,10 @@ export default function LedgerReportsPage() {
               {r.label}
             </button>
           ))}
+          <div className="ml-auto flex items-center gap-2">
+            <HalalBadge size="sm" />
+            <span className="text-[10px] text-[var(--soft-stone)]">Sharia-Compliant Ledger</span>
+          </div>
         </div>
 
         {loading ? (
@@ -179,6 +184,19 @@ export default function LedgerReportsPage() {
             <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>
               Profit margin {pnl.profitMargin}% · last 12 months
             </p>
+
+            {/* Zakat calculation */}
+            <div className="mt-4 p-4 rounded-xl border border-[var(--sage)]/20" style={{ background: 'var(--sage)/5' }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">🛡️</span>
+                <p className="text-sm font-bold" style={{ color: 'var(--sage)' }}>Zakat Calculation (2.5% on eligible wealth)</p>
+                <HalalBadge size="sm" />
+              </div>
+              <p className="text-xs" style={{ color: 'var(--soft-stone)' }}>
+                Zakat is due on net profit above the nisab threshold. Estimated Zakat on this period's net profit:
+                <strong style={{ color: 'var(--sage)' }}> {money(pnl.netProfit > 0 ? pnl.netProfit * 0.025 : 0)}</strong>
+              </p>
+            </div>
 
             {pnl.months.length > 0 && (
               <div className="rounded-[var(--radius-card)] p-6" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>

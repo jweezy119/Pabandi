@@ -3,6 +3,7 @@ import { getAssociatedTokenAddress, createTransferInstruction, createAssociatedT
 import bs58 from 'bs58';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { getPabMint } from '../config/pabToken';
 
 const REWARD_RATE = 0.02; // 2% of task value
 
@@ -26,9 +27,6 @@ function getPlatformKeypair(): Keypair | null {
   }
 }
 
-function getPabMint(): string {
-  return process.env.PAB_MINT_ADDRESS || 'G811FHWiZrqY1DZKz6dQySpJFPTDfe21B8LRnDqa1z5Y';
-}
 
 export async function distributeAgentReward(params: {
   agentId: string;

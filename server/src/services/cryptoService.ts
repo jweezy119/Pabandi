@@ -9,6 +9,7 @@ import { solanaEscrowService } from './solana_escrow.service';
 import { TrustSignals } from '../services/trustSignal.service';
 import { TreasuryBucket } from '../services/treasury.service';
 import { clampReliabilityScore } from '../config/trust-weights';
+import { getPabMint } from '../config/pabToken';
 
 export const PAB_REWARD_RULES = {
   customer: {
@@ -255,7 +256,7 @@ export class CryptoService {
 
       const connection = new Connection("https://api.mainnet-beta.solana.com", "confirmed");
       const payer = Keypair.fromSecretKey(bs58.decode(process.env.SOLANA_PRIVATE_KEY));
-      const mintPublicKey = new PublicKey(process.env.SOLANA_PAB_MINT_ADDRESS!);
+      const mintPublicKey = new PublicKey(getPabMint());
       const recipientPublicKey = new PublicKey(wallet.address);
 
       const fromAta = await getOrCreateAssociatedTokenAccount(connection, payer, mintPublicKey, payer.publicKey);

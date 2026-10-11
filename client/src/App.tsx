@@ -136,7 +136,6 @@ const LiquidityTerminalPage = lazy(() => import('./pages/LiquidityTerminalPage')
 const HospitalityPage = lazy(() => import('./pages/HospitalityPage'));
 const RealEstateScreeningPage = lazy(() => import('./pages/RealEstateScreeningPage'));
 const AirdropPage = lazy(() => import('./pages/AirdropPage'));
-const UsdyPage = lazy(() => import('./pages/UsdyPage'));
 const SolanaEscrowPage = lazy(() => import('./pages/SolanaEscrowPage'));
 const CityLandingPage = lazy(() => import('./pages/CityLandingPage'));
 const LiveSellCustomerPage = lazy(() => import('./pages/LiveSellCustomerPage'));
@@ -609,7 +608,6 @@ function AnimatedAppRoutes() {
             <Route path="dashboard" element={<PlaceholderPage />} />
             <Route path="web3" element={<PlaceholderPage />} />
             <Route path="lp-terminal" element={<PlaceholderPage />} />
-            <Route path="usdy" element={<PlaceholderPage />} />
             <Route path="solana-escrow" element={<PlaceholderPage />} />
             <Route path="solana-escrow/:id" element={<PlaceholderPage />} />
             <Route path="airdrop" element={<PlaceholderPage />} />

@@ -203,10 +203,19 @@ Users NEVER see crypto. The agent handles all complexity:
 | "Trust score: Gold" | Manages staking lock, calculates APY |
 
 ### $PAB Token & DEX
-- **Token:** SPL token on Solana mainnet (mint: `G811FHWiZrqY1DZKz6dQySpJFPTDfe21B8LRnDqa1z5Y`)
+- **Token:** SPL token on Solana mainnet — name `Pabandi`, symbol `PAB`
+- **Mint:** `4MLskKmcnz8bVaPfEuVbhZGsbeUMZqKjQYQQDEX6WQcQ`
+- **Metadata:** https://pabandi-42c5b.web.app/pab-metadata.json
+- **Mint authority:** `38HR8BoGrGeM4fKHsfyWARrW9b8kLbZeYgEHEXAFFrZ2` (Pabandi treasury)
+- **Supply:** 1,000,000,000 (9 decimals)
 - **Pool:** PAB/USDC pair on Raydium
 - **Staking:** Bronze/Silver/Gold/Platinum tiers with APY
 - **Rewards:** Earn $PAB for bookings, check-ins, and referrals
+
+> Resolved in code via `getPabMint()` in `server/src/config/pabToken.ts` — the single
+> source of truth. Do not hardcode a mint anywhere else. An earlier revision of this
+> file named `G811FHWiZrqY1DZKz6dQySpJFPTDfe21B8LRnDqa1z5Y`, which is an orphan mint
+> with no metadata and no treasury balance; it is not $PAB.
 - **Discounts:** 5% off when paying with PAB
 
 ---

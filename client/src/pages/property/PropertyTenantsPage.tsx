@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../services/api';
+import { HalalBadge } from '../../components/halal';
 
 const navItems = [
   { path: '/property', label: 'Dashboard', icon: '📊', end: true },
@@ -74,6 +75,7 @@ export default function PropertyTenantsPage() {
                   <th className="text-left p-3 text-[var(--soft-stone)]">Email</th>
                   <th className="text-left p-3 text-[var(--soft-stone)]">Status</th>
                   <th className="text-left p-3 text-[var(--soft-stone)]">Risk</th>
+                  <th className="text-left p-3 text-[var(--soft-stone)]">Lease</th>
                 </tr>
               </thead>
               <tbody>
@@ -83,10 +85,13 @@ export default function PropertyTenantsPage() {
                     <td className="p-3 text-[var(--soft-stone)]">{t.email}</td>
                     <td className="p-3">{getStatusBadge(t.status)}</td>
                     <td className="p-3">{getRiskBadge(t.riskScore)}</td>
+                    <td className="p-3">
+                      <HalalBadge size="sm" />
+                    </td>
                   </tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={4} className="p-4 text-center text-[var(--soft-stone)]">No tenants found</td></tr>
+                  <tr><td colSpan={5} className="p-4 text-center text-[var(--soft-stone)]">No tenants found</td></tr>
                 )}
               </tbody>
             </table>

@@ -7,6 +7,7 @@ import { useAuthStore } from '../store/authStore';
 import { Button, Chip, Surface, Badge, tokens } from '../design-system';
 import { getAuthToken } from '../utils/authToken';
 import { API_HOST } from '../utils/apiHost';
+import { HalalBadge } from '../components/halal';
 
 type PropertyType = 'hotel' | 'guesthouse' | 'riad' | 'safari_camp' | 'experience' | 'vacation_rental' | 'other';
 
@@ -77,47 +78,6 @@ export default function HospitalityPage() {
     { enabled: isAuthenticated, refetchOnWindowFocus: false }
   );
   const connectedProperties = propertiesData?.data?.properties || [];
-
-  // Live USDY rail status + social-proof count (public, honest SIMULATED→LIVE)
-  const { data: usdyConfig } = useQuery('usdy-config', () =>
-    fetch(`${API_HOST}/api/v1/pyd/usdy/config`).then((r) => r.json()),
-    { refetchOnWindowFocus: false }
-  );
-  const { data: usdyCount, refetch: refetchUsdyCount } = useQuery('usdy-leads-count', () =>
-    fetch(`${API_HOST}/api/v1/pyd/usdy/leads/count`).then((r) => r.json()),
-    { refetchOnWindowFocus: false }
-  );
-
-  const [usdyForm, setUsdyForm] = useState({ email: '', name: '', propertyType: '', portfolioSize: '', country: '' });
-  const [usdySubmitting, setUsdySubmitting] = useState(false);
-  const [usdyDone, setUsdyDone] = useState(false);
-  const [usdyError, setUsdyError] = useState<string | null>(null);
-
-  const handleUsdyLead = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setUsdyError(null);
-    setUsdySubmitting(true);
-    try {
-      const res = await fetch(`${API_HOST}/api/v1/pyd/usdy/lead`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...usdyForm,
-          portfolioSize: usdyForm.portfolioSize ? Number(usdyForm.portfolioSize) : undefined,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setUsdyDone(true);
-        refetchUsdyCount();
-      } else {
-        setUsdyError(data.message || 'Could not pre-register. Try again.');
-      }
-    } catch {
-      setUsdyError('Network error. Try again.');
-    }
-    setUsdySubmitting(false);
-  };
 
   const [testingPropertyId, setTestingPropertyId] = useState<string | null>(null);
 
@@ -413,118 +373,83 @@ export default function HospitalityPage() {
           </div>
         </section>
 
-        {/* USDY x Real Estate — Coming Soon (Ondo tokenized T-bills) */}
-        <section className="mb-20" id="usdy">
+        {/* Halal Rent Yield — Musharakah profit-share (replaces riba-based T-bill yield) */}
+        <section className="mb-20" id="halal-rent-yield">
           <div className="rounded-3xl border border-[var(--sage)]/30 bg-gradient-to-br from-[var(--sage)]/[0.07] to-[var(--clay)]/[0.04] p-6 md:p-10 overflow-hidden relative">
             <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-[var(--sage)]/10 blur-3xl" />
             <div className="relative flex flex-col gap-8 lg:flex-row lg:items-start">
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Chip tone="info" className="bg-[var(--sage)]/15 text-[var(--sage)] border-[var(--sage)]/30">Real Estate Yield</Chip>
-                  {usdyConfig?.data?.live ? (
-                    <span className="text-[10px] font-black uppercase tracking-widest rounded-full px-2.5 py-1 bg-[var(--sage)]/20 text-[var(--sage)] border border-emerald-500/40">LIVE</span>
-                  ) : (
-                    <span className="text-[10px] font-black uppercase tracking-widest rounded-full px-2.5 py-1 bg-amber-400/15 text-[var(--muted-ochre)] border border-amber-400/40">Coming Soon</span>
-                  )}
+                  <Chip tone="info" className="bg-[var(--sage)]/15 text-[var(--sage)] border-[var(--sage)]/30">Halal Rent Yield</Chip>
+                  <HalalBadge size="sm" />
+                  <span className="text-[10px] font-black uppercase tracking-widest rounded-full px-2.5 py-1 bg-amber-400/15 text-[var(--muted-ochre)] border border-amber-400/40">In Design</span>
                 </div>
                 <h2 className="mt-4 text-2xl font-bold text-[var(--warm-ink)] md:text-3xl">
-                  Earn USDY Yield on Every Rent Payment
+                  Rent That Earns Through Musharakah, Not Interest
                 </h2>
                 <p className="mt-3 max-w-xl text-sm text-[var(--warm-ink)] leading-relaxed">
-                  Pabandi is integrating <strong className="text-[var(--sage)]">Ondo Finance USDY</strong> — tokenized US Treasuries — as the yield rail for real-estate rent streams. Rent held for the float window earns native T-bill yield, split <strong>50/50</strong> between tenant equity and landlord bonus. Non-custodial, Sharia-aligned, and anchored on Solana.
+                  Instead of parking rent in an interest-bearing instrument, Pabandi puts the float to work in a
+                  <strong className="text-[var(--sage)]"> Musharakah</strong> (joint-ownership) structure — a
+                  profit-and-loss-sharing partnership. Returns come from <strong>real economic activity</strong>, and
+                  profit is split by a pre-agreed ratio. Losses are shared proportionally, never guaranteed away.
                 </p>
 
                 <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
                   {[
-                    { v: `${(usdyConfig?.data?.apy ?? 4.5).toFixed(1)}%`, l: 'USDY APY (T-bills)', c: '#10b981' },
+                    { v: 'Musharakah', l: 'Joint-ownership structure', c: '#10b981' },
                     { v: '50/50', l: 'Tenant / Landlord split', c: '#6366f1' },
                     { v: 'ZK', l: 'Proof-of-Rent attestation', c: '#f0b429' },
                     { v: 'SOL', l: 'Settlement chain', c: '#14b8a6' },
                   ].map((s) => (
                     <Surface key={s.l} className="flex flex-col gap-1">
-                      <p className="text-xl font-black" style={{ color: s.c }}>{s.v}</p>
+                      <p className="text-lg font-black" style={{ color: s.c }}>{s.v}</p>
                       <p className="text-[10px] font-bold text-[var(--warm-ink)]">{s.l}</p>
                     </Surface>
                   ))}
                 </div>
 
                 <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[var(--soft-stone)]">
-                  <span>✓ Rent held in USDY (paid 1st → settles 5th)</span>
-                  <span>✓ Yield from US Treasuries, not lending</span>
-                  <span>✓ Treasury-protected settlement wallet</span>
+                  <span>✓ No Riba — profit-share, never fixed interest</span>
+                  <span>✓ No Gharar — ratio fixed in advance, terms disclosed</span>
+                  <span>✓ No Maysir — returns from trade, not speculation</span>
                   <span>✓ Portable on-chain rent reliability</span>
                 </div>
 
-                {usdyConfig?.data?.live ? (
-                  <p className="mt-4 text-[11px] font-bold text-[var(--sage)]">● Rail is LIVE — real on-chain USDY holding + yield distribution active.</p>
-                ) : (
-                  <p className="mt-4 text-[11px] text-[var(--soft-stone)]">
-                    Status: <span className="text-[var(--muted-ochre)] font-bold">Simulated</span> — real Solana USDY rail wired &amp; gated on Ondo mainnet mint + settlement wallet.{' '}
-                    <span className="text-[var(--soft-stone)]">({usdyConfig?.data?.apy ?? 4.5}% APY reference.)</span>
-                  </p>
-                )}
-
-                <p className="mt-3 text-[11px] text-[var(--soft-stone)] max-w-xl">
-                  Built in public as part of Pabandi × Ondo — tokenized T-bill yield for the global rental economy. Pre-register your portfolio to get early access and help us show the demand.
+                <p className="mt-4 text-[11px] text-[var(--soft-stone)]">
+                  Status: <span className="text-[var(--muted-ochre)] font-bold">In design</span> — structured under Mudarabah/Musharakah contracts and
+                  subject to independent Sharia Supervisory Board review before any capital is deployed.
                 </p>
+
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <Link to="/sharia-transparency" className="text-[11px] font-bold text-[var(--sage)] hover:underline">
+                    Read the Sharia transparency report →
+                  </Link>
+                  <Link to="/sharia-compliance" className="text-[11px] font-bold text-[var(--sage)] hover:underline">
+                    How compliance is enforced →
+                  </Link>
+                </div>
               </div>
 
-              {/* Pre-registration form (real lead capture) */}
               <Surface className="w-full lg:w-80 shrink-0">
-                {usdyDone ? (
-                  <div className="text-center py-6">
-                    <div className="text-3xl">✅</div>
-                    <p className="mt-2 text-sm font-bold text-[var(--warm-ink)]">You're pre-registered!</p>
-                    <p className="mt-1 text-[11px] text-[var(--soft-stone)]">We'll reach out when the USDY rail goes live.</p>
-                    <p className="mt-3 text-[11px] text-[var(--sage)] font-bold">
-                      {(usdyCount?.data?.totalPreRegistered ?? 0)} {((usdyCount?.data?.totalPreRegistered ?? 0) === 1 ? 'property' : 'properties')} pre-registered so far.
-                    </p>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🛡️</span>
+                    <p className="text-sm font-bold text-[var(--warm-ink)]">The three prohibitions we design against</p>
                   </div>
-                ) : (
-                  <form onSubmit={handleUsdyLead} className="flex flex-col gap-3">
-                    <p className="text-sm font-bold text-[var(--warm-ink)]">Pre-register your portfolio</p>
-                    <p className="text-[10px] text-[var(--soft-stone)] -mt-1">Get early access to USDY rent yield.</p>
-                    <input
-                      type="email" required placeholder="Work email" value={usdyForm.email}
-                      onChange={(e) => setUsdyForm({ ...usdyForm, email: e.target.value })}
-                      className="rounded-lg border border-[var(--soft-stone)]/30 bg-[var(--cream)] px-3 py-2 text-xs text-[var(--warm-ink)] placeholder:text-[var(--soft-stone)] outline-none focus:border-emerald-400/50"
-                    />
-                    <input
-                      type="text" placeholder="Name (optional)" value={usdyForm.name}
-                      onChange={(e) => setUsdyForm({ ...usdyForm, name: e.target.value })}
-                      className="rounded-lg border border-[var(--soft-stone)]/30 bg-[var(--cream)] px-3 py-2 text-xs text-[var(--warm-ink)] placeholder:text-[var(--soft-stone)] outline-none focus:border-emerald-400/50"
-                    />
-                    <select
-                      value={usdyForm.propertyType}
-                      onChange={(e) => setUsdyForm({ ...usdyForm, propertyType: e.target.value })}
-                      className="rounded-lg border border-[var(--soft-stone)]/30 bg-[var(--cream)] px-3 py-2 text-xs text-[var(--warm-ink)] outline-none focus:border-emerald-400/50"
-                    >
-                      <option value="">Property type</option>
-                      <option value="hotel">Hotel / Resort</option>
-                      <option value="guesthouse">Guesthouse / B&B</option>
-                      <option value="vacation_rental">Vacation Rental</option>
-                      <option value="serviced_apartment">Serviced Apartment</option>
-                      <option value="other">Other</option>
-                    </select>
-                    <input
-                      type="number" min="1" placeholder="Portfolio size (units)" value={usdyForm.portfolioSize}
-                      onChange={(e) => setUsdyForm({ ...usdyForm, portfolioSize: e.target.value })}
-                      className="rounded-lg border border-[var(--soft-stone)]/30 bg-[var(--cream)] px-3 py-2 text-xs text-[var(--warm-ink)] placeholder:text-[var(--soft-stone)] outline-none focus:border-emerald-400/50"
-                    />
-                    <input
-                      type="text" placeholder="Country (optional)" value={usdyForm.country}
-                      onChange={(e) => setUsdyForm({ ...usdyForm, country: e.target.value })}
-                      className="rounded-lg border border-[var(--soft-stone)]/30 bg-[var(--cream)] px-3 py-2 text-xs text-[var(--warm-ink)] placeholder:text-[var(--soft-stone)] outline-none focus:border-emerald-400/50"
-                    />
-                    {usdyError && <p className="text-[10px] text-rose-400">{usdyError}</p>}
-                    <Button type="submit" disabled={usdySubmitting} className="mt-1 w-full py-2.5 text-xs font-bold bg-[var(--sage)] hover:bg-emerald-400">
-                      {usdySubmitting ? 'Submitting...' : 'Get Early Access'}
-                    </Button>
-                    <p className="text-[9px] text-[var(--soft-stone)] text-center">
-                      {(usdyCount?.data?.totalPreRegistered ?? 0)} {(usdyCount?.data?.totalPreRegistered ?? 0) === 1 ? 'property' : 'properties'} already pre-registered.
-                    </p>
-                  </form>
-                )}
+                  {[
+                    { ar: 'Riba', en: 'Interest / usury', note: 'No guaranteed, fixed return on a loan or deposit.' },
+                    { ar: 'Gharar', en: 'Excessive uncertainty', note: 'Terms, assets, and profit ratios are always disclosed.' },
+                    { ar: 'Maysir', en: 'Gambling / speculation', note: 'No zero-sum bets or leveraged trading.' },
+                  ].map((x) => (
+                    <div key={x.ar} className="rounded-xl border border-[var(--sage)]/20 bg-[var(--sage)]/[0.04] p-3">
+                      <p className="text-[11px] font-bold text-[var(--sage)]">{x.ar} — {x.en}</p>
+                      <p className="mt-1 text-[10px] text-[var(--soft-stone)] leading-relaxed">{x.note}</p>
+                    </div>
+                  ))}
+                  <p className="text-[9px] text-[var(--soft-stone)]">
+                    Halal status is not self-declared. Any production yield product requires independent scholarly certification.
+                  </p>
+                </div>
               </Surface>
             </div>
           </div>

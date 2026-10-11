@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../services/api';
 import { getAuthToken } from '../../utils/authToken';
+import { HalalBanner, HalalBadge } from '../../components/halal';
 
 const navItems = [
   { path: '/property', label: 'Dashboard', icon: 'dashboard', end: true },
@@ -71,6 +72,8 @@ export default function PropertyOSPage() {
           </Link>
         </div>
 
+        <HalalBanner compact />
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="p-4 rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)]">
             <p className="text-sm text-[var(--soft-stone)]">Total Properties</p>
@@ -87,6 +90,9 @@ export default function PropertyOSPage() {
           <div className="p-4 rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)]">
             <p className="text-sm text-[var(--soft-stone)]">Revenue</p>
             <p className="text-2xl font-bold text-[var(--warm-ink)]">${summary?.totalRevenue?.toLocaleString() || 0}</p>
+            <div className="mt-1 flex items-center gap-1">
+              <HalalBadge size="sm" />
+            </div>
           </div>
         </div>
 
@@ -118,7 +124,10 @@ export default function PropertyOSPage() {
                     <p className="text-[var(--warm-ink)] font-medium">{prop.unitNumber || prop.name}</p>
                     <p className="text-sm text-[var(--soft-stone)]">${prop.rentAmount?.toLocaleString() || 0}/month • {prop.status}</p>
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-[var(--dusty-rose)]/20 text-[var(--dusty-rose)] text-sm">{prop.status}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-full bg-[var(--dusty-rose)]/20 text-[var(--dusty-rose)] text-sm">{prop.status}</span>
+                    <HalalBadge size="sm" />
+                  </div>
                 </div>
               ))}
             </div>
@@ -170,7 +179,7 @@ export default function PropertyOSPage() {
 
         <footer className="pt-8 border-t border-[rgba(191,179,163,0.3)] text-center">
           <p className="text-sm text-[var(--soft-stone)]">
-            Powered by <Link to="/" className="text-[var(--dusty-rose)] hover:text-[var(--dusty-rose)] transition">Pabandi</Link> — The Global Trust Layer
+            Powered by <Link to="/" className="text-[var(--dusty-rose)] hover:text-[var(--dusty-rose)] transition">Pabandi</Link> — The Global Trust Layer · Sharia-Compliant Leases
           </p>
           <p className="text-xs text-[var(--soft-stone)] mt-2">
             © 2026 Pabandi. All rights reserved.
