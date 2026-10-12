@@ -2332,6 +2332,22 @@ model PropertyTenant {
 
   manager            AbodeManager             @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property           PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  // THE CRM LINK.
+  //
+  // Until now a tenant and a CRM client were the same human held in two tables
+  // with nothing connecting them. Every code path that needed "this person's
+  // rent AND their trust score" joined them on an email string — several such
+  // comparisons in crmPab.service and crmAutomation.service, none of them a
+  // constraint. That is how a landlord could act on the wrong tenant after
+  // someone changed an email address, and how the two records drifted silently
+  // whenever a name was edited in one place.
+  //
+  // Nullable and unique: a prospect is not a tenant yet, and a tenant belongs to
+  // exactly one client record. Both are load-bearing — a non-unique link would
+  // make "the tenant for this client" ambiguous and quietly return the wrong
+  // person's rent.
+  crmClientId        String?
+  crmClient          CrmClient?              @relation(fields: [crmClientId], references: [id], onDelete: SetNull)
   tenantApplications TenantApplication[]
   rentSchedules      RentSchedule[]
   ledgers            TenantLedger[]
@@ -2342,6 +2358,8 @@ model PropertyTenant {
   @@unique([managerId, email])
   @@index([managerId])
   @@index([email])
+  @@unique([crmClientId])
+  @@index([crmClientId])
 }
 
 // Screening record for a tenant (CourtCheck US + PK rails).
@@ -7447,6 +7465,9 @@ model CrmClient {
   passport         TrustPassport? @relation("CrmClientTrustPassport", fields: [passportId], references: [id])
 
   jobs              CrmJob[]
+  // The property half of this person, when they are also a tenant. One tenant
+  // row per client, so this is the unique side and the join is unambiguous.
+  propertyTenant    PropertyTenant?
   bookings          Booking[]
   invoices          Invoice[]
   deals             CrmDeal[]

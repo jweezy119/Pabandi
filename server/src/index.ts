@@ -455,6 +455,10 @@ const routeMap: [string, string][] = [
   [`/api/${v}/public/property`, './routes/public.property.routes'],
   [`/api/${v}/crm`, './routes/crm.routes'],
   [`/api/${v}/reconciliation`, './routes/reconciliation.routes'],
+  // Sibling of /crm, mounted after it. crm.routes declares no /clients/:id/property
+  // path, so requests fall through to this router — the same arrangement
+  // /crm/activities already relies on.
+  [`/api/${v}/crm`, './routes/crmPropertyLink.routes'],
   [`/api/${v}/crm/activities`, './routes/activity.routes'],
   [`/api/${v}/crm/tasks`, './routes/task.routes'],
   [`/api/${v}/crm-advanced`, './routes/crmAdvanced.routes'],

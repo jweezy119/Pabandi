@@ -118,6 +118,29 @@ router.get('/dashboard', authenticate, async (req: any, res: Response) => {
   }
 });
 
+// GET /api/v1/property-manager/properties
+//
+// The OS had a way to CREATE a property but no way to LIST them, so the dashboard
+// had nothing to render and could only ever show a hard-coded zero.
+router.get('/properties', authenticate, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
+    const properties = await prisma.propertyManagerProperty.findMany({
+      where: { managerId: profile.id },
+      include: { _count: { select: { units: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ success: true, data: properties });
+  } catch (e: any) {
+    console.error('[pm] list properties failed:', e.message);
+    res.status(500).json({ error: 'Could not load properties' });
+  }
+});
+
 // POST /api/v1/property-manager/properties
 router.post('/properties', authenticate, async (req: any, res: Response) => {
   try {
@@ -138,6 +161,46 @@ router.post('/properties', authenticate, async (req: any, res: Response) => {
   }
 });
 
+// GET /api/v1/property-manager/tenants
+//
+// Only POST /tenants and GET /tenants/:id existed. The tenants screen called
+// GET /tenants and got a 404, so the list has never rendered.
+router.get('/tenants', authenticate, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
+    const { status, search } = req.query;
+    const tenants = await prisma.propertyTenant.findMany({
+      where: {
+        managerId: profile.id,
+        ...(status && status !== 'all' ? { status: status as string } : {}),
+        ...(search
+          ? {
+              OR: [
+                { email: { contains: String(search).toLowerCase(), mode: 'insensitive' } },
+                { firstName: { contains: String(search), mode: 'insensitive' } },
+                { lastName: { contains: String(search), mode: 'insensitive' } },
+              ],
+            }
+          : {}),
+      },
+      include: {
+        property: { select: { id: true, title: true, address: true, city: true, state: true } },
+        leases: { select: { id: true, status: true, startDate: true, endDate: true, rentAmount: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+    res.json({ success: true, data: tenants });
+  } catch (e: any) {
+    console.error('[pm] list tenants failed:', e.message);
+    res.status(500).json({ error: 'Could not load tenants' });
+  }
+});
+
 // GET /api/v1/property-manager/tenants/:id — single tenant detail (for profile view)
 router.get('/tenants/:id', authenticate, async (req: any, res: Response) => {
   try {
@@ -153,6 +216,75 @@ router.get('/tenants/:id', authenticate, async (req: any, res: Response) => {
     res.json({ success: true, data: tenant });
   } catch (e: any) {
     res.status(500).json({ error: 'Could not load tenant' });
+  }
+});
+
+// GET /api/v1/property-manager/financials/summary?period=month|year
+//
+// The financials screen asked for `/property/revenue`, which has never existed on
+// any mounted router. This is the endpoint that answers it, in the shape the
+// screen renders: totalRevenue, totalExpenses, netIncome, paymentCount.
+//
+// Both halves are summed over the same window and from real rows. Net is derived
+// as revenue less expenses rather than totalled separately, so the three figures
+// cannot disagree.
+router.get('/financials/summary', authenticate, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
+    const owned = await prisma.propertyManagerProperty.findMany({
+      where: { managerId: profile.id },
+      select: { id: true },
+    });
+    const propertyIds = owned.map((p) => p.id);
+
+    const period = req.query.period === 'year' ? 'year' : 'month';
+    const now = new Date();
+    const since = new Date(now);
+    if (period === 'year') since.setFullYear(since.getFullYear() - 1);
+    else since.setMonth(since.getMonth() - 1);
+
+    const [financials, payments] = await Promise.all([
+      prisma.propertyFinancial.findMany({
+        where: { propertyId: { in: propertyIds }, date: { gte: since } },
+        select: { type: true, amount: true },
+      }),
+      prisma.rentPayment.findMany({
+        where: { propertyId: { in: propertyIds }, dueDate: { gte: since } },
+        select: { amount: true, status: true },
+      }),
+    ]);
+
+    const totalRevenue = financials
+      .filter((f) => f.type === 'INCOME')
+      .reduce((sum, f) => sum + f.amount, 0);
+    const totalExpenses = financials
+      .filter((f) => f.type === 'EXPENSE')
+      .reduce((sum, f) => sum + f.amount, 0);
+
+    res.json({
+      success: true,
+      data: {
+        period,
+        since: since.toISOString(),
+        totalRevenue,
+        totalExpenses,
+        netIncome: totalRevenue - totalExpenses,
+        // Payments are listed separately from revenue on purpose: a scheduled rent
+        // charge and a collected one are different events, and folding them
+        // together would double-count every invoice that was both raised and paid.
+        paymentCount: payments.length,
+        collectedAmount: payments
+          .filter((p) => p.status === 'PAID')
+          .reduce((sum, p) => sum + p.amount, 0),
+      },
+    });
+  } catch (e: any) {
+    console.error('[pm] financial summary failed:', e.message);
+    res.status(500).json({ error: 'Could not load financials' });
   }
 });
 
@@ -266,6 +398,34 @@ router.patch('/appointments/:id', authenticate, async (req: any, res: Response) 
   }
 });
 
+// GET /api/v1/property-manager/leases
+//
+// Same gap as tenants: leases could be created and patched, never listed.
+router.get('/leases', authenticate, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
+    const { status, propertyId } = req.query;
+    const leases = await prisma.propertyLease.findMany({
+      where: {
+        managerId: profile.id,
+        ...(status && status !== 'all' ? { status: status as string } : {}),
+        ...(propertyId ? { propertyId: propertyId as string } : {}),
+      },
+      include: { property: { select: { id: true, title: true, address: true, city: true } } },
+      orderBy: { startDate: 'desc' },
+      take: 200,
+    });
+    res.json({ success: true, data: leases });
+  } catch (e: any) {
+    console.error('[pm] list leases failed:', e.message);
+    res.status(500).json({ error: 'Could not load leases' });
+  }
+});
+
 // POST /api/v1/property-manager/leases
 router.post('/leases', authenticate, async (req: any, res: Response) => {
   try {
@@ -306,6 +466,34 @@ router.patch('/leases/:id', authenticate, async (req: any, res: Response) => {
     res.json({ success: true, data: lease });
   } catch (e: any) {
     res.status(500).json({ error: 'Could not update lease' });
+  }
+});
+
+// GET /api/v1/property-manager/maintenance
+//
+// Same gap: maintenance requests could be created, never listed.
+router.get('/maintenance', authenticate, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
+    const { status, propertyId } = req.query;
+    const maintenance = await prisma.propertyMaintenance.findMany({
+      where: {
+        managerId: profile.id,
+        ...(status && status !== 'all' ? { status: status as string } : {}),
+        ...(propertyId ? { propertyId: propertyId as string } : {}),
+      },
+      include: { property: { select: { id: true, title: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+    res.json({ success: true, data: maintenance });
+  } catch (e: any) {
+    console.error('[pm] list maintenance failed:', e.message);
+    res.status(500).json({ error: 'Could not load maintenance' });
   }
 });
 
