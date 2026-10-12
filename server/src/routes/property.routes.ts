@@ -8,6 +8,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import { logger } from '../utils/logger';
 import { uploadSecurity } from '../middleware/uploadSecurity';
+import { ownedPropertyIds } from '../services/propertyScope';
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -102,8 +103,17 @@ router.patch('/units/:id', async (req: any, res: Response) => {
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { status, rentAmount, depositAmount, notes } = req.body || {};
+    // Look the unit up WITH its owner before updating. `update({ where: { id } })`
+    // had no predicate, so any signed-in landlord could rewrite the rent or status
+    // of a unit belonging to another landlord by guessing its id.
+    const existing = await prisma.propertyUnit.findFirst({
+      where: { id: req.params.id, property: { managerId: profile.id } },
+      select: { id: true },
+    });
+    if (!existing) return res.status(404).json({ error: 'Unit not found' });
+
     const unit = await prisma.propertyUnit.update({
-      where: { id: req.params.id },
+      where: { id: existing.id },
       data: {
         ...(status && { status }),
         ...(rentAmount != null && { rentAmount: Number(rentAmount) }),
@@ -159,9 +169,15 @@ router.get('/rent-payments', async (req: any, res: Response) => {
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { propertyId, status: statusFilter } = req.query;
+    // Scoped to this landlord's properties. Previously any propertyId in the query
+    // string returned that landlord's rent records.
+    const owned = await ownedPropertyIds(profile.id);
+    if (propertyId && !owned.includes(propertyId as string)) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
     const payments = await prisma.rentPayment.findMany({
       where: {
-        propertyId: propertyId as string,
+        propertyId: (propertyId as string) || { in: owned },
         ...(statusFilter && { status: statusFilter as string }),
       },
       orderBy: { dueDate: 'desc' },
@@ -181,8 +197,17 @@ router.patch('/rent-payments/:id', async (req: any, res: Response) => {
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { status, paidAt, method, reference, notes } = req.body || {};
+    // Marking rent paid is a financial write. It must not be reachable for
+    // another landlord's payment by id alone.
+    const owned = await ownedPropertyIds(profile.id);
+    const existing = await prisma.rentPayment.findFirst({
+      where: { id: req.params.id, propertyId: { in: owned } },
+      select: { id: true },
+    });
+    if (!existing) return res.status(404).json({ error: 'Payment not found' });
+
     const payment = await prisma.rentPayment.update({
-      where: { id: req.params.id },
+      where: { id: existing.id },
       data: {
         ...(status && { status }),
         ...(paidAt && { paidAt: new Date(paidAt) }),
@@ -235,8 +260,12 @@ router.get('/inspections', async (req: any, res: Response) => {
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { propertyId } = req.query;
+    const owned = await ownedPropertyIds(profile.id);
+    if (propertyId && !owned.includes(propertyId as string)) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
     const inspections = await prisma.propertyInspection.findMany({
-      where: { propertyId: propertyId as string },
+      where: { propertyId: (propertyId as string) || { in: owned } },
       orderBy: { inspectedAt: 'desc' },
     });
     res.json({ success: true, data: inspections });
@@ -285,8 +314,12 @@ router.get('/financials', async (req: any, res: Response) => {
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { propertyId, type: typeFilter } = req.query;
+    const owned = await ownedPropertyIds(profile.id);
+    if (propertyId && !owned.includes(propertyId as string)) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
     const financials = await prisma.propertyFinancial.findMany({
-      where: { propertyId: propertyId as string, ...(typeFilter && { type: typeFilter as string }) },
+      where: { propertyId: (propertyId as string) || { in: owned }, ...(typeFilter && { type: typeFilter as string }) },
       orderBy: { date: 'desc' },
     });
     res.json({ success: true, data: financials });
@@ -304,8 +337,12 @@ router.get('/financials/summary', async (req: any, res: Response) => {
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { propertyId } = req.query;
+    const owned = await ownedPropertyIds(profile.id);
+    if (propertyId && !owned.includes(propertyId as string)) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
     const financials = await prisma.propertyFinancial.findMany({
-      where: { propertyId: propertyId as string },
+      where: { propertyId: (propertyId as string) || { in: owned } },
     });
 
     const income = financials.filter((f) => f.type === 'INCOME').reduce((s, f) => s + f.amount, 0);
@@ -362,8 +399,21 @@ router.post('/photos/upload', upload.single('photo'), uploadSecurity, async (req
 // POST /api/v1/property-manager/photos
 router.post('/photos', async (req: any, res: Response) => {
   try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
     const { propertyId, unitId, url, caption, sortOrder, isCover, mimeType, fileSize } = req.body || {};
     if (!propertyId || !url) return res.status(400).json({ error: 'propertyId and url are required' });
+
+    // Without this the caller could attach a photo to any property in the
+    // system — including setting isCover on someone else's listing.
+    const owned = await ownedPropertyIds(profile.id);
+    if (!owned.includes(propertyId as string)) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+
     const photo = await prisma.propertyPhoto.create({ data: { propertyId, unitId, url, caption, sortOrder: sortOrder || 0, isCover: isCover || false, mimeType, fileSize } });
     res.status(201).json({ success: true, data: photo });
   } catch (e: any) {
@@ -374,8 +424,22 @@ router.post('/photos', async (req: any, res: Response) => {
 // GET /api/v1/property-manager/photos?propertyId=ID&unitId=ID
 router.get('/photos', async (req: any, res: Response) => {
   try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
     const { propertyId, unitId } = req.query;
-    const photos = await prisma.propertyPhoto.findMany({ where: { propertyId, unitId: unitId || undefined }, orderBy: { sortOrder: 'asc' } });
+    // Scoped: listing photos by propertyId previously returned any landlord's
+    // listing images to any signed-in caller.
+    const owned = await ownedPropertyIds(profile.id);
+    if (propertyId && !owned.includes(propertyId as string)) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+    const photos = await prisma.propertyPhoto.findMany({
+      where: { propertyId: (propertyId as string) || { in: owned }, unitId: (unitId as string) || undefined },
+      orderBy: { sortOrder: 'asc' },
+    });
     res.json({ success: true, data: photos });
   } catch (e: any) {
     res.status(500).json({ error: 'Internal server error' });
@@ -385,7 +449,20 @@ router.get('/photos', async (req: any, res: Response) => {
 // DELETE /api/v1/property-manager/photos/:id
 router.delete('/photos/:id', async (req: any, res: Response) => {
   try {
-    await prisma.propertyPhoto.delete({ where: { id: req.params.id } });
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
+    // Look the photo up WITH its property before deleting. delete({ where: { id } })
+    // let any signed-in landlord remove any listing image by id.
+    const owned = await ownedPropertyIds(profile.id);
+    const existing = await prisma.propertyPhoto.findFirst({
+      where: { id: req.params.id, propertyId: { in: owned } },
+      select: { id: true },
+    });
+    if (!existing) return res.status(404).json({ error: 'Photo not found' });
+    await prisma.propertyPhoto.delete({ where: { id: existing.id } });
     res.json({ success: true });
   } catch (e: any) {
     res.status(500).json({ error: 'Could not delete photo' });
@@ -637,8 +714,20 @@ router.get('/tasks', async (req: any, res: Response) => {
 // PATCH /api/v1/property-manager/tasks/:id
 router.patch('/tasks/:id', async (req: any, res: Response) => {
   try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
     const { status, completedAt } = req.body || {};
-    const task = await prisma.task.update({ where: { id: req.params.id }, data: { status, completedAt: completedAt ? new Date(completedAt) : null } });
+    // Scoped to this manager: a task id alone must not be enough to close a
+    // task belonging to somebody else.
+    const existing = await prisma.task.findFirst({
+      where: { id: req.params.id, managerId: profile.id },
+      select: { id: true },
+    });
+    if (!existing) return res.status(404).json({ error: 'Task not found' });
+    const task = await prisma.task.update({ where: { id: existing.id }, data: { status, completedAt: completedAt ? new Date(completedAt) : null } });
     res.json({ success: true, data: task });
   } catch (e: any) {
     res.status(500).json({ error: 'Could not update task' });
