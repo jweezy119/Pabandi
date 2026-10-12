@@ -136,6 +136,11 @@ function buildNavFromSettings(settings: any, osName: string, defaultNav?: NavIte
       // has no company or account field, so there is no data behind the idea
       // and no page that could honestly render it. It is a product decision,
       // not a routing fix — reintroduce it with a model and a page together.
+      // The Business OS workspace: the module grid that merges this CRM's data
+      // with the other OSs, including PropertyOS. It is the only place the server
+      // reports which modules are installed, so it is how a landlord reaches
+      // their properties from inside the CRM rather than by typing a URL.
+      { path: '/business-os', label: 'Workspace', icon: 'grid_view', feature: null },
       { path: '/contact/settings/modules', label: 'Settings', icon: 'settings', feature: null },
     ],
   };

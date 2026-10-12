@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../services/api';
-import { HalalBadge } from '../../components/halal';
 
 const navItems = [
   { path: '/property', label: 'Dashboard', icon: '📊', end: true },
@@ -22,15 +21,30 @@ export default function PropertyTenantsPage() {
 
   const loadTenants = async () => {
     try {
-      const res = await api.get('/api/v1/property/tenants');
+      const res = await api.get('/property-manager/tenants');
       setTenants(res.data?.data || []);
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };
 
-  const getRiskBadge = (score: number) => {
-    if (score >= 70) return <span className="px-2 py-0.5 text-xs rounded bg-[var(--sage)]/20 text-[var(--sage)]">Low Risk</span>;
-    if (score >= 40) return <span className="px-2 py-0.5 text-xs rounded bg-[var(--muted-ochre)]/20 text-[var(--muted-ochre)]">Medium Risk</span>;
-    return <span className="px-2 py-0.5 text-xs rounded bg-[var(--terracotta)]/20 text-[var(--terracotta)]">High Risk</span>;
+  /**
+   * Renders the screening band the court-listener check actually produced.
+   *
+   * This used to read a numeric `riskScore` and bucket it into Low/Medium/High.
+   * No such column exists on PropertyTenant — the stored value is `riskBand`
+   * (LOW | MEDIUM | HIGH, or null until screened) — so `undefined` fell through
+   * every threshold and every tenant was labelled "High Risk". A screen that
+   * showed every applicant as a risk would stop being read at all.
+   */
+  const getRiskBadge = (band?: string | null) => {
+    if (!band) return <span className="px-2 py-0.5 text-xs rounded bg-[var(--warm-sand)] text-[var(--soft-stone)]">Not screened</span>;
+    switch (band) {
+      case 'LOW':
+        return <span className="px-2 py-0.5 text-xs rounded bg-[var(--sage)]/20 text-[var(--sage)]">Low Risk</span>;
+      case 'MEDIUM':
+        return <span className="px-2 py-0.5 text-xs rounded bg-[var(--muted-ochre)]/20 text-[var(--muted-ochre)]">Medium Risk</span>;
+      default:
+        return <span className="px-2 py-0.5 text-xs rounded bg-[var(--terracotta)]/20 text-[var(--terracotta)]">High Risk</span>;
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -40,6 +54,18 @@ export default function PropertyTenantsPage() {
       case 'EXPIRED': return <span className="px-2 py-0.5 text-xs rounded bg-[var(--terracotta)]/20 text-[var(--terracotta)]">Expired</span>;
       default: return <span className="px-2 py-0.5 text-xs rounded bg-[var(--warm-sand)] text-[var(--soft-stone)]">{status || 'Unknown'}</span>;
     }
+  };
+
+  /** The tenant's active lease, if any. The column header says "Lease". */
+  const leaseSummary = (t: any) => {
+    const leases: any[] = t.leases || [];
+    const active = leases.find((l) => l.status === 'ACTIVE') || leases[0];
+    if (!active) return '—';
+    const end = active.endDate ? new Date(active.endDate) : null;
+    const until = end && !isNaN(end.getTime())
+      ? ` to ${end.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}`
+      : '';
+    return `$${Number(active.rentAmount || 0).toLocaleString()}${until}`;
   };
 
   const filtered = tenants.filter((t: any) => {
@@ -84,10 +110,8 @@ export default function PropertyTenantsPage() {
                     <td className="p-3"><Link to={`/property/tenants/${t.id}`} className="text-[var(--warm-ink)] hover:text-[var(--sage)]">{t.firstName} {t.lastName}</Link></td>
                     <td className="p-3 text-[var(--soft-stone)]">{t.email}</td>
                     <td className="p-3">{getStatusBadge(t.status)}</td>
-                    <td className="p-3">{getRiskBadge(t.riskScore)}</td>
-                    <td className="p-3">
-                      <HalalBadge size="sm" />
-                    </td>
+                    <td className="p-3">{getRiskBadge(t.riskBand)}</td>
+                    <td className="p-3 text-[var(--soft-stone)]">{leaseSummary(t)}</td>
                   </tr>
                 ))}
                 {filtered.length === 0 && (

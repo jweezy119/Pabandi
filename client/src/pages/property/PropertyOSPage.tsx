@@ -48,9 +48,9 @@ export default function PropertyOSPage() {
   const loadData = async () => {
     try {
       const [summaryRes, rateRes, propsRes] = await Promise.all([
-        api.get(`/api/v1/property/revenue?period=${period}`).catch(() => ({ data: { data: null } })),
-        api.get('/api/v1/property/revenue/collection-rate').catch(() => ({ data: { data: null } })),
-        api.get('/api/v1/property/revenue/top-properties').catch(() => ({ data: { data: [] } })),
+        api.get(`/property-manager/financials/summary?period=${period}`).catch(() => ({ data: { data: null } })),
+        api.get('/property-manager/dashboard').catch(() => ({ data: { data: null } })),
+        api.get('/property-manager/properties').catch(() => ({ data: { data: [] } })),
       ]);
       setSummary(summaryRes.data?.data);
       setCollectionRate(rateRes.data?.data);

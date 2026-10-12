@@ -20,7 +20,7 @@ export default function PropertyTenantDetailPage() {
 
   const loadTenant = async () => {
     try {
-      const res = await api.get(`/api/v1/property/tenants/${id}`);
+      const res = await api.get(`/property-manager/tenants/${id}`);
       setTenant(res.data?.data);
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };

@@ -19,7 +19,7 @@ export default function PropertyFinancialsPage() {
 
   const loadFinancials = async () => {
     try {
-      const res = await api.get(`/api/v1/property/revenue?period=${period}`);
+      const res = await api.get(`/property-manager/financials/summary?period=${period}`);
       setSummary(res.data?.data);
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };

@@ -23,7 +23,7 @@ export default function BuilderProjectPage() {
 
   const loadProject = async () => {
     try {
-      const res = await api.get(`/api/v1/builder/projects/${id}`);
+      const res = await api.get(`/builder/projects/${id}`);
       setProject(res.data?.data);
     } catch (e) {
       console.error('Failed to load project', e);
@@ -34,7 +34,7 @@ export default function BuilderProjectPage() {
 
   const addUnit = async () => {
     try {
-      await api.post('/api/v1/builder/units', {
+      await api.post('/builder/units', {
         projectId: id,
         unitNumber: unitForm.unitNumber,
         type: unitForm.type,
@@ -52,7 +52,7 @@ export default function BuilderProjectPage() {
 
   const addMilestone = async () => {
     try {
-      await api.post('/api/v1/builder/milestones', {
+      await api.post('/builder/milestones', {
         projectId: id,
         title: milestoneForm.title,
         description: milestoneForm.description,
@@ -68,7 +68,7 @@ export default function BuilderProjectPage() {
 
   const completeMilestone = async (mid: string) => {
     try {
-      await api.put(`/api/v1/builder/milestones/${mid}/complete`);
+      await api.put(`/builder/milestones/${mid}/complete`);
       loadProject();
     } catch (e: any) {
       alert('Failed: ' + e.message);

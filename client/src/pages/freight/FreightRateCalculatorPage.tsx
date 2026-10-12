@@ -18,7 +18,7 @@ export default function FreightRateCalculatorPage() {
   const calculate = async () => {
     setCalculating(true);
     try {
-      const res = await api.get(`/api/v1/saf/rates?distance=${form.distance}&weight=${form.weight}&type=${form.cargoType}`);
+      const res = await api.get(`/saf/rates?distance=${form.distance}&weight=${form.weight}&type=${form.cargoType}`);
       setEstimate(res.data?.data);
     } catch (e) { console.error(e); } finally { setCalculating(false); }
   };

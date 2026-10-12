@@ -27,7 +27,7 @@ export default function FreightPostLoadPage() {
   const getEstimate = async () => {
     if (!form.originCity || !form.destCity || !form.weightLbs) return;
     try {
-      const res = await api.get(`/api/v1/saf/rates?distance=500&weight=${form.weightLbs}&type=${form.cargoType}`);
+      const res = await api.get(`/saf/rates?distance=500&weight=${form.weightLbs}&type=${form.cargoType}`);
       setEstimate(res.data?.data);
     } catch (e) { console.error(e); }
   };
@@ -36,7 +36,7 @@ export default function FreightPostLoadPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await api.post('/api/v1/saf/loads', {
+      await api.post('/saf/loads', {
         ...form,
         weightLbs: Number(form.weightLbs),
         valueUsd: Number(form.valueUsd) || 0,

@@ -85,7 +85,7 @@ export default function FreightOSPage() {
 
   const loadLoads = async () => {
     try {
-      const res = await api.get('/api/v1/saf/loads?status=OPEN').catch(() => ({ data: { data: [] } }));
+      const res = await api.get('/saf/loads?status=OPEN').catch(() => ({ data: { data: [] } }));
       setLoads(res.data?.data || []);
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };

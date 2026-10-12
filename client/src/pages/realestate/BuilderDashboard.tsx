@@ -22,9 +22,9 @@ export default function BuilderDashboard() {
   const loadData = async () => {
     try {
       const [profileRes, projectsRes, scoreRes] = await Promise.all([
-        api.get('/api/v1/builder/profile').catch(() => ({ data: { data: null } })),
-        api.get('/api/v1/builder/projects').catch(() => ({ data: { data: [] } })),
-        api.get('/api/v1/builder/trust-score').catch(() => ({ data: { data: null } })),
+        api.get('/builder/profile').catch(() => ({ data: { data: null } })),
+        api.get('/builder/projects').catch(() => ({ data: { data: [] } })),
+        api.get('/builder/trust-score').catch(() => ({ data: { data: null } })),
       ]);
       setProfile(profileRes.data?.data);
       setProjects(projectsRes.data?.data || []);

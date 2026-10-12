@@ -26,7 +26,7 @@ export default function OAuthConsentPage() {
 
     const validateRequest = async () => {
       try {
-        const res = await api.get('/api/v1/oauth/authorize', {
+        const res = await api.get('/oauth/authorize', {
           params: { client_id: clientId, redirect_uri: redirectUri, response_type: responseType }
         });
         setClientInfo(res.data.client);
@@ -48,7 +48,7 @@ export default function OAuthConsentPage() {
   const handleConsent = async (action: 'approve' | 'deny') => {
     setSubmitting(true);
     try {
-      const res = await api.post('/api/v1/oauth/authorize', {
+      const res = await api.post('/oauth/authorize', {
         client_id: clientId,
         redirect_uri: redirectUri,
         action

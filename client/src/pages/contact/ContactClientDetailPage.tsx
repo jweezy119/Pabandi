@@ -7,12 +7,15 @@ import ClientTimeline from '../crm/components/ClientTimeline';
 import { Modal } from '../../components/primitives/Modal';
 import { Input } from '../../components/primitives/Input';
 import { TrustPanel } from '../../components/TrustPanel';
-
-import { TrustPanel } from '../../components/TrustPanel';
 import { InlineEdit } from '../../components/primitives/InlineEdit';
 import { getAuthToken } from '../../utils/authToken';
+import { ClientPropertyPanel } from '../crm/components/ClientPropertyPanel';
 
-const TABS = ['Command Center', 'Files'];
+// 'Property' is the tenancy half of this person. It was absent because a tenant and
+// a CRM client were unrelated records; they are now linked by a real foreign key
+// (PropertyTenant.crmClientId), so the lease and rent position belong next to the
+// trust record rather than in a separate OS the salesperson never opened.
+const TABS = ['Command Center', 'Property', 'Files'];
 
 export default function ContactClientDetailPage() {
   const { id } = useParams();
@@ -161,6 +164,10 @@ export default function ContactClientDetailPage() {
               <ClientSidebar client={client} outstanding={outstanding} totalBilled={totalBilled} onScheduleTask={() => setShowActivityModal(true)} />
             </div>
           </div>
+        )}
+
+        {activeTab === 'Property' && (
+          <ClientPropertyPanel clientId={id!} />
         )}
 
         {activeTab === 'Files' && (

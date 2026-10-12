@@ -16,7 +16,7 @@ export default function BuyerPortal() {
 
   const loadProfile = async () => {
     try {
-      const res = await api.get('/api/v1/buyer/profile');
+      const res = await api.get('/buyer/profile');
       setProfile(res.data?.data);
     } catch (e) {
       console.error('Failed to load buyer profile', e);

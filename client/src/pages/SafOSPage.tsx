@@ -20,7 +20,7 @@ export default function SafOSPage() {
 
   const loadLoads = async () => {
     try {
-      const res = await api.get('/api/v1/saf/loads?status=OPEN');
+      const res = await api.get('/saf/loads?status=OPEN');
       setLoads(res.data?.data || []);
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };

@@ -26,13 +26,13 @@
  *   booking  -> /contact            the workspace itself lists bookings and jobs
  *   capital  -> /contact/money-flow Mudarabah pools, P&L, payouts
  *   payments -> /contact/invoices   settlement and invoices
- *   property -> null                no page exists
+ *   property -> /property           PropertyOS: tenants, leases, maintenance
  *   trust    -> null                no page exists
  *
- * `route: null` is the honest answer for those two. The server still registers
- * both modules, so they remain visible in the grid; a `ModuleCard` with no route
- * renders as unavailable rather than navigating nowhere. Inventing placeholder
- * pages would have hidden the gap behind a page that looks built.
+ * `route: null` is the honest answer for trust. The server still registers the
+ * module, so it remains visible in the grid; a `ModuleCard` with no route renders
+ * as unavailable rather than navigating nowhere. Inventing placeholder pages would
+ * have hidden the gap behind a page that looks built.
  */
 
 export type ModuleId =
@@ -96,7 +96,11 @@ export const MODULES: ModuleDescriptor[] = [
     label: 'Property',
     glyph: '⌂',
     blurb: 'Rent roll, tenant risk, leases and maintenance',
-    route: null,
+    // WAS null, with the justification "no page exists". That was wrong:
+    // App.tsx has registered `/property` and the whole PropertyOS tree since it
+    // was added. A null route renders the card as unavailable, so a working
+    // module read as missing from the workspace.
+    route: '/property',
     accent: 'secondary',
     order: 30,
   },

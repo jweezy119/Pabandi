@@ -25,9 +25,9 @@ export default function HaqOSPage() {
   const loadData = async () => {
     try {
       const [summaryRes, rateRes, propsRes] = await Promise.all([
-        api.get(`/api/v1/haq/revenue?period=${period}`),
-        api.get('/api/v1/haq/revenue/collection-rate'),
-        api.get('/api/v1/haq/revenue/top-properties'),
+        api.get(`/haq/revenue?period=${period}`),
+        api.get('/haq/revenue/collection-rate'),
+        api.get('/haq/revenue/top-properties'),
       ]);
       setSummary(summaryRes.data?.data);
       setCollectionRate(rateRes.data?.data);

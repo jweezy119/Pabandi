@@ -22,7 +22,7 @@ export default function CreateEscrow() {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post('/api/v1/cod/create', {
+      await api.post('/cod/create', {
         sellerId: 'current-user', // Would come from auth context
         amount: parseFloat(form.amount),
         description: form.productName,

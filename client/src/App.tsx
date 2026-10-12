@@ -426,6 +426,12 @@ function AnimatedAppRoutes() {
            <Route path="contact/settings" element={<BusinessGuard><SettingsHubPage /></BusinessGuard>} />
            <Route path="contact/settings/profile" element={<BusinessGuard><BusinessProfilePage /></BusinessGuard>} />
            <Route path="contact/settings/modules" element={<BusinessGuard><ModulesSettingsPage /></BusinessGuard>} />
+           {/* The Business OS workspace. This shell has existed and been lazy-loaded
+               since it was written, but no <Route> ever rendered it, so the module
+               grid the server populates had no page to live on — the one working
+               property-in-CRM integration was invisible. Guarded like the rest of
+               Contact OS, because it reads the caller's CRM context. */}
+           <Route path="business-os" element={<BusinessGuard><BusinessWorkspaceShell /></BusinessGuard>} />
            <Route path="contact/settings/custom-fields" element={<BusinessGuard><CustomFieldsPage /></BusinessGuard>} />
            <Route path="contact/settings/pipeline" element={<BusinessGuard><PipelineSettingsPage /></BusinessGuard>} />
            <Route path="contact/settings/services" element={<BusinessGuard><ServiceCatalogPage /></BusinessGuard>} />

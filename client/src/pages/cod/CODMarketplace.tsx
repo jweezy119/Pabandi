@@ -27,7 +27,7 @@ export default function CODMarketplace() {
 
   const confirmBuy = async () => {
     try {
-      await api.post('/api/v1/cod/create', {
+      await api.post('/cod/create', {
         sellerId: 'seller-id-placeholder',
         amount: selectedItem.price,
         description: selectedItem.title,

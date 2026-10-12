@@ -22,7 +22,7 @@ export default function PropertyLeasesPage() {
   const loadLeases = async () => {
     try {
       const query = filter !== 'all' ? `?status=${filter}` : '';
-      const res = await api.get(`/api/v1/property/leases${query}`);
+      const res = await api.get(`/property-manager/leases${query}`);
       setLeases(res.data?.data || []);
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };

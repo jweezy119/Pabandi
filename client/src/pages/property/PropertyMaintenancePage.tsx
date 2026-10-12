@@ -22,7 +22,7 @@ export default function PropertyMaintenancePage() {
   const loadRequests = async () => {
     try {
       const query = filter.status ? `?status=${filter.status}` : '';
-      const res = await api.get(`/api/v1/property/maintenance${query}`);
+      const res = await api.get(`/property-manager/maintenance${query}`);
       setRequests(res.data?.data || []);
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };

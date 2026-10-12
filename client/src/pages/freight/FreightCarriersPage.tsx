@@ -22,7 +22,7 @@ export default function FreightCarriersPage() {
       const params = new URLSearchParams();
       if (filter.state) params.set('state', filter.state);
       if (filter.verified) params.set('verified', filter.verified);
-      const res = await api.get(`/api/v1/saf/carriers?${params}`);
+      const res = await api.get(`/saf/carriers?${params}`);
       setCarriers(res.data?.data || []);
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };

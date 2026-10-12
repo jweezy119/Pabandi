@@ -27,7 +27,7 @@ export default function EscrowDetail() {
 
   const loadEscrow = async () => {
     try {
-      const res = await api.get(`/api/v1/cod/${id}`);
+      const res = await api.get(`/cod/${id}`);
       setEscrow(res.data?.data);
     } catch (e) {
       console.error('Failed to load escrow', e);
@@ -38,7 +38,7 @@ export default function EscrowDetail() {
 
   const handleAction = async (action: string, data?: any) => {
     try {
-      await api.post(`/api/v1/cod/${id}/${action}`, data);
+      await api.post(`/cod/${id}/${action}`, data);
       loadEscrow();
     } catch (e: any) {
       alert('Action failed: ' + e.message);
