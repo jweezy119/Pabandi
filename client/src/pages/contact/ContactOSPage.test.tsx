@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
+import { LanguageProvider } from '../../context/LanguageContext';
 
 /**
  * The regression these exist for.
@@ -51,15 +52,22 @@ function mockFetch(status: number, body: unknown = { data: [] }) {
 async function renderContactOS(status: number) {
   mockFetch(status);
   const ContactOSPage = (await import('./ContactOSPage')).default;
+  // LanguageProvider because the page renders HalalBanner, which throws through
+  // useLanguage without it. That throw was not a test failure anyone looked at: it
+  // happened during render, the tree never committed, and every assertion below
+  // timed out instead — so these three tests had been green-by-absence, guarding a
+  // regression they could not see.
   return render(
     <HelmetProvider>
-      <MemoryRouter initialEntries={['/contact']}>
-        <LocationProbe />
-        <Routes>
-          <Route path="/contact" element={<ContactOSPage />} />
-          <Route path="/contact/setup" element={<div>setup wizard</div>} />
-        </Routes>
-      </MemoryRouter>
+      <LanguageProvider>
+        <MemoryRouter initialEntries={['/contact']}>
+          <LocationProbe />
+          <Routes>
+            <Route path="/contact" element={<ContactOSPage />} />
+            <Route path="/contact/setup" element={<div>setup wizard</div>} />
+          </Routes>
+        </MemoryRouter>
+      </LanguageProvider>
     </HelmetProvider>,
   );
 }

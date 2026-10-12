@@ -458,6 +458,11 @@ function AnimatedAppRoutes() {
           <Route path="saf/*" element={<Navigate to="/freight" replace />} />
           <Route path="sitara/*" element={<Navigate to="/booking" replace />} />
           <Route path="pipeline/*" element={<Navigate to="/contact" replace />} />
+          {/* "ContactOS" is read and written as contactos in shared links, bookmarks and
+              WhatsApp messages, and there was no route for it — the SPA answered with
+              NotFoundPage, which is indistinguishable from the app being broken.
+              `replace`, so Back from /contact cannot ping-pong between the two. */}
+          <Route path="contactos" element={<Navigate to="/contact" replace />} />
           <Route path="discovery" element={<Navigate to="/booking" replace />} />
           <Route path="/ledger/*" element={<Navigate to="/capital" replace />} />
 

@@ -151,6 +151,14 @@ describe('BusinessGuard source', () => {
     expect(app).toMatch(/path="contact" element=\{<BusinessGuard>/);
     expect(app).toMatch(/path="contact\/clients" element=\{<BusinessGuard>/);
   });
+
+  it('answers /contactos, the name the OS is shared under', () => {
+    // Reported as "pabandi.com/contactos does not load". There was no such route, so
+    // the SPA rendered NotFoundPage — the one outcome indistinguishable from a broken
+    // app. Every other retired name (abode, haq, saf, sitara, pipeline) already had a
+    // redirect here; contactos was the one that did not.
+    expect(app).toMatch(/path="contactos" element=\{<Navigate to="\/contact" replace \/>\}/);
+  });
 });
 
 describe('post-login target', () => {
