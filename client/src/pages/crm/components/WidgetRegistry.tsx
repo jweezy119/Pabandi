@@ -1,8 +1,69 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Users, DollarSign, TrendingUp, AlertTriangle, Calendar,
   CheckSquare, BarChart3, Star, Clock, Target
 } from 'lucide-react';
+import { RevenueWidget } from './RevenueWidget';
+import { PipelineFunnelWidget } from './PipelineFunnelWidget';
+import { ClientHealthWidget } from './ClientHealthWidget';
+import { ActivityMetricsWidget } from './ActivityMetricsWidget';
+import { TaskBoard } from './TaskBoard';
+import { JobCalendar } from './JobCalendar';
+import {
+  StatsOverviewWidget, AlertsWidget, TeamWidget, GoalsWidget,
+} from './dashboardWidgets';
+import type { DashboardData } from './useDashboardData';
+
+/**
+ * WIDGET COMPONENTS
+ *
+ * Every entry here was `component: () => null`. The registry rendered a bordered
+ * box per widget with a title and an empty interior, so the whole body of the
+ * Contact OS dashboard was blank — which reads from outside as a page that is not
+ * loading, and cost three separate reports before anyone read it as "the widgets
+ * were never implemented" rather than "the page is broken".
+ *
+ * The components below are the ones the reports page has been rendering all along
+ * (ReportWidgetGrid); they were never imported here. Each adapter pulls its own
+ * slice out of the single `data` prop and forwards it, because these widgets take
+ * their props positionally and the registry passes one object.
+ *
+ * `WidgetDefinition.component` stays `ComponentType<{ data?: Record<string, unknown> }>`
+ * rather than being widened to DashboardData: the saved layout on a server is a
+ * list of ids, so any widget can appear against any data, and a narrow cast at the
+ * boundary keeps that from becoming a compile error at every call site.
+ *
+ * The registry hands over `Record<string, unknown>`; at runtime it is always
+ * DashboardData.
+ */
+const asData = (data?: Record<string, unknown>) => data as unknown as DashboardData;
+
+/**
+ * TaskBoard and JobCalendar take an `onClick` callback, so they cannot be wired
+ * as bare expressions the way the rest are — they need a component to hold the
+ * navigate hook. Both navigate to the real detail route; the dashboard is a
+ * window onto those pages, not a dead end.
+ */
+function TasksWidget({ data }: { data?: Record<string, unknown> }) {
+  const navigate = useNavigate();
+  return (
+    <TaskBoard
+      tasks={asData(data)?.tasks ?? []}
+      onTaskClick={() => navigate('/contact/tasks')}
+    />
+  );
+}
+
+function CalendarWidget({ data }: { data?: Record<string, unknown> }) {
+  const navigate = useNavigate();
+  return (
+    <JobCalendar
+      jobs={asData(data)?.jobs ?? []}
+      onJobClick={(id) => navigate(`/contact/jobs/${id}`)}
+    />
+  );
+}
 
 export interface WidgetDefinition {
   id: string;
@@ -46,7 +107,7 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     category: 'stats',
     defaultWidth: 'full',
     defaultVisible: true,
-    component: () => null,
+    component: ({ data }) => <StatsOverviewWidget data={asData(data)} />,
   },
   {
     id: 'revenue',
@@ -56,7 +117,7 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     category: 'financial',
     defaultWidth: 'half',
     defaultVisible: true,
-    component: () => null,
+    component: ({ data }) => <RevenueWidget hideHeader data={asData(data)?.revenue} loading={!!asData(data)?.loading} />,
   },
   {
     id: 'pipeline',
@@ -66,7 +127,7 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     category: 'pipeline',
     defaultWidth: 'full',
     defaultVisible: true,
-    component: () => null,
+    component: ({ data }) => <PipelineFunnelWidget hideHeader data={asData(data)?.pipeline ?? []} loading={!!asData(data)?.loading} />,
   },
   {
     id: 'clients',
@@ -76,7 +137,7 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     category: 'stats',
     defaultWidth: 'half',
     defaultVisible: true,
-    component: () => null,
+    component: ({ data }) => <ClientHealthWidget hideHeader data={asData(data)?.clientHealth} loading={!!asData(data)?.loading} />,
   },
   {
     id: 'activities',
@@ -86,7 +147,7 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     category: 'activity',
     defaultWidth: 'half',
     defaultVisible: true,
-    component: () => null,
+    component: ({ data }) => <ActivityMetricsWidget hideHeader data={asData(data)?.activity} loading={!!asData(data)?.loading} />,
   },
   {
     id: 'tasks',
@@ -96,7 +157,7 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     category: 'activity',
     defaultWidth: 'half',
     defaultVisible: false,
-    component: () => null,
+    component: ({ data }) => <TasksWidget data={data} />,
   },
   {
     id: 'alerts',
@@ -106,7 +167,7 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     category: 'stats',
     defaultWidth: 'half',
     defaultVisible: true,
-    component: () => null,
+    component: ({ data }) => <AlertsWidget data={asData(data)} />,
   },
   {
     id: 'calendar',
@@ -116,7 +177,7 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     category: 'activity',
     defaultWidth: 'half',
     defaultVisible: false,
-    component: () => null,
+    component: ({ data }) => <CalendarWidget data={data} />,
   },
   {
     id: 'team',
@@ -126,7 +187,7 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     category: 'team',
     defaultWidth: 'half',
     defaultVisible: false,
-    component: () => null,
+    component: ({ data }) => <TeamWidget data={asData(data)} />,
   },
   {
     id: 'goals',
@@ -136,7 +197,7 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     category: 'financial',
     defaultWidth: 'half',
     defaultVisible: false,
-    component: () => null,
+    component: ({ data }) => <GoalsWidget data={asData(data)} />,
   },
 ];
 

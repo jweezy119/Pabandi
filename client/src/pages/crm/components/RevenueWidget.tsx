@@ -2,20 +2,22 @@ import React from 'react';
 import { Card } from '../../../components/primitives/Card';
 import { CSVExportButton } from './CSVExportButton';
 
-export function RevenueWidget({ data, loading }: { data: any, loading: boolean }) {
+export function RevenueWidget({ data, loading, hideHeader = false }: { data: any; loading: boolean; hideHeader?: boolean }) {
   if (loading) return <Card padding="lg" className="animate-pulse bg-[var(--warm-sand)]/20 h-[300px]" />;
 
   const { billed = 0, collected = 0, outstanding = 0 } = data || {};
 
   return (
-    <Card padding="lg" className="h-full relative flex flex-col justify-between">
+    <Card padding="lg" className={`h-full relative flex flex-col justify-between ${hideHeader ? 'pt-10' : ''}`}>
       <div className="absolute top-4 right-4">
         <CSVExportButton data={[{ billed, collected, outstanding }]} filename="revenue-report" label="" />
       </div>
-      <div>
-        <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-1">Revenue</h3>
-        <p className="text-sm text-[var(--soft-stone)] mb-6">Billed, collected, outstanding</p>
-      </div>
+      {!hideHeader && (
+        <div>
+          <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-1">Revenue</h3>
+          <p className="text-sm text-[var(--soft-stone)] mb-6">Billed, collected, outstanding</p>
+        </div>
+      )}
 
       <div className="space-y-6">
         <div className="text-center">

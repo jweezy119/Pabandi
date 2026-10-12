@@ -2,18 +2,22 @@ import React from 'react';
 import { Card } from '../../../components/primitives/Card';
 import { CSVExportButton } from './CSVExportButton';
 
-export function ClientHealthWidget({ data, loading }: { data: any, loading: boolean }) {
+export function ClientHealthWidget({ data, loading, hideHeader = false }: { data: any; loading: boolean; hideHeader?: boolean }) {
   if (loading) return <Card padding="lg" className="animate-pulse bg-[var(--warm-sand)]/20 h-[300px]" />;
 
   const { atRisk = [], newClients = [], topClients = [] } = data || {};
 
   return (
-    <Card padding="lg" className="h-full relative">
+    <Card padding="lg" className={`h-full relative ${hideHeader ? 'pt-10' : ''}`}>
       <div className="absolute top-4 right-4 flex gap-2">
         <CSVExportButton data={atRisk} filename="at-risk-clients" label="Risk" />
       </div>
-      <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-1">Client Health</h3>
-      <p className="text-sm text-[var(--soft-stone)] mb-6">At-risk, new, and top clients</p>
+      {!hideHeader && (
+        <>
+          <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-1">Client Health</h3>
+          <p className="text-sm text-[var(--soft-stone)] mb-6">At-risk, new, and top clients</p>
+        </>
+      )}
       
       <div className="grid grid-cols-3 gap-4 text-center">
         <div className="p-3 bg-[var(--rose)]/10 rounded-xl border border-[var(--rose)]/20">

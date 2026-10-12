@@ -10,15 +10,18 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getAuthToken } from '../../../utils/authToken';
+import { useDashboardData } from './useDashboardData';
 
 interface ModularDashboardProps {
   businessId: string;
   data?: Record<string, unknown>;
+  /** Already-fetched clients, so the dashboard does not re-request what the page above it just loaded. */
+  clients?: any[] | null;
 }
 
 type EditMode = 'none' | 'layout' | 'theme';
 
-export default function ModularDashboard({ businessId, data }: ModularDashboardProps) {
+export default function ModularDashboard({ businessId, clients }: ModularDashboardProps) {
   const { user } = useAuthStore();
   const [layout, setLayout] = useState<WidgetInstance[]>(getDefaultLayout());
   const [theme, setTheme] = useState<DashboardTheme>(DEFAULT_THEME);
@@ -27,6 +30,11 @@ export default function ModularDashboard({ businessId, data }: ModularDashboardP
   const [saving, setSaving] = useState(false);
   const [showAddWidget, setShowAddWidget] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  // The widgets render nothing without this. It used to be `{ leads }` — the
+  // client list the parent had already fetched — which no widget in the registry
+  // reads, so every one of them rendered its empty state.
+  const { data: dashboardData } = useDashboardData(clients);
 
   useEffect(() => {
     loadLayout();
@@ -328,7 +336,7 @@ export default function ModularDashboard({ businessId, data }: ModularDashboardP
                   <def.icon size={16} style={{ color: theme.accentColor }} />
                   <h3 className="text-sm font-bold text-[var(--warm-ink)]">{def.title}</h3>
                 </div>
-                <WidgetComponent data={data} />
+                <WidgetComponent data={dashboardData as unknown as Record<string, unknown>} />
               </div>
             </div>
           );

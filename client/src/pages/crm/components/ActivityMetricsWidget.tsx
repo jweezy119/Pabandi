@@ -2,21 +2,23 @@ import React from 'react';
 import { Card } from '../../../components/primitives/Card';
 import { CSVExportButton } from './CSVExportButton';
 
-export function ActivityMetricsWidget({ data, loading }: { data: any, loading: boolean }) {
+export function ActivityMetricsWidget({ data, loading, hideHeader = false }: { data: any; loading: boolean; hideHeader?: boolean }) {
   if (loading) return <Card padding="lg" className="animate-pulse bg-[var(--warm-sand)]/20 h-[300px]" />;
 
   const { total = 0, completionRate = 0, timeline = [] } = data || {};
   const maxVal = Math.max(...timeline.map((t: any) => t.count), 1);
 
   return (
-    <Card padding="lg" className="h-full relative flex flex-col justify-between">
+    <Card padding="lg" className={`h-full relative flex flex-col justify-between ${hideHeader ? 'pt-10' : ''}`}>
       <div className="absolute top-4 right-4 flex gap-2">
         <CSVExportButton data={timeline} filename="activity-timeline" label="" />
       </div>
-      <div>
-        <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-1">Activity Metrics</h3>
-        <p className="text-sm text-[var(--soft-stone)] mb-6">Total activities and completion</p>
-      </div>
+      {!hideHeader && (
+        <div>
+          <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-1">Activity Metrics</h3>
+          <p className="text-sm text-[var(--soft-stone)] mb-6">Total activities and completion</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>

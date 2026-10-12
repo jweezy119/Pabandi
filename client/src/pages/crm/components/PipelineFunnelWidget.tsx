@@ -2,18 +2,22 @@ import React from 'react';
 import { Card } from '../../../components/primitives/Card';
 import { CSVExportButton } from './CSVExportButton';
 
-export function PipelineFunnelWidget({ data, loading }: { data: any[], loading: boolean }) {
+export function PipelineFunnelWidget({ data, loading, hideHeader = false }: { data: any[]; loading: boolean; hideHeader?: boolean }) {
   if (loading) return <Card padding="lg" className="animate-pulse bg-[var(--warm-sand)]/20 h-[300px]" />;
 
   const maxVal = Math.max(...data.map(d => d.value), 1);
 
   return (
-    <Card padding="lg" className="h-full flex flex-col relative">
+    <Card padding="lg" className={`h-full flex flex-col relative ${hideHeader ? 'pt-10' : ''}`}>
       <div className="absolute top-4 right-4">
         <CSVExportButton data={data} filename="pipeline-funnel" label="" />
       </div>
-      <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-1">Pipeline Funnel</h3>
-      <p className="text-sm text-[var(--soft-stone)] mb-6">Deals by stage and value</p>
+      {!hideHeader && (
+        <>
+          <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-1">Pipeline Funnel</h3>
+          <p className="text-sm text-[var(--soft-stone)] mb-6">Deals by stage and value</p>
+        </>
+      )}
       
       <div className="flex-1 flex flex-col gap-3 justify-center">
         {data.length === 0 && <div className="text-center text-[var(--soft-stone)]">No deals found</div>}

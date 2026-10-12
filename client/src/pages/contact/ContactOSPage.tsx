@@ -250,7 +250,7 @@ export default function ContactOSPage() {
 
           {/* ── Modular Dashboard ────────────────────────────────── */}
           <div className="clay-rise clay-delay-3 mb-10">
-            <ModularDashboard businessId={businessId} data={{ leads }} />
+            <ModularDashboard businessId={businessId} clients={leads} />
           </div>
 
           {/* ── Clients list ──────────────────────────────────────── */}
