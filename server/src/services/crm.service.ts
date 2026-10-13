@@ -5,6 +5,7 @@ import { logger } from '../utils/logger';
 import { eventBus } from './event-bus.service';
 import { getClientStage } from './crm-reliability.service';
 import type { BusinessCategory, Prisma } from '@prisma/client';
+import { CLIENT_STATUSES, isClientStatus, type ClientStatus } from '../domain/crm';
 
 // ─── Enroll Business ─────────────────────────────────────────────────────────
 
@@ -29,35 +30,20 @@ function resolveCategory(serviceType: string): BusinessCategory {
 }
 
 /**
- * The legal values for a client's status.
- *
- * THE DATA LOSS THIS FIXES
- * ClientFormModal has rendered a Status dropdown — ACTIVE / AT_RISK / VIP /
- * INACTIVE — since it was written. `addClient` destructured a fixed list of five
- * fields and `status` was not among them, so Prisma's default won every time. A
- * person marked AT_RISK was stored as ACTIVE and the screen said otherwise. The
- * same function also dropped `company`, which had no column at all.
- *
- * Exported rather than kept private because the client form needs the same list.
- * There were already three divergent copies of the deal stages; a fourth copy of
- * this one would be the same bug wearing a different hat.
- */
-export const CLIENT_STATUSES = ['ACTIVE', 'AT_RISK', 'VIP', 'INACTIVE'] as const;
-export type ClientStatus = (typeof CLIENT_STATUSES)[number];
-
-/**
  * Rejects an unknown status rather than defaulting.
  *
  * Same reasoning as `parseStage`: storing "vip " or "At Risk" would leave the row
  * matching none of the filters, so the client would vanish from every list the
  * person can reach. A 400 naming the legal values is recoverable; a client that
  * has disappeared from the CRM is not.
+ *
+ * The list itself lives in domain/crm.ts, which the client form imports too —
+ * there were already three divergent copies of the deal stages, and a fourth copy
+ * of this one would be the same bug in a different hat.
  */
 export function parseClientStatus(value: unknown, fallback: ClientStatus = 'ACTIVE'): ClientStatus {
   if (value === undefined || value === null || value === '') return fallback;
-  if (typeof value === 'string' && (CLIENT_STATUSES as readonly string[]).includes(value)) {
-    return value as ClientStatus;
-  }
+  if (isClientStatus(value)) return value;
   throw new CustomError(
     `Invalid status. Expected one of: ${CLIENT_STATUSES.join(', ')}`,
     400,
@@ -1109,29 +1095,12 @@ export async function findOrCreateClient(
  * change with no explicit probability still moves it to the stage default, so the kanban
  * forecast and the probability column cannot drift apart.
  */
-export const DEAL_STAGES = [
-  'LEAD',
-  'QUALIFIED',
-  'PROPOSAL',
-  'NEGOTIATION',
-  'WON',
-  'LOST',
-] as const;
-
-export type DealStage = (typeof DEAL_STAGES)[number];
-
-const STAGE_PROBABILITY: Record<string, number> = {
-  LEAD: 10,
-  QUALIFIED: 30,
-  PROPOSAL: 60,
-  NEGOTIATION: 80,
-  WON: 100,
-  LOST: 0,
-};
-
-function isDealStage(value: unknown): value is DealStage {
-  return typeof value === 'string' && (DEAL_STAGES as readonly string[]).includes(value);
-}
+// Re-exported from domain/crm.ts so existing importers of this module keep working.
+// They are no longer defined here: the vocabulary lives in one place, and the
+// client form imports it from there too.
+export { DEAL_STAGES } from '../domain/crm';
+export type { DealStage } from '../domain/crm';
+import { DEAL_STAGES, isDealStage, type DealStage, STAGE_PROBABILITY } from '../domain/crm';
 
 /**
  * Coerce a caller-supplied stage to a real one.

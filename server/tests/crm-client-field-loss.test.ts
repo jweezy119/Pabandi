@@ -46,8 +46,10 @@ import {
   updateClient,
   deleteClient,
   getClient,
-  CLIENT_STATUSES,
 } from '../src/services/crm.service';
+// The vocabulary moved to domain/crm.ts so the client form imports the same list.
+// The parsers stay in the service, because the service is what rejects.
+import { CLIENT_STATUSES } from '../src/domain/crm';
 
 const SVC = 'svc_1';
 const OTHER_SVC = 'svc_2';

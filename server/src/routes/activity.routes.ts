@@ -4,6 +4,7 @@ import { prisma } from '../utils/database';
 import { trustCore } from '../trust/trust-core';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { CustomError } from '../middleware/errorHandler';
+import { ACTIVITY_TYPES } from '../domain/crm';
 import { logger } from '../utils/logger';
 
 /**
@@ -72,8 +73,6 @@ router.get('/', async (req: AuthRequest, res: Response) => {
  * status, priority and completion handling, and an activity row masquerading as a
  * task would carry none of it: it would appear on no board and never complete.
  */
-const ACTIVITY_TYPES = ['NOTE', 'CALL', 'EMAIL', 'MEETING'] as const;
-
 function parseActivityType(value: unknown): string {
   if (value === undefined || value === null || value === '') return 'NOTE';
   if (typeof value === 'string' && (ACTIVITY_TYPES as readonly string[]).includes(value)) {

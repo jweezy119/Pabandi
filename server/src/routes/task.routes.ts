@@ -3,6 +3,7 @@ import { prisma } from '../utils/database';
 import { trustCore } from '../trust/trust-core';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { CustomError } from '../middleware/errorHandler';
+import { TASK_STATUSES, TASK_PRIORITIES } from '../domain/crm';
 import { logger } from '../utils/logger';
 
 /**
@@ -81,9 +82,6 @@ router.get('/', async (req: AuthRequest, res: Response) => {
  * names the legal values is recoverable, and a task that silently became MEDIUM is
  * not something anyone would notice until it mattered.
  */
-const TASK_STATUSES = ['TODO', 'IN_PROGRESS', 'DONE'] as const;
-const TASK_PRIORITIES = ['LOW', 'MEDIUM', 'HIGH'] as const;
-
 function parseEnum<T extends string>(
   value: unknown,
   allowed: readonly T[],
