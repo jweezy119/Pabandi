@@ -177,6 +177,13 @@ router.patch('/:id', async (req: AuthRequest, res: Response) => {
     res.json(task);
   } catch (err) {
     logger.error(`[Tasks] update failed: ${err instanceof Error ? err.message : err}`);
+    // The tenant check above throws a 403, and a blanket 500 answered it as a server
+    // fault. Same misreport as the capital endpoints: an account with no business on
+    // its token was told the database was broken.
+    if (err instanceof CustomError) {
+      res.status(err.statusCode).json({ error: err.message });
+      return;
+    }
     res.status(500).json({ error: 'Failed to update task' });
   }
 });

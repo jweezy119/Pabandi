@@ -65,6 +65,30 @@ function requireBusinessId(req: AuthRequest): string {
   return businessId;
 }
 
+/**
+ * Send the error with the status it actually has.
+ *
+ * THE 500 THAT WAS NOT A 500
+ * `requireBusinessId` throws a 403 "No business is associated with this account"
+ * when the token carries no businessId. Every handler here caught that with a
+ * blanket `catch` and answered 500 "Failed to list invoices" — so an account whose
+ * session predates enrollment was told the database was broken, on every capital
+ * endpoint, with nothing in the body to say what was actually wrong.
+ *
+ * The 500s people reported on /capital/invoices, /capital/cashflow and
+ * /capital/accounts were this. Not a server fault: a permission answer wearing a
+ * server error's clothes.
+ *
+ * Anything that is not a CustomError is still a 500, and is still logged with its
+ * message — an unexpected failure should not be dressed up as something it is not.
+ */
+function fail(res: Response, e: unknown, fallback: string): Response {
+  if (e instanceof CustomError) {
+    return res.status(e.statusCode).json({ success: false, error: e.message });
+  }
+  return res.status(500).json({ success: false, error: fallback });
+}
+
 /** Sequential, human-readable invoice number per business. */
 async function nextInvoiceNumber(businessId: string): Promise<string> {
   const count = await prisma.ledgerInvoice.count({ where: { businessId } });
@@ -89,7 +113,7 @@ router.get('/invoices', async (req: AuthRequest, res: Response) => {
     res.json({ success: true, data: invoices });
   } catch (e) {
     logger.error(`[Ledger] list invoices failed: ${e instanceof Error ? e.message : e}`);
-    res.status(500).json({ success: false, error: 'Failed to list invoices' });
+    fail(res, e, 'Failed to list invoices');
   }
 });
 
@@ -129,7 +153,7 @@ router.post('/invoices', async (req: AuthRequest, res: Response) => {
     res.status(201).json({ success: true, data: invoice });
   } catch (e) {
     logger.error(`[Ledger] create invoice failed: ${e instanceof Error ? e.message : e}`);
-    res.status(500).json({ success: false, error: 'Failed to create invoice' });
+    fail(res, e, 'Failed to create invoice');
   }
 });
 
@@ -161,7 +185,7 @@ router.put('/invoices/:id/status', async (req: AuthRequest, res: Response) => {
     res.json({ success: true, data: invoice });
   } catch (e) {
     logger.error(`[Ledger] update invoice status failed: ${e instanceof Error ? e.message : e}`);
-    res.status(500).json({ success: false, error: 'Failed to update invoice status' });
+    fail(res, e, 'Failed to update invoice status');
   }
 });
 
@@ -179,7 +203,7 @@ router.delete('/invoices/:id', async (req: AuthRequest, res: Response) => {
     res.json({ success: true, message: 'Invoice deleted' });
   } catch (e) {
     logger.error(`[Ledger] delete invoice failed: ${e instanceof Error ? e.message : e}`);
-    res.status(500).json({ success: false, error: 'Failed to delete invoice' });
+    fail(res, e, 'Failed to delete invoice');
   }
 });
 
@@ -195,7 +219,7 @@ router.get('/expenses', async (req: AuthRequest, res: Response) => {
     res.json({ success: true, data: expenses });
   } catch (e) {
     logger.error(`[Ledger] list expenses failed: ${e instanceof Error ? e.message : e}`);
-    res.status(500).json({ success: false, error: 'Failed to list expenses' });
+    fail(res, e, 'Failed to list expenses');
   }
 });
 
@@ -233,7 +257,7 @@ router.post('/expenses', async (req: AuthRequest, res: Response) => {
     res.status(201).json({ success: true, data: expense });
   } catch (e) {
     logger.error(`[Ledger] create expense failed: ${e instanceof Error ? e.message : e}`);
-    res.status(500).json({ success: false, error: 'Failed to create expense' });
+    fail(res, e, 'Failed to create expense');
   }
 });
 
@@ -253,7 +277,7 @@ router.get('/accounts', async (req: AuthRequest, res: Response) => {
     res.json({ success: true, data: accounts });
   } catch (e) {
     logger.error(`[Ledger] list accounts failed: ${e instanceof Error ? e.message : e}`);
-    res.status(500).json({ success: false, error: 'Failed to list accounts' });
+    fail(res, e, 'Failed to list accounts');
   }
 });
 
@@ -286,7 +310,7 @@ router.post('/accounts', async (req: AuthRequest, res: Response) => {
     res.status(201).json({ success: true, data: account });
   } catch (e) {
     logger.error(`[Ledger] create account failed: ${e instanceof Error ? e.message : e}`);
-    res.status(500).json({ success: false, error: 'Failed to create account' });
+    fail(res, e, 'Failed to create account');
   }
 });
 
@@ -378,7 +402,7 @@ router.get('/cashflow', async (req: AuthRequest, res: Response) => {
     });
   } catch (e) {
     logger.error(`[Ledger] cash flow failed: ${e instanceof Error ? e.message : e}`);
-    res.status(500).json({ success: false, error: 'Failed to get cash flow' });
+    fail(res, e, 'Failed to get cash flow');
   }
 });
 
@@ -445,7 +469,7 @@ router.get('/profit-loss', async (req: AuthRequest, res: Response) => {
     });
   } catch (e) {
     logger.error(`[Ledger] P&L failed: ${e instanceof Error ? e.message : e}`);
-    res.status(500).json({ success: false, error: 'Failed to get P&L' });
+    fail(res, e, 'Failed to get P&L');
   }
 });
 
