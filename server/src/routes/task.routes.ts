@@ -2,8 +2,10 @@ import { Router, Response } from 'express';
 import { prisma } from '../utils/database';
 import { trustCore } from '../trust/trust-core';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
+import { resolveCrmBusiness, requireCrmContext } from '../middleware/crmContext.middleware';
 import { CustomError } from '../middleware/errorHandler';
 import { TASK_STATUSES, TASK_PRIORITIES } from '../domain/crm';
+import { crmScope } from '../services/crm.service';
 import { logger } from '../utils/logger';
 
 /**
@@ -23,34 +25,31 @@ import { logger } from '../utils/logger';
  *
  * It also built its own PrismaClient rather than using the shared one.
  *
- * Note: crm.routes.ts also declares /activities and /tasks, and is mounted at
- * /api/v1/crm BEFORE this router at /api/v1/crm/tasks. Express matches in
- * mount order, so crm.routes.ts wins and this file is currently shadowed for
- * the paths they share. Authentication is added regardless, so the moment the
- * mount order changes these endpoints are not instantly public.
+ * Note: crm.routes.ts declares no /tasks path, and is mounted at /api/v1/crm
+ * BEFORE this router at /api/v1/crm/tasks. Express matches in mount order, so
+ * requests to /tasks fall through to this file.
+ *
+ * WHAT WAS BROKEN HERE, LATER
+ * Tasks live in the same CrmActivity table as activities, so they carried the
+ * same anchor bug: the tenant came from the token's platform `Business.id`,
+ * `serviceBusinessId` was never written, and the activity report -- which scopes
+ * on that column -- therefore never counted a single task. The Tasks page listed
+ * them and the reports page said zero.
  */
 
 const router = Router();
 router.use(authenticate);
-
-/** The tenant this request may act on. Taken from the token, never the body. */
-function requireBusinessId(req: AuthRequest): string {
-  const businessId = req.user?.businessId ?? req.user?.activeBusinessId;
-  if (!businessId) {
-    throw new CustomError('No business is associated with this account', 403);
-  }
-  return businessId;
-}
+router.use(resolveCrmBusiness);
 
 // List Tasks
 router.get('/', async (req: AuthRequest, res: Response) => {
   try {
-    const businessId = requireBusinessId(req);
+    const crm = requireCrmContext(req);
     const { clientId, dealId } = req.query;
 
     const tasks = await prisma.crmActivity.findMany({
       where: {
-        businessId,
+        ...crmScope(crm.serviceBusinessId, crm.businessId),
         type: 'TASK',
         ...(clientId ? { clientId: String(clientId) } : {}),
         ...(dealId ? { dealId: String(dealId) } : {}),
@@ -97,7 +96,7 @@ function parseEnum<T extends string>(
 
 router.post('/', async (req: AuthRequest, res: Response) => {
   try {
-    const businessId = requireBusinessId(req);
+    const crm = requireCrmContext(req);
     const { clientId, dealId, title, description, dueDate, priority, authorName } = req.body ?? {};
 
     if (typeof title !== 'string' || !title.trim()) {
@@ -106,7 +105,8 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 
     const task = await prisma.crmActivity.create({
       data: {
-        businessId,
+        serviceBusinessId: crm.serviceBusinessId,
+        businessId: crm.businessId ?? null,
         ...(clientId ? { clientId } : {}),
         ...(dealId ? { dealId } : {}),
         type: 'TASK',
@@ -135,14 +135,14 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 // Update Task
 router.patch('/:id', async (req: AuthRequest, res: Response) => {
   try {
-    const businessId = requireBusinessId(req);
+    const crm = requireCrmContext(req);
     const { id } = req.params;
     const { status, priority, title, description, dueDate } = req.body ?? {};
 
     // Scoped, and used as the concurrency guard: a task that has already been
     // closed by someone else is not silently re-opened or re-closed.
     const claimed = await prisma.crmActivity.updateMany({
-      where: { id, businessId, type: 'TASK' },
+      where: { id, ...crmScope(crm.serviceBusinessId, crm.businessId), type: 'TASK' },
       data: {
         // Validated on update too, not just create: the board's status dropdown is
         // a plain <select>, and a value outside the set would write a row that no

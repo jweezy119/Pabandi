@@ -22,10 +22,38 @@ function StatusChip({ status }: { status: string }) {
     'in progress': 'bg-[var(--clay)]/20 text-[var(--clay)]',
     complete: 'bg-[var(--sage)]/20 text-[var(--sage)]',
     cancelled: 'bg-[var(--dusty-rose)]/20 text-[var(--dusty-rose)]',
+    held: 'bg-[var(--warm-sand)]/20 text-[var(--warm-sand)]',
+    released: 'bg-[var(--sage)]/20 text-[var(--sage)]',
+    disputed: 'bg-[var(--dusty-rose)]/20 text-[var(--dusty-rose)]',
   };
   const c = colors[status.toLowerCase()] || 'bg-[var(--soft-stone)]/20 text-[var(--soft-stone)]';
   return <span className={`${c} px-2 py-0.5 rounded-full text-xs font-medium capitalize`}>{status}</span>;
 }
+
+/**
+ * The three escrow states trust-core writes, with the plain-English consequence.
+ *
+ * `HELD` is the one that matters commercially and it was invisible: money is in
+ * escrow, nobody has had it, and the job looks ordinary. A hint says so, rather than
+ * leaving the reader to infer from a badge.
+ */
+const ESCROW_LABELS: Record<string, { label: string; status: string; hint?: string }> = {
+  HELD: {
+    label: 'Money held in escrow',
+    status: 'held',
+    hint: 'The client has paid but it has not been released to you yet. It releases when the job completes.',
+  },
+  RELEASED: {
+    label: 'Escrow released',
+    status: 'released',
+    hint: 'Funds have been released to you.',
+  },
+  DISPUTED: {
+    label: 'Escrow disputed',
+    status: 'disputed',
+    hint: 'The client disputed this job, so the funds are frozen. This counts against their trust score until it is resolved.',
+  },
+};
 
 export default function ContactJobDetailPage() {
   const { id } = useParams();
@@ -198,6 +226,55 @@ export default function ContactJobDetailPage() {
               <p className="text-xs text-[var(--soft-stone)] mt-3">Duration</p>
               <p className="text-[var(--warm-ink)] text-lg font-bold">{Math.floor((checkedOutAt.getTime() - checkedInAt.getTime()) / (1000 * 60))} min</p>
             </>}
+
+            {/* Where they actually were.
+                checkin.routes records coordinates, the distance from the venue and
+                whether the geofence passed, and none of it was rendered anywhere. A
+                business disputing a no-show has no way to answer "were they really
+                there?" without it — which is precisely the question this row exists
+                to settle. */}
+            <div className="mt-4 pt-4 border-t border-[var(--soft-stone)]/20">
+              <p className="text-xs text-[var(--soft-stone)]">Location</p>
+              {job.checkinLat != null && job.checkinLng != null ? (
+                <>
+                  <p className="text-[var(--warm-ink)] font-medium">
+                    {job.locationVerified
+                      ? 'Verified at the job location'
+                      : 'Checked in, but outside the geofence'}
+                  </p>
+                  <p className="text-xs text-[var(--soft-stone)] mt-1">
+                    {job.locationVerified
+                      ? `${job.checkinDistanceM?.toFixed(0)} m from the recorded address`
+                      : `${job.checkinDistanceM?.toFixed(0) ?? '?'} m away — treat this job as unverified`}
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-[var(--soft-stone)]">No location recorded</p>
+              )}
+            </div>
+          </ClayCard>
+        )}
+
+        {/* Escrow.
+            trust-core writes HELD / RELEASED / DISPUTED here from the escrow events
+            and nothing ever displayed it, so a business whose money was sitting in
+            escrow had no way to see it, and a DISPUTED job looked identical to any
+            other. DISPUTED in particular feeds getClientStage's at_risk verdict, so
+            this is the evidence behind a client being marked at-risk. */}
+        {job.escrowStatus && job.escrowStatus !== 'NONE' && (
+          <ClayCard className="p-6">
+            <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-4">Escrow</h3>
+            <div className="flex items-center justify-between">
+              <span className="text-[var(--warm-ink)] font-medium">
+                {ESCROW_LABELS[job.escrowStatus]?.label ?? job.escrowStatus}
+              </span>
+              <StatusChip status={ESCROW_LABELS[job.escrowStatus]?.status ?? job.escrowStatus} />
+            </div>
+            {ESCROW_LABELS[job.escrowStatus]?.hint && (
+              <p className="text-sm text-[var(--soft-stone)] mt-2">
+                {ESCROW_LABELS[job.escrowStatus].hint}
+              </p>
+            )}
           </ClayCard>
         )}
 

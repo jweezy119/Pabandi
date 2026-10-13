@@ -130,6 +130,15 @@ export interface TermsDecision {
 
 export interface RecordTermsInput {
   businessId: string;
+  /**
+   * CrmServiceBusiness.id -- the anchor the activity report actually scopes on.
+   *
+   * This is separate from `businessId` (the platform Business) because the
+   * timeline row written below is read back by reports.service.ts against
+   * `serviceBusinessId`. Writing only the legacy anchor here produced an
+   * activity that was invisible to every report.
+   */
+  serviceBusinessId?: string | null;
   invoiceId: string;
   clientId: string;
   decision: TermsDecision;
@@ -153,7 +162,7 @@ export interface RecordTermsInput {
  * invoice is not.
  */
 export async function recordTermsDecision(input: RecordTermsInput): Promise<void> {
-  const { businessId, invoiceId, clientId, decision, actorId, actorName } = input;
+  const { businessId, serviceBusinessId, invoiceId, clientId, decision, actorId, actorName } = input;
   const overrode = decision.overrideReason !== null;
 
   const metadata = {
@@ -186,6 +195,7 @@ export async function recordTermsDecision(input: RecordTermsInput): Promise<void
     await prisma.crmActivity.create({
       data: {
         businessId,
+        ...(serviceBusinessId ? { serviceBusinessId } : {}),
         clientId,
         type: 'NOTE',
         title: overrode

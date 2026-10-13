@@ -265,13 +265,30 @@ export async function getJobsHandler(
   try {
     const crm = requireCrmContext(req);
     const businessId = crm.serviceBusinessId;
-    const { dateFrom, dateTo, status, employeeId, clientId } = req.query;
+    const { dateFrom, dateTo, status, employeeId, clientId, search, sortBy, sortOrder } = req.query;
+
+    /**
+     * Date range, accepted under both spellings.
+     *
+     * The jobs page has always sent `scheduledDate_gte` / `scheduledDate_lte` —
+     * "today", "this week", "upcoming" and "past" all built those — while this
+     * handler read `dateFrom` / `dateTo`. Neither side was wrong about what it
+     * was doing; they simply never met, so all four date chips returned the
+     * unfiltered list while appearing to be selected. `dateFrom`/`dateTo` are kept
+     * because they are the documented parameter names and something else may send them.
+     */
+    const dateFromParam = (req.query.dateFrom ?? req.query.scheduledDate_gte) as string | undefined;
+    const dateToParam = (req.query.dateTo ?? req.query.scheduledDate_lte) as string | undefined;
+
     const jobs = await getJobs(businessId, {
-      dateFrom: dateFrom as string | undefined,
-      dateTo: dateTo as string | undefined,
+      dateFrom: dateFromParam,
+      dateTo: dateToParam,
       status: status as string | undefined,
       employeeId: employeeId as string | undefined,
       clientId: clientId as string | undefined,
+      search: search as string | undefined,
+      sortBy: sortBy as string | undefined,
+      sortOrder: sortOrder as string | undefined,
     }, crm.businessId);
     res.json({ success: true, data: jobs });
   } catch (error) {

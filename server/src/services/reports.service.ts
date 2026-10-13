@@ -92,6 +92,42 @@ function inRange(where: object, field: string, startDate?: Date, endDate?: Date)
   }
 }
 
+/**
+ * "At risk" and "VIP", agreed across both columns that can say so.
+ *
+ * CrmClient carries two independent answers to the same question:
+ *
+ *   `status` ACTIVE | AT_RISK | VIP | INACTIVE — what a person chose on the form.
+ *   `stage`  lead | verified | booked | repeat | vip | at_risk — computed by
+ *            trust-core's getClientStage from job history and escrow defaults.
+ *
+ * Both are written, both are correct, and nothing reconciles them. A business can
+ * mark someone AT_RISK by hand while the engine has them as a healthy repeat
+ * customer, or the engine can drop a client to at_risk after a defaulted escrow
+ * while the form still says ACTIVE.
+ *
+ * The two pages that surfaced this disagreed rather than being one wrong: the
+ * reports read `status`, the dashboard health widget reads `stage`. So the same
+ * person appeared at-risk on one screen and perfectly healthy on the other, and
+ * which one you were shown depended on where you looked.
+ *
+ * Both are honoured, because neither is the false one. A human who has seen
+ * something the score does not know about is not wrong for lacking telemetry, and
+ * an engine that has seen a defaulted escrow is not wrong for being unreadable.
+ * The union is the safe direction to fail: it can over-report someone as at risk,
+ * which is a phone call, and never under-reports, which is a lost account.
+ *
+ * Deliberately not a reconciliation that writes one column from the other. Trust
+ * score is on a locked 0-100 scale with a single writer (see reliabilityScore), and
+ * having the health report silently overwrite a person's own classification is not
+ * a change this file gets to make on its own.
+ */
+const isAtRisk = (c: { status?: string | null; stage?: string | null }): boolean =>
+  c.status === 'AT_RISK' || c.stage === 'at_risk';
+
+const isVip = (c: { status?: string | null; stage?: string | null }): boolean =>
+  c.status === 'VIP' || c.stage === 'vip';
+
 export class ReportsService {
   /** Pipeline value and count grouped by stage. */
   static async getPipeline(ctx: ReportsContext, startDate?: Date, endDate?: Date) {
@@ -174,17 +210,17 @@ export class ReportsService {
 
     const clients = await prisma.crmClient.findMany({
       where,
-      select: { id: true, name: true, status: true, createdAt: true },
+      select: { id: true, name: true, status: true, stage: true, createdAt: true },
     });
 
     return {
-      atRisk: clients.filter((c) => c.status === 'AT_RISK'),
+      atRisk: clients.filter(isAtRisk),
       // Previously `clients.filter(c => startDate && ...)`, which evaluated `startDate` for
       // truthiness and returned EVERY client whenever no range was given — labelled
       // "newClients" on the dashboard. With no range there is no notion of new, so it is
       // empty, and the caller can say "no period selected" instead of showing a total.
       newClients: startDate ? clients.filter((c) => c.createdAt >= startDate) : [],
-      vipClients: clients.filter((c) => c.status === 'VIP'),
+      vipClients: clients.filter(isVip),
     };
   }
 
@@ -210,7 +246,7 @@ export class ReportsService {
   static async getTrustInsights(ctx: ReportsContext, startDate?: Date, endDate?: Date) {
     const clients = await prisma.crmClient.findMany({
       where: crmScope(ctx),
-      select: { reliabilityScore: true, status: true },
+      select: { reliabilityScore: true, status: true, stage: true },
     });
 
     const activityWhere: Prisma.CrmActivityWhereInput = { ...crmScope(ctx) };
@@ -245,7 +281,7 @@ export class ReportsService {
     return {
       scoreDistribution,
       events: byType.map((e) => ({ type: e.type, count: e._count.id })),
-      escalations: clients.filter((c) => c.status === 'AT_RISK').length,
+      escalations: clients.filter(isAtRisk).length,
     };
   }
 

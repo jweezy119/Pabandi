@@ -5,10 +5,20 @@
 // Each agent has: PERCEIVE → REASON → ACT → LEARN loop
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { PrismaClient } from '@prisma/client';
-import crypto from 'crypto';
+import { prisma } from '../utils/database';
 
-const prisma = new PrismaClient();
+/**
+ * The shared Prisma client, not a second `new PrismaClient()`.
+ *
+ * This file declared its own, which meant a second connection pool against the same
+ * database — one the platform's shutdown path does not close, so every deploy leaked
+ * the pool until Postgres refused new connections, and which bypassed whatever the
+ * shared client's configuration does. It also made this service untestable without
+ * mocking the Prisma module itself, which is why the venue-scoping bug below went
+ * unnoticed: the tests could not see its queries.
+ *
+ * `reports.service.ts` does the same thing and is the only other place left.
+ */
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CORE AGENT TYPES
@@ -213,7 +223,7 @@ export const promoterAutonService = {
 
     switch (action.type) {
       case 'ADJUST_DEPOSIT_POLICY':
-        result = await this.executeDepositAdjustment(action.payload);
+        result = await this.executeDepositAdjustment(action.payload, context);
         break;
       case 'OFFER_PREMIUM_PARTNERSHIP':
         result = await this.executePartnershipOffer(action.payload);
@@ -234,10 +244,23 @@ export const promoterAutonService = {
     return { ...action, executed: true, executedAt: new Date(), result };
   },
 
-  async executeDepositAdjustment(payload: any) {
-    // Increase deposit for high-risk guests
+  /**
+   * Raise deposits for high-risk guests.
+   *
+   * `targetGuests` is chosen by `reason()`, which is an LLM-shaped heuristic reading
+   * a venue, so the venue is pinned from the request context rather than trusted from
+   * the payload: the list of who to charge and the list of whose venue it is should
+   * not be able to disagree.
+   */
+  async executeDepositAdjustment(payload: any, context: AgentContext) {
+    const venueId = context?.venueId ?? payload?.venueId;
+    if (!venueId) {
+      return { updatedCount: 0, skipped: 'no venueId in context' };
+    }
+
     const updatedGuests = await prisma.guestList.updateMany({
       where: {
+        venueId,
         userId: { in: payload.targetGuests },
         status: 'CONFIRMED',
         depositAmount: { lt: 50 },
@@ -497,7 +520,7 @@ export const venueBrainService = {
     switch (action.type) {
       case 'INCREASE_COVER_CHARGE':
       case 'DECREASE_COVER_CHARGE':
-        result = await this.executeCoverChargeChange(action.payload);
+        result = await this.executeCoverChargeChange(action.payload, context);
         break;
       case 'ASSIGN_PROMOTER_TIER':
         result = await this.executePromoterTierAssignment(action.payload);
@@ -518,13 +541,18 @@ export const venueBrainService = {
     return { ...action, executed: true, executedAt: new Date(), result };
   },
 
-  async executeCoverChargeChange(payload: any) {
-    // Update active cover charges
+  async executeCoverChargeChange(payload: any, context: AgentContext) {
+    // Venue from the request context, for the same reason as the other executors.
+    const venueId = context?.venueId ?? payload?.venueId;
+    if (!venueId) {
+      return { updatedCount: 0, skipped: 'no venueId in context' };
+    }
+
     const updated = await prisma.coverCharge.updateMany({
-      where: { venueId: payload.venueId, isActive: true },
+      where: { venueId, isActive: true },
       data: { amount: payload.newPrice },
     });
-    return { updatedCount: updated.count, newPrice: payload.newPrice };
+    return { updatedCount: updated.count, newPrice: payload.newPrice, venueId };
   },
 
   async executePromoterTierAssignment(payload: any) {
@@ -835,7 +863,7 @@ export const revenueMaxService = {
 
     switch (action.type) {
       case 'INCREASE_BOTTLE_PRICES':
-        result = await this.executeBottlePriceIncrease(action.payload);
+        result = await this.executeBottlePriceIncrease(action.payload, context);
         break;
       case 'PROMOTE_UPSELL_PACKAGES':
         result = await this.executeUpsellPromotion(action.payload);
@@ -847,12 +875,29 @@ export const revenueMaxService = {
     return { ...action, executed: true, executedAt: new Date(), result };
   },
 
-  async executeBottlePriceIncrease(payload: any) {
+  /**
+   * Reprice the bottles for ONE venue.
+   *
+   * This was `where: { isActive: true }` with no venue predicate, so running the
+   * revenue agent against a single venue multiplied the base price of every active
+   * bottle package on the platform. `runAllVenues` loops this over every venue, so
+   * one pass applied the multiplier once per venue to all of them — N venues deep
+   * compounding, silently, on real pricing.
+   *
+   * No venue means no action. Multiplying nothing is a no-op; multiplying
+   * everything because a context was incomplete is not.
+   */
+  async executeBottlePriceIncrease(payload: any, context: AgentContext) {
+    const venueId = context?.venueId ?? payload?.venueId;
+    if (!venueId) {
+      return { updatedCount: 0, multiplier: payload?.multiplier, skipped: 'no venueId in context' };
+    }
+
     const updated = await prisma.bottlePackage.updateMany({
-      where: { isActive: true },
+      where: { isActive: true, venueId },
       data: { basePrice: { multiply: payload.multiplier } },
     });
-    return { updatedCount: updated.count, multiplier: payload.multiplier };
+    return { updatedCount: updated.count, multiplier: payload.multiplier, venueId };
   },
 
   async executeUpsellPromotion(payload: any) {

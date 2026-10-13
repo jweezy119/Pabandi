@@ -1,4 +1,5 @@
 import { Router, type Response } from 'express';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '../utils/database';
 import { authenticate, type AuthRequest } from '../middleware/auth.middleware';
 import { createInvoice, updateInvoice } from '../services/invoice.service';
@@ -206,6 +207,45 @@ router.post('/jobs', tierGuard({ resource: 'jobs' }), createJobHandler);
 // GET /api/v1/crm/jobs — List jobs with filters
 router.get('/jobs', getJobsHandler);
 
+/**
+ * GET /api/v1/crm/jobs/:id — One job, for the detail page.
+ *
+ * This route did not exist. ContactJobDetailPage fetches `/crm/jobs/${id}` on mount
+ * and only `/jobs` and the three lifecycle verbs were registered, so the request 404'd
+ * and the page rendered its shell against an undefined job — no client, no address,
+ * no price, and every button acting on `undefined`. The page had never worked.
+ *
+ * Scoped through `crmScope`, so a job id from another tenant is a 404 rather than a
+ * read.
+ *
+ * The select is explicit because this is the one screen where the verification data
+ * belongs: check-in coordinates, the distance from the venue, whether the geofence
+ * passed, the escrow state and the reminder timestamp are all recorded by
+ * `checkin.routes` and `reminderCron` and were displayed nowhere in the product. A
+ * business that disputes a no-show needs to see whether the person was actually
+ * there, and that evidence was being collected and discarded on the way to the screen.
+ */
+router.get('/jobs/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const crm = requireCrmContext(req);
+    const job = await prisma.crmJob.findFirst({
+      where: { id: req.params.id, ...crmScope(crm.serviceBusinessId, crm.businessId) },
+      include: {
+        client: true,
+        assignments: { include: { employee: true } },
+      },
+    });
+    if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
+    res.json({ success: true, data: job });
+  } catch (err: any) {
+    const status = Number(err?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      ...(status >= 500 ? { error: 'Could not load job' } : { error: err.message }),
+    });
+  }
+});
+
 // PATCH /api/v1/crm/jobs/:id/status — Update job status
 router.patch('/jobs/:id/status', updateJobStatusHandler);
 
@@ -234,13 +274,40 @@ router.get('/expenses', getExpensesHandler);
 // service-business id, because invoice trust events resolve a passport through
 // client → serviceBusiness → Business → owner. Same business, two keys.
 
+/**
+ * GET /api/v1/crm/invoices
+ *
+ * `search` is honoured here. The list page has always sent `?search=` on every
+ * keystroke, and this handler destructured `{ status }` and ignored everything
+ * else — the client then rendered the unfiltered array it had been given, with no
+ * filter of its own. Typing a client's name into the search box returned exactly
+ * the same rows as typing nothing, which reads as "search is broken" rather than
+ * as a missing feature.
+ *
+ * Case-insensitive, and matches on the fields a person would recognise: the
+ * invoice number, and the client's name or email. An invoice row carries no free
+ * text of its own beyond the number, so those three are the whole search surface.
+ */
 router.get('/invoices', async (req: AuthRequest, res: Response) => {
   try {
     const businessId = requireCrmContext(req).businessId;
     if (!businessId) return res.status(400).json({ success: false, error: 'Business is not linked to a platform business yet' });
-    const { status } = req.query;
+    const { status, search } = req.query;
+
+    const term = typeof search === 'string' ? search.trim() : '';
+    const where: Prisma.InvoiceWhereInput = { businessId, ...(status && { status: status as string }) };
+    if (term) {
+      // `contains` without `mode` is case-sensitive on Postgres, so an exact-case
+      // invoice number would match and a lowercase one would not.
+      where.OR = [
+        { number: { contains: term, mode: 'insensitive' } },
+        { client: { is: { name: { contains: term, mode: 'insensitive' } } } },
+        { client: { is: { email: { contains: term, mode: 'insensitive' } } } },
+      ];
+    }
+
     const invoices = await prisma.invoice.findMany({
-      where: { businessId, ...(status && { status: status as string }) },
+      where,
       include: { client: true },
       orderBy: { createdAt: 'desc' },
     });
@@ -345,6 +412,14 @@ router.patch('/invoices/:id/status', async (req: AuthRequest, res: Response) => 
 
     // Update invoice
     const updated = await prisma.invoice.update({ where: { id: req.params.id }, data: updateData });
+
+    // CrmClient.totalSpent is what the clients table renders as LTV, and nothing else
+    // writes it. Recomputed on BOTH edges of the paid transition, not just on the way
+    // in: an invoice reopened or refunded has to stop counting, or a correction made
+    // in the UI silently keeps earning its old value forever.
+    if (oldStatus === 'paid' || updated.status === 'paid') {
+      await crmService.refreshClientTotals(updated.clientId);
+    }
 
     // Process via invoice trust service (emit events, update paymentScore)
     await invoiceTrustService.processInvoiceStatusChange(

@@ -3,8 +3,10 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/database';
 import { trustCore } from '../trust/trust-core';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
+import { resolveCrmBusiness, requireCrmContext } from '../middleware/crmContext.middleware';
 import { CustomError } from '../middleware/errorHandler';
 import { ACTIVITY_TYPES } from '../domain/crm';
+import { crmScope } from '../services/crm.service';
 import { logger } from '../utils/logger';
 
 /**
@@ -15,31 +17,41 @@ import { logger } from '../utils/logger';
  * body — so both endpoints were open to anyone, for any tenant.
  *
  * This router is mounted at /api/v1/crm/activities, AFTER /api/v1/crm in
- * index.ts. crm.routes.ts already declares the same paths and is registered
- * first, so Express never reaches this file for them. Authentication is
- * nevertheless required here, so the endpoints are not public the moment that
- * ordering changes.
+ * index.ts. crm.routes.ts declares no /activities path of its own, so
+ * requests fall through to this file.
+ *
+ * WHAT WAS BROKEN HERE, LATER
+ * The tenant was taken from `req.user.businessId` -- the platform `Business.id`
+ * -- and written straight into `CrmActivity.businessId`, the legacy column whose
+ * documented meaning is the CrmBusiness table. The current anchor,
+ * `serviceBusinessId`, was never written by any create path in the codebase.
+ *
+ * That is why every activity metric was empty. reports.service.ts scopes the
+ * legacy CRM tables on `serviceBusinessId` only -- deliberately, with a comment
+ * explaining that ORing in the platform id would add a clause that can never
+ * match -- so a correctly-written activity was invisible to the activity report
+ * while still showing up in this list. The two surfaces disagreed about which
+ * column identified a tenant, and only one of them was ever populated.
+ *
+ * Both anchors are now written, and reads use the shared `crmScope`, which ORs
+ * them. That keeps rows written before this fix (legacy anchor only) readable
+ * instead of silently dropping the tenant's existing history.
  */
 
 const router = Router();
 router.use(authenticate);
-
-/** The tenant this request may act on. Taken from the token, never the body. */
-function requireBusinessId(req: AuthRequest): string {
-  const businessId = req.user?.businessId ?? req.user?.activeBusinessId;
-  if (!businessId) {
-    throw new CustomError('No business is associated with this account', 403);
-  }
-  return businessId;
-}
+router.use(resolveCrmBusiness);
 
 // List Activities
 router.get('/', async (req: AuthRequest, res: Response) => {
   try {
-    const businessId = requireBusinessId(req);
+    const crm = requireCrmContext(req);
     const { clientId, dealId, type } = req.query;
 
-    const where: Prisma.CrmActivityWhereInput = { businessId };
+    const where: Prisma.CrmActivityWhereInput = crmScope(
+      crm.serviceBusinessId,
+      crm.businessId,
+    );
     if (clientId) where.clientId = String(clientId);
     if (dealId) where.dealId = String(dealId);
     if (type && type !== 'All') where.type = String(type);
@@ -86,7 +98,7 @@ function parseActivityType(value: unknown): string {
 
 router.post('/', async (req: AuthRequest, res: Response) => {
   try {
-    const businessId = requireBusinessId(req);
+    const crm = requireCrmContext(req);
     const { clientId, dealId, type, title, description, authorName } = req.body ?? {};
 
     if (typeof title !== 'string' || !title.trim()) {
@@ -95,7 +107,11 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 
     const activity = await prisma.crmActivity.create({
       data: {
-        businessId,
+        // Both anchors. serviceBusinessId is the one reports and every other CRM
+        // read scope on; businessId keeps the legacy column meaningful for the
+        // cross-layer joins that still key off the platform Business.
+        serviceBusinessId: crm.serviceBusinessId,
+        businessId: crm.businessId ?? null,
         ...(clientId ? { clientId } : {}),
         ...(dealId ? { dealId } : {}),
         type: parseActivityType(type),

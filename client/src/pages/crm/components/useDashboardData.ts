@@ -122,10 +122,19 @@ function shapePipeline(deals: any[]) {
 function shapeClientHealth(clients: any[]) {
   const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
   return {
-    // `at_risk` is the stage the trust engine writes; a low reliability score is
-    // the same judgement reached independently, and a client can be one without
-    // the other having been recomputed yet.
-    atRisk: clients.filter((c) => c.stage === 'at_risk' || Number(c.reliabilityScore || 0) < 40),
+    // Three independent signals, all of which mean the same thing to a business:
+    //   stage            at_risk — trust-core's verdict from job history and escrow
+    //   status           AT_RISK — what a person chose on the client form
+    //   reliabilityScore <40    the same judgement reached from the score alone
+    //
+    // The reports page filtered on `status` only and this filtered on `stage`, so
+    // the same client read as at-risk in one place and healthy in the other. All
+    // three are honoured here for the same reason as in reports.service.ts: the
+    // union over-reports, which costs a phone call, and under-reporting costs the
+    // account.
+    atRisk: clients.filter(
+      (c) => c.stage === 'at_risk' || c.status === 'AT_RISK' || Number(c.reliabilityScore || 0) < 40,
+    ),
     newClients: clients.filter((c) => new Date(c.createdAt).getTime() >= thirtyDaysAgo),
     topClients: [...clients].sort((a, b) => Number(b.totalSpent || 0) - Number(a.totalSpent || 0)).slice(0, 5),
   };

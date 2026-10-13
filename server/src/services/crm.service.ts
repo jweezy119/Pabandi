@@ -175,6 +175,80 @@ export function crmScope(
   return { OR: clauses };
 }
 
+/**
+ * Recompute a client's denormalised totals from the rows that actually define them.
+ *
+ * `CrmClient.totalJobs`, `totalSpent` and `lastJobAt` existed on the model and were
+ * rendered as a job count and as LTV in the clients table and on the dashboard. No
+ * create, update or lifecycle path in the codebase ever wrote them, so every client
+ * in every tenant displayed a job count of 0 and an LTV of 0 — permanently, and
+ * identically for a brand-new lead and a decade-long customer.
+ *
+ * Derived rather than incremented on purpose. An increment is wrong the moment an
+ * invoice is reopened or a job's status is corrected, and there is no undo; a sum
+ * over the defining rows is self-healing, converges, and can be re-run for backfill
+ * or after a bug without a repair job.
+ *
+ * `totalSpent` sums `subtotal` over PAID invoices only. Counting a `sent` invoice
+ * would make LTV a measure of what was billed rather than what was earned, and it
+ * would move the moment a client opened one without paying.
+ *
+ * This is currency-naive: it adds across currencies without conversion. That is
+ * currently safe rather than merely lucky — `Invoice.currency` is never written by
+ * any service, so every row carries the schema default — but it stops being safe
+ * the moment currency is populated. Whoever fills that column must add conversion
+ * here, and this comment is the note to themselves.
+ */
+export async function recomputeClientTotals(clientId: string): Promise<void> {
+  const [jobs, paidInvoices] = await Promise.all([
+    prisma.crmJob.findMany({
+      where: { clientId, status: 'COMPLETED' },
+      select: { completedAt: true },
+    }),
+    prisma.invoice.findMany({
+      where: { clientId, status: 'paid' },
+      select: { subtotal: true },
+    }),
+  ]);
+
+  const lastJobAt = jobs.reduce<Date | null>((latest, job) => {
+    if (!job.completedAt) return latest;
+    return latest === null || job.completedAt > latest ? job.completedAt : latest;
+  }, null);
+
+  await prisma.crmClient.update({
+    where: { id: clientId },
+    data: {
+      totalJobs: jobs.length,
+      totalSpent: paidInvoices.reduce((sum, inv) => sum + (inv.subtotal || 0), 0),
+      lastJobAt,
+    },
+  });
+}
+
+/**
+ * `recomputeClientTotals`, but never allowed to fail the operation that triggered it.
+ *
+ * Totals are a denormalised cache of rows that still exist. Refusing to complete a
+ * checkout — or to mark an invoice paid — because the derived counter could not be
+ * refreshed would trade a correct business transaction for a cosmetic number, and
+ * the transaction is the part that is hard to undo. The next event for that client
+ * recomputes it anyway, and the backfill migration covers the rows in between.
+ *
+ * Logged at error level rather than swallowed: a recurring failure here means LTV is
+ * quietly stale, which is exactly the kind of thing that should be visible in the
+ * logs even though it is not worth failing a job over.
+ */
+export async function refreshClientTotals(clientId: string): Promise<void> {
+  try {
+    await recomputeClientTotals(clientId);
+  } catch (err) {
+    logger.error(
+      `[Crm] client totals refresh failed for ${clientId}: ${err instanceof Error ? err.message : err}`,
+    );
+  }
+}
+
 export async function enrollBusiness(data: {
   ownerId: string;
   businessName: string;
@@ -657,17 +731,80 @@ export async function updateJobStatus(jobId: string, status: string, serviceBusi
   return job;
 }
 
+/**
+ * Columns the jobs list is allowed to be sorted by.
+ *
+ * `sortBy` is a user-supplied query parameter that lands directly in an `orderBy`,
+ * so it cannot be passed through unfiltered: an unknown key is a 500 from Prisma,
+ * and a key that happens to name a relation would reorder on a column the list does
+ * not display. A sort dropdown that can crash the request is worse than no sorting.
+ */
+const JOB_SORT_COLUMNS = ['scheduledDate', 'price', 'status', 'createdAt'] as const;
+
+/** Relation-scoped sorts, which Prisma cannot express as a column name. */
+const JOB_SORT_RELATIONS = ['clientName'] as const;
+
 export async function getJobs(
   serviceBusinessId: string,
-  filters?: { status?: string; employeeId?: string; clientId?: string; dateFrom?: string; dateTo?: string },
+  filters?: {
+    status?: string;
+    employeeId?: string;
+    clientId?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: string;
+  },
   businessId?: string | null,
 ) {
-  const where: any = crmScope(serviceBusinessId, businessId);
+  // Tenant scope and free-text search are both `OR` groups, so they cannot share the
+  // `OR` key: the second would overwrite the first and every job on the platform
+  // would come back. They are ANDed instead, which also makes it impossible for a
+  // search term to become a way around the tenant.
+  const clauses: any[] = [crmScope(serviceBusinessId, businessId)];
 
-  if (filters?.status) where.status = filters.status;
-  if (filters?.clientId) where.clientId = filters.clientId;
-  if (filters?.dateFrom) where.scheduledDate = { ...where.scheduledDate, gte: new Date(filters.dateFrom) };
-  if (filters?.dateTo) where.scheduledDate = { ...where.scheduledDate, lte: new Date(filters.dateTo) };
+  if (filters?.status) clauses.push({ status: filters.status });
+  if (filters?.clientId) clauses.push({ clientId: filters.clientId });
+  if (filters?.employeeId) clauses.push({ assignments: { some: { employeeId: filters.employeeId } } });
+  if (filters?.dateFrom) clauses.push({ scheduledDate: { gte: new Date(filters.dateFrom) } });
+  if (filters?.dateTo) clauses.push({ scheduledDate: { lte: new Date(filters.dateTo) } });
+
+  /**
+   * Free-text search over a job.
+   *
+   * The jobs page has had a search box and a sort dropdown wired to the query string
+   * since it was written, and this function read neither — it destructured date and
+   * status filters the page does not send, and returned every job in the tenant
+   * sorted by date. Typing in the search box and choosing a sort both did nothing,
+   * silently, on the one page in the CRM that had bothered to send query params.
+   *
+   * The job row has no single "label", so this covers the things a person
+   * recognises a booking by: the client, the kind of work, and where it happens.
+   */
+  const term = filters?.search?.trim();
+  if (term) {
+    clauses.push({
+      OR: [
+        { clientName: { contains: term, mode: 'insensitive' } },
+        { serviceType: { contains: term, mode: 'insensitive' } },
+        { address: { contains: term, mode: 'insensitive' } },
+        { notes: { contains: term, mode: 'insensitive' } },
+        { client: { is: { name: { contains: term, mode: 'insensitive' } } } },
+        { client: { is: { email: { contains: term, mode: 'insensitive' } } } },
+      ],
+    });
+  }
+
+  const where = { AND: clauses };
+
+  const direction = filters?.sortOrder === 'asc' ? 'asc' : 'desc';
+  const sortBy = filters?.sortBy;
+  let orderBy: any = { scheduledDate: 'asc' };
+  if (sortBy === 'clientName') orderBy = { client: { name: direction } };
+  else if (sortBy && (JOB_SORT_COLUMNS as readonly string[]).includes(sortBy)) {
+    orderBy = { [sortBy]: direction };
+  }
 
   return prisma.crmJob.findMany({
     where,
@@ -675,7 +812,7 @@ export async function getJobs(
       client: true,
       assignments: { include: { employee: true } },
     },
-    orderBy: { scheduledDate: 'asc' },
+    orderBy,
   });
 }
 
@@ -971,6 +1108,10 @@ export async function checkOutJob(
       actualDurationMinutes: Math.round(actualDurationMinutes)
     }
   });
+
+  // The job just became one of the completed jobs that CrmClient.totalJobs counts.
+  // Without this the column the clients table renders as a job count stays at 0.
+  await refreshClientTotals(job.clientId);
 
   // Determine if job was on time or late based on scheduled vs actual time
   const deliveryEventType = isLate ? 'delivery.late' : 'delivery.on_time';
