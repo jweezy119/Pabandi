@@ -59,7 +59,11 @@ export default function ContactDealDetailPage() {
     const token = getAuthToken();
     const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
     const res = await fetch(`${baseUrl}/api/v1/crm/deals/${id}`, {
-      method: 'PUT',
+      // PATCH, not PUT. The server has always exposed PATCH /crm/deals/:id; the
+      // PUT here matched nothing, so every inline edit on a deal 404'd and the
+      // field reverted. Changing the verb rather than adding a PUT alias, because
+      // two URLs for one operation is how the two drift apart again.
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ [field]: value }),
     });
