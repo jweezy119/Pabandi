@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { Button } from '../../components/primitives';
 import { getAuthToken } from '../../utils/authToken';
-import { crmJobsService } from '../../services/crmJobs.service';
 
 
 // Reused Clay primitives from booking/BookingOSPage.tsx
@@ -149,15 +148,22 @@ export default function ContactJobsPage() {
     scheduledDate: '',
     scheduledTime: '',
     durationMinutes: '',
-    priceEstimate: '',
-    recurrence: 'one_time',
-    endDate: '',
+    price: '',
     notes: '',
-    requireDeposit: false,
-    depositAmount: ''
+    address: '',
   });
   const [clients, setClients] = useState<any[]>([]);
   const [clientSearch, setClientSearch] = useState('');
+
+  /**
+   * Why the last attempt failed, shown in the modal.
+   *
+   * It used to console.error and close the modal anyway, so a 400 — which is what
+   * every creation from this page produced, because the form never asked for the
+   * address the endpoint requires — looked identical to a job created. Someone
+   * pressing the button and watching nothing appear has no way to tell those apart.
+   */
+  const [createError, setCreateError] = useState<string | null>(null);
   const [filteredClients, setFilteredClients] = useState<any[]>([]);
 
   useEffect(() => {
@@ -209,7 +215,6 @@ export default function ContactJobsPage() {
         yesterday.setDate(yesterday.getDate() - 1);
         queryParams.append('scheduledDate_lte', yesterday.toISOString().split('T')[0]);
       } else if (filters.filter === 'recurring') {
-        queryParams.append('recurrence_not', 'one_time');
       }
       
       if (filters.search) {
@@ -258,20 +263,25 @@ export default function ContactJobsPage() {
   }, [clients, clientSearch]);
 
   const handleCreateJob = async () => {
+    setCreateError(null);
     try {
       // Convert form data to API format
+      // `price`, not `priceEstimate`. CrmJob has no priceEstimate column, so the
+      // amount a customer agreed was sent under a name the server does not read and
+      // the job saved at 0.
+      //
+      // `address` is required here — POST /crm/jobs rejects a job with no address,
+      // and this form never asked for one, so every creation from this page was a
+      // 400 that only reached the console.
       const jobData = {
         clientId: createJobForm.clientId,
         serviceType: createJobForm.serviceType,
         scheduledDate: createJobForm.scheduledDate ? new Date(createJobForm.scheduledDate) : undefined,
         scheduledTime: createJobForm.scheduledTime,
         durationMinutes: parseInt(createJobForm.durationMinutes) || undefined,
-        priceEstimate: parseFloat(createJobForm.priceEstimate) || undefined,
-        recurrence: createJobForm.recurrence,
-        endDate: createJobForm.endDate ? new Date(createJobForm.endDate) : undefined,
+        price: parseFloat(createJobForm.price) || 0,
+        address: createJobForm.address,
         notes: createJobForm.notes,
-        depositRequired: createJobForm.requireDeposit,
-        depositAmount: createJobForm.requireDeposit ? parseFloat(createJobForm.depositAmount) || undefined : undefined
       };
       
       // Remove undefined fields
@@ -297,19 +307,20 @@ export default function ContactJobsPage() {
           scheduledDate: '',
           scheduledTime: '',
           durationMinutes: '',
-          priceEstimate: '',
-          recurrence: 'one_time',
-          endDate: '',
+          price: '',
           notes: '',
-          requireDeposit: false,
-          depositAmount: ''
+          address: ''
         });
         await fetchJobs();
       } else {
-        console.error('Failed to create job:', await res.text());
+        // Shown, not logged. "Something went wrong" in the console is invisible to
+        // the person who pressed the button, and the modal used to close either way
+        // — so a rejected job looked exactly like a created one.
+        const body = await res.json().catch(() => ({}));
+        setCreateError(body?.error || 'The job could not be saved. Check the details and try again.');
       }
     } catch (err) {
-      console.error('Error creating job:', err);
+      setCreateError('The job could not be saved. Check your connection and try again.');
     }
   };
 
@@ -415,13 +426,6 @@ export default function ContactJobsPage() {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3">
-                        {/* Recurrence indicator */}
-                        {job.recurrence !== 'one_time' && (
-                          <div className="bg-[var(--clay)]/20 text-[var(--clay)] rounded-full px-2 py-0.5 text-xs">
-                            {job.recurrence.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        
                         <div>
                           <p className="font-medium text-[var(--warm-ink)] truncate">{job.client?.name || 'Unknown Client'}</p>
                           <p className="text-sm text-[var(--soft-stone)] truncate">
@@ -647,93 +651,51 @@ export default function ContactJobsPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs text-[var(--soft-stone)] font-label mb-1">Price Estimate ($)</label>
+                    <label className="block text-xs text-[var(--soft-stone)] font-label mb-1">Price ($)</label>
                     <input
                       type="number"
                       placeholder="0.00"
-                      value={createJobForm.priceEstimate}
-                      onChange={(e) => setCreateJobForm(prev => ({ ...prev, priceEstimate: e.target.value }))}
+                      value={createJobForm.price}
+                      onChange={(e) => setCreateJobForm(prev => ({ ...prev, price: e.target.value }))}
                       className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm clay-field-input"
                     />
                   </div>
                 </div>
 
-                {/* Recurrence Settings */}
+                {/* Recurrence, end date and deposits were here.
+
+                    CrmJob has no column for any of them, so each was collected,
+                    POSTed and discarded: a job set to recur weekly came back as a
+                    one-off, and a deposit the customer had agreed to was never
+                    recorded. The form also had no address, which this endpoint
+                    requires, so every job created from this page was a 400 that only
+                    reached the console.
+
+                    The two commits before this removed exactly this pattern — a
+                    control that accepts input and stores nothing — everywhere else
+                    in the CRM. Leaving it here would have been lossy and
+                    inconsistent. They come back when there is somewhere to store
+                    them, not before. */}
+
+                {/* Address — required by the endpoint.
+
+                    POST /crm/jobs rejects a job with no address: a service business
+                    cannot dispatch someone who does not know where to go. The form
+                    never asked, so every creation from this page was a 400 that only
+                    reached the console. */}
                 <div>
-                  <label className="block text-xs text-[var(--soft-stone)] mb-1">Recurrence</label>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        id="recurrence-one-time"
-                        name="recurrence"
-                        value="one_time"
-                        checked={createJobForm.recurrence === 'one_time'}
-                        onChange={(e) => setCreateJobForm(prev => ({ ...prev, recurrence: e.target.value }))}
-                        className="h-4 w-4 text-[var(--clay)]"
-                      />
-                      <label htmlFor="recurrence-one-time" className="text-[var(--warm-ink)] font-medium">One-time</label>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        id="recurrence-weekly"
-                        name="recurrence"
-                        value="weekly"
-                        checked={createJobForm.recurrence === 'weekly'}
-                        onChange={(e) => setCreateJobForm(prev => ({ ...prev, recurrence: e.target.value }))}
-                        className="h-4 w-4 text-[var(--clay)]"
-                      />
-                      <label htmlFor="recurrence-weekly" className="text-[var(--warm-ink)] font-medium">Weekly</label>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        id="recurrence-biweekly"
-                        name="recurrence"
-                        value="biweekly"
-                        checked={createJobForm.recurrence === 'biweekly'}
-                        onChange={(e) => setCreateJobForm(prev => ({ ...prev, recurrence: e.target.value }))}
-                        className="h-4 w-4 text-[var(--clay)]"
-                      />
-                      <label htmlFor="recurrence-biweekly" className="text-[var(--warm-ink)] font-medium">Bi-weekly</label>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        id="recurrence-monthly"
-                        name="recurrence"
-                        value="monthly"
-                        checked={createJobForm.recurrence === 'monthly'}
-                        onChange={(e) => setCreateJobForm(prev => ({ ...prev, recurrence: e.target.value }))}
-                        className="h-4 w-4 text-[var(--clay)]"
-                      />
-                      <label htmlFor="recurrence-monthly" className="text-[var(--warm-ink)] font-medium">Monthly</label>
-                    </div>
-                  </div>
-                  
-                  {createJobForm.recurrence !== 'one_time' && (
-                    <div className="mt-3 pt-3 border-t border-[var(--soft-stone)]/30">
-                      <label className="block text-xs text-[var(--soft-stone)] mb-1">End Date</label>
-                      <input
-                        type="date"
-                        value={createJobForm.endDate}
-                        onChange={(e) => setCreateJobForm(prev => ({ ...prev, endDate: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm clay-field-input"
-                      />
-                      <p className="text-[var(--soft-stone)] text-xs mt-1">
-                        This will create approximately {createJobForm.endDate ? 
-                          Math.floor((new Date(createJobForm.endDate).getTime() - new Date(createJobForm.scheduledDate || new Date()).getTime()) / (1000 * 60 * 60 * 24 * 
-                            (createJobForm.recurrence === 'weekly' ? 7 : 
-                             createJobForm.recurrence === 'biweekly' ? 14 : 
-                             createJobForm.recurrence === 'monthly' ? 30 : 1))
-                          ) : 'X'} jobs
-                      </p>
-                    </div>
-                  )}
+                  <label className="block text-xs text-[var(--soft-stone)] mb-1">Address</label>
+                  <input
+                    type="text"
+                    placeholder="Where the work happens"
+                    value={createJobForm.address}
+                    onChange={(e) => setCreateJobForm(prev => ({ ...prev, address: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm clay-field-input"
+                    required
+                  />
+                  <p className="text-[var(--soft-stone)] text-xs mt-1">
+                    Defaults to the client's address once this is filled in for them.
+                  </p>
                 </div>
 
                 {/* Notes */}
@@ -748,41 +710,22 @@ export default function ContactJobsPage() {
                   />
                 </div>
 
-                {/* Deposit Toggle */}
-                <div className="border-t pt-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs text-[var(--soft-stone)] font-medium">Require Deposit</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={createJobForm.requireDeposit}
-                        onChange={(e) => setCreateJobForm(prev => ({ ...prev, requireDeposit: e.target.checked }))}
-                        className="h-4 w-4 text-[var(--clay)]"
-                      />
-                      <span className="text-[var(--warm-ink)] text-xs">{createJobForm.requireDeposit ? 'ON' : 'OFF'}</span>
-                    </div>
+                {/* Placed directly above the button that was pressed, so a rejection is
+                    read where it happened rather than on a page they were moved to. */}
+                {createError && (
+                  <div
+                    role="alert"
+                    className="mb-3 rounded-xl px-3 py-2.5 text-sm"
+                    style={{ background: 'var(--danger-container, #FCE8E6)', color: 'var(--on-danger-container, #8C1D18)' }}
+                  >
+                    <span className="material-symbols-outlined text-[18px] align-middle mr-1.5">error</span>
+                    {createError}
                   </div>
-                  
-                  {createJobForm.requireDeposit && (
-                    <div className="mt-3">
-                      <label className="block text-xs text-[var(--soft-stone)] mb-1">Deposit Amount ($)</label>
-                      <input
-                        type="number"
-                        placeholder="25-100"
-                        value={createJobForm.depositAmount || ''}
-                        onChange={(e) => setCreateJobForm(prev => ({ ...prev, depositAmount: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm clay-field-input"
-                      />
-                      <p className="text-[var(--soft-stone)] text-xs mt-1">
-                        Suggested range: $25-$100 for new or low-reliability clients
-                      </p>
-                    </div>
-                  )}
-                </div>
+                )}
 
                 {/* Submit Button */}
                 <div className="mt-6">
-                  <Button variant="primary" type="submit" className="w-full" disabled={!createJobForm.clientId || !createJobForm.serviceType || !createJobForm.scheduledDate || !createJobForm.scheduledTime}>
+                  <Button variant="primary" type="submit" className="w-full" disabled={!createJobForm.clientId || !createJobForm.serviceType || !createJobForm.scheduledDate || !createJobForm.scheduledTime || !createJobForm.address}>
                     Create Job
                   </Button>
                 </div>

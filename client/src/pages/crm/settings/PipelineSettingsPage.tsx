@@ -1,176 +1,112 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import DashboardLayout from '../../../components/DashboardLayout';
-import { Card } from '../../../components/primitives/Card';
-import { Button } from '../../../components/primitives/Button';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Card } from '../../../components/primitives';
 import { getAuthToken } from '../../../utils/authToken';
+import {
+  DEAL_STAGES,
+  DEAL_STAGE_LABELS,
+  STAGE_PROBABILITY,
+} from '@shared/crm';
 
-
-
-const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() || ''}` });
-
-export function PipelineSettingsPage() {
-  const businessId = localStorage.getItem('businessId') || '';
-  const [config, setConfig] = useState<any>({});
-  const [loading, setLoading] = useState(true);
-  const [draggedItem, setDraggedItem] = useState<number | null>(null);
-
-  const defaultStages = [
-    { id: 'lead', name: 'LEAD', probability: 10, color: 'var(--warm-sand)' },
-    { id: 'qualified', name: 'QUALIFIED', probability: 30, color: 'var(--sage)' },
-    { id: 'proposal', name: 'PROPOSAL', probability: 50, color: 'var(--clay)' },
-    { id: 'negotiation', name: 'NEGOTIATION', probability: 80, color: 'var(--terracotta)' },
-    { id: 'won', name: 'WON', probability: 100, color: 'var(--warm-ink)' },
-    { id: 'lost', name: 'LOST', probability: 0, color: 'var(--rose)' },
-  ];
-
+/**
+ * Pipeline stages, shown rather than edited.
+ *
+ * WHAT THIS PAGE USED TO BE
+ *
+ * A drag-to-reorder editor: rename any stage, change its probability, change its
+ * colour, add new ones, delete existing ones. Every one of those controls wrote to
+ * `/settings/config`, and nothing read it back.
+ *
+ * The stage names were the dangerous half. `parseStage` on the server accepts six
+ * constants — LEAD, QUALIFIED, PROPOSAL, NEGOTIATION, WON, LOST — and rejects
+ * anything else with a 400. So renaming a stage here did not rename anything: it
+ * produced a value the server refuses, which is exactly how `settings.pipelineStages`
+ * ended up feeding `stage-1` into the kanban and breaking it for anyone who had
+ * been through the setup wizard. The colour picker had the same problem in milder
+ * form — the board reads its colours from the shared vocabulary, so a chosen hex
+ * was stored and never shown.
+ *
+ * WHY IT IS NOT SIMPLY WIRING UP
+ *
+ * Supporting custom stages properly means teaching the server to accept them and
+ * deciding what a stage means to the forecast, the probability defaults and the
+ * won/lost transitions. That is a product decision, not a settings screen. Until
+ * it is made, an editor here can only promise something the API will not do.
+ *
+ * So this page shows the real stages and says plainly why they are fixed. The
+ * editing affordances come back with the server change, not before — a control
+ * that accepts input and stores nothing is the same defect this repo just spent
+ * three commits removing from the client, deal, activity and job forms.
+ */
+export default function PipelineSettingsPage() {
+  // Kept so the settings navigation still has something to land on, and so the
+  // page is inside the same auth context as its siblings.
+  const [ready, setReady] = useState(false);
   useEffect(() => {
-    if (businessId) loadConfig();
-  }, [businessId]);
-
-  const loadConfig = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/api/v1/settings/config?businessId=${businessId}`, { headers: getHeaders() });
-      if (res.ok) setConfig(await res.json());
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const saveConfig = async (newConfig: any) => {
-    try {
-      await fetch(`${API_BASE}/api/v1/settings/config`, {
-        method: 'PUT',
-        headers: getHeaders(),
-        body: JSON.stringify({ businessId, data: { enabledFeatures: newConfig.enabledFeatures } })
-      });
-      setConfig(newConfig);
-      alert('Pipeline settings saved!');
-    } catch (err) {
-      console.error(err);
-      alert('Error saving pipeline settings');
-    }
-  };
-
-  const getStages = () => {
-    return config.enabledFeatures?.pipelineStages || defaultStages;
-  };
-
-  const setStages = (stages: any[]) => {
-    const updated = { ...config };
-    if (!updated.enabledFeatures) updated.enabledFeatures = {};
-    updated.enabledFeatures.pipelineStages = stages;
-    setConfig(updated);
-  };
-
-  const addStage = () => {
-    const newStage = { id: Math.random().toString(36).substring(7), name: 'NEW STAGE', probability: 0, color: 'var(--soft-stone)' };
-    setStages([...getStages(), newStage]);
-  };
-
-  const updateStage = (index: number, data: any) => {
-    const stages = [...getStages()];
-    stages[index] = { ...stages[index], ...data };
-    setStages(stages);
-  };
-
-  const removeStage = (index: number) => {
-    const stages = [...getStages()];
-    stages.splice(index, 1);
-    setStages(stages);
-  };
-
-  const resetToDefault = () => {
-    setStages(defaultStages);
-  };
-
-  // Drag and drop logic
-  const onDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedItem(index);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-  const onDragOver = (e: React.DragEvent) => e.preventDefault();
-  const onDrop = (e: React.DragEvent, targetIndex: number) => {
-    e.preventDefault();
-    if (draggedItem === null || draggedItem === targetIndex) return;
-    const stages = [...getStages()];
-    const [removed] = stages.splice(draggedItem, 1);
-    stages.splice(targetIndex, 0, removed);
-    setStages(stages);
-    setDraggedItem(null);
-  };
-
-  if (loading) return <div className="p-8">Loading...</div>;
-  const stages = getStages();
+    // Touch the token so this page behaves like the other settings pages if it ever
+    // gains real content; nothing here is tenant-scoped, because there is nothing
+    // tenant-scoped to read.
+    void getAuthToken();
+    setReady(true);
+  }, []);
 
   return (
-    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" >
+    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between clay-heading pb-2">
-          <div>
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Pipeline Settings</h1>
-            <p className="text-sm text-[var(--soft-stone)] mt-0.5">Manage your deal stages (drag to reorder)</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="ghost" onClick={resetToDefault}>Reset Default</Button>
-            <Button variant="primary" onClick={() => saveConfig(config)}>Save Changes</Button>
-          </div>
+        <div className="clay-heading pb-2">
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Pipeline</h1>
+          <p className="text-sm text-[var(--soft-stone)] mt-0.5">
+            The stages a deal moves through.
+          </p>
         </div>
 
-<Card padding="lg" className="space-y-4">
-          <AnimatePresence mode="popLayout">
-            <motion.div
-              layout
-              className="space-y-3"
-              key={JSON.stringify(getStages().map(s => s.id))}
-            >
-              {getStages().map((stage: any, idx: number) => (
-                <motion.div
-                  key={stage.id}
-                  layout
-                  className="flex gap-4 items-center bg-[var(--warm-sand)]/20 p-3 rounded-lg border border-[var(--warm-sand)] cursor-move transition-all"
-                  draggable
-                  onDragStart={(e) => onDragStart(e, idx)}
-                  onDragOver={onDragOver}
-                  onDrop={(e) => onDrop(e, idx)}
-                  whileDrag={{ scale: 1.02, boxShadow: 'var(--shadow-lift)', zIndex: 100 }}
-                  dragElastic={0.2}
+        <Card padding="lg" className="space-y-4">
+          <div className="space-y-2">
+            {DEAL_STAGES.map((stage) => (
+              <div
+                key={stage}
+                className="flex items-center justify-between gap-4 p-3 rounded-lg border border-[var(--warm-sand)]"
+                style={{ background: 'var(--warm-sand) / 0.2' }}
+              >
+                <div>
+                  <p className="font-bold" style={{ color: 'var(--warm-ink)' }}>
+                    {DEAL_STAGE_LABELS[stage]}
+                  </p>
+                  <p className="text-xs" style={{ color: 'var(--soft-stone)' }}>
+                    {stage}
+                  </p>
+                </div>
+                <span
+                  className="text-sm tabular-nums px-3 py-1 rounded-full"
+                  style={{ background: 'rgba(201,123,90,0.10)', color: 'var(--clay)' }}
                 >
-                  <span className="material-symbols-outlined text-[var(--soft-stone)]">drag_indicator</span>
-                  <input
-                    type="color"
-                    className="w-8 h-8 rounded border-none cursor-pointer"
-                    value={stage.color?.startsWith('#') ? stage.color : '#aaaaaa'}
-                    onChange={e => updateStage(idx, { color: e.target.value })}
-                    title="Choose Color (Note: CSS vars may not show correct initial color in picker)"
-                  />
-                  <input
-                    className="flex-1 px-3 py-2 border rounded-lg font-bold uppercase tracking-wide"
-                    value={stage.name}
-                    onChange={e => updateStage(idx, { name: e.target.value })}
-                    placeholder="Stage Name"
-                  />
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      className="w-20 px-3 py-2 border rounded-lg text-center"
-                      value={stage.probability}
-                      onChange={e => updateStage(idx, { probability: parseInt(e.target.value, 10) || 0 })}
-                      min="0" max="100"
-                    />
-                    <span className="text-sm text-[var(--soft-stone)]">%</span>
-                  </div>
-                  <Button variant="ghost" onClick={() => removeStage(idx)} whileTap={{ scale: 0.95 }}>
-                    <span className="material-symbols-outlined text-[var(--rose)]">delete</span>
-                  </Button>
-                </motion.div>
-              ))}
-            </motion.div>
-          </AnimatePresence>
-          <div className="pt-4">
-            <Button variant="ghost" icon="add" onClick={addStage} whileTap={{ scale: 0.95 }}>Add Stage</Button>
+                  {STAGE_PROBABILITY[stage]}%
+                </span>
+              </div>
+            ))}
           </div>
+
+          <div
+            className="rounded-xl p-4 text-sm"
+            style={{ background: 'var(--warm-sand) / 0.4', color: 'var(--soft-stone)' }}
+          >
+            <p className="font-semibold mb-1" style={{ color: 'var(--warm-ink)' }}>
+              These stages are fixed for now
+            </p>
+            <p>
+              Every deal is checked against this list when it is saved, so a stage
+              outside it would be rejected rather than shown. Renaming or adding
+              stages needs a change on the server first — this page will get its
+              editor back when that happens, rather than offering one that quietly
+              does nothing now.
+            </p>
+            <p className="mt-2">
+              A deal&apos;s chance of closing follows its stage, unless you set a
+              different figure on the deal itself.
+            </p>
+          </div>
+
+          {ready && null}
         </Card>
       </div>
     </DashboardLayout>

@@ -202,7 +202,7 @@ const ModulesSettingsPage = lazy(() => import('./pages/crm/settings/ModulesSetti
 const SettingsHubPage = lazy(() => import('./pages/crm/settings/SettingsHubPage').then((m) => ({ default: m.SettingsHubPage })));
 const BusinessProfilePage = lazy(() => import('./pages/crm/settings/BusinessProfilePage').then((m) => ({ default: m.BusinessProfilePage })));
 const CustomFieldsPage = lazy(() => import('./pages/crm/settings/CustomFieldsPage').then((m) => ({ default: m.CustomFieldsPage })));
-const PipelineSettingsPage = lazy(() => import('./pages/crm/settings/PipelineSettingsPage').then((m) => ({ default: m.PipelineSettingsPage })));
+const PipelineSettingsPage = lazy(() => import('./pages/crm/settings/PipelineSettingsPage'));
 const ServiceCatalogPage = lazy(() => import('./pages/crm/settings/ServiceCatalogPage').then((m) => ({ default: m.ServiceCatalogPage })));
 const PaymentSettingsPage = lazy(() => import('./pages/crm/settings/PaymentSettingsPage').then((m) => ({ default: m.PaymentSettingsPage })));
 const TrustSettingsPage = lazy(() => import('./pages/crm/settings/TrustSettingsPage').then((m) => ({ default: m.TrustSettingsPage })));
@@ -221,7 +221,10 @@ const InvoicesPage = lazy(() => import('./pages/crm/InvoicesPage'));
 // `Cannot read properties of undefined (reading 'Buffer')` while evaluating, so
 // the entire module graph failed and React never mounted on any page — a blank
 // pabandi.com on which every click did nothing.
-const ContactJobsPage = lazy(() => import('./pages/crm/ContactJobsPage').then((m) => ({ default: m.ContactJobsPage })));
+// This was the dark, 109-line page in pages/crm/. The clay one in pages/contact/ is
+// the same screen done properly — client typeahead, calendar view, filters — and it
+// had never been routed. Both existed; only the one nobody wanted was live.
+const ContactJobsPage = lazy(() => import('./pages/contact/ContactJobsPage'));
 const ContactJobDetailPage = lazy(() => import('./pages/crm/ContactJobDetailPage').then((m) => ({ default: m.ContactJobDetailPage })));
 const ContactInvoiceDetailPage = lazy(() => import('./pages/crm/ContactInvoiceDetailPage'));
 const ContactMoneyFlowPage = lazy(() => import('./pages/contact/ContactMoneyFlowPage'));
@@ -303,7 +306,7 @@ function AppShellLayout() {
 }
 
 function AnimatedAppRoutes() {
-  const { isAuthenticated, user, fetchWalletData } = useAuthStore();
+  const { isAuthenticated, fetchWalletData } = useAuthStore();
   const location = useLocation();
 
   useEffect(() => {
@@ -410,7 +413,7 @@ function AnimatedAppRoutes() {
            <Route path="contact" element={<BusinessGuard><ContactOSPage /></BusinessGuard>} />
            <Route path="contact/clients" element={<BusinessGuard><FeatureGate feature="clients"><ContactClientsPage /></FeatureGate></BusinessGuard>} />
            <Route path="contact/clients/:id" element={<BusinessGuard><FeatureGate feature="clients"><ContactClientDetailPage /></FeatureGate></BusinessGuard>} />
-           <Route path="contact/jobs" element={<BusinessGuard><FeatureGate feature="jobs"><ContactJobsPage businessId={user?.businessId || 'default'} /></FeatureGate></BusinessGuard>} />
+           <Route path="contact/jobs" element={<BusinessGuard><FeatureGate feature="jobs"><ContactJobsPage /></FeatureGate></BusinessGuard>} />
            <Route path="contact/jobs/:id" element={<BusinessGuard><FeatureGate feature="jobs"><ContactJobDetailPage /></FeatureGate></BusinessGuard>} />
            <Route path="contact/deals" element={<BusinessGuard><FeatureGate feature="deals"><ContactDealsPage /></FeatureGate></BusinessGuard>} />
            <Route path="contact/deals/:id" element={<BusinessGuard><FeatureGate feature="deals"><ContactDealDetailPage /></FeatureGate></BusinessGuard>} />
