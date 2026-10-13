@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
+  watchForStaleBuild,
   bundleHashFromHtml,
   isStale,
   currentBundleHash,
@@ -35,6 +36,17 @@ beforeEach(() => {
 afterEach(() => {
   __setReload(() => {});
 });
+
+/** Listeners registered by watchForStaleBuild, so a test can fire them. */
+const watchForStaleBuildListeners = new Map<string, (e?: any) => void>();
+const realAddEventListener = window.addEventListener.bind(window);
+
+/** Stub the one request the detector makes: the server's index.html. */
+function mockFetch(body: string, ok = true) {
+  const spy = vi.fn(async () => ({ ok, text: async () => body } as unknown as Response));
+  global.fetch = spy as never;
+  return spy;
+}
 
 const html = (hash: string) =>
   `<!doctype html><html><head><script type="module" src="/assets/index-${hash}.js"></script></head></html>`;
@@ -83,12 +95,6 @@ describe('reading the bundle this document loaded', () => {
 });
 
 describe('the reload decision', () => {
-  function mockFetch(body: string, ok = true) {
-    const spy = vi.fn(async () => ({ ok, text: async () => body } as unknown as Response));
-    global.fetch = spy as never;
-    return spy;
-  }
-
   it('reloads when the server has moved on', async () => {
     mockFetch(html('SERVERNEW'));
 
@@ -159,5 +165,78 @@ describe('the reload decision', () => {
     expect(await checkForStaleBuild(null)).toBe(false);
     expect(reload).not.toHaveBeenCalled();
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe('watchForStaleBuild: how quickly a stale tab is caught', () => {
+  beforeEach(() => {
+    // window.addEventListener is the seam: watchForStaleBuild registers focus,
+    // pageshow and visibilitychange, and a fake-timer test cannot wait for the real
+    // browser to deliver them.
+    vi.spyOn(window, 'addEventListener').mockImplementation(((type: string, fn: any) => {
+      watchForStaleBuildListeners.set(type, fn);
+      return realAddEventListener(type, fn as any);
+    }) as any);
+    watchForStaleBuildListeners.clear();
+
+    // watchForStaleBuild reads the bundle out of the document's own script tags, and
+    // a jsdom document has none — so currentBundleHash() returns null and the check
+    // exits before it ever fetches. Give the document the script the check is
+    // meant to find, or every assertion here passes for the wrong reason.
+    document.head.innerHTML = '<script type="module" src="/assets/index-CLIENTOLD.js"></script>';
+  });
+
+  /**
+   * THE WINDOW THIS EXISTS TO CLOSE
+   *
+   * The first check used to be deferred by the full poll interval — sixty seconds.
+   * In that minute a tab opened before a deploy serves the old bundle on every
+   * click, and the old bundle is the one carrying the bug. So a fix that was
+   * deployed and correct looked broken to the person most likely to be looking at
+   * it, which is exactly how "it's happening again" gets reported after a fix that
+   * demonstrably shipped.
+   */
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    watchForStaleBuildListeners.clear();
+    vi.restoreAllMocks();
+  });
+
+  // `advanceTimersByTimeAsync` rather than the sync version: the check awaits a
+  // fetch, and a sync advance runs the timer callback without letting that promise
+  // settle — so the assertions would pass or fail on the scheduler rather than on
+  // the behaviour.
+  it('checks within a couple of seconds, not a minute', async () => {
+    mockFetch(html('SERVERNEW'));
+    watchForStaleBuild();
+
+    await vi.advanceTimersByTimeAsync(1_500);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not reload when the server is serving this tab the same build', async () => {
+    // Same hash as the script the setup put in the document — CLIENTOLD.
+    mockFetch(html('CLIENTOLD'));
+    watchForStaleBuild();
+
+    await vi.advanceTimersByTimeAsync(1_500);
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it('re-checks when a stale tab is restored from the back/forward cache', async () => {
+    // A tab left open for a day comes back via pageshow. There is no focus event,
+    // and a stale tab does not notice on its own — this is how it went unnoticed.
+    mockFetch(html('SERVERNEW'));
+    watchForStaleBuild();
+    await vi.advanceTimersByTimeAsync(1_500);
+    reload.mockClear();
+    sessionStorage.clear();
+
+    watchForStaleBuildListeners.get('pageshow')?.(new Event('pageshow'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(reload).toHaveBeenCalled();
   });
 });

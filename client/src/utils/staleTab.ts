@@ -40,8 +40,26 @@ declare const __BUILD_SHA__: string;
 /** sessionStorage key marking that we have already reloaded once for staleness. */
 const RELOADED_KEY = 'pabandi:stale-reloaded';
 
-/** How often to re-check. Cheap, but not on every render. */
+/**
+ * How often to re-check while the tab is open.
+ *
+ * Sixty seconds was the first value, and it left the exact window the customer kept
+ * hitting: a tab opened before a deploy keeps running the old bundle, and the old
+ * bundle is the one with the bug. For the first minute after any deploy, every
+ * click went through code that has already been replaced — so the fix looked
+ * deployed and was not, for the person most likely to be looking at it.
+ *
+ * The poll can stay slow. The first check is what matters, and it is immediate.
+ */
 const CHECK_INTERVAL_MS = 60_000;
+
+/**
+ * Delay before the first check.
+ *
+ * Short enough that nobody can click through it, long enough not to compete with
+ * the initial render on a slow connection.
+ */
+const FIRST_CHECK_DELAY_MS = 1_500;
 
 let inFlight = false;
 
@@ -158,10 +176,18 @@ export function watchForStaleBuild(): void {
 
   if (typeof window === 'undefined') return;
 
+  // Immediately, then on the slow poll. Everything below this line is about catching
+  // a tab that was open across a deploy, and the sooner it is caught the less of the
+  // old behaviour anybody meets.
+  setTimeout(run, FIRST_CHECK_DELAY_MS);
   setTimeout(run, CHECK_INTERVAL_MS);
   window.addEventListener('focus', run);
-  // A tab returning from another tab fires `visibilitychange`; checking then is what
-  // catches "I left this open, you deployed, I came back".
+
+  // `pageshow` fires on a bfcache restore, which is how returning to a tab left open
+  // for a day actually happens. Nothing else here covers that case: no focus event,
+  // and a stale tab does not notice on its own.
+  window.addEventListener('pageshow', run);
+
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') run();
   });

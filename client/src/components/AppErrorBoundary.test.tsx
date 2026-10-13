@@ -60,12 +60,35 @@ describe('AppErrorBoundary', () => {
     expect(screen.getByText('Go to home')).toBeTruthy();
   });
 
-  it('offers a reload for a chunk-load failure, not a generic error', () => {
+  it('reloads on its own for a chunk-load failure', () => {
+    // A chunk that will not load is almost never a code bug: it is a tab that was
+    // open across a deploy, whose bundle has since been deleted. The old bundle is
+    // the one with the bug, so waiting for a button press means the person keeps
+    // meeting the old behaviour until they think to press it.
+    const reload = vi.fn();
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, reload },
+      writable: true,
+    });
+
     renderBoundary(chunkError());
-    // A stale bundle is a different problem with a different fix, so it gets its own copy and
-    // its own action. Showing "something went wrong" here would send the user looking for a bug
-    // that is not in the code they can see.
+
+    expect(reload).toHaveBeenCalled();
     expect(screen.getByText('Loading the latest version')).toBeTruthy();
+  });
+
+  it('still offers a reload by hand once the automatic one is spent', () => {
+    // The guard means one automatic reload per session. If that was not enough, the
+    // person needs a way to try again — without it, a tab that somehow stayed
+    // broken after the reload has no way out but a manual browser refresh.
+    sessionStorage.setItem('pabandi:chunk-reload', '1');
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, reload: vi.fn() },
+      writable: true,
+    });
+
+    renderBoundary(chunkError());
+
     expect(screen.getByText('Reload')).toBeTruthy();
   });
 
@@ -90,7 +113,10 @@ describe('AppErrorBoundary', () => {
     expect(screen.queryByText('Loading the latest version')).toBeNull();
   });
 
-  it('reloads at most once per session', () => {
+  it('reloads at most once per session, whether automatic or pressed', () => {
+    // The guard is what stops a genuinely broken deploy becoming an infinite reload
+    // loop, which would be worse than the blank page it replaced. It has to cover the
+    // automatic path too, or moving the reload earlier removes the safety.
     const reload = vi.fn();
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -98,15 +124,16 @@ describe('AppErrorBoundary', () => {
     });
 
     renderBoundary(chunkError());
-    screen.getByText('Reload').click();
-    expect(reload, 'first failure should reload').toHaveBeenCalledTimes(1);
+    expect(reload, 'first failure should reload automatically').toHaveBeenCalledTimes(1);
 
-    // Simulate the tab recovering the new bundle but still hitting a bad import: the second
-    // attempt must NOT reload again, or a bad deploy becomes an infinite reload loop.
+    // Simulate the tab recovering the new bundle but still hitting a bad import: the
+    // second attempt must NOT reload again.
     cleanup();
     sessionStorage.setItem('pabandi:chunk-reload', '1');
     renderBoundary(chunkError());
-    screen.getByText('Reload').click();
+
+    const button = screen.queryByText('Reload') as HTMLElement | null;
+    button?.click();
     expect(reload, 'second failure must not reload again').toHaveBeenCalledTimes(1);
   });
 });

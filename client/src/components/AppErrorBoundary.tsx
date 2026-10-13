@@ -62,6 +62,18 @@ export class AppErrorBoundary extends Component<Props, State> {
     // throwing component, and this boundary exists precisely so an error is no longer a
     // blank page with no diagnostics.
     console.error('[App] unhandled render error:', error, info.componentStack);
+
+    // A failed chunk load is almost never a real bug. It is a tab that was open
+    // across a deploy: the bundle it is running was deleted, and Firebase answers
+    // the request for it with index.html and a 200 — so the import gets HTML, fails
+    // to parse, and the page dies. The fix is a reload, and it is the right one
+    // essentially every time, so do it rather than making someone find a button.
+    //
+    // Guarded by the same flag as the manual path, so a chunk that keeps failing
+    // cannot become a reload loop — that would be worse than the broken page.
+    if (isChunkLoadError(error)) {
+      this.handleChunkReload();
+    }
   }
 
   private handleChunkReload = () => {
@@ -103,11 +115,15 @@ export class AppErrorBoundary extends Component<Props, State> {
               Part of this page could not be loaded, which usually means a new version was
               published while your tab was open. Reloading picks it up.
             </p>
+            <p className="text-xs" style={{ color: 'var(--soft-stone, #8A8178)' }}>
+              This should only take a moment. If it keeps happening, clear the site's data in
+              your browser and try again.
+            </p>
             <button
               onClick={this.handleChunkReload}
               disabled={isReloading}
               className="px-5 py-2.5 rounded-xl font-semibold text-sm disabled:opacity-60"
-              style={{ background: 'var(--clay, #C97B5A)', color: '#fff' }}
+              style={{ background: 'var(--clay, #C97C5A)', color: '#fff' }}
             >
               {isReloading ? 'Reloading…' : 'Reload'}
             </button>
