@@ -315,8 +315,24 @@ export class CustomerIntelligenceService {
     if (predictedCLV > 5000 && features.totalOrders > 20 && riskOfChurn < 30) return 'CHAMPION';
     if (predictedCLV > 2000 && features.totalOrders > 10 && riskOfChurn < 40) return 'LOYAL';
     if (predictedCLV > 1000 && riskOfChurn < 50) return 'POTENTIAL';
+
+    /**
+     * The old final line was an unconditional `return 'LOST'`.
+     *
+     * Anything that was not large, not loyal and not stale was declared lost. That
+     * includes a brand-new customer: no revenue, so every threshold above misses, and
+     * daysSinceLastOrder of 0, so AT_RISK misses too. Every single lead was labelled
+     * LOST, which is the one classification guaranteed to be wrong about someone who
+     * has not had the chance to buy anything yet.
+     *
+     * The ladder is now: a year of silence is lost, three months of it is at risk, and
+     * everything else is potential. LOST is checked before AT_RISK on purpose — with
+     * AT_RISK at 90 days, a 400-day dormancy can never reach LOST, so ordering it last
+     * would leave the label permanently unreachable rather than merely unused.
+     */
+    if (features.daysSinceLastOrder > 365) return 'LOST';
     if (riskOfChurn > 50 || features.daysSinceLastOrder > 90) return 'AT_RISK';
-    return 'LOST';
+    return 'POTENTIAL';
   }
 
   private determineValueTier(predictedCLV: number): string {

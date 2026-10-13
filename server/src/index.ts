@@ -660,6 +660,13 @@ jobCronService.start();
 import { subscriptionReconcileCron } from './services/subscriptionReconcileCron.service';
 subscriptionReconcileCron.start();
 
+// Alert sweep. The alert rules were only ever evaluated when somebody opened the
+// dashboard, so a business that never did had no alerts at all, and a condition that
+// had been true for weeks appeared all at once as though it were new. Now they are
+// produced on a schedule and raised ones notify the owner.
+import { startAlertSweep } from './services/alertSweep.service';
+startAlertSweep();
+
 import cron from 'node-cron';
 import { scanOverdueInvoices } from './services/invoice.service';
 import { scanFailureOwnership } from './services/failure-ownership.service';

@@ -173,6 +173,23 @@ export interface TrustSignals {
   paymentBehaviour: number;
   /** Disputes filed against this subject ÷ transactions, 0–1. */
   disputeRate: number;
+  /**
+   * Whether `disputeRate` is this subject's rate or a placeholder.
+   *
+   * A CRM client cannot be the subject of a Dispute: the model links disputes through
+   * `userId` / `reservationId` / `apiClientId`, and `CrmClient` has none of those
+   * columns. There is no join available, so there is no rate to compute.
+   *
+   * The previous code counted upheld disputes platform-wide and divided that by this
+   * one client's transactions, which made `disputeRate` a property of how busy the
+   * whole platform was. It could exceed 1 and was clamped, so on a busy platform every
+   * client scored zero on dispute-free record regardless of their own behaviour.
+   *
+   * When false, `disputeRate` carries the neutral 0.5 and the score neither rewards
+   * nor punishes the client for something nobody measured. The explanation shown to
+   * the user says "not tracked" rather than implying a clean record.
+   */
+  disputeMeasurable?: boolean;
   /** Cancellation events, normalised to 0–1 by `CANCELLATION_SATURATION`. */
   cancellations: number;
 }

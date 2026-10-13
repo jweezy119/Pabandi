@@ -36,6 +36,8 @@ import {
   getClientStageHandler,
 } from '../controllers/revenue.controller';
 import { invoiceTrustService } from '../services/invoice-trust.service';
+import { getClientIntelligence } from '../services/crm-intelligence.service';
+import { collectClientSignals, explainScore } from '../services/trust-core.service';
 import * as crmService from '../services/crm.service';
 import { crmScope } from '../services/crm.service';
 import { CustomError } from '../middleware/errorHandler';
@@ -757,6 +759,88 @@ router.get('/alerts', getAlertsHandler);
 
 // POST /api/v1/crm/alerts/:id/dismiss — Dismiss an alert
 router.post('/alerts/:id/dismiss', dismissAlertHandler);
+
+/**
+ * GET /api/v1/crm/clients/:id/intelligence
+ *
+ * What the model makes of this client: segment, predicted lifetime value, churn
+ * probability and a next action.
+ *
+ * Two things make this honest rather than decorative. It reads the client's real CRM
+ * rows rather than the nightlife `Reservation` table the model was originally written
+ * against, and it refuses to answer at all below three completed jobs — see
+ * `crm-intelligence.service` for why confidence was not enough to gate on.
+ *
+ * The response always carries `facts`, which are counts read straight from the
+ * database. A client with no verdict still tells you what is true about them; only
+ * the prediction is withheld.
+ *
+ * Tenant-scoped via `crmScope`, so a client id from another business is a 404.
+ */
+router.get('/clients/:id/intelligence', async (req: AuthRequest, res: Response) => {
+  try {
+    const crm = requireCrmContext(req);
+    const client = await prisma.crmClient.findFirst({
+      where: { id: req.params.id, ...crmScope(crm.serviceBusinessId, crm.businessId) },
+      select: { id: true },
+    });
+    if (!client) return res.status(404).json({ success: false, error: 'Client not found' });
+
+    const intelligence = await getClientIntelligence(
+      req.params.id,
+      crm.serviceBusinessId,
+      crm.businessId,
+    );
+    res.json({ success: true, data: intelligence });
+  } catch (err: any) {
+    const status = Number(err?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      ...(status >= 500 ? { error: 'Could not work this out' } : { error: err.message }),
+    });
+  }
+});
+
+/**
+ * GET /api/v1/crm/clients/:id/explain-score
+ *
+ * `trust-core.explainScore()` itemises a reliability score into its four weighted
+ * inputs with each one's arithmetic shown. It is pure, tested, and had no caller
+ * anywhere in the codebase — the platform's one piece of genuine explainability,
+ * unreachable.
+ *
+ * It is exposed here because a score nobody can interrogate is a score nobody can
+ * argue with when it is wrong. The client panel shows the same four rows.
+ */
+router.get('/clients/:id/explain-score', async (req: AuthRequest, res: Response) => {
+  try {
+    const crm = requireCrmContext(req);
+    const client = await prisma.crmClient.findFirst({
+      where: { id: req.params.id, ...crmScope(crm.serviceBusinessId, crm.businessId) },
+      select: { id: true, reliabilityScore: true },
+    });
+    if (!client) return res.status(404).json({ success: false, error: 'Client not found' });
+
+    const { signals, sampleSize } = await collectClientSignals(req.params.id);
+    res.json({
+      success: true,
+      data: {
+        score: client.reliabilityScore,
+        sampleSize,
+        breakdown: signals ? explainScore(signals) : null,
+        reason: signals
+          ? null
+          : 'No completed jobs or settled invoices yet, so there is nothing to break the score down against.',
+      },
+    });
+  } catch (err: any) {
+    const status = Number(err?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      ...(status >= 500 ? { error: 'Could not load the breakdown' } : { error: err.message }),
+    });
+  }
+});
 
 // GET /api/v1/crm/clients/:id/stage — Get client lifecycle stage
 router.get('/clients/:id/stage', getClientStageHandler);

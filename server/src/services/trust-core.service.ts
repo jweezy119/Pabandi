@@ -367,8 +367,17 @@ export function computeEnsembleScore(
   const punctuality = clampReliabilityScore(signals.punctuality);
   const paymentBehaviour = clampReliabilityScore(signals.paymentBehaviour);
 
-  const disputeRate = Number.isFinite(signals.disputeRate)
-    ? Math.max(0, Math.min(1, signals.disputeRate))
+  /**
+   * The dispute term.
+   *
+   * When unmeasurable it evaluates to 0.5, i.e. exactly half marks, so the signal
+   * neither inflates nor deflates the score. The two alternatives were both wrong in a
+   * way that mattered: 0 awards full marks for a clean record nobody has checked, and
+   * a platform-wide count punishes an individual client for other people's disputes.
+   */
+  const rawDisputeRate = signals.disputeMeasurable === false ? 0.5 : signals.disputeRate;
+  const disputeRate = Number.isFinite(rawDisputeRate)
+    ? Math.max(0, Math.min(1, rawDisputeRate))
     : 0;
   const normalizedCancellations = normalizeCancellationCount(signals.cancellations);
 
@@ -413,7 +422,7 @@ export function normalizeCancellationCount(count: number): number {
 export async function collectClientSignals(
   clientId: string,
 ): Promise<{ signals: TrustSignals | null; sampleSize: number }> {
-  const [jobs, invoices, disputes] = await Promise.all([
+  const [jobs, invoices] = await Promise.all([
     prisma.crmJob.findMany({
       where: { clientId },
       select: { status: true, completedAt: true, scheduledDate: true, scheduledTime: true },
@@ -422,8 +431,20 @@ export async function collectClientSignals(
       where: { clientId },
       select: { status: true, dateDue: true, dateIssued: true, paidAt: true },
     }),
-    prisma.dispute.count({ where: { reservationId: { not: null }, outcome: 'UPHELD' } }),
   ]);
+
+  /**
+   * No dispute query at all, deliberately.
+   *
+   * This counted every upheld dispute on the platform and divided by this client's
+   * transaction count, so `disputeRate` measured how busy the platform was rather than
+   * anything about the client. It also could not be fixed by adding a filter: a Dispute
+   * belongs to a user, a reservation or an API client, and `CrmClient` has none of
+   * those columns, so there is no join to filter with. Until the model grows one, the
+   * signal is genuinely unavailable and is marked as such rather than faked.
+   */
+  const disputes = 0;
+  const disputeMeasurable = false;
 
   const resolvedJobs = jobs.filter(
     (j) => j.status === 'COMPLETED' || j.status === 'CANCELLED',
@@ -453,6 +474,7 @@ export async function collectClientSignals(
           ? (paidOnTime.length / settledInvoices.length) * 100
           : COLD_START_SCORE,
       disputeRate: disputes / transactions,
+      disputeMeasurable,
       cancellations: cancelledJobs.length,
     },
     sampleSize: transactions,
@@ -496,7 +518,8 @@ export function explainScore(
   signals: TrustSignals,
   weights: TrustWeights = DEFAULT_TRUST_WEIGHTS,
 ): Array<{ signal: string; value: string; contribution: number }> {
-  const disputeRate = Math.max(0, Math.min(1, signals.disputeRate));
+  const rawDisputeRate = signals.disputeMeasurable === false ? 0.5 : signals.disputeRate;
+  const disputeRate = Math.max(0, Math.min(1, rawDisputeRate));
   const normalizedCancellations = normalizeCancellationCount(signals.cancellations);
 
   return [
@@ -512,7 +535,13 @@ export function explainScore(
     },
     {
       signal: 'Dispute-free record',
-      value: `${round2((1 - disputeRate) * 100)} / 100 (dispute rate ${round2(disputeRate * 100)}%)`,
+      // Say so rather than showing "100 / 100 (dispute rate 0%)". A clean record that
+      // was never measured is not the same fact as one that was, and this panel exists
+      // to be trustworthy about which of the two it is reporting.
+      value:
+        signals.disputeMeasurable === false
+          ? 'Not tracked — this contribution is neutral, not a clean record'
+          : `${round2((1 - disputeRate) * 100)} / 100 (dispute rate ${round2(disputeRate * 100)}%)`,
       contribution: round2(weights.w3 * (1 - disputeRate) * 100),
     },
     {

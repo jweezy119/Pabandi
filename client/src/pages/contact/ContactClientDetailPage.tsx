@@ -11,6 +11,8 @@ import { InlineEdit } from '../../components/primitives/InlineEdit';
 import { getAuthToken } from '../../utils/authToken';
 import { readList } from '../../utils/crmResponse';
 import { ClientPropertyPanel } from '../crm/components/ClientPropertyPanel';
+import { ClientIntelligencePanel } from './components/ClientIntelligencePanel';
+import { TrustScoreBreakdown } from './components/TrustScoreBreakdown';
 
 // 'Property' is the tenancy half of this person. It was absent because a tenant and
 // a CRM client were unrelated records; they are now linked by a real foreign key
@@ -160,6 +162,10 @@ export default function ContactClientDetailPage() {
         {activeTab === 'Command Center' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
+              {/* Above the timeline: it is the one thing on this page that is new
+                  information rather than a record of what already happened. */}
+              <ClientIntelligencePanel clientId={id!} />
+              <TrustScoreBreakdown clientId={id!} />
               <TrustPanel passportId={client.passportId} />
               <ClientTimeline activities={activities} deals={deals} invoices={invoices} jobs={jobs} notes={client.notes} files={files} />
             </div>

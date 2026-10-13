@@ -377,6 +377,114 @@ router.post('/conversation/chat', async (req: any, res: Response) => {
   }
 });
 
+/**
+ * POST /api/v1/ai/concierge
+ *
+ * GlobalAIConciergeWidget is mounted in the app chrome for every signed-in user and
+ * has posted here since it was written. No route named `concierge` existed anywhere in
+ * the server, so every message produced a 404 and the only feedback was a toast
+ * reading "Failed to get response from AI Concierge." A button in the global chrome
+ * that fails every single time is worse than no button: it advertises a capability
+ * the product does not have.
+ *
+ * Built on `aiConversationService`, which is the working chat path — it already goes
+ * through the three-provider `aiRouter` fallback chain and persists a session.
+ *
+ * The proposal is the part that needed care. The widget renders a bookable card and
+ * navigates straight to `/booking/${proposedBusinessId}` when one is present, so an
+ * invented or mistyped id sends someone to a booking page for a venue that does not
+ * exist. So a proposal is returned only when a name the model mentioned actually
+ * resolves to a live business in the database. The conversation happens either way —
+ * `proposal: null` is a normal answer, and the widget already renders a message
+ * without a card.
+ */
+router.post('/concierge', async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const { query, walletAddress } = req.body || {};
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ success: false, error: 'query is required' });
+    }
+
+    const result = await aiConversationService.chat(
+      `concierge-${userId ?? 'anon'}-${Date.now()}`,
+      query,
+      CONCIERGE_SYSTEM_PROMPT,
+      userId,
+    );
+
+    // `chat` returns `response`, not `message` — guessing here would have shipped a
+    // card-less empty reply with no error, since `undefined` is not a missing field.
+    const message: string = result?.response ?? '';
+
+    // Only offer a booking when the model named a business that actually exists.
+    // `message` is model output, so this is a lookup and never a construction.
+    const proposal = await resolveBookingProposal(message);
+
+    res.json({
+      success: true,
+      data: {
+        message,
+        proposal,
+        ...(walletAddress ? { walletAddress } : {}),
+      },
+    });
+  } catch (e: any) {
+    console.error('[ai] concierge failed:', e.message);
+    res.status(500).json({ success: false, error: 'AI chat failed' });
+  }
+});
+
+/**
+ * The assistant's brief. Kept narrow on purpose: it is told to answer conversationally
+ * and to name a venue only when the user asked about somewhere specific, so the
+ * proposal lookup below has something real to resolve rather than a hallucination to
+ * chase.
+ */
+const CONCIERGE_SYSTEM_PROMPT = `You are the booking concierge for Pabandi.
+Help the user find a venue and a time to visit.
+When you mention a specific venue, write its name exactly as it appears.
+Never invent a venue, a date or a booking reference. If you are unsure which venue the
+user means, ask them rather than guessing.
+Keep replies to two or three sentences.`;
+
+/**
+ * Resolve a booking card from a reply, or return null.
+ *
+ * Matches a named venue against live businesses and returns only a real one. A card is
+ * what the widget turns into a navigation, so returning null is always safe and
+ * returning a wrong id is never safe.
+ */
+async function resolveBookingProposal(message: string) {
+  if (!message) return null;
+
+  // Take the quoted or bolded name first — that is what the prompt asks for — and
+  // fall back to the whole message so an unadorned reply still has a chance.
+  const candidates = [
+    ...(message.match(/"([^"]{2,80})"/g) ?? []).map((s) => s.slice(1, -1)),
+    ...(message.match(/\*\*([^*]{2,80})\*\*/g) ?? []).map((s) => s.slice(2, -2)),
+    message,
+  ];
+
+  for (const raw of candidates) {
+    const name = raw.trim();
+    if (!name || name.length > 80) continue;
+
+    const business = await prisma.business.findFirst({
+      where: { name: { contains: name, mode: 'insensitive' }, isActive: true },
+      select: { id: true, name: true },
+    });
+    if (business) {
+      return {
+        proposedBusinessId: business.id,
+        businessName: business.name,
+      };
+    }
+  }
+
+  return null;
+}
+
 // GET /api/v1/ai/conversation/:sessionId/history
 router.get('/conversation/:sessionId/history', async (req: any, res: Response) => {
   try {

@@ -174,6 +174,11 @@ describe('writeReliabilityScore: the audit receipt', () => {
       punctuality: (2 / 3) * 100,
       paymentBehaviour: 50,
       disputeRate: 0,
+      // Carried in the receipt as well as the score, so an auditor reading a
+      // historical score can tell a clean dispute record apart from one that was
+      // never measurable. Without it the receipt implies the client has never
+      // disputed anything, which was never established.
+      disputeMeasurable: false,
       cancellations: 1,
     });
     expect(metadata.weights).toEqual({ w1: 0.4, w2: 0.3, w3: 0.2, w4: 0.1 });

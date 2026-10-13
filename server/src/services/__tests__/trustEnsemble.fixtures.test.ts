@@ -346,20 +346,29 @@ describe('collectClientSignals: row → signal derivations', () => {
     expect(signals?.paymentBehaviour).toBe(COLD_START_SIGNAL_FALLBACK);
   });
 
-  it('expresses dispute rate as disputes over transactions', async () => {
+  it('does not derive dispute rate from a platform-wide count', async () => {
     prismaMock.crmJob.findMany.mockResolvedValue([
       { status: 'COMPLETED' },
       { status: 'COMPLETED' },
       { status: 'COMPLETED' },
       { status: 'COMPLETED' },
     ]);
+    // The old implementation asked prisma.dispute.count with no client predicate and
+    // divided the answer by this client's transactions, so this fixture used to assert
+    // 1/4 = 0.25 for a client who had never disputed anything — the count was every
+    // upheld dispute on the platform. It could not be corrected with a filter either:
+    // a Dispute links to a user, a reservation or an API client, and CrmClient has none
+    // of those columns, so there is no join to scope it with.
+    //
+    // What is asserted now is the refusal: the signal reports itself as unmeasurable,
+    // and the score treats it as neutral rather than as a clean record.
     prismaMock.dispute.count.mockResolvedValue(1);
 
     const { collectClientSignals } = await import('../trust-core.service');
     const { signals } = await collectClientSignals('client_1');
 
-    // 1 dispute / 4 resolved jobs = 0.25
-    expect(signals?.disputeRate).toBeCloseTo(0.25, 10);
+    expect(signals?.disputeMeasurable).toBe(false);
+    expect(signals?.disputeRate).not.toBeCloseTo(0.25, 2);
   });
 });
 
