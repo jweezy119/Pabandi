@@ -26,7 +26,12 @@ BEGIN
   ) THEN
     ALTER TABLE "PropertyTenant"
       ADD CONSTRAINT "PropertyTenant_crmClientId_fkey"
-      FOREIGN KEY ("crmClientId") REFERENCES "CrmClient"("id")
+      -- The table is `crm_clients`, not `CrmClient`. The Prisma model carries
+      -- `@@map("crm_clients")`; migrations are hand-written SQL and do not get
+      -- that mapping applied to them, so the PascalCase name here fails with
+      -- `relation "CrmClient" does not exist` at deploy time. Found by running
+      -- this migration inside a transaction and rolling it back.
+      FOREIGN KEY ("crmClientId") REFERENCES "crm_clients"("id")
       ON DELETE SET NULL ON UPDATE CASCADE;
   END IF;
 END
