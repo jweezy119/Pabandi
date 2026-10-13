@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CommandPalette } from './CommandPalette';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 const MotionLink = motion(Link);
 
@@ -168,6 +170,14 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [navItemsMounted, setNavItemsMounted] = useState(false);
+
+  // ⌘K and the g-then-key navigation. Both lived in files that were written and
+  // never mounted, so the CRM had no keyboard affordances at all despite having the
+  // code for them.
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const openPalette = useCallback(() => setPaletteOpen(true), []);
+  useKeyboardShortcuts({ onOpenPalette: openPalette });
+
   const colorKey = colorKeys[osColor] || 'clay';
   const colors = colorMap[colorKey] || colorMap.clay;
   const osRoot = OS_ROOT[osName] || '/';
@@ -522,6 +532,10 @@ export default function DashboardLayout({
           </div>
         </nav>
       </main>
+
+      {/* Rendered once here so every CRM screen gets ⌘K without each page opting in.
+          The palette returns null when closed. */}
+      <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   );
 }
