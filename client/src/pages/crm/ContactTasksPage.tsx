@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import { Button } from '../../components/primitives/Button';
 import { EmptyState } from '../../components/primitives/EmptyState';
@@ -7,6 +7,7 @@ import { TaskBoard } from './components/TaskBoard';
 import { TaskCalendar } from './components/TaskCalendar';
 import { TaskFormModal } from './components/TaskFormModal';
 import { getAuthToken } from '../../utils/authToken';
+import { readList } from '../../utils/crmResponse';
 
 
 
@@ -37,9 +38,15 @@ export function ContactTasksPage() {
         fetch(`${API_BASE}/api/v1/crm/clients?businessId=${businessId}`, { headers: getHeaders() }),
         fetch(`${API_BASE}/api/v1/crm/deals?businessId=${businessId}`, { headers: getHeaders() }),
       ]);
-      setTasks(await taskRes.json() || []);
-      if (cliRes.ok) setClients((await cliRes.json()).data || []);
-      if (dealRes.ok) setDeals((await dealRes.json()).data || []);
+      // readList: /crm/tasks answers with a bare array on success and `{error}` on
+      // failure, so an unchecked read put an object into `tasks` and the board's
+      // tasks.filter threw — the same error boundary the Activities page hit.
+      const [tasks_, clients_, deals_] = await Promise.all([
+        readList(taskRes), readList(cliRes), readList(dealRes),
+      ]);
+      setTasks(tasks_.items);
+      setClients(clients_.items);
+      setDeals(deals_.items);
     } catch (err) {
       console.error(err);
     } finally {

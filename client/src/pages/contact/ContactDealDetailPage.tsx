@@ -7,6 +7,7 @@ import { TrustPanel } from '../../components/TrustPanel';
 import { InlineEdit } from '../../components/primitives/InlineEdit';
 import { getAuthToken } from '../../utils/authToken';
 import { DEAL_STAGES, DEAL_STAGE_LABELS, options } from '@shared/crm';
+import { readList } from '../../utils/crmResponse';
 
 export default function ContactDealDetailPage() {
   const { id } = useParams();
@@ -41,7 +42,9 @@ export default function ContactDealDetailPage() {
             fetch(`${baseUrl}/api/v1/crm/invoices?clientId=${dData.data.clientId}`, { headers }),
             fetch(`${baseUrl}/api/v1/crm/jobs?clientId=${dData.data.clientId}`, { headers }),
           ]);
-          if (actRes.ok) setActivities((await actRes.json()).data || []);
+          // readList: /crm/activities answers with a bare array, so `.data` was
+          // always undefined and this timeline never rendered anything.
+          setActivities((await readList(actRes)).items);
           if (invRes.ok) setInvoices((await invRes.json()).data || []);
           if (jobsRes.ok) setJobs((await jobsRes.json()).data || []);
         }

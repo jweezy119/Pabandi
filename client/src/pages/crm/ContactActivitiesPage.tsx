@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import { Button } from '../../components/primitives/Button';
 import { EmptyState } from '../../components/primitives/EmptyState';
@@ -6,6 +6,7 @@ import { ActivityFeed } from './components/ActivityFeed';
 import { ActivityFormModal } from './components/ActivityFormModal';
 import { TaskFormModal } from './components/TaskFormModal';
 import { getAuthToken } from '../../utils/authToken';
+import { readList } from '../../utils/crmResponse';
 
 
 
@@ -46,11 +47,24 @@ export function ContactActivitiesPage() {
         fetch(`${API_BASE}/api/v1/crm/clients?businessId=${businessId}`, { headers: getHeaders() }),
         fetch(`${API_BASE}/api/v1/crm/deals?businessId=${businessId}`, { headers: getHeaders() }),
       ]);
-      const actData = await actRes.json();
-      setActivities(actData || []);
-      
-      if (cliRes.ok) setClients((await cliRes.json()).data || []);
-      if (dealRes.ok) setDeals((await dealRes.json()).data || []);
+      // readList, not `await res.json()`. This endpoint returns a bare array on
+      // success and `{error}` on failure, so an unchecked read put an OBJECT into
+      // `activities` the moment the token expired — and the line below calls
+      // activities.filter(), which threw and rendered the error boundary. It
+      // presented as "this page ran into a problem"; the console had nothing.
+      const [acts, clients_, deals_] = await Promise.all([
+        readList(actRes), readList(cliRes), readList(dealRes),
+      ]);
+      setActivities(acts.items);
+      setClients(clients_.items);
+      setDeals(deals_.items);
+
+      if (!acts.ok) {
+        // Said out loud rather than shown as an empty list: "no activities yet" and
+        // "we could not ask the server" are different facts, and only one of them
+        // is fixed by creating an activity.
+        console.error('[Activities] could not load activities — the list is empty because the request failed, not because there are none.');
+      }
     } catch (err) {
       console.error(err);
     } finally {

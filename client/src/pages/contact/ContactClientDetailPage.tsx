@@ -9,6 +9,7 @@ import { Input } from '../../components/primitives/Input';
 import { TrustPanel } from '../../components/TrustPanel';
 import { InlineEdit } from '../../components/primitives/InlineEdit';
 import { getAuthToken } from '../../utils/authToken';
+import { readList } from '../../utils/crmResponse';
 import { ClientPropertyPanel } from '../crm/components/ClientPropertyPanel';
 
 // 'Property' is the tenancy half of this person. It was absent because a tenant and
@@ -54,7 +55,9 @@ export default function ContactClientDetailPage() {
 
       if (clientRes.ok) setClient((await clientRes.json()).data);
       if (invRes.ok) setInvoices((await invRes.json()).data || []);
-      if (actRes.ok) setActivities((await actRes.json()).data || []);
+      // readList, because /crm/activities returns a bare array and `.data` is
+      // undefined on it — so this activity timeline has been permanently empty.
+      setActivities((await readList(actRes)).items);
       if (dealsRes.ok) setDeals((await dealsRes.json()).data || []);
       if (jobsRes.ok) setJobs((await jobsRes.json()).data || []);
       if (filesRes.ok) setFiles((await filesRes.json()).data || []);
