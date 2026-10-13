@@ -72,6 +72,31 @@ router.get('/', async (req: AuthRequest, res: Response) => {
 });
 
 // Create Task
+/**
+ * Task status and priority are constrained in the schema comment and in the UI
+ * dropdown, but nothing enforced them: `priority` was accepted as any string, so a
+ * typo produced a row that matched no filter and disappeared from every board.
+ *
+ * Rejecting rather than coercing matches parseStage on the deal side — a 400 that
+ * names the legal values is recoverable, and a task that silently became MEDIUM is
+ * not something anyone would notice until it mattered.
+ */
+const TASK_STATUSES = ['TODO', 'IN_PROGRESS', 'DONE'] as const;
+const TASK_PRIORITIES = ['LOW', 'MEDIUM', 'HIGH'] as const;
+
+function parseEnum<T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+  label: string,
+  fallback: T,
+): T {
+  if (value === undefined || value === null || value === '') return fallback;
+  if (typeof value === 'string' && (allowed as readonly string[]).includes(value)) {
+    return value as T;
+  }
+  throw new CustomError(`Invalid ${label}. Expected one of: ${allowed.join(', ')}`, 400);
+}
+
 router.post('/', async (req: AuthRequest, res: Response) => {
   try {
     const businessId = requireBusinessId(req);
@@ -90,8 +115,11 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         title: title.trim(),
         description: description ?? null,
         dueDate: dueDate ? new Date(dueDate) : null,
-        priority: typeof priority === 'string' ? priority : 'MEDIUM',
-        status: 'TODO',
+        // Validated now. `typeof priority === 'string' ? priority : 'MEDIUM'`
+        // accepted "high", "HIGH ", "urgent" and stored all three as distinct
+        // values, none of which the board renders.
+        priority: parseEnum(priority, TASK_PRIORITIES, 'priority', 'MEDIUM'),
+        status: parseEnum(req.body?.status, TASK_STATUSES, 'status', 'TODO'),
         ...(authorName ? { authorName } : {}),
       },
     });
@@ -118,8 +146,11 @@ router.patch('/:id', async (req: AuthRequest, res: Response) => {
     const claimed = await prisma.crmActivity.updateMany({
       where: { id, businessId, type: 'TASK' },
       data: {
-        ...(status ? { status } : {}),
-        ...(priority ? { priority } : {}),
+        // Validated on update too, not just create: the board's status dropdown is
+        // a plain <select>, and a value outside the set would write a row that no
+        // column renders — the task would simply vanish from the board.
+        ...(status ? { status: parseEnum(status, TASK_STATUSES, 'status', 'TODO') } : {}),
+        ...(priority ? { priority: parseEnum(priority, TASK_PRIORITIES, 'priority', 'MEDIUM') } : {}),
         ...(title ? { title } : {}),
         ...(description !== undefined ? { description } : {}),
         ...(dueDate ? { dueDate: new Date(dueDate) } : {}),

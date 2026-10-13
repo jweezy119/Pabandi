@@ -62,6 +62,29 @@ router.get('/', async (req: AuthRequest, res: Response) => {
 });
 
 // Create Activity
+/**
+ * Activity types are a closed set in the schema and in both forms, but the route
+ * took whatever string arrived and stored it. `type: type || 'NOTE'` meant a
+ * client sending "Call" produced a row that ActivityFeed's icon switch renders as
+ * the default pencil — a call recorded as a note, with nothing to indicate why.
+ *
+ * TASK is rejected here on purpose. Tasks are a separate endpoint with their own
+ * status, priority and completion handling, and an activity row masquerading as a
+ * task would carry none of it: it would appear on no board and never complete.
+ */
+const ACTIVITY_TYPES = ['NOTE', 'CALL', 'EMAIL', 'MEETING'] as const;
+
+function parseActivityType(value: unknown): string {
+  if (value === undefined || value === null || value === '') return 'NOTE';
+  if (typeof value === 'string' && (ACTIVITY_TYPES as readonly string[]).includes(value)) {
+    return value;
+  }
+  throw new CustomError(
+    `Invalid activity type. Expected one of: ${ACTIVITY_TYPES.join(', ')}`,
+    400,
+  );
+}
+
 router.post('/', async (req: AuthRequest, res: Response) => {
   try {
     const businessId = requireBusinessId(req);
@@ -76,7 +99,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         businessId,
         ...(clientId ? { clientId } : {}),
         ...(dealId ? { dealId } : {}),
-        type: type || 'NOTE',
+        type: parseActivityType(type),
         title: title.trim(),
         description: description ?? null,
         ...(authorName ? { authorName } : {}),

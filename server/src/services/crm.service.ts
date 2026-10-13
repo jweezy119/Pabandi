@@ -4,7 +4,7 @@ import { CustomError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 import { eventBus } from './event-bus.service';
 import { getClientStage } from './crm-reliability.service';
-import type { BusinessCategory } from '@prisma/client';
+import type { BusinessCategory, Prisma } from '@prisma/client';
 
 // ─── Enroll Business ─────────────────────────────────────────────────────────
 
@@ -26,6 +26,59 @@ const SERVICE_TYPE_TO_CATEGORY: Record<string, BusinessCategory> = {
 
 function resolveCategory(serviceType: string): BusinessCategory {
   return SERVICE_TYPE_TO_CATEGORY[serviceType.toUpperCase()] ?? 'OTHER';
+}
+
+/**
+ * The legal values for a client's status.
+ *
+ * THE DATA LOSS THIS FIXES
+ * ClientFormModal has rendered a Status dropdown — ACTIVE / AT_RISK / VIP /
+ * INACTIVE — since it was written. `addClient` destructured a fixed list of five
+ * fields and `status` was not among them, so Prisma's default won every time. A
+ * person marked AT_RISK was stored as ACTIVE and the screen said otherwise. The
+ * same function also dropped `company`, which had no column at all.
+ *
+ * Exported rather than kept private because the client form needs the same list.
+ * There were already three divergent copies of the deal stages; a fourth copy of
+ * this one would be the same bug wearing a different hat.
+ */
+export const CLIENT_STATUSES = ['ACTIVE', 'AT_RISK', 'VIP', 'INACTIVE'] as const;
+export type ClientStatus = (typeof CLIENT_STATUSES)[number];
+
+/**
+ * Rejects an unknown status rather than defaulting.
+ *
+ * Same reasoning as `parseStage`: storing "vip " or "At Risk" would leave the row
+ * matching none of the filters, so the client would vanish from every list the
+ * person can reach. A 400 naming the legal values is recoverable; a client that
+ * has disappeared from the CRM is not.
+ */
+export function parseClientStatus(value: unknown, fallback: ClientStatus = 'ACTIVE'): ClientStatus {
+  if (value === undefined || value === null || value === '') return fallback;
+  if (typeof value === 'string' && (CLIENT_STATUSES as readonly string[]).includes(value)) {
+    return value as ClientStatus;
+  }
+  throw new CustomError(
+    `Invalid status. Expected one of: ${CLIENT_STATUSES.join(', ')}`,
+    400,
+  );
+}
+
+/**
+ * An email is the key people search a CRM by and the address invoices go to, so a
+ * typo here silently breaks both. This is the same shape the CSV importer already
+ * applies (crm.service.ts importClients) — the form was the lax path, not the
+ * strict one.
+ */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function parseEmail(value: unknown): string | null {
+  if (value === undefined || value === null || value === '') return null;
+  const email = String(value).trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) {
+    throw new CustomError(`"${String(value).trim()}" is not a valid email address`, 400);
+  }
+  return email;
 }
 
 /**
@@ -254,26 +307,131 @@ export async function addClient(
     email?: string;
     phone?: string;
     address?: string;
+    company?: string;
     notes?: string;
+    status?: string;
+    customData?: Record<string, unknown>;
   }
 ) {
-  const { name, email, phone, address, notes } = data;
+  const { name, phone, address, company, notes, customData } = data;
 
-  if (!name) {
+  if (!name || !String(name).trim()) {
     throw new CustomError('name is required', 400);
   }
 
   const client = await prisma.crmClient.create({
     data: {
       serviceBusinessId,
-      name,
-      email: email || '',
+      name: String(name).trim(),
+      email: parseEmail(data.email) ?? '',
       phone: phone || '',
       address: address || '',
+      company: company?.trim() || null,
       notes: notes || null,
+      // Was absent entirely, so the dropdown in the form was decorative.
+      status: parseClientStatus(data.status),
+      ...(customData && Object.keys(customData).length
+        ? { customData: customData as Prisma.InputJsonValue }
+        : {}),
     },
   });
 
+  return client;
+}
+
+/**
+ * Update one client, scoped to the caller's service business.
+ *
+ * WHY THIS EXISTS
+ * The inline editor on the client page PUTs /crm/clients/:id. That route was never
+ * registered, so every edit returned 404 and the field snapped back — which reads
+ * as "the app ignores me" rather than as a missing endpoint.
+ *
+ * Every field is optional and only what was sent is written, so a partial edit
+ * cannot blank the fields the caller did not touch. The read is tenant-scoped in
+ * the same statement as the write, so a guessed id cannot reach another business's
+ * client.
+ */
+export async function updateClient(
+  serviceBusinessId: string,
+  clientId: string,
+  data: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    company?: string;
+    notes?: string;
+    status?: string;
+    customData?: Record<string, unknown>;
+  }
+) {
+  const existing = await prisma.crmClient.findFirst({
+    where: { id: clientId, serviceBusinessId },
+    select: { id: true },
+  });
+  if (!existing) {
+    throw new CustomError('Client not found', 404);
+  }
+
+  const patch: Record<string, unknown> = {};
+  if (data.name !== undefined) {
+    const name = String(data.name).trim();
+    if (!name) throw new CustomError('name cannot be empty', 400);
+    patch.name = name;
+  }
+  if (data.email !== undefined) patch.email = parseEmail(data.email) ?? '';
+  if (data.phone !== undefined) patch.phone = data.phone || '';
+  if (data.address !== undefined) patch.address = data.address || '';
+  if (data.company !== undefined) patch.company = data.company?.trim() || null;
+  if (data.notes !== undefined) patch.notes = data.notes || null;
+  if (data.status !== undefined) patch.status = parseClientStatus(data.status);
+  if (data.customData !== undefined) patch.customData = data.customData as Prisma.InputJsonValue;
+
+  return prisma.crmClient.update({ where: { id: existing.id }, data: patch });
+}
+
+/**
+ * Delete one client, scoped to the caller's service business.
+ *
+ * REFUSES when the client has invoices rather than cascading them. An invoice is a
+ * financial record that may already have been paid, settled through escrow, or
+ * reconciled; deleting the client must not take that with it. Jobs and activities
+ * cascade in the schema and carry no independent financial meaning, so they go.
+ *
+ * The message names the count, because "cannot delete" with no reason is the kind
+ * of thing a person reads as a broken button.
+ */
+export async function deleteClient(serviceBusinessId: string, clientId: string) {
+  const client = await prisma.crmClient.findFirst({
+    where: { id: clientId, serviceBusinessId },
+    select: { id: true, _count: { select: { invoices: true, jobs: true, deals: true } } },
+  });
+  if (!client) {
+    throw new CustomError('Client not found', 404);
+  }
+
+  if (client._count.invoices > 0) {
+    throw new CustomError(
+      `This client has ${client._count.invoices} invoice${client._count.invoices === 1 ? '' : 's'}. ` +
+        'Invoices are financial records and cannot be deleted with the client. ' +
+        'Mark the client INACTIVE instead — it disappears from the active lists but keeps its history.',
+      409,
+    );
+  }
+
+  await prisma.crmClient.delete({ where: { id: client.id } });
+  return { id: client.id, deleted: true };
+}
+
+/** One client, or 404. Scoped, so a guessed id cannot read another tenant's data. */
+export async function getClient(serviceBusinessId: string, clientId: string) {
+  const client = await prisma.crmClient.findFirst({
+    where: { id: clientId, serviceBusinessId },
+  });
+  if (!client) {
+    throw new CustomError('Client not found', 404);
+  }
   return client;
 }
 

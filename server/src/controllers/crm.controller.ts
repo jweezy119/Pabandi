@@ -17,6 +17,9 @@ import {
   getEmployees,
   addClient,
   getClients,
+  getClient,
+  updateClient,
+  deleteClient,
   createJob,
   assignEmployee,
   updateJobStatus,
@@ -153,8 +156,13 @@ export async function addClientHandler(
   try {
     const crm = requireCrmContext(req);
     const businessId = crm.serviceBusinessId;
-    const { name, email, phone, address, notes } = req.body;
-    const client = await addClient(businessId, { name, email, phone, address, notes });
+    // `status`, `company` and `customData` used to be left out of this destructure,
+    // so the form sent them and they were dropped here — the Status dropdown had no
+    // effect on anything at all.
+    const { name, email, phone, address, company, notes, status, customData } = req.body;
+    const client = await addClient(businessId, {
+      name, email, phone, address, company, notes, status, customData,
+    });
     res.status(201).json({ success: true, data: client });
   } catch (error) {
     next(error);
@@ -364,6 +372,59 @@ export async function getDashboardStatsHandler(
     const businessId = crm.serviceBusinessId;
     const stats = await getDashboardStats(businessId, crm.businessId);
     res.json({ success: true, data: stats });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * GET /api/v1/crm/clients/:id
+ *
+ * The client page fetches `/crm/clients/${id}` on mount. There was no such route,
+ * so `if (clientRes.ok)` was false, `client` stayed null, and the detail page
+ * rendered its own shell with nothing in it.
+ */
+export async function getClientHandler(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const crm = requireCrmContext(req);
+    res.json({ success: true, data: await getClient(crm.serviceBusinessId, req.params.id) });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** PUT /api/v1/crm/clients/:id — the inline editor on the client page. */
+export async function updateClientHandler(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const crm = requireCrmContext(req);
+    const client = await updateClient(crm.serviceBusinessId, req.params.id, req.body ?? {});
+    res.json({ success: true, data: client });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * DELETE /api/v1/crm/clients/:id
+ *
+ * 409 when the client has invoices — see deleteClient for why those are protected.
+ */
+export async function deleteClientHandler(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const crm = requireCrmContext(req);
+    res.json({ success: true, data: await deleteClient(crm.serviceBusinessId, req.params.id) });
   } catch (error) {
     next(error);
   }

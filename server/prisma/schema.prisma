@@ -7453,6 +7453,12 @@ model CrmClient {
   email            String?
   phone            String?
   address          String?
+  /// Organisation this person belongs to. The client form has asked for this since it
+  /// was written, but there was nowhere to put it: `addClient` destructured a fixed
+  /// list of fields and company was not in it, so the value was accepted, ignored and
+  /// silently lost. Free text on purpose — company names are not an enum, and forcing
+  /// one would push people into "Other".
+  company          String?
   notes            String?
   status           String         @default("ACTIVE") // ACTIVE | AT_RISK | VIP | INACTIVE
   isActive         Boolean        @default(true)

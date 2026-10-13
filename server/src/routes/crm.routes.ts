@@ -1,7 +1,7 @@
 import { Router, type Response } from 'express';
 import { prisma } from '../utils/database';
 import { authenticate, type AuthRequest } from '../middleware/auth.middleware';
-import { createInvoice } from '../services/invoice.service';
+import { createInvoice, updateInvoice } from '../services/invoice.service';
 import { SettingsService } from '../services/settings.service';
 import { resolveCrmBusiness, requireCrmContext } from '../middleware/crmContext.middleware';
 import {
@@ -10,6 +10,9 @@ import {
   getEmployeesHandler,
   addClientHandler,
   getClientsHandler,
+  getClientHandler,
+  updateClientHandler,
+  deleteClientHandler,
   createJobHandler,
   assignEmployeeHandler,
   updateJobStatusHandler,
@@ -151,6 +154,17 @@ router.post('/clients', tierGuard({ resource: 'clients' }), addClientHandler);
 // GET /api/v1/crm/clients — List clients
 router.get('/clients', getClientsHandler);
 
+// The three below are what the client detail page and the inline editor have been
+// calling all along. None of them existed: every edit 404'd, and the detail page
+// fetched a client it could not receive.
+//
+// No tierGuard here, matching /deals: reading one client you already have in your
+// list, and correcting a typo in it, are not metered units. Guarding them would
+// block editing for a customer who had reached their create quota.
+router.get('/clients/:id', getClientHandler);
+router.put('/clients/:id', updateClientHandler);
+router.delete('/clients/:id', deleteClientHandler);
+
 // ── Deal Pipeline ───────────────────────────────────────────────────────────
 // authenticate and resolveCrmBusiness are registered router-wide above, so every route
 // here is authenticated AND tenant-resolved. There is no tierGuard on deals: tierGuard
@@ -278,6 +292,34 @@ router.post('/invoices', tierGuard({ resource: 'invoices' }), async (req: AuthRe
     res.status(status).json({
       success: false,
       ...(status >= 500 ? { error: 'Failed to create invoice' } : { error: err.message }),
+    });
+  }
+});
+
+/**
+ * PATCH /api/v1/crm/invoices/:id
+ *
+ * The invoice detail page has an edit mode for due date and notes, and PATCHes
+ * `/crm/invoices/${id}`. Only `/invoices/:id/status` was registered, so the save
+ * 404'd and `handleSaveEdit` console.error'd it — which nobody sees, so the edit
+ * mode looked like it worked and silently did not.
+ *
+ * Delegates to the service, which already had this: tenant-scoped by businessId,
+ * draft-only, and careful to re-wrap `notes` in the {text, metadata} envelope that
+ * invoicePublic.routes and money-flow.service both JSON.parse. Writing notes
+ * straight into the column from a route would break both readers.
+ */
+router.patch('/invoices/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const { businessId } = requireCrmContext(req);
+    if (!businessId) return res.status(400).json({ success: false, error: 'Business is not linked to a platform business yet' });
+    const invoice = await updateInvoice(businessId as string, req.params.id, req.body ?? {});
+    res.json({ success: true, data: invoice });
+  } catch (err: any) {
+    const status = Number(err?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      ...(status >= 500 ? { error: 'Could not update invoice' } : { error: err.message }),
     });
   }
 });
