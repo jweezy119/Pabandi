@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Input, Button } from '../../../components/primitives';
 import ClaySelect from './ClaySelect';
+import { DEAL_STAGES, DEAL_STAGE_LABELS, type DealStage } from '@shared/crm';
 
 interface DealFormModalProps {
   deal?: {
@@ -20,14 +21,20 @@ interface DealFormModalProps {
   customFields?: { id: string; label: string; type: string }[];
 }
 
-const STAGES = [
-  { value: 'LEAD', label: 'Lead', icon: '🌱' },
-  { value: 'QUALIFIED', label: 'Qualified', icon: '🔍' },
-  { value: 'PROPOSAL', label: 'Proposal', icon: '📋' },
-  { value: 'NEGOTIATION', label: 'Negotiation', icon: '🤝' },
-  { value: 'WON', label: 'Closed Won', icon: '🎉' },
-  { value: 'LOST', label: 'Closed Lost', icon: '❌' },
-];
+/**
+ * Icons are presentation and stay here; the ids come from the shared vocabulary,
+ * because this array was a fourth private copy of the same six stages and the
+ * reason one of the other three lost NEGOTIATION.
+ */
+const STAGE_ICONS: Record<DealStage, string> = {
+  LEAD: '🌱', QUALIFIED: '🔍', PROPOSAL: '📋',
+  NEGOTIATION: '🤝', WON: '🎉', LOST: '❌',
+};
+const STAGES = DEAL_STAGES.map((value) => ({
+  value,
+  label: DEAL_STAGE_LABELS[value],
+  icon: STAGE_ICONS[value],
+}));
 
 export default function DealFormModal({ deal, clients, onClose, onSave, customFields }: DealFormModalProps) {
   const [form, setForm] = useState(deal || {

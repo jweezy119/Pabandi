@@ -2,7 +2,18 @@ import React from 'react';
 import { Input } from '../../../components/primitives';
 import ClaySelect from './ClaySelect';
 
-interface CustomField {
+// Exported because ClientFormModal and DealFormModal both typed their customFields
+// prop as `{ type: string }`, which is not assignable to this narrower union — so
+// the two forms disagreed about what a custom field is. One type, imported.
+/**
+ * A field the business defined for itself.
+ *
+ * `select` is in the union but unreachable through CustomFieldsPage, which only
+ * offers text/number/date/boolean — so a select field can never be created today
+ * even though this renderer handles one. Left in place deliberately: the renderer
+ * is correct, the field-definition form is the half that is missing.
+ */
+export interface CustomField {
   id: string;
   name: string;
   type: 'text' | 'number' | 'date' | 'boolean' | 'select';

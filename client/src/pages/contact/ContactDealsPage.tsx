@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useBusinessSettings } from '../../hooks/useBusinessSettings';
 import DashboardLayout from '../../components/DashboardLayout';
 import { Button, Modal, EmptyState } from '../../components/primitives';
 import { Input } from '../../components/primitives/Input';
@@ -10,24 +9,45 @@ import DealFormModal from '../crm/components/DealFormModal';
 import CSVImportModal from '../crm/components/CSVImportModal';
 import { Upload } from 'lucide-react';
 import { getAuthToken } from '../../utils/authToken';
+import { DEAL_STAGES, DEAL_STAGE_LABELS, STAGE_PROBABILITY, type DealStage } from '@shared/crm';
 
 
 
-const DEFAULT_STAGES = [
-  { id: 'LEAD', label: 'Lead', color: '#8A9A7B' },
-  { id: 'QUALIFIED', label: 'Qualified', color: '#D9A854' },
-  { id: 'PROPOSAL', label: 'Proposal', color: '#C97B5A' },
-  { id: 'NEGOTIATION', label: 'Negotiation', color: '#B26B4C' },
-  { id: 'WON', label: 'Closed Won', color: '#5C7A54' },
-  { id: 'LOST', label: 'Closed Lost', color: '#A85A5A' },
-];
+/**
+ * Kanban column colours. Presentation only — the ids come from the shared
+ * vocabulary below, because this array used to be the authority and there were
+ * three other copies of it.
+ */
+const STAGE_COLORS: Record<DealStage, string> = {
+  LEAD: '#8A9A7B',
+  QUALIFIED: '#D9A854',
+  PROPOSAL: '#C97B5A',
+  NEGOTIATION: '#B26B4C',
+  WON: '#5C7A54',
+  LOST: '#A85A5A',
+};
+
+/**
+ * WHY THIS IGNORES settings.pipelineStages
+ *
+ * That setting used to drive these columns, and completing the setup wizard
+ * breaks them. `applyPreset` writes stages shaped `{id: 'stage-1', name: 'Lead'}`,
+ * so every column rendered with an undefined label and every `<option>` sent
+ * `stage-1` as a stage — which `parseStage` rejects with a 400. Anyone who
+ * finished onboarding got a blank, unwritable pipeline board.
+ *
+ * The server accepts six stages and no others, so six is what the board is built
+ * from. Renaming or adding stages is a server-side change (PipelineSettingsPage
+ * still offers it, which is the remaining half of this problem); until then the
+ * board is right and the saved customisation is not used.
+ */
+const stages = DEAL_STAGES.map((id) => ({
+  id,
+  label: DEAL_STAGE_LABELS[id],
+  color: STAGE_COLORS[id],
+}));
 
 export default function ContactDealsPage() {
-  const { settings } = useBusinessSettings();
-  const stages = settings.pipelineStages?.length > 0 
-    ? settings.pipelineStages 
-    : DEFAULT_STAGES;
-
   const [deals, setDeals] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,11 +137,16 @@ export default function ContactDealsPage() {
   async function submitStageUpdate(dealId: string, stage: string, reason?: string) {
     try {
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const probMap: Record<string, number> = { LEAD: 10, QUALIFIED: 30, PROPOSAL: 60, NEGOTIATION: 80, WON: 100, LOST: 0 };
       const res = await fetch(`${baseUrl}/api/v1/crm/deals/${dealId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
-        body: JSON.stringify({ stage, probability: probMap[stage] ?? 10, ...(reason ? { lostReason: reason } : {}) }),
+        // Probability follows the stage unless overridden — STAGE_PROBABILITY is the
+        // same map the server uses to derive it, so the two cannot disagree.
+        body: JSON.stringify({
+          stage,
+          probability: STAGE_PROBABILITY[stage as DealStage] ?? 10,
+          ...(reason ? { lostReason: reason } : {}),
+        }),
       });
       if (res.ok) fetchDealsAndClients();
     } catch (err) {

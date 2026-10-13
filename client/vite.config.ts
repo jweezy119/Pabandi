@@ -110,6 +110,15 @@ export default defineConfig(({ mode }) => {
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // The CRM's vocabulary — statuses, stages, priorities — is owned by the server,
+      // because the server is what rejects anything outside those sets. The client
+      // imports the same module rather than keeping its own copy: there were three
+      // divergent copies of the deal stages and one was missing NEGOTIATION, which
+      // is the kind of disagreement that only shows up as "the app ignores me".
+      //
+      // The target is a leaf module with no imports of its own, so nothing from the
+      // server's dependency graph reaches the bundle.
+      '@shared': path.resolve(__dirname, '../server/src/domain'),
     },
   },
   server: {

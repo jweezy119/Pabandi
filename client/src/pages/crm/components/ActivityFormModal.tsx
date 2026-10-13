@@ -2,6 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from '../../../components/primitives/Modal';
 import { Button } from '../../../components/primitives/Button';
 import { Input } from '../../../components/primitives/Input';
+import { ACTIVITY_TYPES, ACTIVITY_TYPE_LABELS } from '@shared/crm';
+
+/**
+ * Type tiles. The ids come from the shared vocabulary — the same four the server
+ * accepts — and the labels are shared too, so "Call" cannot be spelled one way
+ * here and another way in the activity feed that renders it.
+ *
+ * TASK is deliberately not offered: tasks have their own status, priority and
+ * completion, and an activity row claiming to be one would appear on no board.
+ */
+const ACTIVITY_TYPE_TILES = ACTIVITY_TYPES.map((id) => ({
+  id,
+  label: ACTIVITY_TYPE_LABELS[id],
+  icon:
+    id === 'NOTE' ? 'edit_note'
+    : id === 'CALL' ? 'call'
+    : id === 'EMAIL' ? 'mail'
+    : 'groups',
+}));
 
 export function ActivityFormModal({ isOpen, onClose, onSubmit, clients, deals, initialType = 'NOTE' }: any) {
   const [formData, setFormData] = useState({
@@ -30,12 +49,7 @@ export function ActivityFormModal({ isOpen, onClose, onSubmit, clients, deals, i
         <div className="space-y-1">
           <label className="text-xs font-semibold text-[var(--warm-ink)]">Activity Type</label>
           <div className="grid grid-cols-4 gap-2">
-            {[
-              { id: 'NOTE', label: 'Note', icon: 'edit_note' },
-              { id: 'CALL', label: 'Call', icon: 'call' },
-              { id: 'EMAIL', label: 'Email', icon: 'mail' },
-              { id: 'MEETING', label: 'Meeting', icon: 'groups' }
-            ].map(t => (
+            {ACTIVITY_TYPE_TILES.map(t => (
               <button
                 key={t.id}
                 type="button"

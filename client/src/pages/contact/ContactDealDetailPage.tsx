@@ -6,6 +6,7 @@ import ClientTimeline from '../crm/components/ClientTimeline';
 import { TrustPanel } from '../../components/TrustPanel';
 import { InlineEdit } from '../../components/primitives/InlineEdit';
 import { getAuthToken } from '../../utils/authToken';
+import { DEAL_STAGES, DEAL_STAGE_LABELS, options } from '@shared/crm';
 
 export default function ContactDealDetailPage() {
   const { id } = useParams();
@@ -89,7 +90,7 @@ export default function ContactDealDetailPage() {
                 <InlineEdit 
                   value={deal.stage} 
                   type="select" 
-                  options={['LEAD', 'QUALIFIED', 'PROPOSAL', 'WON', 'LOST'].map(s => ({label: s, value: s}))}
+                  options={options(DEAL_STAGES, DEAL_STAGE_LABELS)}
                   onSave={(v) => handleDealUpdate('stage', v)} 
                 />
               </div>
