@@ -28,6 +28,12 @@ export function ContactActivitiesPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [deals, setDeals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  // Whether the list is empty because there is nothing, or because the request failed.
+  // The code already knew the difference and wrote it to the console, which nobody
+  // reads; the UI showed "Inbox Zero" for both, so a broken endpoint looked exactly
+  // like a clear inbox and offered "Add Something" — which then failed for the same
+  // reason.
+  const [loadFailed, setLoadFailed] = useState(false);
   const [selectedType, setSelectedType] = useState('ALL');
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -60,6 +66,7 @@ export function ContactActivitiesPage() {
       setDeals(deals_.items);
 
       if (!acts.ok) {
+        setLoadFailed(true);
         // Said out loud rather than shown as an empty list: "no activities yet" and
         // "we could not ask the server" are different facts, and only one of them
         // is fixed by creating an activity.
@@ -166,6 +173,14 @@ export function ContactActivitiesPage() {
 
         {loading ? (
           <div className="p-12 text-center text-[var(--soft-stone)]">Loading...</div>
+        ) : loadFailed ? (
+          // Distinct from the empty state, and it does not offer to create one:
+          // adding an activity will not fix a request that failed.
+          <EmptyState
+            icon="cloud_off"
+            title="Could not load activities"
+            description="This is a connection or permissions problem, not an empty inbox. Reload the page to try again."
+          />
         ) : filtered.length === 0 ? (
           <EmptyState
             icon="notifications"

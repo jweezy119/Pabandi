@@ -37,6 +37,7 @@ import {
 } from '../controllers/revenue.controller';
 import { invoiceTrustService } from '../services/invoice-trust.service';
 import { getClientIntelligence } from '../services/crm-intelligence.service';
+import { searchCrm, MIN_SEARCH_LENGTH, type SearchResult } from '../services/crmSearch.service';
 import { collectClientSignals, explainScore } from '../services/trust-core.service';
 import * as crmService from '../services/crm.service';
 import { crmScope } from '../services/crm.service';
@@ -442,6 +443,56 @@ router.patch('/invoices/:id/status', async (req: AuthRequest, res: Response) => 
 });
 
 // ── Job Lifecycle Management ──────────────────────────────────────────────
+
+/**
+ * GET /api/v1/crm/search?q=
+ *
+ * One search across clients, deals, jobs, invoices and activities.
+ *
+ * The platform had no cross-entity search before this. Every list page carried its own
+ * private box, which meant you could only search the page you were already on, and
+ * the clients box matched name, email and company but not phone or notes — so typing
+ * a phone number found nothing, silently, in a box that looked like it was working.
+ *
+ * `type` may be repeated or comma-separated to narrow the search; omitting it
+ * searches everything. Each result carries an `href`, so choosing one goes to the
+ * record rather than to a list that has to be searched again.
+ */
+router.get('/search', async (req: AuthRequest, res: Response) => {
+  try {
+    const crm = requireCrmContext(req);
+    const q = typeof req.query.q === 'string' ? req.query.q : '';
+
+    if (q.trim().length < MIN_SEARCH_LENGTH) {
+      // An explicit "nothing searched yet", so the caller can tell this apart from
+      // "we searched and found nothing".
+      return res.json({ success: true, data: { results: [], query: q, tooShort: true } });
+    }
+
+    const requested = req.query.type;
+    const types = (Array.isArray(requested) ? requested : requested ? [requested] : [])
+      .flatMap((t) => String(t).split(','))
+      .map((t) => t.trim().toLowerCase())
+      .filter((t): t is SearchResult['type'] =>
+        ['client', 'deal', 'job', 'invoice', 'activity'].includes(t),
+      );
+
+    const results = await searchCrm(
+      crm.serviceBusinessId,
+      crm.businessId,
+      q,
+      types.length ? { types } : {},
+    );
+
+    res.json({ success: true, data: { results, query: q, tooShort: false } });
+  } catch (err: any) {
+    const status = Number(err?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      ...(status >= 500 ? { error: 'Search failed' } : { error: err.message }),
+    });
+  }
+});
 
 // POST /api/v1/crm/jobs/:id/checkin — Check in for a job
 router.post('/jobs/:id/checkin', async (req: AuthRequest, res: Response) => {

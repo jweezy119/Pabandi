@@ -17,6 +17,10 @@ export function ContactTeamPage() {
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  // Distinguishes "the request failed" from "there are no members", and gives the
+  // invite form something to say when the server rejects it.
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
   const navigate = useNavigate();
   
   const { hasPermission, loading: permLoading } = usePermissions(businessId);
@@ -33,9 +37,16 @@ export function ContactTeamPage() {
       const res = await fetch(`${API_BASE}/api/v1/team?businessId=${businessId}`, { headers: getHeaders() });
       if (res.ok) {
         setMembers(await res.json());
+        setLoadFailed(false);
+      } else {
+        // Previously this left `members` at whatever it was — normally [] — so a failed
+        // request rendered "No team members found." A one-person team that briefly lost
+        // its connection looked like an empty directory.
+        setLoadFailed(true);
       }
     } catch (err) {
       console.error(err);
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -43,19 +54,38 @@ export function ContactTeamPage() {
 
   const handleInvite = async (data: any) => {
     try {
-      await fetch(`${API_BASE}/api/v1/team/invite`, {
+      const res = await fetch(`${API_BASE}/api/v1/team/invite`, {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify({ ...data, businessId })
       });
+      // `res.ok` was unchecked, so a rejected invite closed the modal and reloaded the
+      // roster exactly like a successful one. The person watched their form vanish
+      // with no invitation anywhere and nothing telling them it had failed.
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setInviteError(body?.error || 'The invitation was not sent. Check the address and try again.');
+        return;
+      }
+      setInviteError(null);
       setIsInviteOpen(false);
       loadTeam();
     } catch (err) {
       console.error(err);
+      setInviteError('Could not reach the server. The invitation was not sent.');
     }
   };
 
-  if (permLoading || loading) return <div>Loading...</div>;
+  // Inside the layout, not a bare div. This was the only loading state in the CRM that
+  // replaced the whole shell, so the sidebar and nav blinked out and back on every
+  // visit — the page appeared to reload.
+  if (permLoading || loading) {
+    return (
+      <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay">
+        <div className="p-12 text-center text-[var(--soft-stone)]">Loading your team…</div>
+      </DashboardLayout>
+    );
+  }
   if (!hasPermission('VIEWER')) {
     return (
       <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" >
@@ -79,10 +109,23 @@ export function ContactTeamPage() {
           )}
         </div>
 
-        <TeamList 
-          members={members} 
-          onMemberClick={(id) => navigate(`/contact/team/${id}`)}
-        />
+        {inviteError && (
+          <div className="p-3 rounded-xl bg-[var(--dusty-rose)]/15 text-[var(--dusty-rose)] text-sm">
+            {inviteError}
+          </div>
+        )}
+
+        {loadFailed ? (
+          <div className="p-12 text-center text-[var(--soft-stone)]">
+            Could not load the team directory. This is a connection or permissions
+            problem, not an empty team.
+          </div>
+        ) : (
+          <TeamList
+            members={members}
+            onMemberClick={(id) => navigate(`/contact/team/${id}`)}
+          />
+        )}
 
         {canManageTeam && (
           <TeamInviteModal
