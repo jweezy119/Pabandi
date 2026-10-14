@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { requireCrmContext } from '../middleware/crmContext.middleware';
+import { parsePagination, withTotal } from '../utils/pagination';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import jwt, { type Secret } from 'jsonwebtoken';
@@ -177,8 +178,29 @@ export async function getClientsHandler(
   try {
     const crm = requireCrmContext(req);
     const businessId = crm.serviceBusinessId;
-    const clients = await getClients(businessId, crm.businessId);
-    res.json({ success: true, data: clients });
+
+    const pagination = parsePagination(req.query as Record<string, unknown>);
+    const { search, sortBy, sortOrder, status } = req.query;
+
+    const { clients, total } = await getClients(businessId, crm.businessId, {
+      skip: pagination?.skip,
+      take: pagination?.take,
+      search: typeof search === 'string' ? search : undefined,
+      sortBy: typeof sortBy === 'string' ? sortBy : undefined,
+      sortOrder: typeof sortOrder === 'string' ? sortOrder : undefined,
+      status: typeof status === 'string' ? status : undefined,
+    });
+
+    // `pagination` is null unless the caller asked for it, so every existing consumer
+    // — the dashboard, the client dropdowns, the wizard — keeps receiving the whole
+    // list exactly as before and does not silently truncate to one page.
+    res.json({
+      success: true,
+      data: clients,
+      pagination: pagination
+        ? withTotal(pagination, total)
+        : null,
+    });
   } catch (error) {
     next(error);
   }

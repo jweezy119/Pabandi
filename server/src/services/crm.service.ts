@@ -495,26 +495,96 @@ export async function getClient(serviceBusinessId: string, clientId: string) {
   return client;
 }
 
-export async function getClients(serviceBusinessId: string, businessId?: string | null) {
-  const clients = await prisma.crmClient.findMany({
-    where: crmScope(serviceBusinessId, businessId),
-    orderBy: { createdAt: 'desc' },
-  });
+export async function getClients(
+  serviceBusinessId: string,
+  businessId?: string | null,
+  options: {
+    skip?: number;
+    take?: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: string;
+    status?: string;
+  } = {},
+) {
+  const where: any = crmScope(serviceBusinessId, businessId);
 
-  // Attach lifecycle stage for each client
-  const clientsWithStage = await Promise.all(
-    clients.map(async (client) => {
-      const jobs = await prisma.crmJob.findMany({
-        where: { clientId: client.id },
-      });
-      return {
-        ...client,
-        stage: getClientStage(client, jobs),
-      };
-    })
-  );
+  /**
+   * Search and filter moved server-side.
+   *
+   * The clients table filtered in the browser over the complete list, which is only
+   * possible while the complete list is being downloaded. Once the list is paged, a
+   * client-side filter can only ever see the current page — searching would silently
+   * return nothing for anyone whose match was on page 4.
+   *
+   * `phone` is searchable here. The old box matched name, email and company only, so
+   * typing a phone number found nothing, in a box that looked like it was working.
+   */
+  const term = options.search?.trim();
+  if (term) {
+    where.OR = [
+      { name: { contains: term, mode: 'insensitive' } },
+      { email: { contains: term, mode: 'insensitive' } },
+      { phone: { contains: term, mode: 'insensitive' } },
+      { company: { contains: term, mode: 'insensitive' } },
+    ];
+  }
+  if (options.status) where.status = options.status;
 
-  return clientsWithStage;
+  /**
+   * Sort whitelisted. It reaches `orderBy` directly, so an unknown value is a Prisma
+   * error rather than a wrong sort — and a dropdown is not a safe place to accept
+   * arbitrary column names.
+   */
+  const direction = options.sortOrder === 'asc' ? 'asc' : 'desc';
+  const CLIENT_SORT_COLUMNS = ['name', 'company', 'createdAt', 'totalSpent', 'status', 'lastJobAt'];
+  const orderBy: any = options.sortBy && CLIENT_SORT_COLUMNS.includes(options.sortBy)
+    ? { [options.sortBy]: direction }
+    : { createdAt: 'desc' };
+
+  const paginated = options.take !== undefined;
+  const [clients, total] = await Promise.all([
+    prisma.crmClient.findMany({
+      where,
+      orderBy,
+      ...(paginated ? { skip: options.skip ?? 0, take: options.take } : {}),
+    }),
+    paginated ? prisma.crmClient.count({ where }) : 0,
+  ]);
+
+  /**
+   * Lifecycle stage, computed from ONE job query instead of one per client.
+   *
+   * This was an N+1: `clients.map(async c => prisma.crmJob.findMany({ clientId: c.id }))`,
+   * pulling every job row of every one of them. A 500-client tenant meant 501 queries
+   * on every dashboard load, and it grew with the tenant — the sort of cost that makes
+   * a page feel broken long before it is.
+   *
+   * `getClientStage` needs each client's own jobs, so they are fetched once and
+   * grouped. Only clients with at least one job are in the map; the rest fall through
+   * to 'lead', which is what `getClientStage` returns for an empty job list anyway.
+   */
+  const clientIds = clients.map((c) => c.id);
+  const jobsByClient = new Map<string, Array<{ status: string; escrowStatus: string | null }>>();
+
+  if (clientIds.length > 0) {
+    const jobs = await prisma.crmJob.findMany({
+      where: { clientId: { in: clientIds } },
+      select: { clientId: true, status: true, escrowStatus: true },
+    });
+    for (const job of jobs) {
+      const list = jobsByClient.get(job.clientId);
+      if (list) list.push({ status: job.status, escrowStatus: job.escrowStatus });
+      else jobsByClient.set(job.clientId, [{ status: job.status, escrowStatus: job.escrowStatus }]);
+    }
+  }
+
+  const clientsWithStage = clients.map((client) => ({
+    ...client,
+    stage: getClientStage(client, jobsByClient.get(client.id) ?? []),
+  }));
+
+  return { clients: clientsWithStage, total, paginated };
 }
 
 // ─── Job Management ──────────────────────────────────────────────────────────

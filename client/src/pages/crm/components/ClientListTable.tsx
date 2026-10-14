@@ -23,9 +23,29 @@ export interface ClientListTableProps {
   /** Takes the id, not the row: the confirm dialog is keyed by id. */
   onDelete?: (id: string) => void;
   onBulkDelete?: (ids: string[]) => void | Promise<void>;
+
+  /**
+   * Search, sort and page are the SERVER's job now.
+   *
+   * They used to be applied here, in the browser, over the complete client list —
+   * which meant the whole list had to be downloaded to search it, and the search could
+   * only ever see the rows already on screen. With a paged result that becomes a
+   * search of the current page, which returns nothing whenever the match is on
+   * page 4, silently.
+   *
+   * These props are optional: without them the table still renders, and still sorts
+   * and pages whatever array it was given. That keeps every other caller working and
+   * makes the server path an opt-in upgrade rather than a breaking change.
+   */
+  query?: { page: number; limit: number; search: string; sortBy: string; sortOrder: string };
+  pagination?: { page: number; limit: number; total: number; totalPages: number } | null;
+  onQueryChange?: (patch: Partial<NonNullable<ClientListTableProps['query']>>) => void;
 }
 
-export default function ClientListTable({ clients, onEdit, onDelete, onBulkDelete }: ClientListTableProps) {
+export default function ClientListTable({
+  clients, onEdit, onDelete, onBulkDelete, query, pagination, onQueryChange,
+}: ClientListTableProps) {
+  const serverDriven = Boolean(onQueryChange);
   const [search, setSearch] = useState('');
   const [sortCol, setSortCol] = useState('name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
@@ -38,12 +58,28 @@ export default function ClientListTable({ clients, onEdit, onDelete, onBulkDelet
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const itemsPerPage = 10;
 
+  /**
+   * Sorting asks the server for the column's order rather than reordering the page.
+   * Reordering the page locally would produce a table that looks sorted for one screen
+   * and is not sorted at all once you page on.
+   */
   const toggleSort = (col: string) => {
+    const nextDir = sortCol === col && sortDir === 'asc' ? 'desc' : 'asc';
+    if (serverDriven) {
+      const serverCol = col === 'contact' ? 'email' : col === 'ltv' ? 'totalSpent' : col;
+      onQueryChange?.({ sortBy: serverCol, sortOrder: nextDir, page: 1 });
+      return;
+    }
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
     else { setSortCol(col); setSortDir('asc'); }
   };
 
   const filtered = useMemo(() => {
+    // The server already filtered, sorted and paged this array. Touching it here
+    // would only re-break the order it established.
+    if (serverDriven) return clients as any[];
+
+
     let res = clients.filter((c: any) => 
       c.name.toLowerCase().includes(search.toLowerCase()) || 
       (c.email || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -59,10 +95,16 @@ export default function ClientListTable({ clients, onEdit, onDelete, onBulkDelet
       return 0;
     });
     return res;
-  }, [clients, search, sortCol, sortDir]);
+  }, [clients, search, sortCol, sortDir, serverDriven]);
 
-  const paginated = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage);
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const paginated = serverDriven
+    ? (filtered as any[])
+    : filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const totalPages = serverDriven
+    ? (pagination?.totalPages ?? 1)
+    : Math.ceil(filtered.length / itemsPerPage);
+  const currentPage = serverDriven ? (query?.page ?? 1) : page;
+  const totalRows = serverDriven ? (pagination?.total ?? filtered.length) : filtered.length;
 
   const toggleSelectAll = () => {
     if (selectedIds.length === paginated.length) setSelectedIds([]);
@@ -109,8 +151,12 @@ export default function ClientListTable({ clients, onEdit, onDelete, onBulkDelet
         <div className="flex gap-4 items-center w-full max-w-md">
           <Input 
             placeholder="Search clients..." 
-            value={search} 
-            onChange={(e: any) => { setSearch(e.target.value); setPage(1); }} 
+            value={serverDriven ? (query?.search ?? '') : search} 
+            onChange={(e: any) => {
+              setSearch(e.target.value);
+              if (serverDriven) { onQueryChange?.({ search: e.target.value, page: 1 }); return; }
+              setPage(1);
+            }} 
           />
         </div>
         <div className="flex gap-2 items-center relative">
@@ -235,11 +281,33 @@ export default function ClientListTable({ clients, onEdit, onDelete, onBulkDelet
         <span className="text-sm text-[var(--soft-stone)]">
           {filtered.length === 0
             ? 'No entries'
-            : `Showing ${(page - 1) * itemsPerPage + 1} to ${Math.min(page * itemsPerPage, filtered.length)} of ${filtered.length} entries`}
+            : totalRows === 0
+              ? 'No entries'
+              : `Showing ${(currentPage - 1) * (serverDriven ? (pagination?.limit ?? 25) : itemsPerPage) + 1} to ${
+                  Math.min(currentPage * (serverDriven ? (pagination?.limit ?? 25) : itemsPerPage), totalRows)
+                } of ${totalRows} entries`}
         </span>
         <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Prev</Button>
-          <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              const prev = Math.max(1, currentPage - 1);
+              if (serverDriven) { onQueryChange?.({ page: prev }); setSelectedIds([]); return; }
+              setPage(prev);
+            }}
+            disabled={currentPage === 1}
+          >Prev</Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              const next = Math.min(totalPages, currentPage + 1);
+              if (serverDriven) { onQueryChange?.({ page: next }); setSelectedIds([]); return; }
+              setPage(next);
+            }}
+            disabled={currentPage === totalPages}
+          >Next</Button>
         </div>
       </div>
 

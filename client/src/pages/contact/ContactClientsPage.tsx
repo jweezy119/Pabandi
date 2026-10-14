@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import { Button, Modal, EmptyState, ClaySkeletonCard } from '../../components/primitives';
 import ClientListTable from '../crm/components/ClientListTable';
@@ -13,6 +13,25 @@ import { withBusinessId } from '../../utils/businessContext';
 export default function ContactClientsPage() {
   const { user } = useAuthStore();
   const [clients, setClients] = useState<any[]>([]);
+
+  /**
+   * Everything the server needs to answer, in one object, so a change to any part of
+   * it re-fetches exactly once. Four separate useEffects watching four separate
+   * pieces of state is how you end up firing four requests for one keystroke.
+   */
+  const [listQuery, setListQuery] = useState({
+    page: 1,
+    limit: 25,
+    search: '',
+    sortBy: '',
+    sortOrder: '',
+  });
+  /** What the server said about the whole result set. Null when not paginated. */
+  const [pagination, setPagination] = useState<{
+    page: number; limit: number; total: number; totalPages: number;
+  } | null>(null);
+  /** True while a search box is in use, which is the only debounced input. */
+  const searchTimer = useRef(true);
   const [loading, setLoading] = useState(true);
   const [showFormModal, setShowFormModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any>(null);
@@ -24,7 +43,6 @@ export default function ContactClientsPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchClients();
     fetchBusinessSettings();
   }, []);
 
@@ -45,19 +63,54 @@ export default function ContactClientsPage() {
     }
   }
 
-  async function fetchClients() {
+  // One request per query change. 250ms on search so typing a name does not fire a
+  // request per keystroke; immediate for a page or sort change, which are deliberate.
+  useEffect(() => {
+    if (!searchTimer.current) {
+      fetchClients();
+      return;
+    }
+    const t = setTimeout(() => fetchClients(), 250);
+    return () => clearTimeout(t);
+  }, [listQuery.search]);
+
+  useEffect(() => {
+    if (searchTimer.current) fetchClients();
+  }, [listQuery.page, listQuery.sortBy, listQuery.sortOrder]);
+
+  /**
+   * Client-side paging is gone; the server does it.
+   *
+   * This used to receive the tenant's entire client list and slice ten rows at a time
+   * in the browser. Two things followed from that: the dashboard API call moved every
+   * row on every page load, and the table's search and sort could only ever see the
+   * rows it had been given.
+   *
+   * Search, sort and the page are now all sent to the server together, because a
+   * client-side filter over a page of results is not a filter — it is a search of the
+   * current page, which silently returns nothing whenever the match is on another one.
+   */
+  async function fetchClients(overrides: Partial<typeof listQuery> = {}) {
+    const q = { ...listQuery, ...overrides };
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
+      const params = new URLSearchParams();
+      if (q.search) params.set('search', q.search);
+      if (q.sortBy) params.set('sortBy', q.sortBy);
+      if (q.sortOrder) params.set('sortOrder', q.sortOrder);
+      params.set('page', String(q.page));
+      params.set('limit', String(q.limit));
+
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients?${params.toString()}`, {
         headers: { Authorization: `Bearer ${getAuthToken()}` },
       });
       if (res.ok) {
         const data = await res.json();
         setClients(data.data || []);
+        setPagination(data.pagination ?? null);
       }
+      setLoading(false);
     } catch (err) {
       console.error('Failed to fetch clients:', err);
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -189,6 +242,17 @@ export default function ContactClientsPage() {
           <div className="p-8">
             <ClaySkeletonCard />
           </div>
+        ) : clients.length === 0 && listQuery.search ? (
+          // Not an empty CRM. The search ran against the whole tenant and matched
+          // nothing, and telling someone they have no clients when they have four
+          // hundred is the kind of confident wrong that loses their trust in the page.
+          <EmptyState
+            icon="search_off"
+            title="No matches"
+            description={`Nothing matches “${listQuery.search}”.`}
+            actionText="Clear search"
+            onAction={() => setListQuery((q) => ({ ...q, search: '', page: 1 }))}
+          />
         ) : clients.length === 0 ? (
           <EmptyState 
             icon="person_add" 
@@ -203,6 +267,9 @@ export default function ContactClientsPage() {
             onEdit={(client) => { setSelectedClient(clients.find((c) => c.id === client.id) ?? null); setShowFormModal(true); }}
             onDelete={(id: string) => { setDeleteError(null); setShowDeleteConfirm(id); }}
             onBulkDelete={handleBulkDeleteClients}
+            query={listQuery}
+            pagination={pagination}
+            onQueryChange={(patch) => setListQuery((q) => ({ ...q, ...patch }))}
           />
         )}
 
