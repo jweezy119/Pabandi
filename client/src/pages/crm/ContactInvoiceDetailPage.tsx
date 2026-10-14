@@ -64,6 +64,10 @@ export default function ContactInvoiceDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Record<string, unknown>>({});
   const [saving, setSaving] = useState(false);
+  // A status change that failed. Previously every failure on this page was
+  // console.error'd, which nobody reads, so a rejected "Mark Paid" looked exactly
+  // like a successful one and the invoice kept whatever status it already had.
+  const [statusError, setStatusError] = useState<string | null>(null);
   const [routing, setRouting] = useState<RailRouting | null>(null);
 
   useEffect(() => {
@@ -118,6 +122,38 @@ export default function ContactInvoiceDetailPage() {
     }
   };
 
+  /**
+   * Mark paid, or void.
+   *
+   * The page had exactly two actions — Edit and Send, both draft-only — so there was
+   * no way to record that an invoice had been paid without leaving the CRM, and no
+   * way to cancel one that was issued in error. `PATCH /invoices/:id/status` has
+   * existed the whole time; it was never called from here.
+   *
+   * It also re-reads the invoice rather than trusting the local copy. The server
+   * stamps `paidAt` only on the first transition to paid, so a second press is a
+   * no-op there and must not look like a second payment.
+   */
+  const setStatus = async (status: string) => {
+    setSaving(true);
+    setStatusError(null);
+    try {
+      await api(`/invoices/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+      const res = await api(`/invoices/${id}`);
+      setInvoice(res.data || res);
+    } catch (err: any) {
+      // Surfaced, not console.error'd. A failed status change leaves the invoice
+      // looking paid or unpaid depending on nothing, and the person has no way to tell
+      // the request failed.
+      setStatusError(err?.message || 'Could not update the invoice status.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSaveEdit = async () => {
     setSaving(true);
     try {
@@ -144,6 +180,14 @@ export default function ContactInvoiceDetailPage() {
   };
 
   const isDraft = invoice.status === 'draft';
+  // Voiding is deliberately narrower than "not paid": a sent invoice that is merely
+  // unpaid is still a live obligation and deleting the button to say so would be
+  // wrong. Once it is void there is nothing to collect and nothing to correct.
+  // `invoice` is untyped throughout this file, so `status` is `unknown` here. Cast
+  // at this one boundary rather than typing the whole invoice shape, which would fix
+  // eight unrelated pre-existing errors as a side effect of this change.
+  const invoiceStatus = String(invoice.status ?? '');
+  const canVoid = ['sent', 'overdue'].includes(invoiceStatus);
   const paymentLink = `${APP_URL}/pay/${invoice.id}`;
 
   return (
@@ -164,8 +208,27 @@ export default function ContactInvoiceDetailPage() {
           {isDraft && (
             <Button variant="primary" onClick={handleSend} disabled={saving}>Send Invoice</Button>
           )}
+          {!isDraft && invoiceStatus !== 'paid' && invoiceStatus !== 'void' && (
+            <>
+              <Button variant="primary" onClick={() => setStatus('paid')} disabled={saving}>
+                Mark Paid
+              </Button>
+              {canVoid && (
+                <Button variant="ghost" onClick={() => setStatus('void')} disabled={saving}>
+                  Void
+                </Button>
+              )}
+            </>
+          )}
         </div>
       </div>
+
+      {/* Named failure, next to the buttons that caused it. */}
+      {statusError && (
+        <p role="alert" className="text-sm" style={{ color: 'var(--dusty-rose)' }}>
+          {statusError}
+        </p>
+      )}
 
       <div className="bg-white rounded-2xl p-6 border border-[var(--soft-stone)]/30 shadow-sm space-y-6">
         <div className="flex justify-between">

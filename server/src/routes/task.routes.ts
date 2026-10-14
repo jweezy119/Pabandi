@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '../utils/database';
 import { trustCore } from '../trust/trust-core';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
@@ -45,15 +46,27 @@ router.use(resolveCrmBusiness);
 router.get('/', async (req: AuthRequest, res: Response) => {
   try {
     const crm = requireCrmContext(req);
-    const { clientId, dealId } = req.query;
+    const { clientId, dealId, status, priority } = req.query;
+
+    // status and priority are both stored, both parsed on write, and both were
+    // unfilterable: the board showed every task regardless of which column it was in.
+    // Validated against the same closed sets the create path enforces, so a filter can
+    // never name a value the board does not render.
+    const where: Prisma.CrmActivityWhereInput = {
+      ...crmScope(crm.serviceBusinessId, crm.businessId),
+      type: 'TASK',
+      ...(clientId ? { clientId: String(clientId) } : {}),
+      ...(dealId ? { dealId: String(dealId) } : {}),
+    };
+    if (status && (TASK_STATUSES as readonly string[]).includes(String(status))) {
+      where.status = String(status);
+    }
+    if (priority && (TASK_PRIORITIES as readonly string[]).includes(String(priority))) {
+      where.priority = String(priority);
+    }
 
     const tasks = await prisma.crmActivity.findMany({
-      where: {
-        ...crmScope(crm.serviceBusinessId, crm.businessId),
-        type: 'TASK',
-        ...(clientId ? { clientId: String(clientId) } : {}),
-        ...(dealId ? { dealId: String(dealId) } : {}),
-      },
+      where,
       orderBy: { dueDate: 'asc' },
       include: {
         client: { select: { name: true, passportId: true } },
@@ -185,6 +198,41 @@ router.patch('/:id', async (req: AuthRequest, res: Response) => {
       return;
     }
     res.status(500).json({ error: 'Failed to update task' });
+  }
+});
+
+/**
+ * DELETE /api/v1/crm/tasks/:id
+ *
+ * There was no way to remove a task. The board offered a TODO/DONE toggle and the list
+ * offered the same, so a task created by mistake, or one that turned out not to be
+ * work at all, stayed on the board forever — the only way to stop seeing it was to
+ * complete it, which is a different and untrue claim.
+ *
+ * Scoped through `crmScope`, so a task id from another tenant is a 404 rather than a
+ * delete.
+ *
+ * Deliberately emits no trust event. `activity.task_completed` fires on the DONE
+ * transition, which is a record of work done. Deleting a row is an erasure, and
+ * scoring someone's reliability on something they removed would let a score be
+ * improved by deleting the evidence behind it.
+ */
+router.delete('/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const crm = requireCrmContext(req);
+    const deleted = await prisma.crmActivity.deleteMany({
+      where: { id: req.params.id, ...crmScope(crm.serviceBusinessId, crm.businessId), type: 'TASK' },
+    });
+    if (deleted.count === 0) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    const status = err instanceof CustomError ? err.statusCode : 500;
+    if (status === 500) {
+      logger.error(`[Tasks] delete failed: ${err instanceof Error ? err.message : err}`);
+    }
+    res.status(status).json({ error: err instanceof Error ? err.message : 'Failed to delete task' });
   }
 });
 

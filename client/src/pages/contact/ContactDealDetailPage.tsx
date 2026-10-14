@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { Button, Chip, EmptyState } from '../../components/primitives';
@@ -8,6 +8,15 @@ import { InlineEdit } from '../../components/primitives/InlineEdit';
 import { getAuthToken } from '../../utils/authToken';
 import { DEAL_STAGES, DEAL_STAGE_LABELS, options } from '@shared/crm';
 import { readList } from '../../utils/crmResponse';
+
+function Detail({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 py-1">
+      <span className="text-[var(--soft-stone)] shrink-0">{label}</span>
+      <span className="text-right min-w-0">{children}</span>
+    </div>
+  );
+}
 
 export default function ContactDealDetailPage() {
   const { id } = useParams();
@@ -73,6 +82,10 @@ export default function ContactDealDetailPage() {
     });
     if (!res.ok) throw new Error('Failed to update');
     setDeal((prev: any) => ({ ...prev, [field]: value }));
+    // The server derives `probability` from a stage change, so an edit to probability
+    // alone would be overwritten locally by a later stage edit without a refetch. The
+    // response carries the whole row; using it keeps the page truthful.
+    if (field === 'stage') fetchDealData();
   };
 
   return (
@@ -112,6 +125,75 @@ export default function ContactDealDetailPage() {
               <InlineEdit type="number" value={deal.value || 0} onSave={(v) => handleDealUpdate('value', Number(v))} />
             </div>
             <div className="text-sm text-[var(--soft-stone)]">Probability: {deal.probability}%</div>
+          </div>
+        </div>
+
+        {/*
+          The fields the server can already update and this page did not offer.
+
+          `updateDeal` accepts title, value, stage, probability, expectedCloseDate,
+          notes, lostReason and ownerName. The page exposed three of them — title,
+          stage and value — so a quoted deal could not have its close date corrected,
+          its owner set, or its probability overridden, and notes were only ever
+          visible as an "Internal Note" pinned to the top of the timeline at epoch
+          zero. Everything here is an existing endpoint call; none of it needed new
+          server work.
+        */}
+        <div className="bg-white rounded-2xl shadow-sm border border-[rgba(191,179,163,0.3)] p-6">
+          <h3 className="font-bold text-[var(--warm-ink)] mb-4">Deal details</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            <Detail label="Expected close">
+              <InlineEdit
+                type="date"
+                value={deal.expectedCloseDate ? String(deal.expectedCloseDate).slice(0, 10) : ''}
+                placeholder="No date set"
+                onSave={(v) => handleDealUpdate('expectedCloseDate', v || null)}
+              />
+            </Detail>
+
+            <Detail label="Probability">
+              {/* Shown read-only before this: the server recomputes it from the stage
+                  unless the caller states one, so an editable field that silently
+                  reverts on the next stage change needs to say which it is. */}
+              <InlineEdit
+                type="number"
+                value={deal.probability ?? 0}
+                validate={(v) =>
+                  Number(v) < 0 || Number(v) > 100 ? 'Must be between 0 and 100' : null
+                }
+                onSave={(v) => handleDealUpdate('probability', Number(v))}
+              />
+              <span className="text-[var(--soft-stone)]">%</span>
+            </Detail>
+
+            <Detail label="Owner">
+              <InlineEdit
+                value={deal.ownerName || ''}
+                placeholder="Unassigned"
+                onSave={(v) => handleDealUpdate('ownerName', v)}
+              />
+            </Detail>
+
+            {deal.stage === 'LOST' && (
+              <Detail label="Why it was lost">
+                <InlineEdit
+                  value={deal.lostReason || ''}
+                  placeholder="No reason recorded"
+                  onSave={(v) => handleDealUpdate('lostReason', v)}
+                />
+              </Detail>
+            )}
+          </div>
+
+          <div className="mt-5">
+            <p className="text-xs text-[var(--soft-stone)] mb-1.5">Notes</p>
+            <InlineEdit
+              type="textarea"
+              value={deal.notes || ''}
+              placeholder="Add a note about this deal"
+              onSave={(v) => handleDealUpdate('notes', v)}
+              inputClassName="w-full min-h-[80px]"
+            />
           </div>
         </div>
 

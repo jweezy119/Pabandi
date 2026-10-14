@@ -2,7 +2,18 @@ import React from 'react';
 import { Card } from '../../../components/primitives/Card';
 import { Chip } from '../../../components/primitives/Chip';
 
-export function TaskList({ tasks, onToggleTask, onTaskClick }: { tasks: any[], onToggleTask: (id: string, completed: boolean) => void, onTaskClick: (id: string) => void }) {
+export function TaskList({
+  tasks, onToggleTask, onTaskClick, onDeleteTask,
+}: {
+  tasks: any[];
+  onToggleTask: (id: string, completed: boolean) => void;
+  onTaskClick: (id: string) => void;
+  /**
+   * Optional. Without it the delete button is not rendered at all, rather than
+   * rendered dead — a control that cannot work is worse than an absent one.
+   */
+  onDeleteTask?: (id: string) => void;
+}) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm whitespace-nowrap">
@@ -14,6 +25,9 @@ export function TaskList({ tasks, onToggleTask, onTaskClick }: { tasks: any[], o
             <th className="px-4 py-3 font-medium">Due Date</th>
             <th className="px-4 py-3 font-medium">Priority</th>
             <th className="px-4 py-3 font-medium">Assignee</th>
+            {/* No header cell when the button is absent — an empty column header is
+                worse than no column. */}
+            {onDeleteTask && <th className="px-4 py-3 font-medium w-12"><span className="sr-only">Delete</span></th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--warm-sand)]/50">
@@ -46,6 +60,18 @@ export function TaskList({ tasks, onToggleTask, onTaskClick }: { tasks: any[], o
               <td className="px-4 py-3 text-[var(--soft-stone)]">
                 {task.authorName || '-'}
               </td>
+              {onDeleteTask && (
+                <td className="px-4 py-3">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDeleteTask(task.id); }}
+                    aria-label={`Delete task: ${task.title}`}
+                    title="Delete this task"
+                    className="text-[var(--dusty-rose)] hover:opacity-70"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                  </button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

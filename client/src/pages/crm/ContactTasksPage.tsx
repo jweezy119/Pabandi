@@ -3,6 +3,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { Button } from '../../components/primitives/Button';
 import { EmptyState } from '../../components/primitives/EmptyState';
 import { TaskList } from './components/TaskList';
+import { TASK_STATUSES, TASK_PRIORITIES, TASK_STATUS_LABELS } from '@shared/crm';
 import { TaskBoard } from './components/TaskBoard';
 import { TaskCalendar } from './components/TaskCalendar';
 import { TaskFormModal } from './components/TaskFormModal';
@@ -21,8 +22,15 @@ export function ContactTasksPage() {
   const [deals, setDeals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'LIST' | 'BOARD' | 'CALENDAR'>('LIST');
+  /**
+   * Filters the server applies. Status and priority are both stored, both validated
+   * on write, and both were unfilterable — the board showed every task regardless of
+   * which column it sat in, so "show me what is urgent" had no answer.
+   */
+  const [filters, setFilters] = useState<{ status: string; priority: string }>({ status: '', priority: '' });
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (businessId) {
@@ -31,10 +39,15 @@ export function ContactTasksPage() {
   }, [businessId]);
 
   const loadData = async () => {
+    const params = new URLSearchParams();
+    if (businessId) params.set('businessId', businessId);
+    if (filters.status) params.set('status', filters.status);
+    if (filters.priority) params.set('priority', filters.priority);
+    const taskQuery = `${API_BASE}/api/v1/crm/tasks?${params.toString()}`;
     setLoading(true);
     try {
       const [taskRes, cliRes, dealRes] = await Promise.all([
-        fetch(`${API_BASE}/api/v1/crm/tasks?businessId=${businessId}`, { headers: getHeaders() }),
+        fetch(taskQuery, { headers: getHeaders() }),
         fetch(`${API_BASE}/api/v1/crm/clients?businessId=${businessId}`, { headers: getHeaders() }),
         fetch(`${API_BASE}/api/v1/crm/deals?businessId=${businessId}`, { headers: getHeaders() }),
       ]);
@@ -89,6 +102,29 @@ export function ContactTasksPage() {
     }
   };
 
+  /**
+   * Delete a task.
+   *
+   * There was no way to remove one. The only affordance was a TODO/DONE toggle, so a
+   * task created by mistake stayed on the board forever and the only way to stop
+   * seeing it was to mark it complete — a claim about work done that was not done.
+   *
+   * The response is checked. `fetch` does not reject on a 4xx, so an unchecked call
+   * would reload the list, show the task still there, and look like nothing happened.
+   */
+  const handleDeleteTask = async (id: string) => {
+    const res = await fetch(`${API_BASE}/api/v1/crm/tasks/${id}?businessId=${businessId}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+    if (!res.ok) {
+      setActionError('Could not delete that task. It may belong to another workspace.');
+      return;
+    }
+    setActionError(null);
+    setTasks((prev: any[]) => prev.filter((t: any) => t.id !== id));
+  };
+
   const openEditTask = (id: string) => {
     const task = tasks.find(t => t.id === id);
     if (task) {
@@ -138,7 +174,52 @@ export function ContactTasksPage() {
           />
         ) : (
           <>
-            {view === 'LIST' && <TaskList tasks={tasks} onToggleTask={handleToggleTask} onTaskClick={openEditTask} />}
+            {/* Filters. Status and priority are both stored and validated on write,
+                and neither was reachable — the board showed everything regardless of
+                column, so "what is urgent" had no answer. */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              <select
+                value={filters.status}
+                onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
+                aria-label="Filter by status"
+                className="px-3 py-1.5 rounded-xl border border-[var(--soft-stone)]/40 text-sm bg-white"
+              >
+                <option value="">All statuses</option>
+                {TASK_STATUSES.map((s) => <option key={s} value={s}>{TASK_STATUS_LABELS[s] ?? s}</option>)}
+              </select>
+              <select
+                value={filters.priority}
+                onChange={(e) => setFilters((f) => ({ ...f, priority: e.target.value }))}
+                aria-label="Filter by priority"
+                className="px-3 py-1.5 rounded-xl border border-[var(--soft-stone)]/40 text-sm bg-white"
+              >
+                <option value="">All priorities</option>
+                {TASK_PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
+              </select>
+              {(filters.status || filters.priority) && (
+                <button
+                  onClick={() => setFilters({ status: '', priority: '' })}
+                  className="px-3 py-1.5 text-sm text-[var(--soft-stone)] hover:text-[var(--warm-ink)]"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {actionError && (
+              <p role="alert" className="text-sm mb-3" style={{ color: 'var(--dusty-rose)' }}>
+                {actionError}
+              </p>
+            )}
+
+            {view === 'LIST' && (
+              <TaskList
+                tasks={tasks}
+                onToggleTask={handleToggleTask}
+                onTaskClick={openEditTask}
+                onDeleteTask={handleDeleteTask}
+              />
+            )}
             {view === 'BOARD' && <TaskBoard tasks={tasks} onTaskClick={openEditTask} />}
             {view === 'CALENDAR' && <TaskCalendar tasks={tasks} onTaskClick={openEditTask} />}
           </>
