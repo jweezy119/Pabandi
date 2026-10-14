@@ -4,14 +4,67 @@ import crypto from 'crypto';
 const prisma = new PrismaClient();
 
 export class TeamService {
-  static async getTeamMembers(businessId: string) {
-    return prisma.crmEmployee.findMany({
-      where: { businessId },
-      include: {
-        jobs: { select: { id: true, title: true, status: true, deliveryScore: true } }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+  /**
+   * The team roster, filtered, searched, sorted and paged.
+   *
+   * This returned every employee in creation order with no controls at all, so an
+   * admin managing fifty people had to scroll a single table to find one, and there
+   * was no way to ask "who is inactive" or "who has not taken a job in a fortnight".
+   *
+   * `include: jobs` is kept — the table shows a delivery score derived from it — but
+   * it is a second query for every row the page loads, so the page size bounds how
+   * much of it happens. Paging is what makes that acceptable; it was not acceptable
+   * with the whole roster.
+   */
+  static async getTeamMembers(
+    businessId: string,
+    options: {
+      search?: string;
+      role?: string;
+      isActive?: boolean;
+      sortBy?: string;
+      sortOrder?: string;
+      skip?: number;
+      take?: number;
+    } = {},
+  ) {
+    const where: any = { businessId };
+
+    const term = options.search?.trim();
+    if (term) {
+      where.OR = [
+        { name: { contains: term, mode: 'insensitive' } },
+        { email: { contains: term, mode: 'insensitive' } },
+      ];
+    }
+    if (options.role) where.role = options.role;
+    // `isActive` is read with `in` rather than compared directly so an absent param
+    // and a param of `false` are distinguishable — `where.isActive = undefined` is a
+    // no-op, and `= false` is a filter.
+    if (options.isActive !== undefined) where.isActive = options.isActive;
+
+    const direction = options.sortOrder === 'asc' ? 'asc' : 'desc';
+    // Whitelisted: it reaches orderBy directly, so an unknown column is a Prisma
+    // error rather than a wrong order.
+    const SORTABLE = ['name', 'role', 'reliabilityScore', 'deliveryScore', 'payRate', 'createdAt', 'lastBookingAt'];
+    const orderBy: any = options.sortBy && SORTABLE.includes(options.sortBy)
+      ? { [options.sortBy]: direction }
+      : { createdAt: 'desc' };
+
+    const paginated = options.take !== undefined;
+    const [members, total] = await Promise.all([
+      prisma.crmEmployee.findMany({
+        where,
+        include: {
+          jobs: { select: { id: true, title: true, status: true, deliveryScore: true } }
+        },
+        orderBy,
+        ...(paginated ? { skip: options.skip ?? 0, take: options.take } : {}),
+      }),
+      paginated ? prisma.crmEmployee.count({ where }) : 0,
+    ]);
+
+    return { members, total, paginated };
   }
 
   static async getTeamMember(id: string, businessId: string) {

@@ -7,6 +7,7 @@ import { resolveCrmBusiness, requireCrmContext } from '../middleware/crmContext.
 import { CustomError } from '../middleware/errorHandler';
 import { ACTIVITY_TYPES } from '../domain/crm';
 import { crmScope } from '../services/crm.service';
+import { parsePagination, withTotal } from '../utils/pagination';
 import { logger } from '../utils/logger';
 
 /**
@@ -56,15 +57,32 @@ router.get('/', async (req: AuthRequest, res: Response) => {
     if (dealId) where.dealId = String(dealId);
     if (type && type !== 'All') where.type = String(type);
 
-    const activities = await prisma.crmActivity.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        client: { select: { name: true, passportId: true } },
-        deal: { select: { title: true } },
-      },
-    });
+    // Paged, opt-in. The client and deal detail pages ask for one record's history and
+    // render all of it, so an implicit default would quietly truncate those timelines
+    // — which is the same failure that left them permanently empty before `readList`.
+    const pagination = parsePagination(req.query as Record<string, unknown>);
+    const [activities, total] = await Promise.all([
+      prisma.crmActivity.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          client: { select: { name: true, passportId: true } },
+          deal: { select: { title: true } },
+        },
+        ...(pagination ? { skip: pagination.skip, take: pagination.take } : {}),
+      }),
+      pagination ? prisma.crmActivity.count({ where }) : 0,
+    ]);
+
+    // Bare array, as this endpoint has always answered — `readList` exists precisely
+    // because two shapes exist for one job. Pagination rides along as a header-free
+    // sibling key would break that, so it is carried in a response header instead.
     res.json(activities);
+    if (pagination) {
+      const meta = withTotal(pagination, total);
+      res.set('X-Total-Count', String(meta.total));
+      res.set('X-Total-Pages', String(meta.totalPages));
+    }
   } catch (err) {
     const status = err instanceof CustomError ? err.statusCode : 500;
     if (status === 500) {

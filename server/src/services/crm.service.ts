@@ -825,6 +825,8 @@ export async function getJobs(
     search?: string;
     sortBy?: string;
     sortOrder?: string;
+    skip?: number;
+    take?: number;
   },
   businessId?: string | null,
 ) {
@@ -876,14 +878,27 @@ export async function getJobs(
     orderBy = { [sortBy]: direction };
   }
 
-  return prisma.crmJob.findMany({
-    where,
-    include: {
-      client: true,
-      assignments: { include: { employee: true } },
-    },
-    orderBy,
-  });
+  // Paging, opt-in on the same terms as the clients list: no `page`/`limit` means
+  // every job, which is what the client detail page needs when it asks for one
+  // client's jobs.
+  const skip = filters?.skip;
+  const take = filters?.take;
+  const paginated = take !== undefined;
+
+  const [jobs, total] = await Promise.all([
+    prisma.crmJob.findMany({
+      where,
+      include: {
+        client: true,
+        assignments: { include: { employee: true } },
+      },
+      orderBy,
+      ...(paginated ? { skip: skip ?? 0, take } : {}),
+    }),
+    paginated ? prisma.crmJob.count({ where }) : 0,
+  ]);
+
+  return { jobs, total, paginated };
 }
 
 // ─── Payroll Management ──────────────────────────────────────────────────────
@@ -1405,12 +1420,60 @@ const DEAL_SELECT = {
   client: { select: { id: true, name: true, email: true } },
 } as const;
 
-export async function getDeals(serviceBusinessId: string, businessId?: string | null) {
-  return prisma.crmDeal.findMany({
-    where: dealScope(serviceBusinessId),
-    orderBy: [{ stage: 'asc' }, { createdAt: 'desc' }],
-    select: DEAL_SELECT,
-  });
+/**
+ * Deals, optionally paged, filtered and searched.
+ *
+ * `dealScope` scopes on `serviceBusinessId` alone rather than the shared two-anchor
+ * `crmScope`. That is intentional and narrower than the clients list: `CrmDeal` has no
+ * platform-business read path of its own, and widening it to OR in the platform id
+ * would add a clause matching rows nothing writes. It is left alone deliberately rather
+ * than "fixed" to look consistent.
+ */
+export async function getDeals(
+  serviceBusinessId: string,
+  businessId?: string | null,
+  options: {
+    skip?: number;
+    take?: number;
+    search?: string;
+    stage?: string;
+    sortBy?: string;
+    sortOrder?: string;
+  } = {},
+) {
+  const where: any = dealScope(serviceBusinessId);
+
+  // Search covers the client's name as well as the deal, because "show me what Grace
+  // is working on" is the question people actually ask of a pipeline, and a deal with
+  // no descriptive title gives them nothing to type.
+  const term = options.search?.trim();
+  if (term) {
+    where.OR = [
+      { title: { contains: term, mode: 'insensitive' } },
+      { notes: { contains: term, mode: 'insensitive' } },
+      { client: { is: { name: { contains: term, mode: 'insensitive' } } } },
+    ];
+  }
+  if (options.stage) where.stage = options.stage;
+
+  const direction = options.sortOrder === 'asc' ? 'asc' : 'desc';
+  const DEAL_SORT_COLUMNS = ['value', 'createdAt', 'expectedCloseDate', 'title', 'probability'];
+  const orderBy: any = options.sortBy && DEAL_SORT_COLUMNS.includes(options.sortBy)
+    ? { [options.sortBy]: direction }
+    : [{ stage: 'asc' as const }, { createdAt: 'desc' as const }];
+
+  const paginated = options.take !== undefined;
+  const [deals, total] = await Promise.all([
+    prisma.crmDeal.findMany({
+      where,
+      orderBy,
+      select: DEAL_SELECT,
+      ...(paginated ? { skip: options.skip ?? 0, take: options.take } : {}),
+    }),
+    paginated ? prisma.crmDeal.count({ where }) : 0,
+  ]);
+
+  return { deals, total, paginated };
 }
 
 /**

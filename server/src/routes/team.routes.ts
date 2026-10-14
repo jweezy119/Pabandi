@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { TeamService } from '../services/team.service';
+import { parsePagination, withTotal } from '../utils/pagination';
 import { requireRole } from '../middleware/permissions';
 
 const router = Router();
@@ -40,8 +41,26 @@ router.patch('/:id/role', requireRole('ADMIN'), async (req, res) => {
 router.get('/', requireRole('VIEWER'), async (req, res) => {
   try {
     const businessId = String(req.query.businessId);
-    const members = await TeamService.getTeamMembers(businessId);
-    res.json(members);
+    const { search, role, isActive, sortBy, sortOrder } = req.query;
+    const pagination = parsePagination(req.query as Record<string, unknown>);
+
+    const { members, total } = await TeamService.getTeamMembers(businessId, {
+      search: typeof search === 'string' ? search : undefined,
+      role: typeof role === 'string' && role !== 'all' ? role : undefined,
+      // Only 'true' or 'false' filter. Any other value leaves the roster whole, so a
+      // typo does not silently hide everyone.
+      isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+      sortBy: typeof sortBy === 'string' ? sortBy : undefined,
+      sortOrder: typeof sortOrder === 'string' ? sortOrder : undefined,
+      skip: pagination?.skip,
+      take: pagination?.take,
+    });
+
+    res.json({
+      success: true,
+      data: members,
+      pagination: pagination ? withTotal(pagination, total) : null,
+    });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

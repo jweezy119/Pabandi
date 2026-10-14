@@ -3,6 +3,7 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '../utils/database';
 import { authenticate, type AuthRequest } from '../middleware/auth.middleware';
 import { createInvoice, updateInvoice } from '../services/invoice.service';
+import { parsePagination, withTotal } from '../utils/pagination';
 import { SettingsService } from '../services/settings.service';
 import { resolveCrmBusiness, requireCrmContext } from '../middleware/crmContext.middleware';
 import {
@@ -313,12 +314,25 @@ router.get('/invoices', async (req: AuthRequest, res: Response) => {
       ];
     }
 
-    const invoices = await prisma.invoice.findMany({
-      where,
-      include: { client: true },
-      orderBy: { createdAt: 'desc' },
+    // Paged on the same opt-in terms as the clients list. The client detail page asks
+    // for one client's invoices and expects all of them, so an implicit default would
+    // truncate that list with nothing to indicate it.
+    const pagination = parsePagination(req.query as Record<string, unknown>);
+    const [invoices, total] = await Promise.all([
+      prisma.invoice.findMany({
+        where,
+        include: { client: true },
+        orderBy: { createdAt: 'desc' },
+        ...(pagination ? { skip: pagination.skip, take: pagination.take } : {}),
+      }),
+      pagination ? prisma.invoice.count({ where }) : 0,
+    ]);
+
+    res.json({
+      success: true,
+      data: invoices,
+      pagination: pagination ? withTotal(pagination, total) : null,
     });
-    res.json({ success: true, data: invoices });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }

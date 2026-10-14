@@ -302,7 +302,9 @@ export async function getJobsHandler(
     const dateFromParam = (req.query.dateFrom ?? req.query.scheduledDate_gte) as string | undefined;
     const dateToParam = (req.query.dateTo ?? req.query.scheduledDate_lte) as string | undefined;
 
-    const jobs = await getJobs(businessId, {
+    const pagination = parsePagination(req.query as Record<string, unknown>);
+
+    const { jobs, total } = await getJobs(businessId, {
       dateFrom: dateFromParam,
       dateTo: dateToParam,
       status: status as string | undefined,
@@ -311,8 +313,18 @@ export async function getJobsHandler(
       search: search as string | undefined,
       sortBy: sortBy as string | undefined,
       sortOrder: sortOrder as string | undefined,
+      skip: pagination?.skip,
+      take: pagination?.take,
     }, crm.businessId);
-    res.json({ success: true, data: jobs });
+
+    // Null unless asked for. The client detail page fetches one client's jobs and
+    // expects all of them, so an implicit default page size would silently truncate
+    // that timeline to 25 entries.
+    res.json({
+      success: true,
+      data: jobs,
+      pagination: pagination ? withTotal(pagination, total) : null,
+    });
   } catch (error) {
     next(error);
   }
@@ -483,8 +495,24 @@ export async function getDealsHandler(
 ) {
   try {
     const crm = requireCrmContext(req);
-    const deals = await getDeals(crm.serviceBusinessId, crm.businessId);
-    res.json({ success: true, data: deals });
+    const pagination = parsePagination(req.query as Record<string, unknown>);
+    const { search, stage, sortBy, sortOrder } = req.query;
+
+    const { deals, total } = await getDeals(crm.serviceBusinessId, crm.businessId, {
+      skip: pagination?.skip,
+      take: pagination?.take,
+      search: typeof search === 'string' ? search : undefined,
+      stage: typeof stage === 'string' ? stage : undefined,
+      sortBy: typeof sortBy === 'string' ? sortBy : undefined,
+      sortOrder: typeof sortOrder === 'string' ? sortOrder : undefined,
+    });
+
+    // Null unless asked for, so every existing caller keeps the whole pipeline.
+    res.json({
+      success: true,
+      data: deals,
+      pagination: pagination ? withTotal(pagination, total) : null,
+    });
   } catch (error) {
     next(error);
   }

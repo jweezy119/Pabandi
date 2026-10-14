@@ -6,6 +6,7 @@ import { TrustPanel } from '../../components/TrustPanel';
 import { getAuthToken } from '../../utils/authToken';
 import { withBusinessId } from '../../utils/businessContext';
 import { TermsRecommendationPanel } from './components/TermsRecommendationPanel';
+import { InvoiceLineItemsEditor } from './components/InvoiceLineItemsEditor';
 
 const CRM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
 const APP_URL = window.location.origin;
@@ -68,6 +69,13 @@ export default function ContactInvoiceDetailPage() {
   // console.error'd, which nobody reads, so a rejected "Mark Paid" looked exactly
   // like a successful one and the invoice kept whatever status it already had.
   const [statusError, setStatusError] = useState<string | null>(null);
+  /** The line editor and the notes editor are one edit mode; this tracks which. */
+  /**
+   * Which part of the draft is being edited. `isEditing` is the modal state;
+   * `editingLines` chooses between the line editor and the notes box, so entering
+   * Edit lands on the thing that is actually wrong most often.
+   */
+  const [editingLines, setEditingLines] = useState(true);
   const [routing, setRouting] = useState<RailRouting | null>(null);
 
   useEffect(() => {
@@ -203,7 +211,9 @@ export default function ContactInvoiceDetailPage() {
         <h2 className="text-xl font-bold text-[var(--warm-ink)]">Invoice {invoice.number}</h2>
         <div className="flex gap-2">
           {isDraft && !isEditing && (
-            <Button variant="secondary" onClick={() => setIsEditing(true)}>Edit</Button>
+            <Button variant="secondary" onClick={() => { setIsEditing(true); setEditingLines(true); }}>
+              Edit lines &amp; notes
+            </Button>
           )}
           {isDraft && (
             <Button variant="primary" onClick={handleSend} disabled={saving}>Send Invoice</Button>
@@ -256,7 +266,37 @@ export default function ContactInvoiceDetailPage() {
           )}
         </div>
 
-        <InvoiceLineItems items={(invoice.lineItems as unknown[]) || []} subtotal={invoice.subtotal as number} />
+        {/* Line items are editable while the invoice is a draft. `updateInvoice` has
+            always accepted them; the edit mode simply never sent them, so a draft
+            with the wrong lines could only be deleted and recreated — losing the
+            number, the client link and any notes already written. */}
+        {isEditing && editingLines ? (
+          <InvoiceLineItemsEditor
+            items={(invoice.lineItems as any[]) || []}
+            saving={saving}
+            onCancel={() => setEditingLines(false)}
+            onSave={async (lineItems, subtotal) => {
+              setSaving(true);
+              setStatusError(null);
+              try {
+                await api(`/invoices/${id}`, {
+                  method: 'PATCH',
+                  body: JSON.stringify({ lineItems, subtotal }),
+                });
+                const res = await api(`/invoices/${id}`);
+                setInvoice(res.data || res);
+                setEditingLines(false);
+                setIsEditing(false);
+              } catch (err: any) {
+                setStatusError(err?.message || 'Could not save the line items.');
+              } finally {
+                setSaving(false);
+              }
+            }}
+          />
+        ) : (
+          <InvoiceLineItems items={(invoice.lineItems as unknown[]) || []} subtotal={invoice.subtotal as number} />
+        )}
 
         <div>
           <p className="text-sm text-[var(--soft-stone)] mb-1">Notes</p>

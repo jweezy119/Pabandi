@@ -20,6 +20,18 @@ export function ContactTeamPage() {
   // Distinguishes "the request failed" from "there are no members", and gives the
   // invite form something to say when the server rejects it.
   const [loadFailed, setLoadFailed] = useState(false);
+  /**
+   * The roster controls.
+   *
+   * The directory had none: one table, creation order, no way to search, filter or
+   * sort. An admin managing fifty people scrolled a single list to find one, and could
+   * not ask "who is inactive" or "who has not taken a job in a fortnight".
+   */
+  const [rosterQuery, setRosterQuery] = useState({
+    search: '', role: 'all', isActive: 'all', sortBy: 'name', sortOrder: 'asc', page: 1,
+  });
+  const [rosterTotal, setRosterTotal] = useState(0);
+  const [rosterPages, setRosterPages] = useState(1);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const navigate = useNavigate();
   
@@ -30,13 +42,31 @@ export function ContactTeamPage() {
     if (businessId) {
       loadTeam();
     }
-  }, [businessId]);
+  }, [businessId, rosterQuery.search, rosterQuery.role, rosterQuery.isActive, rosterQuery.sortBy, rosterQuery.sortOrder, rosterQuery.page]);
 
   const loadTeam = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/team?businessId=${businessId}`, { headers: getHeaders() });
+      const params = new URLSearchParams();
+      if (businessId) params.set('businessId', businessId);
+      if (rosterQuery.search) params.set('search', rosterQuery.search);
+      if (rosterQuery.role !== 'all') params.set('role', rosterQuery.role);
+      if (rosterQuery.isActive !== 'all') params.set('isActive', rosterQuery.isActive);
+      if (rosterQuery.sortBy) params.set('sortBy', rosterQuery.sortBy);
+      if (rosterQuery.sortOrder) params.set('sortOrder', rosterQuery.sortOrder);
+      params.set('page', String(rosterQuery.page));
+      params.set('limit', '25');
+
+      const res = await fetch(`${API_BASE}/api/v1/team?${params.toString()}`, { headers: getHeaders() });
       if (res.ok) {
-        setMembers(await res.json());
+        const body = await res.json();
+        // The endpoint now answers `{ success, data, pagination }` rather than a bare
+        // array. Reading it as an array set state to an object, and every `.map` over
+        // members below would have thrown.
+        setMembers(body.data || []);
+        if (body.pagination) {
+          setRosterTotal(body.pagination.total ?? 0);
+          setRosterPages(body.pagination.totalPages ?? 1);
+        }
         setLoadFailed(false);
       } else {
         // Previously this left `members` at whatever it was — normally [] — so a failed
@@ -112,6 +142,76 @@ export function ContactTeamPage() {
         {inviteError && (
           <div className="p-3 rounded-xl bg-[var(--dusty-rose)]/15 text-[var(--dusty-rose)] text-sm">
             {inviteError}
+          </div>
+        )}
+
+        {/* Roster controls. All of these were missing: the directory was one table in
+            creation order with no way to narrow it. */}
+        <div className="flex flex-wrap gap-2">
+          <input
+            type="search"
+            value={rosterQuery.search}
+            onChange={(e) => setRosterQuery((q) => ({ ...q, search: e.target.value, page: 1 }))}
+            placeholder="Search name or email"
+            aria-label="Search team"
+            className="px-3 py-1.5 rounded-xl border border-[var(--soft-stone)]/40 text-sm"
+          />
+          <select
+            value={rosterQuery.role}
+            onChange={(e) => setRosterQuery((q) => ({ ...q, role: e.target.value, page: 1 }))}
+            aria-label="Filter by role"
+            className="px-3 py-1.5 rounded-xl border border-[var(--soft-stone)]/40 text-sm bg-white"
+          >
+            <option value="all">All roles</option>
+            {['OWNER', 'ADMIN', 'MEMBER', 'VIEWER'].map((r) => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+          <select
+            value={rosterQuery.isActive}
+            onChange={(e) => setRosterQuery((q) => ({ ...q, isActive: e.target.value, page: 1 }))}
+            aria-label="Filter by status"
+            className="px-3 py-1.5 rounded-xl border border-[var(--soft-stone)]/40 text-sm bg-white"
+          >
+            <option value="all">Everyone</option>
+            <option value="true">Active</option>
+            <option value="false">Deactivated</option>
+          </select>
+          <select
+            value={rosterQuery.sortBy}
+            onChange={(e) => setRosterQuery((q) => ({ ...q, sortBy: e.target.value, page: 1 }))}
+            aria-label="Sort by"
+            className="px-3 py-1.5 rounded-xl border border-[var(--soft-stone)]/40 text-sm bg-white"
+          >
+            <option value="name">Name</option>
+            <option value="role">Role</option>
+            <option value="reliabilityScore">Reliability</option>
+            <option value="deliveryScore">Delivery score</option>
+            <option value="payRate">Pay rate</option>
+            <option value="lastBookingAt">Last job</option>
+            <option value="createdAt">Joined</option>
+          </select>
+        </div>
+
+        {rosterPages > 1 && (
+          <div className="flex items-center justify-between text-xs text-[var(--soft-stone)]">
+            <span>
+              Page {rosterQuery.page} of {rosterPages} · {rosterTotal} member{rosterTotal === 1 ? '' : 's'}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={rosterQuery.page <= 1}
+                onClick={() => setRosterQuery((q) => ({ ...q, page: q.page - 1 }))}
+              >Prev</Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={rosterQuery.page >= rosterPages}
+                onClick={() => setRosterQuery((q) => ({ ...q, page: q.page + 1 }))}
+              >Next</Button>
+            </div>
           </div>
         )}
 
