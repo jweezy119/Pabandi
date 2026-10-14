@@ -7,6 +7,21 @@ export function TrustInsightsWidget({ data, loading }: { data: any, loading: boo
 
   const { scoreDistribution = {}, events = [], escalations = 0 } = data || {};
 
+  /**
+   * Bar lengths are scaled against the largest bucket, not a fixed number.
+   *
+   * This divided every count by 20. A tenant with 200 clients had every band wider
+   * than 100% — the bars overflowed their track and the chart said "everyone is in
+   * the same band", which is the opposite of what it looked like it was showing. A
+   * tenant with five clients had slivers.
+   *
+   * Relative to the maximum, the longest band is always full and the shape of the
+   * distribution is readable whatever the size. The absolute count is printed beside
+   * every bar, so nothing depends on the scale being interpretable.
+   */
+  const bands = Object.entries(scoreDistribution) as Array<[string, number]>;
+  const peak = bands.reduce((max, [, count]) => Math.max(max, Number(count) || 0), 0);
+
   return (
     <Card padding="lg" className="h-full relative">
       <div className="absolute top-4 right-4 flex gap-2">
@@ -17,15 +32,24 @@ export function TrustInsightsWidget({ data, loading }: { data: any, loading: boo
 
       <div className="flex items-center gap-6 mb-6">
         <div className="flex-1 space-y-2">
-          {Object.entries(scoreDistribution).map(([band, count]: any) => (
+          {bands.map(([band, rawCount]) => {
+            const count = Number(rawCount) || 0;
+            const pct = peak > 0 ? Math.round((count / peak) * 100) : 0;
+            return (
             <div key={band} className="flex items-center text-sm">
               <div className="w-16 font-semibold text-[var(--soft-stone)]">{band}</div>
               <div className="flex-1 h-3 bg-[var(--warm-sand)] rounded-r-full overflow-hidden ml-2">
-                <div className="h-full bg-[var(--sage)]/80" style={{ width: `${(count / 20) * 100}%` }} />
+                <div
+                  className="h-full bg-[var(--sage)]/80"
+                  style={{ width: `${pct}%` }}
+                  role="img"
+                  aria-label={`${count} clients scoring ${band}`}
+                />
               </div>
               <div className="w-8 text-right font-medium text-[var(--warm-ink)]">{count}</div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

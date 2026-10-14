@@ -79,6 +79,11 @@ export class InvoiceGenerationService {
       },
     });
 
+    // 'FUNDED' is not a value anything writes. The escrow subscribers in
+    // trust-core write HELD / RELEASED / DISPUTED, and nothing has ever set this
+    // column off its default of NONE — see the note on those subscribers. So this
+    // branch has never run. Left as-is rather than "fixed" to 'HELD', because doing
+    // that would make a dead branch look live while it still could never fire.
     if (job.escrowStatus === 'FUNDED') {
       await prisma.crmJob.update({
         where: { id: jobId },

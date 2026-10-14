@@ -737,7 +737,36 @@ export function initializeTrustCore(): void {
     }
   });
 
-  // escrow.funded → update CrmJob.escrowStatus
+  /**
+   * ─── THE THREE SUBSCRIBERS BELOW ARE CURRENTLY UNREACHABLE ─────────────────
+   *
+   * `escrow.funded`, `escrow.released` and `escrow.disputed` are declared here, marked
+   * durable, and subscribed. Nothing anywhere emits them on this bus. The escrow
+   * services do emit all three — to `trustCore.emit`, which is a different system
+   * (server/src/trust/trust-core.ts) that writes InvoiceTrustEvent rows and passport
+   * scores, never CrmJob. Two trust systems with the same event names on two buses is
+   * why this was invisible: the emitters looked like they were firing.
+   *
+   * So `CrmJob.escrowStatus` is only ever its schema default of NONE, which makes
+   * three other things silently dead:
+   *   - the escrow panel on the job detail page, which never renders
+   *   - `getClientStage`'s hasDefaultedEscrow branch, so a defaulted escrow never
+   *     marks a client at_risk
+   *   - the "escrow held over 30 days" rule in alerts.service
+   *
+   * WHY IT CANNOT JUST BE WIRED UP
+   *
+   * There is no escrow record that links to a job. Nine escrow models exist
+   * (Escrow, UniversalEscrow, ServiceEscrow, FreightEscrow, AgentEscrow, CODEscrow,
+   * LocalSaleEscrow, SolanaEscrow, EscrowEvent) and every one anchors to a reservation,
+   * booking, appointment or payment — none to CrmJob. `CrmJob.bookingId` exists but
+   * Invoice has no bookingId, so the job's money cannot even be traced from its
+   * invoice.
+   *
+   * Choosing which of those nine backs a CRM job — or adding a jobId to one — is a
+   * schema and product decision about how the CRM's money is held. That is not a
+   * decision this file can make by emitting an event.
+   */
   eventBus.subscribe('escrow.funded', async (event: TrustEvent) => {
     const jobId = event.jobId || event.data?.jobId;
     if (!jobId) return;
