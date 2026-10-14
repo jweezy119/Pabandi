@@ -5,6 +5,7 @@ import { InvoiceLineItems } from './components/InvoiceLineItems';
 import { TrustPanel } from '../../components/TrustPanel';
 import { getAuthToken } from '../../utils/authToken';
 import { withBusinessId } from '../../utils/businessContext';
+import { TermsRecommendationPanel } from './components/TermsRecommendationPanel';
 
 const CRM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
 const APP_URL = window.location.origin;
@@ -150,6 +151,10 @@ export default function ContactInvoiceDetailPage() {
       {invoice.client && (
         <TrustPanel passportId={(invoice.client as any).passportId} />
       )}
+
+      {/* Above the action buttons: it says what terms to charge before anyone sends
+          the invoice, which is the only moment the advice is worth anything. */}
+      <TermsRecommendationPanel invoiceId={id!} />
       <div className="flex items-center justify-between mb-4 clay-heading">
         <h2 className="text-xl font-bold text-[var(--warm-ink)]">Invoice {invoice.number}</h2>
         <div className="flex gap-2">

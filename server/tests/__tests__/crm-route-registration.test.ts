@@ -84,6 +84,8 @@ const CLIENT_PAGES_CALL = [
   ['POST', '/api/v1/crm/jobs/job_1/checkout'],
   ['GET', '/api/v1/crm/invoices'],
   ['GET', '/api/v1/crm/invoices/inv_1'],
+  ['GET', '/api/v1/crm/invoices/inv_1/terms-recommendation'],
+  ['POST', '/api/v1/crm/invoices/inv_1/terms'],
   ['PATCH', '/api/v1/crm/invoices/inv_1'],
   ['PATCH', '/api/v1/crm/invoices/inv_1/status'],
   ['GET', '/api/v1/crm/activities'],
@@ -100,6 +102,17 @@ const CLIENT_PAGES_CALL = [
 describe('CRM routes the pages depend on', () => {
   it.each(CLIENT_PAGES_CALL)('%s %s is registered', async (method, path) => {
     expect(await reaches(path, method)).toBe(true);
+  });
+});
+
+describe('invoice route ordering', () => {
+  it('does not let /invoices/:id shadow its own sub-routes', async () => {
+    // /invoices/:id is a single segment and is registered AFTER the two-segment
+    // sub-routes. A single-segment pattern cannot match two segments, so this holds —
+    // but it is exactly the kind of arrangement that breaks silently if someone
+    // flattens the paths, and the terms endpoints are the ones that would vanish.
+    const res = await fetch(`${baseUrl}/api/v1/crm/invoices/inv_1/terms-recommendation`);
+    expect(res.status).not.toBe(404);
   });
 });
 

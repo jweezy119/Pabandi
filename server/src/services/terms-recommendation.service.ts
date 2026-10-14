@@ -173,7 +173,22 @@ export async function recordTermsDecision(input: RecordTermsInput): Promise<void
     recommendedPaymentScore: decision.recommended.paymentScore,
     chosenTerms: decision.terms,
     chosenDueInDays: decision.dueInDays,
-    chosenRequireEscrow: decision.requireEscrow,
+
+    /**
+     * Escrow is recorded as recommended, never as chosen.
+     *
+     * This was `chosenRequireEscrow`, which read as though accepting terms had
+     * arranged escrow for the invoice. It had not, and cannot: escrow is a job
+     * concept (`CrmJob.escrowStatus`), and an invoice has nowhere to hold it. An
+     * audit row is exactly the kind of record someone trusts without re-reading, so
+     * a field that implies money was secured when it was not is worse than no field.
+     *
+     * Safe to rename because nothing ever called this function — the first consumer
+     * is the route added alongside it, so there are no historical rows to migrate.
+     */
+    escrowRecommended: decision.requireEscrow || decision.recommended.requireEscrow,
+    escrowAppliedOnInvoice: false,
+
     overrode,
     overrideReason: decision.overrideReason,
   };

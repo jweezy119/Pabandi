@@ -3,6 +3,7 @@ import { agentOrchestrator, promoterAutonService, venueBrainService, guestFinder
 import { authenticate } from '../middleware/auth.middleware';
 import { requireRole } from '../middleware/permissions';
 import { prisma } from '../utils/database';
+import { CustomError } from '../middleware/errorHandler';
 
 const router = Router();
 
@@ -21,9 +22,27 @@ const router = Router();
  *
  * ADMIN is not a permission decision so much as the weakest available statement of
  * intent: this is platform-wide, and an operator should be the one pulling the
- * trigger. Adding a genuine venue-ownership model is the real fix and is not
- * something this file can invent — it needs a column, a migration, and a decision
- * about who owns the venues that already exist.
+ * trigger.
+ *
+ * WHY NO OWNERSHIP COLUMN WAS ADDED INSTEAD
+ *
+ * The obvious fix is a `businessId` or `ownerId` on BookingVenue. That was considered
+ * and deliberately not done, because it would be worse than the stopgap it replaces:
+ *
+ *   - Neither create path records an owner. `createVenue(data: any)` in both
+ *     venue.service and nightlife.service is called with arbitrary data and stores no
+ *     user context, so there is no ownership to backfill from.
+ *   - Existing venues would have to be assigned an owner nobody chose. Inventing one
+ *     produces rows asserting a commercial relationship that does not exist, and
+ *     scoping financial writes against a fiction is precisely the failure mode the
+ *     propertyScope work exists to prevent.
+ *   - Whether a venue belongs to a platform Business, to an individual promoter, or is
+ *     platform-listed inventory that anyone may run against is a commercial question,
+ *     not a schema one. These agents reprice bottles and rewrite cover charges; who
+ *     may set a club's prices is not something a route file gets to decide.
+ *
+ * So the route stays admin-only and says why, rather than pretending to a model that
+ * does not exist. `requireVenue` below covers the part that is unambiguously correct.
  *
  * `run-all` is the same shape scaled up: it iterates every venue on the platform.
  */
@@ -33,18 +52,48 @@ const adminOnly = requireRole('ADMIN');
 // AGENT CONTROL PANEL — Run agents manually or on schedule
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * Confirm a venue exists before pointing an agent at it.
+ *
+ * Not an authorisation check — see the note on `adminOnly` above, there is no ownership
+ * predicate to apply because `BookingVenue` has no owner column. This is a correctness
+ * check: a mistyped id used to run every agent, produce a full `AgentExecution` record
+ * of decisions and price changes, and change nothing, because every write is filtered
+ * by a venue that does not exist. The run reported success and updated zero rows.
+ *
+ * It also means the `/executions` history cannot fill with rows for venues nobody
+ * ever had.
+ */
+async function requireVenue(venueId: unknown): Promise<string> {
+  const id = typeof venueId === 'string' ? venueId.trim() : '';
+  if (!id) throw new CustomError('venueId is required', 400);
+
+  const venue = await prisma.bookingVenue.findUnique({ where: { id }, select: { id: true } });
+  if (!venue) {
+    // 404, not 400: the id is well-formed, there is just no such venue. The distinction
+    // matters to whoever is fixing the caller's typo.
+    throw new CustomError(`No venue with id ${id}`, 404);
+  }
+  return id;
+}
+
 // Run all agents for a venue
 router.post('/venues/:venueId/run', authenticate, adminOnly, async (req: any, res: Response) => {
   try {
+    const venueId = await requireVenue(req.params.venueId);
     const result = await agentOrchestrator.runAllAgents({
-      agentId: `orchestrator_${req.params.venueId}_${Date.now()}`,
+      agentId: `orchestrator_${venueId}_${Date.now()}`,
       agentType: 'ORCHESTRATOR',
-      venueId: req.params.venueId,
+      venueId,
       metadata: req.body,
     });
     res.json({ success: true, data: result });
   } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Agent execution failed' });
+    const status = Number(e?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      ...(status >= 500 ? { error: 'Agent execution failed' } : { error: e.message }),
+    });
   }
 });
 
@@ -54,18 +103,23 @@ router.post('/run-all', authenticate, adminOnly, async (req: any, res: Response)
     const result = await agentOrchestrator.runAllVenues();
     res.json({ success: true, data: result });
   } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Agent execution failed' });
+    const status = Number(e?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      ...(status >= 500 ? { error: 'Agent execution failed' } : { error: e.message }),
+    });
   }
 });
 
 // Run specific agent type
 router.post('/:agentType/run', authenticate, adminOnly, async (req: any, res: Response) => {
   try {
+    const venueId = await requireVenue(req.body?.venueId);
     const context = {
       agentId: `${req.params.agentType}_${Date.now()}`,
       agentType: req.params.agentType,
       userId: req.user?.id,
-      venueId: req.body.venueId,
+      venueId,
       promoterId: req.body.promoterId,
       metadata: req.body,
     };
@@ -90,7 +144,11 @@ router.post('/:agentType/run', authenticate, adminOnly, async (req: any, res: Re
 
     res.json({ success: true, data: result });
   } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Agent execution failed' });
+    const status = Number(e?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      ...(status >= 500 ? { error: 'Agent execution failed' } : { error: e.message }),
+    });
   }
 });
 

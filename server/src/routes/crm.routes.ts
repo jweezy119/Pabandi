@@ -38,6 +38,10 @@ import {
 import { invoiceTrustService } from '../services/invoice-trust.service';
 import { getClientIntelligence } from '../services/crm-intelligence.service';
 import { searchCrm, MIN_SEARCH_LENGTH, type SearchResult } from '../services/crmSearch.service';
+import {
+  buildTermsRecommendation,
+  recordTermsDecision,
+} from '../services/terms-recommendation.service';
 import { collectClientSignals, explainScore } from '../services/trust-core.service';
 import * as crmService from '../services/crm.service';
 import { crmScope } from '../services/crm.service';
@@ -320,6 +324,173 @@ router.get('/invoices', async (req: AuthRequest, res: Response) => {
   }
 });
 
+/**
+ * GET /api/v1/crm/invoices/:id/terms-recommendation
+ *
+ * What terms this client's payment history argues for, plus the rail that would carry
+ * them.
+ *
+ * `buildTermsRecommendation` has existed and had no caller. It reads the trust data
+ * that is already on every passport, and the create form has always set `dateDue` to
+ * the end of the current month for everyone — so a client who has paid on time twenty
+ * times is quoted the same terms as one who has defaulted twice.
+ *
+ * Advice, never policy. Nothing is applied by reading this.
+ */
+router.get('/invoices/:id/terms-recommendation', async (req: AuthRequest, res: Response) => {
+  try {
+    const crm = requireCrmContext(req);
+    const businessId = crm.businessId;
+    if (!businessId) return res.status(400).json({ success: false, error: 'Business is not linked to a platform business yet' });
+
+    const invoice = await prisma.invoice.findFirst({
+      where: { id: req.params.id, businessId },
+      select: { id: true, clientId: true, subtotal: true, currency: true, status: true },
+    });
+    if (!invoice) return res.status(404).json({ success: false, error: 'Invoice not found' });
+
+    const view = await buildTermsRecommendation(businessId, invoice.clientId, {
+      amount: invoice.subtotal,
+      currency: invoice.currency,
+    });
+    if (!view) return res.status(404).json({ success: false, error: 'Client not found' });
+
+    res.json({ success: true, data: { ...view, invoiceStatus: invoice.status } });
+  } catch (err: any) {
+    const status = Number(err?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      ...(status >= 500 ? { error: 'Could not build a recommendation' } : { error: err.message }),
+    });
+  }
+});
+
+/**
+ * POST /api/v1/crm/invoices/:id/terms
+ *
+ * Accept the recommended terms, or override them with a reason.
+ *
+ * WHAT "TERMS" IS, ON THIS INVOICE
+ *
+ * `dateDue`. There is no terms label, no escrow flag and no override column on
+ * Invoice, and this deliberately does not add them. The recommendation has exactly two
+ * actionable parts — how many days, and whether escrow is advisable — and the first
+ * maps onto `dateDue` precisely. Inventing columns for the other two would be schema
+ * for its own sake.
+ *
+ * Escrow is the honest gap. `requireEscrow` is real advice and escrow is a *job*
+ * concept (`CrmJob.escrowStatus`), so an invoice cannot enforce it. It is recorded in
+ * the decision and returned to the caller, and nothing claims it was applied.
+ *
+ * OVERRIDE REQUIRES A REASON
+ *
+ * A reason is required and validated, not optional. "Why did this client get net-60"
+ * has to be answerable months later, which is the entire purpose of
+ * `recordTermsDecision` — it writes both a SystemAuditLog row and a readable entry on
+ * the client's timeline. An override with no reason makes that permanently unanswerable.
+ *
+ * Applying terms moves `dateDue`, so this is refused on a settled invoice. Nothing
+ * else guards it: nothing can be recovered from re-dating a paid or cancelled
+ * invoice, and the audit would be recording a change nobody can act on.
+ */
+router.post('/invoices/:id/terms', async (req: AuthRequest, res: Response) => {
+  try {
+    const crm = requireCrmContext(req);
+    const businessId = crm.businessId;
+    if (!businessId) return res.status(400).json({ success: false, error: 'Business is not linked to a platform business yet' });
+
+    const invoice = await prisma.invoice.findFirst({
+      where: { id: req.params.id, businessId },
+      select: { id: true, clientId: true, number: true, status: true },
+    });
+    if (!invoice) return res.status(404).json({ success: false, error: 'Invoice not found' });
+
+    const SETTLED = ['paid', 'void', 'cancelled', 'refunded'];
+    if (SETTLED.includes(invoice.status)) {
+      return res.status(409).json({
+        success: false,
+        error: `Cannot change terms on a ${invoice.status} invoice.`,
+      });
+    }
+
+    const { action, dueInDays, overrideReason } = req.body ?? {};
+    if (action !== 'accept' && action !== 'override') {
+      return res.status(400).json({ success: false, error: 'action must be "accept" or "override"' });
+    }
+
+    const view = await buildTermsRecommendation(businessId, invoice.clientId);
+    if (!view) return res.status(404).json({ success: false, error: 'Client not found' });
+
+    let chosenDueInDays: number;
+    let reason: string | null = null;
+
+    if (action === 'accept') {
+      chosenDueInDays = view.recommendation.dueInDays;
+    } else {
+      const days = Number(dueInDays);
+      if (!Number.isFinite(days) || days < 0 || days > 365) {
+        return res.status(400).json({ success: false, error: 'dueInDays must be between 0 and 365' });
+      }
+      if (typeof overrideReason !== 'string' || !overrideReason.trim()) {
+        return res.status(400).json({
+          success: false,
+          error: 'An override needs a reason — it is recorded so the decision can be explained later.',
+        });
+      }
+      chosenDueInDays = days;
+      reason = overrideReason.trim();
+    }
+
+    const newDue = new Date();
+    newDue.setDate(newDue.getDate() + chosenDueInDays);
+
+    const updated = await prisma.invoice.update({
+      where: { id: invoice.id },
+      data: { dateDue: newDue },
+    });
+
+    // The audit and the readable timeline entry. Both failures are swallowed inside
+    // recordTermsDecision: an invoice that has been re-dated must not be un-dated
+    // because the audit write failed.
+    await recordTermsDecision({
+      businessId,
+      serviceBusinessId: crm.serviceBusinessId,
+      invoiceId: invoice.id,
+      clientId: invoice.clientId,
+      actorId: crm.userId,
+      decision: {
+        terms: chosenDueInDays === 0 ? 'Due on receipt' : `Net ${chosenDueInDays}`,
+        dueInDays: chosenDueInDays,
+        requireEscrow: view.recommendation.requireEscrow,
+        overrideReason: reason,
+        recommended: view.recommendation,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        invoice: updated,
+        dueInDays: chosenDueInDays,
+        overrode: action === 'override',
+        // Said plainly rather than left implied: escrow lives on the job, so nothing
+        // here has set it.
+        escrowRecommended: view.recommendation.requireEscrow,
+        escrowApplied: false,
+      },
+    });
+  } catch (err: any) {
+    const status = Number(err?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      ...(status >= 500 ? { error: 'Could not set terms' } : { error: err.message }),
+    });
+  }
+});
+
+/**
+ * GET /api/v1/crm/invoices/:id
+ */
 router.get('/invoices/:id', async (req: AuthRequest, res: Response) => {
   try {
     const businessId = requireCrmContext(req).businessId;
