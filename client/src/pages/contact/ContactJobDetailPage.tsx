@@ -53,6 +53,14 @@ const ESCROW_LABELS: Record<string, { label: string; status: string; hint?: stri
     status: 'disputed',
     hint: 'The client disputed this job, so the funds are frozen. This counts against their trust score until it is resolved.',
   },
+  REFUNDED: {
+    label: 'Escrow refunded',
+    status: 'released',
+    // Worth stating what a refund did to their record. getClientStage reads REFUNDED to
+    // mark a client at_risk, so "money went back to the client" and "this now counts
+    // against them" are the same event and only one of them was visible.
+    hint: 'The money was returned to the client. This counts against their trust score unless the dispute is resolved in their favour.',
+  },
 };
 
 export default function ContactJobDetailPage() {
@@ -260,7 +268,17 @@ export default function ContactJobDetailPage() {
             and nothing ever displayed it, so a business whose money was sitting in
             escrow had no way to see it, and a DISPUTED job looked identical to any
             other. DISPUTED in particular feeds getClientStage's at_risk verdict, so
-            this is the evidence behind a client being marked at-risk. */}
+            this is the evidence behind a client being marked at_risk.
+
+            Now that the chain is live this panel has something to show for the first
+            time — escrowStatus was previously unreachable, and every one of these
+            states was unreachable too.
+
+            The vocabulary here is deliberately four words long. The settlement rail is
+            chosen inside the service and never crosses this boundary, so a business
+            holding money for a client who has never heard of a wallet sees exactly the
+            same panel as one whose client prefers USDC. On-chain detail exists and is
+            reachable, but it is not what this screen leads with. */}
         {job.escrowStatus && job.escrowStatus !== 'NONE' && (
           <ClayCard className="p-6">
             <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-4">Escrow</h3>

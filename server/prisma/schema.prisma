@@ -5972,7 +5972,19 @@ model FiatPayment {
 
 model SolanaEscrow {
   id         String    @id @default(cuid())
-  escrowPda  String    @unique // Solana PDA address
+  /// The on-chain PDA, when this escrow is on the Solana rail.
+  ///
+  /// Nullable because most escrows are NOT on-chain. The brief for this work is that
+  /// the blockchain is leverage rather than a barrier, so the default rail is a card or
+  /// bank authorisation through a licensed partner — and for those there is no PDA, no
+  /// mint and no transaction signature. This was non-nullable and unique, which meant
+  /// every off-chain escrow had to store an invented on-chain address: a column that
+  /// asserts a fact about the chain that is not true.
+  ///
+  /// Kept unique. Postgres permits repeated NULLs in a unique index, so several
+  /// card-rail escrows coexist without colliding while two Solana escrows still cannot
+  /// share a PDA.
+  escrowPda  String?   @unique
   reference  String    @unique // booking/order ID
   buyerId    String
   buyer      User      @relation("escrowBuyer", fields: [buyerId], references: [id])
@@ -5988,11 +6000,31 @@ model SolanaEscrow {
   txRelease  String?
   txRefund   String?
   bump       Int?
+  /// The CRM job this escrow secures, when there is one.
+  ///
+  /// This is the link the escrow chain was missing. `CrmJob.escrowStatus` is read by
+  /// the job detail panel, by `getClientStage`'s defaulted-escrow branch, and by the
+  /// "escrow held over 30 days" alert — and nothing could ever write it, because no
+  /// escrow model linked to a job. Of the nine escrow models in this schema, this is
+  /// the one whose shape matches the escrow program that actually exists
+  /// (contracts/solana/pabandi_escrow): escrowPda, mint, amount, status, and one
+  /// transaction signature per transition.
+  ///
+  /// Nullable because escrow is a per-job decision and most jobs are not escrowed — a
+  /// NOT NULL here would assert "escrow exists" on every job in every tenant.
+  ///
+  /// `onDelete: SetNull` because deleting a job must not delete money. This row holds
+  /// funds and carries on-chain transaction signatures; cascading from a work record
+  /// onto a financial record is precisely the cascade you do not want.
+  jobId      String?
+  job        CrmJob?  @relation(fields: [jobId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
   @@index([reference])
   @@index([status])
+  @@index([jobId])
+  @@unique([jobId])
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -7641,6 +7673,10 @@ model CrmJob {
   actualDurationMinutes Int?
   passportId            String?
   passport              TrustPassport?      @relation(fields: [passportId], references: [id])
+  /// The escrow holding this job's money, when one was opened. One per job, enforced by
+  /// the unique index on the far side. SetNull on delete, so removing a work record
+  /// never cascades onto a financial record.
+  solanaEscrow          SolanaEscrow?
   assignments           CrmJobAssignment[]
 
   @@index([businessId])

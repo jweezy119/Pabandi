@@ -4,6 +4,12 @@ import { prisma } from '../utils/database';
 import { authenticate, type AuthRequest } from '../middleware/auth.middleware';
 import { createInvoice, updateInvoice } from '../services/invoice.service';
 import { parsePagination, withTotal } from '../utils/pagination';
+import {
+  openEscrowForJob,
+  releaseEscrowForJob,
+  disputeEscrowForJob,
+  getEscrowForJob,
+} from '../services/job-escrow.service';
 import { SettingsService } from '../services/settings.service';
 import { resolveCrmBusiness, requireCrmContext } from '../middleware/crmContext.middleware';
 import {
@@ -1164,6 +1170,90 @@ router.get('/clients/:id/terms-recommendation', async (req: AuthRequest, res: Re
     res.status(status).json({
       success: false,
       ...(status >= 500 ? { error: 'Could not build a recommendation' } : { error: err.message }),
+    });
+  }
+});
+
+/**
+ * ─── Escrow on a job ────────────────────────────────────────────────────────
+ *
+ * Three verbs and one read. The rail is decided inside the service and never leaves
+ * it, so there is no "choose a rail" parameter anywhere in this surface — a business
+ * opening an escrow is choosing to have the client's money held safely, not choosing a
+ * settlement technology on their client's behalf.
+ */
+
+// POST /api/v1/crm/jobs/:id/escrow — open escrow against a job
+router.post('/jobs/:id/escrow', async (req: AuthRequest, res: Response) => {
+  try {
+    const crm = requireCrmContext(req);
+    const amount = Number(req.body?.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({ success: false, error: 'amount must be greater than zero' });
+    }
+
+    const result = await openEscrowForJob(crm.serviceBusinessId, {
+      jobId: req.params.id,
+      amount,
+      trustScore: Number(req.body?.trustScore) || 0,
+      deadline: req.body?.deadline ? new Date(req.body.deadline) : new Date(Date.now() + 7 * 24 * 3600 * 1000),
+    });
+
+    res.status(201).json({ success: true, data: result });
+  } catch (err: any) {
+    const status = Number(err?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      ...(status >= 500 ? { error: 'Could not open escrow' } : { error: err.message }),
+    });
+  }
+});
+
+// POST /api/v1/crm/jobs/:id/escrow/release — the job is done, release the money
+router.post('/jobs/:id/escrow/release', async (req: AuthRequest, res: Response) => {
+  try {
+    const crm = requireCrmContext(req);
+    const state = await releaseEscrowForJob(crm.serviceBusinessId, req.params.id);
+    res.json({ success: true, data: { state } });
+  } catch (err: any) {
+    const status = Number(err?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      ...(status >= 500 ? { error: 'Could not release escrow' } : { error: err.message }),
+    });
+  }
+});
+
+// POST /api/v1/crm/jobs/:id/escrow/dispute — frozen pending resolution
+router.post('/jobs/:id/escrow/dispute', async (req: AuthRequest, res: Response) => {
+  try {
+    const crm = requireCrmContext(req);
+    const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
+    if (!reason) {
+      return res.status(400).json({ success: false, error: 'A dispute needs a reason — it is recorded against the job.' });
+    }
+    const state = await disputeEscrowForJob(crm.serviceBusinessId, req.params.id, reason);
+    res.json({ success: true, data: { state } });
+  } catch (err: any) {
+    const status = Number(err?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      ...(status >= 500 ? { error: 'Could not raise the dispute' } : { error: err.message }),
+    });
+  }
+});
+
+// GET /api/v1/crm/jobs/:id/escrow — what the job page needs, and nothing else
+router.get('/jobs/:id/escrow', async (req: AuthRequest, res: Response) => {
+  try {
+    const crm = requireCrmContext(req);
+    const escrow = await getEscrowForJob(crm.serviceBusinessId, req.params.id);
+    res.json({ success: true, data: escrow });
+  } catch (err: any) {
+    const status = Number(err?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      ...(status >= 500 ? { error: 'Could not load escrow' } : { error: err.message }),
     });
   }
 });
