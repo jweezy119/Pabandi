@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 import crypto from 'crypto';
 import { blockchainService } from './blockchain.service';
 import { logger } from '../utils/logger';
-
-const prisma = new PrismaClient();
 
 // ── Promo Payout & On-Chain Mint Service ───────────────────────────────────
 // Brands fund jobs → ambassadors earn on completion → Pabandi takes 1% rake

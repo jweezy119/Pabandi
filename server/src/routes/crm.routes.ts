@@ -1128,6 +1128,46 @@ router.get('/clients/:id/explain-score', async (req: AuthRequest, res: Response)
   }
 });
 
+/**
+ * GET /api/v1/crm/clients/:id/terms-recommendation
+ *
+ * What terms to offer this client, before an invoice exists.
+ *
+ * The recommendation is currently only reachable from an invoice, which is the wrong
+ * moment: terms are set when the invoice is created, and by then you are looking at a
+ * form rather than at the person. Asking here — on the client record, next to their
+ * history — is where the decision actually gets made.
+ *
+ * Read-only. Applying terms is the invoice route's job, and only there: an invoice is
+ * what has a due date, and `recordTermsDecision` audits against an invoice id.
+ */
+router.get('/clients/:id/terms-recommendation', async (req: AuthRequest, res: Response) => {
+  try {
+    const crm = requireCrmContext(req);
+    const businessId = crm.businessId;
+    if (!businessId) return res.status(400).json({ success: false, error: 'Business is not linked to a platform business yet' });
+
+    const client = await prisma.crmClient.findFirst({
+      where: { id: req.params.id, ...crmScope(crm.serviceBusinessId, crm.businessId) },
+      select: { id: true },
+    });
+    if (!client) return res.status(404).json({ success: false, error: 'Client not found' });
+
+    const view = await buildTermsRecommendation(businessId, client.id, {
+      amount: Number(req.query.amount) || undefined,
+    });
+    if (!view) return res.status(404).json({ success: false, error: 'Client not found' });
+
+    res.json({ success: true, data: view });
+  } catch (err: any) {
+    const status = Number(err?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      ...(status >= 500 ? { error: 'Could not build a recommendation' } : { error: err.message }),
+    });
+  }
+});
+
 // GET /api/v1/crm/clients/:id/stage — Get client lifecycle stage
 router.get('/clients/:id/stage', getClientStageHandler);
 

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { promotionsService } from '../services/promotions.service';
 import { authenticate } from '../middleware/auth.middleware';
+import { prisma } from '../utils/database';
 
 const router = Router();
 
@@ -72,7 +73,6 @@ router.post('/vendor/promotions', authenticate, async (req: any, res: Response) 
     
     // Verify ownership
     const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
     const business = await prisma.business.findFirst({
       where: { id: businessId, ownerId: userId },
     });
@@ -95,7 +95,6 @@ router.get('/vendor/promotions', authenticate, async (req: any, res: Response) =
   try {
     const userId = req.user?.id;
     const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
     const businesses = await prisma.business.findMany({
       where: { ownerId: userId },
       select: { id: true },
@@ -121,7 +120,6 @@ router.get('/vendor/analytics', authenticate, async (req: any, res: Response) =>
     
     // Verify ownership
     const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
     const business = await prisma.business.findFirst({
       where: { id: businessId as string, ownerId: userId },
     });

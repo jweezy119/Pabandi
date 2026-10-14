@@ -26,6 +26,7 @@ import { authenticate, authorize, optionalAuthenticate } from '../middleware/aut
 import { rateLimiter } from '../middleware/rateLimiter';
 import { cacheService } from '../services/cache.service';
 import axios from 'axios';
+import { prisma } from '../utils/database';
 
 const router = Router();
 

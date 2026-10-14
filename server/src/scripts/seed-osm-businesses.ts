@@ -1,8 +1,6 @@
 require('dotenv').config();
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 import axios from 'axios';
-
-const prisma = new PrismaClient();
 
 const CITIES = [
   { name: 'Chicago', lat: 41.8781, lng: -87.6298, radius: 30000 },

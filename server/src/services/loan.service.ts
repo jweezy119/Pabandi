@@ -1,8 +1,7 @@
+import { prisma } from '../utils/database';
 import { PrismaClient, LoanStatus } from '@prisma/client';
 import { logger } from '../utils/logger';
 import { blockchainService } from './blockchain.service';
-
-const prisma = new PrismaClient();
 
 export class LoanService {
   // PAB to USDC conversion rate for collateral calculations (Simulated)

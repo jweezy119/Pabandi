@@ -1,7 +1,6 @@
+import { prisma } from '../utils/database';
 import { PrismaClient, ReservationStatus, DepositStatus, LedgerEntryType } from '@prisma/client';
 import { differenceInMonths, startOfMonth, endOfMonth } from 'date-fns';
-
-const prisma = new PrismaClient();
 
 export class ReferralService {
   /**

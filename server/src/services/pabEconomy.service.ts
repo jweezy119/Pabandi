@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/database';
 
 // ── PAB Economy Service ────────────────────────────────────────────────────
 // Arcade-token model: earn by doing things, spend on services, stake for tiers.

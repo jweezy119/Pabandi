@@ -38,6 +38,7 @@ import {
   clampReliabilityScore,
 } from '../../config/trust-weights';
 import { computeEnsembleScore, normalizeCancellationCount } from '../trust-core.service';
+import { prisma } from '../../utils/database';
 
 const W = DEFAULT_TRUST_WEIGHTS;
 

@@ -12,9 +12,7 @@
 // - Snapchat: geofilters, event stories, AR experiences
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/database';
 
 export const socialIntegrationService = {
   // ═══════════════════════════════════════════════════════════════════════════

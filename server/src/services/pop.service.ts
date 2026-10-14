@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 
 export type PopEventType = 'INTENT' | 'ARRIVED' | 'NO_SHOW' | 'MERCHANT_START' | 'MERCHANT_FULFILL';
 
@@ -19,8 +19,6 @@ export interface PopDisputePackage {
   noShowAt?: string;
   evidence: Record<string, any>;
 }
-
-const prisma = new PrismaClient();
 
 export class PopService {
   private events: PopEventInput[] = [];

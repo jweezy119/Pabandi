@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 import crypto from 'crypto';
 import { logger } from '../utils/logger';
-
-const prisma = new PrismaClient();
 
 /**
  * Fire webhooks for a given manager when a CRM event occurs.

@@ -1,9 +1,7 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 
 const router = Router();
-const prisma = new PrismaClient();
-
 // GET /api/v1/badge/:passportId.svg — returns embeddable SVG badge
 router.get('/:passportIdSvg', async (req: Request, res: Response) => {
   try {

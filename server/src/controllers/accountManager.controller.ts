@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 import crypto from 'crypto';
-
-const prisma = new PrismaClient();
 
 function generateRefCode(): string {
   return crypto.randomBytes(4).toString('hex').toUpperCase(); // 8 characters

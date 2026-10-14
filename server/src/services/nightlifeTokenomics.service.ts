@@ -8,9 +8,7 @@
 // - Bottle purchases can use $PAB with discounts
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/database';
 
 // ── Token Distribution Rates ────────────────────────────────────────────────
 const TOKEN_RATES = {

@@ -1,3 +1,4 @@
+import { prisma } from '../utils/database';
 import { PrismaClient, Prisma } from '@prisma/client';
 
 /**
@@ -37,8 +38,6 @@ import { PrismaClient, Prisma } from '@prisma/client';
  *    business fabricated financials, and no test could have caught it because the values
  *    were never derived from anything. It is now computed from real rows.
  */
-
-const prisma = new PrismaClient();
 
 /** The resolved tenant. Never a request-supplied id. */
 export interface ReportsContext {

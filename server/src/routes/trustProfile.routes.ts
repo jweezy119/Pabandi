@@ -1,10 +1,8 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 import { getAttestationsForPassport } from '../services/onchain-attestation.service';
 
 const router = Router();
-const prisma = new PrismaClient();
-
 // GET /api/v1/trust-profile/:passportId — public, no auth
 router.get('/:passportId', async (req: Request, res: Response) => {
   try {

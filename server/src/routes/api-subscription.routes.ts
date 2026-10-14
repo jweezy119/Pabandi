@@ -1,12 +1,10 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 import { safepayService } from '../services/safepay.service';
 import { logger } from '../utils/logger';
 import { randomBytes } from 'crypto';
 
 const router = Router();
-const prisma = new PrismaClient();
-
 // Prices in PKR for API tiers
 const TIER_PRICING: Record<string, number> = {
   GROWTH: 27500, // Roughly $99 USD

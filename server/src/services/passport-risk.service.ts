@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 import { clampReliabilityScore } from '../config/trust-weights';
 
 export type PassportCategory =
@@ -83,8 +83,6 @@ export interface PassportExportResult {
   passport: MyPassportResult;
   schemaVersion: string;
 }
-
-const prisma = new PrismaClient();
 
 // Boundaries converted from 0-1000 to 0-100 to match the canonical scale of
 // `User.reliabilityScore`. A user scoring 92/100 was previously 'UNRATED' here

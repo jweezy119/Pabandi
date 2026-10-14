@@ -1,8 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 import { LinkedInProfileSeeder } from '../services/linkedinProfileSeeder.service';
 import { LINKEDIN_PERSONAS } from '../services/linkedinLeadGen.service';
 
-const prisma = new PrismaClient();
 const seeder = new LinkedInProfileSeeder();
 
 function md5Hex(text: string): string {

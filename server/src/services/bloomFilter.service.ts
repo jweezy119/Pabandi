@@ -1,9 +1,7 @@
 // @ts-nocheck
 import { BloomFilter } from 'bloom-filters';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
-
-const prisma = new PrismaClient();
 
 class BloomFilterService {
   private currentFilter: BloomFilter | null = null;

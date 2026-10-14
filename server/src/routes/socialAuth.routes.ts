@@ -3,13 +3,12 @@ import passport from 'passport';
 import { Strategy as GitHubStrategy } from 'passport-github2';
 import { Strategy as TwitterStrategy } from 'passport-twitter';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { findOrCreateUser, getActiveBusinessId } from '../services/identity.service';
 import { resolveFrontendOrigin } from '../utils/oauthRedirect';
 import { safeReturnPath } from '../utils/url';
 
-const prisma = new PrismaClient();
 const router = Router();
 
 const JWT_SECRET = process.env.JWT_SECRET;

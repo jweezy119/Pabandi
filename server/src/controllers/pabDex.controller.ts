@@ -4,6 +4,7 @@ import { createAssociatedTokenAccountInstruction, createTransferInstruction, get
 import bs58 from 'bs58';
 import { pabToken } from '../services/pabToken.service';
 import { buyPAB, sellPAB, getPoolInfo, getFees, initializePool } from '../services/raydiumPool.service';
+import { prisma } from '../utils/database';
 
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 const USDC_DECIMALS = 6;

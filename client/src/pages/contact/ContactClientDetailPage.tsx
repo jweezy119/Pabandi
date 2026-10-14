@@ -13,6 +13,7 @@ import { readList } from '../../utils/crmResponse';
 import { ClientPropertyPanel } from '../crm/components/ClientPropertyPanel';
 import { ClientIntelligencePanel } from './components/ClientIntelligencePanel';
 import { TrustScoreBreakdown } from './components/TrustScoreBreakdown';
+import { ClientTermsSuggestion } from './components/ClientTermsSuggestion';
 
 // 'Property' is the tenancy half of this person. It was absent because a tenant and
 // a CRM client were unrelated records; they are now linked by a real foreign key
@@ -206,6 +207,11 @@ export default function ContactClientDetailPage() {
             <div className="lg:col-span-2 space-y-6">
               {/* Above the timeline: it is the one thing on this page that is new
                   information rather than a record of what already happened. */}
+              {/* Sits beside the intelligence panel rather than inside it. That panel
+                  returns null when a client has too little history for a verdict, and
+                  someone with no completed jobs can still have a long payment history
+                  worth pricing terms on. */}
+              <ClientTermsSuggestion clientId={id!} />
               <ClientIntelligencePanel clientId={id!} />
               <TrustScoreBreakdown clientId={id!} />
               <TrustPanel passportId={client.passportId} />

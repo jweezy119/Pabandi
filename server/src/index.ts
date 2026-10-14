@@ -10,6 +10,7 @@ import compression from 'compression';
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
 import { rateLimiter } from './middleware/rateLimiter';
+import { prisma } from './utils/database';
 
 // Load environment variables FIRST
 dotenv.config();

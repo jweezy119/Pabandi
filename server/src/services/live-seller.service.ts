@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 import { LiveSellerPlatform } from '@prisma/client';
 import { openwaService } from './whatsapp.service';
 import { ebayService } from './ebay.service';
@@ -305,4 +306,4 @@ export class LiveSellerService {
   }
 }
 
-export const liveSellerService = new LiveSellerService(new PrismaClient());
+export const liveSellerService = new LiveSellerService(prisma);

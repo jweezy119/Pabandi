@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
-
-const prisma = new PrismaClient();
 
 export const checkInService = {
   async generateCheckInToken(reservationId: string) {

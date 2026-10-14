@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 import { notifySupportReply } from './notification.service';
-
-const prisma = new PrismaClient();
 
 export class SupportService {
   static async createTicket(userId: string, businessId: string, data: { subject: string; category: string; description: string; priority: string }) {

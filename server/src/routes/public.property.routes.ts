@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // GET /api/v1/public/properties — public listing/search

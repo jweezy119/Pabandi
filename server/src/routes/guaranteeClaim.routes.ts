@@ -12,6 +12,7 @@ import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/auth.middleware';
 import { guaranteeClaimService, ClaimInput } from '../services/guaranteeClaim.service';
 import { z } from 'zod';
+import { prisma } from '../utils/database';
 
 const router = Router();
 

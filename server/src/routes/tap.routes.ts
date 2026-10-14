@@ -1,11 +1,9 @@
 import { Router } from 'express';
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 
 const router = Router();
-const prisma = new PrismaClient();
-
 const SOLANA_RPC = process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com';
 const connection = new Connection(SOLANA_RPC, 'confirmed');
 

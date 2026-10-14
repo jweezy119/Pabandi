@@ -1,8 +1,7 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { emailService } from '../services/email.service';
 import { writeAttestation } from '../services/onchain-attestation.service';
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/database';
 
 type TrustEventPayload = {
   passportId?: string;

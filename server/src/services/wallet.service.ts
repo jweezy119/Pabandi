@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 import { Keypair, PublicKey } from '@solana/web3.js';
 import crypto from 'crypto';
 import { logger } from '../utils/logger';
-
-const prisma = new PrismaClient();
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;

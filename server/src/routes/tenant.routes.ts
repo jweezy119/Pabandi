@@ -1,9 +1,8 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 import { authenticate } from '../middleware/auth.middleware';
 import crypto from 'crypto';
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // ── Public: Get a manager's public listing info (for application flow) ────────

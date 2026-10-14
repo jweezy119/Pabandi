@@ -1,9 +1,7 @@
 import { Router, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 
 const router = Router();
-const prisma = new PrismaClient();
-
 /**
  * GET /api/v1/passport/public/:sellerId
  * Public trust summary for a seller/business.

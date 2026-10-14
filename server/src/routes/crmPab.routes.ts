@@ -4,6 +4,7 @@ import { leasePabService } from '../services/leasePab.service';
 import { authenticate } from '../middleware/auth.middleware';
 import type { AuthRequest } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
+import { prisma } from '../utils/database';
 
 const router = Router();
 

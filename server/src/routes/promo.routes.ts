@@ -2,9 +2,7 @@ import { Router, Request, Response } from 'express';
 import { promoService } from '../services/promo.service';
 import { promoPayoutService } from '../services/promo.payout.service';
 import { authenticate } from '../middleware/auth.middleware';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/database';
 
 const router = Router();
 

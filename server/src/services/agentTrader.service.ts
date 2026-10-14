@@ -7,6 +7,7 @@
  * Platform takes 10% of LP earnings.
  */
 import { buyPAB, sellPAB, getPoolInfo } from './raydiumPool.service';
+import { prisma } from '../utils/database';
 
 export interface AgentConfig {
   id: string;

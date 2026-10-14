@@ -1,12 +1,11 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 import { authenticate } from '../middleware/auth.middleware';
 import { courtListenerLimiter, courtListenerDailyLimiter } from '../middleware/rateLimit.middleware';
 import { courtCheckService } from '../services/courtCheck.service';
 import { fireWebhooks, logActivity } from '../services/pmWebhook.service';
 import crypto from 'crypto';
 
-const prisma = new PrismaClient();
 const router = Router();
 
 function generateSlug(name: string): string {

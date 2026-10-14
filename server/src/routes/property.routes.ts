@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 import { authenticate } from '../middleware/auth.middleware';
 import { rentAutomationService } from '../services/rentAutomation.service';
 import multer from 'multer';
@@ -10,7 +10,6 @@ import { logger } from '../utils/logger';
 import { uploadSecurity } from '../middleware/uploadSecurity';
 import { ownedPropertyIds } from '../services/propertyScope';
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // Configure multer for property photo uploads

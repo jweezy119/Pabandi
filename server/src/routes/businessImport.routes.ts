@@ -1,9 +1,8 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 import axios from 'axios';
 import { authenticate } from '../middleware/auth.middleware';
 
-const prisma = new PrismaClient();
 const router = Router();
 
 const GOOGLE_PLACES_API = 'https://maps.googleapis.com/maps/api/place';

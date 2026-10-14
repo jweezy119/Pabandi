@@ -4,8 +4,8 @@ import { blockchainService } from './blockchain.service';
 import { trustArbitratorService } from './trustArbitrator.service';
 import { pabTokenStakingService } from './pabTokenStaking.service';
 import { logger } from '../utils/logger';
+import { prisma } from '../utils/database';
 
-const prisma = new PrismaClient();
 const reliabilityService = { updateScoreForReservationActivity: async (..._args: any[]) => null, getUserReliabilityProfile: async () => null };
 
 export class DisputeService {

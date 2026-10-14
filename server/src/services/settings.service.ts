@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/database';
 
 export class SettingsService {
   // We use CrmBusiness ID to map to BusinessSettings businessId
