@@ -107,7 +107,71 @@ export async function generateAlerts(serviceBusinessId: string): Promise<AlertSe
   // ── Job-based alerts ────────────────────────────────────────────────────────
   const jobs = await prisma.crmJob.findMany({
     where: { serviceBusinessId },
+    select: {
+      id: true,
+      status: true,
+      checkedInAt: true,
+      checkedOutAt: true,
+      durationMinutes: true,
+      clientName: true,
+      scheduledDate: true,
+      scheduledTime: true,
+      // Read by the escrow rule below, which measures how long money has been held.
+      escrowStatus: true,
+      createdAt: true,
+    },
   });
+
+  /**
+   * A job somebody checked into and never checked out of.
+   *
+   * This was `jobCronService.processOverdueJobs`, an empty method with a comment
+   * saying a grace policy did not exist. It ran every minute, did nothing, and left
+   * the one signal that reliably means money is being mis-recorded — IN_PROGRESS,
+   * occupied, no check-out — detected by nobody.
+   *
+   * It raised here rather than there because this file is where an alert is decided,
+   * and it already runs on a schedule through the sweep, persists, and notifies. The
+   * old location would have needed all three built from scratch to do less.
+   *
+   * SURFACES, NEVER MUTATES. Nothing auto-closes a stalled job: whether the worker is
+   * still there, the job ran long, or the check-in was never closed out are all
+   * different, and a cron guessing between them would be quietly rewriting a
+   * financial record. A person decides.
+   */
+  const STALLED_AFTER_MINUTES = 30;
+  for (const job of jobs) {
+    if (job.status !== 'IN_PROGRESS' || job.checkedOutAt || !job.checkedInAt) continue;
+
+    /**
+     * Measured from the check-in, not the schedule.
+     *
+     * The first version anchored on `composeJobStart(scheduledDate, scheduledTime)`
+     * and took the later of that and the check-in. The schedule is not a reliable
+     * reference for this: a job checked into late in the day still has today's 10:00
+     * on its row, so the "finish" it computed was in the future and the elapsed time
+     * came out negative — the rule then never fired for any job at all.
+     *
+     * What actually matters is how long the worker has been on site, and that is
+     * known exactly: checkedInAt. `durationMinutes` is the planned length and is 0 for
+     * jobs booked without one, which is why it is added rather than compared — so a
+     * zero-length job still gets the grace window instead of being flagged the
+     * instant it starts.
+     */
+    const elapsedMinutes = (now.getTime() - job.checkedInAt.getTime()) / 60_000;
+    const allowedMinutes = (job.durationMinutes || 0) + STALLED_AFTER_MINUTES;
+
+    if (elapsedMinutes >= allowedMinutes) {
+      const stalledMinutes = elapsedMinutes;
+      alerts.push({
+        type: 'warning',
+        title: `Stalled job: ${job.clientName || 'unknown client'}`,
+        message: `Checked in ${Math.floor(stalledMinutes / 60)}h ago and never checked out. It is still marked in progress, so it is still occupying the slot.`,
+        entityType: 'job',
+        entityId: job.id,
+      });
+    }
+  }
 
   for (const job of jobs) {
     // Job escrow held > 30 days → WARNING

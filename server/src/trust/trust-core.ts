@@ -170,9 +170,20 @@ class TrustCore {
     }
   }
 
-  async calculateScore(wallet: string): Promise<number> {
-    return 500;
-  }
+  /**
+   * A combined passport score was never written, so the stub returned 500.
+   *
+   * It had zero callers, so nothing ever displayed the number. What made it worth
+   * removing rather than leaving inert: 500 is the midpoint of this system's 0-1000
+   * passport scale, so it looks exactly like a real, moderate score. Anyone wiring it
+   * up later would read "500" as a measurement of this person.
+   *
+   * There is no correct value to substitute. TrustPassport carries three independent
+   * 0-1000 scores (payment, delivery, show-up) which are written by their own event
+   * handlers, and how to weight them is a deliberate decision that belongs in
+   * config/trust-weights.ts alongside every other weight in the platform — not as a
+   * literal typed into a method that returns a constant.
+   */
 
   async getPassport(passportId: string): Promise<unknown> {
     return prisma.trustPassport.findUnique({ where: { id: passportId } });

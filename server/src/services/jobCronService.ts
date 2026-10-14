@@ -22,7 +22,12 @@ export class JobCronService {
       if (this.running) return;
       this.running = true;
       try {
-        await this.processOverdueJobs();
+        // Stalled check-ins moved to alerts.service.generateAlerts, where alerts are
+        // decided. This was `processOverdueJobs`, an empty method that ran every
+        // minute and detected nothing: a job checked into and never out is still
+        // occupying the slot, and nothing surfaced it. The rule now raises an alert
+        // through the sweep, and deliberately does not close the job — that is a
+        // person's decision, not a cron's.
         await this.processNoShows();
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -40,12 +45,6 @@ export class JobCronService {
       this.cronJob.stop();
       logger.info('[JobCron] Stopped');
     }
-  }
-
-  private async processOverdueJobs() {
-    // Stalled check-ins (IN_PROGRESS far past the scheduled end) are a real
-    // operational signal, but acting on them needs a per-business grace policy
-    // that does not exist yet. Left explicit rather than half-implemented.
   }
 
   /**

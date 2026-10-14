@@ -33,6 +33,7 @@ export default function ContactClientDetailPage() {
   const [files, setFiles] = useState<any[]>([]);
 
   const [showActivityModal, setShowActivityModal] = useState(false);
+  const [shareState, setShareState] = useState<'copied' | 'failed' | null>(null);
   const [activityForm, setActivityForm] = useState({ type: 'NOTE', title: '', description: '' });
 
   useEffect(() => {
@@ -69,6 +70,28 @@ export default function ContactClientDetailPage() {
       setLoading(false);
     }
   }
+
+  /**
+   * Copy a real, public link to this client's trust passport.
+   *
+   * `/trust/:passportId` is a real route, so the URL was always correct — the lie was
+   * the feedback, not the link. `writeText` returns a promise that rejects on a
+   * denied permission or an insecure context, and it was neither awaited nor caught,
+   * so the success alert appeared either way.
+   */
+  const shareTrustProfile = async () => {
+    const url = `${window.location.origin}/trust/${client.passportId}`;
+    setShareState(null);
+    try {
+      if (!navigator.clipboard) throw new Error('no clipboard');
+      await navigator.clipboard.writeText(url);
+      setShareState('copied');
+    } catch {
+      setShareState('failed');
+    }
+    // Clear it so the message does not sit on the page contradicting a later action.
+    setTimeout(() => setShareState(null), 4000);
+  };
 
   const handleClientUpdate = async (field: string, value: any) => {
     const token = getAuthToken();
@@ -134,21 +157,40 @@ export default function ContactClientDetailPage() {
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="ghost" icon="handshake" onClick={() => {
-              alert(`Invitation sent! Once ${client.name} accepts, they will be added to your personal connections network.`);
-            }}>
-              Connect Personally
-            </Button>
+          <div className="flex gap-2 items-center">
+            {/* "Connect Personally" is gone.
+                It called `alert('Invitation sent! Once X accepts, they will be added
+                to your personal connections network.')` and sent nothing. There is no
+                system behind it: the `Connection` model links one User to another, and
+                a CrmClient has no userId, so there is no row that could be created.
+                The button promised a feature the platform does not have, and an
+                invented invitation is worse than no button at all — someone believes
+                they have sent it. */}
+
             {client.passportId && (
-              <Button variant="ghost" icon="share" onClick={() => {
-                const url = `${window.location.origin}/trust/${client.passportId}`;
-                navigator.clipboard.writeText(url);
-                alert('Trust profile link copied!');
-              }}>Share Trust Profile</Button>
+              <Button variant="ghost" icon="share" onClick={shareTrustProfile}>
+                Share Trust Profile
+              </Button>
             )}
             <Button variant="primary" icon="add" onClick={() => setShowActivityModal(true)}>Log Activity</Button>
           </div>
+
+          {/* Feedback is inline and says what happened. The old handler called
+              navigator.clipboard.writeText without awaiting or catching it, then
+              showed `alert('Trust profile link copied!')` unconditionally — so a
+              rejected clipboard write (permission denied, or a non-secure context)
+              still reported success. */}
+          {shareState && (
+            <span
+              role="status"
+              className="text-xs"
+              style={{ color: shareState === 'copied' ? 'var(--sage)' : 'var(--dusty-rose)' }}
+            >
+              {shareState === 'copied'
+                ? 'Link copied.'
+                : 'Could not copy — the link is in the address bar of this page.'}
+            </span>
+          )}
         </div>
 
         <div className="flex gap-1 border-b border-[rgba(191,179,163,0.3)] pb-2 overflow-x-auto hide-scrollbar clay-fade clay-delay-1">

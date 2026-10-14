@@ -49,6 +49,15 @@ function StatCard({ icon, value, label, color = 'clay', delay = 0 }: {
 
 export default function ContactOSPage() {
   const [leads, setLeads] = useState<any[]>([]);
+  /**
+   * Real deals, fetched rather than inferred.
+   *
+   * The "Active Deals" card used to be `leads.filter(l => l.stage === 'booked').length`
+   * — a count of CLIENTS, labelled as deals. A business with one open deal and forty
+   * booked clients was shown "40 active deals", and a business with fifty open deals
+   * and no booked clients was shown zero.
+   */
+  const [deals, setDeals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [healed, setHealed] = useState(false);
   /**
@@ -95,6 +104,38 @@ export default function ContactOSPage() {
     }
   };
 
+  const fetchDeals = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/deals`, {
+        headers: { Authorization: `Bearer ${getAuthToken()}` },
+      });
+      if (!res.ok) return;
+      const body = await res.json();
+      setDeals(body.data || []);
+    } catch (err) {
+      console.error('[ContactOS] could not load deals:', err);
+    }
+  };
+
+  /**
+   * A deal is active until it is decided. `WON` and `LOST` are the only terminal
+   * stages, so those are the only ones excluded — filtering on the open list instead
+   * would break the moment the pipeline is customised, which is why PipelineSettings
+   * makes it readable-only rather than letting the list drift.
+   */
+  const activeDeals = deals.filter((d) => d.stage !== 'WON' && d.stage !== 'LOST').length;
+
+  /**
+   * Newest first, and capped.
+   *
+   * This rendered `leads.map(...)` — every client the tenant has — under a heading
+   * reading "Recent Clients". At 500 clients that is a 500-row wall on the page
+   * someone sees every morning, and the heading is not describing it.
+   */
+  const recentClients = [...leads]
+    .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+    .slice(0, 6);
+
   useEffect(() => {
     let cancelled = false;
     const fetchLeads = async () => {
@@ -107,6 +148,10 @@ export default function ContactOSPage() {
           const data = await res.json();
           setLeads(data.data || []);
           setEnrolled(true);
+          // Deliberately not awaited into the critical path: a slow or failing deals
+          // call should not hold up the dashboard. The card renders 0 until it lands,
+          // which is the honest state for "we don't know yet".
+          void fetchDeals();
           return;
         }
 
@@ -246,7 +291,7 @@ export default function ContactOSPage() {
               <StatCard icon="groups" value={leads.length.toString()} label="Total Clients" color="clay" delay={160} />
             </Link>
             <Link to="/contact/deals" className="block">
-              <StatCard icon="trending_up" value={leads.filter(l => l.stage === 'booked').length.toString()} label="Active Deals" color="sage" delay={240} />
+              <StatCard icon="trending_up" value={activeDeals.toString()} label="Active Deals" color="sage" delay={240} />
             </Link>
             <Link to="/contact/clients" className="block">
               <StatCard icon="repeat" value={leads.filter(l => l.stage === 'repeat').length.toString()} label="Repeat Clients" color="sky-wash" delay={320} />
@@ -308,14 +353,14 @@ export default function ContactOSPage() {
             ) : (
               <Card hover={false} noPadding>
                 <div>
-                  {leads.map((lead, i) => (
+                  {recentClients.map((lead, i) => (
                     <Link
                       key={lead.id}
                       to={`/contact/clients/${lead.id}`}
                       className="flex items-center justify-between px-7 transition-colors duration-200 clay-table-row"
                       style={{
                         height: 'var(--space-row-height)',
-                        borderBottom: i < leads.length - 1 ? '1px solid rgba(191, 179, 163, 0.15)' : 'none',
+                        borderBottom: i < recentClients.length - 1 ? '1px solid rgba(191, 179, 163, 0.15)' : 'none',
                         borderRadius: '0',
                       }}
                       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(232, 217, 197, 0.3)')}
