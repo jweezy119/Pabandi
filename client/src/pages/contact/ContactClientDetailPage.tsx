@@ -14,6 +14,7 @@ import { ClientPropertyPanel } from '../crm/components/ClientPropertyPanel';
 import { ClientIntelligencePanel } from './components/ClientIntelligencePanel';
 import { TrustScoreBreakdown } from './components/TrustScoreBreakdown';
 import { ClientTermsSuggestion } from './components/ClientTermsSuggestion';
+import { TrustProofButton } from './components/TrustProofButton';
 
 // 'Property' is the tenancy half of this person. It was absent because a tenant and
 // a CRM client were unrelated records; they are now linked by a real foreign key
@@ -173,6 +174,11 @@ export default function ContactClientDetailPage() {
                 Share Trust Profile
               </Button>
             )}
+            {/* The sharing profile is a public record anyone can fetch by id. This is
+                the opposite: a proof scoped to one business, carrying a band and
+                nothing else. The old button stays for "here is my public profile";
+                this is for "prove it to this one business, privately". */}
+            {client.passportId && <TrustProofButton clientId={id!} />}
             <Button variant="primary" icon="add" onClick={() => setShowActivityModal(true)}>Log Activity</Button>
           </div>
 

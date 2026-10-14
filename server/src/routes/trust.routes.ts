@@ -4,6 +4,7 @@ import { logger } from '../utils/logger';
 import { apiLimiter, writeLimiter } from '../middleware/rateLimit.middleware';
 import { getAttestationsForPassport } from '../services/onchain-attestation.service';
 import { signVerifiableCredential } from '../trust/vcKeys';
+import { verifyTrustDisclosure } from '../trust/disclosure.service';
 
 const router = Router();
 const VC_EXPIRY_HOURS = 24;
@@ -17,6 +18,53 @@ function publicScores(passport: any) {
     freight: passport.freightScore ?? 500,
   };
 }
+
+/**
+ * POST /api/v1/trust/verify-disclosure
+ *
+ * Check a trust disclosure someone has shown you.
+ *
+ * Public and stateless on purpose. A business verifying a client needs no account
+ * with us and no access to our database — only the published public key, which is
+ * already served at /.well-known/pabandi-keys.json. That is what makes the credential
+ * worth anything to a stranger: it can be checked by someone who trusts the key and
+ * nothing else about us.
+ *
+ * `audienceBusinessId` is checked against the credential's `aud`. Passing it is what
+ * turns "this proof is genuine" into "this proof was made FOR you"; omitting it
+ * answers only the first, which is the right default for a verifier who simply wants
+ * to inspect it.
+ *
+ * `threshold` asks the question the verifier actually has: does this clear the bar
+ * for the terms I am about to offer? The answer is a boolean, not the underlying
+ * score — the score was never in the credential.
+ */
+router.post('/verify-disclosure', async (req: Request, res: Response) => {
+  try {
+    const { credential, audienceBusinessId, threshold } = req.body || {};
+    if (typeof credential !== 'string' || !credential.trim()) {
+      return res.status(400).json({ success: false, error: 'credential is required' });
+    }
+
+    const parsedThreshold = Number(threshold);
+    const result = verifyTrustDisclosure(credential, {
+      audienceBusinessId:
+        typeof audienceBusinessId === 'string' && audienceBusinessId ? audienceBusinessId : undefined,
+      threshold:
+        Number.isFinite(parsedThreshold) && parsedThreshold >= 0 && parsedThreshold <= 100
+          ? parsedThreshold
+          : undefined,
+    });
+
+    // A failed verification is a 200 with `valid: false`, not an error status. It is a
+    // successful check that came back negative — an expired proof is a fact about the
+    // proof, not a fault with the request.
+    res.json({ success: true, data: result });
+  } catch (error: any) {
+    logger.error(`[Trust] disclosure verification error: ${error.message}`);
+    res.status(500).json({ success: false, error: 'Could not verify the proof' });
+  }
+});
 
 /**
  * GET /api/v1/trust/resolve/:identifier

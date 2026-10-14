@@ -50,6 +50,7 @@ import {
   recordTermsDecision,
 } from '../services/terms-recommendation.service';
 import { collectClientSignals, explainScore } from '../services/trust-core.service';
+import { mintTrustDisclosure } from '../trust/disclosure.service';
 import * as crmService from '../services/crm.service';
 import { crmScope } from '../services/crm.service';
 import { CustomError } from '../middleware/errorHandler';
@@ -1254,6 +1255,43 @@ router.get('/jobs/:id/escrow', async (req: AuthRequest, res: Response) => {
     res.status(status).json({
       success: false,
       ...(status >= 500 ? { error: 'Could not load escrow' } : { error: err.message }),
+    });
+  }
+});
+
+/**
+ * ─── Trust disclosure ───────────────────────────────────────────────────────
+ *
+ * Mint a credential asserting this client's trust BAND — never the score, and never
+ * anything identifying. The point is that a client can prove they are a reliable
+ * payer to a business that has no relationship with them yet, without handing over a
+ * record of who they are or what they have paid.
+ *
+ * `audienceBusinessId` defaults to the caller's own business, so the ordinary case —
+ * "show this to a business I'm about to work with" — requires the caller to say
+ * nothing and cannot accidentally mint an open credential.
+ */
+router.post('/clients/:id/trust-disclosure', async (req: AuthRequest, res: Response) => {
+  try {
+    const crm = requireCrmContext(req);
+    const audience =
+      typeof req.body?.audienceBusinessId === 'string' && req.body.audienceBusinessId.trim()
+        ? req.body.audienceBusinessId.trim()
+        : crm.businessId ?? crm.serviceBusinessId;
+
+    const result = await mintTrustDisclosure({
+      clientId: req.params.id,
+      serviceBusinessId: crm.serviceBusinessId,
+      audienceBusinessId: audience,
+      baseUrl: `${req.protocol}://${req.get('host')}`,
+    });
+
+    res.status(201).json({ success: true, data: result });
+  } catch (err: any) {
+    const status = Number(err?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      ...(status >= 500 ? { error: 'Could not create the proof' } : { error: err.message }),
     });
   }
 });
