@@ -445,6 +445,56 @@ router.patch('/invoices/:id/status', async (req: AuthRequest, res: Response) => 
 // ── Job Lifecycle Management ──────────────────────────────────────────────
 
 /**
+ * GET /api/v1/crm/setup-progress
+ *
+ * Real counts, for the first-run checklist.
+ *
+ * Deliberately a single endpoint rather than the checklist fetching five lists. It
+ * needs counts, and fetching whole collections to read `.length` would pull every
+ * client, job, deal and invoice into the browser to answer a yes/no question — on
+ * the page most likely to be loaded by someone on a phone.
+ *
+ * Each count is a `count`, not a `findMany`, so the database returns one integer per
+ * table.
+ */
+router.get('/setup-progress', async (req: AuthRequest, res: Response) => {
+  try {
+    const crm = requireCrmContext(req);
+    const scope = crmScope(crm.serviceBusinessId, crm.businessId);
+
+    const [clients, jobs, deals, tasks, invoices] = await Promise.all([
+      prisma.crmClient.count({ where: scope }),
+      prisma.crmJob.count({ where: scope }),
+      prisma.crmDeal.count({ where: scope }),
+      // Only outstanding work. A pile of completed tasks is not evidence that the
+      // person set their workspace up, so counting them would tick the box for someone
+      // who finished their list a year ago and never came back.
+      prisma.crmActivity.count({
+        where: { AND: [scope, { type: 'TASK', status: { not: 'DONE' } }] },
+      }),
+      prisma.invoice.count({
+        // Invoices are keyed by the platform Business. An impossible predicate rather
+        // than an empty one: an empty filter here is a match-all on the money table,
+        // and while a count cannot leak rows, it would report a wildly wrong number
+        // and tick the box off nothing.
+        where: {
+          businessId: crm.businessId ?? '__no_platform_business__',
+          status: { not: 'draft' },
+        },
+      }),
+    ]);
+
+    res.json({ success: true, data: { clients, jobs, deals, openTasks: tasks, sentInvoices: invoices } });
+  } catch (err: any) {
+    const status = Number(err?.statusCode) || 500;
+    res.status(status).json({
+      success: false,
+      ...(status >= 500 ? { error: 'Could not load setup progress' } : { error: err.message }),
+    });
+  }
+});
+
+/**
  * GET /api/v1/crm/search?q=
  *
  * One search across clients, deals, jobs, invoices and activities.

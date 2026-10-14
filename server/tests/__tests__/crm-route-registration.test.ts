@@ -92,6 +92,7 @@ const CLIENT_PAGES_CALL = [
   ['POST', '/api/v1/crm/tasks'],
   ['PATCH', '/api/v1/crm/tasks/act_1'],
   ['GET', '/api/v1/crm/search?q=Ada'],
+  ['GET', '/api/v1/crm/setup-progress'],
   ['GET', '/api/v1/crm/reports/activities'],
   ['GET', '/api/v1/crm/alerts'],
 ];

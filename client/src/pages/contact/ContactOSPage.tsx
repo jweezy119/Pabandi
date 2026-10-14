@@ -8,6 +8,7 @@ import ModularDashboard from '../crm/components/ModularDashboard';
 import { useAuthStore } from '../../store/authStore';
 import { getAuthToken } from '../../utils/authToken';
 import { HalalBanner, HalalBadge } from '../../components/halal';
+import FirstRunChecklist from './components/FirstRunChecklist';
 
 
 
@@ -230,6 +231,13 @@ export default function ContactOSPage() {
           {/* ── Halal compliance ─────────────────────────────────── */}
           <div className="mb-8">
             <HalalBanner compact />
+          </div>
+
+          {/* Above the stat cards, not at the bottom. It is the only thing on this
+              page that changes what someone does next, so it goes where the eye lands.
+              It renders nothing once the work is done or dismissed. */}
+          <div className="mb-8">
+            <FirstRunChecklist />
           </div>
 
           {/* ── Stat cards ───────────────────────────────────────── */}
