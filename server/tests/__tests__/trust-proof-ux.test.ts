@@ -52,6 +52,9 @@ function visibleTextOf(src: string): string {
         l.length > 3 &&
         /[a-z]{3}/i.test(l) &&
         // A path like '../../../utils/authToken' is not prose either.
+        // An object-literal entry like `TOP: 'Established',` is a lookup table, not
+        // prose, even though it contains no code punctuation.
+        !/^\w+\s*:/.test(l) &&
         !/[;=<>{}()\/]|\bconst\b|\breturn\b|\bimport\b|\bfrom\b/.test(l),
     );
   const quoted = [...src.matchAll(/'([^'\n]{8,})'/g)]

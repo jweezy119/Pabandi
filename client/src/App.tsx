@@ -20,6 +20,7 @@ const LedgerInvoiceNewPage = lazy(() => import('./pages/ledger/LedgerInvoiceNewP
 const LedgerExpenseNewPage = lazy(() => import('./pages/ledger/LedgerExpenseNewPage'));
 const HomePage = lazy(() => import('./pages/HomePage'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
+const TrustVerifyPage = lazy(() => import('./pages/TrustVerifyPage'));
 const AuthPage = lazy(() => import('./pages/AuthPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage').then((m) => ({ default: m.OnboardingPage })));
@@ -489,6 +490,14 @@ function AnimatedAppRoutes() {
 
           {/* Landing page - standalone, no chrome */}
           <Route path="/" element={<LandingPage />} />
+
+          {/* Checking someone's standing. Public and unauthenticated on purpose.
+              A proof is only worth something to a stranger if a stranger can check it
+              without first creating an account — asking someone to sign up in order to
+              learn whether they are safe to work with is the exact friction the whole
+              thing removes. It is deliberately NOT inside <Layout> or behind
+              BusinessGuard: no chrome, no nav, nothing that implies a product tour. */}
+          <Route path="/verify-trust" element={<TrustVerifyPage />} />
 
           {/* ALL other routes inside Layout */}
           <Route element={<Layout />}>
