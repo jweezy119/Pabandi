@@ -18,13 +18,22 @@
 -- `lastJobAt` is deliberately left NULL when the client has no completed job, which
 -- is a real state rather than a missing value to be papered over with epoch zero.
 --
--- CrmJob is mapped to `crm_jobs` in the schema and CrmActivity and CrmClient are
--- not mapped at all, so the hand-written SQL below uses all three spellings. This
--- statement is dry-run inside a rolled-back transaction before it ships, for the same
--- reason the earlier migrations were: the mapping is applied by the Prisma client,
--- never to SQL typed by hand.
+-- ── TABLE NAMES ─────────────────────────────────────────────────────────────
+--
+-- `crm_clients` and `crm_jobs` are both `@@map`ped in the schema. The Prisma client
+-- applies those mappings; SQL written by hand never does. This statement originally
+-- said "CrmClient", ran on production at 2026-10-13 17:09, and FAILED on
+-- `relation "CrmClient" does not exist` -- which aborted Render's preDeploy and left
+-- the API frozen on the previous deploy for a day.
+--
+-- The identical trap is documented at length in the 20261013 migration that added
+-- `crm_clients.company`, and it was still walked into. Both names below are verified
+-- against the schema's @@map, not inferred from the model name.
+--
+-- Both tables are named by their mapped form here. CrmActivity, used by the sibling
+-- migration, genuinely has no mapping and is genuinely spelled `CrmActivity`.
 
-UPDATE "CrmClient" c
+UPDATE "crm_clients" c
 SET
   "totalJobs" = COALESCE((
     SELECT COUNT(*) FROM "crm_jobs" j
