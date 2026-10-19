@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation } from 'react-query';
+import toast, { Toaster } from 'react-hot-toast';
 import { businessService, reservationService, walletService, propertyManagerService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
-import { Surface, Button, Badge, tokens } from '../design-system';
+import { Surface, Button, Badge } from '../design-system';
 import { format, addDays, isSameDay } from 'date-fns';
+import { useEngineCheckout } from '../hooks/useEngineCheckout';
+import { EmbeddedCheckoutModal, type DepositPrompt } from '../components/EmbeddedCheckoutModal';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface Business {
@@ -34,7 +37,7 @@ interface TimeSlot {
 export default function BookingExperience() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const [step, setStep] = useState<'search' | 'detail' | 'confirm'>(id ? 'detail' : 'search');
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,6 +51,20 @@ export default function BookingExperience() {
   const [specialRequests, setSpecialRequests] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'safepay' | 'solana' | 'bsc'>('safepay');
   const [bookingComplete, setBookingComplete] = useState(false);
+  const [depositPrompt, setDepositPrompt] = useState<DepositPrompt | null>(null);
+
+  // The engine decides whether a deposit applies. This page no longer reads a
+  // Trust Score to work that out -- it never did here, but it did carry a
+  // `trustScore` field and render it, which implied a client-side judgement
+  // that was never actually made. See FluidBookingPage for the same migration
+  // where the logic did exist.
+  const { runAction, closeSession, submitting } = useEngineCheckout();
+
+  useEffect(() => {
+    return () => {
+      void closeSession();
+    };
+  }, [closeSession]);
 
   // Fetch business details
   const { data: businessData } = useQuery(
@@ -97,19 +114,78 @@ export default function BookingExperience() {
       onSuccess: () => {
         setBookingComplete(true);
       },
-      onError: (err: any) => {
-        alert(err?.response?.data?.message || 'Booking failed');
+      onError: (err: { response?: { data?: { message?: string } } }) => {
+        toast.error(err?.response?.data?.message || 'Booking failed');
       },
     }
   );
 
-  const handleBookTable = () => {
+  const handleBookTable = async () => {
     if (!selectedBusiness || !selectedTime) return;
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !user?.id) {
       navigate('/login');
       return;
     }
 
+    const reservationPayload = {
+      businessId: selectedBusiness.id,
+      reservationDate: format(selectedDate, 'yyyy-MM-dd'),
+      reservationTime: selectedTime,
+      numberOfGuests: guests,
+      specialRequests,
+      paymentMethod,
+    };
+
+    const outcome = await runAction({
+      actionType: 'booking',
+      amount: 0,
+      payload: reservationPayload,
+      ownerType: 'user',
+      ownerId: user.id,
+    });
+
+    if (!outcome) return;
+
+    if (outcome.actionRequired === 'deposit_required') {
+      const base = (import.meta.env.VITE_API_URL || '').replace(/\/api\/v\d+\/?$/, '');
+      const params = new URLSearchParams({
+        businessId: selectedBusiness.id,
+        receiptId: outcome.receiptId,
+      });
+      setDepositPrompt({
+        checkoutUrl: `${base}/checkout/deposit?${params.toString()}`,
+        description: `Deposit for your reservation at ${selectedBusiness.name}`,
+      });
+      return;
+    }
+
+    toast.success('Booking confirmed. No deposit required.');
+    bookingMutation.mutate(reservationPayload);
+  };
+
+  const handleDepositFunded = async () => {
+    setDepositPrompt(null);
+
+    if (!selectedBusiness || !user?.id) return;
+
+    const outcome = await runAction({
+      actionType: 'booking',
+      amount: 0,
+      payload: {
+        businessId: selectedBusiness.id,
+        reservationDate: format(selectedDate, 'yyyy-MM-dd'),
+        reservationTime: selectedTime,
+        numberOfGuests: guests,
+        specialRequests,
+        paymentMethod,
+      },
+      ownerType: 'user',
+      ownerId: user.id,
+    });
+
+    if (!outcome) return;
+
+    toast.success('Deposit received. Your reservation is confirmed.');
     bookingMutation.mutate({
       businessId: selectedBusiness.id,
       reservationDate: format(selectedDate, 'yyyy-MM-dd'),
@@ -390,10 +466,10 @@ export default function BookingExperience() {
             {/* Book Button */}
             <Button
               onClick={handleBookTable}
-              disabled={!selectedTime || bookingMutation.isLoading}
+              disabled={!selectedTime || bookingMutation.isLoading || submitting}
               className="w-full py-4 text-lg"
             >
-              {bookingMutation.isLoading ? 'Booking...' : 'Confirm Reservation'}
+              {submitting || bookingMutation.isLoading ? 'Booking...' : 'Confirm Reservation'}
             </Button>
 
             <p className="text-xs text-[var(--soft-stone)] text-center">
@@ -402,6 +478,16 @@ export default function BookingExperience() {
           </div>
         </div>
       </div>
+
+      {/* Deposit prompt and a page-scoped Toaster -- see FluidBookingPage for
+          why the Toaster is scoped rather than mounted app-wide. */}
+      <EmbeddedCheckoutModal
+        prompt={depositPrompt}
+        onClose={() => setDepositPrompt(null)}
+        onFunded={handleDepositFunded}
+      />
+
+      <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
     </div>
   );
 }

@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import {
-  Calendar, Clock, Users, ChevronLeft, ChevronRight, Check,
-  Shield, AlertTriangle, CreditCard, Zap, ArrowLeft
+  Calendar, Clock, Users, ChevronRight, Check, Shield, Zap, ArrowLeft
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Toaster } from 'react-hot-toast';
 import { getAuthToken } from '../../utils/authToken';
 import { HalalBadge } from '../../components/halal';
+import { useEngineCheckout } from '../../hooks/useEngineCheckout';
+import { EmbeddedCheckoutModal, type DepositPrompt } from '../../components/EmbeddedCheckoutModal';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
 
@@ -55,13 +57,24 @@ export default function FluidBookingPage() {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState<any>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [depositPrompt, setDepositPrompt] = useState<DepositPrompt | null>(null);
   const [customerInfo, setCustomerInfo] = useState({
     name: user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : '',
     email: user?.email || '',
     phone: user?.phone || '',
     requests: '',
   });
+
+  // The engine. Owns the session, the balance, and the deposit decision.
+  const { runAction, closeSession, session, submitting } = useEngineCheckout();
+
+  // Release the tab when the page goes away, so an abandoned checkout does not
+  // hold its limit until expiry.
+  useEffect(() => {
+    return () => {
+      void closeSession();
+    };
+  }, [closeSession]);
 
   useEffect(() => {
     if (businessSlug) loadBusiness();
@@ -106,7 +119,66 @@ export default function FluidBookingPage() {
 
   const handleBook = async () => {
     if (!business || !selectedDate || !selectedTime) return;
-    setSubmitting(true);
+    if (!user?.id) {
+      toast.error('Please sign in to complete your booking.');
+      navigate('/login');
+      return;
+    }
+
+    const amount = selectedService?.discountPrice || selectedService?.price || 0;
+    const bookingPayload = {
+      businessId: business.id,
+      serviceId: selectedService?.id,
+      date: selectedDate,
+      time: selectedTime,
+      guests,
+      customerName: customerInfo.name,
+      customerEmail: customerInfo.email,
+      customerPhone: customerInfo.phone,
+      specialRequests: customerInfo.requests,
+    };
+
+    // ── THE ENGINE DECIDES, NOT THIS PAGE ───────────────────────────────────
+    // This used to compute a deposit and a trust waiver client-side and gate
+    // the booking on the result. Both are gone: the engine resolves the Trust
+    // Score from the real principal, decides whether a deposit is required,
+    // and answers with `actionRequired`. A rule enforced in a browser is a
+    // suggestion, and it disagreed with the server's own copy of the score.
+    //
+    // `amount` is the booking's own value, not a deposit. The engine is told
+    // what is being authorised and decides whether it needs a deposit on top.
+    const outcome = await runAction({
+      actionType: 'booking',
+      amount,
+      payload: bookingPayload,
+      ownerType: 'user',
+      ownerId: user.id,
+    });
+
+    if (!outcome) return;
+
+    if (outcome.actionRequired === 'deposit_required') {
+      // The engine wants a deposit before this settles. Open it in place --
+      // no redirect off the booking flow, so the user's details survive.
+      setDepositPrompt({
+        checkoutUrl: buildDepositCheckoutUrl(business.id, outcome.receiptId),
+        description: `Deposit for your booking at ${business.name}`,
+        amount,
+        currency: session?.currency ?? 'USDC',
+      });
+      return;
+    }
+
+    // No deposit needed. Say so explicitly: the user was shown a deposit-shaped
+    // flow and deserves to be told it did not apply.
+    toast.success('Booking confirmed. No deposit required.');
+
+    // The reservation itself is still created by the booking service. The
+    // engine authorises the spend; it does not own the booking row.
+    await createReservation(bookingPayload);
+  };
+
+  const createReservation = async (bookingPayload: Record<string, unknown>) => {
     try {
       const res = await fetch(`${API_BASE}/api/v1/fluid-booking/book`, {
         method: 'POST',
@@ -114,31 +186,73 @@ export default function FluidBookingPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${getAuthToken() || ''}`,
         },
-        body: JSON.stringify({
-          businessId: business.id,
-          serviceId: selectedService?.id,
-          date: selectedDate,
-          time: selectedTime,
-          guests,
-          customerName: customerInfo.name,
-          customerEmail: customerInfo.email,
-          customerPhone: customerInfo.phone,
-          specialRequests: customerInfo.requests,
-        }),
+        body: JSON.stringify(bookingPayload),
       });
       const data = await res.json();
       if (data.success) {
         setBooking(data.data);
         setStep(4);
-        toast.success('Booking confirmed!');
       } else {
-        toast.error(data.error || 'Booking failed');
+        toast.error(data.error || 'Could not create the reservation.');
       }
     } catch (err) {
-      toast.error('Booking failed');
-    } finally {
-      setSubmitting(false);
+      toast.error('Could not create the reservation.');
     }
+  };
+
+  /** Re-run the same booking after a deposit clears. */
+  const handleDepositFunded = async () => {
+    setDepositPrompt(null);
+
+    if (!business || !user?.id) return;
+
+    const outcome = await runAction({
+      actionType: 'booking',
+      amount: selectedService?.discountPrice || selectedService?.price || 0,
+      payload: {
+        businessId: business.id,
+        serviceId: selectedService?.id,
+        date: selectedDate,
+        time: selectedTime,
+        guests,
+        customerName: customerInfo.name,
+        customerEmail: customerInfo.email,
+        customerPhone: customerInfo.phone,
+        specialRequests: customerInfo.requests,
+      },
+      ownerType: 'user',
+      ownerId: user.id,
+    });
+
+    if (!outcome) return;
+
+    toast.success('Deposit received. Your booking is confirmed.');
+    await createReservation({
+      businessId: business.id,
+      serviceId: selectedService?.id,
+      date: selectedDate,
+      time: selectedTime,
+      guests,
+      customerName: customerInfo.name,
+      customerEmail: customerInfo.email,
+      customerPhone: customerInfo.phone,
+      specialRequests: customerInfo.requests,
+    });
+  };
+
+  /**
+   * Where the deposit is collected.
+   *
+   * Built here rather than taken from the engine response because the engine's
+   * `actionRequired` carries no URL -- Phase 2's engine settles nothing on-chain
+   * yet, so there is no canonical checkout endpoint for it to hand back. When
+   * settlement lands this becomes a field on the engine response and this
+   * helper goes away with it.
+   */
+  const buildDepositCheckoutUrl = (businessId: string, receiptId: string) => {
+    const base = (import.meta.env.VITE_API_URL || API_BASE).replace(/\/api\/v\d+\/?$/, '');
+    const params = new URLSearchParams({ businessId, receiptId });
+    return `${base}/checkout/deposit?${params.toString()}`;
   };
 
   const getDates = () => {
@@ -440,22 +554,31 @@ export default function FluidBookingPage() {
                   <span className="font-medium text-[var(--warm-ink)]">{booking.service.name}</span>
                 </div>
               )}
-              {booking.payment && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-[var(--soft-stone)]">Deposit</span>
-                  <span className="font-medium text-[var(--clay)]">${booking.payment.amount}</span>
-                </div>
-              )}
             </div>
 
-            {booking.trust && (
+            {/*
+              What used to be here was a trust panel reading
+              `booking.trust.score >= 80 ? 'Your trusted status waives the
+              deposit!' : ...` and a Deposit row computed from
+              `booking.payment.amount` -- client-side judgement about whether a
+              score was high enough, over a score the client was handed.
+
+              Both are gone. `actionRequired` from the engine is the only input
+              to this decision now, and it was already applied before the user
+              ever reached this screen. What remains is the session balance, so
+              they can see what the booking cost against their tab.
+            */}
+            {session && (
               <div className="p-4 rounded-2xl bg-[var(--sage)]/5 border border-[var(--sage)]/15">
                 <div className="flex items-center gap-2 mb-2">
                   <Shield size={16} className="text-[var(--sage)]" />
-                  <span className="text-sm font-semibold text-[var(--warm-ink)]">Trust Score: {booking.trust.tier}</span>
+                  <span className="text-sm font-semibold text-[var(--warm-ink)]">
+                    Charged to your session
+                  </span>
                 </div>
                 <p className="text-xs text-[var(--soft-stone)]">
-                  {booking.trust.score >= 80 ? 'Your trusted status waives the deposit!' : `No-show risk: ${Math.round(booking.trust.noShowProbability * 100)}%`}
+                  {session.currency} {session.spent} of {session.totalLimit} used.
+                  No deposit was required for this booking.
                 </p>
               </div>
             )}
@@ -478,6 +601,26 @@ export default function FluidBookingPage() {
           </div>
         )}
       </div>
+
+      {/*
+        Scoped Toaster. The app mounts no <Toaster /> anywhere, so every
+        toast.success/error in this file -- including the ones already here --
+        has been a silent no-op. Mounting one app-wide would fix all of them at
+        once, but that surfaces ~20 files' worth of currently-invisible toasts,
+        several of them error messages that were never meant to be shown. A
+        Toaster here covers this page's own toasts and leaves that decision
+        open on purpose.
+
+        The modal is rendered by the page rather than portalled so it inherits
+        the engine's lifetime: it cannot outlive the checkout that opened it.
+      */}
+      <EmbeddedCheckoutModal
+        prompt={depositPrompt}
+        onClose={() => setDepositPrompt(null)}
+        onFunded={handleDepositFunded}
+      />
+
+      <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
     </div>
   );
 }

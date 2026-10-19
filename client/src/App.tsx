@@ -584,7 +584,19 @@ function AnimatedAppRoutes() {
             <Route path="refer" element={<PlaceholderPage />} />
             <Route path="verifier" element={<PlaceholderPage />} />
             <Route path="book" element={<PlaceholderPage />} />
-            <Route path="book/:id" element={<PlaceholderPage />} />
+            {/*
+              This route used to render <PlaceholderPage />, which silently
+              shadowed `book/:businessSlug` further down this same list -- React
+              Router v6 ranks the two patterns identically and takes the first,
+              so EVERY /book/<anything> URL rendered a placeholder and
+              FluidBookingPage was never reached. DiscoveryPage.tsx:243 links to
+              `/book/${business.id}`, so this was eating every real booking
+              link in the app.
+
+              BookingExperience is the id-keyed page, which is what that link
+              produces, so it takes this route.
+            */}
+            <Route path="book/:id" element={<BookingExperience />} />
             <Route path="reservations" element={<PlaceholderPage />} />
             <Route path="reservations/new" element={<PlaceholderPage />} />
             <Route path="nightlife" element={<PlaceholderPage />} />
@@ -656,7 +668,11 @@ function AnimatedAppRoutes() {
             <Route path="promotions" element={<PlaceholderPage />} />
             <Route path="daraz-scanner" element={<PlaceholderPage />} />
             <Route path="u/:username" element={<PublicProfilePage />} />
-            <Route path="book/:businessSlug" element={<FluidBookingPage />} />
+            {/* FluidBookingPage is slug-keyed, so it cannot share the two-segment
+                `book/:id` pattern -- whichever is registered first wins and the
+                other never renders. Given its own three-segment path so both
+                booking flows are reachable. */}
+            <Route path="book/slug/:businessSlug" element={<FluidBookingPage />} />
             <Route path="user/:id" element={<PublicCustomerProfilePage />} />
             <Route path="verify-email" element={<VerifyEmailPage />} />
             <Route path="passport/dietary" element={<DietaryPassportPage />} />

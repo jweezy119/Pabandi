@@ -203,6 +203,91 @@ export const revenueService = {
   insuranceStats: () => apiClient.get('/monetization/insurance/stats'),
 };
 
+// ── Pabandi Engine: session abstraction ───────────────────────────────────
+//
+// A session is authorised once against a limit set by the caller's Trust Score
+// and then spent repeatedly without a further signature per action. The client
+// should hold one open for the life of a checkout rather than reopening one per
+// action.
+
+/** What the caller must do after an engine action. */
+export type ActionRequired = 'none' | 'deposit_required';
+
+export interface EngineSession {
+  sessionId: string;
+  totalLimit: number;
+  spent: number;
+  remaining: number;
+  currency: string;
+  status: 'active' | 'closed' | 'exhausted';
+  tier: string;
+  expiresAt: string;
+}
+
+export interface EngineReceipt {
+  id: string;
+  actionType: string;
+  amount: number;
+  payloadHash: string;
+  signature: string;
+  createdAt: string;
+}
+
+export interface EngineActionResult {
+  receipt: EngineReceipt;
+  session: {
+    id: string;
+    spent: number;
+    totalLimit: number;
+    remaining: number;
+    status: 'active' | 'closed' | 'exhausted';
+    expiresAt: string;
+  };
+  actionRequired: ActionRequired;
+  idempotentReplay: boolean;
+}
+
+/**
+ * The engine's failure shape. `error` is the machine-readable code (LIMIT_EXCEEDED,
+ * SESSION_EXPIRED, ...) and `message` is for a human. Branch on `error`, never
+ * on `message` -- the codes are what the server maps to status codes and they
+ * are what the UI has to react to.
+ */
+export interface EngineActionError {
+  error: string;
+  message?: string;
+  spent?: number;
+  totalLimit?: number;
+  requested?: number;
+  /** Present on LIMIT_EXCEEDED. */
+  remedy?: { action: string; endpoint: string };
+}
+
+export const engineService = {
+  /**
+   * Open a tab. The server resolves the Trust Score itself -- a caller-supplied
+   * score is only ever able to lower the tier, never raise it -- so do not send
+   * one.
+   */
+  openSession: (data: {
+    ownerType: 'user' | 'agent';
+    ownerId: string;
+    currency?: string;
+  }) => apiClient.post<{ success: true; data: EngineSession }>('/engine/session/open', data),
+
+  /** The high-frequency endpoint. */
+  executeAction: (data: {
+    sessionId: string;
+    actionType: 'booking' | 'invoice_pay' | 'escrow';
+    amount: number;
+    payload?: Record<string, unknown>;
+    idempotencyKey?: string;
+  }) => apiClient.post<{ success: true; data: EngineActionResult }>('/engine/session/action', data),
+
+  closeSession: (data: { sessionId: string; settle?: boolean }) =>
+    apiClient.post('/engine/session/close', data),
+};
+
 export const reservationService = {
   createReservation: (data: any) =>
     apiClient.post('/reservations', data),
