@@ -532,6 +532,11 @@ const routeMap: [string, string][] = [
   // Pabandi Engine: session abstraction. Mounted at /api/v1/engine, so the
   // full paths are POST /api/v1/engine/session/open | /action | /close.
   [`/api/${v}/engine`, './routes/engine.routes'],
+  // Agentic surfaces. Both unauthenticated by design: the storefront is a
+  // public read, and /x402/pay authenticates by possession of an open session
+  // (or by an x-payment proof for the classic rail).
+  [`/api/${v}/x402`, './routes/x402.routes'],
+  [`/api/${v}/storefront`, './routes/storefront.routes'],
   [`/api/${v}/agent-learning`, './routes/agentLearning.routes'],
   [`/api/${v}/trust-passport`, './routes/trustPassport.routes'],
   [`/api/${v}/trust`, './routes/trust.routes'],

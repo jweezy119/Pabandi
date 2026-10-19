@@ -110,6 +110,52 @@ const ENGINE_TOOLS = [
       required: ['agentId', 'capabilities'],
     },
   },
+  {
+    name: 'pabandi_execute_transaction',
+    description:
+      'Spend against an open PabandiSession -- book a service, pay an invoice, or fund an escrow. ' +
+      'REQUIRES a sessionId. Sessions are authorised once against a Trust-Score-derived limit and let ' +
+      'you transact repeatedly without a wallet signature per call, which is the entire point. ' +
+      'If you do not have a session, call pabandi_open_session first and use the sessionId it returns; ' +
+      'this tool will refuse without one rather than fall back to a per-call signature.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        sessionId: { type: 'string', description: 'id of an active PabandiSession (from pabandi_open_session)' },
+        actionType: {
+          type: 'string',
+          enum: ['booking', 'invoice_pay', 'escrow'],
+          description: 'What kind of action this spend authorises',
+        },
+        amount: { type: 'number', description: 'Amount in USDC to deduct from the session limit' },
+        payload: {
+          type: 'object',
+          description: 'Action-specific detail (e.g. {businessId, serviceId, date}). Opaque to the engine; hashed into the receipt.',
+          additionalProperties: true,
+        },
+        idempotencyKey: {
+          type: 'string',
+          description: 'Optional. A retry with the same key returns the original receipt and does not spend again.',
+        },
+      },
+      required: ['sessionId', 'actionType', 'amount'],
+    },
+  },
+  {
+    name: 'pabandi_open_session',
+    description:
+      'Open a PabandiSession -- an "open tab" with a spending limit set by your Trust Score (800+ = $1000 / 30 days, ' +
+      '500+ = $100 / 7 days, below 500 = $20 / 24 hours). Call this before pabandi_execute_transaction; ' +
+      'it returns the sessionId every subsequent spend uses. No wallet signature is needed.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        ownerType: { type: 'string', enum: ['user', 'agent'], description: 'Which principal this tab belongs to' },
+        ownerId: { type: 'string', description: 'id of that principal' },
+      },
+      required: ['ownerType', 'ownerId'],
+    },
+  },
 ];
 
 // ── Platform tools (real HTTP proxy) ─────────────────────────────────────────
@@ -295,6 +341,77 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
       }
       case 'pabandi_discover':
         return ptpEngine.getDiscoveryDocument(`${process.env.BACKEND_URL || ''}`);
+      case 'pabandi_open_session': {
+        const { engineService } = await import('../services/engine.service');
+        const { resolveTrustScore } = await import('../services/trust.service');
+
+        const ownerType = args.ownerType === 'agent' ? 'agent' : 'user';
+        const ownerId = String(args.ownerId ?? '');
+
+        if (!ownerId) {
+          throw new Error(
+            'ownerId is required. Call pabandi_open_session with { ownerType: "agent"|"user", ownerId } to get a sessionId for pabandi_execute_transaction.'
+          );
+        }
+
+        // Score resolved server-side, never from the caller. An agent asking
+        // for a large tab does not get to assert the score that grants it.
+        const trust = await resolveTrustScore(ownerType, ownerId);
+
+        return engineService.openSession(ownerType, ownerId, trust.score);
+      }
+      case 'pabandi_execute_transaction': {
+        // ── WHY A MISSING SESSION IS AN ERROR, NOT A FALLBACK ───────────────
+        // The obvious design is "no sessionId? fall back to a per-call
+        // signature." That would be wrong: the fallback is the exact friction
+        // this tool exists to remove, and it would fail silently and expensively
+        // -- every call would work, just with a signature, and nothing would
+        // tell the agent it had lost the cheap path.
+        //
+        // So this refuses, and the error names the endpoint that fixes it.
+        const sessionId = String(args.sessionId ?? '').trim();
+        if (!sessionId) {
+          throw new Error(
+            'sessionId is required. pabandi_execute_transaction spends from an open PabandiSession. ' +
+              'Call pabandi_open_session first (or POST /api/v1/engine/session/open) and pass the returned sessionId. ' +
+              'This tool does not fall back to a per-call wallet signature.'
+          );
+        }
+
+        const actionType = args.actionType;
+        if (!['booking', 'invoice_pay', 'escrow'].includes(actionType)) {
+          throw new Error("actionType must be one of 'booking', 'invoice_pay', 'escrow'.");
+        }
+
+        const amount = Number(args.amount);
+        if (!Number.isFinite(amount) || amount <= 0) {
+          throw new Error('amount must be a number greater than zero.');
+        }
+
+        const { engineService } = await import('../services/engine.service');
+        const outcome = await engineService.executeTransaction({
+          sessionId,
+          actionType,
+          amount,
+          payload: (args.payload ?? {}) as Record<string, unknown>,
+          idempotencyKey: args.idempotencyKey ? String(args.idempotencyKey) : undefined,
+        });
+
+        if (!outcome.ok) {
+          // LIMIT_EXCEEDED gets the remedy inline, because an agent that has
+          // just run a tab down needs to know what to do next without a
+          // round trip to read docs.
+          if (outcome.error.code === 'LIMIT_EXCEEDED') {
+            throw new Error(
+              `Session limit exceeded: spent ${outcome.error.spent} of ${outcome.error.totalLimit}, requested ${outcome.error.requested}. ` +
+                'Open a new session with pabandi_open_session.'
+            );
+          }
+          throw new Error(`${outcome.error.code}: ${outcome.error.message}`);
+        }
+
+        return outcome.value;
+      }
       case 'pabandi_get_ledger': {
         if (!args.idempotencyKey) throw new Error('idempotencyKey required');
         const rec = await passportEconomy.lookup(args.idempotencyKey);

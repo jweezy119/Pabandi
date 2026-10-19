@@ -30,10 +30,32 @@ export const TRUST_CACHE_TTL_SECONDS = 300;
 const KEY_PREFIX = 'pabandi:trust:v1';
 
 /**
- * Key by kind and id rather than by the id alone: a cuid can be both a User id
- * and a Passport id, and a bare-id key would let one principal's score be read
- * as another's.
+ * ── THE TWO SCALES, AND WHY THIS FUNCTION EXISTS ────────────────────────────
+ *
+ * This codebase stores trust scores on two scales and the schema says so:
+ *
+ *   TrustPassport.paymentScore  0-1000  (defaults to 500, neutral is 500)
+ *   User.reliabilityScore       0-100   (defaults to 50,  canonical)
+ *   Business.reliabilityScore   0-100   (nullable)
+ *
+ * Session tiers are expressed on the 0-1000 scale (800+ opens the large tab),
+ * so everything leaving this module is 0-1000.
+ *
+ * This is not a hypothetical. schema.prisma:64-66 records the same bug having
+ * already happened: User.reliabilityScore "was @default(750) -- a 0-1000-scale
+ * value in a 0-100 field, which made every new account read as GOLD against the
+ * passport tier table". Passing a 0-100 score through unclamped would do it
+ * again in the other direction: a user with a flawless 100 would leave here as
+ * 100, fall below the 500 threshold, and be given the $20/24h tab instead of the
+ * $1000/30-day one they earned.
+ *
+ * So 0-100 columns are converted here, explicitly, and everything downstream
+ * only ever sees 0-1000.
  */
+export function toThousandScale(score: number): number {
+  return Math.round((score * 1000) / 100);
+}
+
 function cacheKey(kind: 'user' | 'agent' | 'passport' | 'client' | 'business', id: string): string {
   return `${KEY_PREFIX}:${kind}:${id}`;
 }
@@ -59,6 +81,14 @@ export interface ResolvedTrust {
  * neutral mid-point rather than zero.
  */
 export const NEUTRAL_SCORE = 500;
+
+/**
+ * Cold-start baseline on the 0-100 scale, from config/trust-weights.ts. Used
+ * where a nullable canonical score has to resolve to something. Not 0: a
+ * business or user with no completed work is not a bad one, and 0 is the worst
+ * score available.
+ */
+export const COLD_START_SCORE = 50;
 
 function clamp(score: number): number {
   if (!Number.isFinite(score)) return NEUTRAL_SCORE;
@@ -116,7 +146,7 @@ export async function getAgentTrustScore(agentId: string): Promise<ResolvedTrust
 
     return {
       score: clamp(score),
-      source: passport ? 'TrustPassport.paymentScore' : 'no_passport',
+      source: passport ? 'TrustPassport.paymentScore (already 0-1000)' : 'no_passport',
       computedAt: Date.now(),
     };
   });
@@ -127,8 +157,10 @@ export async function getAgentTrustScore(agentId: string): Promise<ResolvedTrust
 /**
  * Resolve a User's score.
  *
- * Users do not have a TrustPassport row of their own, so this reads the
- * canonical reliability score the CRM keeps on the user.
+ * Users do not have a TrustPassport row of their own. `User.reliabilityScore`
+ * is the canonical 0-100 field, so it is converted to the 0-1000 scale the
+ * tiers use. `User.trustScore` is 0-100 too and is a fallback for a user whose
+ * reliability score has not been seeded.
  */
 export async function getUserTrustScore(userId: string): Promise<ResolvedTrust> {
   const key = cacheKey('user', userId);
@@ -136,16 +168,54 @@ export async function getUserTrustScore(userId: string): Promise<ResolvedTrust> 
   const record = await readThrough<TrustScoreRecord>(key, async () => {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { reliabilityScore: true },
+      select: { reliabilityScore: true, trustScore: true },
     });
 
     if (!user) {
       return { score: NEUTRAL_SCORE, source: 'unknown_user', computedAt: Date.now() };
     }
 
+    const raw = user.reliabilityScore ?? user.trustScore ?? COLD_START_SCORE;
+
     return {
-      score: clamp(user.reliabilityScore ?? NEUTRAL_SCORE),
-      source: 'User.reliabilityScore',
+      score: clamp(toThousandScale(raw)),
+      source: 'User.reliabilityScore (0-100 scaled to 0-1000)',
+      computedAt: Date.now(),
+    };
+  });
+
+  return { score: record.score, cached: isFromCache(record), source: record.source };
+}
+
+/**
+ * Resolve a business's score, for the public storefront.
+ *
+ * `Business.reliabilityScore` is nullable by design -- schema.prisma:246-250
+ * says readers must resolve null through the cold-start baseline rather than
+ * defaulting to 0, because 0 is the worst possible score and "no history yet"
+ * is not the same as "a bad record". So null becomes COLD_START_SCORE, scaled.
+ */
+export async function getBusinessTrustScore(businessId: string): Promise<ResolvedTrust> {
+  const key = cacheKey('business', businessId);
+
+  const record = await readThrough<TrustScoreRecord>(key, async () => {
+    const business = await prisma.business.findUnique({
+      where: { id: businessId },
+      select: { reliabilityScore: true, trustScore: true },
+    });
+
+    if (!business) {
+      return { score: NEUTRAL_SCORE, source: 'unknown_business', computedAt: Date.now() };
+    }
+
+    const raw = business.reliabilityScore ?? business.trustScore ?? COLD_START_SCORE;
+
+    return {
+      score: clamp(toThousandScale(raw)),
+      source:
+        business.reliabilityScore === null
+          ? 'Business.coldStart (0-100 scaled to 0-1000)'
+          : 'Business.reliabilityScore (0-100 scaled to 0-1000)',
       computedAt: Date.now(),
     };
   });
@@ -172,7 +242,7 @@ export async function getPassportTrustScore(passportId: string): Promise<Resolve
 
     return {
       score: clamp(passport.paymentScore ?? passport.showUpScore ?? NEUTRAL_SCORE),
-      source: 'TrustPassport.paymentScore',
+      source: 'TrustPassport.paymentScore (already 0-1000)',
       computedAt: Date.now(),
     };
   });
@@ -241,6 +311,7 @@ export async function invalidateTrustScore(
 export const trustService = {
   getAgentTrustScore,
   getUserTrustScore,
+  getBusinessTrustScore,
   getPassportTrustScore,
   resolveTrustScore,
   invalidateTrustScore,
