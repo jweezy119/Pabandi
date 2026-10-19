@@ -8350,3 +8350,77 @@ model Connection {
   @@index([connectedUserId])
   @@index([businessId])
 }
+
+// ── PABANDI ENGINE: SESSION ABSTRACTION ──────────────────────────────────────
+//
+// An "open tab". A human or an agent signs once, then spends repeatedly
+// against a fixed limit without a further signature per action. The signature
+// that authorised the session stands in for the ones it replaces, which is the
+// whole point: on-chain authorisation is per-transaction and that per-action
+// cost is what this system exists to remove.
+//
+// Nothing here touches Solana. A session is a database row that records what
+// has been promised; settlement (moving the accumulated total on-chain) is a
+// separate step that `closeSession` triggers and that Phase 4 wires up. Until
+// that exists the balances are promises, and the code below says so where it
+// matters rather than implying a transfer happened.
+model PabandiSession {
+  id           String    @id @default(cuid())
+  /// "user" | "agent". A String rather than an enum to match the convention
+  /// used by CrmClient.status / Invoice.status, both of which enumerate in a
+  /// comment rather than in the type.
+  ownerType    String
+  ownerId      String
+  /// The public half of the ephemeral keypair that authorises this session.
+  /// Unique so a session can never be addressed ambiguously. The private half
+  /// is never stored here: until settlement it is not needed, and holding it
+  /// would make every row in this table a signing capability.
+  ephemeralKey String    @unique
+  totalLimit   Float
+  spent        Float     @default(0)
+  /// "active" | "closed" | "exhausted"
+  status       String    @default("active")
+  currency     String    @default("USDC")
+  expiresAt    DateTime
+  closedAt     DateTime?
+  /// Set when closeSession settles the remainder. Null while the session is
+  /// still open, and also after an expiry sweep -- which is precisely the case
+  /// a settlement sweep has to find.
+  settledAt    DateTime?
+  /// Full-resolution total accumulated by receipts. `spent` is the same figure
+  /// rounded to cents for balance arithmetic; this is kept so that a rounding
+  /// decision can be revisited without re-deriving it from every receipt.
+  settledTotal Float     @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  receipts SessionReceipt[]
+
+  // Opening a session looks the owner up ("does this agent already have a tab
+  // open?"), which is a two-column equality match -- neither column alone is
+  // selective enough to be useful on its own.
+  @@index([ownerType, ownerId])
+  // The expiry sweep scans for sessions past expiresAt that have not settled.
+  @@index([status, expiresAt])
+}
+
+model SessionReceipt {
+  id             String         @id @default(cuid())
+  sessionId      String
+  session        PabandiSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  /// "booking" | "invoice_pay" | "escrow"
+  actionType     String
+  amount         Float
+  /// SHA-256 of the canonicalised payload. Lets a disputed action be proven to
+  /// be the one that was authorised, without keeping the payload itself.
+  payloadHash    String
+  signature      String
+  /// Client-supplied retry key. Unique per session so that a retried action
+  /// returns the original receipt instead of spending the balance twice --
+  /// the failure mode a high-frequency endpoint has to be built around.
+  idempotencyKey String?
+  createdAt      DateTime       @default(now())
+
+  @@unique([sessionId, idempotencyKey])
+  @@index([sessionId, createdAt])
+}

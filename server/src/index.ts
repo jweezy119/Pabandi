@@ -529,6 +529,9 @@ const routeMap: [string, string][] = [
   [`/api/${v}/guarantee`, './routes/guaranteeClaim.routes'],
   [`/api/${v}/apps`, './routes/appIntegration.routes'],
   [`/api/${v}/agent-marketplace`, './routes/agentMarketplace.routes'],
+  // Pabandi Engine: session abstraction. Mounted at /api/v1/engine, so the
+  // full paths are POST /api/v1/engine/session/open | /action | /close.
+  [`/api/${v}/engine`, './routes/engine.routes'],
   [`/api/${v}/agent-learning`, './routes/agentLearning.routes'],
   [`/api/${v}/trust-passport`, './routes/trustPassport.routes'],
   [`/api/${v}/trust`, './routes/trust.routes'],
