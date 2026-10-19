@@ -21,18 +21,36 @@ import { z } from 'zod';
 // ── Shared primitives ────────────────────────────────────────────────────────
 
 /**
- * Money, in the smallest unit the API accepts. Bounded above as well as below:
- * an agent sending `amount: 1e308` should be told no at the edge rather than
- * propagating an Infinity into a balance comparison further in.
+ * Money. Bounded above as well as below: an agent sending `amount: 1e308`
+ * should be told no at the edge rather than propagating an Infinity into a
+ * balance comparison further in.
+ *
+ * Precision is capped at 6 decimal places, not 2. The session engine settles in
+ * cents (`toCents` in engine.service.ts) because a balance cap has to be exact,
+ * but a *price* is not a balance and X402_PRICING contains sub-cent values --
+ * `MCP_TOOL_CALL` is 0.001, `ESCROW_INITIATION` is 0.005. Rejecting those here
+ * would reject the project's own price schedule.
+ *
+ * So: accept a precise price, round once when spending. A sub-cent amount
+ * rounds to zero at the session layer, which `executeTransaction` then rejects
+ * as INVALID_AMOUNT -- the caller is told to accumulate rather than being
+ * silently charged nothing.
  */
 const amountSchema = z
   .number({ invalid_type_error: 'amount must be a number' })
   .finite('amount must be a finite number')
   .nonnegative('amount must be zero or greater')
   .max(1_000_000, 'amount exceeds the maximum accepted value')
-  .refine((n) => Number.isInteger(Math.round(n * 100) / 100), {
-    message: 'amount must have at most 2 decimal places',
-  });
+  .refine(
+    (n) => {
+      // True when n is a whole number of millionths. Comparing against a
+      // rounded copy rather than multiplying-and-testing is what avoids
+      // 0.1 + 0.2 style failures deciding the branch.
+      const scaled = n * 1_000_000;
+      return Math.abs(scaled - Math.round(scaled)) < 1e-6;
+    },
+    { message: 'amount must have at most 6 decimal places' }
+  );
 
 /** Cuid or the ids this API actually hands out. Rejects SQL/JS injection shapes. */
 const idSchema = z
