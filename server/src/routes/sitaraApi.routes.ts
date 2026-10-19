@@ -14,6 +14,7 @@ import {
   sendBookingConfirmation,
   sendPromoEmail,
 } from '../services/sitaraApiService';
+import { queueBookingConfirmation, queuePromoEmail } from '../queues/email.queue';
 
 const router = Router();
 
@@ -158,6 +159,9 @@ router.get('/isochrone', async (req: Request, res: Response) => {
 });
 
 // ── Auth: Send booking confirmation email ──────────────────────────────────
+// Queued, not awaited. `sendBookingConfirmation` returned false only on a
+// thrown exception, and the underlying `sendEmail` swallows provider errors,
+// so the old 502 branch was unreachable. 202 is what actually happens now.
 router.post('/send-confirmation', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { to, businessName, date, time, guests } = req.body;
@@ -169,12 +173,15 @@ router.post('/send-confirmation', authenticate, async (req: AuthRequest, res: Re
       });
     }
 
-    const sent = await sendBookingConfirmation({ to, businessName, date, time, guests });
-    if (!sent) {
-      return res.status(502).json({ success: false, error: 'Failed to send email' });
-    }
+    const { mode } = await queueBookingConfirmation({ to, businessName, date, time, guests });
 
-    return res.json({ success: true, data: { message: 'Booking confirmation sent' } });
+    return res.status(202).json({
+      success: true,
+      data: {
+        message: 'Booking confirmation queued for delivery',
+        delivery: mode,
+      },
+    });
   } catch (err: any) {
     console.error('[SitaraApiRoutes] send-confirmation error:', err?.message);
     return res.status(500).json({ success: false, error: 'Email service unavailable' });
@@ -182,6 +189,7 @@ router.post('/send-confirmation', authenticate, async (req: AuthRequest, res: Re
 });
 
 // ── Auth: Send promo email ─────────────────────────────────────────────────
+// Queued for the same reason as /send-confirmation above.
 router.post('/send-promo', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { to, businessName, promoTitle, promoDescription } = req.body;
@@ -193,12 +201,20 @@ router.post('/send-promo', authenticate, async (req: AuthRequest, res: Response)
       });
     }
 
-    const sent = await sendPromoEmail({ to, businessName, promoTitle, promoDescription: promoDescription || '' });
-    if (!sent) {
-      return res.status(502).json({ success: false, error: 'Failed to send email' });
-    }
+    const { mode } = await queuePromoEmail({
+      to,
+      businessName,
+      promoTitle,
+      promoDescription: promoDescription || '',
+    });
 
-    return res.json({ success: true, data: { message: 'Promo email sent' } });
+    return res.status(202).json({
+      success: true,
+      data: {
+        message: 'Promo email queued for delivery',
+        delivery: mode,
+      },
+    });
   } catch (err: any) {
     console.error('[SitaraApiRoutes] send-promo error:', err?.message);
     return res.status(500).json({ success: false, error: 'Email service unavailable' });

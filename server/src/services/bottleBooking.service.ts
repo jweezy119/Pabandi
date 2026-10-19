@@ -1,6 +1,58 @@
 import { logger } from '../utils/logger';
 import { prisma } from '../utils/database';
+import { queueBookingConfirmation, type BookingEmailSnapshot } from '../queues/email.queue';
+// Still used by creditPromoter, which calls sendPromoterCommissionNotification --
+// a method emailService does not have. That call is broken in the existing code
+// and is left exactly as it was rather than fixed under cover of this refactor;
+// it is caught at runtime by the try/catch around it.
 import { emailService } from './email.service';
+
+/**
+ * Build the snapshot the booking-confirmation template actually needs from a
+ * `bottleReservation` row.
+ *
+ * This function exists because the previous code handed the reservation row
+ * straight to `emailService.sendBookingConfirmation`, which expects
+ * `{ to, businessName, date, time, guests }`. A reservation has none of those
+ * fields -- it has `date` as a Date, `arrivalTime`, `guestCount`,
+ * `confirmationCode` and an included `venue`. The call type-checked only
+ * because the template function's parameter was implicitly `any`, and at
+ * runtime it sent a confirmation addressed to `undefined`, so the message
+ * bounced and nothing said so.
+ *
+ * Returns null when there is no guest email to send to. That is a real case --
+ * a reservation can be created without one -- and it must not become a job that
+ * fails the same way three times.
+ */
+async function toBookingEmailSnapshot(
+  booking: {
+    id: string;
+    userId: string;
+    date: Date;
+    arrivalTime: string;
+    guestCount: number;
+    confirmationCode: string;
+    venue?: { name?: string | null } | null;
+  }
+): Promise<BookingEmailSnapshot | null> {
+  const user = await prisma.user.findUnique({
+    where: { id: booking.userId },
+    select: { email: true },
+  });
+
+  if (!user?.email) {
+    return null;
+  }
+
+  return {
+    to: user.email,
+    businessName: booking.venue?.name ?? 'Pabandi',
+    date: booking.date.toISOString().slice(0, 10),
+    time: booking.arrivalTime,
+    guests: booking.guestCount,
+    confirmationCode: booking.confirmationCode,
+  };
+}
 
 
 
@@ -164,11 +216,29 @@ export const bottleBookingService = {
       }
     }
 
-    // Send booking confirmation email
+    // Send booking confirmation email.
+    //
+    // Queued, not awaited: this sits inside createBooking, so the customer was
+    // waiting on Resend to finish a booking that was already committed. A slow
+    // provider turned a successful booking into a timed-out request.
+    //
+    // The fields the template reads are snapshotted from `booking` now rather
+    // than passing the row, because the worker runs later and the booking may
+    // have been edited or deleted by then.
     try {
-      await emailService.sendBookingConfirmation(booking);
-    } catch (err: any) {
-      logger.warn(`Failed to send booking confirmation email: ${err.message}`);
+      const snapshot = await toBookingEmailSnapshot(booking);
+      if (snapshot) {
+        await queueBookingConfirmation(snapshot);
+      } else {
+        // No destination on the booking. Logged rather than queued: a job that
+        // cannot address anyone is a retry that will fail three times for the
+        // same reason.
+        logger.warn(`Booking ${booking.id} has no guest email; confirmation not queued`);
+      }
+    } catch (err: unknown) {
+      // A failure to enqueue must never fail the booking. The booking is
+      // committed and correct; only the courtesy email is missing.
+      logger.warn(`Failed to queue booking confirmation email: ${err instanceof Error ? err.message : String(err)}`);
     }
 
     return booking;

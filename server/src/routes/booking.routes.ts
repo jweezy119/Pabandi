@@ -8,6 +8,7 @@ import {
 } from '../controllers/booking.controller';
 import { bookingService } from '../services/booking.service';
 import { ap2Middleware } from '../middleware/payment';
+import { queueBookingConfirmation, queuePromoEmail } from '../queues/email.queue';
 
 const router = Router();
 
@@ -187,6 +188,13 @@ router.get('/isochrone', async (req: Request, res: Response) => {
 });
 
 // ── BookingOS: Send booking confirmation email ─────────────────────────────
+//
+// Queued rather than awaited. The route used to return 502 when the provider
+// failed, but `emailService.sendEmail` never throws -- it returns `{ error }`
+// -- and `sendBookingConfirmation` only returns false on an exception, so the
+// 502 branch was unreachable in practice. The status code was a claim the code
+// could not keep. It is now 202 Accepted, which is what actually happened:
+// the mail has been handed to the queue.
 router.post('/send-confirmation', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { to, businessName, date, time, guests } = req.body;
@@ -195,12 +203,15 @@ router.post('/send-confirmation', authenticate, async (req: AuthRequest, res: Re
       return res.status(400).json({ success: false, error: 'to, businessName, date, time, guests are required' });
     }
 
-    const sent = await bookingService.sendBookingConfirmation({ to, businessName, date, time, guests });
-    if (!sent) {
-      return res.status(502).json({ success: false, error: 'Failed to send email' });
-    }
+    const { mode } = await queueBookingConfirmation({ to, businessName, date, time, guests });
 
-    return res.json({ success: true, data: { message: 'Booking confirmation sent' } });
+    return res.status(202).json({
+      success: true,
+      data: {
+        message: 'Booking confirmation queued for delivery',
+        delivery: mode,
+      },
+    });
   } catch (err: any) {
     console.error('[BookingRoutes] send-confirmation error:', err?.message);
     return res.status(500).json({ success: false, error: 'Email service unavailable' });
@@ -208,6 +219,7 @@ router.post('/send-confirmation', authenticate, async (req: AuthRequest, res: Re
 });
 
 // ── BookingOS: Send promo email ────────────────────────────────────────────
+// Queued for the same reason as /send-confirmation above.
 router.post('/send-promo', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { to, businessName, promoTitle, promoDescription } = req.body;
@@ -216,12 +228,20 @@ router.post('/send-promo', authenticate, async (req: AuthRequest, res: Response)
       return res.status(400).json({ success: false, error: 'to, businessName, promoTitle are required' });
     }
 
-    const sent = await bookingService.sendPromoEmail({ to, businessName, promoTitle, promoDescription: promoDescription || '' });
-    if (!sent) {
-      return res.status(502).json({ success: false, error: 'Failed to send email' });
-    }
+    const { mode } = await queuePromoEmail({
+      to,
+      businessName,
+      promoTitle,
+      promoDescription: promoDescription || '',
+    });
 
-    return res.json({ success: true, data: { message: 'Promo email sent' } });
+    return res.status(202).json({
+      success: true,
+      data: {
+        message: 'Promo email queued for delivery',
+        delivery: mode,
+      },
+    });
   } catch (err: any) {
     console.error('[BookingRoutes] send-promo error:', err?.message);
     return res.status(500).json({ success: false, error: 'Email service unavailable' });

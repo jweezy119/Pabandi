@@ -17,7 +17,7 @@ import { SOL_USD_PRICE } from '../config/tokenomics';
 
 import { reliabilityService } from '../services/reliability.service';
 import { paymentRouter } from '../services/payment.router';
-import { webhookService } from '../services/webhook.service';
+import { queueWebhook } from '../queues/webhook.queue';
 import { notificationService } from '../services/notification.service';
 import { conciergeService } from '../services/conciergeService';
 import { trustSignalService } from '../services/trustSignal.service';
@@ -411,15 +411,17 @@ export const createReservation = async (
       }
     }
 
-    // Trigger Webhook
-    webhookService.dispatch('reservation.created', businessId, {
+    // Trigger Webhook. Queued: `dispatch` awaited a webhookEndpoint lookup on
+    // this path, so a reservation create paid for a database read it did not
+    // need before it could respond.
+    queueWebhook('reservation.created', businessId, {
       reservation,
       checkoutUrl,
       prediction: {
         riskScore: prediction.riskScore,
         requiresDeposit: requireDeposit,
       },
-    });
+    }).catch((err: unknown) => logger.error('Failed to queue reservation.created webhook:', err));
 
     // Send confirmation notification if not concierge (concierge sends its own once confirmed)
     if (!isConcierge) {
@@ -671,10 +673,10 @@ export const updateReservation = async (
       data: updates,
     });
 
-    // Trigger Webhook
-    webhookService.dispatch('reservation.updated', updated.businessId, {
+    // Trigger Webhook (queued -- see reservation.created above).
+    queueWebhook('reservation.updated', updated.businessId, {
       reservation: updated,
-    });
+    }).catch((err: unknown) => logger.error('Failed to queue reservation.updated webhook:', err));
 
     res.json({
       success: true,
@@ -756,10 +758,10 @@ export const cancelReservation = async (
       reservation.depositAmount || 0
     );
 
-    // Trigger Webhook
-    webhookService.dispatch('reservation.cancelled', cancelled.businessId, {
+    // Trigger Webhook (queued -- see reservation.created above).
+    queueWebhook('reservation.cancelled', cancelled.businessId, {
       reservation: cancelled,
-    });
+    }).catch((err: unknown) => logger.error('Failed to queue reservation.cancelled webhook:', err));
 
     // Process refunds if deposit was paid or staked
     if (reservation.depositRequired && reservation.depositStatus === 'PAID') {

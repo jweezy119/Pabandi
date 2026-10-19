@@ -6,6 +6,7 @@ import {
   engineSessionCloseSchema,
 } from '../schemas/agentic.schemas';
 import engineService from '../services/engine.service';
+import { resolveTrustScore } from '../services/trust.service';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -36,26 +37,26 @@ router.post('/session/open', validateBody(engineSessionOpenSchema), async (req: 
       trustScore?: number;
     };
 
-    // ── TRUST SCORE IS NOT AUTHORITATIVE YET ────────────────────────────────
-    // This route accepts a client-supplied `trustScore`, which means a caller
-    // can currently claim 800 and receive the $1000/30-day tier. That is fine
-    // for an unreleased endpoint and is not fine in production.
+    // ── TRUST SCORE IS RESOLVED SERVER-SIDE ─────────────────────────────────
+    // This used to trust a client-supplied `trustScore`, which meant a caller
+    // could claim 800 and receive the $1000/30-day tier. Now the score comes
+    // from trust.service, which reads the principal's real score.
     //
-    // The fix is to resolve the score server-side here -- from
-    // TrustPassport.paymentScore for an agent, from the User's reliability
-    // score for a user -- and to let the request field act only as a floor
-    // that can lower the tier and never raise it. That lookup needs the trust
-    // service Phase 3 puts behind Redis, so it lands there rather than being
-    // written twice.
-    //
-    // Absent a score, the caller gets the least-privileged tier. Failing
-    // closed here means an unrecognised principal cannot open a large tab by
-    // omitting the field.
-    const effectiveScore = trustScore ?? 0;
+    // A request-supplied `trustScore` is still accepted, but as a FLOOR: it can
+    // lower the tier and never raise it. An agent with no score of its own can
+    // therefore declare itself unproven, but cannot declare itself proven.
+    // Failing closed on the unknown case is the point -- defaulting an
+    // unrecognised principal to the middle tier would let anyone who knew the
+    // endpoint open a large tab by being new.
+    const resolved = await resolveTrustScore(ownerType, ownerId);
+    const effectiveScore = Math.min(resolved.score, trustScore ?? resolved.score);
 
     const session = await engineService.openSession(ownerType, ownerId, effectiveScore);
 
-    return res.status(201).json({ success: true, data: session });
+    return res.status(201).json({
+      success: true,
+      data: { ...session, trustScore: effectiveScore },
+    });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error(`[Engine] session/open error: ${message}`);

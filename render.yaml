@@ -124,3 +124,58 @@ services:
       # recommended for real traffic.
       - key: SOLANA_RPC_URL
         value: https://api.mainnet-beta.solana.com
+
+  # ── BACKGROUND WORKER ─────────────────────────────────────────────────────
+  # Consumes the pabandi-email and pabandi-webhook BullMQ queues, and sweeps
+  # expired PabandiSessions.
+  #
+  # Separate from the API on purpose. A worker is allowed to use more memory and
+  # take longer than a request handler; running it in-process would mean a slow
+  # email provider could take the API down with it, which is the problem Phase 3
+  # exists to solve. A separate service also means the two scale independently.
+  #
+  # Unlike the API, this REQUIRES Redis and exits non-zero without it -- there
+  # is nothing for a worker to degrade to. The API in contrast falls back to
+  # running jobs inline when REDIS_URL is absent, so this service failing does
+  # not take the API with it.
+  - type: worker
+    name: pabandi-worker
+    env: docker
+    region: oregon
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: npm --prefix server run worker
+    # The worker has no HTTP surface, so there is nothing to health check. It is
+    # restarted if it exits non-zero, which it does when it cannot reach Redis.
+    autoDeploy: true
+    buildCommand: echo "Build handled by Dockerfile"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Redis for BullMQ and the trust-score cache. sync:false: the dashboard
+      # value wins so this file cannot silently repoint production at a
+      # different Redis. No Redis is provisioned in this blueprint yet -- see
+      # the note above the API's DATABASE_URL about the connection_limit edit
+      # that still has to be made by hand.
+      - key: REDIS_URL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        fromDatabase:
+          name: pabandi-db
+          property: connectionString
+      # email.service.ts skips all sends when this is unset; the worker would
+      # then drain the queue successfully while sending nothing.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      # Turns the previously-undrained app-integration webhook queue on. See
+      # startAppIntegrationDrain in server/src/queues/worker.ts -- first
+      # deploy delivers a backlog.
+      - key: WORKER_DRAIN_APP_WEBHOOKS
+        value: "true"
+      - key: ENCRYPTION_KEY
+        sync: false

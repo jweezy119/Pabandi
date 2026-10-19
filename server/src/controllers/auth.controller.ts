@@ -15,6 +15,7 @@ import { notificationService } from '../services/notification.service';
 import { emailService } from '../services/email.service';
 import { findOrCreateUser, getActiveBusinessId } from '../services/identity.service';
 import { seedColdStartScore } from '../services/trust-core.service';
+import { queueWelcomeEmailForUser } from '../queues/email.queue';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -459,7 +460,14 @@ export const register = async (
       }).catch(err => logger.error('Failed async Odoo sync:', err));
     }
 
-    emailService.sendWelcome(user);
+    // Queued. This was `emailService.sendWelcome(user)` with no await and no
+    // catch, so a provider failure became an unhandled rejection -- which in
+    // Node 15+ terminates the process. A welcome email is the least important
+    // thing happening during a signup and should never be able to take the
+    // server down.
+    queueWelcomeEmailForUser(user).catch((err: unknown) =>
+      logger.error('Failed to queue welcome email:', err)
+    );
 
     res.status(201).json({
       success: true,
