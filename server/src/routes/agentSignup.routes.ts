@@ -3,7 +3,9 @@ import { prisma } from '../utils/database';
 import { writeLimiter } from '../middleware/rateLimit.middleware';
 import { logger } from '../utils/logger';
 import crypto from 'crypto';
-import { isValidEmailShape } from '../utils/validators';
+import { validateBody } from '../middleware/validateZod';
+import { agentRegistrationSchema } from '../schemas/agentic.schemas';
+import type { AgentRegistration } from '../schemas/agentic.schemas';
 
 const router = Router();
 
@@ -53,32 +55,12 @@ async function provisionAgentPrincipal(
   return { userId: user.id, created: !existing };
 }
 
-router.post('/register', writeLimiter, async (req: Request, res: Response) => {
+router.post('/register', writeLimiter, validateBody(agentRegistrationSchema), async (req: Request, res: Response) => {
   try {
-    const { agentHandle, ownerEmail, name, capabilities } = req.body as {
-      agentHandle: string;
-      ownerEmail: string;
-      name: string;
-      capabilities?: string[];
-    };
-
-    if (!agentHandle || !ownerEmail || !name) {
-      return res.status(400).json({
-        success: false,
-        error: 'agentHandle, ownerEmail, and name are required',
-      });
-    }
-
-    if (!/^[a-z0-9-]{3,30}$/.test(agentHandle)) {
-      return res.status(400).json({
-        success: false,
-        error: 'agentHandle must be 3-30 chars, lowercase alphanumeric + dash',
-      });
-    }
-
-    if (!isValidEmailShape(ownerEmail)) {
-      return res.status(400).json({ success: false, error: 'Invalid email' });
-    }
+    // Shape is guaranteed by agentRegistrationSchema. The middleware has
+    // already replaced req.body with the parsed output, so these are typed
+    // values -- not the untrusted strings the hand-rolled checks used to cast.
+    const { agentHandle, ownerEmail, name, capabilities } = req.body as AgentRegistration;
 
     const existing = await prisma.$queryRaw`
       SELECT id FROM "AgentMarketplace"

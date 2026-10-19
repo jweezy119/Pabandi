@@ -2347,7 +2347,7 @@ model PropertyTenant {
   // make "the tenant for this client" ambiguous and quietly return the wrong
   // person's rent.
   crmClientId        String?
-  crmClient          CrmClient?              @relation(fields: [crmClientId], references: [id], onDelete: SetNull)
+  crmClient          CrmClient?               @relation(fields: [crmClientId], references: [id], onDelete: SetNull)
   tenantApplications TenantApplication[]
   rentSchedules      RentSchedule[]
   ledgers            TenantLedger[]
@@ -2356,9 +2356,9 @@ model PropertyTenant {
   maintenances       PropertyMaintenance[]
 
   @@unique([managerId, email])
+  @@unique([crmClientId])
   @@index([managerId])
   @@index([email])
-  @@unique([crmClientId])
   @@index([crmClientId])
 }
 
@@ -4293,6 +4293,11 @@ model TrustPassport {
   @@index([handle])
   @@index([agentId])
   @@index([providerRef])
+  // Ranking/filtering by score alone (leaderboards, tier gates). Deliberately
+  // NOT @@index([id, paymentScore]): `id` is the primary key, so the PK's own
+  // btree already serves every prefix lookup a composite starting with `id`
+  // could serve. This single-column index is the one that adds something.
+  @@index([paymentScore])
 }
 
 model OnchainAttestation {
@@ -4309,6 +4314,11 @@ model OnchainAttestation {
   @@index([passportId])
   @@index([eventType])
   @@index([status])
+  // The only way this table is read in practice: one passport's attestations,
+  // newest first, optionally narrowed to one event type. Neither single-column
+  // index above can serve that -- Postgres reads the trailing column of a
+  // composite index only when the leading one is constrained too.
+  @@index([passportId, eventType])
 }
 
 // ── Best Fit Engine (Behavioral Biometrics & Pattern Matching) ─────────────
@@ -6017,14 +6027,14 @@ model SolanaEscrow {
   /// funds and carries on-chain transaction signatures; cascading from a work record
   /// onto a financial record is precisely the cascade you do not want.
   jobId      String?
-  job        CrmJob?  @relation(fields: [jobId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  job        CrmJob?   @relation(fields: [jobId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
+  @@unique([jobId])
   @@index([reference])
   @@index([status])
   @@index([jobId])
-  @@unique([jobId])
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -6994,6 +7004,9 @@ model Invoice {
   reconciliationMatches ReconciliationMatch[]
   business              Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
   currency              String                @default("USDC")
+  // (businessId, status) was already present before the add_performance_indexes
+  // pass. Invoices are listed per tenant filtered by status, so it earns its
+  // keep -- just noting it here so nobody adds it a second time.
 
   @@index([businessId, status])
   @@index([clientId])
@@ -7319,13 +7332,13 @@ model ReconciliationMatch {
   /// to decide between trying the next rail and escalating to failure
   /// ownership. Incremented with a guarded update so a redelivered webhook
   /// cannot double-count.
-  retryCount Int @default(0)
+  retryCount        Int     @default(0)
   /// The rail the payment was first attempted on. Kept after a retry moves it
   /// to another rail, so the audit trail still shows where it started.
-  originalRail String?
+  originalRail      String?
   /// The rail this attempt was made on, which differs from `originalRail` after
   /// the first retry.
-  lastRetryRail String?
+  lastRetryRail     String?
   /// Why the last attempt failed, as the rail reported it. Free text because
   /// every processor words its decline reasons differently; the fields that
   /// drive decisions are extracted, not parsed back out of this.
@@ -7334,7 +7347,7 @@ model ReconciliationMatch {
   /// a hard failure (retrying the same payer on another rail will fail the same
   /// way), "congestion" is a queue and is retried on the SAME rail with a
   /// higher priority fee.
-  failureKind String?
+  failureKind       String?
 
   // ── Settlement finality ───────────────────────────────────────────────────
   // "paid" and "final" are different claims. A card payment is received before
@@ -7346,8 +7359,8 @@ model ReconciliationMatch {
   /// on-chain confirmation has no window to wait out.
   settlesAt        DateTime?
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([invoiceId])
   @@index([status])
@@ -7372,7 +7385,7 @@ model InvoiceTrustEvent {
   scoreAfter  Int?
   createdAt   DateTime @default(now())
 
-  invoice  Invoice?      @relation(fields: [invoiceId], references: [id])
+  invoice  Invoice?       @relation(fields: [invoiceId], references: [id])
   passport TrustPassport? @relation(fields: [passportId], references: [id])
 
   /// Idempotency for invoice-scoped events: one `invoice.paid_on_time` per
@@ -7522,6 +7535,9 @@ model CrmClient {
   @@index([passportId])
   @@index([businessId])
   @@index([name])
+  // Client lookup is always scoped to a tenant and almost always by email --
+  // booking, invoicing and CRM search all open with the same two predicates.
+  @@index([businessId, email])
   // ── TABLE NAME ────────────────────────────────────────────────────────────
   // This model maps to crm_clients, NOT the model's own name.
   //

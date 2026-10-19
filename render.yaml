@@ -74,10 +74,18 @@ services:
       # 20261010_trust_event_null_scope ran there on 2026-10-11. A Render
       # database would have returned false.
       #
-      # `sync: false` keeps the dashboard value, so the working configuration
+# `sync: false` keeps the dashboard value, so the working configuration
       # cannot be silently overwritten. If the database is ever genuinely moved,
       # change it in the dashboard and update this comment — do not restore a
-      # `fromDatabase` block without verifying which database the service reads.
+      # fromDatabase block without verifying which database the service reads.
+      #
+      # ACTION REQUIRED IN THE RENDER DASHBOARD (cannot be done from this file,
+      # because sync:false means the blueprint does not own this value):
+      # append `&connection_limit=10&pool_timeout=20` to the existing URL. The
+      # repo's .env / .env.production / .env.example already carry it; this
+      # dashboard value has not been changed. The worker service added in a
+      # later phase opens its own pool, so 10 (api) + 10 (worker) = 20 against
+      # Aliyun RDS — check max_connections before raising either.
       - key: DATABASE_URL
         sync: false
       - key: DIRECT_URL
