@@ -7,6 +7,7 @@ import {
 } from '../schemas/agentic.schemas';
 import engineService from '../services/engine.service';
 import { resolveTrustScore } from '../services/trust.service';
+import { authenticate } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -154,6 +155,48 @@ router.get('/session/:sessionId/receipts', async (req: Request, res: Response) =
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error(`[Engine] receipts error: ${message}`);
+    return res.status(500).json({ success: false, error: message });
+  }
+});
+
+// ── GET /sessions ────────────────────────────────────────────────────────────
+// Owner-scoped read for the wallet: an authenticated user sees the tabs opened
+// under their account id, with balances and status — never signing authority.
+
+router.get('/sessions', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+    const limitRaw = req.query.limit;
+    const limit = typeof limitRaw === 'string' && Number.isFinite(Number(limitRaw)) ? Number(limitRaw) : 10;
+    const sessions = await engineService.listSessionsForOwner(userId, limit);
+    return res.json({ success: true, data: sessions });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`[Engine] sessions error: ${message}`);
+    return res.status(500).json({ success: false, error: message });
+  }
+});
+
+// ── GET /receipts ────────────────────────────────────────────────────────────
+// The wallet's activity feed: recent receipts flattened across all sessions the
+// authenticated user opened.
+
+router.get('/receipts', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+    const limitRaw = req.query.limit;
+    const limit = typeof limitRaw === 'string' && Number.isFinite(Number(limitRaw)) ? Number(limitRaw) : 20;
+    const receipts = await engineService.listReceiptsForOwner(userId, limit);
+    return res.json({ success: true, data: receipts });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`[Engine] receipts feed error: ${message}`);
     return res.status(500).json({ success: false, error: message });
   }
 });

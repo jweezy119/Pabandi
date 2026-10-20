@@ -601,6 +601,66 @@ class EngineService {
   }
 
   /**
+   * Owner-scoped session list for wallet UIs. The wallet must show the account
+   * history of tab activity without granting spend authority over anything:
+   * this read selects no key material — resolution of a session needs its id,
+   * and possession of an id alone does not authorise a spend (spend checks the
+   * ephemeral signature). Plain read, so it is unit-testable without a queue.
+   */
+  async listSessionsForOwner(ownerId: string, limit = 10) {
+    const rows = await prisma.pabandiSession.findMany({
+      where: { ownerId },
+      orderBy: { createdAt: 'desc' },
+      take: Math.min(Math.max(limit, 1), 50),
+      select: {
+        id: true,
+        ownerType: true,
+        totalLimit: true,
+        spent: true,
+        status: true,
+        currency: true,
+        createdAt: true,
+        expiresAt: true,
+        closedAt: true,
+      },
+    });
+
+    return rows.map((row) => ({
+      id: row.id,
+      ownerType: row.ownerType,
+      totalLimit: row.totalLimit,
+      spent: row.spent,
+      remaining: fromCents(toCents(row.totalLimit) - toCents(row.spent)),
+      status: row.status as SessionStatus,
+      currency: row.currency,
+      createdAt: row.createdAt.toISOString(),
+      expiresAt: row.expiresAt.toISOString(),
+      closedAt: row.closedAt ? row.closedAt.toISOString() : null,
+    }));
+  }
+
+  /**
+   * Recent receipts across an owner's sessions — the wallet's activity feed.
+   * Flattens the receipts of every session the owner opened, newest first.
+   */
+  async listReceiptsForOwner(ownerId: string, limit = 20) {
+    const sessions = await prisma.pabandiSession.findMany({
+      where: { ownerId },
+      select: { id: true },
+    });
+    if (sessions.length === 0) return [];
+
+    const rows = await prisma.sessionReceipt.findMany({
+      where: { sessionId: { in: sessions.map((s) => s.id) } },
+      orderBy: { createdAt: 'desc' },
+      take: Math.min(Math.max(limit, 1), 100),
+      select: { id: true, sessionId: true, actionType: true, amount: true, payloadHash: true, signature: true, createdAt: true },
+    });
+
+    return rows.map((row) => ({ ...this.toReceiptView(row), sessionId: row.sessionId }));
+  }
+
+  /**
    * Sessions past their expiry that were never settled. This is the work the
    * Phase 3 worker runs; it is a plain read so it can be unit-tested without a
    * queue.

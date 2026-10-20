@@ -395,6 +395,13 @@ export const walletService = {
   claimAirdrop: () => apiClient.post('/wallet/claim-airdrop'),
   send: (data: { to: string; amount: number; currency: string }) => apiClient.post('/wallet/send', data),
   getTransactions: () => apiClient.get('/wallet/transactions'),
+  /**
+   * Pabandi Engine settlement sessions opened by the authenticated account.
+   * Owner-scoped server read — the wallet cannot spend through it.
+   */
+  getEngineSessions: () => apiClient.get('/engine/sessions?limit=10'),
+  /** Recent engine receipts across all sessions the account opened. */
+  getEngineReceipts: () => apiClient.get('/engine/receipts?limit=20'),
 };
 
 export const pabService = {
