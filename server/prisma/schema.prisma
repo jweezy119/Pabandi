@@ -580,7 +580,7 @@ model Booking {
   updatedAt     DateTime       @updatedAt
   business      Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
   client        CrmClient?     @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  job           CrmJob?        @relation(fields: [id], references: [bookingId])
+  job           CrmJob?
   review        BookingReview?
 
   clientAddress String?
@@ -7674,7 +7674,16 @@ model CrmJob {
   employeeId String?
   employee   CrmEmployee? @relation("JobAssignments", fields: [employeeId], references: [id], onDelete: SetNull)
   bookingId  String?      @unique
-  booking    Booking?
+  // The FK side of the Booking↔CrmJob one-to-one lives HERE, not on Booking.
+  // The relation was declared with `fields: [id], references: [bookingId]` on
+  // the Booking model, which Prisma accepted and the database then built
+  // literally: Booking.id FK → CrmJob.bookingId. Enforced, that forbids a
+  // booking from existing until a job with its id already exists — exactly the
+  // reverse of how the platform creates them (booking first, job from it),
+  // and the reason the settlement sweep's tests could not create a booking on
+  // a database built from this schema. The fields/references pair moved to
+  // the side that actually holds the column.
+  booking    Booking?     @relation(fields: [bookingId], references: [id])
 
   // Location verification
   checkinLat            Float?
