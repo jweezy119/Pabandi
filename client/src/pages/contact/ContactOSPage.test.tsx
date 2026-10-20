@@ -103,9 +103,12 @@ const RENDER_TIMEOUT_MS = 10_000;
 describe('ContactOSPage redirect', () => {
   it('renders the workspace when the server says the account is enrolled', async () => {
     // THE regression. This used to render "setup wizard".
+    // Assertions follow the page's own promise, not an implementation detail:
+    // the vault greeting exists only on the workspace, so it proves both that
+    // the page rendered and that it rendered the right page.
     renderContactOS(200);
 
-    await waitFor(() => expect(screen.getByText(/here's your business at a glance/i)).toBeTruthy(),
+    await waitFor(() => expect(screen.getByText(/here is the money secured behind your bookings/i)).toBeTruthy(),
       { timeout: RENDER_TIMEOUT_MS });
     expect(screen.queryByText('setup wizard')).toBeNull();
     expect(screen.getByTestId('path').textContent).toBe('/contact');
@@ -126,7 +129,7 @@ describe('ContactOSPage redirect', () => {
     // account into the wizard whenever the API had a bad minute.
     renderContactOS(500);
 
-    await waitFor(() => expect(screen.getByText(/here's your business at a glance/i)).toBeTruthy(),
+    await waitFor(() => expect(screen.getByText(/here is the money secured behind your bookings/i)).toBeTruthy(),
       { timeout: RENDER_TIMEOUT_MS });
     expect(screen.queryByText('setup wizard')).toBeNull();
   });

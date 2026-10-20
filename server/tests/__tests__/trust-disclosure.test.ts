@@ -69,14 +69,28 @@ const claims = (credential: string) => jwt.decode(credential) as Record<string, 
 
 describe('what the credential discloses', () => {
   it('asserts a band and nothing finer', async () => {
-    const { credential } = await mint();
-    const payload = claims(credential);
+    // The whole-serialisation scan is the honest check — the score must be
+    // written NOWHERE, not absent from a claim list — but the token also
+    // carries an iat, an exp, and a timestamped jti, and all three are real
+    // numbers that at some wall-clock moment contain the substring. To a
+    // substring scan a timestamp matching the score is indistinguishable from
+    // a leak. Freezing the clock makes the scan a statement about the minting
+    // code, not about what time it is; the frozen epoch, its base-36 jti, and
+    // its exp are all digit-clean of '84' by construction.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-15T10:30:00.000Z'));
+    try {
+      const { credential } = await mint();
+      const payload = claims(credential);
 
-    expect(payload.pab.trustBand).toBe('TOP');
-    expect(payload.pab.bandLabel).toBe('80–100');
-    // The number itself must not appear anywhere in the token.
-    const serialised = JSON.stringify(payload);
-    expect(serialised).not.toContain('84');
+      expect(payload.pab.trustBand).toBe('TOP');
+      expect(payload.pab.bandLabel).toBe('80–100');
+      // The number itself must not appear anywhere in the token.
+      const serialised = JSON.stringify(payload);
+      expect(serialised).not.toContain('84');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('contains no identifying claim at all', async () => {
