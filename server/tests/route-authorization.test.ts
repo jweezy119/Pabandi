@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterAll, beforeAll, vi } from 'vitest';
 
 /**
  * Route-level authorisation on the money endpoints.
@@ -14,6 +14,44 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
  * Each assertion states the reason so a future edit that drops the gate
  * explains itself rather than just failing.
  */
+
+/**
+ * The timers this file's imports start, and why this file stops them.
+ *
+ * Every `await import('../src/routes/...')` below drags in that module's whole
+ * service dependency graph, and several of those services register pollers
+ * (`setInterval`) at module scope. This worker then stays alive for the rest
+ * of the run receiving their console writes after the assertions are over —
+ * and on a slow CI runner one of those writes was still mid-flight when
+ * vitest closed the worker, surfacing as a fatal
+ * `EnvironmentTeardownError: Closing rpc while "onUserConsoleLog" was
+ * pending`. The tests passed; the exit code did not.
+ *
+ * So: wrap `setInterval` while the imports happen, remember every handle the
+ * imported modules created, and clear them all in `afterAll`. No assertion
+ * here is affected — these tests read middleware stacks synchronously — and
+ * the background work they were scheduled for is not lab environment anyway.
+ */
+const createdIntervals: NodeJS.Timeout[] = [];
+const realSetInterval = globalThis.setInterval.bind(globalThis);
+
+beforeAll(() => {
+  globalThis.setInterval = ((fn: any, ms?: number, ...args: any[]) => {
+    const handle = realSetInterval(fn as any, ms as any, ...args);
+    createdIntervals.push(handle);
+    return handle;
+  }) as typeof globalThis.setInterval;
+});
+
+afterAll(async () => {
+  globalThis.setInterval = realSetInterval;
+  for (const handle of createdIntervals) clearInterval(handle);
+  createdIntervals.length = 0;
+  // Let a console write already dispatched land before the worker tears its
+  // rpc channel down: the error is about a write in flight at close, and one
+  // macrotask is what it needs.
+  await new Promise((resolve) => setImmediate(resolve));
+});
 
 const SECRET = 'test-jwt-secret';
 process.env.JWT_SECRET = SECRET;
