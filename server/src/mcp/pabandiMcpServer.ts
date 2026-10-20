@@ -21,6 +21,7 @@ import { passportEconomy, validateCapabilities, PTPRiskBand } from '../services/
 import { PAB_FEE_PER_PASSPORT } from '../config/tokenomics';
 import { optionalAuthenticate } from '../middleware/auth.middleware';
 import { pabandiToolsRegistry, pabandiPlatformDoc, toolAccessOk } from '../services/pabandiTools.service';
+import { declareDiscoveryExtension } from '@x402/extensions';
 
 const SERVER_NAME = 'pabandi-trust';
 const SERVER_VERSION = '1.0.0';
@@ -42,6 +43,80 @@ const X402_PRICE_USDC: Record<string, number> = {
   pabandi_book_stay: 0.25,
 };
 
+/**
+ * ─── BAZAAR DISCOVERY FOR THE PAID TOOLS ─────────────────────────────────────
+ *
+ * Every x402-gated tool places its discovery declaration in the JSON-RPC 402
+ * the caller receives, so the Bazaar (and any agent) can render each tool's
+ * request schema and a worked response example without touching the dispatch
+ * code. `declareDiscoveryExtension` builds exactly the record shape the
+ * x402 Bazaar reads (`extensions.bazaar`), and `tools/list` still serves the
+ * TOOLS table untouched — this is discovery metadata only.
+ */
+const X402_TOOLExamples: Record<string, { inputExample: Record<string, unknown>; outputExample: Record<string, unknown> }> = {
+  pabandi_issue_passport: {
+    inputExample: {
+      agentId: 'svc-agent-7',
+      capabilities: ['act:book', 'read'],
+      idempotencyKey: 'iss-3001',
+    },
+    outputExample: {
+      passportId: 'pass_9f8e7d6c',
+      agentId: 'svc-agent-7',
+      capabilities: ['act:book', 'read'],
+      riskBand: 'B',
+      feePAB: 10,
+      idempotentReplay: false,
+    },
+  },
+  pabandi_start_escrow: {
+    inputExample: {
+      bookingId: 'bk_2211',
+      amount: 200,
+    },
+    outputExample: {
+      escrowId: 'esc_4242',
+      status: 'HELD',
+      network: 'solana',
+      amount: 200,
+      currency: 'USDC',
+    },
+  },
+  pabandi_book_stay: {
+    inputExample: {
+      propertyId: 'prop_88',
+      guestEmail: 'guest@example.com',
+      checkIn: '2026-11-02',
+      checkOut: '2026-11-05',
+    },
+    outputExample: {
+      reservationId: 'res_7781',
+      propertyId: 'prop_88',
+      status: 'confirmed',
+      deposit: { amount: 120, currency: 'USDC', escrowStatus: 'HELD' },
+    },
+  },
+};
+
+function bazaarExtensionForTool(toolName: string): Record<string, unknown> | undefined {
+  const tool = TOOLS.find((t: any) => t.name === toolName);
+  const examples = X402_TOOLExamples[toolName];
+  if (!tool || !examples) return undefined;
+  // TOOLS entries type inputSchema loosely (unknown) because half of the table
+  // is plain documentation; a declared schema is required for discovery, and
+  // every paid tool has one.
+  const schema = tool.inputSchema as Record<string, unknown> | undefined;
+  if (!schema) return undefined;
+  return declareDiscoveryExtension({
+    toolName,
+    description: tool.description,
+    transport: 'json-rpc',
+    inputSchema: schema,
+    example: examples.inputExample,
+    output: { example: examples.outputExample },
+  });
+}
+
 async function requireX402(toolName: string, req?: Request): Promise<void> {
   const price = X402_PRICE_USDC[toolName];
   if (!price) return;
@@ -55,6 +130,9 @@ async function requireX402(toolName: string, req?: Request): Promise<void> {
     recipient: process.env.SOLANA_USDC_ADDRESS || 'PABANDI_USDC_WALLET',
     tool: toolName,
     paymentMethods: ['solana-usdc', 'x402'],
+    // Computed lazily against a tool lookup, not baked into a static: when a
+    // paid tool's schema changes, its discovery follows without a second edit.
+    extensions: bazaarExtensionForTool(toolName),
   };
 
   if (!paymentProof) {

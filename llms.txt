@@ -1,7 +1,7 @@
 # Pabandi — Trust & Settlement Layer for AI Agents
 
 > Start here. One-curl signup. Here's the exact command:
-> curl -X POST https://api.pabandi.com/api/v1/agents/register -H "Content-Type: application/json" -d '{"agentHandle":"my-agent","ownerEmail":"you@example.com","name":"My Agent"}'
+> curl -X POST https://pabandi.onrender.com/api/v1/agents/register -H "Content-Type: application/json" -d '{"agentHandle":"my-agent","ownerEmail":"you@example.com","name":"My Agent"}'
 
 ## What is Pabandi?
 
@@ -10,7 +10,7 @@ Pabandi is the trust layer for the service economy and the settlement layer for 
 ## One-Curl Agent Signup
 
 ```bash
-curl -X POST https://api.pabandi.com/api/v1/agents/register \
+curl -X POST https://pabandi.onrender.com/api/v1/agents/register \
   -H "Content-Type: application/json" \
   -d '{"agentHandle":"my-agent","ownerEmail":"you@example.com","name":"My Agent","capabilities":["booking","trust-verification"]}'
 ```
@@ -24,11 +24,15 @@ x-api-key: pab_...
 Authorization: Bearer pab_...
 ```
 
-`GET https://api.pabandi.com/api/v1/agents/register` is not a thing — signup is POST-only.
+`GET /api/v1/agents/register` is not a thing — signup is POST-only (GET returns 404).
+
+## Hosts
+
+This file, the ARD manifest, and the marketing site are served from **`https://pabandi.com`** (Firebase static hosting). Everything that needs the API — MCP, REST, x402 — is served from **`https://pabandi.onrender.com`**. There is no `api.pabandi.com`; documents citing it are stale.
 
 ## MCP Server
 
-Endpoint: `https://api.pabandi.com/mcp`
+Endpoint: `https://pabandi.onrender.com/mcp` (POST only — GET is 404)
 Protocol: JSON-RPC 2.0 (Streamable HTTP)
 Auth: `Authorization: Bearer <api_key>`
 Rate limit: 30 requests/minute
@@ -44,6 +48,8 @@ Rate limit: 30 requests/minute
 | `pabandi_discover` | PTP protocol discovery document | public | `POST /mcp` (tools/call) |
 | `pabandi_get_ledger` | Public audit lookup of a passport issuance charge by idempotency key | public | `POST /mcp` (tools/call) |
 | `pabandi_issue_passport` | See /api/v1/pabandi/tools | x402 paid | `POST /mcp` (tools/call) |
+| `pabandi_execute_transaction` | See /api/v1/pabandi/tools | auth | `POST /mcp` (tools/call) |
+| `pabandi_open_session` | See /api/v1/pabandi/tools | auth | `POST /mcp` (tools/call) |
 | `pabandi_discover_platform` | Full platform capability manifest | auth | `POST /mcp` (tools/call) |
 | `pabandi_platform_access` | Grant or inspect an exclusive platform access credential | auth | `POST /mcp` (tools/call) |
 | `pabandi_platform_discovery` | Pabandi platform discovery | public | `GET /api/v1/pabandi/tools`, `GET /api/v1/pabandi/spec` |
@@ -98,6 +104,15 @@ These require a session cookie or an agent API key.
 
 ## Discovery Endpoints
 
+On the static host (`https://pabandi.com`):
+
+```
+/llms.txt                                  # This file
+/.well-known/ard.json                      # ARD agent-readiness manifest (MCP server card + llms doc)
+```
+
+On the API host (`https://pabandi.onrender.com`):
+
 ```
 /.well-known/agents.json                  # Agent capability manifest
 /.well-known/agent-registry.json          # Dynamic agent registry
@@ -106,12 +121,24 @@ These require a session cookie or an agent API key.
 /.well-known/oauth-protected-resource
 /.well-known/ptp.json                     # PTP protocol discovery (public key + endpoints)
 GET /api/v1/pabandi/tools                 # Full machine-readable platform manifest
-GET /api/v1/pabandi/spec                  # Generated OpenAPI document
+GET /openapi.yaml                         # Generated OpenAPI document
 ```
 
 ## Payments
 
-- **x402**: the agent sends `X-PAYMENT` (base64 of the signed payment payload) on the same request cycle. Pabandi verifies it with the facilitator before serving the call; a missing or invalid proof returns HTTP 402 / JSON-RPC error `402` with the exact price. Verification fails closed unless `X402_ALLOW_UNVERIFIED` is set.
+Two payment rails behind the same route, plus metered MCP tools:
+
+```
+POST /api/v1/x402/pay                     # Both rails, mirrored below
+```
+
+1. **Session spend (frictionless)**: include `sessionId` from `POST /api/v1/engine/session/open` in the body. The amount is debited against the session's trust-derived spend limit — no wallet signature per call. The response reports `settled: false` until on-chain settlement lands; it says so honestly rather than pretending.
+2. **Classic x402 (per-call)**: omit `sessionId`, get back HTTP 402 with the payment requirements (facilitator `https://x402.org/facilitator`), send the proof in `X-PAYMENT` (base64 signed payment payload), replay the request.
+3. **MCP tools**: `pabandi_issue_passport` ($1.00), `pabandi_start_escrow` ($0.50), `pabandi_book_stay` ($0.25), USDC on solana. A call without a proof gets the JSON-RPC 402 with the exact price and proof format.
+
+Discovery: every 402 the API returns — HTTP or JSON-RPC — carries an `extensions.bazaar` declaration (built with `@x402/extensions`): the full request schema plus a worked input/output example, so an agent can render any paid endpoint without reading these docs. The same metadata indexes the endpoint in the x402 Bazaar.
+
+- **x402 verification fails closed** unless `X402_ALLOW_UNVERIFIED` is explicitly set on the server.
 - **AP2**: intent, cart, and payment mandates are required on high-value transactions.
 - **Escrow**: `POST /api/v1/escrow` locks funds on-chain, released on verified completion.
 
@@ -126,12 +153,13 @@ GET /api/v1/pabandi/spec                  # Generated OpenAPI document
 
 ## SDKs
 
-- TypeScript: `npm install @pabandi/sdk`
-- JavaScript: `npm install @pabandi/trust`
-- Python: `pip install pabandi-sdk`
+None of the SDK packages once advertised here (`@pabandi/sdk`, `@pabandi/trust`, `pabandi-sdk`) has been published — do not try to install them. Every capability above is reachable from any HTTP client over the MCP + REST surfaces documented in this file.
 
 ## Documentation
 
 - Whitepaper: https://pabandi.com/about
-- API Reference: https://api.pabandi.com/openapi.yaml
-- Agent Guide: https://api.pabandi.com/llms.txt
+- API Reference (OpenAPI): https://pabandi.onrender.com/openapi.yaml
+- Agent Guide (this file): https://pabandi.com/llms.txt
+- ARD manifest: https://pabandi.com/.well-known/ard.json
+
+Contact: hello@pabandi.com

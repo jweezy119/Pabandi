@@ -5,6 +5,105 @@ import engineService from '../services/engine.service';
 import { verifyX402Payment, createX402PaymentRequirement, X402_PRICING } from '../services/x402.service';
 import { writeLimiter } from '../middleware/rateLimit.middleware';
 import { logger } from '../utils/logger';
+// Root import: tsconfig uses the classic node moduleResolution, which cannot
+// resolve the package's `exports` subpath for /bazaar; the same function is
+// re-exported from the package root with CJS types it can resolve.
+import { declareDiscoveryExtension } from '@x402/extensions';
+
+/**
+ * ─── BAZAAR DISCOVERY ────────────────────────────────────────────────────────
+ *
+ * The x402 Bazaar indexes paid endpoints by reading the `extensions.bazaar` block
+ * the resource server attaches to its 402 response. Against the official
+ * @x402/express middleware that attachment happens inside the middleware stack;
+ * this route is hand-rolled (it serves two genuinely different payment rails —
+ * session-spend and classic x402 — on one path), so the declaration is attached
+ * to the 402 responses explicitly.
+ *
+ * The route definition is the discovery declaration's source of truth: the
+ * schema is generated from the same Zod schema `validateBody` enforces, so the
+ * discovery metadata cannot drift from what the endpoint actually accepts.
+ */
+/**
+ * JSON Schema body declaration for POST /api/v1/x402/pay, mirrored by hand
+ * from `x402PaySchema` (src/schemas/agentic.schemas.ts — the schema the route
+ * actually enforces via `validateBody`). Hand-maintained rather than converted
+ * because zod-to-json-schema's typed call instantiates zod@3.25's v3 types to
+ * TS2589 depth under this tsconfig; the fields below must follow the Zod
+ * source if either changes, and the diff was verified field-for-field:
+ * amount is a finite nonnegative number capped at 1,000,000; every other field
+ * is an optional non-empty string of 128–280 chars depending on the field.
+ */
+const X402_PAY_BODY_SCHEMA: Record<string, unknown> = {
+  $schema: 'https://json-schema.org/draft/2020-12/schema',
+  type: 'object',
+  properties: {
+    amount: {
+      type: 'number',
+      minimum: 0,
+      maximum: 1_000_000,
+      description: 'Amount in USDC to settle for this call (0+; session spends debited against the open session instead of a wallet signature)',
+    },
+    description: { type: 'string', maxLength: 280, description: 'What the payment settles' },
+    recipientId: {
+      type: 'string',
+      minLength: 1,
+      maxLength: 128,
+      description: 'X402Identity id of the recipient; omit to settle to the platform',
+    },
+    route: { type: 'string', maxLength: 280, description: 'Resource or route being paid for' },
+    sessionId: {
+      type: 'string',
+      minLength: 1,
+      maxLength: 128,
+      description: 'Open PabandiSession id — routes through session-spend instead of an on-chain payment signature',
+    },
+    idempotencyKey: { type: 'string', maxLength: 128, description: 'Retry with the same key to avoid double-charging' },
+  },
+  required: ['amount'],
+};
+const X402_PAY_BAZAAR_RAW = declareDiscoveryExtension({
+  bodyType: 'json',
+  input: {
+    amount: 0.01,
+    description: 'Trust API lookup',
+    route: '/api/v1/trust/resolve/agent@example.com',
+    idempotencyKey: 'inv-0001',
+  },
+  inputSchema: X402_PAY_BODY_SCHEMA,
+  output: {
+    example: {
+      success: true,
+      data: {
+        method: 'x402',
+        settled: true,
+        amount: 0.01,
+        transactionHash: '5nHJSmv2m8Znrkm4tVwqfTqbVQUydjyFvX8mLFdvENq1',
+        recipientId: 'platform',
+        description: 'Trust API lookup',
+      },
+    },
+  },
+});
+// The typed entry point omits `method` because middleware-based servers get it
+// injected from the route context. This route is hand-rolled — no middleware
+// enrichment runs — so the method (and route template) are stated here,
+// matching what the enrichment layer would have produced.
+const X402_PAY_BAZAAR: Record<string, unknown> = {
+  bazaar: {
+    ...X402_PAY_BAZAAR_RAW.bazaar,
+    info: {
+      ...X402_PAY_BAZAAR_RAW.bazaar.info,
+      input: {
+        ...X402_PAY_BAZAAR_RAW.bazaar.info.input,
+        method: 'POST',
+      },
+    },
+  },
+};
+
+/** Exposed for tests: the 402 contract is asserted against the real schema. */
+export { X402_PAY_BAZAAR };
 
 /**
  * x402 micropayments.
@@ -105,6 +204,9 @@ router.post('/pay', writeLimiter, validateBody(x402PaySchema), async (req: Reque
   // ── PATH 2: CLASSIC x402 ──────────────────────────────────────────────────
   // No session and no payment header is not an error, it is the 402 that tells
   // a client what to send. This is the shape x402 clients already expect.
+  // `extensions` carries the Bazaar discovery declaration: an agent that
+  // receives this 402 can render the endpoint's request schema and a worked
+  // response example without ever reading this file.
   const paymentHeader = req.headers['x-payment'];
 
   if (typeof paymentHeader !== 'string' || paymentHeader.length === 0) {
@@ -117,6 +219,7 @@ router.post('/pay', writeLimiter, validateBody(x402PaySchema), async (req: Reque
         trustApiCall: X402_PRICING.TRUST_API_CALL,
         escrowInitiation: X402_PRICING.ESCROW_INITIATION,
       },
+      extensions: X402_PAY_BAZAAR,
     });
   }
 
@@ -134,6 +237,9 @@ router.post('/pay', writeLimiter, validateBody(x402PaySchema), async (req: Reque
       success: false,
       error: 'PAYMENT_NOT_VERIFIED',
       message: result.reason ?? 'Payment could not be verified',
+      // Same declaration as the payment-required 402: a probing agent can land
+      // on either, and both must describe the endpoint.
+      extensions: X402_PAY_BAZAAR,
     });
   }
 
