@@ -1,0 +1,39 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "PabandiOS",
+    "identifier": "did:web:pabandi.com"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:pabandi.com:mcp:pabandi-trust",
+      "displayName": "PabandiOS MCP Server",
+      "type": "application/mcp-server-card+json",
+      "url": "https://pabandi.onrender.com/mcp",
+      "description": "Pabandi's trust and settlement MCP server for the agent economy. An agent registers with one curl call, receives an API key instantly, and can then verify portability trust attestations, issue a trust passport, look up a counterparty's reliability score, search the Pabandi business directory and book services, and spend against an open Pabandi Engine session — settling once on Solana instead of signing every micropayment.",
+      "representativeQueries": [
+        "verify a user's reliability score",
+        "create an escrow for a booking",
+        "issue a trust passport for my agent",
+        "search the Pabandi business directory for a private chef",
+        "open a settlement session and spend against it"
+      ],
+      "capabilities": ["tools"],
+      "tags": ["trust", "escrow", "x402", "settlement", "bookings"],
+      "version": "1.0.0"
+    },
+    {
+      "identifier": "urn:air:pabandi.com:doc:llms-txt",
+      "displayName": "pabandi.com documentation for language models",
+      "type": "text/markdown",
+      "url": "https://pabandi.com/llms.txt",
+      "description": "Pabandi's agent documentation: one-curl signup, the full tool table, the Trust API, x402 payment protocol (session-spend and per-call rails on POST /api/v1/x402/pay), and rate limits. Honest about gaps: no published SDK packages — every capability is reachable over MCP + REST. The signup response contains an apiKey and a setupChecklist of exact next commands.",
+      "representativeQueries": [
+        "How do I register an agent with Pabandi in one curl call?",
+        "What tools does the Pabandi MCP server expose?",
+        "How does x402 payment work against Pabandi?",
+        "What is a Pabandi Engine settlement session?"
+      ]
+    }
+  ]
+}

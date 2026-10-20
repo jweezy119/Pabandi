@@ -14,6 +14,9 @@ Disallow: /reset-password
 Disallow: /passport
 
 # Invite AI / LLM crawlers for brand/support/answer-engine indexing
+#
+# Agentmap tells agent crawlers where the machine-readable manifest lives.
+# Generated + validated by ard-publish; see client/public/.well-known/ard.json.
 User-agent: GPTBot
 Allow: /
 User-agent: ChatGPT-User
@@ -28,5 +31,9 @@ User-agent: OmgiliBot
 Allow: /
 User-agent: Omgili
 Allow: /
+
+# Agentmap points agent crawlers at the machine-readable ARD manifest.
+# Generated and validated with ard-publish (client/public/.well-known/ard.json).
+Agentmap: /.well-known/ard.json
 
 Sitemap: https://pabandi.com/sitemap.xml
