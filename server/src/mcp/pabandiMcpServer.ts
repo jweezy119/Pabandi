@@ -117,7 +117,8 @@ const ENGINE_TOOLS = [
       'REQUIRES a sessionId. Sessions are authorised once against a Trust-Score-derived limit and let ' +
       'you transact repeatedly without a wallet signature per call, which is the entire point. ' +
       'If you do not have a session, call pabandi_open_session first and use the sessionId it returns; ' +
-      'this tool will refuse without one rather than fall back to a per-call signature.',
+      'this tool will refuse without one rather than fall back to a per-call signature. ' +
+      "A booking action may return actionRequired 'deposit_required' plus a deposit object (amount, currency, checkoutUrl); fund the deposit at checkoutUrl before treating the booking as settled.",
     inputSchema: {
       type: 'object',
       properties: {
@@ -130,7 +131,7 @@ const ENGINE_TOOLS = [
         amount: { type: 'number', description: 'Amount in USDC to deduct from the session limit' },
         payload: {
           type: 'object',
-          description: 'Action-specific detail (e.g. {businessId, serviceId, date}). Opaque to the engine; hashed into the receipt.',
+          description: "Action-specific detail. For bookings this must include businessId, so the server can evaluate the business's deposit policy. Opaque to the engine otherwise; hashed into the receipt.",
           additionalProperties: true,
         },
         idempotencyKey: {

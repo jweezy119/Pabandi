@@ -1,6 +1,8 @@
 import crypto from 'crypto';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { evaluateBookingDeposit } from './engine-deposit.service';
+import type { DepositRequirement } from './engine-deposit.service';
 
 /**
  * Pabandi Engine -- session abstraction.
@@ -121,6 +123,14 @@ export interface ExecuteResult {
    * than left as a placeholder.
    */
   actionRequired: 'none' | 'deposit_required';
+  /**
+   * What the user must fund before the booking settles, when the business
+   * asks for one. Only set for `actionType: 'booking'` actions whose payload
+   * names a business, and only when the server-side policy actually demands
+   * it — the caller's deposit arithmetic, wherever it used to happen, is
+   * subordinate to what this field says.
+   */
+  deposit?: DepositRequirement | null;
   idempotentReplay: boolean;
 }
 
@@ -305,6 +315,11 @@ class EngineService {
           value: {
             receipt: this.toReceiptView(existing),
             session: this.toSessionView(session),
+            // A replay is the caller's own retry of an action already
+            // authorised against the tab. Answering 'none' is deliberate and
+            // is what makes the post-deposit flow work: the client re-runs the
+            // booking after funding the deposit, this replay returns the
+            // original receipt with no further ask, and the retry confirms.
             actionRequired: 'none',
             idempotentReplay: true,
           },
@@ -314,7 +329,17 @@ class EngineService {
 
     const session = await prisma.pabandiSession.findUnique({
       where: { id: input.sessionId },
-      select: { id: true, spent: true, totalLimit: true, status: true, expiresAt: true },
+      select: {
+        id: true,
+        spent: true,
+        totalLimit: true,
+        status: true,
+        expiresAt: true,
+        // Needed by the deposit policy, which prices the ask against the
+        // principal's own score rather than the session's tier.
+        ownerType: true,
+        ownerId: true,
+      },
     });
 
     if (!session) {
@@ -444,6 +469,44 @@ class EngineService {
       };
     }
 
+    // ── DEPOSIT POLICY, SERVER-SIDE ───────────────────────────────────────────
+    // A booking may still owe a deposit. The policy answer comes from the
+    // server (engine-deposit.service), never from the caller, so a client that
+    // computes "my score is high enough to skip this" is overruled by a field
+    // it only reads. Runs after the debit has fully settled: the session
+    // authorisation and the business's deposit ask are separate questions, and
+    // the second must not be able to roll back the first.
+    let deposit: DepositRequirement | null = null;
+    let actionRequired: 'none' | 'deposit_required' = 'none';
+
+    if (input.actionType === 'booking') {
+      const businessId = typeof input.payload.businessId === 'string' ? input.payload.businessId : '';
+      if (businessId) {
+        try {
+          const decision = await evaluateBookingDeposit({
+            businessId,
+            ownerType: session.ownerType as 'user' | 'agent',
+            ownerId: session.ownerId,
+            bookingValue: input.amount,
+          });
+
+          if (decision.required && decision.deposit) {
+            deposit = decision.deposit;
+            actionRequired = 'deposit_required';
+          }
+        } catch (err: unknown) {
+          // The session charge stands regardless. Skipping the deposit on an
+          // internal error is the honest reading of "could not evaluate" —
+          // no checkout URL can be demanded of a caller when the server could
+          // not work out whether one is owed — but it is logged, because a
+          // policy silently skipped is a policy quietly gone.
+          logger.warn(
+            `[Engine] deposit evaluation failed for session ${row.id} business ${businessId}: ${String(err)}`
+          );
+        }
+      }
+    }
+
     return {
       ok: true,
       value: {
@@ -456,11 +519,8 @@ class EngineService {
           status: row.status as SessionStatus,
           expiresAt: row.expiresAt.toISOString(),
         },
-        // Every action within the session's own limit needs nothing further.
-        // Phase 5 opens the deposit path from here when the engine starts
-        // demanding one; until then the only way to reach this branch is a
-        // limit that was raised between schema and route, which cannot happen.
-        actionRequired: 'none',
+        actionRequired,
+        deposit,
         idempotentReplay: false,
       },
     };

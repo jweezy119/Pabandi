@@ -122,7 +122,13 @@ export const engineSessionOpenSchema = z.object({
    * lower the limit, never raise it.
    */
   trustScore: z.number().finite().min(0).max(1000).optional(),
-  currency: z.string().length(3).optional().default('USDC'),
+  /**
+   * Currency or token symbol. 3-5 rather than exactly 3, because the default
+   * is USDC -- four characters -- and `length(3)` rejected every session-open
+   * until a request supplied its own currency. ISO 4217 codes are 3 (USD);
+   * token symbols are 4 (USDC).
+   */
+  currency: z.string().min(3).max(5).optional().default('USDC'),
 });
 
 export type EngineSessionOpen = z.infer<typeof engineSessionOpenSchema>;

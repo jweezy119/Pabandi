@@ -403,3 +403,247 @@ describe('findSettleableSessions', () => {
     expect(ids).not.toContain(live.sessionId);
   });
 });
+
+// ── Deposit policy, evaluated server-side ─────────────────────────────────────
+//
+// Phase 5's contract: the engine returns actionRequired 'deposit_required'
+// with the deposit's amount and the business's own rail URL, and the client
+// merely obeys. These run against real rows because the policy is a chain of
+// lookups (business -> default payment method -> principal's score), and a
+// mock of a chain asserts nothing except that the chain was written correctly.
+
+describe('executeTransaction: booking deposit policy', () => {
+  const ts = Date.now();
+  const DEPOSITOR_OWNER = 'engine-deposit-owner';
+
+  let squareBusinessId: string;
+  let flatBusinessId: string;
+  let pctBusinessId: string;
+  let highScoreUserId: string;
+  let lowScoreUserId: string;
+
+  const uniqueSuffix = () => String(ts) + Math.random().toString(36).slice(2, 8);
+
+  beforeAll(async () => {
+    // No trust history: resolveTrustScore returns the neutral 500, which lands
+    // in band B -- a reduced deposit, the same quote a real first-timer gets.
+    const base = { name: 'Engine Deposit Test', category: 'OTHER' as const, address: '123 Test St' };
+
+    const squareBusiness = await prisma.business.create({
+      data: { ownerId: null, ...base, currency: 'USD', requireDeposit: true, depositAmount: 100 },
+    });
+    squareBusinessId = squareBusiness.id;
+
+    await prisma.businessPaymentMethod.create({
+      data: {
+        businessId: squareBusinessId,
+        railId: 'square',
+        displayName: 'Test Square account',
+        target: 'https://square.link/engine-test',
+        isDefault: true,
+      },
+    });
+
+    const flatBusiness = await prisma.business.create({
+      data: { ...base, name: 'Flat, no rail', currency: 'USD', requireDeposit: true, depositAmount: 100 },
+    });
+    flatBusinessId = flatBusiness.id;
+
+    const pctBusiness = await prisma.business.create({
+      data: {
+        ...base,
+        name: 'Percentage beats flat',
+        currency: 'USD',
+        requireDeposit: true,
+        depositPercentage: 20,
+        depositAmount: 100,
+      },
+    });
+    pctBusinessId = pctBusiness.id;
+
+    const high = await prisma.user.create({
+      data: {
+        email: `engine-dep-high-${uniqueSuffix()}@example.com`,
+        passwordHash: 'test',
+        firstName: 'Proven',
+        lastName: 'Customer',
+        role: 'CUSTOMER',
+        reliabilityScore: 90, // -> 900 on the 0-1000 scale -> band A
+      },
+    });
+    highScoreUserId = high.id;
+
+    const low = await prisma.user.create({
+      data: {
+        email: `engine-dep-low-${uniqueSuffix()}@example.com`,
+        passwordHash: 'test',
+        firstName: 'Thin',
+        lastName: 'Record',
+        role: 'CUSTOMER',
+        reliabilityScore: 0, // -> band D, 1.25x
+      },
+    });
+    lowScoreUserId = low.id;
+  });
+
+  afterAll(async () => {
+    await prisma.businessPaymentMethod.deleteMany({ where: { businessId: squareBusinessId } });
+    await prisma.business.deleteMany({
+      where: { id: { in: [squareBusinessId, flatBusinessId, pctBusinessId] } },
+    });
+    await prisma.pabandiSession.deleteMany({
+      where: { ownerId: { in: [DEPOSITOR_OWNER, highScoreUserId, lowScoreUserId] } },
+    });
+    await prisma.user.deleteMany({ where: { id: { in: [highScoreUserId, lowScoreUserId] } } });
+  });
+
+  it('demands a reduced deposit from an unproven principal, with the business rail as the checkout', async () => {
+    const { sessionId } = await engineService.openSession('agent', DEPOSITOR_OWNER, 850);
+
+    const outcome = await engineService.executeTransaction({
+      sessionId,
+      actionType: 'booking',
+      amount: 200,
+      payload: { businessId: squareBusinessId },
+    });
+
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+
+    expect(outcome.value.actionRequired).toBe('deposit_required');
+    expect(outcome.value.deposit).not.toBeNull();
+    if (!outcome.value.deposit) return;
+
+    // Neutral score = band B = half the business's flat $100 ask.
+    expect(outcome.value.deposit.amount).toBe(50);
+    expect(outcome.value.deposit.band).toBe('B');
+    expect(outcome.value.deposit.currency).toBe('USD');
+
+    // The URL is the business's own Square rail, priced with the quote.
+    expect(outcome.value.deposit.checkoutUrl).toContain('https://square.link/engine-test');
+    expect(outcome.value.deposit.checkoutUrl).toContain('amount=50');
+  });
+
+  it('waives the deposit for a band-A principal', async () => {
+    const { sessionId } = await engineService.openSession('user', highScoreUserId, 850);
+
+    const outcome = await engineService.executeTransaction({
+      sessionId,
+      actionType: 'booking',
+      amount: 200,
+      payload: { businessId: squareBusinessId },
+    });
+
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+
+    expect(outcome.value.actionRequired).toBe('none');
+    expect(outcome.value.deposit ?? null).toBeNull();
+  });
+
+  it('caps a deposit at 50% of the booking value', async () => {
+    const { sessionId } = await engineService.openSession('user', lowScoreUserId, 850);
+
+    const outcome = await engineService.executeTransaction({
+      sessionId,
+      actionType: 'booking',
+      amount: 100,
+      payload: { businessId: squareBusinessId },
+    });
+
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+
+    expect(outcome.value.actionRequired).toBe('deposit_required');
+    // Band D asks 1.25 x the $100 base = $125; the ceiling clamps to half the
+    // $100 booking value. The clamp is a published customer protection and has
+    // to hold even for the worst band.
+    expect(outcome.value.deposit?.amount).toBe(50);
+  });
+
+  it('prices percentage against the booking value, ignoring the flat amount', async () => {
+    const { sessionId } = await engineService.openSession('agent', DEPOSITOR_OWNER, 850);
+
+    const outcome = await engineService.executeTransaction({
+      sessionId,
+      actionType: 'booking',
+      amount: 400,
+      payload: { businessId: pctBusinessId },
+    });
+
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+
+    // 20% of $400 = $80 base, band B halves to $40.
+    expect(outcome.value.deposit?.amount).toBe(40);
+  });
+
+  it('returns business-deposit-free for a business without a deposit policy', async () => {
+    const { sessionId } = await engineService.openSession('agent', DEPOSITOR_OWNER, 850);
+
+    const noPolicy = await prisma.business.create({
+      data: {
+        name: 'No deposit ask',
+        ownerId: null,
+        category: 'OTHER',
+        address: '123 Test St',
+        requireDeposit: false,
+      },
+    });
+
+    try {
+      const outcome = await engineService.executeTransaction({
+        sessionId,
+        actionType: 'booking',
+        amount: 50,
+        payload: { businessId: noPolicy.id },
+      });
+
+      expect(outcome.ok).toBe(true);
+      if (!outcome.ok) return;
+      expect(outcome.value.actionRequired).toBe('none');
+      expect(outcome.value.deposit ?? null).toBeNull();
+    } finally {
+      await prisma.business.deleteMany({ where: { id: noPolicy.id } });
+    }
+  });
+
+  it('never fails the spent booking over deposit evaluation', async () => {
+    // A business id that resolves to nothing is not an engine error: the spend
+    // succeeded, and the authorisation must survive an unreadable policy the
+    // same way it survives a policy with no rail URL behind it.
+    const { sessionId } = await engineService.openSession('agent', DEPOSITOR_OWNER, 850);
+
+    const outcome = await engineService.executeTransaction({
+      sessionId,
+      actionType: 'booking',
+      amount: 10,
+      payload: { businessId: 'definitely-not-a-business' },
+    });
+
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.value.actionRequired).toBe('none');
+    expect(outcome.value.receipt.amount).toBe(10);
+  });
+
+  it('shares the flat business with no rail: demands the deposit without a URL', async () => {
+    const { sessionId } = await engineService.openSession('agent', DEPOSITOR_OWNER, 850);
+
+    const outcome = await engineService.executeTransaction({
+      sessionId,
+      actionType: 'booking',
+      amount: 100,
+      payload: { businessId: flatBusinessId },
+    });
+
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+
+    expect(outcome.value.actionRequired).toBe('deposit_required');
+    expect(outcome.value.deposit?.amount).toBe(50);
+    // No default payment method configured. The ask still stands; the caller
+    // must not link anywhere.
+    expect(outcome.value.deposit?.checkoutUrl).toBeNull();
+  });
+});

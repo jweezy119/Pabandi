@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { z } from 'zod';
 import { TOOLS } from '../src/mcp/pabandiMcpServer';
 import { toThousandScale } from '../src/services/trust.service';
 import { x402PaySchema } from '../src/schemas/agentic.schemas';
@@ -126,6 +127,50 @@ describe('x402 price schedule compatibility', () => {
     for (const [name, price] of Object.entries(X402_PRICING)) {
       const result = x402PaySchema.safeParse({ amount: price });
       expect(result.success, `${name} = ${price} was rejected`).toBe(true);
+    }
+  });
+});
+
+describe('schema defaults must satisfy their own constraints', () => {
+  // This class of bug is invisible in a unit test of the schema's happy path
+  // and only shows up on the first real request: `currency` was
+  // `z.string().length(3).optional().default('USDC')`, so the default value
+  // USDC -- four characters -- failed the three-character check and every
+  // session-open was rejected with a VALIDATION_ERROR naming a field the
+  // caller never sent.
+  it('accepts engineSessionOpenSchema with only the required fields', async () => {
+    const { engineSessionOpenSchema } = await import('../src/schemas/agentic.schemas');
+
+    const result = engineSessionOpenSchema.safeParse({ ownerType: 'agent', ownerId: 'agent-123' });
+    expect(result.success, JSON.stringify(result)).toBe(true);
+    if (result.success) {
+      expect(result.data.currency).toBe('USDC');
+    }
+  });
+
+  it('rejects a genuinely bad currency', async () => {
+    const { engineSessionOpenSchema } = await import('../src/schemas/agentic.schemas');
+
+    expect(engineSessionOpenSchema.safeParse({ ownerType: 'agent', ownerId: 'a', currency: 'X' }).success).toBe(false);
+    expect(engineSessionOpenSchema.safeParse({ ownerType: 'agent', ownerId: 'a', currency: 'TOOLONG' }).success).toBe(false);
+  });
+
+  it('applies the same check to every schema default reachable here', async () => {
+    const schemas = await import('../src/schemas/agentic.schemas');
+
+    // Every object schema with a default must parse an empty-ish input. This
+    // is the assertion that would have caught the currency bug directly.
+    const emptyInputs: Array<[string, Record<string, unknown>]> = [
+      ['agentRegistrationSchema', { agentHandle: 'abc', ownerEmail: 'a@b.com', name: 'N' }],
+      ['engineSessionOpenSchema', { ownerType: 'agent', ownerId: 'a' }],
+      ['engineSessionActionSchema', { sessionId: 'a', actionType: 'booking', amount: 1 }],
+      ['engineSessionCloseSchema', { sessionId: 'a' }],
+    ];
+
+    for (const [name, input] of emptyInputs) {
+      const schema = (schemas as Record<string, z.ZodTypeAny>)[name];
+      const result = schema.safeParse(input);
+      expect(result.success, `${name}: ${JSON.stringify(result)}`).toBe(true);
     }
   });
 });
