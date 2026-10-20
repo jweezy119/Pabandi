@@ -9,6 +9,7 @@ import { jobLifecycleService } from './jobLifecycle.service';
 // one rule is exactly how they diverge: a route that marked a job missed at 20
 // minutes while this cron waited for 30 would penalise a worker once per path.
 import { NO_SHOW_GRACE_MINUTES, composeJobStart } from './crm.service';
+import * as bookingSettlement from './booking-settlement.service';
 
 export class JobCronService {
   private cronJob: any = null;
@@ -29,6 +30,17 @@ export class JobCronService {
         // through the sweep, and deliberately does not close the job — that is a
         // person's decision, not a cron's.
         await this.processNoShows();
+
+        /**
+         * The settlement window sweep — the cron half of the guarantee.
+         *
+         * It lives beside the no-show sweep on purpose: both answer "the slot is
+         * over, what happens now", and both must run once with the same
+         * overlap guard. processNoShows marks jobs; this closes deposits whose
+         * window has closed without check-in evidence or dispute. Skipped,
+         * the guarantee stays a promise someone has to remember to enforce.
+         */
+        await this.processBookingSettlements();
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         logger.error(`[JobCron] Error processing jobs: ${message}`);
@@ -94,6 +106,22 @@ export class JobCronService {
 
     if (marked > 0) {
       logger.info(`[JobCron] Marked ${marked} job(s) as no-show`);
+    }
+  }
+
+  /**
+   * Thin wrapper over the settlement-window sweep.
+   *
+   * Kept as a method so the cron's overlap guard covers it, and so a failure
+   * here is logged in the same watchable place as the no-show sweep rather
+   * than vanishing into an unawaited promise.
+   */
+  private async processBookingSettlements() {
+    try {
+      await bookingSettlement.settleExpiredWindows();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.error(`[JobCron] Settlement window sweep failed: ${message}`);
     }
   }
 }

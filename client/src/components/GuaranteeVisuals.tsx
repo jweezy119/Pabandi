@@ -101,6 +101,12 @@ export const GUARANTEE_STEPS = [
     body: 'The deposit is forfeited to you. Your time was never free.',
     icon: 'payments',
   },
+  {
+    n: '5',
+    title: 'The default is paid.',
+    body: 'After the appointment, a 48-hour settlement window closes. If no check-in and no dispute arrive inside it, the deposit settles to you automatically. On a card network the default favors the client and you fight the chargeback. Here the default favors you — because both sides agreed to the deposit up front.',
+    icon: 'hourglass_bottom',
+  },
 ];
 
 /**

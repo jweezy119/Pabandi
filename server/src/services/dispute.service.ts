@@ -5,6 +5,11 @@ import { trustArbitratorService } from './trustArbitrator.service';
 import { pabTokenStakingService } from './pabTokenStaking.service';
 import { logger } from '../utils/logger';
 import { prisma } from '../utils/database';
+// No circular import: booking-escrow.service imports only prisma, logger and
+// its rules module. The dispute verdict must be able to move the booking
+// escrow, so calling the same transition every other caller uses keeps the
+// transition matrix as the single gatekeeper for who-may-move-money-where.
+import { advanceBookingEscrow } from './booking-escrow.service';
 
 const reliabilityService = { updateScoreForReservationActivity: async (..._args: any[]) => null, getUserReliabilityProfile: async () => null };
 
@@ -147,7 +152,15 @@ export class DisputeService {
   public async fileContextDispute(opts: {
     reportedById: string;       // the party raising the dispute (payer / customer)
     againstId: string;          // the party being disputed (worker / beneficiary)
-    contextType: 'MILESTONE' | 'OFFRAMP' | 'PAYOUT' | 'RESERVATION';
+    /**
+     * BOOKING joins this list when the settlement window's dispute route is
+     * filed. RESERVATION would have been the second choice, but the model
+     * writes `reservationId` for that context and the column is an FK to
+     * Reservation — a booking id there is a constraint violation, not a
+     * reference to anything. BOOKING keeps contextId honest instead of
+     * repointing a booking id at a reservation column it cannot land in.
+     */
+    contextType: 'MILESTONE' | 'OFFRAMP' | 'PAYOUT' | 'RESERVATION' | 'BOOKING';
     contextId: string;
     type?: DisputeType;
     description: string;
@@ -216,6 +229,15 @@ export class DisputeService {
     if (contextType === 'PAYOUT' || contextType === 'OFFRAMP') {
       const p = await prisma.payout.findUnique({ where: { id: contextId } });
       return p?.amountUsdc || 0;
+    }
+    if (contextType === 'BOOKING') {
+      // Deliberate zero. The booking's deposit is held on the business's own
+      // rail account, and the escrow row is the evidence ledger — neither can
+      // be moved by the AI arbitrator, which rules on amounts it can claw
+      // back. A booking dispute ends with a person moving the escrow via the
+      // parties route, so the claim stays with the jury rather than being
+      // auto-ruled below the $500 line.
+      return 0;
     }
     return 0;
   }
@@ -335,6 +357,32 @@ export class DisputeService {
     if ((dispute.contextType === 'MILESTONE' || dispute.contextType === 'OFFRAMP' || dispute.contextType === 'PAYOUT')
         && outcome === DisputeOutcome.UPHELD) {
       await this.clawbackContext(dispute);
+    }
+
+    // ── Booking escrow follows the verdict ───────────────────────────────────
+    //
+    // A BOOKING dispute exists because the settlement window's default (paid)
+    // was contested. Its whole lifecycle is: escrow → disputed → verdict. If
+    // the dispute resolved and the escrow row stayed `disputed` forever, the
+    // window's promise ("arbitration decides") would end in a fourth limbo
+    // state instead of a settlement. So the verdict moves the money record:
+    //   UPHELD   — the client's contest succeeded: the deposit returns
+    //              (refunded), exactly the outcome the dispute was filed for;
+    //   DISMISSED— the client's contest failed: the original default stands,
+    //              and the escrow releases to the business (released), with
+    //              evidence naming the verdict, not the cron.
+    // resolvedAt/transition refuse an escrow that a parties route already
+    // settled manually — advanceBookingEscrow logs and no-ops for illegal
+    // transitions rather than duplicating the outcome.
+    if (dispute.contextType === 'BOOKING') {
+      try {
+        await advanceBookingEscrow(dispute.contextId, outcome === DisputeOutcome.UPHELD ? 'refunded' : 'released', {
+          source: 'dispute-verdict',
+          reason: `Dispute ${dispute.id} resolved as ${outcome}; the escrow follows the verdict.`,
+        });
+      } catch (e: any) {
+        logger.error(`[Dispute] Booking escrow could not follow verdict for ${dispute.contextId}: ${e.message}`);
+      }
     }
 
     // Apply trust score penalties based on outcome

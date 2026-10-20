@@ -314,6 +314,13 @@ export default function BookingExperience() {
               goes toward your bill. If you cancel last minute, the business keeps it.
             </p>
           )}
+          {paidDeposit != null && paidDeposit > 0 && (
+            <p className="text-xs text-[var(--terracotta)] mb-4 max-w-xs mx-auto" role="note">
+              Arrived? Check in — it releases your deposit instantly. If the 48-hour
+              window after your appointment closes with no check-in and no dispute,
+              the deposit settles to the business by default.
+            </p>
+          )}
           <p className="text-[10px] tracking-wide mb-6" style={{ color: 'var(--soft-stone)' }}>
             Secured by Pabandi Engine
           </p>

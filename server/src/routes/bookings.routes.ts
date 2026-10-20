@@ -20,6 +20,14 @@ import {
   advanceBookingEscrow,
   forfeitBookingDeposit,
 } from '../services/booking-escrow.service';
+import {
+  settlementStatus,
+  disputeWithinWindow,
+  SettlementError,
+} from '../services/booking-settlement.service';
+// The settlement service is the window logic; the dispute service is named
+// (class-instance) because that module exports an instance, not statics.
+import { disputeService } from '../services/dispute.service';
 import { assessFeeSafe } from '../services/fee-assessment.service';
 
 const router = Router();
@@ -698,6 +706,91 @@ router.post('/:id/no-show', authenticate, async (req: AuthRequest, res: Response
   } catch (e: any) {
     console.error('No-show booking error:', e);
     res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ── GET /api/v1/bookings/:id/settlement ──────────────────────────────────────
+//
+// The window status both sides act on. The client surface reads it to say
+// "arrived? check in, or dispute before <time>"; business surfaces read the
+// same fields to show the countdown until the deposit settles to them.
+// One endpoint, one source of truth: settlementStatus.
+router.get('/:id/settlement', async (req: Request, res: Response) => {
+  try {
+    const status = await settlementStatus(req.params.id);
+    if (!status) {
+      return res.status(404).json({ success: false, error: 'Booking not found' });
+    }
+    res.json({ success: true, data: status });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ── POST /api/v1/bookings/:id/dispute ────────────────────────────────────────
+//
+// The client's one-tap assertion inside the settlement window. This is the
+// counterpart that makes "the default is paid" survivable: the default only
+// favours the business when the client chose not to assert; any set window
+// that cannot be challenged is not a guarantee, it is a forfeiture.
+//
+// Authorisation mirrors canCheckInToJob: the business owner, or the client
+// whose email matches the booking's client record. The client is a CrmClient,
+// not a User — the platform links them by email rather than trusting an id
+// the caller might not have.
+router.post('/:id/dispute', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: req.params.id },
+      include: { business: true, client: true },
+    });
+    if (!booking) {
+      return res.status(404).json({ success: false, error: 'Booking not found' });
+    }
+
+    const isOwner = booking.business.ownerId === req.user!.id;
+    const isClient = !!booking.client && !!req.user!.email && booking.client.email === req.user!.email;
+    if (!isOwner && !isClient) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+
+    // The business has no owner record at all — there is no counterparty to
+    // arbitrate against, and no one the dispute could name as "against".
+    if (!booking.business.ownerId) {
+      return res.status(409).json({ success: false, error: 'This business has no owner of record.' });
+    }
+
+    /**
+     * The business disputing its own booking re-routes into the generic
+     * escrow PATCH rather than this route: a dispute is a two-party fact, and
+     * the arbiter needs the client as the reporter. Filing it as one would
+     * poison the arbitration inputs (filers and gatekeepers swapped).
+     */
+    if (isOwner) {
+      return res.status(409).json({
+        success: false,
+        error: 'Escrow disputes are filed by the client. If attendance is contested, resolve via the escrow parties route.',
+      });
+    }
+
+    const dispute = await disputeWithinWindow(
+      booking.id,
+      {
+        reportedById: req.user!.id,
+        againstId: booking.business.ownerId,
+        description:
+          (typeof req.body?.description === 'string' && req.body.description.trim().slice(0, 1000)) ||
+          'The client disputes the outcome of the booking inside its settlement window.',
+      },
+    );
+
+    return res.status(201).json({ success: true, data: dispute });
+  } catch (e: any) {
+    if (e instanceof SettlementError) {
+      return res.status(e.statusCode).json({ success: false, error: e.message });
+    }
+    console.error('Dispute booking error:', e);
+    return res.status(500).json({ success: false, error: e.message });
   }
 });
 

@@ -564,6 +564,13 @@ export default function FluidBookingPage() {
                   </>
                 : 'We’ve sent a confirmation to ' + customerInfo.email}
             </p>
+            {paidDeposit != null && paidDeposit > 0 && (
+              <p className="text-xs max-w-md mx-auto" role="note" style={{ color: 'var(--terracotta)' }}>
+                Arrived? Check in — it releases your deposit instantly. If the 48-hour window
+                after your appointment closes with no check-in and no dispute, the deposit
+                settles to the business by default.
+              </p>
+            )}
 
             {/*
               The bill, broken the way the guarantee explains it: what the
