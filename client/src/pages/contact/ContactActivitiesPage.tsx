@@ -4,7 +4,7 @@ import { getAuthToken } from '../../utils/authToken';
 
 const navItems = [
   { path: '/contact/leads', label: 'Leads', icon: 'person_add' },
-  { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
+  { path: '/contact/deals', label: 'Guaranteed Bookings', icon: 'workspace_premium' },
   { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
 ];
 

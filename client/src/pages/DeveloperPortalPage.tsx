@@ -10,6 +10,41 @@ import {
   tokens,
 } from '../design-system';
 
+const SESSION_OPEN_CODE = `// 1. Your agent opens a tab — the Trust Score sets the ceiling, server-side.
+const session = await fetch('https://pabandi.onrender.com/api/v1/engine/session/open', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    ownerType: 'agent',
+    ownerId: 'your-agent-id',
+    trustScore: 780,          // Optional floor — can only lower the tier
+    currency: 'USDC'
+  })
+}).then(r => r.json());
+// → 201 { success: true, data: { sessionId, totalLimit: 500, remaining, ... } }
+
+// 2. Settle against the tab — bookings cost the service value, deposits are
+//    the engine's decision, not yours to compute.
+const action = await fetch('https://pabandi.onrender.com/api/v1/engine/action', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    sessionId: session.data.sessionId,
+    actionType: 'booking',
+    amount: 1000,
+    payload: { businessId, serviceId, date, time },
+  })
+}).then(r => r.json());
+// → { success: true, actionRequired: 'deposit_required'|'none', deposit?: {
+//      amount, currency, explanation, checkoutUrl } }
+
+// 3. Settle once on Solana when the tab is done.
+await fetch('https://pabandi.onrender.com/api/v1/engine/session/close', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ sessionId: session.data.sessionId, settle: true })
+});`;
+
 const LIVE_SALE_CODE = `app.post('/live-sale/checkout', async (req, res) => {
   const { buyer_wallet, amount, seller_id, currency } = req.body;
 
@@ -83,7 +118,7 @@ console.log(json);`;
 export default function DeveloperPortalPage() {
   const [copied, setCopied] = useState(false);
   const [playgroundOutput, setPlaygroundOutput] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'overview' | 'quickstart' | 'sdks' | 'playground'>('overview');
+  const [activeTab, setActiveTab] = useState<'engine' | 'overview' | 'quickstart' | 'sdks' | 'playground'>('engine');
 
   const handleCopy = () => {
     navigator.clipboard.writeText(LIVE_SALE_CODE);
@@ -106,23 +141,36 @@ export default function DeveloperPortalPage() {
 
   return (
     <div className="min-h-screen antialiased" style={{ background: tokens.color.background, color: tokens.color.text, fontFamily: tokens.font.body }}>
-      <section className="relative overflow-hidden px-4 pt-20 pb-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-3xl text-center">
-          <Chip tone="info">PABANDI API</Chip>
+      <section
+        className="relative overflow-hidden px-4 pt-20 pb-16 sm:px-6 lg:px-8"
+        style={{ background: 'linear-gradient(180deg, rgba(42,37,32,0.92) 0%, rgba(42,37,32,0.97) 100%)' }}
+      >
+        <div
+          className="pointer-events-none absolute inset-0"
+          aria-hidden="true"
+          style={{
+            background:
+              'radial-gradient(ellipse 60% 40% at 20% 0%, rgba(201,123,90,0.18), transparent), radial-gradient(ellipse 40% 30% at 80% 10%, rgba(217,168,84,0.10), transparent)',
+          }}
+        />
+        <div className="relative mx-auto max-w-3xl text-center">
+          <Chip tone="info">PABANDI API · MCP READY</Chip>
 
-          <h1 className="mt-6 text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl">
-            <span className="bg-gradient-to-br from-white via-indigo-300 to-purple-300 bg-clip-text text-transparent">
-              Reliability score as portable identity.
+          <h1 className="mt-6 text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl" style={{ fontFamily: 'var(--font-headline)' }}>
+            <span className="bg-gradient-to-br from-[var(--warm-sand)] via-[var(--clay)] to-[var(--muted-ochre)] bg-clip-text text-transparent">
+              The Settlement Layer for the Agent Economy.
             </span>
           </h1>
 
-          <p className="mx-auto mt-4 max-w-2xl text-lg font-medium text-[var(--warm-ink)]/80">
-            One score. Every platform. Real behavior, not self-reported claims.
+          <p className="mx-auto mt-4 max-w-2xl text-lg font-medium text-[var(--warm-sand)]/80">
+            Your agent opens a session with $100. Makes 50 API calls. Settles once on Solana.
+            Bookings, escrow and no-show guarantees — priced by the Trust Score, enforced
+            server-side, settled in a single transaction.
           </p>
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <a href="mailto:jay@pabandi.com" className="no-underline">
-              <Button>Get API Key →</Button>
+              <Button variant="primary">Get API Key →</Button>
             </a>
             <Chip tone="success">v0.1 Beta · Free for partners</Chip>
           </div>
@@ -132,7 +180,7 @@ export default function DeveloperPortalPage() {
       {/* Tabs */}
       <section className="mx-auto max-w-5xl px-4 pb-4 sm:px-6 lg:px-8">
         <div className="flex gap-2 overflow-x-auto">
-          {(['overview', 'quickstart', 'sdks', 'playground'] as const).map(tab => (
+          {(['engine', 'overview', 'quickstart', 'sdks', 'playground'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -143,6 +191,66 @@ export default function DeveloperPortalPage() {
           ))}
         </div>
       </section>
+
+      {/* Engine Tab — the open-tab settlement concept */}
+      {activeTab === 'engine' && (
+        <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-6 lg:px-8">
+          {/*
+            One section, one idea: the tab is the unit of integration. The
+            three surfaces below (concept strip, code, safety callout) all
+            explain the same lifecycle so a reader who skips the words can
+            still read the flow in any order.
+          */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+            {[
+              { n: '01', title: 'Open a tab', body: 'One call. The Trust Score sets the ceiling server-side — an agent can declare itself unproven, never proven.', icon: 'tab' },
+              { n: '02', title: 'Spend against it', body: 'Bookings, invoice payments, escrow. The engine decides deposits; nobody signs per payment.', icon: 'credit_score' },
+              { n: '03', title: 'Settle once', body: 'Fifty calls, one Solana settlement. Receipts hash what was authorised against what shipped.', icon: 'receipt_long' },
+            ].map(step => (
+              <Surface key={step.n} className="p-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="material-symbols-outlined" style={{ color: 'var(--terracotta)' }}>{step.icon}</span>
+                  <span className="text-xs font-bold tracking-widest" style={{ color: 'var(--soft-stone)' }}>{step.n}</span>
+                </div>
+                <h3 className="text-lg font-bold" style={{ fontFamily: 'var(--font-headline)', color: 'var(--warm-ink)' }}>{step.title}</h3>
+                <p className="mt-1 text-sm leading-relaxed" style={{ color: 'var(--soft-stone)' }}>{step.body}</p>
+              </Surface>
+            ))}
+          </div>
+
+          <Surface className="p-6">
+            <h3 className="text-xl font-bold mb-2" style={{ fontFamily: 'var(--font-headline)', color: 'var(--warm-ink)' }}>
+              The whole lifecycle in three calls
+            </h3>
+            <p className="text-sm mb-4" style={{ color: 'var(--soft-stone)' }}>
+              Sessions are quoted in USDC by default and every response carries the remaining
+              balance. Malformed payloads are rejected with field-level Zod errors, not a 500.
+            </p>
+            <CodeBlock code={SESSION_OPEN_CODE} language="javascript" />
+          </Surface>
+
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Callout accent="var(--terracotta)">
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--warm-ink)' }}>
+                <strong>MCP native.</strong> The same surface is exposed as Model Context
+                Protocol tools at <code>POST /mcp</code> — <code>pabandi_open_session</code>,{' '}
+                <code>pabandi_execute_transaction</code>, <code>pabandi_discover</code>. Any MCP
+                client can drive the engine without custom glue code. Tools that move money
+                require a <code>sessionId</code> and will tell the agent to open one first.
+              </p>
+            </Callout>
+            <Callout accent="var(--sage)">
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--warm-ink)' }}>
+                <strong>Deposits are the engine's decision.</strong> The booking response{' '}
+                <code>actionRequired</code> field is the whole contract: <code>none</code> means
+                the guarantee was satisfied, <code>deposit_required</code> means fund{' '}
+                <code>deposit.checkoutUrl</code>. A decision priced in a browser can be relabel;
+                a decision priced by the session's owner principal cannot.
+              </p>
+            </Callout>
+          </div>
+        </section>
+      )}
 
       {/* Overview Tab */}
       {activeTab === 'overview' && (

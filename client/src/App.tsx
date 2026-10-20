@@ -14,12 +14,14 @@ import { Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 // client and the layout shell are needed by almost every route, so splitting them would
 // add a waterfall without saving anything.
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const DeveloperPortalPage = lazy(() => import('./pages/DeveloperPortalPage'));
 const BusinessPage = lazy(() => import('./pages/BusinessPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const LedgerInvoiceNewPage = lazy(() => import('./pages/ledger/LedgerInvoiceNewPage'));
 const LedgerExpenseNewPage = lazy(() => import('./pages/ledger/LedgerExpenseNewPage'));
 const HomePage = lazy(() => import('./pages/HomePage'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
+const GuaranteePage = lazy(() => import('./pages/GuaranteePage'));
 const TrustVerifyPage = lazy(() => import('./pages/TrustVerifyPage'));
 const AuthPage = lazy(() => import('./pages/AuthPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
@@ -68,7 +70,6 @@ const VerifierSandboxPage = lazy(() => import('./pages/VerifierSandboxPage').the
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })));
 const AdminSetupPage = lazy(() => import('./pages/AdminSetupPage').then((m) => ({ default: m.AdminSetupPage })));
 const DietaryPassportPage = lazy(() => import('./pages/DietaryPassportPage'));
-const DeveloperPortalPage = lazy(() => import('./pages/DeveloperPortalPage'));
 const PartnerDirectoryPage = lazy(() => import('./pages/PartnerDirectoryPage'));
 const GrantsPage = lazy(() => import('./pages/GrantsPage'));
 const TrustPulsePage = lazy(() => import('./pages/TrustPulsePage').then((m) => ({ default: m.TrustPulsePage })));
@@ -490,6 +491,10 @@ function AnimatedAppRoutes() {
 
           {/* Landing page - standalone, no chrome */}
           <Route path="/" element={<LandingPage />} />
+          {/* The guarantee pitch — its own document, also no chrome. Defensible
+              as a sibling of "/" and not a child of Layout: it is read before
+              signup, by people who have no dashboard to return to. */}
+          <Route path="/guarantee" element={<GuaranteePage />} />
 
           {/* Checking someone's standing. Public and unauthenticated on purpose.
               A proof is only worth something to a stranger if a stranger can check it
@@ -660,8 +665,12 @@ function AnimatedAppRoutes() {
             <Route path="contact-us" element={<PlaceholderPage />} />
             <Route path="forgot-password" element={<PlaceholderPage />} />
             <Route path="reset-password/:token" element={<PlaceholderPage />} />
-            <Route path="developer" element={<PlaceholderPage />} />
-            <Route path="developers" element={<Navigate to="/developer" replace />} />
+
+            {/* Developer / agent portal. Inside Layout so the dashboard chrome
+                stays, which is what a portal read after signup needs. */}
+            <Route path="developers" element={<DeveloperPortalPage />} />
+            <Route path="developer" element={<Navigate to="/developers" replace />} />
+
             <Route path="partners" element={<PlaceholderPage />} />
             <Route path="grants" element={<PlaceholderPage />} />
             <Route path="promo" element={<PlaceholderPage />} />

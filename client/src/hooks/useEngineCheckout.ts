@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import {
   engineService,
   type ActionRequired,
+  type DepositRequirement,
   type EngineActionError,
   type EngineSession,
 } from '../services/api';
@@ -38,7 +39,9 @@ export interface UseEngineCheckoutResult {
   /**
    * Run an action through the engine, opening a session if needed.
    * Resolves to the action's outcome, or null if it failed (a toast has
-   * already been shown in that case).
+   * already been shown in that case). What the outcome carries decides the
+   * UI: `actionRequired: 'none'` confirms, `'deposit_required'` arrives with
+   * a `deposit` whose `checkoutUrl` is where the user funds it.
    */
   runAction: (input: {
     actionType: 'booking' | 'invoice_pay' | 'escrow';
@@ -46,7 +49,11 @@ export interface UseEngineCheckoutResult {
     payload?: Record<string, unknown>;
     ownerType: 'user' | 'agent';
     ownerId: string;
-  }) => Promise<{ actionRequired: ActionRequired; receiptId: string } | null>;
+  }) => Promise<{
+    actionRequired: ActionRequired;
+    receiptId: string;
+    deposit: DepositRequirement | null;
+  } | null>;
 
   /** Close the open session, if any. Safe to call when none was opened. */
   closeSession: () => Promise<void>;
@@ -131,7 +138,14 @@ export function useEngineCheckout(): UseEngineCheckoutResult {
         sessionRef.current = { ...open, spent: result.session.spent, remaining: result.session.remaining };
         setSession(sessionRef.current);
 
-        return { actionRequired: result.actionRequired, receiptId: result.receipt.id };
+        return {
+          actionRequired: result.actionRequired,
+          receiptId: result.receipt.id,
+          // The engine's own deposit decision — amount, explanation and the
+          // business's payment rail URL. Anything the client used to compute
+          // here is subordinate to this.
+          deposit: result.deposit ?? null,
+        };
       } catch (error: unknown) {
         const err = error as { response?: { status?: number; data?: EngineActionError } };
 

@@ -123,14 +123,17 @@ import { useBusinessSettings } from '../hooks/useBusinessSettings';
 
 function buildNavFromSettings(settings: any, osName: string, defaultNav?: NavItem[]): NavItem[] {
   const map: Record<string, any[]> = {
-    'Contact OS': [
+     'Contact OS': [
       { path: '/contact', label: 'Dashboard', icon: 'dashboard', feature: null, end: true },
-      { path: '/contact/clients', label: 'Clients', icon: 'groups', feature: 'clients' },
-      { path: '/contact/deals', label: 'Deals', icon: 'handshake', feature: 'deals' },
+      // Guarantee vocabulary. The pages did not move; what they are *for* did.
+      // A "Verified Client" is someone an escrow has vouched for; a
+      // "Guaranteed Booking" is a deal whose deposit we can point at.
+      { path: '/contact/clients', label: 'Verified Clients', icon: 'verified_user', feature: 'clients' },
+      { path: '/contact/deals', label: 'Guaranteed Bookings', icon: 'workspace_premium', feature: 'deals' },
       { path: '/contact/jobs', label: 'Jobs', icon: 'work', feature: 'jobs' },
       { path: '/contact/activities', label: 'Activities', icon: 'notifications', feature: 'activities' },
       { path: '/contact/tasks', label: 'Tasks', icon: 'check', feature: 'tasks' },
-      { path: '/contact/invoices', label: 'Invoices', icon: 'file', feature: 'invoices' },
+      { path: '/contact/invoices', label: 'Escrow & Payments', icon: 'lock', feature: 'invoices' },
       { path: '/contact/money-flow', label: 'Money Flow', icon: 'account_balance_wallet', feature: 'invoices' },
       { path: '/contact/team', label: 'Team', icon: 'users', feature: 'team' },
       // NOTE: 'Companies' / B2B accounts used to sit here. It was removed

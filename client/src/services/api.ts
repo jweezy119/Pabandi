@@ -233,6 +233,23 @@ export interface EngineReceipt {
   createdAt: string;
 }
 
+export interface DepositRequirement {
+  /** What the user must fund before the booking settles. */
+  amount: number;
+  currency: string;
+  /** Band that shaped the amount, for display. */
+  band: string | null;
+  /** The score that chose the band (0-1000 platform scale). */
+  score: number | null;
+  explanation: string;
+  /**
+   * Where to fund, from the business's own payment rail. The engine only
+   * demands a deposit it can name a URL for; null here means the business
+   * collects it directly and the UI must say so rather than link anywhere.
+   */
+  checkoutUrl: string | null;
+}
+
 export interface EngineActionResult {
   receipt: EngineReceipt;
   session: {
@@ -244,6 +261,8 @@ export interface EngineActionResult {
     expiresAt: string;
   };
   actionRequired: ActionRequired;
+  /** Present when actionRequired is 'deposit_required'. Absent otherwise. */
+  deposit?: DepositRequirement | null;
   idempotentReplay: boolean;
 }
 
@@ -275,14 +294,18 @@ export const engineService = {
     currency?: string;
   }) => apiClient.post<{ success: true; data: EngineSession }>('/engine/session/open', data),
 
-  /** The high-frequency endpoint. */
+  /**
+   * The high-frequency endpoint. One call per action; the server decides
+   * deposits, so the client only ever reads `actionRequired` and, when a
+   * deposit is asked for, `deposit.checkoutUrl`.
+   */
   executeAction: (data: {
     sessionId: string;
     actionType: 'booking' | 'invoice_pay' | 'escrow';
     amount: number;
     payload?: Record<string, unknown>;
     idempotencyKey?: string;
-  }) => apiClient.post<{ success: true; data: EngineActionResult }>('/engine/session/action', data),
+  }) => apiClient.post<{ success: true; data: EngineActionResult }>('/engine/action', data),
 
   closeSession: (data: { sessionId: string; settle?: boolean }) =>
     apiClient.post('/engine/session/close', data),

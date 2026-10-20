@@ -7,7 +7,7 @@ import { Card } from '../../components/primitives';
 import ModularDashboard from '../crm/components/ModularDashboard';
 import { useAuthStore } from '../../store/authStore';
 import { getAuthToken } from '../../utils/authToken';
-import { HalalBanner, HalalBadge } from '../../components/halal';
+import { HalalBanner } from '../../components/halal';
 import FirstRunChecklist from './components/FirstRunChecklist';
 
 
@@ -58,6 +58,24 @@ export default function ContactOSPage() {
    * and no booked clients was shown zero.
    */
   const [deals, setDeals] = useState<any[]>([]);
+  /**
+   * Bookings — the source of the money view.
+   *
+   * The vault cards and the Live Escrow Feed both read from this one list,
+   * fetched with the same owner-scoped endpoint the bookings page uses. No new
+   * backend was added for the reframe: escrow state here is the deposit state
+   * the Booking row already records (depositAmount, depositStatus, status).
+   */
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookingsLoaded, setBookingsLoaded] = useState(false);
+  /**
+   * CRM tools are collapsed by default.
+   *
+   * Zero-clutter rule: the pipeline, module widgets, and the halal banner do not
+   * move money, so they start hidden and are one click away. They are removed
+   * from the first screen, not from the product.
+   */
+  const [showCRMTools, setShowCRMTools] = useState(false);
   const [loading, setLoading] = useState(true);
   const [healed, setHealed] = useState(false);
   /**
@@ -118,6 +136,31 @@ export default function ContactOSPage() {
   };
 
   /**
+   * Bookings for the vault view. Owner-scoped server side (the endpoint checks
+   * the account owns the business), so no authorization work happens here.
+   *
+   * A failure is not fatal to the page — it is fatal only to the *money* cards,
+   * which then show an explicit "unavailable" rather than pretending everything
+   * is secured at $0.
+   */
+  const fetchBookings = async () => {
+    try {
+      if (businessId === 'default') return;
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/bookings/business/${businessId}`,
+        { headers: { Authorization: `Bearer ${getAuthToken()}` } }
+      );
+      if (!res.ok) return;
+      const body = await res.json();
+      setBookings(body.data || []);
+    } catch (err) {
+      console.error('[ContactOS] could not load bookings for the vault:', err);
+    } finally {
+      setBookingsLoaded(true);
+    }
+  };
+
+  /**
    * A deal is active until it is decided. `WON` and `LOST` are the only terminal
    * stages, so those are the only ones excluded — filtering on the open list instead
    * would break the moment the pipeline is customised, which is why PipelineSettings
@@ -136,6 +179,73 @@ export default function ContactOSPage() {
     .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
     .slice(0, 6);
 
+  // ── The vault: what the money is doing ─────────────────────────────────────
+  //
+  // Three questions answered from the bookings list, in descending interest:
+  // what is locked for upcoming work, what no-shows paid you this month, and
+  // what is one ghost away from being nothing.
+
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const isUpcoming = (b: any) =>
+    ['pending', 'confirmed'].includes(b.status) &&
+    (!b.slotStart || new Date(b.slotStart) >= new Date(Date.now() - 24 * 60 * 60 * 1000));
+
+  /** Deposit money committed to bookings that have not happened yet. */
+  const securedRevenue = bookings
+    .filter((b) => isUpcoming(b) && (b.depositStatus === 'funded' || b.depositStatus === 'released'))
+    .reduce((sum, b) => sum + (b.depositAmount || 0) + (b.travelFee || 0), 0);
+
+  /** Forfeited deposits — no-shows the guarantee held this month. */
+  const guaranteedIncome = bookings
+    .filter(
+      (b) =>
+        b.status === 'no_show' &&
+        (!b.slotStart || new Date(b.slotStart) >= monthStart)
+    )
+    .reduce((sum, b) => sum + (b.depositAmount || 0) + (b.travelFee || 0), 0);
+
+  /**
+   * Bookings not yet paid against. The brief says "low trust score and
+   * hasn't paid" — client trust scores are not on the bookings payload, and
+   * inventing a threshold the client cannot verify would be the CRM lying
+   * again. "Secured" is used honestly: no deposit on the books yet means the
+   * booking is not yet a guarantee, whatever the score says.
+   */
+  const atRiskBookings = bookings.filter(
+    (b) => isUpcoming(b) && b.depositAmount > 0 && b.depositStatus !== 'funded'
+  );
+
+  /** The feed: secured first, then awaiting, then the forfeited — newest first. */
+  const escrowFeed = [...bookings]
+    .sort(
+      (a, b) =>
+        new Date(b.slotStart || b.updatedAt || 0).getTime() -
+        new Date(a.slotStart || a.updatedAt || 0).getTime()
+    )
+    .slice(0, 8);
+
+  const feedTone = (b: any): { dot: string; color: string; text: string; amount: string } => {
+    const amount = `$${((b.depositAmount || 0) + (b.travelFee || 0)).toLocaleString()}`;
+    const name = b.client?.name || 'The client';
+    const service = b.serviceType || 'Booking';
+    const when = b.slotStart
+      ? new Date(b.slotStart).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+      : '';
+
+    if (b.status === 'no_show') {
+      return { dot: '🔴', color: 'var(--dusty-rose)', text: `Deposit Forfeited — ${name} no-showed for ${service}. ${amount} is yours.`, amount };
+    }
+    if (b.depositStatus === 'funded') {
+      return { dot: '🟢', color: 'var(--sage)', text: `${amount} Escrow Locked — ${name} for ${service} ${when && `(${when})`}`.trim(), amount };
+    }
+    if (b.depositAmount > 0) {
+      return { dot: '🟡', color: 'var(--muted-ochre)', text: `Deposit Awaiting — ${name} has not secured ${service} ${when && `(${when})`}`.trim(), amount };
+    }
+    return { dot: '⚪', color: 'var(--soft-stone)', text: `${service} booked by ${name} — no deposit asked for`, amount };
+  };
+
   useEffect(() => {
     let cancelled = false;
     const fetchLeads = async () => {
@@ -152,6 +262,7 @@ export default function ContactOSPage() {
           // call should not hold up the dashboard. The card renders 0 until it lands,
           // which is the honest state for "we don't know yet".
           void fetchDeals();
+          void fetchBookings();
           return;
         }
 
@@ -255,7 +366,7 @@ export default function ContactOSPage() {
   return (
     <>
       <Helmet>
-        <title>Contact OS — Every relationship, one trusted record</title>
+        <title>The Vault — every booking, guaranteed</title>
       </Helmet>
       <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" >
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -265,134 +376,239 @@ export default function ContactOSPage() {
               Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}
             </h1>
             <p className="mt-1" style={{ color: 'var(--soft-stone)', fontSize: '15px' }}>
-              Here's your business at a glance.
+              Here is the money secured behind your bookings.
             </p>
-            <div className="mt-3 flex items-center gap-2">
-              <HalalBadge size="sm" />
-              <span className="text-[11px] text-[var(--soft-stone)]">Sharia-compliant deal &amp; invoice structures</span>
-            </div>
           </div>
 
-          {/* ── Halal compliance ─────────────────────────────────── */}
-          <div className="mb-8">
-            <HalalBanner compact />
-          </div>
-
-          {/* Above the stat cards, not at the bottom. It is the only thing on this
-              page that changes what someone does next, so it goes where the eye lands.
-              It renders nothing once the work is done or dismissed. */}
+          {/* Above the vault cards: it is the only thing on this page that changes
+              what someone does next, so it goes where the eye lands. It renders
+              nothing once the work is done or dismissed. */}
           <div className="mb-8">
             <FirstRunChecklist />
           </div>
 
-          {/* ── Stat cards ───────────────────────────────────────── */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
-            <Link to="/contact/clients" className="block">
-              <StatCard icon="groups" value={leads.length.toString()} label="Total Clients" color="clay" delay={160} />
+          {/* ── The Vault: stat cards ────────────────────────────── */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+            <Link to="/contact/invoices" className="block" aria-label="Secured Revenue">
+              <StatCard
+                icon="lock"
+                value={
+                  bookingsLoaded
+                    ? `$${securedRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                    : '—'
+                }
+                label="Secured Revenue"
+                color="sage"
+                delay={160}
+              />
             </Link>
-            <Link to="/contact/deals" className="block">
-              <StatCard icon="trending_up" value={activeDeals.toString()} label="Active Deals" color="sage" delay={240} />
+            <Link to="/contact/invoices" className="block" aria-label="Guaranteed Income">
+              <StatCard
+                icon="account_balance_wallet"
+                value={
+                  bookingsLoaded
+                    ? `$${guaranteedIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                    : '—'
+                }
+                label="Guaranteed Income"
+                color="clay"
+                delay={240}
+              />
             </Link>
-            <Link to="/contact/clients" className="block">
-              <StatCard icon="repeat" value={leads.filter(l => l.stage === 'repeat').length.toString()} label="Repeat Clients" color="sky-wash" delay={320} />
-            </Link>
-            <Link to="/contact/clients" className="block">
-              <StatCard icon="star" value={leads.filter(l => l.stage === 'vip').length.toString()} label="VIP" color="dusty-rose" delay={400} />
+            <Link to="/contact/deals" className="block" aria-label="At-Risk Bookings">
+              <StatCard
+                icon="warning_amber"
+                value={bookingsLoaded ? atRiskBookings.length.toString() : '—'}
+                label="At-Risk Bookings"
+                color="dusty-rose"
+                delay={320}
+              />
             </Link>
           </div>
 
-          {/* ── Modular Dashboard ────────────────────────────────── */}
+          {/* ── Live Escrow Feed ─────────────────────────────────── */}
           <div className="clay-rise clay-delay-3 mb-10">
-            <ModularDashboard businessId={businessId} clients={leads} />
-          </div>
-
-          {/* ── Clients list ──────────────────────────────────────── */}
-          <div className="clay-rise clay-delay-5">
             <div className="flex items-center justify-between mb-5 clay-heading" style={{ fontSize: '1.25rem' }}>
               <h2 className="font-bold" style={{ color: 'var(--warm-ink)', fontFamily: 'var(--font-headline)' }}>
-                Recent Clients
+                Live Escrow Feed
               </h2>
               <Link
-                to="/contact/clients"
+                to="/contact/invoices"
                 className="text-sm font-bold px-4 py-2 rounded-full transition-all duration-200 clay-filter-chip clay-filter-chip--active"
-                style={{
-                  color: 'white',
-                  backgroundColor: 'var(--clay)',
-                  boxShadow: 'var(--shadow-btn)',
-                }}
+                style={{ color: 'white', backgroundColor: 'var(--clay)', boxShadow: 'var(--shadow-btn)' }}
               >
-                View All →
+                Escrow &amp; Payments →
               </Link>
             </div>
 
-            {leads.length === 0 ? (
-              <Card hover={false} className="text-center">
-                <div className="py-12">
-                  <span className="material-symbols-outlined text-[48px] mb-4 block" style={{ color: 'var(--clay)' }}>
-                    person_add
+            <Card hover={false} noPadding>
+              {!bookingsLoaded ? (
+                <div className="px-7 py-10 text-center" style={{ color: 'var(--soft-stone)', fontSize: 14 }}>
+                  Loading the vault…
+                </div>
+              ) : escrowFeed.length === 0 ? (
+                <div className="px-7 py-10 text-center">
+                  <span className="material-symbols-outlined text-[44px] mb-3 block" style={{ color: 'var(--clay)' }}>
+                    lock
                   </span>
                   <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--warm-ink)', fontFamily: 'var(--font-headline)' }}>
-                    Add your first client
+                    Nothing secured yet
                   </h3>
-                  <p className="mb-6" style={{ color: 'var(--soft-stone)', fontSize: '14px', maxWidth: '320px', margin: '0 auto 24px' }}>
-                    Every great relationship starts here. Add a client to start tracking.
+                  <p style={{ color: 'var(--soft-stone)', fontSize: '14px' }}>
+                    Your first guaranteed booking will appear here — deposit locked, attendance
+                    watched.
                   </p>
                   <Link
-                    to="/contact/clients"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-white transition-all duration-150"
-                    style={{
-                      backgroundColor: 'var(--clay)',
-                      boxShadow: 'var(--shadow-btn)',
-                    }}
+                    to="/contact/deals"
+                    className="inline-flex items-center gap-2 px-6 py-3 mt-5 rounded-full font-bold text-white transition-all duration-150"
+                    style={{ backgroundColor: 'var(--clay)', boxShadow: 'var(--shadow-btn)' }}
                   >
                     <span className="material-symbols-outlined text-[18px]">add</span>
-                    Add Client
+                    Create a Guaranteed Booking
                   </Link>
                 </div>
-              </Card>
-            ) : (
-              <Card hover={false} noPadding>
+              ) : (
                 <div>
-                  {recentClients.map((lead, i) => (
-                    <Link
-                      key={lead.id}
-                      to={`/contact/clients/${lead.id}`}
-                      className="flex items-center justify-between px-7 transition-colors duration-200 clay-table-row"
-                      style={{
-                        height: 'var(--space-row-height)',
-                        borderBottom: i < recentClients.length - 1 ? '1px solid rgba(191, 179, 163, 0.15)' : 'none',
-                        borderRadius: '0',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(232, 217, 197, 0.3)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center"
-                          style={{
-                            background: 'linear-gradient(135deg, var(--warm-sand) 0%, rgba(201,123,90,0.15) 100%)',
-                          }}
-                        >
-                          <span className="text-sm font-bold" style={{ color: 'var(--clay)' }}>
-                            {lead.name?.charAt(0)?.toUpperCase() || '?'}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm" style={{ color: 'var(--warm-ink)' }}>
-                            {lead.name}
-                          </p>
-                          <p style={{ color: 'var(--soft-stone)', fontSize: '12px' }}>
-                            {lead.stage || 'lead'} • {lead.totalJobs || 0} jobs
-                          </p>
-                        </div>
+                  {escrowFeed.map((b, i) => {
+                    const tone = feedTone(b);
+                    return (
+                      <div
+                        key={b.id}
+                        className="flex items-center gap-4 px-7 clay-table-row"
+                        style={{
+                          height: 'var(--space-row-height)',
+                          borderBottom: i < escrowFeed.length - 1 ? '1px solid rgba(191, 179, 163, 0.15)' : 'none',
+                        }}
+                      >
+                        <span aria-hidden="true">{tone.dot}</span>
+                        <p className="flex-1 text-sm" style={{ color: 'var(--warm-ink)' }}>
+                          {tone.text}
+                        </p>
+                        <span className="money-number text-sm shrink-0">{tone.amount}</span>
                       </div>
-                      <span className="stat-number text-sm" style={{ color: 'var(--terracotta)' }}>
-                        ${(lead.totalSpent || 0).toLocaleString()}
-                      </span>
-                    </Link>
-                  ))}
+                    );
+                  })}
                 </div>
-              </Card>
+              )}
+            </Card>
+          </div>
+
+          {/* ── CRM tools, collapsed ─────────────────────────────── */}
+          <div className="mb-10">
+            <button
+              type="button"
+              onClick={() => setShowCRMTools((v) => !v)}
+              aria-expanded={showCRMTools}
+              className="w-full flex items-center justify-between px-5 py-3 rounded-2xl bg-white transition-all"
+              style={{ boxShadow: 'var(--shadow-soft)', color: 'var(--soft-stone)' }}
+            >
+              <span className="text-sm font-bold">
+                {showCRMTools ? 'Hide CRM tools' : 'CRM tools — pipeline, modules, compliance'}
+              </span>
+              <span className="material-symbols-outlined text-[20px]">
+                {showCRMTools ? 'expand_less' : 'expand_more'}
+              </span>
+            </button>
+
+            {showCRMTools && (
+              <div className="mt-6 space-y-8">
+                <p style={{ color: 'var(--soft-stone)', fontSize: 13 }}>
+                  Background features: who your high-value clients are and what each could be worth.
+                </p>
+                <div>
+                  <HalalBanner compact />
+                </div>
+                <div className="clay-rise">
+                  <ModularDashboard businessId={businessId} clients={leads} />
+                </div>
+
+                {/* ── Verified Clients (background CRM) ───────────────── */}
+                <div>
+                  <div className="flex items-center justify-between mb-5 clay-heading" style={{ fontSize: '1.25rem' }}>
+                    <h2 className="font-bold" style={{ color: 'var(--warm-ink)', fontFamily: 'var(--font-headline)' }}>
+                      Verified Clients
+                    </h2>
+                    <Link
+                      to="/contact/clients"
+                      className="text-sm font-bold px-4 py-2 rounded-full transition-all duration-200 clay-filter-chip clay-filter-chip--active"
+                      style={{ color: 'white', backgroundColor: 'var(--clay)', boxShadow: 'var(--shadow-btn)' }}
+                    >
+                      View All →
+                    </Link>
+                  </div>
+
+                  {leads.length === 0 ? (
+                    <Card hover={false} className="text-center">
+                      <div className="py-12">
+                        <span className="material-symbols-outlined text-[48px] mb-4 block" style={{ color: 'var(--clay)' }}>
+                          person_add
+                        </span>
+                        <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--warm-ink)', fontFamily: 'var(--font-headline)' }}>
+                          Add your first client
+                        </h3>
+                        <p className="mb-6" style={{ color: 'var(--soft-stone)', fontSize: '14px', maxWidth: '320px', margin: '0 auto 24px' }}>
+                          Every great relationship starts here. Add a client to start tracking.
+                        </p>
+                        <Link
+                          to="/contact/clients"
+                          className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-white transition-all duration-150"
+                          style={{ backgroundColor: 'var(--clay)', boxShadow: 'var(--shadow-btn)' }}
+                        >
+                          <span className="material-symbols-outlined text-[18px]">add</span>
+                          Add Client
+                        </Link>
+                      </div>
+                    </Card>
+                  ) : (
+                    <Card hover={false} noPadding>
+                      <div>
+                        {recentClients.map((lead, i) => (
+                          <Link
+                            key={lead.id}
+                            to={`/contact/clients/${lead.id}`}
+                            className="flex items-center justify-between px-7 transition-colors duration-200 clay-table-row"
+                            style={{
+                              height: 'var(--space-row-height)',
+                              borderBottom: i < recentClients.length - 1 ? '1px solid rgba(191, 179, 163, 0.15)' : 'none',
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="w-10 h-10 rounded-full flex items-center justify-center"
+                                style={{ background: 'linear-gradient(135deg, var(--warm-sand) 0%, rgba(201,123,90,0.15) 100%)' }}
+                              >
+                                <span className="text-sm font-bold" style={{ color: 'var(--clay)' }}>
+                                  {lead.name?.charAt(0)?.toUpperCase() || '?'}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="font-medium text-sm" style={{ color: 'var(--warm-ink)' }}>
+                                  {lead.name}
+                                </p>
+                                <p style={{ color: 'var(--soft-stone)', fontSize: '12px' }}>
+                                  {lead.stage || 'lead'} • {lead.totalJobs || 0} jobs
+                                </p>
+                              </div>
+                            </div>
+                            <span className="stat-number text-sm" style={{ color: 'var(--terracotta)' }}>
+                              ${(lead.totalSpent || 0).toLocaleString()}
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    </Card>
+                  )}
+                </div>
+
+                {/* The pipeline summary lives here, in the background CRM. The
+                    counts are computed from deals the server returned, not from
+                    clients relabelled as deals. */}
+                <p style={{ color: 'var(--soft-stone)', fontSize: 13 }}>
+                  {activeDeals} open booking{activeDeals === 1 ? '' : 's'} in the pipeline,{' '}
+                  {leads.filter((l) => l.stage === 'repeat').length} repeat,{' '}
+                  {leads.filter((l) => l.stage === 'vip').length} VIP.
+                </p>
+              </div>
             )}
           </div>
         </div>

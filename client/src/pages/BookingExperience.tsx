@@ -8,6 +8,7 @@ import { Surface, Button, Badge } from '../design-system';
 import { format, addDays, isSameDay } from 'date-fns';
 import { useEngineCheckout } from '../hooks/useEngineCheckout';
 import { EmbeddedCheckoutModal, type DepositPrompt } from '../components/EmbeddedCheckoutModal';
+import { VaultLocked } from '../components/GuaranteeVisuals';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface Business {
@@ -51,6 +52,12 @@ export default function BookingExperience() {
   const [specialRequests, setSpecialRequests] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'safepay' | 'solana' | 'bsc'>('safepay');
   const [bookingComplete, setBookingComplete] = useState(false);
+  /**
+   * The deposit the engine charged for this reservation, for the confirmation
+   * screen. `$0` means "engine waived it" and is kept distinct from `null`,
+   * which means "never decided".
+   */
+  const [paidDeposit, setPaidDeposit] = useState<number | null>(null);
   const [depositPrompt, setDepositPrompt] = useState<DepositPrompt | null>(null);
 
   // The engine decides whether a deposit applies. This page no longer reads a
@@ -147,19 +154,30 @@ export default function BookingExperience() {
     if (!outcome) return;
 
     if (outcome.actionRequired === 'deposit_required') {
-      const base = (import.meta.env.VITE_API_URL || '').replace(/\/api\/v\d+\/?$/, '');
-      const params = new URLSearchParams({
-        businessId: selectedBusiness.id,
-        receiptId: outcome.receiptId,
-      });
+      // Funded in place. The figure and URL are the engine's — it read the
+      // business's rail and the customer's band; this page neither computes
+      // nor redirects.
+      const deposit = outcome.deposit;
+      if (!deposit?.checkoutUrl) {
+        toast.error(
+          `${selectedBusiness.name} requires a deposit, collected directly by the business. The reservation cannot complete here yet.`
+        );
+        return;
+      }
+      // The figure feeds the confirmation breakdown; the URL opens the
+      // embedded modal below.
+      setPaidDeposit(deposit.amount);
       setDepositPrompt({
-        checkoutUrl: `${base}/checkout/deposit?${params.toString()}`,
-        description: `Deposit for your reservation at ${selectedBusiness.name}`,
+        checkoutUrl: deposit.checkoutUrl,
+        description: deposit.explanation,
+        amount: deposit.amount,
+        currency: deposit.currency,
       });
       return;
     }
 
     toast.success('Booking confirmed. No deposit required.');
+    setPaidDeposit(0);
     bookingMutation.mutate(reservationPayload);
   };
 
@@ -276,12 +294,28 @@ export default function BookingExperience() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--cream)' }}>
         <Surface className="max-w-md w-full p-8 text-center">
-          <div className="w-20 h-20 rounded-full bg-[rgba(var(--sage),0.15)] flex items-center justify-center mx-auto mb-6">
-            <span className="text-4xl">✅</span>
+          {/*
+            Vault-locked moment, matching the FluidBooking conclusion: the
+            guarantee's two halves stated, the deposit figure shown as the
+            instrument's readout, and provenance in small type.
+          */}
+          <div className="flex justify-center mb-6">
+            <VaultLocked amount={paidDeposit == null ? null : paidDeposit.toLocaleString()} />
           </div>
-          <h2 className="text-2xl font-bold text-[var(--warm-ink)] mb-2">Reservation Confirmed!</h2>
-          <p className="text-[var(--soft-stone)] mb-6">
+          <h2 className="text-2xl font-bold text-[var(--warm-ink)] mb-2">
+            {paidDeposit != null && paidDeposit > 0 ? 'Vault Locked' : 'Reservation Confirmed!'}
+          </h2>
+          <p className="text-[var(--soft-stone)] mb-4">
             {business?.name} · {format(selectedDate, 'MMM d')} at {selectedTime} · {guests} guests
+          </p>
+          {paidDeposit != null && paidDeposit > 0 && (
+            <p className="text-xs text-[var(--soft-stone)] mb-4 max-w-xs mx-auto">
+              Your ${paidDeposit.toLocaleString()} deposit is secured in escrow. If you show up, it
+              goes toward your bill. If you cancel last minute, the business keeps it.
+            </p>
+          )}
+          <p className="text-[10px] tracking-wide mb-6" style={{ color: 'var(--soft-stone)' }}>
+            Secured by Pabandi Engine
           </p>
           <div className="flex gap-3 justify-center">
             <Button onClick={() => navigate('/reservations')}>View Bookings</Button>
@@ -469,7 +503,7 @@ export default function BookingExperience() {
               disabled={!selectedTime || bookingMutation.isLoading || submitting}
               className="w-full py-4 text-lg"
             >
-              {submitting || bookingMutation.isLoading ? 'Booking...' : 'Confirm Reservation'}
+              {submitting || bookingMutation.isLoading ? 'Securing your reservation…' : 'Secure My Booking'}
             </Button>
 
             <p className="text-xs text-[var(--soft-stone)] text-center">

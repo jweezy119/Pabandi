@@ -72,9 +72,9 @@ const VERTICALS = [
 
 // ─── Feature label map ────────────────────────────────────────────────────────
 const FEATURE_LABELS: Record<string, { icon: string; label: string }> = {
-  clients: { icon: 'groups', label: 'Clients' },
+  clients: { icon: 'groups', label: 'Verified Clients' },
   deals: { icon: 'handshake', label: 'Deals pipeline' },
-  invoices: { icon: 'receipt_long', label: 'Invoices' },
+  invoices: { icon: 'receipt_long', label: 'Escrow & Payments' },
   activities: { icon: 'timeline', label: 'Activity feed' },
   tasks: { icon: 'task_alt', label: 'Task manager' },
   jobs: { icon: 'work', label: 'Jobs & scheduling' },

@@ -137,6 +137,16 @@ a[role="button"]:not(:disabled):active {
   font-family: var(--font-headline);
 }
 
+/* Large editorial money figures — Fraunces, per the guarantee reframe.
+   Tabular-nums so rows of amounts stay aligned like a ledger. */
+.money-number {
+  font-family: var(--font-headline);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--warm-ink);
+}
+
 .font-label {
   font-family: var(--font-label);
   text-transform: uppercase;
@@ -512,3 +522,339 @@ a[role="button"]:not(:disabled):active {
   }
 }
 
+
+/* ═══════════════════════════════════════════════════════════════
+   Guarantee visuals — split-screen hero, vault lock, trust gauge
+   Warm clay palette throughout; compositor-only properties.
+   ═══════════════════════════════════════════════════════════════ */
+
+.guarantee-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
+}
+
+.guarantee-half {
+  background: white;
+  border-radius: var(--radius-card);
+  padding: 20px 18px;
+  box-shadow: var(--shadow-soft);
+  border-top: 1px solid rgba(255, 255, 255, 0.7);
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+}
+
+.guarantee-half--client {
+  background: linear-gradient(160deg, #fff 0%, var(--warm-sand) 130%);
+}
+
+.guarantee-half--calendar {
+  background: linear-gradient(160deg, #fff 0%, #EDF0E6 130%);
+}
+
+.guarantee-half-label {
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--soft-stone);
+  margin-bottom: 12px;
+}
+
+.guarantee-tile {
+  background: var(--cream);
+  border: 1px solid rgba(191, 179, 163, 0.25);
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.guarantee-tile-title {
+  font-family: var(--font-headline);
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--warm-ink);
+  margin: 0;
+}
+
+.guarantee-tile-meta {
+  font-size: 12px;
+  color: var(--soft-stone);
+  margin: 4px 0 12px;
+}
+
+.guarantee-book-btn {
+  border: none;
+  cursor: pointer;
+  background: var(--clay);
+  color: white;
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  padding: 9px 0;
+  width: 100%;
+  border-radius: var(--radius-btn);
+  box-shadow: var(--shadow-btn);
+}
+
+.guarantee-lock {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--warm-ink);
+  color: var(--warm-sand);
+  border-radius: 14px;
+  padding: 12px 14px;
+  opacity: 0.35;
+  transform: scale(0.96);
+  transition: opacity 500ms var(--ease-smooth), transform 500ms var(--ease-clay);
+}
+
+.guarantee-lock--on {
+  opacity: 1;
+  transform: scale(1);
+  box-shadow: 0 10px 28px rgba(42, 37, 32, 0.28);
+}
+
+.guarantee-lock .material-symbols-outlined {
+  font-size: 20px;
+  color: var(--muted-ochre);
+}
+
+.guarantee-lock-amount {
+  font-family: var(--font-headline);
+  font-weight: 700;
+  font-size: 22px;
+}
+
+.guarantee-slot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px;
+}
+
+.guarantee-slot-time {
+  font-family: var(--font-label);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--soft-stone);
+  min-width: 42px;
+}
+
+.guarantee-slot-line {
+  flex: 1;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(191, 179, 163, 0.35);
+}
+
+.guarantee-secured {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--sage);
+  opacity: 0.3;
+  transform: translateY(4px);
+  transition: opacity 500ms var(--ease-smooth), transform 500ms var(--ease-clay);
+}
+
+.guarantee-secured--on {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.guarantee-secured .material-symbols-outlined {
+  font-size: 20px;
+}
+
+/* ── Vault locked confirmation ─────────────────────────────────── */
+
+.vault-locked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.vault-locked-arc {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.vault-locked-arc > svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+}
+
+.vault-ring {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.vault-ring--track {
+  stroke: rgba(191, 179, 163, 0.3);
+}
+
+.vault-ring--sweep {
+  stroke: var(--sage);
+  stroke-dasharray: 327; /* 2πr, r=52 */
+  stroke-dashoffset: 327;
+  animation: vault-ring-sweep 900ms var(--ease-entrance) forwards;
+}
+
+@keyframes vault-ring-sweep {
+  to { stroke-dashoffset: 0; }
+}
+
+.vault-locked-lock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  color: var(--terracotta);
+}
+
+.vault-locked-check {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--sage);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity 300ms var(--ease-smooth), transform 400ms var(--ease-clay);
+  box-shadow: var(--shadow-btn);
+}
+
+.vault-locked-check--on {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.vault-locked-amount {
+  margin: 0;
+  text-align: center;
+}
+
+.vault-locked-fig {
+  display: block;
+  font-family: var(--font-headline);
+  font-weight: 700;
+  font-size: 40px;
+  color: var(--warm-ink);
+  line-height: 1.1;
+}
+
+.vault-locked-into {
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--soft-stone);
+}
+
+/* ── Trust gauge (client dossier speedometer) ──────────────────── */
+
+.trust-gauge {
+  position: relative;
+}
+
+.trust-gauge-track {
+  fill: none;
+  stroke: rgba(191, 179, 163, 0.25);
+  stroke-width: 10;
+}
+
+.trust-gauge-arc {
+  fill: none;
+  stroke-width: 10;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 64px 64px;
+}
+
+.trust-gauge-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.trust-gauge-score {
+  font-family: var(--font-headline);
+  font-weight: 900;
+  font-size: 40px;
+  line-height: 1;
+  color: var(--warm-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.trust-gauge-scale {
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--soft-stone);
+}
+
+.trust-gauge-sublabel {
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sage);
+}
+
+/* ── Deposit breakdown card (checkout flow) ────────────────────── */
+
+.deposit-breakdown {
+  background: white;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+  border-top: 1px solid rgba(255, 255, 255, 0.7);
+  padding: 28px;
+  max-width: 460px;
+  margin: 0 auto;
+}
+
+.deposit-row {
+  display: flex;
+  align-items: baseline;
+}
+
+.deposit-row + .deposit-row {
+  border-top: 1px solid rgba(191, 179, 163, 0.18);
+}
+
+.deposit-due-today {
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 2px solid rgba(201, 123, 90, 0.35);
+}

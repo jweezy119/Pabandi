@@ -10,6 +10,7 @@ import { getAuthToken } from '../../utils/authToken';
 import { HalalBadge } from '../../components/halal';
 import { useEngineCheckout } from '../../hooks/useEngineCheckout';
 import { EmbeddedCheckoutModal, type DepositPrompt } from '../../components/EmbeddedCheckoutModal';
+import { VaultLocked } from '../../components/GuaranteeVisuals';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
 
@@ -58,6 +59,13 @@ export default function FluidBookingPage() {
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState<any>(null);
   const [depositPrompt, setDepositPrompt] = useState<DepositPrompt | null>(null);
+  /**
+   * The deposit that actually secured this booking, for the confirmation
+   * breakdown. `$0` is meaningful (the engine waived it) and is distinguished
+   * from `null` — "not decided yet", which still renders the breakdown rows
+   * with placeholders rather than inventing a figure.
+   */
+  const [paidDeposit, setPaidDeposit] = useState<number | null>(null);
   const [customerInfo, setCustomerInfo] = useState({
     name: user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : '',
     email: user?.email || '',
@@ -158,13 +166,29 @@ export default function FluidBookingPage() {
     if (!outcome) return;
 
     if (outcome.actionRequired === 'deposit_required') {
-      // The engine wants a deposit before this settles. Open it in place --
-      // no redirect off the booking flow, so the user's details survive.
+      // The engine wants a deposit before this settles. The figure and the
+      // destination come from the engine, not from this page: it owned the
+      // business's policy and the customer's band, and it built the URL from
+      // the business's own payment rail.
+      const deposit = outcome.deposit;
+      if (!deposit?.checkoutUrl) {
+        // The business asks for a deposit but has no collectible URL (no
+        // payment method configured, or a rail like bank transfer that has
+        // no hosted page). Saying nothing here would read the booking as
+        // confirmed without the money the business asked for.
+        toast.error(
+          `${business.name} requires a deposit, collected directly by the business. The booking cannot complete here yet.`
+        );
+        return;
+      }
+      // Remember what the engine charged: the confirmation screen breaks the
+      // bill down against it rather than guessing.
+      setPaidDeposit(deposit.amount);
       setDepositPrompt({
-        checkoutUrl: buildDepositCheckoutUrl(business.id, outcome.receiptId),
-        description: `Deposit for your booking at ${business.name}`,
-        amount,
-        currency: session?.currency ?? 'USDC',
+        checkoutUrl: deposit.checkoutUrl,
+        description: deposit.explanation,
+        amount: deposit.amount,
+        currency: deposit.currency,
       });
       return;
     }
@@ -172,6 +196,7 @@ export default function FluidBookingPage() {
     // No deposit needed. Say so explicitly: the user was shown a deposit-shaped
     // flow and deserves to be told it did not apply.
     toast.success('Booking confirmed. No deposit required.');
+    setPaidDeposit(0);
 
     // The reservation itself is still created by the booking service. The
     // engine authorises the spend; it does not own the booking row.
@@ -238,21 +263,6 @@ export default function FluidBookingPage() {
       customerPhone: customerInfo.phone,
       specialRequests: customerInfo.requests,
     });
-  };
-
-  /**
-   * Where the deposit is collected.
-   *
-   * Built here rather than taken from the engine response because the engine's
-   * `actionRequired` carries no URL -- Phase 2's engine settles nothing on-chain
-   * yet, so there is no canonical checkout endpoint for it to hand back. When
-   * settlement lands this becomes a field on the engine response and this
-   * helper goes away with it.
-   */
-  const buildDepositCheckoutUrl = (businessId: string, receiptId: string) => {
-    const base = (import.meta.env.VITE_API_URL || API_BASE).replace(/\/api\/v\d+\/?$/, '');
-    const params = new URLSearchParams({ businessId, receiptId });
-    return `${base}/checkout/deposit?${params.toString()}`;
   };
 
   const getDates = () => {
@@ -521,7 +531,7 @@ export default function FluidBookingPage() {
                 disabled={submitting || !customerInfo.name || !customerInfo.email}
                 className="flex-1 py-3 rounded-xl bg-[var(--clay)] text-white font-semibold disabled:opacity-40 hover:bg-[var(--terracotta)] transition-colors"
               >
-                {submitting ? 'Booking...' : 'Confirm Booking'}
+                {submitting ? 'Securing your booking…' : 'Secure My Booking'}
               </button>
             </div>
           </div>
@@ -529,11 +539,64 @@ export default function FluidBookingPage() {
 
         {step === 4 && booking && (
           <div className="space-y-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-[var(--sage)]/20 flex items-center justify-center mx-auto">
-              <Check size={32} className="text-[var(--sage)]" />
+            {/*
+              "Vault locked" moment. The green tick became the vault: the ring
+              closes exactly once, then the figure counts in. Copy states both
+              halves of the guarantee — what happens if they show, and what
+              happens if they don't — because a deposit explained only as a
+              fee reads as a penalty.
+            */}
+            <div className="flex justify-center">
+              <VaultLocked amount={paidDeposit == null ? null : paidDeposit.toLocaleString()} />
             </div>
-            <h2 className="text-2xl font-bold text-[var(--warm-ink)] font-headline">Booking Confirmed!</h2>
-            <p className="text-[var(--soft-stone)]">We've sent a confirmation to {customerInfo.email}</p>
+            <h2 className="text-2xl font-bold text-[var(--warm-ink)] font-headline">
+              {paidDeposit == null
+                ? 'Booking Confirmed!'
+                : paidDeposit === 0
+                  ? 'Booking Confirmed — No Deposit Required'
+                  : 'Vault Locked'}
+            </h2>
+            <p className="text-[var(--soft-stone)] text-sm max-w-md mx-auto">
+              {paidDeposit != null && paidDeposit > 0
+                ? <>
+                   {'Your deposit is secured in escrow. If you show up, it goes toward your final '}
+                    {'bill. If you cancel last minute, the business keeps it.'}
+                  </>
+                : 'We’ve sent a confirmation to ' + customerInfo.email}
+            </p>
+
+            {/*
+              The bill, broken the way the guarantee explains it: what the
+              service costs, what got locked today instead of paid, and what
+              still comes on arrival. All figures are from the engine's decision
+              (`paidDeposit`) or the service price — never invented client-side.
+            */}
+            <div className="deposit-breakdown text-left" style={{ maxWidth: 420 }}>
+              <p className="clay-label mb-3">Booking Summary</p>
+              <div className="deposit-row" style={{ justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--soft-stone)', fontSize: 14 }}>Service Total</span>
+                <span className="money-number">${(selectedService?.discountPrice || selectedService?.price || 0).toLocaleString()}</span>
+              </div>
+              {paidDeposit != null && paidDeposit > 0 && (
+                <div className="deposit-row" style={{ justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--soft-stone)', fontSize: 14 }}>Refundable Deposit</span>
+                  <span className="money-number" style={{ color: 'var(--terracotta)' }}>
+                    ${paidDeposit.toLocaleString()}
+                    <span style={{ fontSize: 10, color: 'var(--soft-stone)' }}> · locked in escrow</span>
+                  </span>
+                </div>
+              )}
+              <div className="deposit-row deposit-due-today" style={{ justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--warm-ink)', fontSize: 13, fontWeight: 700 }}>Amount Due Today</span>
+                <span className="money-number">{paidDeposit == null ? '—' : `$${paidDeposit.toLocaleString()}`}</span>
+              </div>
+              <div className="deposit-row" style={{ justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--warm-ink)', fontSize: 13, fontWeight: 700 }}>Amount Due on Arrival</span>
+                <span className="money-number">
+                  ${((selectedService?.discountPrice || selectedService?.price || 0) - (paidDeposit || 0)).toLocaleString()}
+                </span>
+              </div>
+            </div>
 
             <div className="p-4 rounded-2xl bg-white/60 border border-[rgba(191,179,163,0.2)] text-left space-y-2">
               <div className="flex justify-between text-sm">
@@ -578,7 +641,7 @@ export default function FluidBookingPage() {
                 </div>
                 <p className="text-xs text-[var(--soft-stone)]">
                   {session.currency} {session.spent} of {session.totalLimit} used.
-                  No deposit was required for this booking.
+                  {paidDeposit ? ' The deposit was collected at checkout on top of this.' : ' No deposit was required for this booking.'}
                 </p>
               </div>
             )}
@@ -598,6 +661,11 @@ export default function FluidBookingPage() {
             <Link to="/" className="inline-block px-6 py-3 rounded-xl bg-[var(--clay)] text-white font-semibold hover:bg-[var(--terracotta)] transition-colors">
               Back to Home
             </Link>
+
+            {/* Provenance line. Small on purpose: it is a signature, not a claim. */}
+            <p className="text-[10px] tracking-wide" style={{ color: 'var(--soft-stone)' }}>
+              Secured by Pabandi Engine
+            </p>
           </div>
         )}
       </div>

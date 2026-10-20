@@ -6,13 +6,16 @@ import ClientSidebar from '../crm/components/ClientSidebar';
 import ClientTimeline from '../crm/components/ClientTimeline';
 import { Modal } from '../../components/primitives/Modal';
 import { Input } from '../../components/primitives/Input';
-import { TrustPanel } from '../../components/TrustPanel';
+// TrustPanel was removed from this page: it fetched /trust/passports/:id, an
+// endpoint that does not exist, so every client saw "No Trust Passport found".
+// The TrustDossier below reads the explain-score figure that the deposit
+// policy itself prices against.
 import { InlineEdit } from '../../components/primitives/InlineEdit';
-import { getAuthToken } from '../../utils/authToken';
-import { readList } from '../../utils/crmResponse';
+import { getAuthToken } from '../../utils/authToken';import { readList } from '../../utils/crmResponse';
 import { ClientPropertyPanel } from '../crm/components/ClientPropertyPanel';
 import { ClientIntelligencePanel } from './components/ClientIntelligencePanel';
 import { TrustScoreBreakdown } from './components/TrustScoreBreakdown';
+import { TrustDossier } from './components/TrustDossier';
 import { ClientTermsSuggestion } from './components/ClientTermsSuggestion';
 import { TrustProofButton } from './components/TrustProofButton';
 
@@ -208,7 +211,7 @@ export default function ContactClientDetailPage() {
           ))}
         </div>
 
-        {activeTab === 'Command Center' && (
+            {activeTab === 'Command Center' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
               {/* Above the timeline: it is the one thing on this page that is new
@@ -220,10 +223,19 @@ export default function ContactClientDetailPage() {
               <ClientTermsSuggestion clientId={id!} />
               <ClientIntelligencePanel clientId={id!} />
               <TrustScoreBreakdown clientId={id!} />
-              <TrustPanel passportId={client.passportId} />
               <ClientTimeline activities={activities} deals={deals} invoices={invoices} jobs={jobs} notes={client.notes} files={files} />
             </div>
-            <div>
+            <div className="space-y-6">
+              {/* First in the sidebar and at gauge size: standing is what you
+                  consult before you dispatch a crew. Everything stacked below it
+                  (payables, schedule) is the background record. */}
+              <TrustDossier
+                clientId={id!}
+                fallbackScore={client.reliabilityScore}
+                passportId={client.passportId}
+                jobs={jobs}
+                invoices={invoices}
+              />
               <ClientSidebar client={client} outstanding={outstanding} totalBilled={totalBilled} onScheduleTask={() => setShowActivityModal(true)} />
             </div>
           </div>

@@ -42,10 +42,10 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
  */
 const COMMANDS = [
   { label: 'Dashboard', category: 'Go to', href: '/dashboard' },
-  { label: 'Clients', category: 'Go to', href: '/contact/clients' },
-  { label: 'Deals', category: 'Go to', href: '/contact/deals' },
+  { label: 'Verified Clients', category: 'Go to', href: '/contact/clients' },
+  { label: 'Guaranteed Bookings', category: 'Go to', href: '/contact/deals' },
   { label: 'Jobs', category: 'Go to', href: '/contact/jobs' },
-  { label: 'Invoices', category: 'Go to', href: '/contact/invoices' },
+  { label: 'Escrow & Payments', category: 'Go to', href: '/contact/invoices' },
   { label: 'Activities', category: 'Go to', href: '/contact/activities' },
   { label: 'Tasks', category: 'Go to', href: '/contact/tasks' },
   { label: 'Team', category: 'Go to', href: '/contact/team' },

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ClayGlobe } from '../components/ClayGlobe';
+import { GuaranteeSplitVisual, GUARANTEE_STEPS } from '../components/GuaranteeVisuals';
 import { useAuthStore } from '../store/authStore';
 
 const MODULES = [
@@ -62,11 +62,15 @@ const TRUST_SIGNALS = [
   { number: 'Portable', label: 'Trust Passport', detail: 'Your reputation travels with you' },
 ];
 
-const HOW_IT_WORKS = [
-  { step: '1', title: 'Add your business', desc: 'Post your business and get your free CRM.' },
-  { step: '2', title: 'Paste your payment link', desc: 'Square, Solana, PayPal — whatever you use.' },
-  { step: '3', title: 'Send invoices. Get paid. Build trust.', desc: 'Your clients pay you directly. We build your trust profile.' },
-];
+/**
+ * The four escrow steps, written for the hero-adjacent strip. Same story as
+ * GUARANTEE_STEPS; this is the short version that fits in a scroll.
+ */
+const HOW_IT_WORKS = GUARANTEE_STEPS.map((s) => ({
+  step: s.n,
+  title: s.title,
+  desc: s.body,
+}));
 
 function useScrollReveal() {
   const ref = useRef<HTMLDivElement>(null);
@@ -350,6 +354,7 @@ export default function LandingPage() {
             <span>PabandiOS</span>
           </Link>
           <nav className="nav-list" aria-label="Main">
+            <Link to="/guarantee">The Guarantee</Link>
             <Link to="/contact">CRM</Link>
             <Link to="/booking">Booking</Link>
             <Link to="/property">Property</Link>
@@ -370,35 +375,37 @@ export default function LandingPage() {
           <div className="container">
             <div className="hero-inner">
               <div className="hero-content">
-                <p className="hero-kicker">The trust operating system</p>
+                <p className="hero-kicker">The high-ticket guarantee engine</p>
                 <h1 id="hero-title" className="hero-title">
-                  <span className="word">Commitment,</span><br />
-                  <span className="word hero-accent">Secured.</span>
+                  <span className="word">Get Paid Before</span><br />
+                  <span className="word">You Show Up.</span><br />
+                  <span className="word hero-accent">Guaranteed.</span>
                 </h1>
                 <p className="hero-subtitle">
-                  Post your business. Get your CRM. Add your payment method. Get paid.
+                  Pabandi locks client deposits in secure crypto escrow. If they ghost, you keep the
+                  money. If they show, the funds release instantly. Built for high-ticket service
+                  providers — wedding photographers, contractors, roofers, agencies, and the agents
+                  that book them.
                 </p>
                 <div className="hero-actions">
                   {isAuthenticated ? (
                     <MagneticButton className="btn btn-primary" onClick={() => navigate('/contact')}>
-                      Go to CRM Dashboard
+                      Open My Vault
                     </MagneticButton>
                   ) : (
                     <>
                       <MagneticButton className="btn btn-primary" onClick={() => navigate('/signup?module=contact')}>
-                        Get Your Free CRM
+                        Protect My Revenue
                       </MagneticButton>
-                      <Link to="/signup" className="btn btn-secondary">
-                        Post Your Business
+                      <Link to="/guarantee" className="btn btn-secondary">
+                        See how the guarantee works
                       </Link>
                     </>
                   )}
                 </div>
               </div>
               <div className="hero-visual">
-                <div className="clay-earth">
-                  <ClayGlobe />
-                </div>
+                <GuaranteeSplitVisual />
               </div>
             </div>
           </div>
@@ -410,10 +417,10 @@ export default function LandingPage() {
         <section className="modules" aria-labelledby="modules-title">
           <div className="container">
             <ScrollReveal>
-              <h2 id="modules-title" className="section-title">Five Modules. One Trust Layer.</h2>
+              <h2 id="modules-title" className="section-title">Every Module Runs on the Same Escrow</h2>
             </ScrollReveal>
             <ScrollReveal delay={100}>
-              <p className="section-subtitle">Each module runs independently. All share the same escrow, rewards, and reputation engine.</p>
+              <p className="section-subtitle">Bookings, freight, property, invoicing — the guarantee engine underneath is the product. The CRM is just where it lives.</p>
             </ScrollReveal>
             <div className="modules-grid">
               {MODULES.map((mod, i) => (
@@ -491,11 +498,17 @@ export default function LandingPage() {
 
         <WaveDivider />
 
-        {/* How It Works */}
+        {/* How It Works — the escrow flow */}
         <section className="how-it-works" aria-labelledby="how-title">
           <div className="container">
             <ScrollReveal>
-              <h2 id="how-title" className="section-title">How It Works</h2>
+              <h2 id="how-title" className="section-title">The Escrow Flow, in Four Moves</h2>
+            </ScrollReveal>
+            <ScrollReveal delay={80}>
+              <p className="section-subtitle">
+                The deposit never sits in anyone's bank account. It sits in escrow, and the only
+                thing that decides where it goes is whether you show up. <Link to="/guarantee" className="module-link">The full guarantee →</Link>
+              </p>
             </ScrollReveal>
             <div className="steps-container">
               {HOW_IT_WORKS.map((step, i) => (
@@ -522,19 +535,19 @@ export default function LandingPage() {
         <section className="cta-section" aria-labelledby="cta-title">
           <div className="container">
             <ScrollReveal>
-              <h2 id="cta-title" className="section-title">Ready to Build Trust?</h2>
+              <h2 id="cta-title" className="section-title">Ready to Guarantee Your Next Booking?</h2>
             </ScrollReveal>
             <ScrollReveal delay={150}>
-              <p className="section-subtitle">Set up your business in five minutes. No crypto knowledge required.</p>
+              <p className="section-subtitle">Lock your next high-ticket client in escrow. Five minutes to set up. No crypto knowledge required.</p>
             </ScrollReveal>
             <ScrollReveal delay={300}>
               {isAuthenticated ? (
                 <MagneticButton className="btn btn-large btn-primary" onClick={() => navigate('/contact')}>
-                  Go to Dashboard
+                  Open My Vault
                 </MagneticButton>
               ) : (
                 <MagneticButton className="btn btn-large btn-primary" onClick={() => navigate('/signup?module=contact')}>
-                  Start Free
+                  Protect My Revenue
                 </MagneticButton>
               )}
             </ScrollReveal>
@@ -551,12 +564,13 @@ export default function LandingPage() {
           </div>
           <p className="footer-tagline">BookingOS · FreightOS · PropertyOS · Contact OS · CapitalOS — Powered by TrustOS</p>
           <nav className="footer-nav" aria-label="Footer">
+            <Link to="/guarantee">The Guarantee</Link>
+            <Link to="/developers">Developers</Link>
             <Link to="/about">About</Link>
-            <Link to="/contact">Contact</Link>
             <Link to="/privacy">Privacy</Link>
             <Link to="/terms">Terms</Link>
           </nav>
-          <p className="footer-copy">© 2026 Pabandi. The trust layer for the informal economy.</p>
+          <p className="footer-copy">© 2026 Pabandi. The high-ticket guarantee engine.</p>
         </div>
       </footer>
     </div>
