@@ -630,6 +630,37 @@ export const treasuryService = {
   getSummary: () => apiClient.get('/treasury/summary'),
 };
 
+/**
+ * Sulha (Optimistic Arbitration) — the staked arbitrator panel API.
+ *
+ * The dashboard at /contact/arbitration reads the queue and settles cases;
+ * `resolve` carries the signing arbitrator's passport id, and the server
+ * (not this client) decides whether that passport may rule.
+ */
+export const sulhaService = {
+  queue: () => apiClient.get<{ success: boolean; data: { queue: SulhaDisputeRow[] } }>('/sulha/panel/queue').then((r) => r.data),
+  resolve: (disputeId: string, payload: { passportId: string; verdict: 'seller' | 'buyer'; note?: string }) =>
+    apiClient.post<{ success: boolean; data: { dispute: SulhaDisputeRow } }>(`/sulha/panel/${disputeId}/resolve`, payload).then((r) => r.data),
+};
+
+export interface SulhaDisputeRow {
+  id: string;
+  escrowId: string;
+  raisedByPassport: string;
+  reason: string;
+  evidenceJson: {
+    urls?: string[];
+    hashes?: string[];
+    appended?: Array<{ passportId: string; evidence: Record<string, unknown>; at: string }>;
+    notes?: string;
+    [key: string]: unknown;
+  };
+  status: string;
+  aiConfidence: number | null;
+  resolutionNotes: string | null;
+  createdAt: string;
+}
+
 export const economyService = {
   getStats: () => apiClient.get('/economy/stats'),
   runDemoBooking: (body: { amountPab?: number }) => apiClient.post('/economy/demo-book', body),

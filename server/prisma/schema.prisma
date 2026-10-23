@@ -4278,6 +4278,15 @@ model TrustPassport {
   // Location verification
   verifiedLocationCount Int @default(0)
 
+  // ─── Sulha staked arbitrator panel ───────────────────────────────────────
+  // An opted-in reviewer for escrow disputes that Jev could not decide. The
+  // flag is the stake registry's gate, not a rank: anyone opted in who rules
+  // against the machine's eventual consensus has their `dispute.failed`
+  // counterpart recorded against the panel entry, so arbitrators are
+  // accountable for the votes they cast, not for owning a title.
+  isArbitrator    Boolean   @default(false)
+  arbitratorSince DateTime?
+
   // Relations
   gigHistory           PassportGigHistory[]
   endorsements         SkillEndorsement[]

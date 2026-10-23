@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { sulhaService, SulhaError } from '../services/sulha.service';
 import { arbitrationService } from '../services/arbitration.service';
+import { prisma } from '../utils/database';
+import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { apiLimiter, writeLimiter } from '../middleware/rateLimit.middleware';
 
 /**
@@ -113,5 +115,97 @@ router.post('/disputes/:id/evidence', writeLimiter, async (req: Request, res: Re
 });
 
 const getFrozen = (status: string): boolean => ['open', 'ai_review', 'human_review'].includes(status);
+
+// ─── Staked arbitrator panel (human review) ─────────────────────────────────
+// The queue feeds the /contact/arbitration dashboard in the CRM. Reviews end
+// in a click — Release to Seller or Refund Buyer — and each click IS the
+// settlement: the panel route resolves through sulhaService.settleDispute, so
+// the unfreeze, the engine settlement, and the trust events are exactly the
+// ones the AI path uses. The passport's `isArbitrator` flag is the stake
+// gate; per-dispute votes are recorded in panelVotes as the audit trail.
+
+const resolveSchema = z.object({
+  passportId: z.string().min(1).max(128),
+  verdict: z.enum(['seller', 'buyer']),
+  note: z.string().max(2000).optional(),
+});
+
+/** Find the arbitrator's passport by id or handle, requiring the panel flag. */
+async function findArbitrator(passportIdOrHandle: string) {
+  const byId = await prisma.trustPassport.findUnique({
+    where: { id: passportIdOrHandle },
+    select: { id: true, isArbitrator: true, displayName: true },
+  });
+  const passport = byId ?? (await prisma.trustPassport.findUnique({
+    where: { handle: passportIdOrHandle },
+    select: { id: true, isArbitrator: true, displayName: true },
+  }));
+  return passport && passport.isArbitrator ? passport : null;
+}
+
+router.get('/panel/queue', authenticate, apiLimiter, async (_req: AuthRequest, res: Response) => {
+  const rows = await prisma.escrowDispute.findMany({
+    where: { status: { in: ['open', 'ai_review', 'human_review'] } },
+    orderBy: { createdAt: 'asc' },
+    take: 100,
+  });
+  return res.json({ success: true, data: { queue: rows.map((row) => sulhaService.toView(row)) } });
+});
+
+router.post('/panel/:id/resolve', authenticate, writeLimiter, async (req: AuthRequest, res: Response) => {
+  const parsed = resolveSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ success: false, error: 'INVALID_BODY', issues: parsed.error.issues });
+  }
+
+  const arbitrator = await findArbitrator(parsed.data.passportId);
+  if (!arbitrator) {
+    // 403 rather than 404: the body was well-formed and the caller exists —
+    // what failed is the authorization to rule, not the lookup.
+    return res.status(403).json({ success: false, error: 'NOT_ARBITRATOR' });
+  }
+
+  const disputeRow = await prisma.escrowDispute.findUnique({
+    where: { id: req.params.id },
+    select: { id: true, status: true },
+  });
+  if (!disputeRow) return res.status(404).json({ success: false, error: 'DISPUTE_NOT_FOUND' });
+  if (!['open', 'ai_review', 'human_review'].includes(disputeRow.status)) {
+    return res.status(409).json({ success: false, error: 'DISPUTE_ALREADY_RESOLVED' });
+  }
+
+  // The vote is recorded BEFORE the settlement so the audit trail survives an
+  // escrow failure — a lost vote is worse than a deferred unfreeze.
+  const current = await prisma.escrowDispute.findUnique({
+    where: { id: req.params.id },
+    select: { panelVotes: true },
+  });
+  const votes = Array.isArray(current?.panelVotes) ? ([...(current?.panelVotes as object[])] as Record<string, unknown>[]) : [];
+  const existingIndex = votes.findIndex((v) => (v as { passportId?: string }).passportId === arbitrator.id);
+  const voteRecord = {
+    passportId: arbitrator.id,
+    displayName: arbitrator.displayName,
+    vote: parsed.data.verdict,
+    votedAt: new Date().toISOString(),
+  };
+  if (existingIndex >= 0) votes[existingIndex] = voteRecord;
+  else votes.push(voteRecord);
+  await prisma.escrowDispute.update({ where: { id: req.params.id }, data: { panelVotes: votes as object } });
+
+  try {
+    const dispute = await sulhaService.settleDispute({
+      disputeId: req.params.id,
+      verdict: parsed.data.verdict,
+      resolutionNotes: `Panel ruling by ${arbitrator.displayName}${parsed.data.note ? `: ${parsed.data.note}` : ''}`,
+      source: 'panel',
+    });
+    return res.json({ success: true, data: { dispute } });
+  } catch (err: unknown) {
+    if (err instanceof SulhaError) {
+      return res.status(errorStatus(err.code)).json({ success: false, error: err.code, message: err.message });
+    }
+    throw err;
+  }
+});
 
 export default router;

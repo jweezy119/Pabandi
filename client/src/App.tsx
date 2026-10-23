@@ -193,6 +193,7 @@ const ContactOSPage = lazy(() => import('./pages/contact/ContactOSPage'));
 const ContactClientsPage = lazy(() => import('./pages/contact/ContactClientsPage'));
 const ContactClientDetailPage = lazy(() => import('./pages/contact/ContactClientDetailPage'));
 const ContactDealsPage = lazy(() => import('./pages/contact/ContactDealsPage'));
+const ContactArbitrationPage = lazy(() => import('./pages/contact/ContactArbitrationPage'));
 const ContactDealDetailPage = lazy(() => import('./pages/contact/ContactDealDetailPage'));
 const ContactActivitiesPage = lazy(() => import('./pages/crm/ContactActivitiesPage').then((m) => ({ default: m.ContactActivitiesPage })));
 const ContactTasksPage = lazy(() => import('./pages/crm/ContactTasksPage').then((m) => ({ default: m.ContactTasksPage })));
@@ -420,6 +421,7 @@ function AnimatedAppRoutes() {
            <Route path="contact/deals" element={<BusinessGuard><FeatureGate feature="deals"><ContactDealsPage /></FeatureGate></BusinessGuard>} />
            <Route path="contact/deals/:id" element={<BusinessGuard><FeatureGate feature="deals"><ContactDealDetailPage /></FeatureGate></BusinessGuard>} />
            <Route path="contact/activities" element={<BusinessGuard><FeatureGate feature="activities"><ContactActivitiesPage /></FeatureGate></BusinessGuard>} />
+           <Route path="contact/arbitration" element={<BusinessGuard><FeatureGate feature="activities"><ContactArbitrationPage /></FeatureGate></BusinessGuard>} />
            <Route path="contact/tasks" element={<BusinessGuard><FeatureGate feature="tasks"><ContactTasksPage /></FeatureGate></BusinessGuard>} />
            <Route path="contact/team" element={<BusinessGuard><FeatureGate feature="team"><ContactTeamPage /></FeatureGate></BusinessGuard>} />
            <Route path="contact/team/:id" element={<BusinessGuard><FeatureGate feature="team"><ContactTeamMemberPage /></FeatureGate></BusinessGuard>} />
