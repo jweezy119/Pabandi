@@ -115,6 +115,11 @@ export function toDisputeView(row: {
 }
 
 export class SulhaService {
+  /** Thin expose of the projection for routes that read raw rows. */
+  toView(row: Parameters<typeof toDisputeView>[0]): SulhaDisputeView {
+    return toDisputeView(row);
+  }
+
   /**
    * Raise a dispute and freeze the escrow.
    *
