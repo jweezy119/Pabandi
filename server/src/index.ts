@@ -346,6 +346,7 @@ import authRoutes from './routes/auth.routes';
 
 // Import vcap routes
 import vcapRoutes from './routes/vcap.routes';
+import trustVerificationRoutes from './routes/trustVerification.routes';
 
 
 // Register critical routes immediately

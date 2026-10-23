@@ -15,11 +15,19 @@ export async function writeAttestation({
   eventType,
   referenceId,
   metadata = {},
+  settlementReceiptSignature,
+  buyerAgentId,
+  sellerAgentId,
+  dataHash,
 }: {
   passportId: string;
   eventType: string;
   referenceId: string;
   metadata?: Record<string, any>;
+  settlementReceiptSignature?: string;
+  buyerAgentId?: string;
+  sellerAgentId?: string;
+  dataHash?: string;
 }) {
   const hash = computeHash(passportId, eventType, referenceId);
 
@@ -45,6 +53,12 @@ export async function writeAttestation({
         hash,
         explorerUrl: '',
         status: 'pending',
+        // Store PAR fields
+        settlementReceiptSignature,
+        buyerAgentId,
+        sellerAgentId,
+        dataHash,
+        ...metadata,
       },
     });
 
@@ -93,6 +107,11 @@ export async function writeAttestation({
         hash,
         explorerUrl,
         status: 'confirmed',
+        // Store PAR fields
+        settlementReceiptSignature,
+        buyerAgentId,
+        sellerAgentId,
+        dataHash,
       },
     });
 
@@ -109,6 +128,11 @@ export async function writeAttestation({
         hash,
         explorerUrl: '',
         status: 'failed',
+        // Store PAR fields even on failure
+        settlementReceiptSignature,
+        buyerAgentId,
+        sellerAgentId,
+        dataHash,
       },
     });
 
@@ -139,6 +163,10 @@ export async function retryPendingAttestations(limit = 20) {
         passportId: attestation.passportId,
         eventType: attestation.eventType,
         referenceId: attestation.referenceId,
+        settlementReceiptSignature: attestation.settlementReceiptSignature,
+        buyerAgentId: attestation.buyerAgentId,
+        sellerAgentId: attestation.sellerAgentId,
+        dataHash: attestation.dataHash,
       });
 
       if (result.attestation && result.attestation.status === 'confirmed') {
@@ -148,6 +176,11 @@ export async function retryPendingAttestations(limit = 20) {
             status: 'confirmed',
             txSignature: result.signature || attestation.txSignature,
             explorerUrl: result.explorerUrl || attestation.explorerUrl,
+            // Preserve PAR fields
+            settlementReceiptSignature: attestation.settlementReceiptSignature,
+            buyerAgentId: attestation.buyerAgentId,
+            sellerAgentId: attestation.sellerAgentId,
+            dataHash: attestation.dataHash,
           },
         });
       }
