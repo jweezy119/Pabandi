@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.jweezy119/Pabandi",
   "title": "PabandiOS",
-  "description": "Trust and settlement layer for AI agents: portable trust attestations (PTP), reputation risk bands, escrow, and x402/USDC payments on Solana.",
-  "version": "1.0.0",
+  "description": "Trust and settlement for AI agents: portable attestations, escrow, x402/USDC payments on Solana.",
+  "version": "1.0.1",
   "repository": {
     "url": "https://github.com/jweezy119/Pabandi",
     "source": "github"
