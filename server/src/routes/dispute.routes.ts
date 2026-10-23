@@ -23,6 +23,7 @@ router.post('/', authenticate, async (req: any, res) => {
 
     if (escrowId) {
       const sulha = await import('../services/sulha.service');
+      const arbitrationMod = await import('../services/arbitration.service');
       const dispute = await sulha.sulhaService.raiseDispute({
         escrowId,
         raisedByPassport: raisedByPassport || req.user.id,
@@ -30,7 +31,12 @@ router.post('/', authenticate, async (req: any, res) => {
         evidenceJson: evidenceJson || {},
         sessionId,
       });
-      return res.status(201).json({ message: 'Escrow disputed (frozen by Sulha)', dispute });
+      const arbitration = await arbitrationMod.arbitrationService.queueArbitration(dispute.id);
+      return res.status(201).json({
+        message: 'Escrow disputed (frozen by Sulha)',
+        dispute: { ...dispute, status: arbitration.queued ? 'ai_review' : dispute.status },
+        arbitration: arbitration.queued ? 'queued' : 'skipped',
+      });
     }
 
     const againstId = req.body.againstId;

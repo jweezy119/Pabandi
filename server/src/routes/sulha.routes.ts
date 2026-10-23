@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { sulhaService, SulhaError } from '../services/sulha.service';
+import { arbitrationService } from '../services/arbitration.service';
 import { apiLimiter, writeLimiter } from '../middleware/rateLimit.middleware';
 
 /**
@@ -61,7 +62,15 @@ router.post('/disputes', writeLimiter, async (req: Request, res: Response) => {
   }
   try {
     const dispute = await sulhaService.raiseDispute(parsed.data);
-    return res.status(201).json({ success: true, data: { dispute } });
+    // Commit 2: the raise hears the machine arbitrator. queueArbitration flips
+    // the dispute to ai_review before returning, then runs Jev in the
+    // background — a decisive verdict auto-resolves, anything else waits for
+    // the human panel.
+    const arbitration = await arbitrationService.queueArbitration(dispute.id);
+    return res.status(201).json({
+      success: true,
+      data: { dispute: { ...dispute, status: arbitration.queued ? 'ai_review' : dispute.status }, arbitration: arbitration.queued ? 'queued' : 'skipped' },
+    });
   } catch (err: unknown) {
     if (err instanceof SulhaError) {
       return res.status(errorStatus(err.code)).json({ success: false, error: err.code, message: err.message });
