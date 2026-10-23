@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { validateBody } from '../middleware/validateZod';
 import { x402PaySchema } from '../schemas/agentic.schemas';
 import engineService from '../services/engine.service';
-import { verifyX402Payment, createX402PaymentRequirement, X402_PRICING } from '../services/x402.service';
+import { verifyX402Payment, verifyX402PaymentV2, createX402PaymentRequirement, buildPaymentRequired, encodePaymentRequired, parseX402PaymentHeaderRaw, X402_PRICING } from '../services/x402.service';
 import { writeLimiter } from '../middleware/rateLimit.middleware';
 import { logger } from '../utils/logger';
 // Root import: tsconfig uses the classic node moduleResolution, which cannot
@@ -207,25 +207,68 @@ router.post('/pay', writeLimiter, validateBody(x402PaySchema), async (req: Reque
   // `extensions` carries the Bazaar discovery declaration: an agent that
   // receives this 402 can render the endpoint's request schema and a worked
   // response example without ever reading this file.
+  const PAYMENT_RESOURCE = route ?? '/api/v1/x402/pay';
   const paymentHeader = req.headers['x-payment'];
+  // v2 spec clients answer a 402 with `PAYMENT-SIGNATURE`, not `X-PAYMENT`.
+  const paymentSignature = req.headers['payment-signature'];
 
-  if (typeof paymentHeader !== 'string' || paymentHeader.length === 0) {
+  if (!paymentSignature && (typeof paymentHeader !== 'string' || paymentHeader.length === 0)) {
+    // x402 v2: the requirements live in the `PAYMENT-REQUIRED` header as base64
+    // JSON; the body keeps the legacy Pabandi shape so existing callers (and
+    // the discovery examples) do not break.
+    return res.status(402)
+      .header('Payment-Required', encodePaymentRequired(buildPaymentRequired({
+        resource: PAYMENT_RESOURCE,
+        amountUsdc: X402_PRICING.TRUST_API_CALL,
+        extensions: X402_PAY_BAZAAR,
+      })))
+      .json({
+        ...createX402PaymentRequirement(PAYMENT_RESOURCE, X402_PRICING.TRUST_API_CALL),
+        // The frictionless alternative, stated so an agent does not have to read
+        // the docs to discover it.
+        hint: 'Open a PabandiSession (POST /api/v1/engine/session/open) and pass its sessionId to spend without a per-payment signature.',
+        pricing: {
+          trustApiCall: X402_PRICING.TRUST_API_CALL,
+          escrowInitiation: X402_PRICING.ESCROW_INITIATION,
+        },
+        extensions: X402_PAY_BAZAAR,
+      });
+  }
+
+  if (typeof paymentSignature === 'string' && paymentSignature.length > 0) {
+    // ── PATH 2a: x402 v2 spec rail ──────────────────────────────────────────
+    // The parsed payload's `accepted` requirements echo what the server
+    // offered; the facilitator verifies the transaction against them and
+    // settles as feePayer sponsor.
+    const parsedV2 = parseX402PaymentHeaderRaw(paymentSignature);
+    if (parsedV2.v2) {
+      const result = await verifyX402PaymentV2({
+        paymentPayload: parsedV2.v2,
+        resource: PAYMENT_RESOURCE,
+        amountUsdc: X402_PRICING.TRUST_API_CALL,
+      });
+      if (!result.valid) {
+        return res.status(402).json({
+          success: false,
+          error: 'PAYMENT_NOT_VERIFIED',
+          message: result.reason ?? 'Payment could not be verified',
+          extensions: X402_PAY_BAZAAR,
+        });
+      }
+      recordVerifiedPayment(req, res, amount, recipientId, description, result);
+      return;
+    }
     return res.status(402).json({
-      ...createX402PaymentRequirement(route ?? '/api/v1/x402/pay', amount),
-      // The frictionless alternative, stated so an agent does not have to read
-      // the docs to discover it.
-      hint: 'Open a PabandiSession (POST /api/v1/engine/session/open) and pass its sessionId to spend without a per-payment signature.',
-      pricing: {
-        trustApiCall: X402_PRICING.TRUST_API_CALL,
-        escrowInitiation: X402_PRICING.ESCROW_INITIATION,
-      },
+      success: false,
+      error: 'PAYMENT_NOT_VERIFIED',
+      message: 'Malformed PAYMENT-SIGNATURE header: expected a base64 x402 v2 PaymentPayload',
       extensions: X402_PAY_BAZAAR,
     });
   }
 
   const result = await verifyX402Payment({
     paymentHeader,
-    resource: route ?? '/api/v1/x402/pay',
+    resource: PAYMENT_RESOURCE,
     amount,
   });
 
@@ -243,14 +286,29 @@ router.post('/pay', writeLimiter, validateBody(x402PaySchema), async (req: Reque
     });
   }
 
+  // Successful path-1 settlement returns through the shared helper below.
+  recordVerifiedPayment(req, res, amount, recipientId, description, result);
+});
+
+/**
+ * Shared bookkeeping for a verified on-chain payment. The on-chain leg
+ * succeeded, so the payment is real even though there is no session to record
+ * it against — written as a SessionReceipt-like event via the engine is not
+ * possible without a session, so this is logged and returned; settlement
+ * reconciliation closes the gap against the facilitator (Phase 4).
+ */
+function recordVerifiedPayment(
+  _req: Request,
+  res: Response,
+  amount: number,
+  recipientId: string | undefined,
+  description: string | undefined,
+  result: { transactionHash?: string }
+): void {
   try {
-    // The on-chain leg succeeded, so the payment is real even though there is
-    // no session to record it against. Written as a SessionReceipt-like event
-    // via the engine is not possible without a session, so this is logged and
-    // returned; Phase 4 settlement reconciles these against the facilitator.
     logger.info(`[x402] verified payment amount=${amount} recipient=${recipientId ?? 'platform'} tx=${result.transactionHash ?? 'unknown'}`);
 
-    return res.json({
+    res.json({
       success: true,
       data: {
         method: 'x402',
@@ -263,8 +321,8 @@ router.post('/pay', writeLimiter, validateBody(x402PaySchema), async (req: Reque
     });
   } catch (err: unknown) {
     logger.error(`[x402] settlement bookkeeping failed: ${err instanceof Error ? err.message : String(err)}`);
-    return res.status(500).json({ success: false, error: 'Payment accepted but bookkeeping failed' });
+    res.status(500).json({ success: false, error: 'Payment accepted but bookkeeping failed' });
   }
-});
+}
 
 export default router;
