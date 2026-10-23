@@ -10,11 +10,33 @@ const disputeService = new DisputeService();
 /**
  * @route POST /api/v1/disputes
  * @desc File a dispute (legacy reservation-based)
+ * @desc SULHA: a body with `escrowId` raises an escrow dispute instead — the
+ * Optimistic Arbitration flow (sulha.service). Body shape is the
+ * discriminator: reservationId -> reservation jury, escrowId -> Sulha escrow
+ * freeze. That keeps the documented POST /api/v1/disputes contract serving
+ * both products without a shape change under existing callers.
  */
 router.post('/', authenticate, async (req: any, res) => {
   try {
-    const { reservationId, againstId, reason, evidenceUrls, stakedAmount } = req.body;
+    const { reservationId, escrowId, raisedByPassport, sessionId } = req.body;
+    const { reason, evidenceJson } = req.body;
+
+    if (escrowId) {
+      const sulha = await import('../services/sulha.service');
+      const dispute = await sulha.sulhaService.raiseDispute({
+        escrowId,
+        raisedByPassport: raisedByPassport || req.user.id,
+        reason: reason || req.body.description || 'Disputed escrow',
+        evidenceJson: evidenceJson || {},
+        sessionId,
+      });
+      return res.status(201).json({ message: 'Escrow disputed (frozen by Sulha)', dispute });
+    }
+
+    const againstId = req.body.againstId;
     const filedById = req.user.id;
+    const evidenceUrls = req.body.evidenceUrls;
+    const stakedAmount = req.body.stakedAmount;
 
     if (!reservationId || !againstId || !reason) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -103,10 +125,25 @@ router.get('/', authenticate, async (req: any, res) => {
 /**
  * @route GET /api/v1/disputes/:id
  * @desc Dispute detail (public arbitration view).
+ * @desc SULHA: an EscrowDispute id resolves to the Sulha record instead of the
+ * reservation jury table — one id space, both dispute products distinguishable
+ * by which table the id hits first.
  */
 router.get('/:id', async (req: any, res) => {
   try {
     const { prisma } = require('../utils/database');
+    // Sulha record first — its ids and the legacy Dispute ids share a cuid
+    // format, so a failed legacy lookup must not be read as "not found" before
+    // the other table has been asked.
+    const sulha = await import('../services/sulha.service');
+    const sulhaDispute = await sulha.sulhaService.getDispute(req.params.id);
+    if (sulhaDispute) {
+      return res.json({
+        dispute: sulhaDispute,
+        frozen: ['open', 'ai_review', 'human_review'].includes(sulhaDispute.status),
+      });
+    }
+
     const dispute = await prisma.dispute.findUnique({
       where: { id: req.params.id },
       include: { votes: true },
@@ -148,10 +185,27 @@ router.post('/:id/vote', authenticate, async (req: any, res) => {
 });
 
 /**
+ * @route POST /api/v1/disputes/:id/evidence
+ * @desc SULHA: append evidence to an escrow dispute (delegate to sulha.service;
+ * the Sulha record, the escrow freeze, and the party gate live there).
+ */
+router.post('/:id/evidence', authenticate, async (req: any, res) => {
+  try {
+    const sulha = await import('../services/sulha.service');
+    const takenPassport = req.body.passportId || req.body.raisedByPassport || req.user.id;
+    const dispute = await sulha.sulhaService.appendEvidence(req.params.id, takenPassport, req.body.evidence ?? req.body.evidenceJson ?? {});
+    return res.status(201).json({ success: true, dispute });
+  } catch (error: any) {
+    const code = error?.code as string | undefined;
+    const status = code === 'DISPUTE_NOT_FOUND' ? 404 : code === 'DISPUTE_ALREADY_RESOLVED' ? 409 : code === 'NOT_A_PARTY' ? 403 : 400;
+    return res.status(status).json({ error: code ?? error.message, message: error.message });
+  }
+});
+
+/**
  * @route POST /api/v1/disputes/migrate
  * @desc Add contextType/contextId columns (Cloud Run FS read-only)
- */
-router.post('/migrate', async (_req: any, res: any) => {
+ */router.post('/migrate', async (_req: any, res: any) => {
   try {
     const { prisma } = require('../utils/database');
     await prisma.$executeRawUnsafe(`ALTER TABLE "Dispute" ADD COLUMN IF NOT EXISTS "contextType" TEXT`);

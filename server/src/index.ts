@@ -344,6 +344,10 @@ function directRoute(routePath: string, router: any) {
 import githubAuthRoutes from './routes/githubAuth.routes';
 import authRoutes from './routes/auth.routes';
 
+// Import vcap routes
+import vcapRoutes from './routes/vcap.routes';
+
+
 // Register critical routes immediately
 directRoute(`/api/${API_VERSION}/auth`, authRoutes);
 directRoute(`/api/${API_VERSION}/auth/social`, githubAuthRoutes);
@@ -355,6 +359,10 @@ const routeMap: [string, string][] = [
   [`/api/${v}/businesses/import`, './routes/businessImport.routes'],
   [`/api/${v}/reservations`, './routes/reservation.routes'],
   [`/api/${v}/disputes`, './routes/dispute.routes'],
+  // Sulha (Optimistic Arbitration) — escrow disputes, Jev arbitration, staked
+  // panel. Its own namespace; /disputes above stays the reservation debate
+  // surface, with escrow delegates added there.
+  [`/api/${v}/sulha`, './routes/sulha.routes'],
   [`/api/${v}/loans`, './routes/loan.routes'],
   [`/api/${v}/payouts`, './routes/payout.routes'],
   [`/api/${v}/payments`, './routes/payment.routes'],
@@ -416,6 +424,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/trust`, './routes/trust.routes'],
   [`/api/${v}/profile`, './routes/profile.routes'],
   [`/api/${v}/trust/v1`, './routes/trustApi.v1.routes'],
+  [`/api/${v}/vcap`, './routes/vcap.routes'],
   [`/api/${v}/monetization`, './routes/monetization.routes'],
   [`/api/${v}/linkedin/seed`, './routes/linkedinSeed.routes'],
   [`/api/${v}/linkedin`, './routes/linkedin.routes'],
@@ -585,6 +594,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/settings/sms`, './routes/settings.sms.routes'],
   [`/api/${v}/channels`, './routes/channel.routes'],
   [`/api/${v}/trust-profile`, './routes/trustProfile.routes'],
+  [`/api/${v}/trust-verification`, './routes/trustVerification.routes'],
   [`/api/${v}/badge`, './routes/badge.routes'],
   [`/api/${v}/user`, './routes/userProfile.routes'],
   [`/api/${v}/business-verification`, './routes/businessVerification.routes'],

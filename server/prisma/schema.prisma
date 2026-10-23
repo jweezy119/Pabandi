@@ -4301,19 +4301,25 @@ model TrustPassport {
 }
 
 model OnchainAttestation {
-  id          String   @id @default(cuid())
-  passportId  String
-  eventType   String
-  referenceId String
-  txSignature String   @unique
-  hash        String
-  explorerUrl String
-  status      String   @default("pending") // pending | confirmed | failed
-  createdAt   DateTime @default(now())
+  id                         String   @id @default(cuid())
+  passportId                 String
+  eventType                  String
+  referenceId                String
+  txSignature                String   @unique
+  hash                       String
+  explorerUrl                String
+  status                     String   @default("pending") // pending | confirmed | failed
+  createdAt                  DateTime @default(now())
+  // PAR fields for data escrow settlement reputation
+  settlementReceiptSignature String?
+  buyerAgentId               String?
+  sellerAgentId              String?
+  dataHash                   String?
 
   @@index([passportId])
   @@index([eventType])
   @@index([status])
+  @@index([settlementReceiptSignature])
   // The only way this table is read in practice: one passport's attestations,
   // newest first, optionally narrowed to one event type. Neither single-column
   // index above can serve that -- Postgres reads the trailing column of a
@@ -8432,4 +8438,42 @@ model SessionReceipt {
 
   @@unique([sessionId, idempotencyKey])
   @@index([sessionId, createdAt])
+}
+
+// ─── Sulha (Optimistic Arbitration) ──────────────────────────────────────────
+//
+// Sulha is the dispute-resolution layer for escrows. An escrow whose terms are
+// contested is moved to `disputed` and frozen: Jev (Pabandi's decision model)
+// arbitrates first, and only cases it cannot settle with high confidence go to
+// a staked human panel. This model exists separately from the resident `Dispute`
+// (reservation-jury voting for bookings) rather than being squeezed into it:
+// the fields, the state machine, and the counterparties are different, and one
+// escrow disputed through Sulha is not "dispute as usual" with a jury vote.
+model EscrowDispute {
+  id               String    @id @default(cuid())
+  /// The escrow this dispute freezes. `@unique` — one dispute per escrow.
+  /// The id is the UniversalEscrow.referenceId, the platform-wide escrow id.
+  escrowId         String    @unique
+  /// Passport id of the party that raised the dispute (public intent marker).
+  raisedByPassport String
+  reason           String
+  /// { urls: [...photo/docs links], hashes: [...data hashes], chatLogs: [...], notes }
+  evidenceJson     Json
+  /// "open" | "ai_review" | "human_review" | "resolved_buyer" | "resolved_seller"
+  status           String    @default("open")
+  /// Jev's confidence in its verdict (0–100), set when arbitration runs.
+  aiConfidence     Float?
+  resolutionNotes  String?
+  /// Optional engine linkage: sessions fund escrowed actions, and an open
+  /// dispute must not be able to be closed underneath a pending settlement.
+  /// Null when the dispute was raised without a session context.
+  sessionId        String?
+  /// Staked panel record: [{ passportId, walletAddress, vote: "seller"|"buyer",
+  /// stakePAB, votedAt }] — the audit trail a resolution cites.
+  panelVotes       Json?
+  createdAt        DateTime  @default(now())
+  resolvedAt       DateTime?
+
+  @@index([status, createdAt])
+  @@index([sessionId])
 }

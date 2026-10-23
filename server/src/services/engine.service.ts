@@ -139,6 +139,7 @@ export type ExecuteFailure =
   | { code: 'SESSION_NOT_ACTIVE'; message: string; status: SessionStatus }
   | { code: 'SESSION_EXPIRED'; message: string }
   | { code: 'LIMIT_EXCEEDED'; message: string; spent: number; totalLimit: number; requested: number }
+  | { code: 'SESSION_DISPUTED'; message: string; disputeId: string }
   | { code: 'CONCURRENT_SPEND'; message: string }
   | { code: 'INVALID_AMOUNT'; message: string };
 
@@ -561,6 +562,29 @@ class EngineService {
 
     if (!session) {
       return { ok: false, error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } };
+    }
+
+    // ─── SULHA FREEZE ──────────────────────────────────────────────────────
+    // Closing settles what the session owes. If an escrow dispute funded by
+    // this session is open, settlement is precisely what the dispute is about
+    // — closing the session now would settle funds before the arbitrator has
+    // heard the case. Failure closes the dispute, which is the only way back
+    // to a closeable session; the resolution path in sulha.service calls in
+    // here after the verdict, so the same gate both blocks and unblocks.
+    const openDispute = await prisma.escrowDispute.findFirst({
+      where: { sessionId, status: { in: ['open', 'ai_review', 'human_review'] } },
+      select: { id: true, escrowId: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (openDispute) {
+      return {
+        ok: false,
+        error: {
+          code: 'SESSION_DISPUTED',
+          message: `Session is frozen: dispute ${openDispute.id} covers escrow ${openDispute.escrowId}`,
+          disputeId: openDispute.id,
+        },
+      };
     }
 
     const remaining = fromCents(toCents(session.totalLimit) - toCents(session.spent));
