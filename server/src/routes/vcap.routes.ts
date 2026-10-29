@@ -2,9 +2,9 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
-import { apiLimiter, writeLimiter } from '../middleware/rateLimit.middleware';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import crypto from 'crypto';
+import { X402_PRICING } from '../config/fees';
 
 type EscrowParty = { partyId: string; role: string };
 type EscrowCondition = { type: string; verify: { expectedHash?: string } };
@@ -103,9 +103,12 @@ router.post('/:id/verify', authenticate, apiLimiter, async (req: AuthRequest, re
       data: { status: 'verified' },
     });
 
+    // VCAP verification fee: $0.01 per verification (X402_PRICING.TRUST_API_CALL)
+    const vcapFee = X402_PRICING.TRUST_API_CALL;
+
     // Trigger release of funds via Pabandi Engine
     logger.info(
-      `[VCAP] Successfully verified data escrow ${escrowId}, funds will be released via Pabandi Engine`
+      `[VCAP] Successfully verified data escrow ${escrowId}, verification fee: $${vcapFee.toFixed(2)}, funds will be released via Pabandi Engine`
     );
 
     // Create PAR (Provenance-Anchored Reputation) record
@@ -137,7 +140,11 @@ router.post('/:id/verify', authenticate, apiLimiter, async (req: AuthRequest, re
     return res.json({
       success: true,
       message: 'Data escrow verified successfully',
-      result: verificationResult,
+      result: {
+        ...verificationResult,
+        vcapFee,
+        platformFeeCollected: vcapFee,
+      },
     });
   } catch (error: any) {
     if (error instanceof z.ZodError) {

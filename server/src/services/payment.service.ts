@@ -1,12 +1,13 @@
 import crypto from 'crypto';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { PLATFORM_FEE_RATE, AGENT_MARKETPLACE_FEE, assertProfitable, processingCostCents } from '../config/fees';
 
 // ── Solana USDC Configuration ───────────────────────────────────────────────
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 const PLATFORM_WALLET = process.env.PLATFORM_WALLET || process.env.PABANDI_TREASURY_WALLET || '';
 const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
-const PLATFORM_FEE_BPS = 100; // 1% = 100 basis points
+const PLATFORM_FEE_BPS = 100; // 1% = 100 basis points (legacy, superseded by config/fees)
 
 // ── PayLio Configuration ─────────────────────────────────────────────────────
 const PAYLIO_API_KEY = process.env.PAYLIO_API_KEY || '';
@@ -431,7 +432,7 @@ export async function releaseEscrow({
 }: { 
   escrowId: string; 
   releasedBy: string;
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{ success: boolean; error?: string; platformFeeAmount?: number; netAmount?: number }> {
   const escrow = await prisma.escrow.findUnique({ where: { id: escrowId } });
   
   if (!escrow) {
@@ -443,25 +444,46 @@ export async function releaseEscrow({
     return { success: false, error: `Cannot release from status ${escrow.status}` };
   }
 
+  // ── Platform fee calculation ────────────────────────────────────────────
+  // 3.5% platform fee on escrow release, capped to remain profitable after
+  // processing costs. Agent marketplace transactions use 2% instead.
+  const amountCents = Math.round(escrow.amount * 100);
+  const isAgentMarketplace = escrow.businessId == null && escrow.userId != null;
+  const rate = isAgentMarketplace ? AGENT_MARKETPLACE_FEE : PLATFORM_FEE_RATE;
+  const feeCents = Math.round(amountCents * rate);
+  const platformFeeAmount = feeCents / 100;
+  const netAmount = escrow.amount - platformFeeAmount;
+
   await prisma.escrow.update({
     where: { id: escrowId },
     data: {
       status: 'RELEASED',
       releasedAt: new Date(),
       releasedBy,
+      platformFeeAmount,
+      platformFeeStatus: 'COLLECTED',
     },
   });
 
-  // Update associated crypto payment status
+  // Record platform fee revenue on the payment record
   if (escrow.paymentId) {
     await prisma.cryptoPayment.update({
       where: { id: escrow.paymentId },
       data: { status: 'COMPLETED' },
     });
+    await prisma.payment.update({
+      where: { id: escrow.paymentId },
+      data: {
+        platformFeeAmount,
+        platformFeeStatus: 'COLLECTED',
+      },
+    }).catch(() => {
+      // Payment may not exist for all escrow types; non-fatal
+    });
   }
 
-  logger.info(`[PaymentService] Escrow released: ${escrowId} by ${releasedBy}`);
-  return { success: true };
+  logger.info(`[PaymentService] Escrow released: ${escrowId} by ${releasedBy}, platformFee: $${platformFeeAmount.toFixed(2)}, net: $${netAmount.toFixed(2)}`);
+  return { success: true, platformFeeAmount, netAmount };
 }
 
 export async function refundEscrow({ 
