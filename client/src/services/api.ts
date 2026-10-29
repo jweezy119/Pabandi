@@ -191,6 +191,9 @@ export const agentPassportService = {
     apiClient.get(`/agent-passport/ledger/${idempotencyKey}`),
   /** Discovery doc (public key + capability vocabulary). */
   discover: () => apiClient.get('/agent-passport/.well-known/ptp.json'),
+  /** Public trust verification — returns JSON-LD Verifiable Credential for an agent. */
+  getAgentCredentials: (passportId: string) =>
+    apiClient.get(`/trust/agent/${passportId}/credentials`),
 };
 
 export const revenueService = {

@@ -48,6 +48,14 @@ export const EscrowInterface: React.FC = () => {
     { onSuccess: () => { queryClient.invalidateQueries(['escrows', userEmail]); } }
   );
 
+  const verifyMutation = useMutation(
+    ({ escrowId, deliveredDataHash, sourceUrl }: { escrowId: string; deliveredDataHash: string; sourceUrl?: string }) =>
+      protocolService.verifyEscrow(escrowId, { deliveredDataHash, sourceUrl }),
+    { onSuccess: () => { queryClient.invalidateQueries(['escrows', userEmail]); } }
+  );
+
+  const [verifyForm, setVerifyForm] = useState<{ escrowId: string; deliveredDataHash: string; sourceUrl: string } | null>(null);
+
   const fundMutation = useMutation(
     (id: string) => protocolService.fundEscrow(id),
     { onSuccess: () => { queryClient.invalidateQueries(['escrows', userEmail]); } }
@@ -170,6 +178,9 @@ export const EscrowInterface: React.FC = () => {
                         <Button size="sm" variant="ghost" onClick={() => disputeMutation.mutate(escrow.id)} loading={disputeMutation.isLoading}>
                           Dispute
                         </Button>
+                        <Button size="sm" variant="outline" onClick={() => setVerifyForm({ escrowId: escrow.id, deliveredDataHash: '', sourceUrl: '' })}>
+                          Verify Data
+                        </Button>
                       </>
                     )}
                   </div>
@@ -202,10 +213,62 @@ export const EscrowInterface: React.FC = () => {
               ))}
             </div>
           </Surface>
+        {verifyForm && (
+          <Surface className="p-5">
+            <h3 className="text-sm font-bold text-slate-100 mb-4">Verify Data Delivery — Escrow {verifyForm.escrowId}</h3>
+            <p className="text-xs text-slate-400 mb-4">
+              Enter the hash of the delivered data. Pabandi will compare it against the expected hash and release funds on match.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input
+                type="text"
+                placeholder="Delivered Data Hash (SHA-256)"
+                value={verifyForm.deliveredDataHash}
+                onChange={(e) => setVerifyForm({ ...verifyForm, deliveredDataHash: e.target.value })}
+                className="px-4 py-2.5 rounded-lg border border-white/10 bg-white/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
+              />
+              <input
+                type="text"
+                placeholder="Source URL (optional)"
+                value={verifyForm.sourceUrl}
+                onChange={(e) => setVerifyForm({ ...verifyForm, sourceUrl: e.target.value })}
+                className="px-4 py-2.5 rounded-lg border border-white/10 bg-white/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
+              />
+            </div>
+            <div className="mt-4 flex gap-3">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  if (!verifyForm.deliveredDataHash) return;
+                  verifyMutation.mutate({
+                    escrowId: verifyForm.escrowId,
+                    deliveredDataHash: verifyForm.deliveredDataHash,
+                    sourceUrl: verifyForm.sourceUrl || undefined,
+                  });
+                  setVerifyForm(null);
+                }}
+                loading={verifyMutation.isLoading}
+              >
+                Submit Verification
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setVerifyForm(null)}
+              >
+                Cancel
+              </Button>
+            </div>
+            {verifyMutation.isError && (
+              <div className="mt-3 text-xs text-red-400">
+                Verification failed. The delivered hash did not match the expected hash.
+              </div>
+            )}
+            {verifyMutation.isSuccess && (
+              <div className="mt-3 text-xs text-green-400">
+                Data verified successfully. Funds released and PAR record created.
+              </div>
+            )}
+          </Surface>
         )}
-      </div>
-    </div>
-  );
-};
 
 export default EscrowInterface;

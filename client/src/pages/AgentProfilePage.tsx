@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { API_HOST } from '../utils/apiHost';
+import { agentPassportService } from '../services/api';
 
 type Agent = {
   id: string;
@@ -22,6 +23,9 @@ export default function AgentProfilePage() {
   const { slug } = useParams<{ slug: string }>();
   const [agent, setAgent] = useState<Agent | null>(null);
   const [loading, setLoading] = useState(true);
+  const [credentials, setCredentials] = useState<any | null>(null);
+  const [credLoading, setCredLoading] = useState(false);
+  const [credError, setCredError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!slug) return;
@@ -183,6 +187,60 @@ export default function AgentProfilePage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* Trust Verification Credential */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">Verifiable Credential</h2>
+            <button
+              onClick={async () => {
+                setCredLoading(true);
+                setCredError(null);
+                try {
+                  const res = await agentPassportService.getAgentCredentials(slug);
+                  setCredentials(res.data?.credential || res.data);
+                } catch (e: any) {
+                  setCredError(e.response?.data?.error || e.message || 'Failed to load credential');
+                } finally {
+                  setCredLoading(false);
+                }
+              }}
+              disabled={credLoading}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                credLoading
+                  ? 'bg-[rgba(191,179,163,0.3)] text-[var(--soft-stone)] cursor-not-allowed'
+                  : credentials
+                    ? 'bg-[var(--sage)] text-white hover:bg-[var(--sage)]/90'
+                    : 'bg-[rgba(191,179,163,0.3)] text-[var(--dusty-rose)] border border-[var(--dusty-rose)] hover:bg-[var(--dusty-rose)]/10'
+              }`}
+            >
+              {credLoading ? 'Loading…' : credentials ? 'View Credential' : 'View Verifiable Credential'}
+            </button>
+          </div>
+
+          {credError && (
+            <div className="mb-4 p-3 rounded-lg bg-[var(--terracotta)]/10 text-[var(--terracotta)] text-sm border border-[var(--terracotta)]/30">
+              {credError}
+            </div>
+          )}
+
+          {credentials && (
+            <div className="rounded-2xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] backdrop-blur-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-semibold text-[var(--dusty-rose)]">JSON-LD Verifiable Credential</span>
+                <button
+                  onClick={() => navigator.clipboard.writeText(JSON.stringify(credentials, null, 2))}
+                  className="text-xs text-[var(--soft-stone)] hover:text-[var(--dusty-rose)] underline"
+                >
+                  Copy JSON
+                </button>
+              </div>
+              <div className="bg-black/20 rounded-lg p-4 font-mono text-xs overflow-x-auto whitespace-pre break-all text-[var(--soft-stone)]">
+                {JSON.stringify(credentials, null, 2)}
+              </div>
             </div>
           )}
         </div>

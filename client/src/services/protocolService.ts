@@ -39,6 +39,10 @@ export const protocolService = {
   disputeEscrow: (id: string) => apiClient.post(`/escrow/${id}/dispute`),
   listEscrows: (email: string) => apiClient.get('/escrow', { params: { email } }),
 
+  // ── VCAP Verify (Data Escrow) ─────────────────────────────────────────
+  verifyEscrow: (id: string, payload: { deliveredDataHash: string; sourceUrl?: string }) =>
+    apiClient.post(`/data-escrow/${id}/verify`, payload),
+
   // ── Agents ────────────────────────────────────────────────────────────
   getAgentProfile: (agentId: string) => apiClient.get(`/agent-marketplace/${agentId}`),
   registerAgent: (payload: any) => apiClient.post('/agent-marketplace/register', payload),
