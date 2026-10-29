@@ -21,7 +21,7 @@ const VCAPVerifySchema = z.object({
   sourceUrl: z.string().optional(),
 });
 
-router.post('/data-escrow/:id/verify', authenticate, apiLimiter, async (req: AuthRequest, res: Response) => {
+router.post('/:id/verify', authenticate, apiLimiter, async (req: AuthRequest, res: Response) => {
   try {
     const escrowId = req.params.id;
     const userId = req.user?.id;

@@ -9,7 +9,7 @@ const router = Router();
  * GET /api/v1/trust/agent/:passportId/credentials
  * Public Trust Verification Layer - returns a JSON-LD Verifiable Credential
  */
-router.get('/trust/agent/:passportId/credentials', async (req: Request, res: Response) => {
+router.get('/:passportId/credentials', async (req: Request, res: Response) => {
   try {
     const passportId = req.params.passportId;
 
