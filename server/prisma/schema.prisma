@@ -8395,6 +8395,19 @@ model PabandiSession {
   /// comment rather than in the type.
   ownerType    String
   ownerId      String
+  /// ─── DELEGATED (agent-on-behalf-of-human) SESSIONS ───────────────────────
+  /// A delegated session is opened by an external AI agent (POST
+  /// /api/v1/engine/delegated-session) for a human who has not yet signed in.
+  /// The agent is recorded here; the human is handed `handoffUrl` and funds the
+  /// tab there. The three trailing columns carry what the handoff page and the
+  /// session.funded webhook need: which service is being booked (id + the
+  /// display label the agent supplied) and where to notify the agent. All
+  /// nullable: a normal openSession() tab has none of them.
+  delegatedByAgentId String?
+  handoffUrl         String?
+  serviceId          String?
+  serviceLabel       String?
+  webhookUrl         String?
   /// The public half of the ephemeral keypair that authorises this session.
   /// Unique so a session can never be addressed ambiguously. The private half
   /// is never stored here: until settlement it is not needed, and holding it
@@ -8402,7 +8415,9 @@ model PabandiSession {
   ephemeralKey String    @unique
   totalLimit   Float
   spent        Float     @default(0)
-  /// "active" | "closed" | "exhausted"
+  /// "active" | "pending" | "closed" | "exhausted". "pending" is a delegated
+  /// handoff session that has not been funded yet -- a promise with no money
+  /// behind it until the human funds it, at which point it becomes "active".
   status       String    @default("active")
   currency     String    @default("USDC")
   expiresAt    DateTime
@@ -8485,4 +8500,21 @@ model EscrowDispute {
 
   @@index([status, createdAt])
   @@index([sessionId])
+}
+
+model ScoutedTarget {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  website       String?
+  agentType     String   @default("data-broker") // data-broker | ai-agent-builder | marketplace
+  source        String   @default("github")    // github | producthunt
+  outreachStatus String  @default("pending") // pending | emailed | responded | signed_up | bounced
+  referredViaEscrowId String?
+  emailedAt     DateTime?
+  createdAt     DateTime @default(now())
+
+  @@index([email])
+  @@index([outreachStatus])
+  @@index([source])
 }
