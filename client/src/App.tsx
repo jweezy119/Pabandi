@@ -145,6 +145,7 @@ const LiveSellingPage = lazy(() => import('./pages/LiveSellingPage'));
 const FreelancePage = lazy(() => import('./pages/FreelancePage'));
 const BackgroundCheckPage = lazy(() => import('./pages/BackgroundCheckPage'));
 const AgentPassportPage = lazy(() => import('./pages/AgentPassportPage'));
+const AgentOnboardingPage = lazy(() => import('./pages/AgentOnboardingPage'));
 const RevenuePage = lazy(() => import('./pages/RevenuePage'));
 const BackgroundCheckReportPage = lazy(() => import('./pages/BackgroundCheckReportPage'));
 const PromoPage = lazy(() => import('./pages/PromoPage'));
@@ -571,6 +572,7 @@ function AnimatedAppRoutes() {
             <Route path="trust/pulse" element={<PlaceholderPage />} />
             <Route path="trust/jury" element={<PlaceholderPage />} />
             <Route path="agent-passport" element={<PlaceholderPage />} />
+            <Route path="agent-onboarding" element={<AgentOnboardingPage />} />
             <Route path="background-check" element={<PlaceholderPage />} />
             <Route path="background-check/:id" element={<PlaceholderPage />} />
             <Route path="protected-deposit" element={<PlaceholderPage />} />
