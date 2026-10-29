@@ -3,6 +3,7 @@ import { getRedis, closeRedis, isRedisConfigured } from '../lib/redis';
 import { closeQueues } from './connection';
 import { EMAIL_QUEUE, runEmailJob, type EmailJob } from './email.queue';
 import { WEBHOOK_QUEUE, runWebhookJob, type WebhookJob } from './webhook.queue';
+import { registerScoutWorker, SCOUT_QUEUE } from '../workers/scout.worker';
 import engineService from '../services/engine.service';
 import { logger } from '../utils/logger';
 
@@ -94,23 +95,42 @@ async function main(): Promise<void> {
     }
   );
 
-  for (const [name, worker] of [
-    [EMAIL_QUEUE, emailWorker],
-    [WEBHOOK_QUEUE, webhookWorker],
-  ] as const) {
-    worker.on('failed', (job, err) => reportFailure(name, job, err));
-    worker.on('error', (err) => logger.error(`[Worker] ${name} error: ${err.message}`));
-    worker.on('completed', (job) => {
-      // Info, not warn: completed is the common case and should not draw the
-      // eye the way the failure paths do.
-      logger.info(`[Worker] ${name} ${job.name} ${job.id} done`);
-    });
+  // Scout agent worker — runs autonomous outbound discovery and outreach
+  const scoutWorker = await registerScoutWorker(redis);
+
+  emailWorker.on('failed', (job, err) => reportFailure(EMAIL_QUEUE, job, err));
+  emailWorker.on('error', (err) =>
+    logger.error(`[Worker] ${EMAIL_QUEUE} error: ${err.message}`)
+  );
+  emailWorker.on('completed', (job) =>
+    logger.info(`[Worker] ${EMAIL_QUEUE} ${job.name} ${job.id} done`)
+  );
+
+  webhookWorker.on('failed', (job, err) => reportFailure(WEBHOOK_QUEUE, job, err));
+  webhookWorker.on('error', (err) =>
+    logger.error(`[Worker] ${WEBHOOK_QUEUE} error: ${err.message}`)
+  );
+  webhookWorker.on('completed', (job) =>
+    logger.info(`[Worker] ${WEBHOOK_QUEUE} ${job.name} ${job.id} done`)
+  );
+
+  if (scoutWorker) {
+    scoutWorker.on('failed', (job, err) => reportFailure(SCOUT_QUEUE, job, err));
+    scoutWorker.on('error', (err) =>
+      logger.error(`[Worker] ${SCOUT_QUEUE} error: ${err.message}`)
+    );
+    scoutWorker.on('completed', (job) =>
+      logger.info(`[Worker] ${SCOUT_QUEUE} ${job.name} ${job.id} done`)
+    );
   }
 
   await emailWorker.waitUntilReady();
   await webhookWorker.waitUntilReady();
+  if (scoutWorker) await scoutWorker.waitUntilReady();
 
-  logger.info(`[Worker] ready. consuming ${EMAIL_QUEUE} and ${WEBHOOK_QUEUE}`);
+  logger.info(
+    `[Worker] ready. consuming ${EMAIL_QUEUE} and ${WEBHOOK_QUEUE}${scoutWorker ? ` and ${SCOUT_QUEUE}` : ''}`
+  );
   startSessionExpirySweep();
 }
 

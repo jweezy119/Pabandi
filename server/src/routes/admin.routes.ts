@@ -23,6 +23,7 @@ import {
 import { AuthRequest } from '../middleware/auth.middleware';
 import { Response, NextFunction } from 'express';
 import { listAdminPlugins, getAdminPlugin, updateAdminPlugin } from '../services/openwa_admin.service';
+import { enqueueScoutRun } from '../workers/scout.worker';
 
 const router = Router();
 
@@ -87,6 +88,22 @@ router.patch('/openwa/plugins/:id', (req: AuthRequest, res: Response, next: Next
     res.json({ success: true, data: { plugin } });
   } catch (error) {
     next(error);
+  }
+});
+
+// ── Scout Agent Admin ─────────────────────────────────────────────
+router.post('/scout/run', async (_req: AuthRequest, res: Response) => {
+  try {
+    const result = await enqueueScoutRun();
+    res.json({
+      success: true,
+      data: { mode: result.mode, jobId: result.jobId },
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Scout run failed',
+    });
   }
 });
 
