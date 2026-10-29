@@ -213,6 +213,7 @@ export const EscrowInterface: React.FC = () => {
               ))}
             </div>
           </Surface>
+        )}
         {verifyForm && (
           <Surface className="p-5">
             <h3 className="text-sm font-bold text-slate-100 mb-4">Verify Data Delivery — Escrow {verifyForm.escrowId}</h3>
@@ -270,5 +271,9 @@ export const EscrowInterface: React.FC = () => {
             )}
           </Surface>
         )}
+      </div>
+    </div>
+  );
+};
 
 export default EscrowInterface;
