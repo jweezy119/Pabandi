@@ -1,6 +1,6 @@
 import { Queue, Worker, type Job } from 'bullmq';
 import { getRedis, isRedisConfigured } from '../lib/redis';
-import { enqueue, type EnqueueResult } from './connection';
+import { enqueue, type EnqueueResult } from '../queues/connection';
 import { scoutAgent, ScoutTarget } from '../services/scout-agent.service';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
@@ -35,6 +35,7 @@ async function getTodaysEmailCount(): Promise<number> {
 
 /**
  * Check if a target has already been scouted (deduplication).
+ * Targets without email addresses cannot be emailed and are skipped.
  */
 async function isAlreadyScouted(email: string): Promise<boolean> {
   const existing = await prisma.scoutedTarget.findUnique({
@@ -46,10 +47,11 @@ async function isAlreadyScouted(email: string): Promise<boolean> {
 
 /**
  * Record a target as scouted (deduplication record).
+ * Requires an email address — targets without one are skipped before this runs.
  */
 async function recordScoutedTarget(target: ScoutTarget): Promise<void> {
   await prisma.scoutedTarget.upsert({
-    where: { email: target.email ?? target.id },
+    where: { email: target.email! },
     update: {
       outreachStatus: 'pending',
       name: target.name,
@@ -58,7 +60,7 @@ async function recordScoutedTarget(target: ScoutTarget): Promise<void> {
       source: target.source,
     },
     create: {
-      email: target.email ?? target.id,
+      email: target.email!,
       name: target.name,
       website: target.website,
       agentType: target.agentType,
@@ -179,7 +181,7 @@ export async function runScoutCycle(): Promise<{
     try {
       const sent = await scoutAgent.outreachTarget(target, research.pitchHook);
       if (sent.sent) {
-        await markTargetEmailed(target.email);
+        await markTargetEmailed(target.email!);
         results.emailed++;
         logger.info(`[Scout] Emailed ${target.email}`);
       } else {
