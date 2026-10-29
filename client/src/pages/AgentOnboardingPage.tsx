@@ -278,7 +278,7 @@ export default function AgentOnboardingPage() {
             <strong>How guarantees work:</strong><br />
             • Band A/B sellers only (highest trust)<br />
             • Fee: 0.5% of guaranteed amount<br />
-            • Auto-approval for claims < $50 (Band A)<br />
+            • Auto-approval for claims under $50 (Band A)<br />
             • Payout in USDC within 24h of approved claim
           </div>
         </div>

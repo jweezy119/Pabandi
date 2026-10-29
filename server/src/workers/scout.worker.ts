@@ -276,8 +276,6 @@ export async function registerScoutWorker(
       connection: redisConnection,
       concurrency: 1,
       limiter: { max: 1, duration: 60_000 }, // Max 1 run per minute
-      attempts: 3,
-      backoff: { type: 'exponential', delay: 10000 },
     }
   );
 
