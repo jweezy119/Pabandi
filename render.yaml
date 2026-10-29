@@ -57,41 +57,21 @@ services:
         generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
-      # THE LIVE SERVICE DOES NOT USE A RENDER DATABASE. It connects to Aliyun RDS.
+      # THE LIVE SERVICE USES SUPABASE (free tier, 500 MB DB).
       #
-      # This entry previously read `fromDatabase: { name: pabandi-db }`, which
-      # was wrong and actively dangerous: `fromDatabase` makes the blueprint
-      # authoritative, so any re-apply of this file would point the service at a
-      # Render-managed Postgres instead of the database it actually reads. That
-      # would not be a slow degradation — the new database has none of the 338
-      # tables, so every authenticated request would fail at once.
+      # Set DATABASE_URL in the Render dashboard to your Supabase connection string:
+      #   postgresql://postgres:YOUR_PASSWORD@db.yzfdpfpwxqjipnmpcnpz.supabase.co:5432/postgres?schema=public&connection_limit=10&pool_timeout=20
       #
-      # How this was established rather than assumed: `schema-check.service`
-      # added in 8fa0ddd8f reports on /health whether the columns the running
-      # code queries exist. The deployed service returns `schema.ok: true`,
-      # including for `InvoiceTrustEvent.invoiceId` being NULLABLE — a property
-      # that became true only on Aliyun RDS, when migration
-      # 20261010_trust_event_null_scope ran there on 2026-10-11. A Render
-      # database would have returned false.
+      # `sync: false` keeps the dashboard value, so the blueprint does not own
+      # this value. You must set it in the Render dashboard manually.
       #
-# `sync: false` keeps the dashboard value, so the working configuration
-      # cannot be silently overwritten. If the database is ever genuinely moved,
-      # change it in the dashboard and update this comment — do not restore a
-      # fromDatabase block without verifying which database the service reads.
-      #
-      # ACTION REQUIRED IN THE RENDER DASHBOARD (cannot be done from this file,
-      # because sync:false means the blueprint does not own this value):
-      # append `&connection_limit=10&pool_timeout=20` to the existing URL. The
-      # repo's .env / .env.production / .env.example already carry it; this
-      # dashboard value has not been changed. The worker service added in a
-      # later phase opens its own pool, so 10 (api) + 10 (worker) = 20 against
-      # Aliyun RDS — check max_connections before raising either.
+      # ACTION REQUIRED IN THE RENDER DASHBOARD:
+      # Set DATABASE_URL to your Supabase connection string (sync:false means
+      # this file cannot set it for you).
       - key: DATABASE_URL
         sync: false
-      - key: DIRECT_URL
-        fromDatabase:
-          name: pabandi-db
-          property: connectionString
+      # DIRECT_URL is not needed for Supabase (it's not a Render-managed DB).
+      # Remove the fromDatabase block — Supabase is external to Render.
       - key: COURTLISTENER_API_KEY
         generateValue: true
       - key: COURTLISTENER_API_KEYS
@@ -162,10 +142,8 @@ services:
         sync: false
       - key: DATABASE_URL
         sync: false
-      - key: DIRECT_URL
-        fromDatabase:
-          name: pabandi-db
-          property: connectionString
+      # DIRECT_URL not needed for Supabase (external to Render).
+      # Set DATABASE_URL in the Render dashboard for the worker too.
       # email.service.ts skips all sends when this is unset; the worker would
       # then drain the queue successfully while sending nothing.
       - key: RESEND_API_KEY
