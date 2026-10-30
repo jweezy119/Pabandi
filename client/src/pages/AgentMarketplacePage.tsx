@@ -6,6 +6,7 @@ import ProjectCard from '../components/ProjectCard';
 import AgentCard from '../components/AgentCard';
 import { API_HOST } from '../utils/apiHost';
 import PostedProjectsPanel from '../components/marketplace/PostedProjectsPanel';
+import ProviderWorkspacePanel from '../components/marketplace/ProviderWorkspacePanel';
 
 type Stats = {
   totalAgents: number;
@@ -105,7 +106,10 @@ export default function AgentMarketplacePage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8"><PostedProjectsPanel /></div>
+        <div className="mb-8 grid gap-6 lg:grid-cols-2">
+          <PostedProjectsPanel />
+          <ProviderWorkspacePanel />
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
