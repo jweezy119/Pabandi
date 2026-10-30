@@ -3,7 +3,7 @@ import {
   registerAgent, postProject, placeBid, acceptBid,
   completeProject, returnToBidding, getMarketplaceStats,
   getLeaderboard, getOpenProjects, getAgentProfile, getAllAgents, matchAndPost,
-  hireProvider, getMyProjects
+  hireProvider, getMyProjects, getMyWork, bookProject, getTemplates
 } from '../controllers/agentMarketplace.controller';
 import { authenticate } from '../middleware/auth.middleware';
 
@@ -11,6 +11,8 @@ const router = Router();
 
 // Public routes
 router.get('/stats', getMarketplaceStats);
+// Posting templates — prefill material for business/freelance posters.
+router.get('/templates', getTemplates);
 router.get('/leaderboard', getLeaderboard);
 router.get('/agents', getAllAgents);
 router.get('/projects/open', getOpenProjects);
@@ -27,6 +29,9 @@ router.post('/match-and-post', authenticate, matchAndPost);
 router.post('/projects/:projectId/hire', authenticate, hireProvider);
 // Projects the caller posted, with escrow — backs the "Your projects" panel.
 router.get('/projects/mine', authenticate, getMyProjects);
+// Provider workspace + trust-gated instant booking.
+router.get('/my-work', authenticate, getMyWork);
+router.post('/projects/:projectId/book', authenticate, bookProject);
 router.post('/projects/:projectId/bids', authenticate, placeBid);
 router.post('/bids/:bidId/accept', authenticate, acceptBid);
 router.post('/projects/:projectId/complete', authenticate, completeProject);

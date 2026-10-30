@@ -1,6 +1,8 @@
 import { prisma } from '../utils/database';
 import { AGENT_MARKETPLACE_FEE } from '../config/fees';
 import { PAB_USD_PRICE } from '../config/tokenomics';
+import { TEMPLATE_BY_KEY } from '../config/agentTemplates';
+import type { Prisma } from '@prisma/client';
 import { findMatchedProviders, type MatchedProvider } from './agentMatching.service';
 
 const PLATFORM_FEE_USD = AGENT_MARKETPLACE_FEE; // 2% total, from config/fees
@@ -78,11 +80,15 @@ export class AgentMarketplace {
     deadline: Date;
     category: string;
     complexity: string;
+    metadata?: Record<string, unknown>;
   }) {
     const pabPrice = PAB_USD_PRICE;
     return prisma.agentProject.create({
       data: {
         ...params,
+        metadata: params.metadata
+          ? (params.metadata as Prisma.InputJsonValue)
+          : undefined,
         budgetPab: params.budgetUsd / pabPrice,
         status: 'OPEN',
       },
@@ -109,16 +115,33 @@ export class AgentMarketplace {
     deadline?: Date;
     category?: string;
     complexity?: string;
+    /** Optional template applied when a caller posts through a catalog key. */
+    templateKey?: string;
+    /** Poster opt-in: verified agents (identity + score ≥ 70) may book directly
+     * and the escrow funds itself without the poster pressing accept. */
+    autoBook?: boolean;
   }): Promise<{ project: Awaited<ReturnType<AgentMarketplace['postProject']>>; providers: MatchedProvider[] }> {
+    // Template merge: caller-supplied fields win; template fields fill the
+    // gaps (description, skills, complexity). A template is a starting draft,
+    // not an override.
+    const template = params.templateKey ? TEMPLATE_BY_KEY.get(params.templateKey) : undefined;
+
     const project = await this.postProject({
-      title: params.title,
-      description: params.description,
-      requirements: params.requiredSkills.join(', '),
+      title: params.title || template?.title || 'Untitled project',
+      description:
+        params.description ||
+        template?.description ||
+        'No description provided.',
+      requirements: (params.requiredSkills.length ? params.requiredSkills : template?.requiredSkills ?? []).join(', '),
       posterId: params.posterId,
       budgetUsd: params.budget,
       deadline: params.deadline ?? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
       category: params.category ?? 'AGENT_BOUNTY',
-      complexity: params.complexity ?? 'MEDIUM',
+      complexity: params.complexity ?? template?.complexity ?? 'MEDIUM',
+      metadata: {
+        ...(params.autoBook ? { autoBook: true } : {}),
+        ...(template ? { templateKey: template.key, deliverables: template.deliverables } : {}),
+      },
     });
 
     const providers = await findMatchedProviders(params.requiredSkills);
@@ -263,6 +286,109 @@ export class AgentMarketplace {
         metadata: { kind: 'trust-passport-provider', passportId: passport.id, handle: passport.handle },
       },
     });
+  }
+
+  /**
+   * Provider identity: signed-in user → their TrustPassport → AgentProfile.
+   *
+   * Providers are passport holders, and TrustPassport.userId is the honest
+   * link (each user owns at most one passport). Bridge profiles reuse the
+   * ensureProviderProfile wallet/slug resolution so a passport that later
+   * registers a real agent wallet keeps the same marketplace identity.
+   */
+  async resolveProviderProfile(userId: string) {
+    const passport = await prisma.trustPassport.findUnique({ where: { userId } });
+    if (!passport) throw new Error('No provider passport linked to this account');
+    const profile = await this.ensureProviderProfile(passport);
+    return { profile, passport };
+  }
+
+  /**
+   * Provider workspace payload ("Your work").
+   *
+   * assigned: won, escrow-funded projects, newest first — the work an agent
+   * has actually been booked for. openFeed: open projects the provider could
+   * still book, excluding (a) projects they already bid on and (b) their own
+   * postings — a booking feed, not a noise feed.
+   */
+  async getMyWork(userId: string) {
+    const { profile } = await this.resolveProviderProfile(userId);
+
+    const bids = await prisma.agentProjectBid.findMany({
+      where: { bidderId: profile.id, isWinning: true },
+      include: { project: { include: { escrow: true } } },
+      orderBy: { submittedAt: 'desc' },
+      take: 20,
+    });
+
+    const assigned = bids
+      .filter((b) => b.project.status === 'FUNDED')
+      .map((b) => ({
+        projectId: b.projectId,
+        title: b.project.title,
+        budgetUsd: b.project.budgetUsd,
+        deadline: b.project.deadline,
+        escrow: b.project.escrow,
+      }));
+
+    const openFeed = await prisma.agentProject.findMany({
+      where: {
+        status: 'OPEN',
+        posterId: { not: profile.id },
+        bids: { none: { bidderId: profile.id } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 15,
+    });
+
+    return {
+      providerId: profile.id,
+      assigned,
+      completedCount: bids.filter((b) => b.project.status === 'COMPLETED').length,
+      totalEarned: profile.totalEarned,
+      openFeed,
+    };
+  }
+
+  /**
+   * Provider books a project.
+   *
+   * Trust-gated instant booking. The poster must have opted in (autoBook at
+   * post time) AND the provider must be identity-verified with Trust Score
+   * ≥ 70; only then does the booking fund itself — the bid is created and
+   * immediately run through acceptBid with the TICKET as the poster's identity,
+   * acting on the opt-in the poster explicitly gave when they posted. Everyone
+   * else gets a normal bid at full budget for the poster to accept manually.
+   */
+  async bookProject(projectId: string, userId: string) {
+    const { profile, passport } = await this.resolveProviderProfile(userId);
+
+    const project = await prisma.agentProject.findUnique({ where: { id: projectId } });
+    if (!project) throw new Error('Project not found');
+    if (project.status !== 'OPEN') throw new Error('Project is not open for booking');
+    if (project.posterId === profile.id) throw new Error('Cannot book your own project');
+
+    const instantAllowed =
+      (project.metadata as { autoBook?: unknown } | null)?.autoBook === true &&
+      passport.verifiedIdentity === true &&
+      (passport.score ?? 0) >= 70;
+
+    const bid = await this.placeBid({
+      projectId,
+      bidderId: profile.id,
+      proposedAmount: project.budgetUsd,
+      timelineHours: 14 * 24,
+      approach: instantAllowed
+        ? 'Instant booking — identity-verified provider, Trust Score ≥ 70'
+        : 'Provider application — awaiting poster acceptance',
+    });
+
+    if (!instantAllowed) {
+      return { booked: false, bidId: bid.id };
+    }
+
+    const { escrow } = await this.acceptBid(bid.id, project.posterId);
+    return { booked: true, bidId: bid.id, escrow };
   }
 
   /**

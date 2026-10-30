@@ -1,7 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { agentMarketplace } from '../services/agentMarketplace.service';
+import { TEMPLATE_BY_KEY, PROJECT_TEMPLATES } from '../config/agentTemplates';
 import type { AuthRequest } from '../middleware/auth.middleware';
+
+// Posting templates — prefill material for business/freelance posters.
+export const getTemplates = (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    res.json({ success: true, data: PROJECT_TEMPLATES });
+  } catch (err) { next(err); }
+};
 
 export const registerAgent = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -36,18 +44,29 @@ export const matchAndPost = async (req: Request, res: Response, next: NextFuncti
     const { user } = req as AuthRequest;
     if (!user?.id) return res.status(401).json({ success: false, error: 'Authentication required' });
 
-    const { title, description, budget, requiredSkills } = req.body ?? {};
-    if (typeof title !== 'string' || title.trim().length === 0) {
+    const { title, description, budget, requiredSkills, templateKey, autoBook } = req.body ?? {};
+    // Template-aware validation: a templateKey may supply title, description
+    // and skills, so explicit values are only required for whatever the
+    // template cannot fill. Budget is always the poster's decision.
+    const template = typeof templateKey === 'string' && templateKey
+      ? TEMPLATE_BY_KEY.get(templateKey)
+      : undefined;
+    if (templateKey && !template) {
+      return res.status(400).json({ success: false, error: 'Unknown templateKey' });
+    }
+    if (typeof title !== 'string' || (title.trim().length === 0 && !template)) {
       return res.status(400).json({ success: false, error: 'title is required' });
     }
-    if (typeof description !== 'string' || description.trim().length === 0) {
+    if (typeof description !== 'string' || (description.trim().length === 0 && !template)) {
       return res.status(400).json({ success: false, error: 'description is required' });
     }
     if (typeof budget !== 'number' || !Number.isFinite(budget) || budget <= 0) {
       return res.status(400).json({ success: false, error: 'budget must be a positive number' });
     }
-    if (!Array.isArray(requiredSkills) || requiredSkills.length === 0 ||
-        requiredSkills.some((s: unknown) => typeof s !== 'string')) {
+    const skills: string[] = Array.isArray(requiredSkills)
+      ? requiredSkills.filter((s: unknown): s is string => typeof s === 'string')
+      : [];
+    if (skills.length === 0 && !template) {
       return res.status(400).json({ success: false, error: 'requiredSkills must be a non-empty array of strings' });
     }
 
@@ -63,12 +82,14 @@ export const matchAndPost = async (req: Request, res: Response, next: NextFuncti
     }
 
     const { project, providers } = await agentMarketplace.matchAndPost({
-      title: title.trim(),
-      description: description.trim(),
+      title: typeof title === 'string' ? title.trim() : '',
+      description: typeof description === 'string' ? description.trim() : '',
       budget,
-      requiredSkills: (requiredSkills as string[]).map((s) => s.trim()).filter(Boolean),
+      requiredSkills: skills.map((s) => s.trim()).filter(Boolean),
       posterId: poster.id,
       deadline,
+      templateKey: template?.key,
+      autoBook: autoBook === true,
     });
     return res.status(201).json({ success: true, data: { project, providers } });
   } catch (err) { next(err); }
@@ -82,6 +103,24 @@ export const matchAndPost = async (req: Request, res: Response, next: NextFuncti
  * `/projects` posts stored the raw token id, the unified flow stores the
  * bridged `client-<userId>` profile id.
  */
+export const getMyWork = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { user } = req as AuthRequest;
+    if (!user?.id) return res.status(401).json({ success: false, error: 'Authentication required' });
+    const data = await agentMarketplace.getMyWork(user.id);
+    return res.json({ success: true, data });
+  } catch (err) { next(err); }
+};
+
+export const bookProject = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { user } = req as AuthRequest;
+    if (!user?.id) return res.status(401).json({ success: false, error: 'Authentication required' });
+    const data = await agentMarketplace.bookProject(req.params.projectId, user.id);
+    return res.json({ success: true, data });
+  } catch (err) { next(err); }
+};
+
 export const getMyProjects = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { user } = req as AuthRequest;
