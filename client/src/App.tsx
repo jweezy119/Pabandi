@@ -45,6 +45,9 @@ const NightlifePage = lazy(() => import('./pages/NightlifePage'));
 const PromoterOS = lazy(() => import('./pages/PromoterOS'));
 const AgentControlPanel = lazy(() => import('./pages/AgentControlPanel'));
 const AgentMarketplacePage = lazy(() => import('./pages/AgentMarketplacePage'));
+const ServiceProviderDirectoryPage = lazy(() => import('./pages/ServiceProviderDirectoryPage'));
+const ServiceProviderDetailPage = lazy(() => import('./pages/ServiceProviderDetailPage'));
+const ServiceProviderIngestPage = lazy(() => import('./pages/ServiceProviderIngestPage'));
 const AgentProfilePage = lazy(() => import('./pages/AgentProfilePage'));
 const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage'));
 const TapPayPage = lazy(() => import('./pages/TapPayPage'));
@@ -611,9 +614,13 @@ function AnimatedAppRoutes() {
             <Route path="nightlife" element={<PlaceholderPage />} />
             <Route path="promoter" element={<PlaceholderPage />} />
             <Route path="agent-dashboard" element={<PlaceholderPage />} />
-            <Route path="agent-marketplace" element={<PlaceholderPage />} />
-            <Route path="agent-marketplace/agents/:slug" element={<PlaceholderPage />} />
-            <Route path="agent-marketplace/projects/:projectId" element={<PlaceholderPage />} />
+           <Route path="agent-marketplace" element={<PlaceholderPage />} />
+           <Route path="agent-marketplace/agents/:slug" element={<PlaceholderPage />} />
+           <Route path="agent-marketplace/projects/:projectId" element={<PlaceholderPage />} />
+           {/* Service Provider Directory & Booking — revenue surface */}
+           <Route path="service-providers" element={<ServiceProviderDirectoryPage />} />
+           <Route path="service-providers/ingest" element={<ServiceProviderIngestPage />} />
+           <Route path="service-providers/:passportId" element={<ServiceProviderDetailPage />} />
             <Route path="live-sell" element={<PlaceholderPage />} />
             <Route path="live-selling" element={<PlaceholderPage />} />
             <Route path="freelance" element={<PlaceholderPage />} />
