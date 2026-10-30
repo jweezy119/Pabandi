@@ -13,174 +13,40 @@ import { Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 // The 9 non-page imports above stay eager on purpose: providers, the auth store, the API
 // client and the layout shell are needed by almost every route, so splitting them would
 // add a waterfall without saving anything.
-const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const DeveloperPortalPage = lazy(() => import('./pages/DeveloperPortalPage'));
 const BusinessPage = lazy(() => import('./pages/BusinessPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const LedgerInvoiceNewPage = lazy(() => import('./pages/ledger/LedgerInvoiceNewPage'));
 const LedgerExpenseNewPage = lazy(() => import('./pages/ledger/LedgerExpenseNewPage'));
-const HomePage = lazy(() => import('./pages/HomePage'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const GuaranteePage = lazy(() => import('./pages/GuaranteePage'));
 const TrustVerifyPage = lazy(() => import('./pages/TrustVerifyPage'));
 const AuthPage = lazy(() => import('./pages/AuthPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
-const OnboardingPage = lazy(() => import('./pages/OnboardingPage').then((m) => ({ default: m.OnboardingPage })));
 const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'));
 const OAuthConsentPage = lazy(() => import('./pages/OAuthConsentPage'));
 const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
-const ReservationsPage = lazy(() => import('./pages/ReservationsPage'));
-const NewReservationPage = lazy(() => import('./pages/NewReservationPage'));
-const CheckoutSessionPage = lazy(() => import('./pages/CheckoutSessionPage').then((m) => ({ default: m.CheckoutSessionPage })));
+const AgentMarketplacePage = lazy(() => import('./pages/AgentMarketplacePage'));
 const PersonalDashboardPage = lazy(() => import('./pages/me/PersonalDashboardPage'));
 const PersonalPassportPage = lazy(() => import('./pages/me/PersonalPassportPage'));
 const PersonalBookingsPage = lazy(() => import('./pages/me/PersonalBookingsPage'));
 const PersonalRewardsPage = lazy(() => import('./pages/me/PersonalRewardsPage'));
 const PayInvoicePage = lazy(() => import('./pages/PayInvoicePage'));
-const CheckoutSuccessPage = lazy(() => import('./pages/CheckoutSuccessPage'));
-const CheckoutCancelPage = lazy(() => import('./pages/CheckoutCancelPage'));
-const BookingPage = lazy(() => import('./pages/BookingPage'));
 const BookingExperience = lazy(() => import('./pages/BookingExperience'));
-const NightlifePage = lazy(() => import('./pages/NightlifePage'));
-const PromoterOS = lazy(() => import('./pages/PromoterOS'));
-const AgentControlPanel = lazy(() => import('./pages/AgentControlPanel'));
-const AgentMarketplacePage = lazy(() => import('./pages/AgentMarketplacePage'));
 const ServiceProviderDirectoryPage = lazy(() => import('./pages/ServiceProviderDirectoryPage'));
 const ServiceProviderDetailPage = lazy(() => import('./pages/ServiceProviderDetailPage'));
 const ServiceProviderIngestPage = lazy(() => import('./pages/ServiceProviderIngestPage'));
-const AgentProfilePage = lazy(() => import('./pages/AgentProfilePage'));
-const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage'));
-const TapPayPage = lazy(() => import('./pages/TapPayPage'));
-const UniversalCheckoutPage = lazy(() => import('./pages/UniversalCheckoutPage'));
-const DemoCheckoutPage = lazy(() => import('./pages/DemoCheckoutPage').then((m) => ({ default: m.DemoCheckoutPage })));
-const LegacyBusinessProfilePage = lazy(() => import('./pages/BusinessProfilePage'));
-const BusinessCrmPage = lazy(() => import('./pages/BusinessCrmPage'));
-const BusinessJoinPage = lazy(() => import('./pages/BusinessJoinPage'));
-const PostBusinessPage = lazy(() => import('./pages/PostBusinessPage'));
-const BusinessActivationPage = lazy(() => import('./pages/BusinessActivationPage'));
-const BusinessModelPage = lazy(() => import('./pages/BusinessModelPage'));
-const TechnologyPage = lazy(() => import('./pages/TechnologyPage'));
-const ContactPage = lazy(() => import('./pages/ContactPage'));
-const BusinessSettingsPage = lazy(() => import('./pages/BusinessSettingsPage'));
-const LegacyNotificationsPage = lazy(() => import('./pages/NotificationsPage'));
-const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
-const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
-const ProfilesPage = lazy(() => import('./pages/ProfilesPage'));
-const ProfileDetailPage = lazy(() => import('./pages/ProfileDetailPage'));
-const ProfilePage = lazy(() => import('./pages/ProfilePage'));
-const ReferAndEarnPage = lazy(() => import('./pages/ReferAndEarnPage').then((m) => ({ default: m.ReferAndEarnPage })));
-const VerifierSandboxPage = lazy(() => import('./pages/VerifierSandboxPage').then((m) => ({ default: m.VerifierSandboxPage })));
-const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })));
-const AdminSetupPage = lazy(() => import('./pages/AdminSetupPage').then((m) => ({ default: m.AdminSetupPage })));
 const DietaryPassportPage = lazy(() => import('./pages/DietaryPassportPage'));
-const PartnerDirectoryPage = lazy(() => import('./pages/PartnerDirectoryPage'));
-const GrantsPage = lazy(() => import('./pages/GrantsPage'));
-const TrustPulsePage = lazy(() => import('./pages/TrustPulsePage').then((m) => ({ default: m.TrustPulsePage })));
-const CommunityJuryPage = lazy(() => import('./pages/CommunityJuryPage').then((m) => ({ default: m.CommunityJuryPage })));
-const WaitlistPage = lazy(() => import('./pages/WaitlistPage').then((m) => ({ default: m.WaitlistPage })));
-const ReferralLandingPage = lazy(() => import('./pages/ReferralLandingPage').then((m) => ({ default: m.ReferralLandingPage })));
-const MarketplacePartnerPage = lazy(() => import('./pages/MarketplacePartnerPage'));
-const SalePage = lazy(() => import('./pages/SalePage'));
-const CRMPage = lazy(() => import('./pages/CRMPage'));
-const SalesCRMPage = lazy(() => import('./pages/SalesCRMPage'));
-const TenantWorkflowPage = lazy(() => import('./pages/TenantWorkflowPage').then((m) => ({ default: m.TenantWorkflowPage })));
-const AIAssistantPage = lazy(() => import('./pages/AIAssistantPage').then((m) => ({ default: m.AIAssistantPage })));
-const AITenantRiskPage = lazy(() => import('./pages/AITenantRiskPage').then((m) => ({ default: m.AITenantRiskPage })));
-const AILeaseAnomalyPage = lazy(() => import('./pages/AILeaseAnomalyPage').then((m) => ({ default: m.AILeaseAnomalyPage })));
-const AIRentOptimizerPage = lazy(() => import('./pages/AIRentOptimizerPage').then((m) => ({ default: m.AIRentOptimizerPage })));
-const PaymentTestPage = lazy(() => import('./pages/PaymentTestPage'));
-const PropertyDetailPage = lazy(() => import('./pages/PropertyDetailPage'));
-const PublicPropertiesPage = lazy(() => import('./pages/PublicPropertiesPage'));
-const TenantPortalPage = lazy(() => import('./pages/TenantPortalPage'));
-const TenantDashboardPage = lazy(() => import('./pages/TenantDashboardPage'));
-const TenantPortalDashboard = lazy(() => import('./pages/TenantPortalDashboard'));
-const RentPayment = lazy(() => import('./pages/RentPayment'));
-const MaintenanceRequest = lazy(() => import('./pages/MaintenanceRequest'));
-const LeaseView = lazy(() => import('./pages/LeaseView'));
-const OnboardingWizard = lazy(() => import('./pages/onboarding/OnboardingWizard'));
-const CustomerBookingPage = lazy(() => import('./pages/booking/CustomerBookingPage'));
-const BusinessDashboard = lazy(() => import('./pages/dashboard/BusinessDashboard'));
-const PaymentHistory = lazy(() => import('./pages/PaymentHistory'));
 const EnhancedDashboardPage = lazy(() => import('./pages/EnhancedDashboardPage'));
-const DisputeCenterPage = lazy(() => import('./pages/DisputeCenterPage'));
-const MaintenancePage = lazy(() => import('./pages/MaintenancePage'));
-const ApplicationsPage = lazy(() => import('./pages/ApplicationsPage'));
-const SafeMeetPage = lazy(() => import('./pages/SafeMeetPage'));
-const EscrowPage = lazy(() => import('./pages/EscrowPage'));
-const DocumentsPage = lazy(() => import('./pages/DocumentsPage'));
 const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'));
-const LeaseGeneratorPage = lazy(() => import('./pages/LeaseGeneratorPage'));
-const RentRollPage = lazy(() => import('./pages/RentRollPage'));
-const TrustPassportPage = lazy(() => import('./pages/TrustPassportPage'));
-const RewardsPage = lazy(() => import('./pages/RewardsPage'));
-const ListingDetailPage = lazy(() => import('./pages/ListingDetailPage'));
-const CalculatorPage = lazy(() => import('./pages/CalculatorPage'));
-const SmartSearchPage = lazy(() => import('./pages/SmartSearchPage'));
-const AiChatPage = lazy(() => import('./pages/AiChatPage'));
-const AiPropertyAnalyzerPage = lazy(() => import('./pages/AiPropertyAnalyzerPage'));
-const MarketIntelligencePage = lazy(() => import('./pages/MarketIntelligencePage'));
-const PortfolioAnalyzerPage = lazy(() => import('./pages/PortfolioAnalyzerPage'));
-const AdvancedPropertyIntelligencePage = lazy(() => import('./pages/AdvancedPropertyIntelligencePage'));
-const TokenomicsPage = lazy(() => import('./pages/TokenomicsPage'));
 
-const OnRampPage = lazy(() => import('./pages/OnRampPage'));
-const OffRampPage = lazy(() => import('./pages/OffRampPage'));
-const TokenFlowPage = lazy(() => import('./pages/TokenFlowPage'));
-const EscrowDetailPage = lazy(() => import('./pages/EscrowDetailPage'));
-const MarketplacePage = lazy(() => import('./pages/MarketplacePage'));
 const PostProjectPage = lazy(() => import('./pages/marketplace/PostProjectPage'));
-const BrowseHotelsPage = lazy(() => import('./pages/BrowseHotelsPage'));
-const BuilderDashboard = lazy(() => import('./pages/realestate/BuilderDashboard'));
-const BuilderProjectPage = lazy(() => import('./pages/realestate/BuilderProjectPage'));
-const BuyerPortal = lazy(() => import('./pages/realestate/BuyerPortal'));
-const CODMarketplace = lazy(() => import('./pages/cod/CODMarketplace'));
-const CreateEscrow = lazy(() => import('./pages/cod/CreateEscrow'));
-const EscrowDetail = lazy(() => import('./pages/cod/EscrowDetail'));
 const DemoWalkthroughPage = lazy(() => import('./pages/DemoWalkthroughPage'));
-const Web3Page = lazy(() => import('./pages/Web3Page'));
-const LiquidityTerminalPage = lazy(() => import('./pages/LiquidityTerminalPage'));
-const HospitalityPage = lazy(() => import('./pages/HospitalityPage'));
-const RealEstateScreeningPage = lazy(() => import('./pages/RealEstateScreeningPage'));
-const AirdropPage = lazy(() => import('./pages/AirdropPage'));
-const SolanaEscrowPage = lazy(() => import('./pages/SolanaEscrowPage'));
-const CityLandingPage = lazy(() => import('./pages/CityLandingPage'));
-const LiveSellCustomerPage = lazy(() => import('./pages/LiveSellCustomerPage'));
-const LiveSellingPage = lazy(() => import('./pages/LiveSellingPage'));
-const FreelancePage = lazy(() => import('./pages/FreelancePage'));
-const BackgroundCheckPage = lazy(() => import('./pages/BackgroundCheckPage'));
-const AgentPassportPage = lazy(() => import('./pages/AgentPassportPage'));
 const AgentOnboardingPage = lazy(() => import('./pages/AgentOnboardingPage'));
-const RevenuePage = lazy(() => import('./pages/RevenuePage'));
-const BackgroundCheckReportPage = lazy(() => import('./pages/BackgroundCheckReportPage'));
-const PromoPage = lazy(() => import('./pages/PromoPage'));
-const PromotionsPage = lazy(() => import('./pages/PromotionsPage'));
-const FiatPaymentPage = lazy(() => import('./pages/FiatPaymentPage'));
-const PpdWizardPage = lazy(() => import('./pages/PpdWizardPage'));
-const PassportDirectoryPage = lazy(() => import('./pages/PassportDirectoryPage'));
-const CashOutPage = lazy(() => import('./pages/CashOutPage'));
-const PayrollPage = lazy(() => import('./pages/PayrollPage'));
-const ArbitrationPage = lazy(() => import('./pages/ArbitrationPage'));
-const OutreachCRMPage = lazy(() => import('./pages/OutreachCRMPage'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
-const DarazScannerPage = lazy(() => import('./pages/DarazScannerPage'));
-const FreelanceStorefrontPage = lazy(() => import('./pages/FreelanceStorefrontPage'));
-const MudarabahPoolsPage = lazy(() => import('./pages/MudarabahPoolsPage').then((m) => ({ default: m.MudarabahPoolsPage })));
-const ServiceBusinessDashboard = lazy(() => import('./pages/crm/ServiceBusinessDashboard'));
 const BusinessWorkspaceShell = lazy(() => import('./pages/business-os/BusinessWorkspaceShell'));
-const ProfitDashboardPage = lazy(() => import('./pages/ProfitDashboardPage'));
-const ShariaTransparencyPage = lazy(() => import('./pages/ShariaTransparencyPage').then((m) => ({ default: m.ShariaTransparencyPage })));
 const PublicCustomerProfilePage = lazy(() => import('./pages/PublicCustomerProfilePage').then((m) => ({ default: m.PublicCustomerProfilePage })));
-const PublicPassportPage = lazy(() => import('./pages/PublicPassportPage').then((m) => ({ default: m.PublicPassportPage })));
-const TrustProfilePage = lazy(() => import('./pages/public/TrustProfilePage').then((m) => ({ default: m.TrustProfilePage })));
-const PassportDashboardPage = lazy(() => import('./pages/PassportDashboardPage').then((m) => ({ default: m.PassportDashboardPage })));
-const EconomyDashboardPage = lazy(() => import('./pages/EconomyDashboardPage'));
-const BusinessAnalyticsPage = lazy(() => import('./pages/BusinessAnalyticsPage'));
-const PluginManagerPage = lazy(() => import('./pages/PluginManagerPage').then((m) => ({ default: m.PluginManagerPage })));
-const ActiveJobsPage = lazy(() => import('./pages/ActiveJobsPage'));
-const JobWorkspacePage = lazy(() => import('./pages/JobWorkspacePage'));
-const PartnerDashboardPage = lazy(() => import('./pages/PartnerDashboardPage'));
-const JobDetailsPage = lazy(() => import('./pages/JobDetailsPage'));
 const PropertyOSPage = lazy(() => import('./pages/property/PropertyOSPage'));
 const PropertyTenantsPage = lazy(() => import('./pages/property/PropertyTenantsPage'));
 const PropertyTenantDetailPage = lazy(() => import('./pages/property/PropertyTenantDetailPage'));
@@ -239,7 +105,6 @@ const ContactMoneyFlowPage = lazy(() => import('./pages/contact/ContactMoneyFlow
 const LedgerExpensesPage = lazy(() => import('./pages/ledger/LedgerExpensesPage'));
 const LedgerAccountsPage = lazy(() => import('./pages/ledger/LedgerAccountsPage'));
 const LedgerReportsPage = lazy(() => import('./pages/ledger/LedgerReportsPage'));
-const ProtocolDashboardPage = lazy(() => import('./pages/ProtocolDashboardPage'));
 const ProfileEditorPage = lazy(() => import('./pages/me/ProfileEditorPage'));
 const PublicProfilePage = lazy(() => import('./pages/public/PublicProfilePage'));
 const FluidBookingPage = lazy(() => import('./pages/booking/FluidBookingPage'));
@@ -247,20 +112,10 @@ const BusinessVerificationPage = lazy(() => import('./pages/crm/BusinessVerifica
 const QuickPostPage = lazy(() => import('./pages/crm/QuickPostPage'));
 const ValuesPreferencesPage = lazy(() => import('./pages/me/ValuesPreferencesPage'));
 const AgentDashboardPage = lazy(() => import('./pages/me/AgentDashboardPage'));
-const SupportHomePage = lazy(() => import('./pages/support/SupportHomePage'));
-const SupportTicketsPage = lazy(() => import('./pages/support/SupportTicketsPage'));
-const SupportTicketDetailPage = lazy(() => import('./pages/support/SupportTicketDetailPage'));
-const SupportKbPage = lazy(() => import('./pages/support/SupportKbPage'));
-const SupportKbArticlePage = lazy(() => import('./pages/support/SupportKbArticlePage'));
 // These four are components rather than pages, but they are rendered on ONE route each
 // and they drag in the wallet, Solana, QR and map libraries — around 100 KB gzipped that
 // a CRM user never needs. They were the largest thing still in the first load after route
 // splitting, so they are deferred too.
-const TrustStakingPortal = lazy(() => import('./components/TrustStaking'));
-const StakingInterface = lazy(() => import('./components/StakingInterface'));
-const EscrowInterface = lazy(() => import('./components/EscrowInterface'));
-const AgentInterface = lazy(() => import('./components/AgentInterface'));
-const SupportAdminPage = lazy(() => import('./pages/support/SupportAdminPage'));
 import { AnimatePresence } from 'framer-motion';
 import { useBusinessSettings } from './hooks/useBusinessSettings';
 
@@ -356,16 +211,6 @@ function AnimatedAppRoutes() {
       }
     } catch { /* malformed */ }
   }, []);
-
-  const AuthRequiredProfilesPage = () => {
-    if (!isAuthenticated) return <Navigate to="/login" replace />;
-    return <ProfilesPage />;
-  };
-
-  const AuthRequiredProfileDetailPage = () => {
-    if (!isAuthenticated) return <Navigate to="/login" replace />;
-    return <ProfileDetailPage />;
-  };
 
   return (
     // Routes load on demand, so something has to hold the frame while a chunk arrives.
@@ -617,7 +462,9 @@ function AnimatedAppRoutes() {
             <Route path="nightlife" element={<PlaceholderPage />} />
             <Route path="promoter" element={<PlaceholderPage />} />
             <Route path="agent-dashboard" element={<PlaceholderPage />} />
-           <Route path="agent-marketplace" element={<PlaceholderPage />} />
+           {/* Real agent marketplace — this placeholder previously shadowed the
+               built page, and PostProjectPage links here ("View the marketplace"). */}
+           <Route path="agent-marketplace" element={<AgentMarketplacePage />} />
            <Route path="agent-marketplace/agents/:slug" element={<PlaceholderPage />} />
            <Route path="agent-marketplace/projects/:projectId" element={<PlaceholderPage />} />
            {/* Service Provider Directory & Booking — revenue surface */}
