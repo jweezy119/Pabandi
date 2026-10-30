@@ -30,10 +30,10 @@ export class InvoiceGenerationService {
       throw new Error('Business ID not found on job');
     }
 
-    // Read the tenant off the job itself. This referenced an undefined
-    // `serviceBusiness`, throwing a ReferenceError on every completed job — the
-    // function could not have succeeded. The merge spliced the line in from the
-    // Contact OS branch, where the id came from a resolved serviceBusiness.
+    // Read the tenant off the job itself. This used to reference an undefined
+    // `serviceBusiness`, which throws a ReferenceError on every completed job —
+    // the function could not have succeeded. The merge spliced this line in from
+    // the Contact OS branch, where the id came from a resolved serviceBusiness.
     const businessId = job.businessId;
     if (!businessId) {
       throw new Error(
@@ -79,11 +79,6 @@ export class InvoiceGenerationService {
       },
     });
 
-    // 'FUNDED' is not a value anything writes. The escrow subscribers in
-    // trust-core write HELD / RELEASED / DISPUTED, and nothing has ever set this
-    // column off its default of NONE — see the note on those subscribers. So this
-    // branch has never run. Left as-is rather than "fixed" to 'HELD', because doing
-    // that would make a dead branch look live while it still could never fire.
     if (job.escrowStatus === 'FUNDED') {
       await prisma.crmJob.update({
         where: { id: jobId },

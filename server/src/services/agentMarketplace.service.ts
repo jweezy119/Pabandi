@@ -562,6 +562,11 @@ export class AgentMarketplace {
           amount: project.escrow.releaseAmount,
           metadata: { source: 'agent-marketplace', projectId },
         });
+        await trustCore.emit('job.completed', {
+          passportId: providerPassport.id,
+          amount: project.escrow.releaseAmount,
+          timestamp: new Date(),
+        });
         const now = new Date();
         await prisma.passportGigHistory.create({
           data: {

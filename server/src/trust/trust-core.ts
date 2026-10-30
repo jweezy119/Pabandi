@@ -44,6 +44,7 @@ const SCORE_DELTAS: Record<string, { field: 'paymentScore' | 'deliveryScore' | '
   'delivery.missed': { field: 'deliveryScore', delta: -20 },
   'booking.no_show': { field: 'showUpScore', delta: -20 },
   'delivery.checked_in': { field: 'showUpScore', delta: +5 },
+  'job.completed': { field: 'deliveryScore', delta: +10 },
 };
 
 /** Events worth writing to an on-chain attestation. */

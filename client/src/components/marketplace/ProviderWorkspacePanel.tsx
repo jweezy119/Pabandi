@@ -46,9 +46,11 @@ interface BookResponse {
 export function ProviderWorkspacePanel() {
   const [work, setWork] = useState<MyWorkResponse['data'] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [settingUp, setSettingUp] = useState(false);
   const [bookingId, setBookingId] = useState<string | null>(null);
   /** Last booking outcome — instant (escrow funded) vs application sent. */
   const [bookingNote, setBookingNote] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
   const [error, setError] = useState<string | null>(null);
 
   const token = getAuthToken();
@@ -69,7 +71,61 @@ export function ProviderWorkspacePanel() {
     return () => { cancelled = true; };
   }, [token]);
 
-  if (!token || loadFailed || !work) return null;
+  if (!token) return null;
+
+  /** No linked passport → /my-work fails. `GET /trust-passport/me` creates
+   * one for the signed-in user on demand; the next /my-work succeeds. */
+  const setUpPassport = async () => {
+    setSettingUp(true);
+    try {
+      await fetch(apiUrl('/api/v1/trust-passport/me'), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const mw: MyWorkResponse = await fetch(apiUrl('/api/v1/agent-marketplace/my-work'), {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((r) => r.json());
+      if (mw.success && mw.data) {
+        setWork(mw.data);
+        setLoadFailed(false);
+      } else {
+        setLoadFailed(true);
+      }
+    } catch {
+      setLoadFailed(true);
+    } finally {
+      setSettingUp(false);
+    }
+  };
+
+  if (loadFailed) {
+    return (
+      <div
+        className="rounded-[var(--radius-card)] bg-[var(--cream)] border border-[rgba(201,123,90,0.25)] p-5"
+        style={{ boxShadow: 'var(--shadow-soft)' }}
+      >
+        <h3 className="font-headline text-xl text-[var(--warm-ink)] mb-1">Become a bookable agent</h3>
+        <p className="text-sm text-[var(--soft-stone)] mb-4">
+          Your Trust Passport is what buyers see when they match — skills, projects
+          and score. Set it up in a second, then the work feed and bookings appear here.
+        </p>
+        <button
+          type="button"
+          disabled={settingUp}
+          onClick={setUpPassport}
+          className="rounded-[var(--radius-btn)] px-5 py-2.5 font-label text-sm text-[var(--cream)] bg-[var(--clay)] hover:bg-[var(--terracotta)] transition-colors disabled:opacity-50"
+          style={{ boxShadow: 'var(--shadow-btn)' }}
+        >
+          {settingUp ? 'Setting up…' : 'Set up my agent passport'}
+        </button>
+      </div>
+    );
+  }
+
+  if (!work) return null;
+
+  const completedCount = work.completedCount ?? 0;
+  const totalEarned = work.totalEarned ?? 0;
+  const trustBump = completedCount * 10;
 
   const book = async (job: OpenJob) => {
     setBookingId(job.id);

@@ -7,6 +7,38 @@ import { PublicKey, Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+
+// Auto-link/create trust passport for user (frictionless)
+async function ensureTrustPassport(userId: string, firstName?: string | null) {
+  try {
+    const existing = await prisma.trustPassport.findUnique({ where: { userId } });
+    if (existing) {
+      return existing;
+    }
+    try {
+      const passport = await prisma.trustPassport.create({
+        data: {
+          userId,
+          handle: `user-${userId}`,
+          displayName: firstName || 'User',
+          visibility: 'PRIVATE',
+        },
+      });
+      return passport;
+    } catch (e: unknown) {
+      const err = e as { code?: string };
+      if (err?.code === 'P2002') {
+        return await prisma.trustPassport.findUnique({ where: { userId } });
+      }
+      throw e;
+    }
+  } catch (e) {
+    // Don't block auth if passport creation fails
+    console.error('[auth] ensureTrustPassport failed:', e);
+    return null;
+  }
+}
+
 import { CustomError } from '../middleware/errorHandler';
 import { encrypt } from '../utils/encryption';
 import { osintService } from '../services/osint.service';
@@ -233,6 +265,9 @@ export const register = async (
 
     logger.info(`User completed registration via code: ${updatedUser.email}`);
 
+    // Auto-link/create trust passport (frictionless)
+    ensureTrustPassport(updatedUser.id, updatedUser.firstName).catch(() => {});
+
     return res.status(201).json({
       success: true,
       message: 'Registration completed successfully',
@@ -448,6 +483,9 @@ export const register = async (
 
     logger.info(`New user registered: ${user.email} ${user.role === 'BUSINESS_OWNER' ? '(Business: ' + req.body.businessName + ')' : ''}`);
 
+    // Auto-link/create trust passport (frictionless)
+    ensureTrustPassport(user.id, user.firstName).catch(() => {});
+
     // Sync to Odoo CRM if business owner
     if (resolvedRole === UserRole.BUSINESS_OWNER && req.body.businessName) {
       // Fire and forget (don't block the request)
@@ -574,6 +612,9 @@ export const login = async (
     );
 
     logger.info(`User logged in: ${user.email}`);
+
+    // Auto-link/create trust passport (frictionless)
+    ensureTrustPassport(user.id, user.firstName).catch(() => {});
 
     res.json({
       success: true,

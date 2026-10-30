@@ -233,9 +233,10 @@ async function processInvoiceStatusChange(
   );
 
   // Record the event
-  // recordInvoiceEvent reads the current score itself; the signature takes three
-  // arguments. The extra two were ignored at runtime, so this worked by accident
-  // while reading as though the caller's values were being persisted.
+  // recordInvoiceEvent reads the current score and derives the new one itself.
+  // The merge left a call passing scoreBefore/scoreAfter, which the signature does
+  // not accept — at runtime the extra args were ignored, so it happened to work,
+  // but it read as though the caller's values were being persisted.
   await recordInvoiceEvent(invoiceId, passportId, eventType);
 
   // Emit event via event bus (for other consumers)
