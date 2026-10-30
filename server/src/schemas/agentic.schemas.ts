@@ -159,3 +159,30 @@ export const engineSessionCloseSchema = z.object({
 });
 
 export type EngineSessionClose = z.infer<typeof engineSessionCloseSchema>;
+
+// ── POST /api/v1/engine/delegated-session ────────────────────────────────────
+
+/**
+ * An external AI agent opens an escrow session on behalf of a human it is
+ * helping, then hands that human a link to fund it. `userEmail`, `amount` and
+ * `serviceId` are the contract the route is documented against; `serviceLabel`
+ * and `webhookUrl` are optional conveniences so the handoff page can show a
+ * readable service name and so the agent can be notified when funding lands,
+ * without a separate agent-callback registration step.
+ */
+export const engineDelegatedSessionSchema = z.object({
+  userEmail: z
+    .string({ required_error: 'userEmail is required', invalid_type_error: 'userEmail must be a string' })
+    .email('userEmail must be a valid email address')
+    .max(254, 'userEmail must be at most 254 characters'),
+  amount: amountSchema,
+  serviceId: idSchema,
+  serviceLabel: freeText(180).optional(),
+  webhookUrl: z
+    .string({ invalid_type_error: 'webhookUrl must be a string' })
+    .url('webhookUrl must be a valid URL')
+    .max(2048, 'webhookUrl must be at most 2048 characters')
+    .optional(),
+});
+
+export type EngineDelegatedSession = z.infer<typeof engineDelegatedSessionSchema>;

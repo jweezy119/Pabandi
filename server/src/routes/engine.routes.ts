@@ -4,10 +4,13 @@ import {
   engineSessionOpenSchema,
   engineSessionActionSchema,
   engineSessionCloseSchema,
+  engineDelegatedSessionSchema,
 } from '../schemas/agentic.schemas';
 import engineService from '../services/engine.service';
+import { createDelegatedSession } from '../services/delegatedSession.service';
 import { resolveTrustScore } from '../services/trust.service';
 import { authenticate } from '../middleware/auth.middleware';
+import { apiKeyAuth, ApiKeyRequest } from '../middleware/apiKey.middleware';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -67,6 +70,61 @@ router.post('/session/open', validateBody(engineSessionOpenSchema), async (req: 
     return res.status(500).json({ success: false, error: message });
   }
 });
+
+// ── POST /delegated-session ──────────────────────────────────────────────────
+
+/**
+ * An external AI agent opens an escrow tab for a human it is helping, and
+ * hands that human a link to fund it.
+ *
+ * Agent auth is MANDATORY and runs before the body is even parsed into a
+ * session: the agent is the party minting a spend capability, so its API key
+ * is verified first (apiKeyAuth -> req.apiClient) and its id is recorded on the
+ * row. A missing/invalid key is answered by the global error handler as 401
+ * before anything is created. The body is validated next, so a malformed
+ * request is a 400 with per-field messages rather than a partial session.
+ */
+router.post(
+  '/delegated-session',
+  apiKeyAuth,
+  validateBody(engineDelegatedSessionSchema),
+  async (req: ApiKeyRequest, res: Response) => {
+    try {
+      const agentId = req.apiClient?.id;
+      if (!agentId) {
+        // apiKeyAuth attached req.apiClient on success; absence here means the
+        // key resolved to neither an ApiClient nor an active AgentMarketplace
+        // row, which should not happen. Fail closed rather than mint a session
+        // for an unattributed caller.
+        return res.status(401).json({ success: false, error: 'Agent identity not resolved' });
+      }
+
+      const { userEmail, amount, serviceId, serviceLabel, webhookUrl } = req.body as {
+        userEmail: string;
+        amount: number;
+        serviceId: string;
+        serviceLabel?: string;
+        webhookUrl?: string;
+      };
+
+      const result = await createDelegatedSession({
+        userEmail,
+        amount,
+        serviceId,
+        serviceLabel,
+        webhookUrl,
+        agentId,
+        frontendUrl: process.env.FRONTEND_URL || 'https://pabandi.com',
+      });
+
+      return res.status(201).json({ success: true, data: result });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`[Engine] delegated-session error: ${message}`);
+      return res.status(500).json({ success: false, error: message });
+    }
+  }
+);
 
 // ── POST /session/action | /action ───────────────────────────────────────────
 

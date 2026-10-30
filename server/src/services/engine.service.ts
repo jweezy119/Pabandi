@@ -81,7 +81,7 @@ function fromCents(cents: number): number {
 
 // ── Results ──────────────────────────────────────────────────────────────────
 
-export type SessionStatus = 'active' | 'closed' | 'exhausted';
+export type SessionStatus = 'active' | 'pending' | 'closed' | 'exhausted';
 
 export interface OpenSessionResult {
   sessionId: string;
