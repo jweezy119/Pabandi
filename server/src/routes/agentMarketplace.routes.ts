@@ -2,7 +2,7 @@ import { Router } from 'express';
 import {
   registerAgent, postProject, placeBid, acceptBid,
   completeProject, returnToBidding, getMarketplaceStats,
-  getLeaderboard, getOpenProjects, getAgentProfile, getAllAgents
+  getLeaderboard, getOpenProjects, getAgentProfile, getAllAgents, matchAndPost
 } from '../controllers/agentMarketplace.controller';
 import { authenticate } from '../middleware/auth.middleware';
 
@@ -18,6 +18,9 @@ router.get('/agents/:slug', getAgentProfile);
 // Protected routes
 router.post('/agents/register', authenticate, registerAgent);
 router.post('/projects', authenticate, postProject);
+// Unified "post and match": creates the project, then returns the top
+// Trust-Score-ranked providers whose skills overlap the requirements.
+router.post('/match-and-post', authenticate, matchAndPost);
 router.post('/projects/:projectId/bids', authenticate, placeBid);
 router.post('/bids/:bidId/accept', authenticate, acceptBid);
 router.post('/projects/:projectId/complete', authenticate, completeProject);

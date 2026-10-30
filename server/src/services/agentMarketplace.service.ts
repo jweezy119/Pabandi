@@ -1,6 +1,7 @@
 import { prisma } from '../utils/database';
 import { AGENT_MARKETPLACE_FEE } from '../config/fees';
 import { PAB_USD_PRICE } from '../config/tokenomics';
+import { findMatchedProviders, type MatchedProvider } from './agentMatching.service';
 
 const PLATFORM_FEE_USD = AGENT_MARKETPLACE_FEE; // 2% total, from config/fees
 const PAB_REWARD_RATE = 0.05;  // 5% PAB reward on both sides
@@ -89,8 +90,66 @@ export class AgentMarketplace {
   }
 
   /**
-   * Place a bid on a project
+   * Post a project AND return the best-matched providers for it.
+   *
+   * Used by POST /agent-marketplace/match-and-post: the client posts once and
+   * gets back both the created AgentProject and the top Trust-Score-ranked
+   * TrustPassport holders whose skills overlap the project's requirements.
+   * Defaults here are deliberate: the minimal payload the client sends is
+   * title / description / budget / requiredSkills — deadline falls 14 days
+   * out, complexity stays MEDIUM, and the requirements field carries the
+   * required skills (that is what the field means for agent honeypots).
    */
+  async matchAndPost(params: {
+    title: string;
+    description: string;
+    budget: number;
+    requiredSkills: string[];
+    posterId: string;
+    deadline?: Date;
+    category?: string;
+    complexity?: string;
+  }): Promise<{ project: Awaited<ReturnType<AgentMarketplace['postProject']>>; providers: MatchedProvider[] }> {
+    const project = await this.postProject({
+      title: params.title,
+      description: params.description,
+      requirements: params.requiredSkills.join(', '),
+      posterId: params.posterId,
+      budgetUsd: params.budget,
+      deadline: params.deadline ?? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      category: params.category ?? 'AGENT_BOUNTY',
+      complexity: params.complexity ?? 'MEDIUM',
+    });
+
+    const providers = await findMatchedProviders(params.requiredSkills);
+    return { project, providers };
+  }
+
+  /**
+   * Resolve or create the posting client's marketplace profile.
+   * AgentProject.poster is an AgentProfile, but match-and-post callers are
+   * ordinary signed-in users. The profiles have no user FK, so the bridge is
+   * the stable slug convention `client-<userId>` — created on first post with
+   * placeholder wallet fields (no on-chain identity exists yet), reused after.
+   */
+  async ensurePosterProfile(userId: string, displayName: string): Promise<{ id: string }> {
+    const slug = `client-${userId}`;
+    const existing = await prisma.agentProfile.findUnique({ where: { slug } });
+    if (existing) return existing;
+    return prisma.agentProfile.create({
+      data: {
+        name: displayName,
+        slug,
+        description: 'Client posting projects through the agent marketplace.',
+        capabilities: [],
+        walletAddress: '',
+        publicKey: '',
+        reputation: 0,
+        metadata: { kind: 'client-poster', userId },
+      },
+    });
+  }
+
   async placeBid(params: {
     projectId: string;
     bidderId: string;
