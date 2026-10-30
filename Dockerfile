@@ -19,7 +19,7 @@ WORKDIR /app/server
 COPY server/package*.json ./
 # Dev dependencies are build tools here (typescript, prisma), not runtime ones,
 # so they are installed and pruned again after the compile.
-RUN npm install --include=dev
+RUN npm install
 COPY server/ .
 # `npm run compile`, not a bare `npx tsc`. Two reasons, both load-bearing:
 #   1. tsc exits 2 on the pre-existing type errors, so a bare `npx tsc` fails
@@ -39,7 +39,7 @@ WORKDIR /app
 # ── Client SPA ────────────────────────────────────────────────────────────────
 WORKDIR /app/client
 COPY client/package*.json ./
-RUN npm install --include=dev --legacy-peer-deps
+RUN npm install --legacy-peer-deps
 COPY client/ .
 RUN npm run build
 
