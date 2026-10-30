@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/auth.middleware';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { serviceProviderIngestion, type ExternalProviderProfile } from '../services/serviceProviderIngestion.service';
+import { marketplaceScraper } from '../services/marketplaceScraper.service';
+import { upworkApi } from '../services/upworkApi.service';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { bestFitEngineService } from '../services/ai/bestFitEngine.service';
@@ -289,6 +291,236 @@ router.post('/gig-outcome', authenticate, async (req: AuthRequest, res: Response
     });
   } catch (error: any) {
     logger.error('[ServiceProviderRoutes] Gig outcome error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/v1/service-providers/scrape
+ * Scrape a single marketplace profile URL (Fiverr, TaskRabbit, Upwork).
+ * Body: { url: string }
+ */
+router.post('/scrape', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { url } = req.body;
+    if (!url) {
+      return res.status(400).json({ success: false, error: 'url is required' });
+    }
+
+    const scraped = await marketplaceScraper.scrapeMarketplaceProfile(url);
+    res.json({
+      success: true,
+      data: scraped,
+    });
+  } catch (error: any) {
+    logger.error('[ServiceProviderRoutes] Scrape error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/v1/service-providers/scrape/ingest
+ * Scrape multiple marketplace profile URLs and ingest them all into Pabandi.
+ * Body: { urls: string[] }
+ */
+router.post('/scrape/ingest', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { urls }: { urls: string[] } = req.body;
+    if (!Array.isArray(urls) || urls.length === 0) {
+      return res.status(400).json({ success: false, error: 'urls array required' });
+    }
+
+    const result = await marketplaceScraper.scrapeAndIngestProfiles(urls);
+
+    res.json({
+      success: true,
+      data: result,
+      message: `Scraped and ingested ${result.ingested.length} providers (${result.errors.length} errors)`,
+    });
+  } catch (error: any) {
+    logger.error('[ServiceProviderRoutes] Scrape/ingest error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/v1/service-providers/upwork/auth
+ * Get the Upwork OAuth 2.0 authorization URL for connecting a user's Upwork account.
+ * Query: state (optional CSRF protection token)
+ */
+router.get('/upwork/auth', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const state = req.query.state as string || req.user!.id;
+    const authUrl = upworkApi.getUpworkAuthUrl(state);
+    res.json({
+      success: true,
+      data: { authUrl, state },
+    });
+  } catch (error: any) {
+    logger.error('[ServiceProviderRoutes] Upwork auth URL error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/v1/service-providers/upwork/callback
+ * Upwork OAuth 2.0 callback. Exchanges authorization code for tokens and
+ * ingests the user's Upwork profile into Pabandi.
+ * Query: code, state
+ */
+router.get('/upwork/callback', async (req: Request, res: Response) => {
+  try {
+    const { code, state } = req.query;
+    if (!code) {
+      return res.status(400).json({ success: false, error: 'code is required' });
+    }
+
+    const tokens = await upworkApi.exchangeUpworkCode(code as string);
+    const profile = await upworkApi.fetchUpworkProfile(tokens.accessToken);
+    const result = await upworkApi.ingestUpworkProfile(profile);
+
+    // Redirect back to frontend with success
+    const frontendUrl = process.env.FRONTEND_URL || 'https://pabandi.com';
+    return res.redirect(`${frontendUrl}/profile?upwork_success=1&passportId=${result.passportId}&trustScore=${result.trustScore}`);
+  } catch (error: any) {
+    logger.error('[ServiceProviderRoutes] Upwork callback error:', error);
+    const frontendUrl = process.env.FRONTEND_URL || 'https://pabandi.com';
+    return res.redirect(`${frontendUrl}/profile?upwork_error=1`);
+  }
+});
+
+/**
+ * POST /api/v1/service-providers/upwork/ingest
+ * Ingest the authenticated user's Upwork social identity into Pabandi.
+ * Uses stored Upwork access token (if configured) or falls back to Puppeteer scraping.
+ */
+router.post('/upwork/ingest', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const result = await upworkApi.ingestUserUpworkIdentity(userId);
+
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        error: 'No Upwork social identity found. Connect your Upwork account first.',
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        passportId: result.passportId,
+        handle: result.handle,
+        displayName: result.displayName,
+        trustScore: result.trustScore,
+        riskBand: result.riskBand,
+        source: result.source,
+        sourceId: result.sourceId,
+      },
+      message: `Upwork profile ingested with trust score ${result.trustScore} (band ${result.riskBand})`,
+    });
+  } catch (error: any) {
+    logger.error('[ServiceProviderRoutes] Upwork ingest error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/v1/service-providers/social/ingest
+ * Ingest all of the authenticated user's social identities (Fiverr, Upwork, etc.)
+ * into Pabandi Trust Passports.
+ */
+router.post('/social/ingest', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+
+    // Ingest Upwork identity
+    const upworkResult = await upworkApi.ingestUserUpworkIdentity(userId);
+
+    const results: Array<{
+      source: string;
+      sourceId: string;
+      passportId: string;
+      handle: string;
+      displayName: string;
+      trustScore: number;
+      riskBand: string;
+    }> = [];
+
+    if (upworkResult) {
+      results.push({
+        source: upworkResult.source,
+        sourceId: upworkResult.sourceId,
+        passportId: upworkResult.passportId,
+        handle: upworkResult.handle,
+        displayName: upworkResult.displayName,
+        trustScore: upworkResult.trustScore,
+        riskBand: upworkResult.riskBand,
+      });
+    }
+
+    // Also ingest any Fiverr identity via scraper
+    const { prisma } = await import('../utils/database');
+    const fiverrIdentity = await prisma.socialIdentity.findFirst({
+      where: {
+        userId,
+        platform: 'FIVERR' as any,
+      },
+    });
+
+    if (fiverrIdentity?.platformHandle) {
+      const platformHandle = fiverrIdentity.platformHandle || 'unknown';
+      const profileUrl = `https://www.fiverr.com/${platformHandle}`;
+      try {
+        const scraped = await marketplaceScraper.scrapeFiverrProfile(profileUrl);
+        const providerProfile: ExternalProviderProfile = {
+          source: 'fiverr',
+          sourceId: scraped.sourceId || platformHandle,
+          name: scraped.name || 'Fiverr Seller',
+          handle: scraped.handle || platformHandle,
+          bio: scraped.bio,
+          location: scraped.location,
+          websiteUrl: scraped.websiteUrl,
+          avatarUrl: scraped.avatarUrl,
+          hourlyRate: scraped.hourlyRate,
+          currency: 'USD',
+          skills: scraped.skills || [],
+          category: 'FREELANCER',
+          rating: scraped.rating,
+          reviewCount: scraped.reviewCount,
+          totalEarnings: scraped.totalEarnings,
+          jobsCompleted: scraped.jobsCompleted,
+          accountAgeDays: scraped.accountAgeDays,
+          isVerified: scraped.isVerified,
+          accountLevel: scraped.accountLevel,
+          portfolioUrls: scraped.portfolioUrls || [],
+          rawData: scraped.rawData,
+        };
+        const ingestResult = await serviceProviderIngestion.ingestProvider(providerProfile);
+        results.push({
+          source: 'fiverr',
+          sourceId: ingestResult.sourceId,
+          passportId: ingestResult.passportId,
+          handle: ingestResult.handle,
+          displayName: ingestResult.displayName,
+          trustScore: ingestResult.trustScore,
+          riskBand: ingestResult.riskBand,
+        });
+      } catch (err: any) {
+        logger.warn(`[ServiceProviderRoutes] Fiverr scrape ingest failed: ${err.message}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        ingested: results,
+        total: results.length,
+      },
+      message: `Ingested ${results.length} social identity/profiles into Pabandi Trust Passports`,
+    });
+  } catch (error: any) {
+    logger.error('[ServiceProviderRoutes] Social ingest error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
