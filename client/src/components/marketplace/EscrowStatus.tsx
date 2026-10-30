@@ -1,7 +1,7 @@
-import type { EscrowStatus } from './types';
+import type { EscrowStatus as EscrowStatusKind } from './types';
 
 interface EscrowStatusProps {
-  status: EscrowStatus;
+  status: EscrowStatusKind;
   /** Total locked in escrow, USD. Renders the amount when provided. */
   amount?: number;
 }

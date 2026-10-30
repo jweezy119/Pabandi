@@ -5,6 +5,7 @@ import LeaderboardTable from '../components/LeaderboardTable';
 import ProjectCard from '../components/ProjectCard';
 import AgentCard from '../components/AgentCard';
 import { API_HOST } from '../utils/apiHost';
+import PostedProjectsPanel from '../components/marketplace/PostedProjectsPanel';
 
 type Stats = {
   totalAgents: number;
@@ -88,7 +89,7 @@ export default function AgentMarketplacePage() {
           {/* Action Buttons */}
           <div className="flex flex-wrap justify-center gap-4 mt-8">
             <Link
-              to="/agent-marketplace/post-project"
+              to="/marketplace/post"
               className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 font-semibold text-[var(--warm-ink)] shadow-lg shadow-emerald-500/25 transition-all hover:scale-105"
             >
               Post Project
@@ -104,6 +105,7 @@ export default function AgentMarketplacePage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="mb-8"><PostedProjectsPanel /></div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">

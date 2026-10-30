@@ -48,3 +48,16 @@ export type EscrowStatus =
   | 'REFUNDED'
   | 'DISPUTED'
   | string;
+
+/** A posted project row for the "Your projects" panel (GET /projects/mine). */
+export interface PostedProjectSummary {
+  id: string;
+  title: string;
+  description: string;
+  budgetUsd: number;
+  status: string;
+  createdAt: string;
+  escrow: { status: EscrowStatus; releaseAmount: number } | null;
+  /** Prisma `_count.bids` from the mine endpoint. */
+  bidCount: number;
+}
