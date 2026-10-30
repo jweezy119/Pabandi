@@ -7,9 +7,7 @@ import { getAuthToken } from '../../utils/authToken';
 
 type FormState = { title: string; description: string; budget: string; skills: string };
 
-const EMPTY_FORM: FormState = { title: '', description: '', budget: '', skills: '' };
-
-/**
+const EMPTY_FORM: FormState = { title: '', description: '', budget: '', skills: '' };/**
  * Post a project to the Agent Marketplace and instantly see the best
  * Trust-Score-matched providers. One submit, one endpoint:
  * POST /api/v1/agent-marketplace/match-and-post.
@@ -19,6 +17,10 @@ export default function PostProjectPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ project: PostedProject; providers: MatchedProvider[] } | null>(null);
+  /** Provider passport currently being hired, if any. */
+  const [hiringId, setHiringId] = useState<string | null>(null);
+  /** Passport whose hire succeeded — funds are now locked in escrow. */
+  const [hiredId, setHiredId] = useState<string | null>(null);
 
   const setField = (key: keyof FormState) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -64,6 +66,39 @@ export default function PostProjectPage() {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  /**
+   * Hire a matched provider: funds full-budget escrow through the server's
+   * hire endpoint. Runs the same auth rule as posting — silently failing to
+   * a sign-in hint would hide money movement behind a broken button.
+   */
+  const hire = async (provider: MatchedProvider) => {
+    if (!result) return;
+    setHiringId(provider.passportId);
+    setError(null);
+    try {
+      const res = await fetch(
+        apiUrl(`/api/v1/agent-marketplace/projects/${result.project.id}/hire`),
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getAuthToken() ?? ''}`,
+          },
+          body: JSON.stringify({ passportId: provider.passportId }),
+        },
+      );
+      const json: { success: boolean; error?: string } = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Could not hire this agent. Try again.');
+      }
+      setHiredId(provider.passportId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong.');
+    } finally {
+      setHiringId(null);
     }
   };
 
@@ -142,9 +177,21 @@ export default function PostProjectPage() {
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
                 {result.providers.map((provider) => (
-                  <ProviderCard key={provider.passportId} provider={provider} />
+                  <ProviderCard
+                    key={provider.passportId}
+                    provider={provider}
+                    onHire={hire}
+                    hiring={hiringId === provider.passportId}
+                    hired={hiredId === provider.passportId}
+                  />
                 ))}
               </div>
+            )}
+            {hiredId && (
+              <p className="mt-3 text-sm text-[var(--soft-stone)]">
+                Escrow funded — the provider can start work. Funds release when you
+                mark the project complete.
+              </p>
             )}
           </section>
         )}

@@ -1,10 +1,13 @@
 import type { MatchedProvider } from './types';
+import { EscrowStatus } from './EscrowStatus';
 
 interface ProviderCardProps {
   provider: MatchedProvider;
   onHire?: (provider: MatchedProvider) => void;
   /** Whether a hire action is in flight for this card. */
   hiring?: boolean;
+  /** Once hired, the card freezes the Hire button and shows the escrow badge. */
+  hired?: boolean;
 }
 
 /**
@@ -12,7 +15,7 @@ interface ProviderCardProps {
  * Leads with the Trust Score — the whole point of matching — then identity,
  * then the skills that earned this provider the match.
  */
-export function ProviderCard({ provider, onHire, hiring = false }: ProviderCardProps) {
+export function ProviderCard({ provider, onHire, hiring = false, hired = false }: ProviderCardProps) {
   return (
     <div
       className="rounded-[var(--radius-card)] bg-[var(--cream)] border border-[rgba(201,123,90,0.25)] p-5 flex flex-col gap-3"
@@ -62,6 +65,8 @@ export function ProviderCard({ provider, onHire, hiring = false }: ProviderCardP
         )}
       </div>
 
+      {hired && <EscrowStatus status="FUNDED" />}
+
       <div className="flex items-center gap-2 text-sm text-[var(--soft-stone)]">
         <span>{provider.completedProjects} projects completed</span>
         {provider.verifiedIdentity && (
@@ -69,15 +74,17 @@ export function ProviderCard({ provider, onHire, hiring = false }: ProviderCardP
         )}
       </div>
 
-      <button
-        type="button"
-        disabled={hiring}
-        onClick={onHire ? () => onHire(provider) : undefined}
-        className="mt-1 w-full rounded-[var(--radius-btn)] py-2.5 font-label text-sm text-[var(--cream)] bg-[var(--clay)] hover:bg-[var(--terracotta)] transition-colors disabled:opacity-50"
-        style={{ boxShadow: 'var(--shadow-btn)' }}
-      >
-        {hiring ? 'Hiring…' : 'Hire'}
-      </button>
+      {!hired && (
+        <button
+          type="button"
+          disabled={hiring}
+          onClick={onHire ? () => onHire(provider) : undefined}
+          className="mt-1 w-full rounded-[var(--radius-btn)] py-2.5 font-label text-sm text-[var(--cream)] bg-[var(--clay)] hover:bg-[var(--terracotta)] transition-colors disabled:opacity-50"
+          style={{ boxShadow: 'var(--shadow-btn)' }}
+        >
+          {hiring ? 'Hiring…' : 'Hire'}
+        </button>
+      )}
     </div>
   );
 }
