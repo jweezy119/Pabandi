@@ -3,6 +3,7 @@ import { AGENT_MARKETPLACE_FEE } from '../config/fees';
 import { PAB_USD_PRICE } from '../config/tokenomics';
 import { TEMPLATE_BY_KEY } from '../config/agentTemplates';
 import type { Prisma } from '@prisma/client';
+import { trustCore } from '../trust/trust-core';
 import { findMatchedProviders, type MatchedProvider } from './agentMatching.service';
 
 const PLATFORM_FEE_USD = AGENT_MARKETPLACE_FEE; // 2% total, from config/fees
@@ -536,6 +537,47 @@ export class AgentMarketplace {
         status: 'COMPLETED',
       },
     });
+
+    // Reputation-bearing completion. A paid delivery is a Trust Score event —
+    // `delivery.on_time`, the SAME event an on-schedule gig checkout produces —
+    // so marketplace work and gig work land in one reputation history, and
+    // with it one reason for the next poster to book this provider. Bridged
+    // providers carry their passportId in profile metadata; real agents by
+    // wallet. Failure to record trust must never fail the release itself.
+    const solver = await prisma.agentProfile.findUnique({ where: { id: solverId } });
+    let providerPassport = null as null | { id: string };
+    const meta = (solver?.metadata as { passportId?: unknown } | null) ?? null;
+    if (typeof meta?.passportId === 'string') {
+      providerPassport = await prisma.trustPassport.findUnique({ where: { id: meta.passportId } });
+    }
+    if (!providerPassport && solver?.walletAddress) {
+      providerPassport = await prisma.trustPassport.findFirst({
+        where: { walletAddress: solver.walletAddress },
+      });
+    }
+    if (providerPassport) {
+      try {
+        await trustCore.emit('delivery.on_time', {
+          passportId: providerPassport.id,
+          amount: project.escrow.releaseAmount,
+          metadata: { source: 'agent-marketplace', projectId },
+        });
+        const now = new Date();
+        await prisma.passportGigHistory.create({
+          data: {
+            passportId: providerPassport.id,
+            gigId: projectId,
+            title: project.title,
+            scheduledDate: now,
+            timeBucket: `${Math.floor(now.getHours() / 6) * 6}-${Math.floor(now.getHours() / 6) * 6 + 6}`,
+            dayOfWeek: now.getDay(),
+            status: 'COMPLETED',
+          },
+        });
+      } catch (err) {
+        console.error(`[AgentMarketplace] trust record failed for project ${projectId}:`, err);
+      }
+    }
 
     return { success: true, released: project.escrow.releaseAmount, pabReward: pabReward / pabPrice };
   }
