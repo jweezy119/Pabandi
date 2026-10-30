@@ -1086,8 +1086,8 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM signal received: closing HTTP server');
   try {
-    const { closeScraperBrowser } = await import('./services/marketplaceScraper.service');
-    await closeScraperBrowser();
+    const { closeAllScraperBrowsers } = await import('./services/unifiedScraper.service');
+    await closeAllScraperBrowsers();
   } catch { /* ignore */ }
   try {
     const { webhookManager } = await import('./services/openwa.webhook-manager.service');

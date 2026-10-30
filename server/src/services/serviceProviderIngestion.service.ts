@@ -5,7 +5,7 @@ import { trustPassportService } from './trustPassport.service';
 import { badgeService } from './badge.service';
 
 export interface ExternalProviderProfile {
-  source: 'upwork' | 'taskrabbit' | 'fiverr' | 'thumbtack' | 'manual';
+  source: 'upwork' | 'taskrabbit' | 'fiverr' | 'thumbtack' | 'manual' | 'jobber' | 'broccoli';
   sourceId: string; // external platform's unique ID
   name: string;
   handle?: string;
@@ -214,8 +214,10 @@ export async function ingestProvider(profile: ExternalProviderProfile): Promise<
   const platformMap: Record<string, string> = {
     upwork: 'UPWORK',
     fiverr: 'FIVERR',
-    taskrabbit: 'UPWORK', // closest match - task-based platform
+    taskrabbit: 'UPWORK',
     thumbtack: 'UPWORK',
+    jobber: 'UPWORK',
+    broccoli: 'UPWORK',
   };
   const platform = platformMap[profile.source];
   if (platform) {

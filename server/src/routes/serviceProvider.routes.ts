@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/auth.middleware';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { serviceProviderIngestion, type ExternalProviderProfile } from '../services/serviceProviderIngestion.service';
-import { marketplaceScraper } from '../services/marketplaceScraper.service';
+import { unifiedScraper } from '../services/unifiedScraper.service';
 import { upworkApi } from '../services/upworkApi.service';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
@@ -307,7 +307,7 @@ router.post('/scrape', authenticate, async (req: AuthRequest, res: Response) => 
       return res.status(400).json({ success: false, error: 'url is required' });
     }
 
-    const scraped = await marketplaceScraper.scrapeMarketplaceProfile(url);
+    const scraped = await unifiedScraper.scrapeMarketplaceProfile(url);
     res.json({
       success: true,
       data: scraped,
@@ -330,7 +330,7 @@ router.post('/scrape/ingest', authenticate, async (req: AuthRequest, res: Respon
       return res.status(400).json({ success: false, error: 'urls array required' });
     }
 
-    const result = await marketplaceScraper.scrapeAndIngestProfiles(urls);
+    const result = await unifiedScraper.scrapeAndIngestProfiles(urls);
 
     res.json({
       success: true,
@@ -472,7 +472,7 @@ router.post('/social/ingest', authenticate, async (req: AuthRequest, res: Respon
       const platformHandle = fiverrIdentity.platformHandle || 'unknown';
       const profileUrl = `https://www.fiverr.com/${platformHandle}`;
       try {
-        const scraped = await marketplaceScraper.scrapeFiverrProfile(profileUrl);
+        const scraped = await unifiedScraper.scrapeFiverrProfile(profileUrl);
         const providerProfile: ExternalProviderProfile = {
           source: 'fiverr',
           sourceId: scraped.sourceId || platformHandle,
