@@ -347,6 +347,7 @@ import authRoutes from './routes/auth.routes';
 // Import vcap routes
 import vcapRoutes from './routes/vcap.routes';
 import trustVerificationRoutes from './routes/trustVerification.routes';
+import dataEscrowRoutes from './routes/dataEscrow.routes';
 
 
 // Register critical routes immediately
@@ -426,6 +427,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/profile`, './routes/profile.routes'],
   [`/api/${v}/trust/v1`, './routes/trustApi.v1.routes'],
   [`/api/${v}/data-escrow`, './routes/vcap.routes'],
+  [`/api/${v}/data-escrow`, './routes/dataEscrow.routes'],
   [`/api/${v}/monetization`, './routes/monetization.routes'],
   [`/api/${v}/linkedin/seed`, './routes/linkedinSeed.routes'],
   [`/api/${v}/linkedin`, './routes/linkedin.routes'],

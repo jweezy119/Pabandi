@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
+import { apiLimiter } from '../middleware/rateLimit.middleware';
 import crypto from 'crypto';
 import { X402_PRICING } from '../config/fees';
 
