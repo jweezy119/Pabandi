@@ -125,7 +125,8 @@ export async function runScoutCycle(): Promise<{
     return results;
   }
 
-  // ── Filter: deduplicate ──────────────────────────────────────────
+  // ── Filter: deduplicate + ML tier prioritization ──
+  // Only outreach hot/warm targets; cold targets waste email slots.
   const newTargets: ScoutTarget[] = [];
   for (const target of targets) {
     if (!target.email) {
@@ -134,6 +135,11 @@ export async function runScoutCycle(): Promise<{
     }
     const already = await isAlreadyScouted(target.email);
     if (already) {
+      results.skipped++;
+      continue;
+    }
+    // Skip cold-tier targets — low conversion probability, not worth an email slot
+    if (target.mlTier === 'cold') {
       results.skipped++;
       continue;
     }
@@ -173,6 +179,11 @@ export async function runScoutCycle(): Promise<{
         pitchHook: 'Monetize your data through Pabandi escrow',
       };
     }
+
+    // Log ML enrichment
+    logger.info(
+      `[Scout] Target ${target.name} tier=${target.mlTier} score=${target.mlScore} source=${target.source} wallet=${target.wallet ?? '-'} usdc=${target.usdcBalance ?? '-'}`
+    );
 
     // Record as scouted (deduplication)
     await recordScoutedTarget(target);
