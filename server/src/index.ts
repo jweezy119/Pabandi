@@ -348,6 +348,7 @@ import authRoutes from './routes/auth.routes';
 import vcapRoutes from './routes/vcap.routes';
 import trustVerificationRoutes from './routes/trustVerification.routes';
 import dataEscrowRoutes from './routes/dataEscrow.routes';
+import serviceProviderRoutes from './routes/serviceProvider.routes';
 
 
 // Register critical routes immediately
@@ -606,6 +607,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/agent-comm`, './routes/agentCommunication.routes'],
   [`/api/${v}/agents`, './routes/agentSignup.routes'],
   [`/api/${v}/agent-passport`, './routes/agentPassport.routes'],
+  [`/api/${v}/service-providers`, './routes/serviceProvider.routes'],
   [`/api/${v}/predictive`, './routes/predictive.routes'],
   [`/api/${v}/realestate`, './routes/realestate.routes'],
   [`/api/${v}/pabandi`, './routes/pabandiTools.routes'],
