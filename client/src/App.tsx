@@ -32,6 +32,7 @@ const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
 const AgentMarketplacePage = lazy(() => import('./pages/AgentMarketplacePage'));
 const PersonalDashboardPage = lazy(() => import('./pages/me/PersonalDashboardPage'));
 const PersonalPassportPage = lazy(() => import('./pages/me/PersonalPassportPage'));
+const TrustPassportPage = lazy(() => import('./pages/TrustPassportPage'));
 const PersonalBookingsPage = lazy(() => import('./pages/me/PersonalBookingsPage'));
 const PersonalRewardsPage = lazy(() => import('./pages/me/PersonalRewardsPage'));
 const PayInvoicePage = lazy(() => import('./pages/PayInvoicePage'));
