@@ -1,7 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ProviderCard from '../../components/marketplace/ProviderCard';
-import type { MatchAndPostResponse, MatchedProvider, PostedProject } from '../../components/marketplace/types';
+import type {
+  MatchAndPostResponse,
+  MatchedProvider,
+  PostedProject,
+  ProjectTemplate,
+} from '../../components/marketplace/types';
 import { apiUrl } from '../../utils/apiHost';
 import { getAuthToken } from '../../utils/authToken';
 
@@ -21,6 +26,10 @@ export default function PostProjectPage() {
   const [hiringId, setHiringId] = useState<string | null>(null);
   /** Passport whose hire succeeded — funds are now locked in escrow. */
   const [hiredId, setHiredId] = useState<string | null>(null);
+  /** Posting templates for one-click rich briefs. */
+  const [templates, setTemplates] = useState<ProjectTemplate[]>([]);
+  /** Poster opt-in: verified agents may self-book and escrow funds itself. */
+  const [autoBook, setAutoBook] = useState(false);
 
   const setField = (key: keyof FormState) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -54,6 +63,7 @@ export default function PostProjectPage() {
           description: form.description.trim(),
           budget: Number(form.budget),
           requiredSkills: form.skills.split(',').map((s) => s.trim()).filter(Boolean),
+          autoBook,
         }),
       });
       const json: MatchAndPostResponse = await res.json();
@@ -100,6 +110,30 @@ export default function PostProjectPage() {
     } finally {
       setHiringId(null);
     }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(apiUrl('/api/v1/agent-marketplace/templates'))
+      .then((r) => r.json() as Promise<{ success: boolean; data?: ProjectTemplate[] }>)
+      .then((json) => {
+        if (!cancelled && json.success && json.data) setTemplates(json.data);
+      })
+      .catch(() => { /* templates are optional prefill; the form still works */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  const applyTemplate = (tpl: ProjectTemplate) => {
+    setForm({
+      title: tpl.title,
+      // Deliverables go into the description body: postings with explicit
+      // scope deliverable lists match better AND release escrow cleanly.
+      description: `${tpl.description}\n\nDeliverables:\n${tpl.deliverables
+        .map((d) => `• ${d.replace(/^- /, '')}`)
+        .join('\n')}`,
+      budget: String(tpl.suggestedBudgetUSD),
+      skills: tpl.requiredSkills.join(', '),
+    });
   };
 
   const inputClass =
@@ -150,6 +184,42 @@ export default function PostProjectPage() {
           <label className="font-label text-sm flex flex-col gap-1.5">
             Skills required <span className="text-xs text-[var(--soft-stone)]">(comma separated)</span>
             <input className={inputClass} value={form.skills} onChange={setField('skills')} placeholder="solana, react, python" />
+          </label>
+
+          {templates.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <span className="font-label text-sm">Start from a template</span>
+              <div className="flex flex-wrap gap-2">
+                {templates.map((tpl) => (
+                  <button
+                    key={tpl.key}
+                    type="button"
+                    onClick={() => applyTemplate(tpl)}
+                    className={`text-xs px-3 py-1.5 rounded-[var(--radius-pill)] border transition-colors ${
+                      form.title === tpl.title
+                        ? 'bg-[var(--clay)] text-[var(--cream)] border-transparent'
+                        : 'bg-white/60 text-[var(--soft-stone)] border-[rgba(191,179,163,0.4)] hover:bg-[var(--warm-sand)]'
+                    }`}
+                  >
+                    {tpl.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <label className="flex items-start gap-2.5 text-sm text-[var(--soft-stone)] cursor-pointer">
+            <input
+              type="checkbox"
+              checked={autoBook}
+              onChange={(e) => setAutoBook(e.target.checked)}
+              className="mt-0.5 accent-[var(--clay)]"
+            />
+            <span>
+              <strong className="text-[var(--warm-ink)]">Instant booking</strong> — let
+              identity-verified agents with Trust Score ≥ 70 book this project directly;
+              escrow funds itself. Everyone else bids as usual for your approval.
+            </span>
           </label>
 
           {error && <p className="text-sm text-[var(--terracotta)]">{error}</p>}

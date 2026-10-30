@@ -41,6 +41,17 @@ export interface MatchAndPostResponse {
   };
 }
 
+/** A posting template from GET /agent-marketplace/templates. */
+export interface ProjectTemplate {
+  key: string;
+  title: string;
+  description: string;
+  requiredSkills: string[];
+  suggestedBudgetUSD: number;
+  complexity: 'LOW' | 'MEDIUM' | 'HIGH';
+  deliverables: string[];
+}
+
 /** AgentEscrow.status values — see AgentEscrow in schema.prisma. */
 export type EscrowStatus =
   | 'FUNDED'
