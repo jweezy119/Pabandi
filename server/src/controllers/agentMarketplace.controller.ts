@@ -107,5 +107,46 @@ export const getAgentProfile = async (req: Request, res: Response, next: NextFun
       },
     });
     res.json({ success: true, agent });
-  } catch (err) { next(err); }
+  } catch (err) { next(err) };
+};
+
+export const getAllAgents = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { category, minReputation, limit = '20', offset = '0' } = req.query;
+    const where: any = { isActive: true };
+    if (minReputation) where.reputation = { gte: parseInt(minReputation as string) };
+
+    const [agents, total] = await Promise.all([
+      prisma.agentProfile.findMany({
+        where,
+        orderBy: { reputation: 'desc' },
+        take: parseInt(limit as string),
+        skip: parseInt(offset as string),
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          description: true,
+          capabilities: true,
+          reputation: true,
+          totalEarned: true,
+          projectsCompleted: true,
+          walletAddress: true,
+          createdAt: true,
+        },
+      }),
+      prisma.agentProfile.count({ where }),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        agents,
+        total,
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string),
+        hasMore: parseInt(offset as string) + parseInt(limit as string) < total,
+      },
+    });
+  } catch (err) { next(err) };
 };

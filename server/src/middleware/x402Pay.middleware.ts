@@ -75,7 +75,7 @@ export function x402Pay(options: X402PayOptions) {
 
     // ── No payment yet: serve 402 ──
     if (!paymentSignature && (typeof paymentHeader !== 'string' || paymentHeader.length === 0)) {
-      return res.status(402)
+      res.status(402)
         .header('Payment-Required', encodePaymentRequired(buildPaymentRequired({
           resource,
           amountUsdc: amount,
@@ -87,6 +87,7 @@ export function x402Pay(options: X402PayOptions) {
           pricing: { amountUsdc: amount },
           extensions: BAZAAR_RAW,
         });
+      return;
     }
 
     // ── Verify x402 v2 spec payment ──
@@ -99,22 +100,24 @@ export function x402Pay(options: X402PayOptions) {
           amountUsdc: amount,
         });
         if (!result.valid && !allowUnverified) {
-          return res.status(402).json({
+          res.status(402).json({
             success: false,
             error: 'PAYMENT_NOT_VERIFIED',
             message: result.reason ?? 'Payment could not be verified',
             extensions: BAZAAR_RAW,
           });
+          return;
         }
         req.x402Payment = { method: 'x402-v2', settled: true, amount, transactionHash: result.transactionHash };
         return next();
       }
-      return res.status(402).json({
+      res.status(402).json({
         success: false,
         error: 'PAYMENT_NOT_VERIFIED',
         message: 'Malformed PAYMENT-SIGNATURE header',
         extensions: BAZAAR_RAW,
       });
+      return;
     }
 
     // ── Verify legacy x-payment header ──
@@ -125,12 +128,13 @@ export function x402Pay(options: X402PayOptions) {
       amount,
     });
     if (!result.valid && !allowUnverified) {
-      return res.status(402).json({
+      res.status(402).json({
         success: false,
         error: 'PAYMENT_NOT_VERIFIED',
         message: result.reason ?? 'Payment could not be verified',
         extensions: BAZAAR_RAW,
       });
+      return;
     }
     req.x402Payment = { method: 'x402', settled: true, amount, transactionHash: result.transactionHash };
     next();

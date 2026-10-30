@@ -2,7 +2,7 @@ import { Router } from 'express';
 import {
   registerAgent, postProject, placeBid, acceptBid,
   completeProject, returnToBidding, getMarketplaceStats,
-  getLeaderboard, getOpenProjects, getAgentProfile
+  getLeaderboard, getOpenProjects, getAgentProfile, getAllAgents
 } from '../controllers/agentMarketplace.controller';
 import { authenticate } from '../middleware/auth.middleware';
 
@@ -11,6 +11,7 @@ const router = Router();
 // Public routes
 router.get('/stats', getMarketplaceStats);
 router.get('/leaderboard', getLeaderboard);
+router.get('/agents', getAllAgents);
 router.get('/projects/open', getOpenProjects);
 router.get('/agents/:slug', getAgentProfile);
 
