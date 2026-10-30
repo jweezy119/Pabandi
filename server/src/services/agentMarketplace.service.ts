@@ -168,6 +168,104 @@ export class AgentMarketplace {
   }
 
   /**
+   * Direct hire from a Trust-Score match.
+   *
+   * The hire flow for the ProviderCard: the poster picks a matched passport,
+   * the server creates a full-budget bid on the provider's behalf and then
+   * runs the SAME acceptBid path a normal bid acceptance takes. One escrow
+   * implementation for both flows means "Hire" cannot fund money differently
+   * from "Accept bid".
+   *
+   * actorId is the signed-in USER id, not the AgentProfile id: clients never
+   * hold agent identities. The poster profile is resolved with the same
+   * `client-<userId>` slug convention match-and-post bridges with, and the
+   * project ownership check inside acceptBid runs against it. A user who has
+   * never posted has no client profile — that fails the check, which is the
+   * correct outcome.
+   */
+  async hireProvider(projectId: string, passportId: string, actorUserId: string) {
+    const client = await prisma.agentProfile.findUnique({
+      where: { slug: `client-${actorUserId}` },
+      select: { id: true },
+    });
+    if (!client) throw new Error('Not authorised to hire on this project');
+
+    const project = await prisma.agentProject.findUnique({ where: { id: projectId } });
+    if (!project) throw new Error('Project not found');
+    if (project.posterId !== client.id) {
+      throw new Error('Not authorised to hire on this project');
+    }
+    if (project.status !== 'OPEN') {
+      throw new Error('Project is not open for hire');
+    }
+
+    const passport = await prisma.trustPassport.findUnique({ where: { id: passportId } });
+    if (!passport) throw new Error('Provider passport not found');
+
+    const provider = await this.ensureProviderProfile(passport);
+
+    // Full-budget direct-hire bid. The provider never bid, so their price is
+    // the posted budget — the poster decided it when they posted.
+    const bid = await this.placeBid({
+      projectId,
+      bidderId: provider.id,
+      proposedAmount: project.budgetUsd,
+      timelineHours: 14 * 24,
+      approach: 'Direct hire via Trust-Score match',
+    });
+
+    const { escrow } = await this.acceptBid(bid.id, client.id);
+
+    // Remember which passport was hired — metadata, not a listed field.
+    const updated = await prisma.agentProject.update({
+      where: { id: projectId },
+      data: { metadata: { hiredPassport: passportId } },
+      select: { id: true, status: true, escrowId: true },
+    });
+
+    return { project: { ...updated, hiredPassport: passportId }, escrow };
+  }
+
+  /**
+   * Resolve or create the marketplace AgentProfile behind a TrustPassport.
+   * Real agents register with a wallet; passport-only providers are bridged
+   * with the stable slug convention `provider-<passportId>`.
+   */
+  async ensureProviderProfile(passport: {
+    id: string;
+    displayName: string;
+    headline: string | null;
+    walletAddress: string | null;
+    skills: unknown;
+    score: number | null;
+    handle: string;
+  }) {
+    if (passport.walletAddress) {
+      const byWallet = await prisma.agentProfile.findFirst({
+        where: { walletAddress: passport.walletAddress },
+      });
+      if (byWallet) return byWallet;
+    }
+    const slug = `provider-${passport.id}`;
+    const bySlug = await prisma.agentProfile.findUnique({ where: { slug } });
+    if (bySlug) return bySlug;
+    return prisma.agentProfile.create({
+      data: {
+        name: passport.displayName,
+        slug,
+        description: passport.headline || 'Agent marketplace provider',
+        capabilities: Array.isArray(passport.skills)
+          ? passport.skills.filter((s): s is string => typeof s === 'string')
+          : [],
+        walletAddress: passport.walletAddress ?? '',
+        publicKey: passport.walletAddress ?? '',
+        reputation: passport.score ?? 0,
+        metadata: { kind: 'trust-passport-provider', passportId: passport.id, handle: passport.handle },
+      },
+    });
+  }
+
+  /**
    * Accept a bid and fund escrow
    */
   async acceptBid(bidId: string, actorId?: string) {

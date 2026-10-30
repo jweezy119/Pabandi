@@ -74,6 +74,21 @@ export const matchAndPost = async (req: Request, res: Response, next: NextFuncti
   } catch (err) { next(err); }
 };
 
+export const hireProvider = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Poster identity comes from the token, same rule as everywhere else in
+    // this controller. passportId is the only thing the body contributes.
+    const { user } = req as AuthRequest;
+    if (!user?.id) return res.status(401).json({ success: false, error: 'Authentication required' });
+    const passportId = req.body?.passportId;
+    if (typeof passportId !== 'string' || passportId.trim().length === 0) {
+      return res.status(400).json({ success: false, error: 'passportId is required' });
+    }
+    const data = await agentMarketplace.hireProvider(req.params.projectId, passportId.trim(), user.id);
+    return res.json({ success: true, data });
+  } catch (err) { next(err); }
+};
+
 export const placeBid = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const bid = await agentMarketplace.placeBid({
