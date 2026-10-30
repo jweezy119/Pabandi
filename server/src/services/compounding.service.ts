@@ -147,9 +147,15 @@ export class CompoundingService {
 
   // ─── START PERIODIC COMPOUNDING ────────────────────────
   startPeriodicCompounding(): ReturnType<typeof setInterval> {
-    this.compound().then(result => {
-      console.log(`[Compound] Hour ${this.totalCompounds}: +$${result.compounded.toFixed(4)} → Reserve: $${result.newReserve.toFixed(2)}`);
-    });
+    // Delayed 30s rather than fired in the same tick as listen(): the boot
+    // minute also runs schema-check, outbox replay and settlement's first pass.
+    // Stacking them segfaulted (exit 139) a 512MB Render instance after
+    // "Server ready" — see Dockerfile NODE_OPTIONS note.
+    setTimeout(() => {
+      this.compound().then(result => {
+        console.log(`[Compound] Hour ${this.totalCompounds}: +$${result.compounded.toFixed(4)} → Reserve: $${result.newReserve.toFixed(2)}`);
+      }).catch(err => console.error('[Compound] boot compound failed:', err.message));
+    }, 30_000).unref();
 
     return setInterval(async () => {
       const result = await this.compound();

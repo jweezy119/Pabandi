@@ -20,18 +20,18 @@ import { useAuthStore } from '../store/authStore';
  * unknown state is what creates the loop; waiting does not.
  */
 export default function AuthHydrationGate({ children }: { children: React.ReactNode }) {
-  const [ready, setReady] = useState(() => useAuthStore.persist.hasHydrated());
+  const [ready, setReady] = useState(() => useAuthStore.persist?.hasHydrated?.() ?? true);
 
   useEffect(() => {
-    if (useAuthStore.persist.hasHydrated()) {
+    if (useAuthStore.persist?.hasHydrated?.()) {
       setReady(true);
       return;
     }
     // Covers the case where hydration finished between the initialiser and
     // this effect, which would otherwise leave the gate waiting on an event
     // that has already fired.
-    const unsub = useAuthStore.persist.onFinishHydration(() => setReady(true));
-    setReady(useAuthStore.persist.hasHydrated());
+    const unsub = useAuthStore.persist?.onFinishHydration?.(() => setReady(true)) ?? (() => {});
+    setReady(useAuthStore.persist?.hasHydrated?.() ?? true);
     return () => unsub();
   }, []);
 

@@ -15,6 +15,7 @@
  */
 import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/auth.middleware';
+import { x402Pay } from '../middleware/x402Pay.middleware';
 import crypto from 'crypto';
 import { ptpEngine } from '../protocol/ptp.spec';
 import { prisma } from '../utils/database';
@@ -118,8 +119,12 @@ router.post('/issue', async (req: Request, res: Response) => {
 });
 
 // Public, no-auth verification — the "standard" one-call check any site/agent uses.
-// `token` is a base64-encoded PTPAgentAttestation; `need` optionally requires a capability.
-router.get('/verify', async (req: Request, res: Response) => {
+// x402-gated: $0.01 per verification. `token` is a base64-encoded PTPAgentAttestation;
+// `need` optionally requires a capability.
+router.get(
+  '/verify',
+  x402Pay({ amount: 0.01, resource: '/api/v1/agent-passport/verify', description: 'PTP attestation verification' }),
+  async (req: Request, res: Response) => {
   try {
     const token = req.query.token as string;
     const need = req.query.need as string | undefined;

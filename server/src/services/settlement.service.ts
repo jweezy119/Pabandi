@@ -90,11 +90,17 @@ export class SettlementService {
   }
 
   startPeriodicSettlement(): ReturnType<typeof setInterval> {
-    this.runSettlement().then(result => {
-      if (result.settled > 0) {
-        console.log(`[Settlement] Settled ${result.settled} rewards, $${result.totalUsdc.toFixed(4)} retained in platform wallet`);
-      }
-    });
+    // The hourly interval already starts from setInterval below, so delaying the
+    // first (boot-time) run costs nothing. It used to fire in the same instant as
+    // the schema check, outbox replay and compounding right after listen() — a
+    // burst that segfaulted (exit 139) a 512MB Render instance on a deploy.
+    setTimeout(() => {
+      this.runSettlement().then(result => {
+        if (result.settled > 0) {
+          console.log(`[Settlement] Settled ${result.settled} rewards, $${result.totalUsdc.toFixed(4)} retained in platform wallet`);
+        }
+      }).catch(err => console.error('[Settlement] boot settlement failed:', err.message));
+    }, 30_000).unref();
 
     return setInterval(async () => {
       const result = await this.runSettlement();

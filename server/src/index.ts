@@ -692,7 +692,6 @@ startAlertSweep();
 import cron from 'node-cron';
 import { scanOverdueInvoices } from './services/invoice.service';
 import { scanFailureOwnership } from './services/failure-ownership.service';
-import { runScoutCycle } from './workers/scout.worker';
 // Daily scan for overdue invoices at 9am local
 cron.schedule('0 9 * * *', async () => {
   try {
@@ -720,8 +719,15 @@ cron.schedule('0 10 * * *', async () => {
 // Daily autonomous scout: discover AI agents on GitHub/Product Hunt, research,
 // and email them a $50 Pabandi referral link. Runs at 8 AM UTC, max 10 emails/day.
 // Set SCOUT_DRY_RUN=false in Render to actually send emails.
+//
+// Imported lazily inside the cron body, not at module load. The scout stack
+// drags the entire Solana/web3 dependency tree into the API process's memory,
+// and a deploy that loaded it at boot segfaulted (exit 139) a 512MB Render
+// instance seconds after "Server ready". It runs once a day; it does not need
+// to be resident 24/7.
 cron.schedule('0 8 * * *', async () => {
   try {
+    const { runScoutCycle } = await import('./workers/scout.worker');
     const result = await runScoutCycle();
     console.log(
       `[ScoutCron] Cycle complete: discovered=${result.discovered} researched=${result.researched} emailed=${result.emailed} skipped=${result.skipped} errors=${result.errors.length}`

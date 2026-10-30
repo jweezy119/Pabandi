@@ -151,8 +151,10 @@ function buildNavFromSettings(settings: any, osName: string, defaultNav?: NavIte
   };
 
   if (map[osName]) {
-    const enabled = settings.enabledFeatures['contact'] ?? [];
-    return map[osName].filter(item => 
+    const enabled = Array.isArray(settings.enabledFeatures?.['contact'])
+      ? settings.enabledFeatures['contact']
+      : [];
+    return map[osName].filter(item =>
       item.feature === null || enabled.includes(item.feature)
     );
   }

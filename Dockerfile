@@ -52,4 +52,16 @@ WORKDIR /app/server
 
 ENV NODE_ENV=production
 
+# ── Runtime memory guard (Render starter plan = 512 MB) ──────────────────────
+# A deploy segfaulted (exit 139 = SIGSEGV) ~2s after "Server ready", in the
+# burst where schema-check, compounding, settlement and event-outbox replay all
+# fire their first Prisma queries at once. The same boot succeeded on retry, so
+# this was memory pressure, not a deterministic bug: when the container fills
+# up, the native query engine dies inside its own allocation path — a segfault,
+# not V8's clean "heap out of memory" abort. Keep the JS heap capped well below
+# the container limit (engine + static SPA serving need the headroom) and stop
+# glibc's per-core malloc arenas from inflating resident memory.
+ENV NODE_OPTIONS=--max-old-space-size=320
+ENV MALLOC_ARENA_MAX=2
+
 CMD ["node", "dist/src/index.js"]

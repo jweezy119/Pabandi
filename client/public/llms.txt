@@ -133,7 +133,7 @@ POST /api/v1/x402/pay                     # Both rails, mirrored below
 ```
 
 1. **Session spend (frictionless)**: include `sessionId` from `POST /api/v1/engine/session/open` in the body. The amount is debited against the session's trust-derived spend limit — no wallet signature per call. The response reports `settled: false` until on-chain settlement lands; it says so honestly rather than pretending.
-2. **Classic x402 (per-call)**: omit `sessionId`, get back HTTP 402 with the payment requirements (facilitator `https://x402.org/facilitator`), send the proof in `X-PAYMENT` (base64 signed payment payload), replay the request.
+2. **Classic x402 (per-call)**: omit `sessionId`, get back HTTP 402 with the payment requirements (facilitator `https://x402.org/facilitator`), send the proof in `X-PAYMENT` (base64 signed payment payload), replay the request. Spec x402 v2 clients: the same 402 also carries a base64 `PAYMENT-REQUIRED` header (`x402Version: 2`, `accepts` = exact scheme on `solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp` with the USDC mint and atomic amount); answer it with a base64 `PAYMENT-SIGNATURE` header containing a `PaymentPayload` whose `payload.transaction` is the partially-signed Solana transaction.
 3. **MCP tools**: `pabandi_issue_passport` ($1.00), `pabandi_start_escrow` ($0.50), `pabandi_book_stay` ($0.25), USDC on solana. A call without a proof gets the JSON-RPC 402 with the exact price and proof format.
 
 Discovery: every 402 the API returns — HTTP or JSON-RPC — carries an `extensions.bazaar` declaration (built with `@x402/extensions`): the full request schema plus a worked input/output example, so an agent can render any paid endpoint without reading these docs. The same metadata indexes the endpoint in the x402 Bazaar.
