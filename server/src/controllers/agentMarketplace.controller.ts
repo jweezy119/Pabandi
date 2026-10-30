@@ -74,6 +74,35 @@ export const matchAndPost = async (req: Request, res: Response, next: NextFuncti
   } catch (err) { next(err); }
 };
 
+/**
+ * Projects the signed-in caller has posted, with escrow and bid counts.
+ *
+ * Backs the "Your projects" panel. Two posterId sources are covered for the
+ * same reason completeProject's controller accepts two actor ids: legacy
+ * `/projects` posts stored the raw token id, the unified flow stores the
+ * bridged `client-<userId>` profile id.
+ */
+export const getMyProjects = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { user } = req as AuthRequest;
+    if (!user?.id) return res.status(401).json({ success: false, error: 'Authentication required' });
+    const client = await prisma.agentProfile.findUnique({
+      where: { slug: `client-${user.id}` },
+      select: { id: true },
+    });
+    const projects = await prisma.agentProject.findMany({
+      where: { OR: [{ posterId: client?.id ?? '' }, { posterId: user.id }] },
+      include: {
+        escrow: true,
+        _count: { select: { bids: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+    return res.json({ success: true, data: projects });
+  } catch (err) { next(err); }
+};
+
 export const hireProvider = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Poster identity comes from the token, same rule as everywhere else in
@@ -112,12 +141,23 @@ export const acceptBid = async (req: Request, res: Response, next: NextFunction)
 
 export const completeProject = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // solverId is no longer accepted from the body. The winning bid is on the
-    // project; the caller supplies only who they are.
-    const result = await agentMarketplace.completeProject(
-      req.params.projectId,
-      (req as any).user?.id,
-    );
+    // The actor id is what the ownership check runs against, so it comes from the
+    // token — never the body.
+    const { user } = req as AuthRequest;
+    if (!user?.id) return res.status(401).json({ success: false, error: 'Authentication required' });
+    //
+    // Poster bridge. There are two ways a project got its posterId:
+    //   - the legacy `/projects` flow stores the raw token user id,
+    //   - `/match-and-post` bridges the user to a `client-<userId>` AgentProfile
+    //     (AgentProject.poster is an AgentProfile FK; see ensurePosterProfile).
+    // The service compares against that stored posterId, so resolve the bridge
+    // first and fall back to the token id for the legacy flow. A user whose id
+    // matches nothing still fails the check inside completeProject.
+    const client = await prisma.agentProfile.findUnique({
+      where: { slug: `client-${user.id}` },
+      select: { id: true },
+    });
+    const result = await agentMarketplace.completeProject(req.params.projectId, client?.id ?? user.id);
     res.json({ success: true, data: result });
   } catch (err) { next(err); }
 };
