@@ -128,6 +128,7 @@ const OffRampPage = lazy(() => import('./pages/OffRampPage'));
 const TokenFlowPage = lazy(() => import('./pages/TokenFlowPage'));
 const EscrowDetailPage = lazy(() => import('./pages/EscrowDetailPage'));
 const MarketplacePage = lazy(() => import('./pages/MarketplacePage'));
+const PostProjectPage = lazy(() => import('./pages/marketplace/PostProjectPage'));
 const BrowseHotelsPage = lazy(() => import('./pages/BrowseHotelsPage'));
 const BuilderDashboard = lazy(() => import('./pages/realestate/BuilderDashboard'));
 const BuilderProjectPage = lazy(() => import('./pages/realestate/BuilderProjectPage'));
@@ -519,6 +520,8 @@ function AnimatedAppRoutes() {
             <Route path="mudarabah" element={<PlaceholderPage />} />
             <Route path="profit" element={<PlaceholderPage />} />
             <Route path="marketplace/live-selling" element={<PlaceholderPage />} />
+            {/* Post a project + instant Trust-Score matching */}
+            <Route path="marketplace/post" element={<PostProjectPage />} />
             <Route path="marketplace/freelancers" element={<PlaceholderPage />} />
             <Route path="marketplace/gigs" element={<PlaceholderPage />} />
             <Route path="marketplace/hospitality" element={<PlaceholderPage />} />
