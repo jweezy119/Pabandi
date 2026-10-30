@@ -5940,6 +5940,10 @@ model Escrow {
   releasedAt   DateTime?
   releasedBy   String?
   refundReason String?
+  businessId   String?
+  userId       String?
+  platformFeeAmount Float?
+  platformFeeStatus String?   @default("NONE")
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   fiatPayment  FiatPayment?
@@ -5947,6 +5951,8 @@ model Escrow {
   @@index([status])
   @@index([payerId])
   @@index([payeeId])
+  @@index([businessId])
+  @@index([userId])
 }
 
 model UniversalEscrow {
