@@ -16,6 +16,7 @@ import { Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 const DeveloperPortalPage = lazy(() => import('./pages/DeveloperPortalPage'));
 const AgentPaymentsPage = lazy(() => import('./pages/AgentPaymentsPage'));
 const AgentsLandingPage = lazy(() => import('./pages/AgentsLandingPage'));
+const AgentsRegisterPage = lazy(() => import('./pages/AgentsRegisterPage'));
 const BusinessPage = lazy(() => import('./pages/BusinessPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const LedgerInvoiceNewPage = lazy(() => import('./pages/ledger/LedgerInvoiceNewPage'));
@@ -534,6 +535,7 @@ function AnimatedAppRoutes() {
             <Route path="developers" element={<DeveloperPortalPage />} />
             <Route path="agent-payments" element={<AgentPaymentsPage />} />
             <Route path="agents" element={<AgentsLandingPage />} />
+            <Route path="agents/register" element={<AgentsRegisterPage />} />
             <Route path="agents/payments" element={<AgentPaymentsPage />} />
             <Route path="developer" element={<Navigate to="/developers" replace />} />
 
