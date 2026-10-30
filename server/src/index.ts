@@ -1112,3 +1112,15 @@ export default app;
 // global motion rebuild trigger 1788040077
 
 // economy demo fix + dao models rebuild trigger 1788041833
+
+// W3C DID Document at /.well-known/did.json
+app.get('/.well-known/did.json', (_req, res) => {
+  res.setHeader('Content-Type', 'application/did+json');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  try {
+    const { didService } = require('./services/vc/did.service');
+    res.json(didService.getDidDocument());
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
