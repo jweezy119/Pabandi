@@ -155,7 +155,7 @@ async function requireX402(toolName: string, req?: Request): Promise<void> {
 const ENGINE_TOOLS = [
   {
     name: 'pabandi_verify_passport',
-    description: 'Verify a Pabandi PTP attestation (agent, business, individual, or trust rail). Input a base64-encoded attestation and optionally require a capability (e.g. "act:book"). Returns valid, granted capabilities, risk band, expiry. Offline-verifiable: re-executes HMAC-SHA512 over a fixed field subset.',
+    description: 'Verify a Pabandi PTP attestation (agent/business/individual/trust rail). Input base64-encoded attestation token and optional need (e.g. "act:book"). Returns valid, grantedCapabilities, riskBand, expiresAt. Works offline. Example: {"token": "...base64...", "need": "act:book"}',
     inputSchema: {
       type: 'object',
       properties: {
@@ -167,17 +167,17 @@ const ENGINE_TOOLS = [
   },
   {
     name: 'pabandi_discover',
-    description: 'Return the Pabandi Trust Protocol discovery document: public verify endpoint URL, protocol public key, issue endpoint, supported risk bands/entity types.',
+    description: 'Get PTP discovery (public). Returns verify endpoint, public key, issue endpoint, risk bands, entity types. No auth required.',
     inputSchema: { type: 'object', properties: {} },
   },
   {
     name: 'pabandi_get_ledger',
-    description: 'Public audit lookup of a passport issuance charge by idempotency key. Returns fee ($PAB), owner, agent, risk band, capabilities.',
+    description: 'Look up a passport issuance charge by idempotencyKey (public audit). Returns feePab, ownerUserId, agentId, riskBand, capabilities, chargedAt. Example: {"idempotencyKey": "iss-3001"}',
     inputSchema: { type: 'object', properties: { idempotencyKey: { type: 'string' } }, required: ['idempotencyKey'] },
   },
   {
     name: 'pabandi_issue_passport',
-    description: 'Issue a scoped Agent Capability Passport. Capabilities are validated against owner trust band. Metered at PAB_FEE_PER_PASSPORT $PAB per issue (idempotent). Authentication required.',
+    description: 'Issue a scoped Agent Capability Passport (auth required via Bearer token from the owner). Capabilities validated against trust band. Metered at PAB_FEE_PER_PASSPORT $PAB per issue; idempotent via idempotencyKey. Example: {"agentId": "svc-agent-7", "capabilities": ["act:book", "read"], "idempotencyKey": "iss-3001"}. Get API key at POST /api/v1/agents/register.',
     inputSchema: {
       type: 'object',
       properties: {
