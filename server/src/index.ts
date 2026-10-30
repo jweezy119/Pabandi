@@ -690,6 +690,7 @@ startAlertSweep();
 import cron from 'node-cron';
 import { scanOverdueInvoices } from './services/invoice.service';
 import { scanFailureOwnership } from './services/failure-ownership.service';
+import { runScoutCycle } from './workers/scout.worker';
 // Daily scan for overdue invoices at 9am local
 cron.schedule('0 9 * * *', async () => {
   try {
@@ -711,6 +712,23 @@ cron.schedule('0 10 * * *', async () => {
     }
   } catch (error) {
     console.error('[FailureOwnership] Error scanning invoices:', error);
+  }
+});
+
+// Daily autonomous scout: discover AI agents on GitHub/Product Hunt, research,
+// and email them a $50 Pabandi referral link. Runs at 8 AM UTC, max 10 emails/day.
+// Set SCOUT_DRY_RUN=false in Render to actually send emails.
+cron.schedule('0 8 * * *', async () => {
+  try {
+    const result = await runScoutCycle();
+    console.log(
+      `[ScoutCron] Cycle complete: discovered=${result.discovered} researched=${result.researched} emailed=${result.emailed} skipped=${result.skipped} errors=${result.errors.length}`
+    );
+  } catch (error) {
+    console.error(
+      '[ScoutCron] Scout cycle failed:',
+      error instanceof Error ? error.message : String(error)
+    );
   }
 });
 logger.info('✅ Job cron service auto-started (checks every minute)');
