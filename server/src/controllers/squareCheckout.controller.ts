@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import type { Prisma } from '@prisma/client';
 import { squareService } from '../services/squareCheckout.service';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
@@ -109,10 +110,58 @@ export const handleSquareWebhook = async (req: Request, res: Response, next: Nex
 
     // Update payment status in DB based on webhook
     if (result.type === 'PAYMENT_UPDATED' && result.status === 'COMPLETED') {
-      // A booking deposit is paid by its own per-booking Square link, whose
-      // note carries the booking id. Reconciling on amount alone would tie a
-      // deposit to some other booking that happened to cost the same, so this
-      // is matched exactly, the same way invoices are.
+      // Agent marketplace escrow funding. Escrows fund only through this
+      // branch: the payment's note carries the escrow id we wrote at checkout,
+      // the amount must equal the escrow total (a typed amount, but defense in
+      // depth against any future dynamic-link reuse), and the escrow must
+      // still be AWAITING_PAYMENT — the webhook is the trust boundary, so
+      // nothing the browser said earlier can have pre-funded it.
+      if (result.escrowId) {
+        try {
+          const escrow = await prisma.agentEscrow.findUnique({
+            where: { id: result.escrowId },
+            select: { id: true, projectId: true, status: true, totalAmount: true, project: { select: { metadata: true } } },
+          });
+          if (!escrow || escrow.status !== 'AWAITING_PAYMENT') {
+            logger.info(`[SquareWebhook] escrow ${result.escrowId} not awaiting funding (${escrow?.status ?? 'missing'}); acking.`);
+            return res.json({ received: true, funded: false, reason: 'not awaiting payment' });
+          }
+          const expectedCents = Math.round(escrow.totalAmount * 100);
+          if (result.amountCents != null && result.amountCents !== expectedCents) {
+            logger.warn(
+              `[SquareWebhook] Escrow ${escrow.id} collected $${(result.amountCents / 100).toFixed(2)} but $${(expectedCents / 100).toFixed(2)} was due. Leaving unfunded.`,
+            );
+            return res.json({ received: true, funded: false, reason: 'amount mismatch' });
+          }
+          await prisma.$transaction([
+            prisma.agentEscrow.update({
+              where: { id: escrow.id },
+              data: { status: 'FUNDED', fundedAt: new Date() },
+            }),
+            // Payment provenance lands on the project's metadata — AgentEscrow
+            // has no metadata column, and this row is what a reconciliation or
+            // refund query reads later. Spread first: hiredPassport and any
+            // other keys already on the project survive the webhook.
+            prisma.agentProject.update({
+              where: { id: escrow.projectId },
+              data: {
+                metadata: {
+                  ...((escrow.project.metadata as Record<string, unknown>) || {}),
+                  squarePaymentId: result.paymentId,
+                  escrowPaidAt: new Date().toISOString(),
+                  amountPaidUsd: escrow.totalAmount,
+                } as unknown as Prisma.InputJsonValue,
+              },
+            }),
+          ]);
+          logger.info(`[SquareWebhook] Agent escrow ${escrow.id} funded via Square.`);
+          return res.json({ received: true, funded: true });
+        } catch (escrowErr) {
+          logger.error(`[SquareWebhook] escrow funding update failed for ${result.escrowId}: ${escrowErr}`);
+          return res.json({ received: true, funded: false });
+        }
+      }
+
       if (result.bookingId) {
         try {
           const booking = await prisma.booking.findUnique({

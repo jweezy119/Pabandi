@@ -348,3 +348,24 @@ export function parseBookingNote(note: string | null | undefined): { bookingId: 
   if (!bookingId) return null;
   return { bookingId };
 }
+
+/**
+ * Agent marketplace escrow funding, on the same note scheme. The escrow is
+ * created at AWAITING_PAYMENT with its note carrying this prefix; only the
+ * Square webhook — parsing the note back out of the payment — flips it to
+ * FUNDED. Square signs its webhooks and can be matched exactly, so this is
+ * the trust boundary for escrow funding, not anything the browser says.
+ */
+export const AGENT_ESCROW_NOTE_PREFIX = 'pabandi:agentescrow:';
+
+export function agentEscrowNote(escrowId: string): string {
+  return `${AGENT_ESCROW_NOTE_PREFIX}${escrowId}`;
+}
+
+/** Pull the escrow id back out of a payment note. Null if it is not ours. */
+export function parseAgentEscrowNote(note: string | null | undefined): { escrowId: string } | null {
+  if (!note || !note.startsWith(AGENT_ESCROW_NOTE_PREFIX)) return null;
+  const escrowId = note.slice(AGENT_ESCROW_NOTE_PREFIX.length);
+  if (!escrowId) return null;
+  return { escrowId };
+}

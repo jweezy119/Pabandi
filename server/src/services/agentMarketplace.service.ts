@@ -5,7 +5,8 @@ import { TEMPLATE_BY_KEY } from '../config/agentTemplates';
 import type { Prisma } from '@prisma/client';
 import { trustCore } from '../trust/trust-core';
 import { findMatchedProviders, type MatchedProvider } from './agentMatching.service';
-import { stripeService } from './stripe.service';
+import { squareService } from './squareCheckout.service';
+import { agentEscrowNote } from './square-connection.service';
 
 const PLATFORM_FEE_USD = AGENT_MARKETPLACE_FEE; // 2% total, from config/fees
 const PAB_REWARD_RATE = 0.05;  // 5% PAB reward on both sides
@@ -14,11 +15,11 @@ const SOL_FEE_RATE = 0.001;    // 0.1% SOL fee (simulated)
 /**
  * Real-money mode. While a rail key is absent, escrow rows are the ledger for
  * a simulated flow (status FUNDED at accept time); the platform fee earned is
- * accounting, not cash. When STRIPE_SECRET_KEY exists, acceptBid defers the
- * FUNDED state until the card payment actually lands via the checkout webhook —
- * the fee becomes real revenue instead of a number nobody collected.
+ * accounting, not cash. When SQUARE_ACCESS_TOKEN exists, acceptBid defers the
+ * FUNDED state until the poster's card payment actually lands via the Square
+ * webhook — the fee becomes real revenue instead of a number nobody collected.
  */
-const realMoneyEnabled = () => Boolean((process.env.STRIPE_SECRET_KEY || '').trim());
+const realMoneyEnabled = () => Boolean((process.env.SQUARE_ACCESS_TOKEN || '').trim());
 
 /** Checkout redirect target after funding (or abandoning) an escrow. */
 const escrowCheckoutUrls = (escrowId: string) => {
@@ -30,21 +31,23 @@ const escrowCheckoutUrls = (escrowId: string) => {
 };
 
 /**
- * A Stripe checkout URL that funds this escrow. Fresh sessions each call, so
- * an expired or abandoned link never blocks funding once a project is live.
+ * A Square hosted-checkout URL that funds this escrow. Fresh payment links
+ * each call, so an expired or abandoned one never blocks funding once a
+ * project is live. The note carries the escrow id on the house's
+ * `pabandi:agentescrow:` scheme — it is what the Square webhook matches the
+ * payment back to this escrow with, exactly, no amount-guessing.
  */
-const createEscrowCheckout = (escrow: { id: string; totalAmount: number }): Promise<string> => {
+const createEscrowCheckout = async (escrow: { id: string; totalAmount: number }): Promise<string> => {
   const { successUrl, cancelUrl } = escrowCheckoutUrls(escrow.id);
-  return stripeService.createCheckoutUrl(
-    Math.round(escrow.totalAmount * 100),
-    'usd',
-    escrow.id,
-    successUrl,
+  const checkout = await squareService.createCheckout({
+    referenceId: escrow.id,
+    amount: Math.round(escrow.totalAmount * 100),
+    currency: 'USD',
+    redirectUrl: successUrl,
     cancelUrl,
-    undefined,
-    { payment_kind: 'agent_escrow_funding', escrow_id: escrow.id },
-    'Agent marketplace escrow funding'
-  );
+    note: agentEscrowNote(escrow.id),
+  });
+  return checkout.url;
 };
 
 export class AgentMarketplace {

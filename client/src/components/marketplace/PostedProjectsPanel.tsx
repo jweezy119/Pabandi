@@ -82,7 +82,7 @@ export function PostedProjectsPanel() {
   };
 
   /**
-   * Mint a fresh Stripe session for an escrow still awaiting money (hire left
+   * Mint a fresh payment link for an escrow still awaiting money (hire left
    * it AWAITING_PAYMENT, or the poster abandoned checkout). Nothing releases —
    * the webhook, not this click, confirms the card.
    */
@@ -97,9 +97,7 @@ export function PostedProjectsPanel() {
       const json: { success: boolean; error?: string; data?: { funded: boolean; checkoutUrl: string | null } } =
         await res.json();
       if (!res.ok || !json.success) throw new Error(json.error || 'Could not start payment.');
-      // A stripe_disabled fallback URL means checkout failed server-side —
-      // redirecting would just land the poster on a broken reservations page.
-      if (json.data?.checkoutUrl && !json.data.checkoutUrl.includes('stripe_disabled')) {
+      if (json.data?.checkoutUrl) {
         window.location.href = json.data.checkoutUrl;
         return;
       }
