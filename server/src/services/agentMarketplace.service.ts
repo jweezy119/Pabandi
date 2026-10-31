@@ -5,10 +5,47 @@ import { TEMPLATE_BY_KEY } from '../config/agentTemplates';
 import type { Prisma } from '@prisma/client';
 import { trustCore } from '../trust/trust-core';
 import { findMatchedProviders, type MatchedProvider } from './agentMatching.service';
+import { stripeService } from './stripe.service';
 
 const PLATFORM_FEE_USD = AGENT_MARKETPLACE_FEE; // 2% total, from config/fees
 const PAB_REWARD_RATE = 0.05;  // 5% PAB reward on both sides
 const SOL_FEE_RATE = 0.001;    // 0.1% SOL fee (simulated)
+
+/**
+ * Real-money mode. While a rail key is absent, escrow rows are the ledger for
+ * a simulated flow (status FUNDED at accept time); the platform fee earned is
+ * accounting, not cash. When STRIPE_SECRET_KEY exists, acceptBid defers the
+ * FUNDED state until the card payment actually lands via the checkout webhook —
+ * the fee becomes real revenue instead of a number nobody collected.
+ */
+const realMoneyEnabled = () => Boolean((process.env.STRIPE_SECRET_KEY || '').trim());
+
+/** Checkout redirect target after funding (or abandoning) an escrow. */
+const escrowCheckoutUrls = (escrowId: string) => {
+  const frontend = process.env.FRONTEND_URL || 'http://localhost:3000';
+  return {
+    successUrl: `${frontend}/agent-marketplace?escrow_funded=${escrowId}`,
+    cancelUrl: `${frontend}/agent-marketplace?escrow_cancelled=${escrowId}`,
+  };
+};
+
+/**
+ * A Stripe checkout URL that funds this escrow. Fresh sessions each call, so
+ * an expired or abandoned link never blocks funding once a project is live.
+ */
+const createEscrowCheckout = (escrow: { id: string; totalAmount: number }): Promise<string> => {
+  const { successUrl, cancelUrl } = escrowCheckoutUrls(escrow.id);
+  return stripeService.createCheckoutUrl(
+    Math.round(escrow.totalAmount * 100),
+    'usd',
+    escrow.id,
+    successUrl,
+    cancelUrl,
+    undefined,
+    { payment_kind: 'agent_escrow_funding', escrow_id: escrow.id },
+    'Agent marketplace escrow funding'
+  );
+};
 
 export class AgentMarketplace {
 
@@ -238,7 +275,7 @@ export class AgentMarketplace {
       approach: 'Direct hire via Trust-Score match',
     });
 
-    const { escrow } = await this.acceptBid(bid.id, client.id);
+    const { escrow, checkoutUrl } = await this.acceptBid(bid.id, client.id);
 
     // Remember which passport was hired — metadata, not a listed field.
     const updated = await prisma.agentProject.update({
@@ -247,7 +284,7 @@ export class AgentMarketplace {
       select: { id: true, status: true, escrowId: true },
     });
 
-    return { project: { ...updated, hiredPassport: passportId }, escrow };
+    return { project: { ...updated, hiredPassport: passportId }, escrow, checkoutUrl };
   }
 
   /**
@@ -388,8 +425,8 @@ export class AgentMarketplace {
       return { booked: false, bidId: bid.id };
     }
 
-    const { escrow } = await this.acceptBid(bid.id, project.posterId);
-    return { booked: true, bidId: bid.id, escrow };
+    const { escrow, checkoutUrl } = await this.acceptBid(bid.id, project.posterId);
+    return { booked: true, bidId: bid.id, escrow, checkoutUrl };
   }
 
   /**
@@ -412,16 +449,25 @@ export class AgentMarketplace {
     const platformFee = bid.proposedAmount * PLATFORM_FEE_USD;
     const releaseAmount = bid.proposedAmount - platformFee;
 
-    // Create escrow
+    // Real-money mode holds the escrow at AWAITING_PAYMENT until the poster's
+    // card payment clears through checkout; the webhook flips it to FUNDED.
+    // Simulated mode (no rail key) funds immediately, as before.
+    const awaitingPayment = realMoneyEnabled();
     const escrow = await prisma.agentEscrow.create({
       data: {
         projectId: bid.projectId,
         totalAmount: bid.proposedAmount,
         releaseAmount,
         platformFee,
-        status: 'FUNDED',
+        status: awaitingPayment ? 'AWAITING_PAYMENT' : 'FUNDED',
       },
     });
+
+    // Checkout for the poster to pay the escrow. Only produced when rails are
+    // live; the caller's client redirects, and the webhook completes funding.
+    const checkoutUrl = awaitingPayment
+      ? await createEscrowCheckout(escrow)
+      : undefined;
 
     // Update bid and project
     await prisma.agentProjectBid.update({
@@ -441,7 +487,33 @@ export class AgentMarketplace {
       data: { status: 'FUNDED', selectedBidId: bidId, escrowId: escrow.id },
     });
 
-    return { escrow, bid };
+    return { escrow, bid, checkoutUrl };
+  }
+
+  /**
+   * Poster's payment link for an escrow still awaiting money. Hire/book
+   * responses carry a checkout URL, but one that was abandoned, expired, or
+   * viewed on the wrong device should never leave a project unpayable — the
+   * poster can always mint a fresh session here until the webhook has funded
+   * the escrow.
+   */
+  async getFundCheckoutUrl(projectId: string, actorUserId: string) {
+    const { id: clientProfileId } = await this.ensurePosterProfile(actorUserId, 'Client');
+    const project = await prisma.agentProject.findUnique({
+      where: { id: projectId },
+      include: { escrow: true },
+    });
+    const escrow = project?.escrow;
+    if (!project || !escrow) throw new Error('Project or escrow not found');
+    if (project.posterId !== actorUserId && project.posterId !== clientProfileId) {
+      throw new Error('Not authorised to fund this project');
+    }
+
+    if (escrow.status === 'FUNDED') return { funded: true, checkoutUrl: null };
+    if (escrow.status !== 'AWAITING_PAYMENT') {
+      throw new Error(`Escrow is ${escrow.status}; no funding session available`);
+    }
+    return { funded: false, checkoutUrl: await createEscrowCheckout(escrow) };
   }
 
   /**
@@ -464,6 +536,13 @@ export class AgentMarketplace {
       include: { escrow: true },
     });
     if (!project || !project.escrow) throw new Error('Project or escrow not found');
+
+    // A payout needs money in escrow. In real-money mode a fresh bid sits at
+    // AWAITING_PAYMENT until the poster's checkout payment clears; releasing
+    // that early would pay the provider before the poster's card was charged.
+    if (project.escrow.status !== 'FUNDED') {
+      throw new Error('Escrow is not funded yet — complete the payment first');
+    }
 
     if (project.posterId !== actorId) {
       // The caller is not the party who posted this work.

@@ -100,11 +100,20 @@ export default function PostProjectPage() {
           body: JSON.stringify({ passportId: provider.passportId }),
         },
       );
-      const json: { success: boolean; error?: string } = await res.json();
+      const json: { success: boolean; error?: string; data?: { checkoutUrl?: string } } = await res.json();
       if (!res.ok || !json.success) {
         throw new Error(json.error || 'Could not hire this agent. Try again.');
       }
       setHiredId(provider.passportId);
+      // Real-money mode: the server holds the escrow at AWAITING_PAYMENT until
+      // the poster's card payment clears, so the poster is walked to Stripe
+      // checkout immediately. Denied/absent rails return no URL — the escrow
+      // funded in the classic way.
+      const checkoutUrl = json.data?.checkoutUrl;
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
+        return;
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
     } finally {

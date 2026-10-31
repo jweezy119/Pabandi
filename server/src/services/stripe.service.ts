@@ -22,7 +22,12 @@ export const stripeService = {
     reservationId: string,
     successUrl?: string,
     cancelUrl?: string,
-    destinationAccountId?: string
+    destinationAccountId?: string,
+    /** Merged into session metadata — how specific flows (e.g. marketplace
+     * escrow funding) claim their webhook event by `payment_kind`. */
+    extraMetadata?: Record<string, string>,
+    /** Overrides the checkout line-item name (default "Reservation Deposit"). */
+    productName?: string
   ): Promise<string> {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const success = successUrl || `${frontendUrl}/reservations?stripe_success=true&ref=${reservationId}`;
@@ -44,7 +49,7 @@ export const stripeService = {
             price_data: {
               currency: currency.toLowerCase(),
               product_data: {
-                name: 'Reservation Deposit',
+                name: productName || 'Reservation Deposit',
                 description: `Deposit for reservation #${reservationId}`,
               },
               unit_amount: amountCents,
@@ -54,6 +59,7 @@ export const stripeService = {
         ],
         metadata: {
           reservation_id: reservationId,
+          ...(extraMetadata || {}),
         },
       };
 

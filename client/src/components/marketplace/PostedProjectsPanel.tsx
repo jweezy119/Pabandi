@@ -32,6 +32,7 @@ export function PostedProjectsPanel() {
   const [completingId, setCompletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [fundingId, setFundingId] = useState<string | null>(null);
 
   const token = getAuthToken();
 
@@ -80,6 +81,37 @@ export function PostedProjectsPanel() {
     }
   };
 
+  /**
+   * Mint a fresh Stripe session for an escrow still awaiting money (hire left
+   * it AWAITING_PAYMENT, or the poster abandoned checkout). Nothing releases —
+   * the webhook, not this click, confirms the card.
+   */
+  const payEscrow = async (project: PostedProjectSummary) => {
+    setFundingId(project.id);
+    setError(null);
+    try {
+      const res = await fetch(
+        apiUrl(`/api/v1/agent-marketplace/projects/${project.id}/fund-checkout`),
+        { method: 'POST', headers: { Authorization: `Bearer ${token ?? ''}` } },
+      );
+      const json: { success: boolean; error?: string; data?: { funded: boolean; checkoutUrl: string | null } } =
+        await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || 'Could not start payment.');
+      if (json.data?.checkoutUrl) {
+        window.location.href = json.data.checkoutUrl;
+        return;
+      }
+      // Funded between render and click — refresh the row.
+      setProjects((ps) =>
+        (ps ?? []).map((p) => (p.id === project.id ? { ...p, escrow: { status: 'FUNDED', releaseAmount: p.escrow?.releaseAmount ?? 0 } } : p)),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong.');
+    } finally {
+      setFundingId(null);
+    }
+  };
+
   return (
     <div className="rounded-[var(--radius-card)] bg-[var(--cream)] border border-[rgba(201,123,90,0.25)] p-5"
       style={{ boxShadow: 'var(--shadow-soft)' }}>
@@ -111,7 +143,18 @@ export function PostedProjectsPanel() {
               </div>
               <div className="flex items-center gap-3">
                 {project.escrow && <EscrowStatusBadge status={project.escrow.status} amount={project.escrow.releaseAmount} />}
-                {project.status === 'FUNDED' && (
+                {project.escrow?.status === 'AWAITING_PAYMENT' && (
+                  <button
+                    type="button"
+                    disabled={fundingId === project.id}
+                    onClick={() => payEscrow(project)}
+                    className="rounded-[var(--radius-btn)] px-4 py-2 font-label text-sm text-[var(--cream)] bg-[var(--sage)] hover:bg-[var(--clay)] transition-colors disabled:opacity-50 shrink-0"
+                    style={{ boxShadow: 'var(--shadow-btn)' }}
+                  >
+                    {fundingId === project.id ? 'Opening…' : 'Pay escrow'}
+                  </button>
+                )}
+                {project.status === 'FUNDED' && project.escrow?.status !== 'AWAITING_PAYMENT' && (
                   <button
                     type="button"
                     disabled={completingId === project.id}

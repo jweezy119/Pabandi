@@ -3,7 +3,7 @@ import {
   registerAgent, postProject, placeBid, acceptBid,
   completeProject, returnToBidding, getMarketplaceStats,
   getLeaderboard, getOpenProjects, getAgentProfile, getAllAgents, matchAndPost,
-  hireProvider, getMyProjects, getMyWork, bookProject, getTemplates, getRevenue
+  hireProvider, getMyProjects, getMyWork, bookProject, getTemplates, getRevenue, fundEscrowCheckout
 } from '../controllers/agentMarketplace.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
@@ -30,6 +30,8 @@ router.post('/match-and-post', authenticate, matchAndPost);
 // Direct hire from a Trust-Score match: funds full-budget escrow through the
 // same accept-bid path.
 router.post('/projects/:projectId/hire', authenticate, hireProvider);
+// Fresh payment session for an escrow still awaiting the poster's money.
+router.post('/projects/:projectId/fund-checkout', authenticate, fundEscrowCheckout);
 // Projects the caller posted, with escrow — backs the "Your projects" panel.
 router.get('/projects/mine', authenticate, getMyProjects);
 // Provider workspace + trust-gated instant booking.

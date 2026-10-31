@@ -47,6 +47,7 @@ const EnhancedDashboardPage = lazy(() => import('./pages/EnhancedDashboardPage')
 const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'));
 
 const PostProjectPage = lazy(() => import('./pages/marketplace/PostProjectPage'));
+const AdminRevenuePage = lazy(() => import('./pages/marketplace/AdminRevenuePage'));
 const DemoWalkthroughPage = lazy(() => import('./pages/DemoWalkthroughPage'));
 const AgentOnboardingPage = lazy(() => import('./pages/AgentOnboardingPage'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
@@ -443,7 +444,7 @@ function AnimatedAppRoutes() {
             <Route path="support/tickets/:id" element={<PlaceholderPage />} />
             <Route path="support/kb" element={<PlaceholderPage />} />
             <Route path="support/kb/:slug" element={<PlaceholderPage />} />
-            <Route path="support/admin" element={<PlaceholderPage />} />
+            <Route path="support/admin" element={<AdminRevenuePage />} />
             <Route path="economy" element={<PlaceholderPage />} />
             <Route path="revenue" element={<PlaceholderPage />} />
             <Route path="rewards" element={<PlaceholderPage />} />

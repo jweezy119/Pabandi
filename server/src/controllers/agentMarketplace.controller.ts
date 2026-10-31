@@ -223,6 +223,20 @@ export const hireProvider = async (req: Request, res: Response, next: NextFuncti
   } catch (err) { next(err); }
 };
 
+/**
+ * Fresh checkout URL for funding an escrow that is still AWAITING_PAYMENT.
+ * The hire/book path already carries a URL, but abandoned or expired sessions
+ * need this so the poster can always complete the payment.
+ */
+export const fundEscrowCheckout = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { user } = req as AuthRequest;
+    if (!user?.id) return res.status(401).json({ success: false, error: 'Authentication required' });
+    const data = await agentMarketplace.getFundCheckoutUrl(req.params.projectId, user.id);
+    return res.json({ success: true, data });
+  } catch (err) { next(err); }
+};
+
 export const placeBid = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const bid = await agentMarketplace.placeBid({
