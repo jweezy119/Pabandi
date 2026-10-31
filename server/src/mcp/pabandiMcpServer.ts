@@ -22,6 +22,7 @@ import { PAB_FEE_PER_PASSPORT } from '../config/tokenomics';
 import { optionalAuthenticate } from '../middleware/auth.middleware';
 import { pabandiToolsRegistry, pabandiPlatformDoc, toolAccessOk } from '../services/pabandiTools.service';
 import { declareDiscoveryExtension } from '@x402/extensions';
+import { didService } from '../services/vc/did.service';
 
 const SERVER_NAME = 'pabandi-trust';
 const SERVER_VERSION = '1.0.0';
@@ -525,6 +526,121 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
           attestation: att,
           token: Buffer.from(JSON.stringify(att)).toString('base64'),
           economics: { feePab: charge.feePab, alreadyCharged: charge.alreadyCharged, idempotencyKey: charge.idempotencyKey, riskBand: band, ledgerId: charge.record?.id },
+        };
+      }
+
+      case 'pabandi_source_for_task': {
+        const { title, description, skills = [], budget, limit = 3 } = args;
+        const passports = await prisma.trustPassport.findMany({
+          where: {
+            visibility: { in: ['PUBLIC', 'MODULE_ONLY'] },
+            score: { gte: 400 },
+          },
+          take: 50,
+          orderBy: { score: 'desc' },
+        });
+        const results = passports.slice(0, limit).map((p: any) => ({
+          handle: p.handle,
+          displayName: p.displayName,
+          score: p.score || 500,
+          level: p.level || 'Bronze',
+          category: p.category,
+          skills: p.skills || [],
+          headline: p.headline,
+          verifiedIdentity: p.verifiedIdentity,
+          profileUrl: `https://pabandi.com/trust/${p.handle}`,
+          verifyUrl: `https://pabandi.com/verify`,
+          matchReason: `Trust score ${p.score || 500} • ${p.deliverySampleSize || 0} deliveries`,
+        }));
+        return { success: true, task: { title, skills, budget }, results, count: results.length };
+      }
+      case 'pabandi_check_vendor_trust': {
+        const { handle, email, did } = args;
+        let passport: any = null;
+        if (handle) passport = await prisma.trustPassport.findUnique({ where: { handle } });
+        else if (email) {
+          const user = await prisma.user.findUnique({ where: { email } });
+          if (user) passport = await prisma.trustPassport.findUnique({ where: { userId: user.id } });
+        }
+        if (!passport) return { success: false, found: false, message: 'No passport found' };
+        return {
+          success: true,
+          found: true,
+          passport: {
+            handle: passport.handle,
+            displayName: passport.displayName,
+            score: passport.score || 500,
+            level: passport.level || 'Bronze',
+            verifiedIdentity: passport.verifiedIdentity,
+            deliveryScore: passport.deliveryScore,
+            paymentScore: passport.paymentScore,
+            showUpScore: passport.showUpScore,
+            category: passport.category,
+            skills: passport.skills,
+            profileUrl: `https://pabandi.com/trust/${passport.handle}`,
+            verifyUrl: `https://pabandi.com/verify`,
+            did: didService.getDid(),
+          },
+        };
+      }
+      case 'pabandi_get_trusted_vendors': {
+        const { category, skills = [], minScore = 500, tier, limit = 10 } = args;
+        const where: any = { visibility: 'PUBLIC', score: { gte: minScore } };
+        if (category) where.category = category;
+        if (tier) where.level = tier;
+        const passports = await prisma.trustPassport.findMany({ where, take: limit, orderBy: { score: 'desc' } });
+        return {
+          success: true,
+          vendors: passports.map((p: any) => ({
+            handle: p.handle,
+            displayName: p.displayName,
+            score: p.score || 500,
+            level: p.level || 'Bronze',
+            category: p.category,
+            skills: p.skills || [],
+            verifiedIdentity: p.verifiedIdentity,
+            profileUrl: `https://pabandi.com/trust/${p.handle}`,
+          })),
+          count: passports.length,
+        };
+      }
+      case 'pabandi_create_hire_from_task': {
+        const authUser = (req as any)?.user;
+        if (!authUser?.id) throw new Error('Authentication required. Pass Bearer token from POST /api/v1/agents/register or login.');
+        const { title, description, skills = [], budget, providerHandle, taskId } = args;
+        let poster = await prisma.agentProfile.findFirst({ where: { slug: `client-${authUser.id}` } });
+        if (!poster) {
+          poster = await prisma.agentProfile.create({
+            data: {
+              name: (req as any)?.user?.firstName || authUser.email || 'Client',
+              slug: `client-${authUser.id}`,
+              description: 'Client via PM integration',
+              capabilities: [],
+              walletAddress: '0x0',
+              publicKey: '0x0',
+            },
+          });
+        }
+        const project = await prisma.agentProject.create({
+          data: {
+            title,
+            description,
+            requirements: JSON.stringify({ skills, taskId, source: 'pm-integration', providerHandle }),
+            posterId: poster.id,
+            budgetUsd: Number(budget),
+            budgetPab: Number(budget) * 10,
+            deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            category: skills[0] || 'general',
+            status: 'OPEN',
+            metadata: { taskId, source: 'pm-integration', providerHandle },
+          },
+        });
+        return {
+          success: true,
+          projectId: project.id,
+          hireUrl: `https://pabandi.com/marketplace`,
+          escrowProtected: true,
+          message: 'Job created with escrow protection. Fund escrow to hire safely.',
         };
       }
     }
