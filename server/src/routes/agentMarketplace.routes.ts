@@ -3,14 +3,17 @@ import {
   registerAgent, postProject, placeBid, acceptBid,
   completeProject, returnToBidding, getMarketplaceStats,
   getLeaderboard, getOpenProjects, getAgentProfile, getAllAgents, matchAndPost,
-  hireProvider, getMyProjects, getMyWork, bookProject, getTemplates
+  hireProvider, getMyProjects, getMyWork, bookProject, getTemplates, getRevenue
 } from '../controllers/agentMarketplace.controller';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticate, authorize } from '../middleware/auth.middleware';
 
 const router = Router();
 
 // Public routes
 router.get('/stats', getMarketplaceStats);
+// Capacity for the operator: lifetime platform revenue, committed and pending
+// fees, and a 30-day fee series.
+router.get('/revenue', authenticate, authorize('ADMIN'), getRevenue);
 // Posting templates — prefill material for business/freelance posters.
 router.get('/templates', getTemplates);
 router.get('/leaderboard', getLeaderboard);

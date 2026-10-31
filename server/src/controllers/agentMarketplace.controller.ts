@@ -5,6 +5,72 @@ import { TEMPLATE_BY_KEY, PROJECT_TEMPLATES } from '../config/agentTemplates';
 import type { AuthRequest } from '../middleware/auth.middleware';
 
 // Posting templates — prefill material for business/freelance posters.
+export const getRevenue = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const [totals, outstanding, recent30, recentTx] = await Promise.all([
+      prisma.agentMarketTransaction.aggregate({
+        _sum: { platformFeeUsd: true, pabReward: true, amount: true },
+      }),
+      prisma.agentEscrow.aggregate({
+        where: { status: 'FUNDED' },
+        _sum: { totalAmount: true, platformFee: true },
+        _count: true,
+      }),
+      prisma.agentMarketTransaction.findMany({
+        where: {
+          type: 'PROJECT_PAYMENT',
+          createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+        },
+        select: { platformFeeUsd: true, amount: true, createdAt: true },
+      }),
+      prisma.agentMarketTransaction.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        select: { id: true, projectId: true, amount: true, platformFeeUsd: true, type: true, status: true, createdAt: true },
+      }),
+    ]);
+
+    // Fees already take the 2% marketplace cut at escrow release; this is the
+    // accounting view of what that cut has produced — the number that decides
+    // when the platform can fund things like donations.
+    const dailyFees = new Map<string, { fees: number; volume: number }>();
+    for (const tx of recent30) {
+      const day = tx.createdAt.toISOString().slice(0, 10);
+      const entry = dailyFees.get(day) ?? { fees: 0, volume: 0 };
+      entry.fees += tx.platformFeeUsd;
+      entry.volume += tx.amount;
+      dailyFees.set(day, entry);
+    }
+
+    const [completedProjects, escrowReleaseCount] = await Promise.all([
+      prisma.agentProject.count({ where: { status: 'COMPLETED' } }),
+      prisma.agentEscrow.count({ where: { status: 'RELEASED' } }),
+    ]);
+
+    return res.json({
+      success: true,
+      data: {
+        lifetime: {
+          volumeUsd: totals._sum.amount ?? 0,
+          platformFeesUsd: totals._sum.platformFeeUsd ?? 0,
+          pabRewards: totals._sum.pabReward ?? 0,
+          completedProjects,
+          escrowReleases: escrowReleaseCount,
+        },
+        escrow: {
+          outstandingCount: outstanding._count ?? 0,
+          outstandingUsd: outstanding._sum.totalAmount ?? 0,
+          committedFeesUsd: outstanding._sum.platformFee ?? 0,
+        },
+        series30d: [...dailyFees.entries()]
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([day, v]) => ({ day, ...v })),
+        recentTransactions: recentTx,
+      },
+    });
+  } catch (err) { next(err); }
+};
+
 export const getTemplates = (_req: Request, res: Response, next: NextFunction) => {
   try {
     res.json({ success: true, data: PROJECT_TEMPLATES });
