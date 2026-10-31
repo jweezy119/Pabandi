@@ -1124,3 +1124,18 @@ app.get('/.well-known/did.json', (_req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
+// OIDC discovery at root
+app.get('/.well-known/openid-configuration', (_req, res) => {
+  res.json({
+    issuer: 'https://pabandi.com',
+    authorization_endpoint: 'https://pabandi.com/api/v1/oauth/authorize',
+    token_endpoint: 'https://pabandi.onrender.com/api/v1/oauth/token',
+    userinfo_endpoint: 'https://pabandi.onrender.com/api/v1/oauth/userinfo',
+    jwks_uri: 'https://pabandi.com/.well-known/jwks.json',
+    response_types_supported: ['code'],
+    subject_types_supported: ['public'],
+    id_token_signing_alg_values_supported: ['HS256'],
+    scopes_supported: ['openid', 'profile', 'email', 'trust:passport'],
+  });
+});
