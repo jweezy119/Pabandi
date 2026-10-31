@@ -31,6 +31,7 @@ export function PostedProjectsPanel() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [completingId, setCompletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
 
   const token = getAuthToken();
 
@@ -70,6 +71,8 @@ export function PostedProjectsPanel() {
           ? { ...p, status: 'COMPLETED', escrow: { status: 'RELEASED', releaseAmount: p.escrow?.releaseAmount ?? 0 } }
           : p)),
       );
+      // Money AND reputation moved in one action; say both out loud.
+      setNote('Escrow released — the provider was paid and their Trust Score recorded the delivery.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
     } finally {

@@ -20,7 +20,7 @@ vi.mock('../src/utils/database', () => ({
     agentProject: { findUnique: vi.fn(), update: vi.fn() },
     agentProjectBid: { findFirst: vi.fn(), findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
     agentEscrow: { create: vi.fn(), update: vi.fn() },
-    agentProfile: { update: vi.fn() },
+    agentProfile: { update: vi.fn(), findUnique: vi.fn() },
     agentMarketTransaction: { create: vi.fn() },
   },
 }));
@@ -66,6 +66,7 @@ describe('completing a project', () => {
     mock(prisma.agentEscrow.update).mockResolvedValue({} as never);
     mock(prisma.agentProject.update).mockResolvedValue({} as never);
     mock(prisma.agentProfile.update).mockResolvedValue({} as never);
+    mock(prisma.agentProfile.findUnique).mockResolvedValue({ id: 'solver_b' } as never);
     mock(prisma.agentMarketTransaction.create).mockResolvedValue({} as never);
 
     await agentMarketplace.completeProject('proj_1', 'poster_a');
