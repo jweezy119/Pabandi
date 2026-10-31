@@ -511,7 +511,7 @@ export default function BookingPage() {
                   <div className="flex items-start gap-3 p-3 rounded-xl bg-[var(--sage)]/5 border border-[var(--sage)]/10">
                     <span className="text-[var(--sage)] mt-0.5">🛡️</span>
                     <div>
-                      <p className="text-xs font-medium text-[var(--warm-ink)]">Pabandi Escrow Protection</p>
+                      <p className="text-xs font-medium text-[var(--warm-ink)]">Pabandi Secure Deposit Protection</p>
                       <p className="text-[10px] text-[var(--soft-stone)] leading-relaxed">Deposit held safely until check-in. Earn $PAB rewards for reliability.</p>
                     </div>
                   </div>

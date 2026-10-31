@@ -75,7 +75,7 @@ export default function HomePage() {
             </div>
             <div className="p-6 rounded-2xl bg-[var(--cream)] border border-[var(--soft-stone)]/30">
               <div className="w-12 h-12 rounded-xl bg-[var(--sky-wash)]/20 flex items-center justify-center text-2xl mb-4">🔒</div>
-              <h3 className="text-xl font-bold mb-2">Escrow Protection</h3>
+              <h3 className="text-xl font-bold mb-2">Secure Deposit Protection</h3>
               <p className="text-[var(--soft-stone)]">Funds locked until both parties fulfill. No more scams, no more ghosting, no more fraud.</p>
             </div>
             <div className="p-6 rounded-2xl bg-[var(--cream)] border border-[var(--soft-stone)]/30">

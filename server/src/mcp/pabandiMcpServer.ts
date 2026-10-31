@@ -530,16 +530,33 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
       }
 
       case 'pabandi_source_for_task': {
-        const { title, description, skills = [], budget, limit = 3 } = args;
+        const { title, description = '', skills = [], budget, limit = 3 } = args;
+        // Contextual sourcing: analyze task and match by skills + trust
+        const allSkills = [...skills];
+        const lowerDesc = description.toLowerCase();
+        if (lowerDesc.includes('react')) allSkills.push('React');
+        if (lowerDesc.includes('node')) allSkills.push('Node.js');
+        if (lowerDesc.includes('design')) allSkills.push('Design');
+        if (lowerDesc.includes('bug')) allSkills.push('Debugging');
+        
         const passports = await prisma.trustPassport.findMany({
           where: {
             visibility: { in: ['PUBLIC', 'MODULE_ONLY'] },
-            score: { gte: 400 },
+            score: { gte: 450 },
           },
-          take: 50,
-          orderBy: { score: 'desc' },
+          take: 100,
+          orderBy: [{ score: 'desc' }, { deliverySampleSize: 'desc' }],
         });
-        const results = passports.slice(0, limit).map((p: any) => ({
+        
+        // Score and rank by relevance
+        const scored = passports.map((p: any) => {
+          const pSkills = Array.isArray(p.skills) ? p.skills : [];
+          const skillMatch = allSkills.filter(s => pSkills.some((ps: string) => ps.toLowerCase().includes(s.toLowerCase()))).length;
+          const relevanceScore = (p.score || 500) + skillMatch * 50;
+          return { p, skillMatch, relevanceScore };
+        }).sort((a, b) => b.relevanceScore - a.relevanceScore);
+        
+        const results = scored.slice(0, limit).map(({ p, skillMatch }: any) => ({
           handle: p.handle,
           displayName: p.displayName,
           score: p.score || 500,
@@ -548,11 +565,15 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
           skills: p.skills || [],
           headline: p.headline,
           verifiedIdentity: p.verifiedIdentity,
+          skillMatch,
           profileUrl: `https://pabandi.com/trust/${p.handle}`,
           verifyUrl: `https://pabandi.com/verify`,
-          matchReason: `Trust score ${p.score || 500} • ${p.deliverySampleSize || 0} deliveries`,
+          vcVerifyUrl: `https://pabandi.com/verify`,
+          matchReason: `${skillMatch > 0 ? skillMatch + ' skill match' : 'High trust'} • Score ${p.score || 500} • ${p.deliverySampleSize || 0} deliveries • ZK-verified`,
+          secureDeposit: true,
+          escrowAvailable: true,
         }));
-        return { success: true, task: { title, skills, budget }, results, count: results.length };
+        return { success: true, task: { title, skills: allSkills, budget }, results, count: results.length, recommendation: 'Use Secure Deposit (escrow) for protection' };
       }
       case 'pabandi_check_vendor_trust': {
         const { handle, email, did } = args;

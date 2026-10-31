@@ -693,7 +693,7 @@ export default function NewReservationPage() {
 
               <div className="rounded-xl p-6 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)]">
                 <h3 className="font-headline text-lg font-bold text-primary mb-4 flex items-center gap-2">
-                  <LockClosedIcon className="h-5 w-5" /> Escrow Protection
+                  <LockClosedIcon className="h-5 w-5" /> Secure Deposit Protection
                 </h3>
                 <div className="text-sm text-[var(--soft-stone)] space-y-3">
                   <p>
