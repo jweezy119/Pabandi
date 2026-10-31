@@ -60,11 +60,12 @@ const PropertyTenantDetailPage = lazy(() => import('./pages/property/PropertyTen
 const PropertyLeasesPage = lazy(() => import('./pages/property/PropertyLeasesPage'));
 const PropertyMaintenancePage = lazy(() => import('./pages/property/PropertyMaintenancePage'));
 const PropertyFinancialsPage = lazy(() => import('./pages/property/PropertyFinancialsPage'));
-const FreightOSPage = lazy(() => import('./pages/freight/FreightOSPage'));
-const FreightPostLoadPage = lazy(() => import('./pages/freight/FreightPostLoadPage'));
-const FreightMyLoadsPage = lazy(() => import('./pages/freight/FreightMyLoadsPage'));
-const FreightCarriersPage = lazy(() => import('./pages/freight/FreightCarriersPage'));
-const FreightRateCalculatorPage = lazy(() => import('./pages/freight/FreightRateCalculatorPage'));
+// FreightOS pages — DISABLED to focus on A2A and ContactOS/BookingOS
+// const FreightOSPage = lazy(() => import('./pages/freight/FreightOSPage'));
+// const FreightPostLoadPage = lazy(() => import('./pages/freight/FreightPostLoadPage'));
+// const FreightMyLoadsPage = lazy(() => import('./pages/freight/FreightMyLoadsPage'));
+// const FreightCarriersPage = lazy(() => import('./pages/freight/FreightCarriersPage'));
+// const FreightRateCalculatorPage = lazy(() => import('./pages/freight/FreightRateCalculatorPage'));
 const BookingOSPage = lazy(() => import('./pages/booking/BookingOSPage'));
 const BookingFlowPage = lazy(() => import('./pages/booking/BookingFlowPage'));
 const ContactOSPage = lazy(() => import('./pages/contact/ContactOSPage'));
@@ -257,12 +258,12 @@ function AnimatedAppRoutes() {
           <Route path="property/maintenance" element={<PropertyMaintenancePage />} />
           <Route path="property/financials" element={<PropertyFinancialsPage />} />
 
-          {/* FreightOS (formerly SafOS) - Freight & Logistics */}
-          <Route path="freight" element={<FreightOSPage />} />
-          <Route path="freight/post-load" element={<FreightPostLoadPage />} />
-          <Route path="freight/my-loads" element={<FreightMyLoadsPage />} />
-          <Route path="freight/carriers" element={<FreightCarriersPage />} />
-          <Route path="freight/rates" element={<FreightRateCalculatorPage />} />
+          {/* FreightOS (formerly SafOS) - Freight & Logistics — DISABLED to focus on A2A and ContactOS/BookingOS */}
+          {/* <Route path="freight" element={<FreightOSPage />} /> */}
+          {/* <Route path="freight/post-load" element={<FreightPostLoadPage />} /> */}
+          {/* <Route path="freight/my-loads" element={<FreightMyLoadsPage />} /> */}
+          {/* <Route path="freight/carriers" element={<FreightCarriersPage />} /> */}
+          {/* <Route path="freight/rates" element={<FreightRateCalculatorPage />} /> */}
 
           {/* BookingOS (formerly Sitara) - Booking & Discovery */}
           <Route path="booking" element={<BookingOSPage />} />
@@ -325,7 +326,7 @@ function AnimatedAppRoutes() {
         {/* Redirects from old routes */}
         <Route path="abode/*" element={<Navigate to="/property" replace />} />
           <Route path="haq/*" element={<Navigate to="/property" replace />} />
-          <Route path="saf/*" element={<Navigate to="/freight" replace />} />
+          <Route path="saf/*" element={<Navigate to="/contact" replace />} />
           <Route path="sitara/*" element={<Navigate to="/booking" replace />} />
           <Route path="pipeline/*" element={<Navigate to="/contact" replace />} />
           {/* "ContactOS" is read and written as contactos in shared links, bookmarks and

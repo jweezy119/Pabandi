@@ -14,16 +14,7 @@ const MODULES = [
     tint: '#A85A3C',
     path: '/booking',
   },
-  {
-    id: 'freight',
-    name: 'FreightOS',
-    tagline: 'Move with escrow',
-    description: 'Shippers pay into escrow. Carriers get paid on delivery.',
-    icon: 'package',
-    colorClass: 'module-icon-freight',
-    tint: '#8A9A7B',
-    path: '/freight',
-  },
+  // FreightOS removed from public view to focus on A2A
   {
     id: 'property',
     name: 'PropertyOS',
@@ -358,7 +349,6 @@ export default function LandingPage() {
             <Link to="/contact">CRM</Link>
             <Link to="/booking">Booking</Link>
             <Link to="/property">Property</Link>
-            <Link to="/freight">Freight</Link>
             <Link to="/capital">Capital</Link>
           </nav>
           {isAuthenticated ? (
@@ -420,7 +410,7 @@ export default function LandingPage() {
               <h2 id="modules-title" className="section-title">Every Module Runs on the Same Escrow</h2>
             </ScrollReveal>
             <ScrollReveal delay={100}>
-              <p className="section-subtitle">Bookings, freight, property, invoicing — the guarantee engine underneath is the product. The CRM is just where it lives.</p>
+              <p className="section-subtitle">Bookings, property, invoicing — the guarantee engine underneath is the product. The CRM is just where it lives.</p>
             </ScrollReveal>
             <div className="modules-grid">
               {MODULES.map((mod, i) => (
@@ -562,7 +552,7 @@ export default function LandingPage() {
             <span className="logo-mark">◈</span>
             <span>PabandiOS</span>
           </div>
-          <p className="footer-tagline">BookingOS · FreightOS · PropertyOS · Contact OS · CapitalOS — Powered by TrustOS</p>
+          <p className="footer-tagline">BookingOS · PropertyOS · Contact OS · CapitalOS — Powered by TrustOS</p>
           <nav className="footer-nav" aria-label="Footer">
             <Link to="/guarantee">The Guarantee</Link>
             <Link to="/developers">Developers</Link>

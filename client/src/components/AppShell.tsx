@@ -13,7 +13,6 @@ const MOBILE_MODULES = [
   { id: 'contact', label: 'Contact', path: '/contact', icon: 'contacts', color: 'var(--clay)' },
   { id: 'booking', label: 'Book', path: '/booking', icon: 'book_online', color: 'var(--sage)' },
   { id: 'property', label: 'Property', path: '/property', icon: 'real_estate_agent', color: 'var(--sky-wash)' },
-  { id: 'freight', label: 'Freight', path: '/freight', icon: 'local_shipping', color: 'var(--muted-ochre)' },
   { id: 'capital', label: 'Capital', path: '/capital', icon: 'account_balance', color: 'var(--dusty-rose)' },
 ];
 
@@ -24,7 +23,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const activeMode = (user?.preferredMode || 'business').toUpperCase();
   const isBusiness = activeMode === 'BUSINESS';
   const visibleModules = MOBILE_MODULES.filter(m => {
-    if (m.id === 'property' || m.id === 'freight' || m.id === 'capital') {
+    if (m.id === 'property' || m.id === 'capital') {
       return activeMode === 'BUSINESS';
     }
     return true;

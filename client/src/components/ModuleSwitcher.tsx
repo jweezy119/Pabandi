@@ -19,7 +19,6 @@ const ALL_MODULES: Array<{ id: string; label: string; path: string; icon: string
   { id: 'contact', label: 'ContactOS', path: '/contact', icon: 'contacts', color: 'var(--clay)', modes: ['business'] },
   { id: 'capital', label: 'CapitalOS', path: '/capital', icon: 'account_balance', color: 'var(--dusty-rose)', modes: ['business'] },
   { id: 'property', label: 'PropertyOS', path: '/property', icon: 'real_estate_agent', color: 'var(--sky-wash)', modes: ['business'] },
-  { id: 'freight', label: 'FreightOS', path: '/freight', icon: 'local_shipping', color: 'var(--muted-ochre)', modes: ['business'] },
   { id: 'booking', label: 'BookingOS', path: '/booking', icon: 'book_online', color: 'var(--sage)', modes: ['business', 'personal'] },
 ];
 

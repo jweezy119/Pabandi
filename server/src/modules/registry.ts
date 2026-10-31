@@ -52,6 +52,7 @@ export const MODULES: ModuleDefinition[] = [
     subFeatures: []
   },
   {
+    // Disabled to focus on A2A and ContactOS/BookingOS
     id: 'freight',
     name: 'FreightOS',
     description: 'Freight & logistics platform',
