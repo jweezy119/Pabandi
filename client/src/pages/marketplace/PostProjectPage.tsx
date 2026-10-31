@@ -110,7 +110,10 @@ export default function PostProjectPage() {
       // checkout immediately. Denied/absent rails return no URL — the escrow
       // funded in the classic way.
       const checkoutUrl = json.data?.checkoutUrl;
-      if (checkoutUrl) {
+      // The service returns a stripe_disabled fallback URL when checkout
+      // failed server-side; redirecting there would look like a broken page,
+      // so treat it as "no checkout" and keep the simulated-flow messaging.
+      if (checkoutUrl && !checkoutUrl.includes('stripe_disabled')) {
         window.location.href = checkoutUrl;
         return;
       }

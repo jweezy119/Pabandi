@@ -97,7 +97,9 @@ export function PostedProjectsPanel() {
       const json: { success: boolean; error?: string; data?: { funded: boolean; checkoutUrl: string | null } } =
         await res.json();
       if (!res.ok || !json.success) throw new Error(json.error || 'Could not start payment.');
-      if (json.data?.checkoutUrl) {
+      // A stripe_disabled fallback URL means checkout failed server-side —
+      // redirecting would just land the poster on a broken reservations page.
+      if (json.data?.checkoutUrl && !json.data.checkoutUrl.includes('stripe_disabled')) {
         window.location.href = json.data.checkoutUrl;
         return;
       }
