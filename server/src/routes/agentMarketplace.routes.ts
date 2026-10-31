@@ -3,7 +3,8 @@ import {
   registerAgent, postProject, placeBid, acceptBid,
   completeProject, returnToBidding, getMarketplaceStats,
   getLeaderboard, getOpenProjects, getAgentProfile, getAllAgents, matchAndPost,
-  hireProvider, getMyProjects, getMyWork, bookProject, getTemplates, getRevenue, fundEscrowCheckout
+  hireProvider, getMyProjects, getMyWork, bookProject, getTemplates, getRevenue, fundEscrowCheckout,
+  m2mPostProject, m2mListProjects, m2mSubmitBid, m2mAwardProject
 } from '../controllers/agentMarketplace.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
@@ -11,6 +12,11 @@ const router = Router();
 
 // Public routes
 router.get('/stats', getMarketplaceStats);
+// M2M routes
+router.post('/m2m/post-project', m2mPostProject);
+router.get('/m2m/projects', m2mListProjects);
+router.post('/m2m/bid', m2mSubmitBid);
+router.post('/m2m/award', m2mAwardProject);
 // Capacity for the operator: lifetime platform revenue, committed and pending
 // fees, and a 30-day fee series.
 router.get('/revenue', authenticate, authorize('ADMIN'), getRevenue);

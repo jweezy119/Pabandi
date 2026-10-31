@@ -1,24 +1,29 @@
-import { Bot, Key, Zap, ArrowRight, Terminal, FileText, Network, Code, Lock } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { Bot, Key, Zap, Network, Code, Lock } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import M2MSimulator from '../components/M2MSimulator';
 
 export default function AgentsLandingPage() {
-  const [copied, setCopied] = useState<string | null>(null);
   const { isAuthenticated } = useAuthStore();
-
-  const copy = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(key);
-    setTimeout(() => setCopied(null), 2000);
-  };
-
-  const handleGenerateKey = () => {
+  const handleGenerateKey = async () => {
     if (!isAuthenticated) {
       window.location.href = '/signup';
       return;
     }
-    alert('Agent API key generation coming soon. Your M2M API key will be generated and displayed securely.');
+    try {
+      const response = await fetch('/api/v1/agents/generate-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (data.success && data.data?.apiKey) {
+        alert(`M2M API Key generated:\n\n${data.data.apiKey}\n\nSave this key securely - it won't be shown again.`);
+      } else {
+        alert('Failed to generate API key');
+      }
+    } catch (error) {
+      alert('Error generating API key');
+    }
   };
 
   return (
@@ -54,6 +59,9 @@ export default function AgentsLandingPage() {
               MCP Server Documentation
             </a>
           </div>
+        {/* M2M Simulator */}
+        <div className="mb-16">
+          <M2MSimulator />
         </div>
 
         {/* Code Example */}
@@ -114,4 +122,7 @@ print(f"Project funded: {project_id}")`}</code>
       </div>
     </div>
   );
+
+
+
 }

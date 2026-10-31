@@ -88,6 +88,7 @@ export interface OpenSessionResult {
   ownerType: string;
   ownerId: string;
   ephemeralKey: string;
+  sessionKey?: string;
   totalLimit: number;
   spent: number;
   remaining: number;
@@ -251,9 +252,10 @@ class EngineService {
       ownerType,
       ownerId,
       ephemeralKey: session.ephemeralKey,
+      sessionKey: session.ephemeralKey,
       totalLimit: session.totalLimit,
       spent: session.spent,
-      remaining: fromCents(toCents(session.totalLimit) - toCents(session.spent)),
+      remaining: session.totalLimit - session.spent,
       currency: session.currency,
       status: session.status as SessionStatus,
       tier: tier.name,

@@ -62,7 +62,7 @@ router.post('/session/open', validateBody(engineSessionOpenSchema), async (req: 
 
     return res.status(201).json({
       success: true,
-      data: { ...session, trustScore: effectiveScore },
+      data: { ...session, sessionKey: session.ephemeralKey, trustScore: effectiveScore },
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';

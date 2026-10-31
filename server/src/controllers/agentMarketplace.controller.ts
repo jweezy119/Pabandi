@@ -4,6 +4,70 @@ import { agentMarketplace } from '../services/agentMarketplace.service';
 import { TEMPLATE_BY_KEY, PROJECT_TEMPLATES } from '../config/agentTemplates';
 import type { AuthRequest } from '../middleware/auth.middleware';
 
+// M2M endpoints
+export const m2mPostProject = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { agentId, title, description, budget, requiredSkills, deliverableHash, deadlineHours, category } = req.body;
+    const result = await agentMarketplace.m2mPostProject({
+      agentId,
+      title,
+      description,
+      budget,
+      requiredSkills: requiredSkills || [],
+      deliverableHash,
+      deadlineHours,
+      category,
+    });
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const m2mListProjects = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { agentId, skills, limit } = req.query;
+    const result = await agentMarketplace.m2mListProjects({
+      agentId: agentId as string,
+      skills: skills ? (Array.isArray(skills) ? skills as string[] : [skills as string]) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    });
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const m2mSubmitBid = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { projectId, agentId, amount, timelineHours, proposal } = req.body;
+    const result = await agentMarketplace.m2mSubmitBid({
+      projectId,
+      agentId,
+      amount,
+      timelineHours,
+      proposal,
+    });
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const m2mAwardProject = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { projectId, bidId, agentId } = req.body;
+    const result = await agentMarketplace.m2mAwardProject({
+      projectId,
+      bidId,
+      agentId,
+    });
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Posting templates — prefill material for business/freelance posters.
 export const getRevenue = async (req: Request, res: Response, next: NextFunction) => {
   try {

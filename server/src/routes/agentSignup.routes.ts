@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import { validateBody } from '../middleware/validateZod';
 import { agentRegistrationSchema } from '../schemas/agentic.schemas';
 import type { AgentRegistration } from '../schemas/agentic.schemas';
+import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -162,5 +163,46 @@ router.post('/register', writeLimiter, validateBody(agentRegistrationSchema), as
     return res.status(500).json({ success: false, error: message });
   }
 });
+
+// Generate M2M API key for authenticated user
+router.post('/generate-key', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const apiKey = `pab_m2m_${crypto.randomBytes(32).toString('hex')}`;
+    const apiKeyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
+
+    // Store in ApiClient for authenticated user
+    const client = await prisma.apiClient.create({
+      data: {
+        name: `M2M Agent Key - ${(req as any).user?.email || userId}`,
+        email: (req as any).user?.email || `agent-${userId}@pabandi.local`,
+        apiKey: apiKey,
+        tier: 'STARTER',
+        callsLimit: 10000,
+        isActive: true,
+      },
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        apiKey,
+        id: client.id,
+        name: client.name,
+        createdAt: client.createdAt,
+      },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`[AgentSignup] generate-key error: ${message}`);
+    return res.status(500).json({ success: false, error: message });
+  }
+});
+
+export default router;
 
 export default router;

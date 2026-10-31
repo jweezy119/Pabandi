@@ -350,6 +350,18 @@ export default function BusinessSettingsPage() {
                   <input type="number" min="0" max="100" className="w-full rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" value={businessData.reliabilityScore} onChange={e => setBusinessData({ ...businessData, reliabilityScore: Number(e.target.value) })} />
                   <p className="mt-1.5 text-xs text-[var(--warm-ink)]/70">Set your public reliability score (0-100) to market yourself better.</p>
                 </div>
+                <div className="md:col-span-2">
+                  <div className="flex items-center justify-between p-4 bg-[var(--warm-sand)]/20 rounded-xl border border-[rgba(191,179,163,0.3)]">
+                    <div>
+                      <div className="font-semibold text-[var(--warm-ink)]">Accept AI Agent Bookings</div>
+                      <div className="text-sm text-[var(--soft-stone)]">Allow AI agents to book services directly via MCP</div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" className="sr-only peer" checked={(businessData as any).acceptsAgentBookings || false} onChange={e => setBusinessData({ ...businessData, acceptsAgentBookings: e.target.checked } as any)} />
+                      <div className="w-11 h-6 bg-[var(--warm-sand)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--clay)]"></div>
+                    </label>
+                  </div>
+                </div>
               </div>
               <SaveButton onClick={() => {}} label="Save Profile" />
             </form>

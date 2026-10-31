@@ -128,6 +128,7 @@ function getPublicPassportData(passport: any) {
     verifiedEventCount: passport._count?.invoiceTrustEvents ?? 0,
     badges: passport.verifiedIdentity ? ['Verified Identity'] : [],
     memberSince: passport.createdAt.toISOString(),
+    acceptsAgentBookings: passport.business?.acceptsAgentBookings || false,
   };
 }
 
@@ -140,6 +141,9 @@ router.get('/passport/:id', trustApiKeyAuth, trustRateLimit, async (req: Request
       include: {
         _count: {
           select: { invoiceTrustEvents: true },
+        },
+        business: {
+          select: { acceptsAgentBookings: true },
         },
       },
     });

@@ -276,16 +276,6 @@ function TrustedBySection() {
 export default function LandingPage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
-  const [scrollY, setScrollY] = useState(0);
-  const [pageTint, setPageTint] = useState<string | null>(null);
-  const [expandedCard, setExpandedCard] = useState<string | null>(null);
-  const landingRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const handleCardHover = useCallback((tint: string) => {
     setPageTint(tint);
