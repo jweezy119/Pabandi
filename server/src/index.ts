@@ -260,6 +260,24 @@ app.get('/health', (_req, res) => {
     // PTP attestation signing. Its absence used to throw at module load and 500 six
     // route modules; it is now a per-request 503, so this is how anyone finds out.
     ptpSigningConfigured: Boolean((process.env.PTP_SIGNING_SECRET || '').trim()),
+    // Runtime AI-safety posture. Booleans the operator (and error reports)
+    // can read at a glance instead of grepping deploy logs for which
+    // money/safety features are actually live.
+    security: {
+      // Prompt-injection quarantine + secret-echo redaction (security/aiGuard)
+      // are compiled in and applied at the AI router; nothing to configure.
+      aiGuardActive: true,
+      aiProvidersConfigured: Boolean(
+        process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.DASHSCOPE_API_KEY ||
+        process.env.GEMINI_API_KEY
+      ),
+      // Payment provider readiness — these gate paid features; a false here
+      // means checkout features are degraded even if routes exist.
+      safepayConfigured: Boolean(
+        (process.env.SAFEPAY_WEBHOOK_SECRET || process.env.SAFEPAY_SECRET_KEY || '').trim()
+      ),
+      offrampConfigured: Boolean((process.env.OFFRAMP__LP_API_KEY || '').trim()),
+    },
     // Whether the database this process is attached to has the columns the
     // running code depends on.
     //

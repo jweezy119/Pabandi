@@ -1,15 +1,23 @@
+import { redactSecrets } from '../security/aiGuard';
+
 const redactPII = (data: any): any => {
+  // Strings get value-shaped redaction, not key-based: upstream API errors
+  // frequently REPEAT a credential in the message body ("Invalid key: sk-..."),
+  // and key-name matching never sees it.
+  if (typeof data === 'string') return redactSecrets(data);
   if (typeof data !== 'object' || data === null) return data;
   if (Array.isArray(data)) return data.map(redactPII);
 
   const result = { ...data };
-  const sensitiveKeys = ['password', 'passwordHash', 'token', 'apiKey', 'email', 'phone'];
+  const sensitiveKeys = ['password', 'passwordHash', 'token', 'apiKey', 'secret', 'privatekey', 'api_key', 'email', 'phone', 'authorization'];
 
   for (const key of Object.keys(result)) {
     if (sensitiveKeys.some((k) => key.toLowerCase().includes(k))) {
       result[key] = '[REDACTED]';
     } else if (typeof result[key] === 'object') {
       result[key] = redactPII(result[key]);
+    } else if (typeof result[key] === 'string') {
+      result[key] = redactSecrets(result[key]);
     }
   }
   return result;
