@@ -50,7 +50,6 @@ export function ProviderWorkspacePanel() {
   const [bookingId, setBookingId] = useState<string | null>(null);
   /** Last booking outcome — instant (escrow funded) vs application sent. */
   const [bookingNote, setBookingNote] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
   const [error, setError] = useState<string | null>(null);
 
   const token = getAuthToken();
@@ -122,10 +121,6 @@ export function ProviderWorkspacePanel() {
   }
 
   if (!work) return null;
-
-  const completedCount = work.completedCount ?? 0;
-  const totalEarned = work.totalEarned ?? 0;
-  const trustBump = completedCount * 10;
 
   const book = async (job: OpenJob) => {
     setBookingId(job.id);

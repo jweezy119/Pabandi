@@ -129,6 +129,7 @@ export function PostedProjectsPanel() {
       )}
 
       {error && <p className="mt-3 text-sm text-[var(--terracotta)]">{error}</p>}
+      {note && <p className="mt-3 text-sm text-[var(--sage)]">{note}</p>}
     </div>
   );
 }
