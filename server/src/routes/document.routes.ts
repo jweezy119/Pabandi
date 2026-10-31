@@ -1,13 +1,16 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../utils/database';
 import { authenticate } from '../middleware/auth.middleware';
+import { aiSpendGuard } from '../middleware/aiSpendGuard';
 
 const router = Router();
 
 router.use(authenticate);
 
-// POST /api/v1/property/documents — upload a document record.
-router.post('/documents', async (req: any, res: Response) => {
+// Uploads would feed documentAI's paid LLM analysis when that service is
+// invoked (it currently has no callers); the POST sits inside the daily
+// allowance so the cap cannot be walked around the day analysis goes live.
+router.post('/documents', aiSpendGuard, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });

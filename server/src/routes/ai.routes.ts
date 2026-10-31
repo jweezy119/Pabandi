@@ -3,11 +3,16 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { authenticate } from '../middleware/auth.middleware';
 import { aiRateLimiter } from '../middleware/rateLimiter';
+import { aiSpendGuard } from '../middleware/aiSpendGuard';
 
 const router = Router();
 
 // All AI endpoints require authentication + rate limiting
 router.use(authenticate);
+// Paid-model daily budget: the burst limiter below stops stampedes; this one
+// stops the slow all-day bleed that actually drains credits. See both
+// middleware docs for why neither alone is enough.
+router.use(aiSpendGuard);
 router.use(aiRateLimiter);
 
 // ── AI Investment Analyzer ──────────────────────────────────────────────────
