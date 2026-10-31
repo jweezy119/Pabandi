@@ -18,6 +18,7 @@ const AgentPaymentsPage = lazy(() => import('./pages/AgentPaymentsPage'));
 const AgentsLandingPage = lazy(() => import('./pages/AgentsLandingPage'));
 const AgentsRegisterPage = lazy(() => import('./pages/AgentsRegisterPage'));
 const VCVerifyPage = lazy(() => import('./pages/vc/VCVerifyPage'));
+const IntegrationsPage = lazy(() => import('./pages/IntegrationsPage'));
 const BusinessPage = lazy(() => import('./pages/BusinessPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const LedgerInvoiceNewPage = lazy(() => import('./pages/ledger/LedgerInvoiceNewPage'));
@@ -540,6 +541,8 @@ function AnimatedAppRoutes() {
             <Route path="agents/register" element={<AgentsRegisterPage />} />
             <Route path="verify" element={<VCVerifyPage />} />
             <Route path="vc/verify" element={<VCVerifyPage />} />
+            <Route path="integrations" element={<IntegrationsPage />} />
+            <Route path="developers/integrations" element={<IntegrationsPage />} />
             <Route path="agents/payments" element={<AgentPaymentsPage />} />
             <Route path="developer" element={<Navigate to="/developers" replace />} />
 
