@@ -4,6 +4,9 @@ import { jevDecision } from './jevDecision.service';
 import { sendEmail } from './email.service';
 import { scoutWeb3 } from './scout-web3.service';
 import { scoutML, type ScoreInputs } from './scout-ml.service';
+// READMEs and external taglines are attacker-controlled text that reaches
+// generation prompts — quarantining them is the only honest handling.
+import { sanitizeUntrusted, redactSecrets } from '../security/aiGuard';
 
 export interface ScoutTarget {
   id: string;
@@ -346,7 +349,10 @@ export class ScoutAgentService {
     }
     const data = await response.json();
     const content = Buffer.from(data.content, 'base64').toString('utf-8');
-    return content.slice(0, 4000);
+    // A README is untrusted input: it can contain "ignore instructions" text
+    // aimed at whichever LLM sees it next, and secrets authors forgot. Both
+    // get handled at the boundary, before the content travels anywhere.
+    return sanitizeUntrusted(content, { maxLen: 4000, label: 'github-readme' });
   }
 
   private scoreTarget(target: ScoutTarget): { score: number; tier: 'hot' | 'warm' | 'cold'; reason: string } {
@@ -376,10 +382,13 @@ export class ScoutAgentService {
 
     const referralLink = await this.generateReferralLink(target);
 
-    const subject = `Monetizing your AI agent ${target.name}`;
+    // The pitch is model output that can carry echoed secrets; nothing leaves
+    // the process with a credential in it.
+    const safePitch = redactSecrets(pitch);
+    const subject = `Monetizing your AI agent ${redactSecrets(target.name)}`;
     const html = `
       <p>Hey ${target.name.split(' ')[0] || 'there'},</p>
-      <p>${pitch}</p>
+      <p>${safePitch}</p>
       <p>We built Pabandi, the settlement layer for A2A data brokerage. We eliminate fake reputation and verify data delivery through provenance-anchored reputation (PAR) and VCAP verification.</p>
       <p>Here is a <strong>$50 SPAB referral link</strong>. If you complete one verified escrow, the $50 is yours:</p>
       <p><a href="${referralLink}">${referralLink}</a></p>

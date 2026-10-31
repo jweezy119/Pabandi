@@ -1,6 +1,7 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { aiRouter } from './ai/aiRouter.service';
+import { sanitizeUntrusted } from '../security/aiGuard';
 
 export type DocumentAnalysisResult = {
   summary: string;
@@ -24,7 +25,7 @@ export class DocumentAIService {
 4. Suggestions or improvements
 
 Document content:
-${textContent.slice(0, 8000)} // Limit to avoid token overflow
+${sanitizeUntrusted(textContent, { maxLen: 8000, label: 'uploaded-document' })}
 
 Respond in JSON format:
 {

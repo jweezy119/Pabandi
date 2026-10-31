@@ -3,6 +3,10 @@ import { IAIProvider, AICompletionOptions, AICompletionResult, AIEmbeddingResult
 import { OpenAIProvider } from './openai.provider';
 import { AnthropicProvider } from './anthropic.provider';
 import { DashscopeService } from '../ai/dashscope.service';
+// Output redaction happens ONCE here rather than in every caller. LLM
+// completions sometimes echo credentials that reach them through context, and
+// the router is the single place model text enters the rest of the system.
+import { guardOutput } from '../../security/aiGuard';
 
 export type AIProviderName = 'openai' | 'anthropic' | 'dashscope';
 
@@ -44,7 +48,7 @@ export class AIRouter {
       try {
         const result = await provider.complete(messages, options);
         logger.info(`[AI] Completed with provider=${provider.name} model=${result.model}`);
-        return { ...result, provider: provider.name };
+        return { ...result, text: guardOutput(result.text), provider: provider.name };
       } catch (error: any) {
         const errorMsg = `Provider ${provider.name} failed: ${error.message}`;
         errors.push(errorMsg);
