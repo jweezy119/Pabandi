@@ -23,7 +23,11 @@ export function ModeToggle() {
       
       await startTransition(async () => {
         await toggleMode(newMode);
-        navigate(newMode === 'business' ? '/contact' : '/me');
+        if (newMode === 'business') {
+          navigate('/contact');
+        } else {
+          navigate('/me');
+        }
       });
       
     } catch (err) {
@@ -39,7 +43,7 @@ export function ModeToggle() {
     <motion.button
       onClick={handleToggle}
       disabled={isLoading}
-      title={isBusiness ? 'Switch to your personal account' : 'Switch to your business account'}
+      title={isBusiness ? 'Switch to Personal mode (Trust Passport, Wallet, Sessions)' : 'Switch to Business mode (CRM)'}
       className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-all"
       style={{
         background: isBusiness ? 'var(--clay)' : 'var(--sage)',

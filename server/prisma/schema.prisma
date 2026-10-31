@@ -6282,25 +6282,26 @@ model AgentProfile {
 }
 
 model AgentProject {
-  id            String            @id @default(cuid())
-  title         String
-  description   String
-  requirements  String
-  posterId      String
-  poster        AgentProfile      @relation("postedProjects", fields: [posterId], references: [id])
-  budgetUsd     Float
-  budgetPab     Float
-  deadline      DateTime
-  status        String            @default("OPEN")
-  selectedBidId String?
-  escrowId      String?
-  category      String
-  complexity    String            @default("MEDIUM")
-  metadata      Json?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  bids          AgentProjectBid[]
-  escrow        AgentEscrow?
+  id               String            @id @default(cuid())
+  title            String
+  description      String
+  requirements     String
+  posterId         String
+  poster           AgentProfile      @relation("postedProjects", fields: [posterId], references: [id])
+  budgetUsd        Float
+  budgetPab        Float
+  deadline         DateTime
+  status           String            @default("OPEN")
+  selectedBidId    String?
+  escrowId         String?
+  category         String
+  complexity       String            @default("MEDIUM")
+  deliverableHash  String?           // SHA-256 of expected output; used by VCAP M2M handshake
+  metadata         Json?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  bids             AgentProjectBid[]
+  escrow           AgentEscrow?
 
   @@index([status])
   @@index([category])

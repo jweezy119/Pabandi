@@ -121,12 +121,14 @@ export class AgentMarketplace {
     deadline: Date;
     category: string;
     complexity: string;
+    deliverableHash?: string | null;
     metadata?: Record<string, unknown>;
   }) {
     const pabPrice = PAB_USD_PRICE;
     return prisma.agentProject.create({
       data: {
         ...params,
+        deliverableHash: params.deliverableHash ?? undefined,
         metadata: params.metadata
           ? (params.metadata as Prisma.InputJsonValue)
           : undefined,
@@ -771,6 +773,154 @@ export class AgentMarketplace {
         projectsCompleted: true,
       },
     });
+  }
+
+  // ── M2M (Machine-to-Machine) Commerce Layer ────────────────────────────────
+  //
+  // Pure programmatic API surface for external AI agents. No UI, no human
+  // approval: the math does the trust. These methods are the server-side half
+  // of the M2M handshake; the route file wires them to /api/v1/m2m.
+
+  /**
+   * M2M: post a task from an external agent.
+   *
+   * `deliverableHash` is the SHA-256 of the expected output. It is the anchor
+   * of the VCAP handshake: the provider submits the real hash at delivery
+   time and the two are compared to decide release vs dispute. No hash, no
+   automatic release — the caller must supply one.
+   */
+  async m2mPostProject(params: {
+    agentId: string;
+    title: string;
+    description: string;
+    budget: number;
+    requiredSkills: string[];
+    deliverableHash: string;
+    deadlineHours?: number;
+    category?: string;
+  }) {
+    if (!params.deliverableHash || typeof params.deliverableHash !== 'string') {
+      throw new Error('deliverableHash is required for M2M projects');
+    }
+    const hash = params.deliverableHash.trim().toLowerCase();
+    if (!/^[0-9a-f]{64}$/.test(hash)) {
+      throw new Error('deliverableHash must be a 64-character hex SHA-256 digest');
+    }
+
+    const project = await this.postProject({
+      title: params.title,
+      description: params.description,
+      requirements: params.requiredSkills.join(', '),
+      posterId: params.agentId,
+      budgetUsd: params.budget,
+      deadline: new Date(Date.now() + (params.deadlineHours ?? 14 * 24) * 60 * 60 * 1000),
+      category: params.category ?? 'M2M_TASK',
+      complexity: 'MEDIUM',
+      deliverableHash: hash,
+      metadata: { source: 'm2m', requiredSkills: params.requiredSkills },
+    });
+
+    return { projectId: project.id, deliverableHash: hash, status: project.status };
+  }
+
+  /**
+   * M2M: list open projects. Filtered by the caller's capabilities when
+   * supplied, so an agent only sees work it can actually do.
+   */
+  async m2mListProjects(params: {
+    agentId: string;
+    skills?: string[];
+    limit?: number;
+  }) {
+    const limit = Math.min(Math.max(Number(params.limit) || 20, 1), 100);
+    const projects = await prisma.agentProject.findMany({
+      where: { status: 'OPEN' },
+      include: { bids: true },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+
+    const skills = (params.skills ?? []).map((s) => s.toLowerCase());
+    const filtered = skills.length
+      ? projects.filter((p) => {
+          const pSkills = (p.metadata as { requiredSkills?: string[] } | null)?.requiredSkills ?? [];
+          const req = pSkills.map((s) => s.toLowerCase());
+          return skills.some((s) => req.includes(s));
+        })
+      : projects;
+
+    return filtered.map((p) => ({
+      id: p.id,
+      title: p.title,
+      description: p.description,
+      budgetUsd: p.budgetUsd,
+      deadline: p.deadline,
+      category: p.category,
+      deliverableHash: p.deliverableHash,
+      requiredSkills: (p.metadata as { requiredSkills?: string[] } | null)?.requiredSkills ?? [],
+      bids: p.bids.length,
+    }));
+  }
+
+  /**
+   * M2M: submit a bid. Identical shape to placeBid but goes through the M2M
+   * path so the caller identity is the agent, not a signed-in user.
+   */
+  async m2mSubmitBid(params: {
+    projectId: string;
+    agentId: string;
+    amount: number;
+    timelineHours: number;
+    proposal?: string;
+  }) {
+    const project = await prisma.agentProject.findUnique({ where: { id: params.projectId } });
+    if (!project) throw new Error('Project not found');
+    if (project.status !== 'OPEN') {
+      throw new Error(`Project is ${project.status}; bidding is closed`);
+    }
+    if (!Number.isFinite(params.amount) || params.amount <= 0) {
+      throw new Error('amount must be a number greater than zero');
+    }
+
+    return this.placeBid({
+      projectId: params.projectId,
+      bidderId: params.agentId,
+      proposedAmount: params.amount,
+      timelineHours: params.timelineHours,
+      approach: params.proposal ?? 'M2M bid',
+    });
+  }
+
+  /**
+   * M2M: award a project to a specific bid. The poster's funds are locked into
+   * escrow and the winning bid flips to ACCEPTED. Same authority check as
+   * acceptBid — only the poster may award.
+   */
+  async m2mAwardProject(params: { projectId: string; bidId: string; agentId: string }) {
+    const bid = await prisma.agentProjectBid.findUnique({
+      where: { id: params.bidId },
+      include: { project: true },
+    });
+    if (!bid) throw new Error('Bid not found');
+    if (bid.projectId !== params.projectId) {
+      throw new Error('Bid does not belong to this project');
+    }
+    if (bid.project.status !== 'OPEN') {
+      throw new Error(`Project is ${bid.project.status}; cannot award`);
+    }
+    if (bid.project.posterId !== params.agentId) {
+      throw new Error('Not authorised to award this project — only the poster may');
+    }
+
+    const { escrow } = await this.acceptBid(params.bidId, params.agentId);
+    return {
+      projectId: params.projectId,
+      bidId: params.bidId,
+      escrowId: escrow.id,
+      status: bid.project.status,
+      totalAmount: escrow.totalAmount,
+      releaseAmount: escrow.releaseAmount,
+    };
   }
 }
 

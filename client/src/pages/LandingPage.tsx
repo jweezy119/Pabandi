@@ -1,33 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { GuaranteeSplitVisual, GUARANTEE_STEPS } from '../components/GuaranteeVisuals';
+import { GUARANTEE_STEPS } from '../components/GuaranteeVisuals';
 import { useAuthStore } from '../store/authStore';
 
 const MODULES = [
   {
-    id: 'booking',
-    name: 'BookingOS',
-    tagline: 'Book with trust',
-    description: 'Customers book with confidence. Businesses get escrow-backed deposits.',
-    icon: 'calendar',
-    colorClass: 'module-icon-booking',
-    tint: '#A85A3C',
-    path: '/booking',
-  },
-  // FreightOS removed from public view to focus on A2A
-  {
-    id: 'property',
-    name: 'PropertyOS',
-    tagline: 'Buy, rent, manage with trust.',
-    description: 'Landlords screen tenants. Buyers verify documents. Every deal escrow-backed.',
-    icon: 'house',
-    colorClass: 'module-icon-property',
-    tint: '#D4A5A5',
-    path: '/property',
-  },
-  {
     id: 'contact',
-    name: 'Contact OS',
+    name: 'Business OS (CRM & Escrow)',
     tagline: 'Every relationship, one trusted record.',
     description: 'Track clients, close deals, and know who\'re reliable before you commit.',
     icon: 'funnel',
@@ -36,14 +15,14 @@ const MODULES = [
     path: '/contact',
   },
   {
-    id: 'capital',
-    name: 'CapitalOS',
-    tagline: 'Track with clarity',
-    description: 'Send invoices, record expenses, see profit in real time.',
-    icon: 'coin',
-    colorClass: 'module-icon-ledger',
-    tint: '#B8C9D4',
-    path: '/capital',
+    id: 'booking',
+    name: 'Human Portal (Bookings & Reviews)',
+    tagline: 'Book with trust',
+    description: 'Customers book with confidence. Businesses get escrow-backed deposits.',
+    icon: 'calendar',
+    colorClass: 'module-icon-booking',
+    tint: '#A85A3C',
+    path: '/booking',
   },
 ];
 
@@ -345,11 +324,9 @@ export default function LandingPage() {
             <span>PabandiOS</span>
           </Link>
           <nav className="nav-list" aria-label="Main">
-            <Link to="/guarantee">The Guarantee</Link>
-            <Link to="/contact">CRM</Link>
-            <Link to="/booking">Booking</Link>
-            <Link to="/property">Property</Link>
-            <Link to="/capital">Capital</Link>
+            <Link to="/agents">For AI Developers</Link>
+            <Link to="/contact">For Businesses</Link>
+            <Link to="/booking">Human Portal</Link>
           </nav>
           {isAuthenticated ? (
             <Link to="/contact" className="cta-nav">Dashboard</Link>
@@ -360,42 +337,49 @@ export default function LandingPage() {
       </header>
 
       <main>
-{/* Hero */}
+      {/* Hero */}
         <section className="hero" aria-labelledby="hero-title">
           <div className="container">
             <div className="hero-inner">
               <div className="hero-content">
-                <p className="hero-kicker">The high-ticket guarantee engine</p>
+                <p className="hero-kicker">The Settlement & Trust Layer for Hybrid Commerce</p>
                 <h1 id="hero-title" className="hero-title">
-                  <span className="word">Get Paid Before</span><br />
-                  <span className="word">You Show Up.</span><br />
-                  <span className="word hero-accent">Guaranteed.</span>
+                  <span className="word">Trust and Settlement</span><br />
+                  <span className="word">for the Agent Economy.</span>
                 </h1>
                 <p className="hero-subtitle">
-                  Pabandi locks client deposits in secure crypto escrow. If they ghost, you keep the
-                  money. If they show, the funds release instantly. Built for high-ticket service
-                  providers — wedding photographers, contractors, roofers, agencies, and the agents
-                  that book them.
+                  AI agents are hiring humans and other agents. Pabandi is the programmable escrow and reputation layer that makes it safe. Verify human reliability. Settle machine transactions.
                 </p>
                 <div className="hero-actions">
-                  {isAuthenticated ? (
-                    <MagneticButton className="btn btn-primary" onClick={() => navigate('/contact')}>
-                      Open My Vault
-                    </MagneticButton>
-                  ) : (
-                    <>
-                      <MagneticButton className="btn btn-primary" onClick={() => navigate('/signup?module=contact')}>
-                        Protect My Revenue
-                      </MagneticButton>
-                      <Link to="/guarantee" className="btn btn-secondary">
-                        See how the guarantee works
-                      </Link>
-                    </>
-                  )}
+                  <MagneticButton className="btn btn-primary" onClick={() => navigate('/agents')}>
+                    For AI Developers
+                  </MagneticButton>
+                  <Link to="/contact" className="btn btn-secondary">
+                    For Businesses
+                  </Link>
                 </div>
               </div>
               <div className="hero-visual">
-                <GuaranteeSplitVisual />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '2rem', background: 'rgba(245,239,230,0.7)', borderRadius: '24px', border: '1px solid rgba(191,179,163,0.3)' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'linear-gradient(135deg, #C97B5A, #A85A3C)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', boxShadow: '0 8px 24px rgba(168,90,60,0.3)' }}>
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+                    </div>
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: 'var(--warm-ink)' }}>Human</div>
+                  </div>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                    <div style={{ width: '60px', height: '60px', borderRadius: '12px', background: 'linear-gradient(135deg, #D9A854, #C97B5A)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 30px rgba(217,168,84,0.6)', animation: 'pulse 2s ease-in-out infinite' }}>
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                    <div style={{ position: 'absolute', width: '100%', height: '2px', background: 'linear-gradient(90deg, transparent, #D9A854, transparent)', top: '50%', transform: 'translateY(-50%)' }}></div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ width: '80px', height: '80px', borderRadius: '12px', background: 'linear-gradient(135deg, #8A9A7B, #6B7B5B)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', boxShadow: '0 8px 24px rgba(138,154,123,0.3)' }}>
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/></svg>
+                    </div>
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: 'var(--warm-ink)' }}>AI Agent</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -407,10 +391,10 @@ export default function LandingPage() {
         <section className="modules" aria-labelledby="modules-title">
           <div className="container">
             <ScrollReveal>
-              <h2 id="modules-title" className="section-title">Every Module Runs on the Same Escrow</h2>
+              <h2 id="modules-title" className="section-title">Modules</h2>
             </ScrollReveal>
             <ScrollReveal delay={100}>
-              <p className="section-subtitle">Bookings, property, invoicing — the guarantee engine underneath is the product. The CRM is just where it lives.</p>
+              <p className="section-subtitle">Escrow and trust built for the hybrid agent economy.</p>
             </ScrollReveal>
             <div className="modules-grid">
               {MODULES.map((mod, i) => (
@@ -552,15 +536,16 @@ export default function LandingPage() {
             <span className="logo-mark">◈</span>
             <span>PabandiOS</span>
           </div>
-          <p className="footer-tagline">BookingOS · PropertyOS · Contact OS · CapitalOS — Powered by TrustOS</p>
+          <p className="footer-tagline">Business OS · Human Portal — Powered by TrustOS</p>
           <nav className="footer-nav" aria-label="Footer">
             <Link to="/guarantee">The Guarantee</Link>
             <Link to="/developers">Developers</Link>
+            <Link to="/agents">For AI Developers</Link>
             <Link to="/about">About</Link>
             <Link to="/privacy">Privacy</Link>
             <Link to="/terms">Terms</Link>
           </nav>
-          <p className="footer-copy">© 2026 Pabandi. The high-ticket guarantee engine.</p>
+          <p className="footer-copy">© 2026 Pabandi. The Settlement & Trust Layer for Hybrid Commerce.</p>
         </div>
       </footer>
     </div>

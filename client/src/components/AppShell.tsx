@@ -12,8 +12,6 @@ import { ModeTransitionOverlay } from './ModeTransitionOverlay';
 const MOBILE_MODULES = [
   { id: 'contact', label: 'Contact', path: '/contact', icon: 'contacts', color: 'var(--clay)' },
   { id: 'booking', label: 'Book', path: '/booking', icon: 'book_online', color: 'var(--sage)' },
-  { id: 'property', label: 'Property', path: '/property', icon: 'real_estate_agent', color: 'var(--sky-wash)' },
-  { id: 'capital', label: 'Capital', path: '/capital', icon: 'account_balance', color: 'var(--dusty-rose)' },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -22,12 +20,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { openModal } = useWalletModal();
   const activeMode = (user?.preferredMode || 'business').toUpperCase();
   const isBusiness = activeMode === 'BUSINESS';
-  const visibleModules = MOBILE_MODULES.filter(m => {
-    if (m.id === 'property' || m.id === 'capital') {
-      return activeMode === 'BUSINESS';
-    }
-    return true;
-  });
+  const visibleModules = MOBILE_MODULES;
 
   return (
     <div className="flex flex-col h-screen bg-[var(--bg-main)] overflow-hidden" data-mode={user?.preferredMode || 'business'}>
