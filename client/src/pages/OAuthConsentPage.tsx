@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { ShieldCheck, CheckCircle2, AlertCircle, ArrowRight, ShieldAlert } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { ShieldCheck, CheckCircle2, AlertCircle, ArrowRight, ShieldAlert, Lock, Eye } from 'lucide-react';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
 
 export default function OAuthConsentPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const clientId = searchParams.get('client_id');
   const redirectUri = searchParams.get('redirect_uri');
   const responseType = searchParams.get('response_type');
+  const scope = searchParams.get('scope') || 'openid profile trust:passport';
+  const state = searchParams.get('state');
   
   const { user, isAuthenticated } = useAuthStore();
   
@@ -16,6 +19,7 @@ export default function OAuthConsentPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [passport, setPassport] = useState<any>(null);
 
   useEffect(() => {
     // If not authenticated, redirect to login with returnTo
@@ -130,30 +134,35 @@ export default function OAuthConsentPage() {
         <div className="p-8">
           <p className="text-[var(--soft-stone)] font-medium mb-4">This will allow <span className="font-bold text-[var(--warm-ink)]">{clientInfo?.name}</span> to:</p>
           
-          <div className="space-y-4 mb-8">
+          <div className="space-y-4 mb-6">
             <div className="flex items-start">
               <CheckCircle2 className="w-5 h-5 text-[var(--sage)] mt-0.5 mr-3 flex-shrink-0" />
               <div>
                 <p className="font-semibold text-[var(--warm-ink)]">View your Identity & Contact Info</p>
-                <p className="text-sm text-[var(--soft-stone)]">Name, verified email address, and profile picture.</p>
+                <p className="text-sm text-[var(--soft-stone)]">Name and verified email address.</p>
               </div>
             </div>
             
             <div className="flex items-start">
-              <CheckCircle2 className="w-5 h-5 text-[var(--sage)] mt-0.5 mr-3 flex-shrink-0" />
+              <Eye className="w-5 h-5 text-[var(--clay)] mt-0.5 mr-3 flex-shrink-0" />
               <div>
-                <p className="font-semibold text-[var(--warm-ink)]">Read your Trust Passport Data</p>
-                <p className="text-sm text-[var(--soft-stone)]">Your Trust Score, Trust Band, and active verified badges.</p>
+                <p className="font-semibold text-[var(--warm-ink)]">Read your Trust Passport</p>
+                <p className="text-sm text-[var(--soft-stone)]">Trust Score ({passport?.score || 500}), level ({passport?.level || 'Bronze'}), verified status, and badges.</p>
               </div>
             </div>
             
             <div className="flex items-start">
-              <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5 mr-3 flex-shrink-0" />
+              <Lock className="w-5 h-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" />
               <div>
-                <p className="font-semibold text-[var(--warm-ink)]">Cannot edit your data</p>
-                <p className="text-sm text-[var(--soft-stone)]">This application only has read-only access to your public passport.</p>
+                <p className="font-semibold text-[var(--warm-ink)]">Read-only access</p>
+                <p className="text-sm text-[var(--soft-stone)]">This app cannot edit, post, or transact on your behalf.</p>
               </div>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 border border-blue-200 mb-6 text-xs text-blue-800">
+            <ShieldCheck className="w-4 h-4 flex-shrink-0" />
+            <span>Secure OAuth 2.0 / OpenID Connect. You can revoke access anytime from Settings.</span>
           </div>
 
           <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-xl mb-8 border border-slate-100">
