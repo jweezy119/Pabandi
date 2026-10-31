@@ -1,7 +1,43 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Surface, Badge, tokens } from '../design-system';
+import { FileText, Download, ShieldCheck, CheckCircle } from 'lucide-react';
+import { apiUrl } from '@/utils/apiHost';
+import { getAuthToken } from '@/utils/authToken';
 
 export const TrustPassportPage: React.FC = () => {
+  const [issuingVC, setIssuingVC] = useState(false);
+  const [vcData, setVcData] = useState<any>(null);
+  const token = getAuthToken();
+
+  const issueTrustPassportVC = async () => {
+    if (!token) return;
+    setIssuingVC(true);
+    try {
+      const res = await fetch(apiUrl('/api/v1/vc/issue/trust-passport'), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setVcData(data.data);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIssuingVC(false);
+    }
+  };
+
+  const downloadVC = () => {
+    if (!vcData) return;
+    const blob = new Blob([JSON.stringify(vcData, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pabandi-trust-passport-vc-${Date.now()}.json`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
   return (
     <div className="min-h-screen" style={{ background: tokens.color.background }}>
       <div className="max-w-5xl mx-auto px-4 py-6">
@@ -38,6 +74,43 @@ export const TrustPassportPage: React.FC = () => {
               <div className="font-bold text-[var(--warm-ink)]">Jan 2025</div>
             </div>
           </div>
+        </Surface>
+
+        {/* Verifiable Credential */}
+        <Surface className="p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-[var(--clay)]" />
+              <h2 className="text-lg font-bold text-[var(--warm-ink)]">Verifiable Credential (Portable Trust)</h2>
+            </div>
+            {token && (
+              <button
+                onClick={issueTrustPassportVC}
+                disabled={issuingVC}
+                className="px-4 py-2 rounded-[var(--radius-btn)] bg-[var(--clay)] text-white hover:bg-[var(--terracotta)] transition-colors disabled:opacity-50 text-sm flex items-center gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                {issuingVC ? 'Issuing...' : vcData ? 'Re-issue VC' : 'Get Verifiable Credential'}
+              </button>
+            )}
+          </div>
+          <p className="text-sm mb-4" style={{ color: tokens.color.textDim }}>
+            Issue a W3C Verifiable Credential signed by <code className="text-xs bg-[var(--warm-sand)] px-1 py-0.5 rounded">did:web:pabandi.com</code>. 
+            Take it anywhere and verify it at <a href="/verify" className="text-[var(--clay)] hover:underline">/verify</a> with no login required.
+          </p>
+          {vcData && (
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-green-50 border border-green-200">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              <span className="text-sm text-green-800 flex-1">VC issued successfully</span>
+              <button
+                onClick={downloadVC}
+                className="px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors text-sm flex items-center gap-1"
+              >
+                <Download className="w-4 h-4" />
+                Download VC
+              </button>
+            </div>
+          )}
         </Surface>
 
         {/* Reputation Breakdown */}
@@ -137,3 +210,6 @@ export const TrustPassportPage: React.FC = () => {
 };
 
 export default TrustPassportPage;
+
+
+/* Enhanced with VC support - appended */
