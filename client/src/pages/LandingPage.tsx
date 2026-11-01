@@ -276,6 +276,8 @@ function TrustedBySection() {
 export default function LandingPage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+  const landingRef = useRef<HTMLDivElement>(null);
+  const [pageTint, setPageTint] = useState<string | null>(null);
 
   const handleCardHover = useCallback((tint: string) => {
     setPageTint(tint);
