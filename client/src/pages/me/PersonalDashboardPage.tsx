@@ -5,6 +5,7 @@ import { ArrowRight, Lock, CheckCircle, Clock, Sparkles } from 'lucide-react';
 import { ClayButton } from '../../components/clay/ClayButton';
 import { ClayCard } from '../../components/clay/ClayCard';
 import { ClayBadge } from '../../components/primitives';
+import { AssistiveBanner } from '../../components/AssistiveBanner';
 import { useAuthStore } from '../../store/authStore';
 import { getAuthToken } from '../../utils/authToken';
 
@@ -109,6 +110,29 @@ export default function PersonalDashboardPage() {
           </div>
           <p className="text-sm text-amber-600">Your personal trust &amp; escrow hub</p>
         </div>
+
+        {/* Assistive AI Banner */}
+        <AnimatePresence>
+          {hasActionRequired ? (
+            <AssistiveBanner
+              variant="job_complete"
+              actionLabel="Release Funds Now"
+              actionHref={`/app/release/${escrows.find(e => e.status === 'DELIVERED' || e.status === 'WORK_COMPLETED')?.id}`}
+            />
+          ) : score < 500 ? (
+            <AssistiveBanner
+              variant="score_dropping"
+              actionLabel="Book a Service"
+              actionHref="/booking"
+            />
+          ) : (
+            <AssistiveBanner
+              variant="all_well"
+              actionLabel="Continue"
+              actionHref="/booking"
+            />
+          )}
+        </AnimatePresence>
 
         {/* Trust Passport Card */}
         <div className="mb-6">

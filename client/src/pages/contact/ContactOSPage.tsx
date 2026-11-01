@@ -10,6 +10,7 @@ import { ClayCard } from '../../components/clay/ClayCard';
 import { ClayBadge } from '../../components/primitives';
 import { FirstRunChecklist } from './components/FirstRunChecklist';
 import ModularDashboard from '../crm/components/ModularDashboard';
+import { AssistiveBanner } from '../../components/AssistiveBanner';
 
 type Booking = {
   id: string;
@@ -55,6 +56,7 @@ export default function ContactOSPage() {
   const [todaysRevenue, setTodaysRevenue] = useState(0);
   const [pendingEscrows, setPendingEscrows] = useState(0);
   const [activeGigs, setActiveGigs] = useState(0);
+  const [trustScore, setTrustScore] = useState(500);
   const [todaysBookings, setTodaysBookings] = useState<Booking[]>([]);
   const [agentActivity, setAgentActivity] = useState<AgentActivity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,6 +107,16 @@ export default function ContactOSPage() {
         if (bizRes.ok) {
           const biz = await bizRes.json();
           setBusinessName(biz.data?.name || biz.name || 'Your Business');
+        }
+
+        // Trust score from passport
+        const passportRes = await fetch(
+          `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/trust-passport/me`,
+          { headers }
+        );
+        if (passportRes.ok) {
+          const passportData = await passportRes.json();
+          setTrustScore(passportData.data?.score ?? 500);
         }
 
         // Today's revenue from bookings
@@ -242,7 +254,7 @@ export default function ContactOSPage() {
       </Helmet>
       <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay">
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          {/* ── Greeting + Assistive AI Banner slot ────────────────── */}
+          {/* ── Greeting + Assistive AI Banner ────────────────── */}
           <div className="clay-fade mb-6">
             <div className="flex items-center justify-between mb-2">
               <div>
@@ -250,7 +262,27 @@ export default function ContactOSPage() {
                 <p className="text-sm text-amber-600">Business dashboard — escrow, gigs, and agent activity</p>
               </div>
             </div>
-            {/* AssistiveBanner will be inserted here in Commit 3 */}
+            <AnimatePresence>
+              {pendingEscrows > 2 ? (
+                <AssistiveBanner
+                  variant="overdue_invoices"
+                  actionLabel="Send Reminder"
+                  actionHref="/contact/invoices"
+                />
+              ) : trustScore < 500 ? (
+                <AssistiveBanner
+                  variant="score_dropping"
+                  actionLabel="Book a Service"
+                  actionHref="/booking"
+                />
+              ) : (
+                <AssistiveBanner
+                  variant="all_well"
+                  actionLabel="Continue"
+                  actionHref="/booking"
+                />
+              )}
+            </AnimatePresence>
           </div>
 
           {/* ── First Run Checklist ──────────────────────────────── */}
