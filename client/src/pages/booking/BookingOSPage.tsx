@@ -112,14 +112,19 @@ export default function BookingOSPage() {
   useEffect(() => {
     const fetchClients = async () => {
       try {
+        const token = getAuthToken();
+        if (!token) {
+          setLoadingClients(false);
+          return;
+        }
         const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
-          headers: { Authorization: `Bearer ${getAuthToken()}` },
+          headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
           const data = await res.json();
           setClients(data.data || []);
         }
-      } catch (e) { console.error(e); } finally { setLoadingClients(false); }
+      } catch (e) { console.error('Failed to fetch clients:', e); } finally { setLoadingClients(false); }
     };
     fetchClients();
   }, []);

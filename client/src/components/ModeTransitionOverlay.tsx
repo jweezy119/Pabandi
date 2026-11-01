@@ -113,7 +113,7 @@ export function ModeTransitionOverlay() {
   if (!isTransitioning) return null;
   
   return (
-    <div className={`mode-transition-overlay phase-${phase}`} style={{ pointerEvents: isTransitioning ? 'all' : 'none' }}>
+    <div className={`mode-transition-overlay phase-${phase}`} style={{ pointerEvents: 'none', display: 'none' }}>
       <canvas ref={canvasRef} className="mode-transition-canvas" />
     </div>
   );
