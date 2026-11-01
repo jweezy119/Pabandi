@@ -1,3 +1,5 @@
+import { motion, useReducedMotion } from 'framer-motion';
+import { CLAY_SPRING, CLAY_FADE } from '../animations/clayMotion';
 import type { MatchedProvider } from './types';
 import { EscrowStatus } from './EscrowStatus';
 
@@ -16,10 +18,27 @@ interface ProviderCardProps {
  * then the skills that earned this provider the match.
  */
 export function ProviderCard({ provider, onHire, hiring = false, hired = false }: ProviderCardProps) {
+  const reduced = useReducedMotion();
   return (
-    <div
-      className="rounded-[var(--radius-card)] bg-[var(--cream)] border border-[rgba(201,123,90,0.25)] p-5 flex flex-col gap-3"
-      style={{ boxShadow: 'var(--shadow-soft)' }}
+    <motion.div
+      layoutId={`provider-${provider.passportId}`}
+      drag
+      dragSnapToOrigin
+      dragElastic={0.16}
+      whileDrag={
+        reduced
+          ? undefined
+          : { scale: 1.05, boxShadow: '0 18px 36px rgba(198,92,54,0.3)', cursor: 'grabbing', zIndex: 10 }
+      }
+      whileHover={reduced ? undefined : { y: -4, boxShadow: '0 10px 22px rgba(198,92,54,0.18)' }}
+      whileTap={reduced ? undefined : { scale: 0.98 }}
+      onDragEnd={() => undefined}
+      transition={reduced ? CLAY_FADE : CLAY_SPRING}
+      dragTransition={reduced ? undefined : { bounceStiffness: 400, bounceDamping: 22 }}
+      dragMomentum={false}
+      className="rounded-[var(--radius-card)] bg-[var(--cream)] border border-[rgba(201,123,90,0.25)] p-5 flex flex-col gap-3 touch-grab"
+      style={{ boxShadow: 'var(--shadow-soft)', willChange: 'transform' }}
+      data-testid="provider-card"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
@@ -85,7 +104,7 @@ export function ProviderCard({ provider, onHire, hiring = false, hired = false }
           {hiring ? 'Hiring…' : 'Hire'}
         </button>
       )}
-    </div>
+    </motion.div>
   );
 }
 

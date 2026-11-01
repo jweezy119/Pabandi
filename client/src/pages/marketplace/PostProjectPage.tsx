@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import ProviderCard from '../../components/marketplace/ProviderCard';
+import { ClayStamp } from '../../components/animations/ClayStamp';
+import { ClayDust } from '../../components/animations/ClayDust';
+import { CLAY_SPRING, CLAY_FADE } from '../../components/animations/clayMotion';
 import type {
   MatchAndPostResponse,
   MatchedProvider,
@@ -30,6 +34,9 @@ export default function PostProjectPage() {
   const [templates, setTemplates] = useState<ProjectTemplate[]>([]);
   /** Poster opt-in: verified agents may self-book and escrow funds itself. */
   const [autoBook, setAutoBook] = useState(false);
+  /** Increments once per successful post — drives the stamp + clay-dust burst. */
+  const [stampKey, setStampKey] = useState(0);
+  const reduced = useReducedMotion();
 
   const setField = (key: keyof FormState) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -72,6 +79,7 @@ export default function PostProjectPage() {
       }
       setResult(json.data);
       setForm(EMPTY_FORM);
+      setStampKey((k) => k + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
     } finally {
@@ -233,21 +241,28 @@ export default function PostProjectPage() {
 
           {error && <p className="text-sm text-[var(--terracotta)]">{error}</p>}
 
-          <button
+          <motion.button
             type="submit"
             disabled={submitting}
+            whileTap={reduced ? undefined : { scale: 0.95 }}
+            transition={reduced ? CLAY_FADE : CLAY_SPRING}
+            style={{ willChange: 'transform', boxShadow: 'var(--shadow-btn)' }}
             className="self-start rounded-[var(--radius-btn)] px-6 py-2.5 font-label text-[var(--cream)] bg-[var(--clay)] hover:bg-[var(--terracotta)] transition-colors disabled:opacity-50"
-            style={{ boxShadow: 'var(--shadow-btn)' }}
           >
             {submitting ? 'Finding matches…' : 'Post & Find Matches'}
-          </button>
+          </motion.button>
         </form>
 
         {result && (
-          <section className="mt-10">
-            <h2 className="font-headline text-2xl mb-3">
-              Top matches for “{result.project.title}”
-            </h2>
+          <section className="mt-10 relative">
+            <div className="relative">
+              <ClayDust key={stampKey} burst={stampKey > 0} className="absolute inset-x-0 top-0 h-24 z-10" />
+              <ClayStamp stamped={stampKey > 0} className="relative">
+                <h2 className="font-headline text-2xl mb-3">
+                  Top matches for “{result.project.title}”
+                </h2>
+              </ClayStamp>
+            </div>
             {result.providers.length === 0 ? (
               <p className="text-[var(--soft-stone)]">
                 No matching agents in the passport registry yet — check back after
