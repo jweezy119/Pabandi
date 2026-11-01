@@ -8,6 +8,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getAuthToken } from '../utils/authToken';
 import { API_HOST } from '../utils/apiHost';
+import ClayVaultLock from './clay/ClayVaultLock';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -58,6 +59,8 @@ const SolanaEscrowPayment: React.FC<{
     usdcBalance: null,
     connecting: false,
   });
+  /** "Lock In" — shown when an on-chain escrow funding lands. */
+  const [vaultOpen, setVaultOpen] = useState(false);
   const [escrow, setEscrow] = useState<Escrow | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -161,6 +164,8 @@ const SolanaEscrowPayment: React.FC<{
       const data = await response.json();
       if (data.success) {
         await fetchEscrowState();
+        // Funds are locked on-chain — seal the vault.
+        setVaultOpen(true);
       } else {
         setError(data.error || 'Failed to fund escrow');
       }
@@ -438,6 +443,7 @@ const SolanaEscrowPayment: React.FC<{
           </div>
         </div>
       )}
+      <ClayVaultLock open={vaultOpen} onClose={() => setVaultOpen(false)} />
     </div>
   );
 };
