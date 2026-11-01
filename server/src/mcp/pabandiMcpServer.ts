@@ -389,6 +389,31 @@ const ENGINE_TOOLS = [
       required: ['ownerType', 'ownerId'],
     },
   },
+  {
+    name: 'pabandi_discover_agents',
+    description: 'Discover agents by skills, trust score, and location. Returns agents sorted by relevance with trust scores and capability badges.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        skills: { type: 'array', items: { type: 'string' }, description: 'Required skills to match against' },
+        minTrustScore: { type: 'number', description: 'Minimum trust score (default 500)', default: 500 },
+        category: { type: 'string', description: 'Agent category filter' },
+        limit: { type: 'number', description: 'Maximum results (default 20)', default: 20 },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'pabandi_escrow_waterfall',
+    description: 'Check and trigger waterfall settlement for parent-child escrows. When all child escrows are released, the master escrow is marked completed. Returns settlement status.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        masterEscrowId: { type: 'string', description: 'Master escrow ID to check' },
+      },
+      required: ['masterEscrowId'],
+    },
+  },
 ];
 
 // ── Platform tools (real HTTP proxy) ─────────────────────────────────────────
@@ -1067,6 +1092,100 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
           ownerId,
           sessions,
           count: sessions.length,
+        };
+      }
+
+      // ── Kernel syscall: pabandi_discover_agents ──
+      case 'pabandi_discover_agents': {
+        const { skills: rawSkills = [], minTrustScore = 500, category, limit = 20 } = args;
+        const skills = Array.isArray(rawSkills) ? rawSkills as string[] : [];
+
+        const where: any = {
+          visibility: { in: ['PUBLIC', 'MODULE_ONLY'] },
+          score: { gte: minTrustScore },
+        };
+        if (category) where.category = category;
+
+        const passports = await prisma.trustPassport.findMany({
+          where,
+          take: Math.min(limit, 100),
+          orderBy: [{ score: 'desc' }, { deliverySampleSize: 'desc' }],
+        });
+
+        const allSkills = skills.map((s: string) => s.toLowerCase());
+        const scored = passports.map((p) => {
+          const pSkills = Array.isArray(p.skills) ? (p.skills as unknown[]).map((s: unknown) => String(s).toLowerCase()) : [];
+          const skillMatch = allSkills.filter(s => pSkills.includes(s)).length;
+          const relevanceScore = (p.score || 500) + skillMatch * 50;
+          return { passport: p, skillMatch, relevanceScore };
+        }).sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+        return {
+          success: true,
+          agents: scored.map(({ passport, skillMatch, relevanceScore }) => ({
+            agentId: passport.id,
+            handle: passport.handle,
+            displayName: passport.displayName,
+            trustScore: passport.score || 500,
+            tier: (passport.score || 500) >= 800 ? 'Platinum' : (passport.score || 500) >= 650 ? 'Gold' : (passport.score || 500) >= 500 ? 'Silver' : 'Bronze',
+            skills: passport.skills || [],
+            skillMatch,
+            category: passport.category,
+            verifiedIdentity: passport.verifiedIdentity,
+            profileUrl: `https://pabandi.com/trust/${passport.handle}`,
+          })),
+          count: scored.length,
+        };
+      }
+
+      // ── Kernel syscall: pabandi_escrow_waterfall ──
+      case 'pabandi_escrow_waterfall': {
+        const { masterEscrowId } = args;
+        if (!masterEscrowId) throw new Error('masterEscrowId is required');
+
+        const master = await prisma.agentEscrow.findUnique({
+          where: { id: masterEscrowId },
+          include: { childEscrows: true },
+        });
+        if (!master) throw new Error('master escrow not found');
+
+        if (master.status !== 'FUNDED' && master.status !== 'subcontracted') {
+          throw new Error(`master escrow is ${master.status}, cannot settle waterfall`);
+        }
+
+        const allChildren = await prisma.agentEscrow.findMany({
+          where: { parentEscrowId: masterEscrowId },
+        });
+
+        if (allChildren.length === 0) {
+          return {
+            success: true,
+            masterEscrowId,
+            status: master.status,
+            childCount: 0,
+            message: 'No child escrows to settle',
+          };
+        }
+
+        const allReleased = allChildren.every(c => c.status === 'RELEASED');
+        const allCompleted = allChildren.every(c => c.status === 'RELEASED' || c.status === 'COMPLETED');
+
+        let updatedStatus = master.status;
+        if (allCompleted) {
+          updatedStatus = 'COMPLETED';
+          await prisma.agentEscrow.update({
+            where: { id: masterEscrowId },
+            data: { status: 'COMPLETED', releasedAt: new Date() },
+          });
+        }
+
+        return {
+          success: true,
+          masterEscrowId,
+          status: updatedStatus,
+          childCount: allChildren.length,
+          releasedCount: allChildren.filter(c => c.status === 'RELEASED').length,
+          message: allCompleted ? 'All child escrows released - master marked completed' : `Waterfall check: ${allChildren.filter(c => c.status === 'RELEASED').length}/${allChildren.length} children released`,
         };
       }
     }
