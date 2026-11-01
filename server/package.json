@@ -69,6 +69,7 @@
     "cookie-session": "^2.1.1",
     "cors": "^2.8.6",
     "date-fns": "^4.4.0",
+    "dodopayments": "^2.59.0",
     "dotenv": "^16.3.1",
     "elliptic": "^6.6.0",
     "ethers": "^6.17.0",
