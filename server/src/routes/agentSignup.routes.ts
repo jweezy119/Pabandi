@@ -91,6 +91,19 @@ router.post('/register', writeLimiter, validateBody(agentRegistrationSchema), as
     // metered MCP tools) would fail with "not found" on a fresh signup.
     const owner = await provisionAgentPrincipal(ownerEmail, name, agentHandle);
 
+    // Register onchain identity (optional, gasless for agent)
+    try {
+      const { agentIdentityService } = await import('../services/agent-identity.service');
+      const passport = await prisma.trustPassport.findFirst({
+        where: { handle: agentHandle },
+      });
+      if (passport) {
+        await agentIdentityService.registerAgentOnChain(passport.id);
+      }
+    } catch (e) {
+      logger.warn('[AgentSignup] Onchain registration skipped:', e);
+    }
+
     const setupChecklist = [
       {
         step: 1,

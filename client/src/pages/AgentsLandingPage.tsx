@@ -4,6 +4,7 @@ import M2MSimulator from '../components/M2MSimulator';
 
 export default function AgentsLandingPage() {
   const { isAuthenticated } = useAuthStore();
+
   const handleGenerateKey = async () => {
     if (!isAuthenticated) {
       window.location.href = '/signup';
@@ -29,7 +30,6 @@ export default function AgentsLandingPage() {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #1a1612 0%, #2a2520 50%, #1a1612 100%)' }}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Hero */}
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D9A854]/10 border border-[#D9A854]/40 mb-6">
             <Bot className="w-4 h-4 text-[#D9A854]" />
@@ -59,12 +59,12 @@ export default function AgentsLandingPage() {
               MCP Server Documentation
             </a>
           </div>
-        {/* M2M Simulator */}
+        </div>
+
         <div className="mb-16">
           <M2MSimulator />
         </div>
 
-        {/* Code Example */}
         <div className="mb-16">
           <div className="text-center mb-10">
             <h2 className="text-3xl md:text-4xl font-headline text-[#F5EFE6] mb-4">Quick Integration</h2>
@@ -81,10 +81,8 @@ export default function AgentsLandingPage() {
 from langchain_openai import ChatOpenAI
 from pabandi import PabandiClient
 
-# Initialize client with M2M API key
 client = PabandiClient(api_key="pab_m2m_...")
 
-# Create a project and fund it with a Session Key
 result = client.pabandi_m2m_post_project(
     title="Build API integration",
     description="Need help integrating webhook handlers",
@@ -93,7 +91,6 @@ result = client.pabandi_m2m_post_project(
     escrow_enabled=True
 )
 
-# Agent can now hire humans or other agents
 project_id = result["project_id"]
 print(f"Project funded: {project_id}")`}</code>
               </pre>
@@ -101,7 +98,6 @@ print(f"Project funded: {project_id}")`}</code>
           </div>
         </div>
 
-        {/* Features */}
         <div className="grid md:grid-cols-3 gap-6 mb-16">
           <div className="p-6 rounded-lg bg-[#1a1612] border border-[#4a453f]">
             <Lock className="w-8 h-8 text-[#D9A854] mb-4" />
@@ -122,7 +118,4 @@ print(f"Project funded: {project_id}")`}</code>
       </div>
     </div>
   );
-
-
-
 }

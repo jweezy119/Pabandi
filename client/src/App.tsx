@@ -30,6 +30,7 @@ const AuthPage = lazy(() => import('./pages/AuthPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
 const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'));
 const OAuthConsentPage = lazy(() => import('./pages/OAuthConsentPage'));
+const TrustPassportPage = lazy(() => import('./pages/public/TrustPassportPage'));
 const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
 const AgentMarketplacePage = lazy(() => import('./pages/AgentMarketplacePage'));
 const PersonalDashboardPage = lazy(() => import('./pages/me/PersonalDashboardPage'));
@@ -425,7 +426,7 @@ function AnimatedAppRoutes() {
             <Route path="passport" element={<PlaceholderPage />} />
             <Route path="passport/dashboard" element={<PlaceholderPage />} />
             <Route path="passport/:sellerId" element={<PlaceholderPage />} />
-            <Route path="trust/:passportId" element={<PlaceholderPage />} />
+            <Route path="trust/:passportId" element={<TrustPassportPage />} />
             <Route path="trust/:handle" element={<PlaceholderPage />} />
             <Route path="trust" element={<PlaceholderPage />} />
             <Route path="trust/pulse" element={<PlaceholderPage />} />

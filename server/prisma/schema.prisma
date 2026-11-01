@@ -4222,6 +4222,8 @@ model TrustPassport {
   id                  String     @id @default(cuid())
   handle              String     @unique // shareable slug, e.g. "apex-builders"
   agentId             String? // Web3Agent.id if linked
+  onchainAgentId      String? // ERC-8004 onchain identity ID
+  onchainIdentityRegistered Boolean @default(false)
   providerRef         String? // string key used across deposits/bonds/BC (landlordId/beneficiaryId/subjectId)
   category            String     @default("FREELANCER") // FREELANCER | BUILDER | FLEET | HOA | PROPERTY_MANAGER
   displayName         String

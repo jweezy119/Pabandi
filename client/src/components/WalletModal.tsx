@@ -442,6 +442,8 @@ response = requests.post("https://pabandi.com/api/v1/...", headers=headers)`}
           )}
         </div>
       )}
+
+      {tab === 'activity' && (
         <div className="space-y-3 py-2">
           {receiptsError && (
             <div className="text-sm text-[var(--clay)] py-4">
