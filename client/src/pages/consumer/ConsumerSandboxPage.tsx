@@ -43,7 +43,7 @@ export default function ConsumerSandboxPage() {
   };
 
   return (
-    <div className="min-h-screen bg-amber-50 text-amber-900 font-sans">
+    <div className="min-h-screen bg-amber-50 text-amber-900 font-sans pb-[env(safe-area-inset-bottom)]">
       {/* Demo Mode Banner */}
       <div className="bg-amber-100 border border-amber-200 px-4 py-2 text-center">
         <p className="text-sm font-bold text-amber-700 flex items-center justify-center gap-1">
