@@ -562,7 +562,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/agent-marketplace`, './routes/agentMarketplace.routes'],
   [`/api/${v}/m2m`, './routes/agentMarketplace.routes'],
   [`/api/${v}/m2m`, './routes/m2mSubcontract.routes'],
-  [`/api/${v}`, './routes/externalBooking.routes'],
+  [`/api/${v}`, './routes/agentEarnings.routes'],
   [`/api/${v}/billing`, './routes/billing.routes'],
   // Pabandi Engine: session abstraction. Mounted at /api/v1/engine, so the
   // full paths are POST /api/v1/engine/session/open | /action | /close.

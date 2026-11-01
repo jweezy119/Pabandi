@@ -6368,15 +6368,32 @@ model AgentMarketTransaction {
 model AgentWallet {
   id              String         @id @default(cuid())
   agentId         String         @unique
-  agent           AgentProfile   @relation(fields: [agentId], references: [id])
+  passportId      String?        @unique
+  pdaAddress      String?        @unique
+  agent           AgentProfile?  @relation(fields: [agentId], references: [id])
   publicKey       String         @unique
   encryptedSecret String
   balanceUsdc     Float          @default(0)
+  pabBalance      Float          @default(0)
+  delegatedLimit  Float?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   transfers       UsdcTransfer[]
+  earningsLedger  AgentEarningsLedger[]
 
   @@index([publicKey])
+}
+
+model AgentEarningsLedger {
+  id          String      @id @default(cuid())
+  walletId    String
+  wallet      AgentWallet @relation(fields: [walletId], references: [id])
+  mint        String
+  amount      Float
+  type        String // reward | escrow_release | fee
+  referenceId String?
+  txSignature String
+  createdAt   DateTime    @default(now())
 }
 
 model UsdcTransfer {
@@ -8531,3 +8548,13 @@ model ScoutedTarget {
   @@index([source])
 }
 
+
+model ReconciliationAlert {
+  id              String   @id @default(cuid())
+  walletId        String
+  onchainBalance  Float
+  ledgerBalance   Float
+  difference      Float
+  status          String   @default("open")
+  createdAt       DateTime @default(now())
+}
