@@ -1,6 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { gigService } from '../services/gig.service';
 import { PublicKey, LAMPORTS_PER_SOL, Connection } from '@solana/web3.js';
+import { authenticate } from '../middleware/auth.middleware';
+import { prisma } from '../utils/database';
 
 const router = Router();
 
@@ -71,6 +73,76 @@ router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const board = await gigService.openBoard();
     res.json({ success: true, data: board, count: board.length });
+  } catch (e: any) { next(e); }
+});
+
+/**
+ * POST /api/v1/gigs/ — Create a new gig (project).
+ * Body: { title, description, category, requiredSkills, budgetUsd, estimatedHours?, demandGrowthPct? }
+ */
+router.post('/', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { title, description, category, requiredSkills, budgetUsd, estimatedHours, demandGrowthPct } = req.body || {};
+
+    if (!title || !description || !category || budgetUsd == null) {
+      return res.status(400).json({ success: false, error: 'title, description, category, and budgetUsd are required' });
+    }
+
+    const gig = await prisma.project.create({
+      data: {
+        title,
+        description,
+        category,
+        requiredSkills: requiredSkills || [],
+        budgetUsd: Number(budgetUsd),
+        estimatedHours: estimatedHours ? Number(estimatedHours) : 0,
+        demandGrowthPct: demandGrowthPct ? Number(demandGrowthPct) : 0,
+        status: 'OPEN',
+        createdBy: req.user?.id,
+      },
+    });
+
+    res.status(201).json({ success: true, data: { gigId: gig.id, ...gig } });
+  } catch (e: any) { next(e); }
+});
+
+/**
+ * POST /api/v1/gigs/:id/accept/:bidId — Accept a specific bid on a gig.
+ * Only the gig poster may accept.
+ */
+router.post('/:id/accept/:bidId', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: gigId, bidId } = req.params;
+
+    const gig = await prisma.project.findUnique({ where: { id: gigId } });
+    if (!gig) return res.status(404).json({ success: false, error: 'Gig not found' });
+    if (gig.status !== 'OPEN') return res.status(400).json({ success: false, error: 'Gig is not open' });
+    if (gig.createdBy !== req.user?.id) return res.status(403).json({ success: false, error: 'Only the gig poster may accept bids' });
+
+    const bid = await prisma.projectBid.findUnique({ where: { id: bidId } });
+    if (!bid) return res.status(404).json({ success: false, error: 'Bid not found' });
+    if (bid.projectId !== gigId) return res.status(400).json({ success: false, error: 'Bid does not belong to this gig' });
+    if (bid.status !== 'PENDING') return res.status(400).json({ success: false, error: 'Bid is not pending' });
+
+    // Reject all other pending bids
+    await prisma.projectBid.updateMany({
+      where: { projectId: gigId, status: 'PENDING' },
+      data: { status: 'REJECTED' },
+    });
+
+    // Accept this bid
+    await prisma.projectBid.update({
+      where: { id: bidId },
+      data: { status: 'ACCEPTED' },
+    });
+
+    // Mark gig as in progress
+    await prisma.project.update({
+      where: { id: gigId },
+      data: { status: 'IN_PROGRESS', bestAgentId: bid.agentId, bestConfidence: bid.confidencePct },
+    });
+
+    res.json({ success: true, data: { gigId, acceptedBidId: bidId, agentId: bid.agentId, quoteUsd: bid.quoteUsd } });
   } catch (e: any) { next(e); }
 });
 
