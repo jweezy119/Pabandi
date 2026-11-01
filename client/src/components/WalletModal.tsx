@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { CLAY_FADE, CLAY_SETTLE, CLAY_SPRING } from './animations/clayMotion';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
 import { useAuthStore } from '../store/authStore';
@@ -78,6 +80,7 @@ export function WalletModal() {
   const { wallet, user } = useAuthStore();
   const { isOpen, closeModal } = useWalletModal();
   const { wallet: privyWallet } = useEmbeddedSolanaWallet();
+  const reduced = useReducedMotion();
 
   const [tab, setTab] = useState<TabId>('assets');
   const [copied, setCopied] = useState(false);
@@ -228,7 +231,26 @@ export function WalletModal() {
         onChange={(id) => setTab(id as TabId)}
       />
 
-      {tab === 'assets' && (
+      {/*
+        The "Lock In" shell: this layout container measures the active tab's
+        height and morphs the modal to it on a spring — the wallet physically
+        expands and contracts as tabs toggle. Framer's layout projection
+        interpolates via transform (never a raw width/height transition), so
+        it stays composited. Reduced motion: content swaps with a fade only.
+      */}
+      <motion.div
+        layout={reduced ? false : true}
+        transition={reduced ? CLAY_FADE : CLAY_SETTLE}
+        style={{ overflow: 'visible', willChange: 'transform' }}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+        {tab === 'assets' && (
+        <motion.div
+          key="assets"
+          initial={reduced ? undefined : { opacity: 0, y: 8 }}
+          animate={reduced ? undefined : { opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+        >
         <div className="space-y-6 py-2">
           {/* Balances */}
           <div className="grid grid-cols-2 gap-4">
@@ -282,9 +304,16 @@ export function WalletModal() {
             </span>
           </div>
         </div>
+        </motion.div>
       )}
 
       {tab === 'sessions' && (
+        <motion.div
+          key="sessions"
+          initial={reduced ? undefined : { opacity: 0, y: 8 }}
+          animate={reduced ? undefined : { opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+        >
         <div className="space-y-3 py-2">
           {sessionsError && (
             <div className="text-sm text-[var(--clay)] py-4">
@@ -322,9 +351,16 @@ export function WalletModal() {
               </div>
             ))}
         </div>
+        </motion.div>
       )}
 
       {tab === 'agent-budgets' && (
+        <motion.div
+          key="agent-budgets"
+          initial={reduced ? undefined : { opacity: 0, y: 8 }}
+          animate={reduced ? undefined : { opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+        >
         <div className="space-y-4 py-2">
           <div className="text-xs text-[var(--soft-stone)] bg-[var(--warm-sand)]/20 p-3 rounded-lg">
             <strong>Note:</strong> Funds for agent sessions are deducted from your Pabandi Wallet.
@@ -441,9 +477,16 @@ response = requests.post("https://pabandi.com/api/v1/...", headers=headers)`}
             </div>
           )}
         </div>
+        </motion.div>
       )}
 
       {tab === 'activity' && (
+        <motion.div
+          key="activity"
+          initial={reduced ? undefined : { opacity: 0, y: 8 }}
+          animate={reduced ? undefined : { opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+        >
         <div className="space-y-3 py-2">
           {receiptsError && (
             <div className="text-sm text-[var(--clay)] py-4">
@@ -471,7 +514,10 @@ response = requests.post("https://pabandi.com/api/v1/...", headers=headers)`}
               </div>
             ))}
         </div>
+        </motion.div>
       )}
+        </AnimatePresence>
+      </motion.div>
     </Modal>
   );
 }

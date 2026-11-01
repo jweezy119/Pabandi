@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import ProviderCard from '../../components/marketplace/ProviderCard';
 import { ClayStamp } from '../../components/animations/ClayStamp';
 import { ClayDust } from '../../components/animations/ClayDust';
+import ClayVaultLock from '../../components/clay/ClayVaultLock';
 import { CLAY_SPRING, CLAY_FADE } from '../../components/animations/clayMotion';
 import type {
   MatchAndPostResponse,
@@ -36,6 +37,8 @@ export default function PostProjectPage() {
   const [autoBook, setAutoBook] = useState(false);
   /** Increments once per successful post — drives the stamp + clay-dust burst. */
   const [stampKey, setStampKey] = useState(0);
+  /** The "Lock In" vault ritual — shown when escrow funds land classically. */
+  const [vaultOpen, setVaultOpen] = useState(false);
   const reduced = useReducedMotion();
 
   const setField = (key: keyof FormState) => (
@@ -122,6 +125,8 @@ export default function PostProjectPage() {
         window.location.href = checkoutUrl;
         return;
       }
+      // Classic escrow path: funds are held on-chain — seal the screen.
+      setVaultOpen(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
     } finally {
@@ -294,6 +299,8 @@ export default function PostProjectPage() {
           Browsing first? <Link to="/agent-marketplace" className="underline">View the marketplace</Link>
         </p>
       </div>
+
+      <ClayVaultLock open={vaultOpen} onClose={() => setVaultOpen(false)} />
     </div>
   );
 }
