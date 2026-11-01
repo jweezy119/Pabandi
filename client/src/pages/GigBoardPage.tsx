@@ -21,20 +21,32 @@ const categoryColors: Record<string, string> = {
   'agent-building': '#ec4899',
 };
 
+interface Gig {
+  gigId?: string;
+  id: string;
+  title: string;
+  description?: string;
+  category: string;
+  requiredSkills?: string[];
+  budgetUsd?: number;
+  competingBids?: number;
+  demandGrowthPct?: number;
+}
+
 export default function GigBoardPage() {
   const { isAuthenticated } = useAuthStore();
-  const [gigs, setGigs] = useState<any[]>([]);
+  const [gigs, setGigs] = useState<Gig[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('ALL');
   const [postOpen, setPostOpen] = useState(false);
-  const [postForm, setPostForm] = useState({ title: '', description: '', category: 'WEB_DEVELOPMENT', requiredSkills: '', budgetUsd: '' });
+  const [postForm, setPostForm] = useState({ title: '', description: '', category: 'agent-to-human', requiredSkills: '', budgetUsd: '' });
   const [posting, setPosting] = useState(false);
   const [bidOpenGig, setBidOpenGig] = useState<string | null>(null);
   const [bidQuote, setBidQuote] = useState('');
   const [bidding, setBidding] = useState(false);
 
   useEffect(() => {
-    api.get('/gigs').then(r => {
+    api.get<{ data?: Gig[]; gigs?: Gig[] }>('/gigs').then(r => {
       setGigs(r.data?.data || r.data?.gigs || []);
     }).catch(() => setGigs([])).finally(() => setLoading(false));
   }, []);
@@ -52,14 +64,15 @@ export default function GigBoardPage() {
         category: postForm.category,
         requiredSkills: skills,
         budgetUsd: Number(postForm.budgetUsd),
-      });
+      } as Gig);
       setPostOpen(false);
       setPostForm({ title: '', description: '', category: 'WEB_DEVELOPMENT', requiredSkills: '', budgetUsd: '' });
       // Refresh list
       const r = await api.get('/gigs');
       setGigs(r.data?.data || r.data?.gigs || []);
-    } catch (err: any) {
-      alert(err.response?.data?.error || 'Failed to create gig');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to create gig';
+      alert(msg);
     } finally { setPosting(false); }
   };
 
@@ -72,10 +85,11 @@ export default function GigBoardPage() {
       setBidOpenGig(null);
       setBidQuote('');
       // Refresh list
-      const r = await api.get('/gigs');
+      const r = await api.get<{ data?: Gig[]; gigs?: Gig[] }>('/gigs');
       setGigs(r.data?.data || r.data?.gigs || []);
-    } catch (err: any) {
-      alert(err.response?.data?.error || 'Failed to submit bid');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to submit bid';
+      alert(msg);
     } finally { setBidding(false); }
   };
 
@@ -134,15 +148,15 @@ export default function GigBoardPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((gig: any) => {
-              const color = categoryColors[gig.category] || '#6366f1';
+            {filtered.map((gig) => {
+              const color = categoryColors[gig.category as keyof typeof categoryColors] || '#6366f1';
               return (
                 <div key={gig.gigId || gig.id} className="relative group bg-[var(--warm-sand)]/50 backdrop-blur border border-[var(--soft-stone)]/30 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/5">
                   <Link to={`/gigs/${gig.gigId || gig.id}`} className="block h-full">
                     {/* Category badge */}
                     <div className="flex items-center justify-between mb-4">
                       <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider" style={{ background: `${color}20`, color, border: `1px solid ${color}30` }}>
-                        {categoryLabels[gig.category] || gig.category}
+                        {categoryLabels[gig.category as keyof typeof categoryLabels] || gig.category}
                       </span>
                       {gig.demandGrowthPct > 0 && (
                         <span className="text-[10px] font-bold text-[var(--sage)] flex items-center gap-0.5">

@@ -20,7 +20,7 @@ const CATEGORIES = [
   { id: 'EVENT_VENUE', label: 'Venues', icon: 'celebration' },
 ];
 
-function ClayButton({ children, variant = 'primary', className = '', ...props }: any) {
+function ClayButton({ children, variant = 'primary', className = '', ...props }: { children: React.ReactNode; variant?: 'primary' | 'secondary' | 'ghost'; className?: string } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const base = 'inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 cursor-pointer border-2';
   const variants: Record<string, string> = {
     primary: 'bg-[var(--clay)] text-white border-[var(--clay)] hover:bg-[var(--terracotta)] hover:border-[var(--terracotta)] hover:-translate-y-0.5 active:scale-95',
@@ -171,7 +171,7 @@ export default function BookingOSPage() {
           <ClayStat icon="calendar_month" value="12" label="Bookings" trend="+8 this month" color="sage" />
           <ClayStat icon="star" value="4.7" label="Avg Rating" color="ochre" />
           <ClayStat icon="account_balance_wallet" value="$0.00" label="Spending" color="sky-wash" />
-          <ClayStat icon="verified" value={String(BUSINESSES.filter(b => b.halalCertified).length)} label="Halal Businesses" color="sage" />
+          <ClayStat icon="verified" value={String(businesses.filter(b => b.halalCertified).length)} label="Halal Businesses" color="sage" />
         </div>
 
         {/* Search and filters */}
