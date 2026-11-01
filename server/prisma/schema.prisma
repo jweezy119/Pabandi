@@ -6328,16 +6328,21 @@ model AgentProjectBid {
 }
 
 model AgentEscrow {
-  id            String       @id @default(cuid())
-  projectId     String       @unique
-  project       AgentProject @relation(fields: [projectId], references: [id])
-  totalAmount   Float
-  releaseAmount Float
-  platformFee   Float
-  status        String       @default("FUNDED")
-  fundedAt      DateTime     @default(now())
-  releasedAt    DateTime?
-  refundedAt    DateTime?
+  id                String        @id @default(cuid())
+  projectId         String        @unique
+  project           AgentProject  @relation(fields: [projectId], references: [id])
+  parentEscrowId    String?
+  parentEscrow      AgentEscrow?  @relation("ChildEscrows", fields: [parentEscrowId], references: [id])
+  childEscrows      AgentEscrow[] @relation("ChildEscrows")
+  providerPassportId String?
+  deliverableHash   String?
+  totalAmount       Float
+  releaseAmount     Float
+  platformFee       Float
+  status            String        @default("FUNDED")
+  fundedAt          DateTime      @default(now())
+  releasedAt        DateTime?
+  refundedAt        DateTime?
 }
 
 model AgentMarketTransaction {

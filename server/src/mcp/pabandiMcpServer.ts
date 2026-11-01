@@ -222,18 +222,26 @@ const ENGINE_TOOLS = [
     },
   },
   {
-    name: 'pabandi_open_session',
-    description:
-      'Open a PabandiSession -- an "open tab" with a spending limit set by your Trust Score (800+ = $1000 / 30 days, ' +
-      '500+ = $100 / 7 days, below 500 = $20 / 24 hours). Call this before pabandi_execute_transaction; ' +
-      'it returns the sessionId every subsequent spend uses. No wallet signature is needed.',
+    name: 'pabandi_m2m_manage_subcontracts',
+    description: 'Autonomously split a job and pay sub-agents. Create parent-child escrows for subcontracting work.',
     inputSchema: {
       type: 'object',
       properties: {
-        ownerType: { type: 'string', enum: ['user', 'agent'], description: 'Which principal this tab belongs to' },
-        ownerId: { type: 'string', description: 'id of that principal' },
+        masterEscrowId: { type: 'string', description: 'Master escrow ID' },
+        subcontracts: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              providerPassportId: { type: 'string' },
+              amount: { type: 'number' },
+              deliverableHash: { type: 'string' },
+            },
+            required: ['providerPassportId', 'amount', 'deliverableHash'],
+          },
+        },
       },
-      required: ['ownerType', 'ownerId'],
+      required: ['masterEscrowId', 'subcontracts'],
     },
   },
 ];
