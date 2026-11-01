@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Shield, Lock, Play, CheckCircle } from 'lucide-react';
+import { ArrowRight, Shield, Lock, Play, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import { ClayCard } from '../../components/clay/ClayCard';
 import ClayVaultLock from '../../components/clay/ClayVaultLock';
 
-type SimState = 'idle' | 'negotiating' | 'escrow_locked' | 'delivered' | 'released';
+type SimState = 'idle' | 'negotiating' | 'escrow_locked' | 'delivered' | 'released' | 'disputed';
 
 const LOG_LINES: Record<string, string[]> = {
   idle: [
@@ -65,6 +65,22 @@ const LOG_LINES: Record<string, string[]> = {
     '&gt; Releasing $1,000 USDC to seller',
     '&gt; Updating trust scores...',
   ],
+  disputed: [
+    '&gt; Pabandi Engine initialized',
+    '&gt; Waiting for simulation start',
+    '&gt; Parsing job description...',
+    '&gt; Buyer Agent (Node A): risk_profile=LOW',
+    '&gt; Seller Agent (Node B): risk_profile=MEDIUM',
+    '&gt; Trust Score diff: 410',
+    '&gt; Calculating required deposit...',
+    '&gt; Deposit required: 20%',
+    '&gt; Locking $1,000 USDC in master escrow',
+    '&gt; Vault seal applied',
+    '&gt; Seller submitted deliverable',
+    '&gt; Data hash: 0x9f3a...c2d1',
+    '&gt; Buyer rejected deliverable',
+    '&gt; Sulha AI Arbitration invoked',
+  ],
 };
 
 const FEED_ITEMS: Record<string, { label: string; status: 'pending' | 'active' | 'complete' }[]> = {
@@ -97,6 +113,13 @@ const FEED_ITEMS: Record<string, { label: string; status: 'pending' | 'active' |
     { label: 'Deliver work product', status: 'complete' },
     { label: 'Release funds', status: 'complete' },
   ],
+  disputed: [
+    { label: 'Analyze agent trust scores', status: 'complete' },
+    { label: 'Calculate required deposit', status: 'complete' },
+    { label: 'Fund master escrow', status: 'complete' },
+    { label: 'Deliver work product', status: 'complete' },
+    { label: 'Release funds', status: 'pending' },
+  ],
 };
 
 export default function DealSimulator() {
@@ -105,6 +128,8 @@ export default function DealSimulator() {
   const [buyerScore, setBuyerScore] = useState(820);
   const [sellerScore, setSellerScore] = useState(410);
   const [vaultOpen, setVaultOpen] = useState(false);
+  const [disputeModal, setDisputeModal] = useState(false);
+  const [arbitrationRuling, setArbitrationRuling] = useState<'buyer' | 'seller' | null>(null);
   const [logScroll, setLogScroll] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -115,7 +140,6 @@ export default function DealSimulator() {
 
   const startSimulation = () => {
     setState('negotiating');
-    // After 1.5s, the negotiating panel auto-shows "Risk Analysis Complete"
   };
 
   const fundEscrow = () => {
@@ -128,10 +152,36 @@ export default function DealSimulator() {
     setState('delivered');
   };
 
+  const verifyAndRelease = () => {
+    setState('released');
+    setBuyerScore(830);
+    setSellerScore(420);
+  };
+
+  const rejectAndDispute = () => {
+    setState('disputed');
+    setDisputeModal(true);
+  };
+
+  const ruleInFavor = (party: 'buyer' | 'seller') => {
+    setArbitrationRuling(party);
+    if (party === 'buyer') {
+      setBuyerScore(840);
+      setSellerScore(360); // Seller drops -50 for fraud
+    } else {
+      setBuyerScore(780);
+      setSellerScore(450);
+    }
+    setState('released');
+    setDisputeModal(false);
+  };
+
   const resetSimulation = () => {
     setState('idle');
     setBuyerScore(820);
     setSellerScore(410);
+    setDisputeModal(false);
+    setArbitrationRuling(null);
   };
 
   const isMobile = window.innerWidth < 768;
@@ -294,14 +344,23 @@ export default function DealSimulator() {
           {state === 'delivered' && (
             <div className="bg-[#1a1612] border border-[#4a453f] rounded-3xl p-6">
               <p className="text-[#C97B5A] font-bold text-lg mb-4">Deliverable Received</p>
-              <p className="text-[#BFB3A3] mb-6">Seller submitted proof of work. Verify and release funds.</p>
-              <button
-                onClick={() => setState('released')}
-                className="w-full py-4 rounded-xl bg-[#8A9A7B] text-[#1a1612] font-bold hover:bg-[#9EAD8E] transition-colors"
-              >
-                <CheckCircle className="w-5 h-5 mr-2" />
-                Verify & Release Funds
-              </button>
+              <p className="text-[#BFB3A3] mb-6">Seller submitted proof of work. Verify and release funds, or dispute.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={verifyAndRelease}
+                  className="flex-1 py-4 rounded-xl bg-[#8A9A7B] text-[#1a1612] font-bold hover:bg-[#9EAD8E] transition-colors"
+                >
+                  <CheckCircle className="w-5 h-5 mr-2" />
+                  Verify & Release
+                </button>
+                <button
+                  onClick={rejectAndDispute}
+                  className="flex-1 py-4 rounded-xl bg-[#C97B5A]/10 border border-[#C97B5A]/30 text-[#C97B5A] font-bold hover:bg-[#C97B5A]/20 transition-colors"
+                >
+                  <AlertTriangle className="w-5 h-5 mr-2" />
+                  Reject & Dispute
+                </button>
+              </div>
             </div>
           )}
           {state === 'released' && (
@@ -336,6 +395,57 @@ export default function DealSimulator() {
           onClose={() => setVaultOpen(false)}
           message="Funds Secured in Escrow"
         />
+
+        {/* Sulha Dispute Modal */}
+        <AnimatePresence>
+          {disputeModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+              onClick={() => setDisputeModal(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-[#1a1612] border border-[#C97B5A]/30 rounded-3xl p-6 w-full max-w-md shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="font-bold text-[#C97B5A] text-lg mb-4">Sulha AI Arbitration</h3>
+                <div className="font-mono text-xs space-y-2 mb-6 text-[#BFB3A3]">
+                  <div className="flex items-start gap-2">
+                    <span className="text-[#C97B5A]">&gt;</span>
+                    <span>Analyzing data hash...</span>
+                  </div>
+                  <div className="flex items-start gap-2 opacity-50">
+                    <span className="text-[#C97B5A]">&gt;</span>
+                    <span>Hash mismatch detected</span>
+                  </div>
+                  <div className="flex items-start gap-2 opacity-25">
+                    <span className="text-[#C97B5A]">&gt;</span>
+                    <span>Invoking arbiter...</span>
+                  </div>
+                </div>
+                <p className="text-[#BFB3A3] mb-6">The deliverable hash does not match. How should the arbiter rule?</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => ruleInFavor('buyer')}
+                    className="flex-1 py-3 rounded-xl bg-[#C97B5A]/10 border border-[#C97B5A]/30 text-[#C97B5A] font-bold hover:bg-[#C97B5A]/20 transition-colors"
+                  >
+                    Rule in Favor of Buyer
+                  </button>
+                  <button
+                    onClick={() => ruleInFavor('seller')}
+                    className="flex-1 py-3 rounded-xl bg-[#8A9A7B]/10 border border-[#8A9A7B]/30 text-[#8A9A7B] font-bold hover:bg-[#8A9A7B]/20 transition-colors"
+                  >
+                    Rule in Favor of Seller
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
