@@ -1,15 +1,137 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Shield, Play } from 'lucide-react';
+import { ArrowRight, Shield, Lock, Play, CheckCircle } from 'lucide-react';
 import { ClayCard } from '../../components/clay/ClayCard';
+import ClayVaultLock from '../../components/clay/ClayVaultLock';
+
+type SimState = 'idle' | 'negotiating' | 'escrow_locked' | 'delivered' | 'released';
+
+const LOG_LINES: Record<string, string[]> = {
+  idle: [
+    '&gt; Pabandi Engine initialized',
+    '&gt; Waiting for simulation start',
+  ],
+  negotiating: [
+    '&gt; Pabandi Engine initialized',
+    '&gt; Waiting for simulation start',
+    '&gt; Parsing job description...',
+    '&gt; Buyer Agent (Node A): risk_profile=LOW',
+    '&gt; Seller Agent (Node B): risk_profile=MEDIUM',
+    '&gt; Trust Score diff: 410',
+    '&gt; Calculating required deposit...',
+  ],
+  escrow_locked: [
+    '&gt; Pabandi Engine initialized',
+    '&gt; Waiting for simulation start',
+    '&gt; Parsing job description...',
+    '&gt; Buyer Agent (Node A): risk_profile=LOW',
+    '&gt; Seller Agent (Node B): risk_profile=MEDIUM',
+    '&gt; Trust Score diff: 410',
+    '&gt; Calculating required deposit...',
+    '&gt; Deposit required: 20%',
+    '&gt; Locking $1,000 USDC in master escrow',
+    '&gt; Vault seal applied',
+  ],
+  delivered: [
+    '&gt; Pabandi Engine initialized',
+    '&gt; Waiting for simulation start',
+    '&gt; Parsing job description...',
+    '&gt; Buyer Agent (Node A): risk_profile=LOW',
+    '&gt; Seller Agent (Node B): risk_profile=MEDIUM',
+    '&gt; Trust Score diff: 410',
+    '&gt; Calculating required deposit...',
+    '&gt; Deposit required: 20%',
+    '&gt; Locking $1,000 USDC in master escrow',
+    '&gt; Vault seal applied',
+    '&gt; Seller submitted deliverable',
+    '&gt; Data hash: 0x9f3a...c2d1',
+    '&gt; Awaiting buyer verification',
+  ],
+  released: [
+    '&gt; Pabandi Engine initialized',
+    '&gt; Waiting for simulation start',
+    '&gt; Parsing job description...',
+    '&gt; Buyer Agent (Node A): risk_profile=LOW',
+    '&gt; Seller Agent (Node B): risk_profile=MEDIUM',
+    '&gt; Trust Score diff: 410',
+    '&gt; Calculating required deposit...',
+    '&gt; Deposit required: 20%',
+    '&gt; Locking $1,000 USDC in master escrow',
+    '&gt; Vault seal applied',
+    '&gt; Seller submitted deliverable',
+    '&gt; Data hash: 0x9f3a...c2d1',
+    '&gt; Buyer verified deliverable',
+    '&gt; Releasing $1,000 USDC to seller',
+    '&gt; Updating trust scores...',
+  ],
+};
+
+const FEED_ITEMS: Record<string, { label: string; status: 'pending' | 'active' | 'complete' }[]> = {
+  idle: [],
+  negotiating: [
+    { label: 'Analyze agent trust scores', status: 'complete' },
+    { label: 'Calculate required deposit', status: 'complete' },
+    { label: 'Fund master escrow', status: 'pending' },
+    { label: 'Deliver work product', status: 'pending' },
+    { label: 'Release funds', status: 'pending' },
+  ],
+  escrow_locked: [
+    { label: 'Analyze agent trust scores', status: 'complete' },
+    { label: 'Calculate required deposit', status: 'complete' },
+    { label: 'Fund master escrow', status: 'complete' },
+    { label: 'Deliver work product', status: 'pending' },
+    { label: 'Release funds', status: 'pending' },
+  ],
+  delivered: [
+    { label: 'Analyze agent trust scores', status: 'complete' },
+    { label: 'Calculate required deposit', status: 'complete' },
+    { label: 'Fund master escrow', status: 'complete' },
+    { label: 'Deliver work product', status: 'complete' },
+    { label: 'Release funds', status: 'pending' },
+  ],
+  released: [
+    { label: 'Analyze agent trust scores', status: 'complete' },
+    { label: 'Calculate required deposit', status: 'complete' },
+    { label: 'Fund master escrow', status: 'complete' },
+    { label: 'Deliver work product', status: 'complete' },
+    { label: 'Release funds', status: 'complete' },
+  ],
+};
 
 export default function DealSimulator() {
   const navigate = useNavigate();
-  const [simStarted, setSimStarted] = useState(false);
+  const [state, setState] = useState<SimState>('idle');
+  const [buyerScore, setBuyerScore] = useState(820);
+  const [sellerScore, setSellerScore] = useState(410);
+  const [vaultOpen, setVaultOpen] = useState(false);
+  const [logScroll, setLogScroll] = useState<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (logScroll) {
+      logScroll.scrollTop = logScroll.scrollHeight;
+    }
+  }, [state, logScroll]);
 
   const startSimulation = () => {
-    setSimStarted(true);
+    setState('negotiating');
+    // After 1.5s, the negotiating panel auto-shows "Risk Analysis Complete"
+  };
+
+  const fundEscrow = () => {
+    setState('escrow_locked');
+    setVaultOpen(true);
+    setTimeout(() => setVaultOpen(false), 2600);
+  };
+
+  const simulateDelivery = () => {
+    setState('delivered');
+  };
+
+  const resetSimulation = () => {
+    setState('idle');
+    setBuyerScore(820);
+    setSellerScore(410);
   };
 
   const isMobile = window.innerWidth < 768;
@@ -47,11 +169,15 @@ export default function DealSimulator() {
                 <h3 className="font-bold text-[#F5EFE6] text-sm">Buyer Agent (Node A)</h3>
               </div>
               <div className="relative w-full h-24 bg-[#0f0d0b] rounded-full border border-[#4a453f] overflow-hidden mb-4">
-                <div className="h-full bg-gradient-to-r from-[#8A9A7B] to-[#C97B5A] transition-all duration-1000" style={{ width: '82%' }} />
+                <motion.div
+                  className="h-full bg-gradient-to-r from-[#8A9A7B] to-[#C97B5A]"
+                  style={{ width: `${Math.min(buyerScore / 1000, 1) * 100}%` }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                />
               </div>
               <div className="flex justify-between text-xs text-[#BFB3A3] mb-2">
                 <span>Trust Score</span>
-                <span className="font-bold text-[#F5EFE6]">820</span>
+                <span className="font-bold text-[#F5EFE6]">{buyerScore}</span>
               </div>
               <p className="text-xs text-[#8A9A7B]">Low risk · 12 completed deals</p>
             </ClayCard>
@@ -62,11 +188,15 @@ export default function DealSimulator() {
                 <h3 className="font-bold text-[#F5EFE6] text-sm">Seller Agent (Node B)</h3>
               </div>
               <div className="relative w-full h-24 bg-[#0f0d0b] rounded-full border border-[#4a453f] overflow-hidden mb-4">
-                <div className="h-full bg-gradient-to-r from-[#8A9A7B] to-[#C97B5A] transition-all duration-1000" style={{ width: '41%' }} />
+                <motion.div
+                  className="h-full bg-gradient-to-r from-[#8A9A7B] to-[#C97B5A]"
+                  style={{ width: `${Math.min(sellerScore / 1000, 1) * 100}%` }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                />
               </div>
               <div className="flex justify-between text-xs text-[#BFB3A3] mb-2">
                 <span>Trust Score</span>
-                <span className="font-bold text-[#F5EFE6]">410</span>
+                <span className="font-bold text-[#F5EFE6]">{sellerScore}</span>
               </div>
               <p className="text-xs text-[#8A9A7B]">Medium risk · 3 completed deals</p>
             </ClayCard>
@@ -76,33 +206,25 @@ export default function DealSimulator() {
           <div className={centerPanelClass}>
             <div className="bg-[#1a1612] border border-[#4a453f] rounded-3xl p-6 flex-1 flex flex-col">
               <h3 className="font-bold text-[#F5EFE6] text-sm mb-4">Transaction Feed</h3>
-              <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-                {simStarted ? (
-                  <>
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex items-start gap-3"
+              <div className="flex-1 overflow-y-auto space-y-4 pr-2" ref={logScroll}>
+                {FEED_ITEMS[state].map((item, i) => (
+                  <motion.div
+                    key={i}
+                    className="flex items-start gap-3"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                  >
+                    <div
+                      className={`w-2 h-2 rounded-full ${item.status === 'complete' ? 'bg-[#8A9A7B]' : item.status === 'active' ? 'bg-[#C97B5A]' : 'bg-[#4a453f]'}`}
+                    />
+                    <span
+                      className={`text-sm ${item.status === 'complete' ? 'text-[#8A9A7B]' : item.status === 'active' ? 'text-[#C97B5A]' : 'text-[#5a554f]'}`}
                     >
-                      <div className="w-2 h-2 rounded-full bg-[#C97B5A]" />
-                      <span className="text-sm text-[#C97B5A]">Risk analysis initiated</span>
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                      className="flex items-start gap-3"
-                    >
-                      <div className="w-2 h-2 rounded-full bg-[#8A9A7B]" />
-                      <span className="text-sm text-[#8A9A7B]">Waiting for escrow funding</span>
-                    </motion.div>
-                  </>
-                ) : (
-                  <div className="flex items-start gap-3 text-[#5a554f] text-sm">
-                    <div className="w-2 h-2 rounded-full bg-[#4a453f]" />
-                    <span>Simulation not started</span>
-                  </div>
-                )}
+                      {item.label}
+                    </span>
+                  </motion.div>
+                ))}
               </div>
             </div>
           </div>
@@ -116,17 +238,26 @@ export default function DealSimulator() {
                 <div className="w-12 h-4 bg-[#4a453f]/50 rounded-full" />
                 <span className="ml-2 text-xs text-[#8A9A7B] font-mono">PABANDI ENGINE v1.0</span>
               </div>
-                <div className="flex-1 overflow-y-auto font-mono text-xs space-y-1.5 pr-2">
-                  <div className="text-[#5a554f]">&gt; Pabandi Engine initialized</div>
-                  <div className="text-[#5a554f]">&gt; Waiting for simulation start</div>
-                </div>
+              <div className="flex-1 overflow-y-auto font-mono text-xs space-y-1.5 pr-2">
+                {LOG_LINES[state].map((line, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className={`text-xs font-mono leading-relaxed ${line.startsWith('&gt;') ? 'text-[#C97B5A]' : 'text-[#5a554f]'}`}
+                  >
+                    {line}
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Action Button */}
+        {/* Action Buttons */}
         <div className="mt-8">
-          {!simStarted && (
+          {state === 'idle' && (
             <button
               onClick={startSimulation}
               className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-[#C97B5A] text-[#1a1612] font-bold hover:bg-[#E8B864] transition-colors shadow-lg hover:shadow-[0_0_30px_rgba(201,123,86,0.4)]"
@@ -135,20 +266,76 @@ export default function DealSimulator() {
               Start Simulation
             </button>
           )}
+          {state === 'negotiating' && (
+            <div className="bg-[#1a1612] border border-[#4a453f] rounded-3xl p-6 text-center">
+              <p className="text-[#C97B5A] font-bold text-lg mb-4">Risk Analysis Complete</p>
+              <p className="text-[#BFB3A3] mb-6">Deposit of $1,000 required (20% of $5,000 job)</p>
+              <button
+                onClick={fundEscrow}
+                className="w-full py-4 rounded-xl bg-[#C97B5A] text-[#1a1612] font-bold hover:bg-[#E8B864] transition-colors"
+              >
+                <Lock className="w-5 h-5 mr-2" />
+                Fund Escrow
+              </button>
+            </div>
+          )}
+          {state === 'escrow_locked' && (
+            <div className="bg-[#1a1612] border border-[#4a453f] rounded-3xl p-6 text-center">
+              <p className="text-[#8A9A7B] font-bold text-lg mb-4">Escrow Locked: $1,000 USDC</p>
+              <p className="text-[#BFB3A3] mb-6">Awaiting seller delivery...</p>
+              <button
+                onClick={simulateDelivery}
+                className="w-full py-4 rounded-xl bg-[#C97B5A]/20 border border-[#C97B5A]/30 text-[#C97B5A] font-bold hover:bg-[#C97B5A]/40 transition-colors"
+              >
+                Simulate Delivery
+              </button>
+            </div>
+          )}
+          {state === 'delivered' && (
+            <div className="bg-[#1a1612] border border-[#4a453f] rounded-3xl p-6">
+              <p className="text-[#C97B5A] font-bold text-lg mb-4">Deliverable Received</p>
+              <p className="text-[#BFB3A3] mb-6">Seller submitted proof of work. Verify and release funds.</p>
+              <button
+                onClick={() => setState('released')}
+                className="w-full py-4 rounded-xl bg-[#8A9A7B] text-[#1a1612] font-bold hover:bg-[#9EAD8E] transition-colors"
+              >
+                <CheckCircle className="w-5 h-5 mr-2" />
+                Verify & Release Funds
+              </button>
+            </div>
+          )}
+          {state === 'released' && (
+            <div className="bg-[#1a1612] border border-[#4a453f] rounded-3xl p-6 text-center">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <CheckCircle className="w-6 h-6 text-[#8A9A7B]" />
+                <span className="text-[#8A9A7B] font-bold text-lg">Funds Released</span>
+              </div>
+              <div className="flex justify-between text-sm mb-6">
+                <div className="text-center">
+                  <p className="text-[#5a554f] text-xs uppercase">Buyer Score</p>
+                  <p className="font-bold text-[#F5EFE6]">{buyerScore}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[#5a554f] text-xs uppercase">Seller Score</p>
+                  <p className="font-bold text-[#F5EFE6]">{sellerScore}</p>
+                </div>
+              </div>
+              <button
+                onClick={resetSimulation}
+                className="w-full py-3 rounded-xl bg-[#4a453f] text-[#BFB3A3] font-bold hover:bg-[#5a554f] transition-colors"
+              >
+                Run Another Simulation
+              </button>
+            </div>
+          )}
         </div>
 
-        {simStarted && (
-          <div className="mt-8 bg-[#1a1612] border border-[#4a453f] rounded-3xl p-6 text-center">
-            <p className="text-[#C97B5A] font-bold text-lg mb-4">Simulation Started</p>
-            <p className="text-[#BFB3A3] mb-6">Agent trust profiles loaded. Ready to fund escrow.</p>
-            <button
-              onClick={() => setSimStarted(false)}
-              className="w-full py-3 rounded-xl bg-[#4a453f] text-[#BFB3A3] font-bold hover:bg-[#5a554f] transition-colors"
-            >
-              Reset Simulation
-            </button>
-          </div>
-        )}
+        {/* Vault Lock Animation */}
+        <ClayVaultLock
+          open={vaultOpen}
+          onClose={() => setVaultOpen(false)}
+          message="Funds Secured in Escrow"
+        />
       </div>
     </div>
   );
