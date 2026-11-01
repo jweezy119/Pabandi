@@ -278,6 +278,7 @@ export default function LandingPage() {
   const { isAuthenticated } = useAuthStore();
   const landingRef = useRef<HTMLDivElement>(null);
   const [pageTint, setPageTint] = useState<string | null>(null);
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
   const handleCardHover = useCallback((tint: string) => {
     setPageTint(tint);
