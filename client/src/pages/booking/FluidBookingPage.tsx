@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import {
-  Calendar, Clock, Users, ChevronRight, Check, Shield, Zap, ArrowLeft
+  Calendar, Clock, Users, ChevronRight, Check, Shield, Zap, ArrowLeft, Mail, CreditCard
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Toaster } from 'react-hot-toast';
@@ -11,6 +11,7 @@ import { HalalBadge } from '../../components/halal';
 import { useEngineCheckout } from '../../hooks/useEngineCheckout';
 import { EmbeddedCheckoutModal, type DepositPrompt } from '../../components/EmbeddedCheckoutModal';
 import { VaultLocked } from '../../components/GuaranteeVisuals';
+import { ClayButton } from '../../components/clay/ClayButton';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
 
@@ -315,6 +316,13 @@ export default function FluidBookingPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6">
+        {/* Breadcrumb navigation */}
+        <div className="flex items-center gap-1 mb-6 text-xs text-[var(--soft-stone)]">
+          <span>Booking</span>
+          <ChevronRight size={12} />
+          <span className="text-[var(--clay)] font-medium">Payment</span>
+        </div>
+
         <div className="flex items-center gap-2 mb-6">
           {[1, 2, 3, 4].map(s => (
             <div key={s} className="flex items-center gap-2">
@@ -677,25 +685,42 @@ export default function FluidBookingPage() {
         )}
       </div>
 
-      {/*
-        Scoped Toaster. The app mounts no <Toaster /> anywhere, so every
-        toast.success/error in this file -- including the ones already here --
-        has been a silent no-op. Mounting one app-wide would fix all of them at
-        once, but that surfaces ~20 files' worth of currently-invisible toasts,
-        several of them error messages that were never meant to be shown. A
-        Toaster here covers this page's own toasts and leaves that decision
-        open on purpose.
+        {/*
+          Scoped Toaster. The app mounts no <Toaster /> anywhere, so every
+          toast.success/error in this file -- including the ones already here --
+          has been a silent no-op. Mounting one app-wide would fix all of them at
+          once, but that surfaces ~20 files' worth of currently-invisible toasts,
+          several of them error messages that were never meant to be shown. A
+          Toaster here covers this page's own toasts and leaves that decision
+          open on purpose.
 
-        The modal is rendered by the page rather than portalled so it inherits
-        the engine's lifetime: it cannot outlive the checkout that opened it.
-      */}
-      <EmbeddedCheckoutModal
-        prompt={depositPrompt}
-        onClose={() => setDepositPrompt(null)}
-        onFunded={handleDepositFunded}
-      />
+          The modal is rendered by the page rather than portalled so it inherits
+          the engine's lifetime: it cannot outlive the checkout that opened it.
+        */}
+        <EmbeddedCheckoutModal
+          prompt={depositPrompt}
+          onClose={() => setDepositPrompt(null)}
+          onFunded={handleDepositFunded}
+        />
 
-      <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
-    </div>
+        {/* Deposit summary - shows what was paid and why, even after modal closes */}
+        {paidDeposit != null && paidDeposit > 0 && booking && (
+          <div className="mt-8 p-4 rounded-2xl bg-emerald-500/8 border border-emerald-500/20">
+            <div className="flex items-center gap-3 mb-3">
+              <Shield size={14} className="text-emerald-500" />
+              <span className="text-sm font-semibold text-emerald-700">Deposit Secured</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-[var(--soft-stone)]">Amount locked in escrow</span>
+              <span className="font-bold text-emerald-700">${paidDeposit.toLocaleString()}</span>
+            </div>
+            <p className="text-xs text-emerald-600 mt-2">
+              This deposit is held by Pabandi until your appointment. It will be released to the business once you check in.
+            </p>
+          </div>
+        )}
+
+        <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
+      </div>
   );
 }

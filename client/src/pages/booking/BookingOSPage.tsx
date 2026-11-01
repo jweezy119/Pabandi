@@ -1,9 +1,10 @@
 import DashboardLayout from '../../components/DashboardLayout';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { getAuthToken } from '../../utils/authToken';
 import { HalalBanner } from '../../components/halal';
 import { ClayCard } from '../../components/clay/ClayCard';
+import BookingSearchBar from '../../components/BookingSearchBar';
 
 const NAV_ITEMS = [
   { path: '/booking', label: 'Discovery', icon: 'explore', end: true },
@@ -21,20 +22,6 @@ const CATEGORIES = [
   { id: 'EVENT_VENUE', label: 'Venues', icon: 'celebration' },
 ];
 
-function ClayButton({ children, variant = 'primary', className = '', ...props }: { children: React.ReactNode; variant?: 'primary' | 'secondary' | 'ghost'; className?: string } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  const base = 'inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 cursor-pointer border-2';
-  const variants: Record<string, string> = {
-    primary: 'bg-[var(--clay)] text-white border-[var(--clay)] hover:bg-[var(--terracotta)] hover:border-[var(--terracotta)] hover:-translate-y-0.5 active:scale-95',
-    secondary: 'bg-transparent text-[var(--warm-ink)] border-[var(--soft-stone)] hover:border-[var(--clay)] hover:text-[var(--clay)]',
-    ghost: 'bg-transparent text-[var(--soft-stone)] border-transparent hover:bg-[var(--warm-sand)]',
-  };
-  return (
-    <button className={`${base} ${variants[variant]} ${className}`} {...props}>
-      {children}
-    </button>
-  );
-}
-
 function ClayStat({ icon, value, label, trend, color = 'terracotta' }: { icon: string; value: string | number; label: string; trend?: string; color?: string }) {
   const colorMap: Record<string, string> = {
     terracotta: 'bg-[var(--clay)]',
@@ -44,10 +31,10 @@ function ClayStat({ icon, value, label, trend, color = 'terracotta' }: { icon: s
     'sky-wash': 'bg-[var(--sky-wash)]',
   };
   return (
-    <ClayCard className="p-5" hover={false}>
+    <ClayCard className="p-4" hover={false}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm mb-1" style={{ color: 'var(--soft-stone)' }}>{label}</p>
+          <p className="text-xs mb-1" style={{ color: 'var(--soft-stone)' }}>{label}</p>
           <p className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>{value}</p>
           {trend && <p className="text-xs mt-1" style={{ color: 'var(--sage)' }}>{trend}</p>}
         </div>
@@ -62,7 +49,7 @@ function ClayStat({ icon, value, label, trend, color = 'terracotta' }: { icon: s
 function BusinessCard({ business }: { business: any }) {
   return (
     <Link
-      to={`/booking/${business.id}`}
+      to={`/book/slug/${business.id}`}
       className="block"
     >
       <ClayCard className="overflow-hover" hover={true}>
@@ -101,6 +88,7 @@ export default function BookingOSPage() {
   const [clientSearch, setClientSearch] = useState('');
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loadingBusinesses, setLoadingBusinesses] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -154,6 +142,13 @@ export default function BookingOSPage() {
     selectedCategory === null || b.category === selectedCategory
   );
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/booking?search=${encodeURIComponent(searchQuery.trim())}&category=${selectedCategory || 'ALL'}`);
+    }
+  };
+
   return (
     <DashboardLayout osName="BookingOS" osIcon="◈" osColor="terracotta" navItems={NAV_ITEMS}>
       <div className="space-y-6 max-w-6xl mx-auto">
@@ -168,71 +163,27 @@ export default function BookingOSPage() {
 
         {/* Stats row */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <ClayStat icon="storefront" value="24" label="Businesses" trend="+3 this week" color="terracotta" />
+          <ClayStat icon="storefront" value={businesses.length} label="Businesses" color="terracotta" />
           <ClayStat icon="calendar_month" value="12" label="Bookings" trend="+8 this month" color="sage" />
           <ClayStat icon="star" value="4.7" label="Avg Rating" color="ochre" />
           <ClayStat icon="account_balance_wallet" value="$0.00" label="Spending" color="sky-wash" />
           <ClayStat icon="verified" value={String(businesses.filter(b => b.halalCertified).length)} label="Halal Businesses" color="sage" />
         </div>
 
-        {/* Search and filters */}
-        <ClayCard className="p-4" hover={false}>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--soft-stone)' }}>search</span>
-              <input
-                type="text"
-                placeholder="Search businesses..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-full text-sm focus:outline-none"
-                style={{ background: 'var(--warm-sand)', border: '1px solid rgba(191,179,163,0.3)', color: 'var(--warm-ink)' }}
-              />
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              <ClayButton variant={selectedCategory === null ? 'primary' : 'secondary'} onClick={() => setSelectedCategory(null)}>
-                All
-              </ClayButton>
-              {CATEGORIES.map((cat) => (
-                <ClayButton
-                  key={cat.id}
-                  variant={selectedCategory === cat.id ? 'primary' : 'secondary'}
-                  onClick={() => setSelectedCategory(cat.id)}
-                >
-                  {cat.label}
-                </ClayButton>
-              ))}
-            </div>
-          </div>
-        </ClayCard>
-
-        {/* Business grid */}
-        <div>
-          <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--warm-ink)' }}>Near You</h2>
-          {loadingBusinesses ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <ClayCard key={i} className="p-4" hover={false}>
-                  <div className="h-40 bg-[var(--warm-sand)] rounded-xl mb-3 animate-pulse" />
-                  <div className="flex items-start justify-between mb-1">
-                    <h3 className="font-bold" style={{ color: 'var(--warm-ink)' }}>{' '}</h3>
-                  </div>
-                  <p className="text-sm mb-2" style={{ color: 'var(--soft-stone)' }}>{' '}</p>
-                </ClayCard>
-              ))}
-            </div>
-          ) : filteredBusinesses.length === 0 ? (
-            <ClayCard className="p-8 text-center" hover={false}>
-              <p style={{ color: 'var(--soft-stone)' }}>No businesses found matching your search.</p>
-            </ClayCard>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredBusinesses.map((business) => (
-                <BusinessCard key={business.id} business={business} />
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Search section */}
+        <BookingSearchBar
+          results={businesses.map(b => ({
+            id: b.id,
+            name: b.name,
+            category: b.category,
+            rating: b.rating || 5,
+            address: b.address || '',
+            city: b.city || '',
+            image: b.logoUrl,
+            trustScore: b.trustScore,
+          }))}
+          onResultClick={(id) => navigate(`/book/slug/${id}`)}
+        />
 
         {/* Shared ContactOS Clients */}
         <div>
