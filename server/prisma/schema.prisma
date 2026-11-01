@@ -5944,6 +5944,9 @@ model Escrow {
   userId       String?
   platformFeeAmount Float?
   platformFeeStatus String?   @default("NONE")
+  description    String?
+  deliverableHash String?
+  lockedAt       DateTime?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   fiatPayment  FiatPayment?

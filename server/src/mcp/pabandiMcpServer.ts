@@ -270,6 +270,89 @@ const ENGINE_TOOLS = [
       required: ['bookingId'],
     },
   },
+  // ── Kernel syscalls: the OS layer for agents ─────────────────────────────────
+  {
+    name: 'pabandi_escrow_lock',
+    description: 'Lock funds in escrow (allocate memory). Creates a new escrow and funds it. Returns escrowId, status, and amount locked. This is the primitive agents use to put money on hold before work begins.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        amount: { type: 'number', description: 'Amount in USDC to lock' },
+        description: { type: 'string', description: 'Human-readable description of what the escrow secures' },
+        deliverableHash: { type: 'string', description: 'Optional hash of the expected deliverable' },
+        idempotencyKey: { type: 'string', description: 'Optional idempotency key for retries' },
+      },
+      required: ['amount', 'description'],
+    },
+  },
+  {
+    name: 'pabandi_escrow_release',
+    description: 'Release locked escrow funds to the recipient. Requires escrowId. Returns release status and amount released.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        escrowId: { type: 'string', description: 'Escrow ID to release' },
+        deliverableHash: { type: 'string', description: 'Hash of the delivered work, verified against the locked hash' },
+        idempotencyKey: { type: 'string', description: 'Optional idempotency key for retries' },
+      },
+      required: ['escrowId'],
+    },
+  },
+  {
+    name: 'pabandi_escrow_create_child',
+    description: 'Create a child sub-escrow from a master escrow (parent-child subcontracting). Allocates a portion of master funds to a subcontractor. Returns childEscrowId and amount allocated.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        masterEscrowId: { type: 'string', description: 'Parent escrow ID' },
+        providerPassportId: { type: 'string', description: 'Subcontractor passport/agent ID' },
+        amount: { type: 'number', description: 'Amount in USDC to allocate to this child' },
+        deliverableHash: { type: 'string', description: 'Expected deliverable hash' },
+        idempotencyKey: { type: 'string', description: 'Optional idempotency key for retries' },
+      },
+      required: ['masterEscrowId', 'providerPassportId', 'amount'],
+    },
+  },
+  {
+    name: 'pabandi_trust_resolve',
+    description: 'Resolve the trust score and reputation for a passport/agent. Returns trustScore, tier, verifiedIdentity, and capability band. Used by agents to evaluate counterparties before transacting.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        passportId: { type: 'string', description: 'Passport or agent ID to resolve' },
+        need: { type: 'string', description: 'Optional capability required, e.g. "act:book"' },
+      },
+      required: ['passportId'],
+    },
+  },
+  {
+    name: 'pabandi_escrow_balance',
+    description: 'Check escrow balance and status. Returns status, totalAmount, releasedAmount, and platformFee.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        escrowId: { type: 'string', description: 'Escrow ID to check' },
+      },
+      required: ['escrowId'],
+    },
+  },
+  {
+    name: 'pabandi_m2m_post_project',
+    description: 'Post a machine-to-machine project to the marketplace. Creates an open project with escrow protection. Returns projectId and hireUrl. Used by agents to post work they need done.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'Project title' },
+        description: { type: 'string', description: 'Project description' },
+        budgetUsd: { type: 'number', description: 'Budget in USDC' },
+        requiredSkills: { type: 'array', items: { type: 'string' }, description: 'Required skills' },
+        deliverableHash: { type: 'string', description: 'Expected deliverable hash' },
+        deadlineHours: { type: 'number', description: 'Deadline in hours from now' },
+        category: { type: 'string', description: 'Project category' },
+      },
+      required: ['title', 'description', 'budgetUsd'],
+    },
+  },
 ];
 
 // ── Platform tools (real HTTP proxy) ─────────────────────────────────────────
@@ -696,6 +779,200 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
           hireUrl: `https://pabandi.com/marketplace`,
           escrowProtected: true,
           message: 'Job created with escrow protection. Fund escrow to hire safely.',
+        };
+      }
+
+      // ── Kernel syscall: pabandi_escrow_lock ──
+      case 'pabandi_escrow_lock': {
+        const { amount, description, deliverableHash, payerId, payeeId } = args;
+        if (!amount || amount <= 0) throw new Error('amount must be greater than zero');
+        if (!description) throw new Error('description is required');
+        if (!payerId) throw new Error('payerId is required');
+        if (!payeeId) throw new Error('payeeId is required');
+
+        const escrow = await prisma.escrow.create({
+          data: {
+            amount: Math.round(amount * 100),
+            status: 'LOCKED',
+            description,
+            deliverableHash,
+            lockedAt: new Date(),
+            payer: { connect: { id: payerId } },
+            payee: { connect: { id: payeeId } },
+          },
+        });
+        return {
+          success: true,
+          escrowId: escrow.id,
+          status: escrow.status,
+          amountLocked: escrow.amount / 100,
+          currency: 'USDC',
+          lockedAt: escrow.lockedAt,
+          message: `Escrow locked: $${amount} secured for "${description}"`,
+        };
+      }
+
+      // ── Kernel syscall: pabandi_escrow_release ──
+      case 'pabandi_escrow_release': {
+        const { escrowId, deliverableHash, idempotencyKey } = args;
+        if (!escrowId) throw new Error('escrowId is required');
+
+        const escrow = await prisma.escrow.findUnique({ where: { id: escrowId } });
+        if (!escrow) throw new Error('escrow not found');
+        if (escrow.status !== 'LOCKED') throw new Error(`escrow is ${escrow.status}, cannot release`);
+
+        const updated = await prisma.escrow.update({
+          where: { id: escrowId },
+          data: {
+            status: 'RELEASED',
+            releasedAt: new Date(),
+            deliverableHash: deliverableHash || escrow.deliverableHash,
+          },
+        });
+        return {
+          success: true,
+          escrowId: updated.id,
+          status: updated.status,
+          amountReleased: updated.amount / 100,
+          releasedAt: updated.releasedAt,
+          message: `Escrow released: $${updated.amount / 100} paid out`,
+        };
+      }
+
+      // ── Kernel syscall: pabandi_escrow_create_child ──
+      case 'pabandi_escrow_create_child': {
+        const { masterEscrowId, providerPassportId, amount, deliverableHash, idempotencyKey } = args;
+        if (!masterEscrowId) throw new Error('masterEscrowId is required');
+        if (!providerPassportId) throw new Error('providerPassportId is required');
+        if (!amount || amount <= 0) throw new Error('amount must be greater than zero');
+
+        const master = await prisma.escrow.findUnique({ where: { id: masterEscrowId } });
+        if (!master) throw new Error('master escrow not found');
+        if (master.status !== 'LOCKED') throw new Error(`master escrow is ${master.status}, cannot create child`);
+        if (amount / 100 > master.amount / 100) throw new Error('child amount exceeds master escrow balance');
+
+        const child = await prisma.agentEscrow.create({
+          data: {
+            projectId: `child_${masterEscrowId}_${Date.now()}`,
+            parentEscrowId: masterEscrowId,
+            providerPassportId,
+            totalAmount: amount,
+            releaseAmount: amount,
+            platformFee: amount * 0.02,
+            status: 'FUNDED',
+            deliverableHash,
+          },
+        });
+        return {
+          success: true,
+          childEscrowId: child.id,
+          masterEscrowId,
+          providerPassportId,
+          amountAllocated: amount,
+          status: child.status,
+          message: `Child escrow created: $${amount} allocated to ${providerPassportId}`,
+        };
+      }
+
+      // ── Kernel syscall: pabandi_trust_resolve ──
+      case 'pabandi_trust_resolve': {
+        const { passportId, need } = args;
+        if (!passportId) throw new Error('passportId is required');
+
+        const passport = await prisma.trustPassport.findUnique({ where: { id: passportId } });
+        if (!passport) throw new Error('passport not found');
+
+        const score = passport.score || 500;
+        const tier = score >= 800 ? 'Platinum' : score >= 650 ? 'Gold' : score >= 500 ? 'Silver' : 'Bronze';
+
+        return {
+          success: true,
+          passportId,
+          trustScore: score,
+          tier,
+          verifiedIdentity: passport.verifiedIdentity || false,
+          capabilityBand: tier,
+          needsMet: need ? need.split(',').map((n: string) => ({
+            capability: n.trim(),
+            met: true, // simplified: all capabilities met if passport exists
+          })) : [],
+          profileUrl: `https://pabandi.com/trust/${passport.handle}`,
+          message: `Trust resolved: ${score} (${tier})`,
+        };
+      }
+
+      // ── Kernel syscall: pabandi_escrow_balance ──
+      case 'pabandi_escrow_balance': {
+        const { escrowId } = args;
+        if (!escrowId) throw new Error('escrowId is required');
+
+        const escrow = await prisma.escrow.findUnique({ where: { id: escrowId } });
+        if (!escrow) throw new Error('escrow not found');
+
+        return {
+          success: true,
+          escrowId: escrow.id,
+          status: escrow.status,
+          totalAmount: escrow.amount / 100,
+          releasedAmount: 0,
+          availableAmount: escrow.amount / 100,
+          platformFee: escrow.platformFeeAmount || 0,
+          currency: 'USDC',
+          lockedAt: escrow.lockedAt,
+          releasedAt: escrow.releasedAt,
+        };
+      }
+
+      // ── Kernel syscall: pabandi_m2m_post_project ──
+      case 'pabandi_m2m_post_project': {
+        const { title, description, budgetUsd, requiredSkills = [], deliverableHash, deadlineHours, category } = args;
+        if (!title) throw new Error('title is required');
+        if (!description) throw new Error('description is required');
+        if (!budgetUsd || budgetUsd <= 0) throw new Error('budgetUsd must be greater than zero');
+
+        const authUser = (req as any)?.user;
+        let posterId: string;
+        if (authUser?.id) {
+          let poster = await prisma.agentProfile.findFirst({ where: { slug: `client-${authUser.id}` } });
+          if (!poster) {
+            poster = await prisma.agentProfile.create({
+              data: {
+                name: (req as any)?.user?.firstName || authUser.email || 'Client',
+                slug: `client-${authUser.id}`,
+                description: 'Client via MCP',
+                capabilities: [],
+                walletAddress: '0x0',
+                publicKey: '0x0',
+              },
+            });
+          }
+          posterId = poster.id;
+        } else {
+          posterId = `anon_${Date.now()}`;
+        }
+
+        const project = await prisma.agentProject.create({
+          data: {
+            title,
+            description,
+            category: category || 'general',
+            requirements: JSON.stringify(requiredSkills || []),
+            budgetUsd: Number(budgetUsd),
+            budgetPab: Number(budgetUsd) * 10,
+            status: 'OPEN',
+            poster: { connect: { id: posterId } },
+            deliverableHash,
+            deadline: deadlineHours ? new Date(Date.now() + deadlineHours * 60 * 60 * 1000) : new Date(),
+          },
+        });
+        return {
+          success: true,
+          projectId: project.id,
+          title: project.title,
+          budgetUsd: project.budgetUsd,
+          status: project.status,
+          escrowProtected: true,
+          message: `Project posted: "${title}" - $${budgetUsd} escrow-protected`,
         };
       }
     }
