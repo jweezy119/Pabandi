@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
+import { PrivyProvider } from './components/PrivyProvider';
 // ─── Route-level code splitting ─────────────────────────────────────────────
 //
 // Every page used to be imported eagerly: 221 static imports meant the whole product
@@ -601,7 +602,9 @@ function App() {
   return (
     <HelmetProvider>
       <LanguageProvider>
-        <AnimatedAppRoutes />
+        <PrivyProvider>
+          <AnimatedAppRoutes />
+        </PrivyProvider>
       </LanguageProvider>
     </HelmetProvider>
   );
