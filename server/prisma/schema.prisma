@@ -215,7 +215,7 @@ model Business {
   /// The merchant's own SMS provider credentials, if connected.
   smsProvider            BusinessSmsProvider?
   stripeAccountId        String?                  @unique
-  subscription           Subscription?
+  // subscription           Subscription?
   category               BusinessCategory
   address                String
   city                   String                   @default("")
@@ -8533,15 +8533,3 @@ model ScoutedTarget {
   @@index([source])
 }
 
-model Subscription {
-  id                    String   @id @default(cuid())
-  businessId            String   @unique
-  business              Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  tier                  String   @default("free") // free, starter, pro, business
-  status                String   @default("active") // active, past_due, canceled, trialing
-  currentPeriodEnd      DateTime?
-  paymentCustomerId     String?
-  paymentSubscriptionId String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-}
