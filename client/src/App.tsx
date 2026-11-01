@@ -31,6 +31,11 @@ const AuthPage = lazy(() => import('./pages/AuthPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
 const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'));
 const OAuthConsentPage = lazy(() => import('./pages/OAuthConsentPage'));
+const ConsumerLayout = lazy(() => import('./pages/consumer/ConsumerLayout'));
+const ConsumerHomePage = lazy(() => import('./pages/consumer/ConsumerHomePage'));
+const ConsumerReleasePage = lazy(() => import('./pages/consumer/ConsumerReleasePage'));
+const ConsumerPassportPage = lazy(() => import('./pages/consumer/ConsumerPassportPage'));
+const ConsumerSettingsPage = lazy(() => import('./pages/consumer/ConsumerSettingsPage'));
 const TrustPassportPublicPage = lazy(() => import('./pages/public/TrustPassportPage'));
 const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
 const AgentMarketplacePage = lazy(() => import('./pages/AgentMarketplacePage'));
@@ -585,6 +590,14 @@ function AnimatedAppRoutes() {
             <Route path="me/quick-post" element={<PersonalGuard><QuickPostPage /></PersonalGuard>} />
             <Route path="me/values" element={<PersonalGuard><ValuesPreferencesPage /></PersonalGuard>} />
             <Route path="me/agent" element={<PersonalGuard><AgentDashboardPage /></PersonalGuard>} />
+          </Route>
+
+          {/* Consumer mobile app — standalone mobile shell, no B2B sidebar */}
+          <Route path="app" element={<ConsumerLayout />}>
+            <Route index element={<ConsumerHomePage />} />
+            <Route path="release/:id" element={<ConsumerReleasePage />} />
+            <Route path="passport" element={<ConsumerPassportPage />} />
+            <Route path="settings" element={<ConsumerSettingsPage />} />
           </Route>
 
         {/* Catch-all. Must stay last: React Router matches in declaration order,
