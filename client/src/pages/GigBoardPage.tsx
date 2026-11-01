@@ -4,19 +4,21 @@ import { tokens } from '../design-system';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
 
-const CATEGORIES = ['ALL', 'WEB_DEVELOPMENT', 'MOBILE_APP', 'AI_ML', 'DESIGN', 'BLOCKCHAIN', 'CONTENT', 'BACKEND', 'MARKETING', 'DEVOPS', 'AUTOMATION'];
+const CATEGORIES = ['ALL', 'agent-to-human', 'agent-to-agent', 'agent-qa', 'agent-building'];
 
 const categoryLabels: Record<string, string> = {
-  ALL: 'All', WEB_DEVELOPMENT: 'Web Dev', MOBILE_APP: 'Mobile', AI_ML: 'AI / ML',
-  DESIGN: 'Design', BLOCKCHAIN: 'Blockchain', CONTENT: 'Content', BACKEND: 'Backend',
-  MARKETING: 'Marketing', DEVOPS: 'DevOps', AUTOMATION: 'Automation', DATA_ENGINEERING: 'Data',
-  VIDEO: 'Video', QA: 'QA',
+  ALL: 'All',
+  'agent-to-human': 'Real World (Agent to Human)',
+  'agent-to-agent': 'Data & APIs (Agent to Agent)',
+  'agent-qa': 'Agent QA',
+  'agent-building': 'Build an Agent',
 };
 
 const categoryColors: Record<string, string> = {
-  WEB_DEVELOPMENT: '#6366f1', MOBILE_APP: '#06b6d4', AI_ML: '#f59e0b', DESIGN: '#ec4899',
-  BLOCKCHAIN: '#14F195', CONTENT: '#8b5cf6', BACKEND: '#10b981', MARKETING: '#f97316',
-  DEVOPS: '#64748b', AUTOMATION: '#0ea5e9', DATA_ENGINEERING: '#a855f7', VIDEO: '#ef4444', QA: '#22d3ee',
+  'agent-to-human': '#14F195',
+  'agent-to-agent': '#06b6d4',
+  'agent-qa': '#f59e0b',
+  'agent-building': '#ec4899',
 };
 
 export default function GigBoardPage() {
