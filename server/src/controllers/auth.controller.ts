@@ -1241,11 +1241,16 @@ export const verifyWallet = async (req: AuthRequest, res: Response, next: NextFu
       { expiresIn: JWT_EXPIRES_IN as any }
     );
 
-    const refreshToken = jwt.sign(
-      { id: user.id },
-      JWT_REFRESH_SECRET as Secret,
-      { expiresIn: JWT_REFRESH_EXPIRES_IN as any },
-    );
+    let refreshToken: string | undefined;
+    try {
+      refreshToken = jwt.sign(
+        { id: user.id },
+        JWT_REFRESH_SECRET as Secret,
+        { expiresIn: JWT_REFRESH_EXPIRES_IN as any },
+      );
+    } catch {
+      // Refresh token secret not configured; proceed without it
+    }
 
     logger.info(`User logged in via wallet: ${walletAddress}`);
 
