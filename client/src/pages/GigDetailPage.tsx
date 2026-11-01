@@ -6,13 +6,16 @@ import { useAuthStore } from '../store/authStore';
 
 export default function GigDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const [gig, setGig] = useState<any>(null);
   const [ranking, setRanking] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [bidOpen, setBidOpen] = useState(false);
   const [bidQuote, setBidQuote] = useState('');
   const [bidSubmitting, setBidSubmitting] = useState(false);
+  const [acceptOpen, setAcceptOpen] = useState(false);
+  const [acceptBidId, setAcceptBidId] = useState('');
+  const [accepting, setAccepting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -39,6 +42,25 @@ export default function GigDetailPage() {
     } catch (err: any) {
       alert(err.response?.data?.error || 'Failed to submit bid');
     } finally { setBidSubmitting(false); }
+  };
+
+  const handleAcceptBid = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id || !acceptBidId) return;
+    setAccepting(true);
+    try {
+      await api.post(`/gigs/${id}/accept/${acceptBidId}`);
+      setAcceptOpen(false);
+      setAcceptBidId('');
+      // Refresh
+      const r = await api.get(`/gigs/${id}`).catch(() => null);
+      if (r?.data?.data) setGig(r.data.data);
+      else if (r?.data) setGig(r.data);
+      const rank = await api.get(`/gigs/${id}/bid-ranking`).catch(() => null);
+      if (rank?.data?.ranked) setRanking(rank.data.ranked);
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to accept bid');
+    } finally { setAccepting(false); }
   };
 
   if (loading) {
@@ -138,6 +160,35 @@ export default function GigDetailPage() {
                 <p className="text-[var(--soft-stone)] text-sm">
                   <a href="/api/v1/auth/google?role=freelancer" className="text-[var(--clay)] font-bold hover:text-[var(--terracotta)]">Sign in</a> to bid on this project
                 </p>
+              )}
+
+              {/* Accept Bid (poster only) */}
+              {isAuthenticated && user?.id === gig.createdBy && gig.competingBids > 0 && (
+                <div className="mt-6 pt-6 border-t border-[var(--soft-stone)]/30">
+                  <h4 className="text-xs font-bold text-[var(--soft-stone)] uppercase tracking-wider mb-3">Accept a Bid</h4>
+                  {acceptOpen ? (
+                    <form onSubmit={handleAcceptBid} className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-bold text-[var(--soft-stone)] mb-1">Bid ID to Accept</label>
+                        <input type="text" value={acceptBidId} onChange={e => setAcceptBidId(e.target.value)}
+                          placeholder="Paste bid ID" className="w-full bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl px-4 py-3 text-[var(--warm-ink)] focus:outline-none focus:border-indigo-500" />
+                      </div>
+                      <div className="flex gap-3">
+                        <button type="button" onClick={() => setAcceptOpen(false)}
+                          className="flex-1 px-4 py-2.5 bg-transparent text-[var(--soft-stone)] border border-[var(--soft-stone)]/30 rounded-xl hover:bg-[var(--warm-sand)] transition-colors">Cancel</button>
+                        <button type={accepting ? 'button' : 'submit'} disabled={accepting}
+                          className="flex-1 px-4 py-2.5 bg-[var(--clay)] text-[var(--warm-ink)] font-bold rounded-xl hover:bg-[var(--terracotta)] transition-colors disabled:opacity-50">
+                          {accepting ? 'Accepting...' : 'Accept Bid'}
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <button onClick={() => setAcceptOpen(true)}
+                      className="w-full px-4 py-2.5 bg-[var(--clay)]/20 text-[var(--clay)] border border-[var(--clay)]/30 font-bold rounded-xl hover:bg-[var(--clay)]/30 transition-colors">
+                      Accept a Bid →
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           )}
