@@ -208,14 +208,16 @@ model User {
 }
 
 model Business {
-  id      String  @id @default(cuid())
-  ownerId String? @unique
-  name    String
+  id                    String            @id @default(cuid())
+  ownerId               String?           @unique
+  name                  String
 
   /// The merchant's own SMS provider credentials, if connected.
   smsProvider            BusinessSmsProvider?
   stripeAccountId        String?                  @unique
   // subscription           Subscription?
+  externalBookingUrl     String?
+  externalBookingPlatform String? // booksy, fresha, vagaro, calendly, square, calcom, other
   category               BusinessCategory
   address                String
   city                   String                   @default("")
@@ -238,22 +240,18 @@ model Business {
   isVerified             Boolean                  @default(false)
   isActive               Boolean                  @default(true)
   isPremium              Boolean                  @default(false)
+  acceptsAgentBookings   Boolean                  @default(false)
   createdAt              DateTime                 @default(now())
   updatedAt              DateTime                 @updatedAt
   googlePlaceId          String?
   rating                 Float?
   reviewCount            Int                      @default(0)
-  /// CANONICAL SCALE 0-100. Sole writer: trust-core.service.ts.
-  /// Nullable because a business with no completed booking has no reliability
-  /// to speak of; readers must resolve null through the cold-start baseline
-  /// rather than defaulting to 0, which is the worst possible score.
   reliabilityScore       Float?
   karmaScore             Float                    @default(50.0)
   businessTier           String                   @default("STANDARD")
   trustScore             Float                    @default(50.0)
   state                  String                   @default("")
   isClaimed              Boolean                  @default(true)
-  externalBookingUrl     String?
   raastId                String?
   slug                   String?                  @unique
   verifiedAt             DateTime?

@@ -222,26 +222,52 @@ const ENGINE_TOOLS = [
     },
   },
   {
-    name: 'pabandi_m2m_manage_subcontracts',
-    description: 'Autonomously split a job and pay sub-agents. Create parent-child escrows for subcontracting work.',
+    name: 'pabandi_get_services',
+    description: 'Get services offered by a business for agent booking',
     inputSchema: {
       type: 'object',
       properties: {
-        masterEscrowId: { type: 'string', description: 'Master escrow ID' },
-        subcontracts: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              providerPassportId: { type: 'string' },
-              amount: { type: 'number' },
-              deliverableHash: { type: 'string' },
-            },
-            required: ['providerPassportId', 'amount', 'deliverableHash'],
-          },
-        },
+        businessId: { type: 'string', description: 'Business ID' },
       },
-      required: ['masterEscrowId', 'subcontracts'],
+      required: ['businessId'],
+    },
+  },
+  {
+    name: 'pabandi_check_availability',
+    description: 'Check availability for a business on a specific date',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        businessId: { type: 'string', description: 'Business ID' },
+        date: { type: 'string', description: 'Date in YYYY-MM-DD format' },
+      },
+      required: ['businessId', 'date'],
+    },
+  },
+  {
+    name: 'pabandi_create_booking',
+    description: 'Create a booking for an agent/client. Supports ACP, x402, AP2, UCP protocols.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        businessId: { type: 'string', description: 'Business ID' },
+        serviceId: { type: 'string', description: 'Service ID' },
+        datetime: { type: 'string', description: 'Booking datetime' },
+        clientPassportId: { type: 'string', description: 'Client passport ID' },
+        protocol: { type: 'string', enum: ['acp', 'x402', 'ap2', 'ucp'], description: 'Payment protocol' },
+      },
+      required: ['businessId', 'serviceId', 'datetime'],
+    },
+  },
+  {
+    name: 'pabandi_cancel_booking',
+    description: 'Cancel a booking',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        bookingId: { type: 'string', description: 'Booking ID' },
+      },
+      required: ['bookingId'],
     },
   },
 ];
