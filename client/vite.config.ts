@@ -93,17 +93,28 @@ export default defineConfig(({ mode }) => {
     // precache — a customer stuck on an old bundle cannot be told so.
     VitePWA({
       registerType: 'autoUpdate',
-      // Emit no worker at all, rather than emitting one nobody registers.
-      disable: true,
+      disable: false,
       includeAssets: ['favicon.ico'],
       workbox: { maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 },
       manifest: {
-        name: 'Pabandi CRM',
+        name: 'Pabandi',
         short_name: 'Pabandi',
-        description: 'Property Management & Sales CRM',
-        theme_color: '#6366f1',
-        background_color: '#0f172a',
+        description: 'Trust & Settlement for the Agent Economy',
+        theme_color: '#C97B5A',
+        background_color: '#F5EFE6',
         display: 'standalone',
+        icons: [
+          {
+            src: '/pwa-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: '/pwa-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+          },
+        ],
       },
     }),
   ],
