@@ -246,6 +246,8 @@ function AnimatedAppRoutes() {
         }
       >
       <Routes location={location} key={location.pathname}>
+        {/* Public sandbox demo — no authentication required */}
+        <Route path="/sandbox" element={<DealSimulatorPage />} />
         <Route element={<AppShellLayout />}>
             {/* /dashboard is where every signed-in surface sends you: the AppShell
                 wordmark, UserMenu, the marketing header's avatar. It was swept to
@@ -600,7 +602,6 @@ function AnimatedAppRoutes() {
               <Route path="passport" element={<ConsumerPassportPage />} />
               <Route path="settings" element={<ConsumerSettingsPage />} />
             </Route>
-            <Route path="sandbox" element={<DealSimulatorPage />} />
 
         {/* Catch-all. Must stay last: React Router matches in declaration order,
             so anything above it keeps priority. Without this, an unmatched path
