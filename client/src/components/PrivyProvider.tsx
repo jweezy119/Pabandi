@@ -1,21 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { PrivyProvider as PrivyReactProvider } from '@privy-io/react-auth'
 
 export function PrivyProvider({ children }: { children: React.ReactNode }) {
-  const [ready, setReady] = useState(false)
-  const [appId, setAppId] = useState<string | null>(null)
-
-  useEffect(() => {
-    const id = import.meta.env.VITE_PRIVY_APP_ID
-    if (id) {
-      setAppId(id)
-      setReady(true)
-    }
-  }, [])
-
-  if (!ready || !appId) {
-    return <>{children}</>
-  }
+  const appId = import.meta.env.VITE_PRIVY_APP_ID || undefined
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const config: any = {
@@ -34,6 +21,13 @@ export function PrivyProvider({ children }: { children: React.ReactNode }) {
     embeddedWallets: {
       solana: { createOnLogin: 'users-without-wallets' },
     },
+  }
+
+  // When no Privy app ID is configured, render children without the wallet
+  // provider. Components that call useWallets must handle missing context
+  // gracefully (e.g. EmbeddedCheckoutModal checks VITE_PRIVY_APP_ID first).
+  if (!appId) {
+    return <>{children}</>
   }
 
   return (
