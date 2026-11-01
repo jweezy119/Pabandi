@@ -36,7 +36,7 @@ const ConsumerHomePage = lazy(() => import('./pages/consumer/ConsumerHomePage'))
 const ConsumerReleasePage = lazy(() => import('./pages/consumer/ConsumerReleasePage'));
 const ConsumerPassportPage = lazy(() => import('./pages/consumer/ConsumerPassportPage'));
 const ConsumerSettingsPage = lazy(() => import('./pages/consumer/ConsumerSettingsPage'));
-const ConsumerSandboxPage = lazy(() => import('./pages/consumer/ConsumerSandboxPage'));
+const DealSimulatorPage = lazy(() => import('./pages/sandbox/DealSimulator'));
 const TrustPassportPublicPage = lazy(() => import('./pages/public/TrustPassportPage'));
 const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
 const AgentMarketplacePage = lazy(() => import('./pages/AgentMarketplacePage'));
@@ -600,7 +600,7 @@ function AnimatedAppRoutes() {
               <Route path="passport" element={<ConsumerPassportPage />} />
               <Route path="settings" element={<ConsumerSettingsPage />} />
             </Route>
-            <Route path="sandbox" element={<ConsumerSandboxPage />} />
+            <Route path="sandbox" element={<DealSimulatorPage />} />
 
         {/* Catch-all. Must stay last: React Router matches in declaration order,
             so anything above it keeps priority. Without this, an unmatched path
