@@ -1328,6 +1328,7 @@ export const toggleUserMode = async (req: AuthRequest, res: Response, next: Next
       return res.status(400).json({ success: false, message: 'mode must be business or personal' });
     }
 
+    // Check if User model has preferredMode field
     const user = await prisma.user.update({
       where: { id: req.user!.id },
       data: { preferredMode: mode },
@@ -1342,10 +1343,6 @@ export const toggleUserMode = async (req: AuthRequest, res: Response, next: Next
 
     const businessId = (user.business as { id?: string } | null)?.id ?? null;
 
-    // A mode switch must reissue the token: the JWT carries `mode`, and any
-    // server-side authorization keyed on it would otherwise keep seeing the
-    // previous mode until the original token expired. The client stores this
-    // token, so the guards and the server agree immediately.
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, businessId, activeBusinessId: businessId, mode: user.preferredMode } as JwtPayload,
       JWT_SECRET as Secret,
@@ -1353,7 +1350,9 @@ export const toggleUserMode = async (req: AuthRequest, res: Response, next: Next
     );
 
     res.json({ success: true, data: { user: { ...user, businessId }, token } });
-  } catch (error) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('[Auth] toggleUserMode error:', message);
     next(error);
   }
 };

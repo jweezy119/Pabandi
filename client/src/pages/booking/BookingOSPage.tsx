@@ -2,7 +2,6 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { getAuthToken } from '../../utils/authToken';
-import { HalalBadge } from '../../components/halal';
 import { HalalBanner } from '../../components/halal';
 
 const NAV_ITEMS = [
@@ -21,17 +20,6 @@ const CATEGORIES = [
   { id: 'EVENT_VENUE', label: 'Venues', icon: 'celebration' },
 ];
 
-const BUSINESSES = [
-  { id: '1', name: 'The Golden Fork', category: 'Restaurant', rating: 4.8, reviews: 124, price: '$$', image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400', isOpen: true, halalCertified: true },
-  { id: '2', name: 'Bella Salon', category: 'Salon', rating: 4.9, reviews: 89, price: '$$', image: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400', isOpen: true, halalCertified: false },
-  { id: '3', name: 'Serenity Spa', category: 'Spa', rating: 4.7, reviews: 56, price: '$$$', image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400', isOpen: false, halalCertified: false },
-  { id: '4', name: 'Skyline Lounge', category: 'Nightlife', rating: 4.6, reviews: 203, price: '$$$', image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400', isOpen: true, halalCertified: false },
-  { id: '5', name: 'CozyNest Rentals', category: 'Apartment', rating: 4.5, reviews: 42, price: '$$', image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400', isOpen: true, halalCertified: true },
-  { id: '6', name: 'Grand Hotel', category: 'Hotel', rating: 4.8, reviews: 312, price: '$$$$', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400', isOpen: true, halalCertified: true },
-];
-
-import { ClayCard } from '../../components/clay/ClayCard';
-
 function ClayButton({ children, variant = 'primary', className = '', ...props }: any) {
   const base = 'inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 cursor-pointer border-2';
   const variants: Record<string, string> = {
@@ -46,7 +34,7 @@ function ClayButton({ children, variant = 'primary', className = '', ...props }:
   );
 }
 
-function ClayStat({ icon, value, label, trend, color = 'terracotta' }: { icon: string; value: string; label: string; trend?: string; color?: string }) {
+function ClayStat({ icon, value, label, trend, color = 'terracotta' }: { icon: string; value: string | number; label: string; trend?: string; color?: string }) {
   const colorMap: Record<string, string> = {
     terracotta: 'bg-[var(--clay)]',
     sage: 'bg-[var(--sage)]',
@@ -70,35 +58,37 @@ function ClayStat({ icon, value, label, trend, color = 'terracotta' }: { icon: s
   );
 }
 
-function BusinessCard({ business }: { business: typeof BUSINESSES[0] }) {
+function BusinessCard({ business }: { business: any }) {
   return (
-    <ClayCard className="overflow-hidden">
-      <div className="relative h-40 overflow-hidden">
-        <img src={business.image} alt={business.name} className="w-full h-full object-cover" />
-        <div className="absolute top-3 right-3 flex gap-1">
-          {business.halalCertified && (
+    <Link
+      to={`/booking/${business.id}`}
+      className="block"
+    >
+      <ClayCard className="overflow-hover" hover={true}>
+        <div className="relative h-40 overflow-hidden rounded-xl mb-3 bg-[var(--warm-sand)]">
+          <div className="absolute top-3 right-3 flex gap-1">
             <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: 'var(--sage)', color: 'white' }}>
-              🛡️ Halal
+              ⭐ {business.rating || 5}
             </span>
-          )}
-          <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: business.isOpen ? 'var(--sage)' : 'var(--soft-stone)', color: 'white' }}>
-            {business.isOpen ? 'Open' : 'Closed'}
-          </span>
+            <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: 'var(--clay)', color: 'white' }}>
+              Open
+            </span>
+          </div>
         </div>
-      </div>
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-1">
-          <h3 className="font-bold" style={{ color: 'var(--warm-ink)' }}>{business.name}</h3>
-          <span className="text-sm font-medium" style={{ color: 'var(--clay)' }}>{business.price}</span>
+        <div className="p-4">
+          <div className="flex items-start justify-between mb-1">
+            <h3 className="font-bold" style={{ color: 'var(--warm-ink)' }}>{business.name}</h3>
+            <span className="text-sm font-medium" style={{ color: 'var(--clay)' }}>{business.price || '$$'}</span>
+          </div>
+          <p className="text-sm mb-2" style={{ color: 'var(--soft-stone)' }}>{business.category}</p>
+          <div className="flex items-center gap-2 flex-wrap text-xs text-[var(--soft-stone)]">
+            <span>{business.city}</span>
+            <span>·</span>
+            <span>{business.category}</span>
+          </div>
         </div>
-        <p className="text-sm mb-2" style={{ color: 'var(--soft-stone)' }}>{business.category}</p>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span style={{ color: 'var(--muted-ochre)' }}>★ {business.rating}</span>
-          <span className="text-sm" style={{ color: 'var(--soft-stone)' }}>({business.reviews} reviews)</span>
-          {business.halalCertified && <HalalBadge size="sm" />}
-        </div>
-      </div>
-    </ClayCard>
+      </ClayCard>
+    </Link>
   );
 }
 
@@ -108,6 +98,8 @@ export default function BookingOSPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [loadingClients, setLoadingClients] = useState(true);
   const [clientSearch, setClientSearch] = useState('');
+  const [businesses, setBusinesses] = useState<any[]>([]);
+  const [loadingBusinesses, setLoadingBusinesses] = useState(true);
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -129,17 +121,37 @@ export default function BookingOSPage() {
     fetchClients();
   }, []);
 
+  useEffect(() => {
+    const fetchBusinesses = async () => {
+      try {
+        const token = getAuthToken();
+        if (!token) {
+          setLoadingBusinesses(false);
+          return;
+        }
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/booking/businesses`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setBusinesses(data.data || []);
+        }
+      } catch (e) { console.error('Failed to fetch businesses:', e); } finally { setLoadingBusinesses(false); }
+    };
+    fetchBusinesses();
+  }, []);
+
   const filteredClients = clients.filter(c =>
     c.name?.toLowerCase().includes(clientSearch.toLowerCase()) ||
     c.email?.toLowerCase().includes(clientSearch.toLowerCase())
   );
 
-  const filteredBusinesses = selectedCategory === 'HALAL'
-    ? BUSINESSES.filter(b => b.halalCertified)
-    : BUSINESSES.filter(b =>
-        b.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        b.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+  const filteredBusinesses = businesses.filter(b =>
+    b.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    b.category?.toLowerCase().includes(searchQuery.toLowerCase())
+  ).filter(b =>
+    selectedCategory === null || b.category === selectedCategory
+  );
 
   return (
     <DashboardLayout osName="BookingOS" osIcon="◈" osColor="terracotta" navItems={NAV_ITEMS}>
@@ -180,13 +192,7 @@ export default function BookingOSPage() {
               <ClayButton variant={selectedCategory === null ? 'primary' : 'secondary'} onClick={() => setSelectedCategory(null)}>
                 All
               </ClayButton>
-              <ClayButton
-                variant={selectedCategory === 'HALAL' ? 'primary' : 'secondary'}
-                onClick={() => setSelectedCategory('HALAL')}
-              >
-                🛡️ Halal Only
-              </ClayButton>
-              {CATEGORIES.slice(0, 4).map((cat) => (
+              {CATEGORIES.map((cat) => (
                 <ClayButton
                   key={cat.id}
                   variant={selectedCategory === cat.id ? 'primary' : 'secondary'}
@@ -202,11 +208,29 @@ export default function BookingOSPage() {
         {/* Business grid */}
         <div>
           <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--warm-ink)' }}>Near You</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredBusinesses.map((business) => (
-              <BusinessCard key={business.id} business={business} />
-            ))}
-          </div>
+          {loadingBusinesses ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <ClayCard key={i} className="p-4" hover={false}>
+                  <div className="h-40 bg-[var(--warm-sand)] rounded-xl mb-3 animate-pulse" />
+                  <div className="flex items-start justify-between mb-1">
+                    <h3 className="font-bold" style={{ color: 'var(--warm-ink)' }}>{' '}</h3>
+                  </div>
+                  <p className="text-sm mb-2" style={{ color: 'var(--soft-stone)' }}>{' '}</p>
+                </ClayCard>
+              ))}
+            </div>
+          ) : filteredBusinesses.length === 0 ? (
+            <ClayCard className="p-8 text-center" hover={false}>
+              <p style={{ color: 'var(--soft-stone)' }}>No businesses found matching your search.</p>
+            </ClayCard>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredBusinesses.map((business) => (
+                <BusinessCard key={business.id} business={business} />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Shared ContactOS Clients */}
