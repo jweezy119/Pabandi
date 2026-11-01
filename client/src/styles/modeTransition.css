@@ -4,8 +4,8 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 9999;
-  pointer-events: none; /* Let clicks pass through if needed, though usually we want to block interactions during transition */
+  z-index: 99999;
+  pointer-events: none;
 }
 
 /* We want to block interactions during the transition */
