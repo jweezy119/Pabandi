@@ -30,17 +30,7 @@ const BUSINESSES = [
   { id: '6', name: 'Grand Hotel', category: 'Hotel', rating: 4.8, reviews: 312, price: '$$$$', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400', isOpen: true, halalCertified: true },
 ];
 
-function ClayCard({ children, className = '', hover = true, ...props }: any) {
-  return (
-    <div
-      className={`rounded-[28px] bg-white transition-all duration-300 ${hover ? 'hover:-translate-y-0.5' : ''} ${className}`}
-      style={{ boxShadow: '0 4px 20px rgba(180,130,90,0.12)' }}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-}
+import { ClayCard } from '../../components/clay/ClayCard';
 
 function ClayButton({ children, variant = 'primary', className = '', ...props }: any) {
   const base = 'inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 cursor-pointer border-2';
