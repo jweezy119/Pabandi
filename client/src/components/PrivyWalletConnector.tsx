@@ -7,6 +7,21 @@ interface PrivyWalletConnectorProps {
 }
 
 export function PrivyWalletConnector({ onConnect, onDisconnect }: PrivyWalletConnectorProps) {
+  // If Privy is not configured, show a disabled connector
+  if (!import.meta.env.VITE_PRIVY_APP_ID) {
+    return (
+      <div className="privy-wallet-connector">
+        <button
+          disabled
+          className="w-full py-3 rounded-xl font-semibold text-white opacity-50 transition-all hover:opacity-50"
+          style={{ background: 'var(--clay)', color: 'var(--warm-ink)' }}
+        >
+          Wallet not configured
+        </button>
+      </div>
+    )
+  }
+
   const { login, logout, user, authenticated } = usePrivy()
   const { wallet } = useEmbeddedSolanaWallet()
 

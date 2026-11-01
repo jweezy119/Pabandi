@@ -22,8 +22,19 @@ export interface PaymentResult {
   error?: string;
 }
 
+/**
+ * Pay an invoice using the embedded Privy wallet.
+ *
+ * If Privy is not configured (no VITE_PRIVY_APP_ID), returns a graceful error
+ * instead of crashing on usePrivy() / useWallets().
+ */
 export async function payInvoice(invoiceId: string): Promise<PaymentResult> {
   try {
+    // If Privy is not configured, wallet payments are unavailable
+    if (!import.meta.env.VITE_PRIVY_APP_ID) {
+      return { success: false, error: 'Wallet payments not configured.' };
+    }
+
     const { authenticated, user } = usePrivy();
 
     if (!authenticated || !user) {

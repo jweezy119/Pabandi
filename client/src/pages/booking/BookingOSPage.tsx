@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { getAuthToken } from '../../utils/authToken';
 import { HalalBanner } from '../../components/halal';
+import { ClayCard } from '../../components/clay/ClayCard';
 
 const NAV_ITEMS = [
   { path: '/booking', label: 'Discovery', icon: 'explore', end: true },
