@@ -4,10 +4,45 @@ import { tokens } from '../design-system';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
 
+interface GigDetail {
+  id: string;
+  title: string;
+  description?: string;
+  category: string;
+  status: string;
+  budgetUsd?: number;
+  requiredSkills?: string[];
+  competingBids?: number;
+  demandGrowthPct?: number;
+  estimatedHours?: number;
+  createdBy?: string;
+  latitude?: number;
+  longitude?: number;
+  locationName?: string;
+  milestones?: any[];
+}
+
+/** Haversine distance in miles between two lat/lng points. */
+function haversineMiles(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const R = 3958.8;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 export default function GigDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { isAuthenticated, user } = useAuthStore();
-  const [gig, setGig] = useState<any>(null);
+  const navigate = useNavigate();
+  const preferredMode = user?.preferredMode || 'personal';
+  const isBusiness = preferredMode === 'business';
+
+  const [gig, setGig] = useState<GigDetail | null>(null);
   const [ranking, setRanking] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [bidOpen, setBidOpen] = useState(false);
@@ -16,6 +51,14 @@ export default function GigDetailPage() {
   const [acceptOpen, setAcceptOpen] = useState(false);
   const [acceptBidId, setAcceptBidId] = useState('');
   const [accepting, setAccepting] = useState(false);
+
+  // Location state for distance calculation
+  const [location, setLocation] = useState<{
+    latitude: number | null;
+    longitude: number | null;
+    loading: boolean;
+    error: string | null;
+  }>({ latitude: null, longitude: null, loading: false, error: null });
 
   useEffect(() => {
     if (!id) return;
@@ -29,6 +72,35 @@ export default function GigDetailPage() {
     }).finally(() => setLoading(false));
   }, [id]);
 
+  // Detect user location for distance display
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocation({ latitude: null, longitude: null, loading: false, error: 'Geolocation not supported' });
+      return;
+    }
+    setLocation({ latitude: null, longitude: null, loading: true, error: null });
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setLocation({ latitude: pos.coords.latitude, longitude: pos.coords.longitude, loading: false, error: null }),
+      (err) => setLocation({ latitude: null, longitude: null, loading: false, error: 'Unable to retrieve location' }),
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }, []);
+
+  // Calculate distance if both user and gig have coordinates
+  const distanceMiles = gig && location.latitude && location.longitude && gig.latitude && gig.longitude
+    ? haversineMiles(location.latitude, location.longitude, gig.latitude, gig.longitude)
+    : null;
+
+  const formatDistance = (d: number | null) => {
+    if (d === null) return '—';
+    if (d < 1) return '<1 mi';
+    return `${d.toFixed(1)} mi`;
+  };
+
+  const isMine = gig?.createdBy === user?.id;
+  const showBidButton = !isBusiness && !isMine && gig?.status === 'OPEN';
+  const showAcceptButton = isBusiness && isMine && gig?.competingBids > 0 && gig?.status === 'OPEN';
+
   const handleBid = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
@@ -36,7 +108,6 @@ export default function GigDetailPage() {
     try {
       await api.post(`/gigs/${id}/bid`, { quoteUsd: Number(bidQuote) || gig?.budgetUsd });
       setBidOpen(false);
-      // Refresh
       const r = await api.get(`/gigs/${id}/bid-ranking`).catch(() => null);
       if (r?.data?.ranked) setRanking(r.data.ranked);
     } catch (err: any) {
@@ -52,7 +123,6 @@ export default function GigDetailPage() {
       await api.post(`/gigs/${id}/accept/${acceptBidId}`);
       setAcceptOpen(false);
       setAcceptBidId('');
-      // Refresh
       const r = await api.get(`/gigs/${id}`).catch(() => null);
       if (r?.data?.data) setGig(r.data.data);
       else if (r?.data) setGig(r.data);
@@ -84,8 +154,6 @@ export default function GigDetailPage() {
     );
   }
 
-  const milestones = gig.milestones || [];
-
   return (
     <div className="min-h-screen pb-24" style={{ background: '#0f172a', color: tokens.color.text }}>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-28">
@@ -101,6 +169,11 @@ export default function GigDetailPage() {
             <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${gig.status === 'OPEN' ? 'bg-[var(--sage)]/20 text-[var(--sage)] border border-[var(--sage)]/30' : gig.status === 'IN_PROGRESS' ? 'bg-[var(--muted-ochre)]/20 text-[var(--muted-ochre)] border border-amber-500/30' : 'bg-slate-500/20 text-[var(--soft-stone)] border border-slate-500/30'}`}>
               {gig.status}
             </span>
+            {distanceMiles !== null && (
+              <span className="px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-[var(--clay)]/20 text-[var(--clay)] border border-indigo-500/30">
+                {formatDistance(distanceMiles)} away
+              </span>
+            )}
           </div>
           <h1 className="text-3xl font-black text-[var(--warm-ink)] mb-3">{gig.title}</h1>
           <p className="text-[var(--warm-ink)] leading-relaxed mb-6">{gig.description}</p>
@@ -124,6 +197,17 @@ export default function GigDetailPage() {
               <p className="text-2xl font-black text-[var(--clay)]">🛡️</p>
             </div>
           </div>
+
+          {/* Location */}
+          {gig.locationName && (
+            <div className="mt-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[14px] text-[var(--soft-stone)]">location_on</span>
+              <span className="text-sm text-[var(--soft-stone)]">{gig.locationName}</span>
+              {distanceMiles !== null && (
+                <span className="text-xs text-[var(--soft-stone)] ml-1">({formatDistance(distanceMiles)})</span>
+              )}
+            </div>
+          )}
 
           {/* Skills */}
           <div className="mt-6">
@@ -162,8 +246,8 @@ export default function GigDetailPage() {
                 </p>
               )}
 
-              {/* Accept Bid (poster only) */}
-              {isAuthenticated && user?.id === gig.createdBy && gig.competingBids > 0 && (
+              {/* Accept Bid (poster only - business mode) */}
+              {isAuthenticated && isBusiness && isMine && gig.competingBids > 0 && (
                 <div className="mt-6 pt-6 border-t border-[var(--soft-stone)]/30">
                   <h4 className="text-xs font-bold text-[var(--soft-stone)] uppercase tracking-wider mb-3">Accept a Bid</h4>
                   {acceptOpen ? (
@@ -195,11 +279,11 @@ export default function GigDetailPage() {
         </div>
 
         {/* Milestones */}
-        {milestones.length > 0 && (
+        {gig.milestones && gig.milestones.length > 0 && (
           <div className="bg-[var(--warm-sand)]/40 border border-[var(--soft-stone)]/30 rounded-2xl p-6 mb-8">
             <h2 className="text-lg font-bold text-[var(--warm-ink)] mb-4">📊 Milestones</h2>
             <div className="space-y-3">
-              {milestones.map((m: any, i: number) => (
+              {gig.milestones.map((m: any, i: number) => (
                 <div key={i} className="flex items-center gap-4">
                   <div className="w-8 h-8 rounded-full bg-[var(--clay)]/20 border border-indigo-500/30 flex items-center justify-center text-[var(--clay)] font-bold text-sm">{i + 1}</div>
                   <div className="flex-1">
