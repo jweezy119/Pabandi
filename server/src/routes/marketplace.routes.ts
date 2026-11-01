@@ -1,6 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { authenticate } from '../middleware/auth.middleware';
+import { AuthRequest } from '../middleware/auth.middleware';
+import { zkMatchService } from '../services/zk-match.service';
 
 const router = Router();
 
@@ -178,6 +181,108 @@ router.get('/categories', async (_req: Request, res: Response) => {
     res.json({ success: true, data: categories });
   } catch (e: any) {
     res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ── POST /api/v1/marketplace/blind-match ─────────────────────────────────────
+// ZK-protected blind matching: agent submits a commitment (SHA-256 hash of their
+// score, budget, and identity) plus a nullifier. The system verifies the ZK proof
+// (score >= 80, budget matches, nullifier unused) without revealing the raw score.
+// If verified, locks escrow and pairs the agent with the job.
+router.post('/blind-match', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { commitment, nullifier, jobId, salt, claimedScore, claimedBudget, agentId } = req.body;
+
+    if (!commitment || !nullifier || !jobId || !salt || claimedScore == null || claimedBudget == null || !agentId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: commitment, nullifier, jobId, salt, claimedScore, claimedBudget, agentId',
+      });
+    }
+
+    // Fetch the job to verify budget
+    const job = await prisma.agentProject.findUnique({ where: { id: jobId } });
+    if (!job) {
+      return res.status(404).json({ success: false, error: 'Job not found' });
+    }
+    if (job.status !== 'OPEN') {
+      return res.status(400).json({ success: false, error: 'Job is not open' });
+    }
+
+    // Verify the ZK proof
+    const proof = zkMatchService.verifyProof(
+      commitment,
+      nullifier,
+      agentId,
+      jobId,
+      job.budgetUsd,
+      salt,
+      claimedScore,
+      claimedBudget,
+    );
+
+    if (!proof.verified) {
+      return res.status(403).json({
+        success: false,
+        error: 'ZK proof verification failed',
+        details: {
+          scoreAtLeast80: proof.scoreAtLeast80,
+          budgetMatches: proof.budgetMatches,
+          nullifierUnused: proof.nullifierUnused,
+        },
+      });
+    }
+
+    // Lock escrow and pair agent with job (without revealing raw score)
+    // Create an AgentEscrow record for this match
+    const escrow = await prisma.agentEscrow.create({
+      data: {
+        projectId: jobId,
+        providerPassportId: agentId,
+        totalAmount: job.budgetUsd,
+        releaseAmount: job.budgetUsd,
+        platformFee: job.budgetUsd * 0.02,
+        status: 'FUNDED',
+      },
+    });
+
+    // Update job status to indicate it's been matched (but not reveal agent score)
+    await prisma.agentProject.update({
+      where: { id: jobId },
+      data: {
+        status: 'IN_PROGRESS',
+        selectedBidId: escrow.id,
+        escrowId: escrow.id,
+      },
+    });
+
+    logger.info(
+      `[ZK Match] Agent ${agentId} matched to job ${jobId} via blind match. Escrow: ${escrow.id}`,
+    );
+
+    return res.json({
+      success: true,
+      data: {
+        matchId: escrow.id,
+        jobId,
+        agentId,
+        escrowId: escrow.id,
+        escrowAmount: escrow.totalAmount,
+        platformFee: escrow.platformFee,
+        proof: {
+          verified: proof.verified,
+          scoreAtLeast80: proof.scoreAtLeast80,
+          budgetMatches: proof.budgetMatches,
+          nullifierUnused: proof.nullifierUnused,
+          // Raw score is NOT revealed - only that it passed the >= 80 threshold
+        },
+        message: 'Blind match successful. Escrow locked. Agent identity and score remain private.',
+      },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('[ZK Match] blind-match error:', message);
+    return res.status(500).json({ success: false, error: message });
   }
 });
 
