@@ -353,6 +353,42 @@ const ENGINE_TOOLS = [
       required: ['title', 'description', 'budgetUsd'],
     },
   },
+  {
+    name: 'pabandi_session_close',
+    description: 'Close an open session and optionally settle remaining funds. Returns settlement summary.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        sessionId: { type: 'string', description: 'Session ID to close' },
+        settle: { type: 'boolean', description: 'If true, attempt to settle any remaining balance' },
+      },
+      required: ['sessionId'],
+    },
+  },
+  {
+    name: 'pabandi_session_receipts',
+    description: 'List all receipts (spend records) for a session. Returns the full spend history.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        sessionId: { type: 'string', description: 'Session ID' },
+        limit: { type: 'number', description: 'Maximum receipts to return (default 50)' },
+      },
+      required: ['sessionId'],
+    },
+  },
+  {
+    name: 'pabandi_session_list',
+    description: 'List all sessions opened by an owner (user or agent). Returns sessions with balances and status.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        ownerType: { type: 'string', enum: ['user', 'agent'], description: 'Owner type' },
+        ownerId: { type: 'string', description: 'Owner ID' },
+      },
+      required: ['ownerType', 'ownerId'],
+    },
+  },
 ];
 
 // ── Platform tools (real HTTP proxy) ─────────────────────────────────────────
@@ -973,6 +1009,64 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
           status: project.status,
           escrowProtected: true,
           message: `Project posted: "${title}" - $${budgetUsd} escrow-protected`,
+        };
+      }
+
+      // ── Kernel syscall: pabandi_session_close ──
+      case 'pabandi_session_close': {
+        const { engineService } = await import('../services/engine.service');
+        const { sessionId, settle } = args;
+        if (!sessionId) throw new Error('sessionId is required');
+
+        const outcome = await engineService.closeSession(sessionId, settle ?? false);
+
+        if (!outcome.ok) {
+          throw new Error(`${outcome.error.code}: ${outcome.error.message}`);
+        }
+
+        return {
+          success: true,
+          sessionId: outcome.value.sessionId,
+          status: outcome.value.status,
+          settled: outcome.value.settled,
+          totalSpent: outcome.value.spent,
+          unsettledAmount: outcome.value.unsettledAmount,
+          currency: outcome.value.currency,
+          receiptCount: outcome.value.receiptCount,
+          message: outcome.value.settled
+            ? `Session ${sessionId} closed and settled`
+            : `Session ${sessionId} closed`,
+        };
+      }
+
+      // ── Kernel syscall: pabandi_session_receipts ──
+      case 'pabandi_session_receipts': {
+        const { engineService } = await import('../services/engine.service');
+        const { sessionId, limit } = args;
+        if (!sessionId) throw new Error('sessionId is required');
+
+        const receipts = await engineService.listReceipts(sessionId, limit ? Number(limit) : 50);
+        return {
+          success: true,
+          sessionId,
+          receipts,
+          count: receipts.length,
+        };
+      }
+
+      // ── Kernel syscall: pabandi_session_list ──
+      case 'pabandi_session_list': {
+        const { engineService } = await import('../services/engine.service');
+        const { ownerType, ownerId } = args;
+        if (!ownerType || !ownerId) throw new Error('ownerType and ownerId are required');
+
+        const sessions = await engineService.listSessionsForOwner(ownerId, 50);
+        return {
+          success: true,
+          ownerType,
+          ownerId,
+          sessions,
+          count: sessions.length,
         };
       }
     }
