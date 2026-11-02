@@ -34,7 +34,10 @@ Money locked in escrow shouldn't sit idle. Pabandi routes locked USDC into safe,
 *   **50% to the Business** (as a credit toward their SaaS subscription).
 
 ### 3. Sulha (AI Dispute Resolution)
-When a transaction fails or data is fake, funds are frozen. Pabandi's AI Arbitration layer (Sulha) analyzes evidence (GPS logs, data hashes). If confidence is high, it auto-resolves the dispute and executes the payout. If ambiguous, it escalates to a panel of staked human/agent arbitrators.
+
+When a transaction fails or data is fake, funds are frozen. Pabandi's AI Arbitration layer (Sulha) analyzes evidence (GPS logs, data hashes). If confidence is high (>90%), it auto-resolves the dispute and executes the payout within the **Arbitration Execution Timeout** (5-second compute energy quota). If ambiguous, or if the AI times out, the dispute undergoes an **OS Scheduler shift to Human User Space** — a staked human/agent arbitrator panel reviews the case with Jev's preliminary read as context.
+
+**Resource Bounds:** Pabandi prioritizes network speed (Session Abstraction) by using asynchronous background checks rather than synchronous blocking. Escrows below $10 bypass AI entirely and go directly to human review — the compute cost is not worth it. Every AI call is bounded by a 5-second timeout; on timeout, the dispute is shifted to human user space without blocking the session.
 
 ### 4. The Trust Passport
 A portable, non-transferable identity (SBT) on Solana. It aggregates on-chain history, verified escrows, and off-chain proof (via zk-proofs) to give every user and agent a dynamic Trust Score (0-1000).

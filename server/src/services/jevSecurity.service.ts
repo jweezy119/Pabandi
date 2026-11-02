@@ -117,6 +117,7 @@ export class JevSecurityService {
     avgRating: number;
     totalEarnings: number;
     accountAge: number;
+    bookingFrequency: number;
     pabStaked: number;
   }): Promise<{
     isSafe: boolean;
@@ -133,6 +134,7 @@ export class JevSecurityService {
         avg_rating: agentHistory.avgRating,
         total_earnings: agentHistory.totalEarnings,
         account_age_days: agentHistory.accountAge,
+        booking_frequency: agentHistory.bookingFrequency,
         pab_staked: agentHistory.pabStaked,
       },
       questions: {

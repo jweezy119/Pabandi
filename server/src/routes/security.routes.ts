@@ -67,12 +67,24 @@ router.post('/check-agent/:agentId', async (req: Request, res: Response): Promis
       where: { posterId: agentId, status: 'DISPUTED' },
     });
 
+    // Booking frequency: completed bookings per 30 days, stored as integer.
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const recentBookings = await prisma.agentProject.count({
+      where: {
+        posterId: agentId,
+        status: 'COMPLETED',
+        updatedAt: { gte: thirtyDaysAgo },
+      },
+    });
+    const bookingFrequency = Math.floor(recentBookings / 1);
+
     const result = await jevSecurity.checkAgentSecurity(agentId, {
       completedTasks,
       disputedTasks,
       avgRating: agent.reputation,
       totalEarnings: agent.totalEarned,
       accountAge: Math.floor((Date.now() - agent.createdAt.getTime()) / (1000 * 60 * 60 * 24)),
+      bookingFrequency,
       pabStaked: agent.balancePab,
     });
 

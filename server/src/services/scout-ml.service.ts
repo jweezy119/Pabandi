@@ -64,7 +64,7 @@ export function scoreTarget(inputs: ScoreInputs): { score: number; tier: 'hot' |
 
   const now = new Date();
   const daysSinceActivity = inputs.lastActivity
-    ? (now.getTime() - inputs.lastActivity.getTime()) / (1000 * 60 * 60 * 24)
+    ? Math.floor((now.getTime() - inputs.lastActivity.getTime()) / (1000 * 60 * 60 * 24))
     : 999;
 
   if (daysSinceActivity < 7) activityScore += 15;
@@ -82,7 +82,7 @@ export function scoreTarget(inputs: ScoreInputs): { score: number; tier: 'hot' |
   else if (githubForks > 0) githubScore += 1;
 
   const daysSinceCommit = inputs.githubLastCommit
-    ? (now.getTime() - inputs.githubLastCommit.getTime()) / (1000 * 60 * 60 * 24)
+    ? Math.floor((now.getTime() - inputs.githubLastCommit.getTime()) / (1000 * 60 * 60 * 24))
     : 999;
 
   if (daysSinceCommit < 30) githubScore += 5;

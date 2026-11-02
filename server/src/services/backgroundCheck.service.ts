@@ -138,14 +138,14 @@ async function checkGithub(username: string): Promise<ModuleResult> {
       return res;
     }
     const d = await r.json();
-    const ageDays = (Date.now() - new Date(d.created_at).getTime()) / 86400000;
+    const ageDays = Math.floor((Date.now() - new Date(d.created_at).getTime()) / 86400000);
     const followers = d.followers || 0;
     const repos = d.public_repos || 0;
-    res.raw = { followers, repos, ageDays: Math.floor(ageDays) };
+    res.raw = { followers, repos, ageDays };
     if (ageDays < 180) res.riskScore += 25;
     if (followers < 3 && repos < 3) res.riskScore += 20;
     if (repos >= 5 && followers >= 5) res.riskScore = Math.max(0, res.riskScore - 15);
-    res.signals.push(`GitHub: ${repos} repos, ${followers} followers, ${Math.floor(ageDays)}d old`);
+    res.signals.push(`GitHub: ${repos} repos, ${followers} followers, ${ageDays}d old`);
   } catch (e: any) {
     res.error = e.message;
     res.riskScore = 10;
@@ -166,10 +166,10 @@ async function checkDomain(domain: string): Promise<ModuleResult> {
     if (!r.ok) { res.riskScore = 20; res.signals.push('Domain RDAP lookup failed'); setCache(cacheKey, res); return res; }
     const d = await r.json();
     const registered = (d.events || []).find((e: any) => e.eventAction === 'registration')?.eventDate;
-    const ageDays = registered ? (Date.now() - new Date(registered).getTime()) / 86400000 : 0;
-    res.raw = { ageDays: Math.floor(ageDays), registrar: d.entities?.[0]?.vcardArray };
-    if (ageDays < 90) { res.riskScore += 35; res.signals.push(`Domain only ${Math.floor(ageDays)}d old — high risk`); }
-    else res.signals.push(`Domain ${Math.floor(ageDays)}d old`);
+    const ageDays = registered ? Math.floor((Date.now() - new Date(registered).getTime()) / 86400000) : 0;
+    res.raw = { ageDays, registrar: d.entities?.[0]?.vcardArray };
+    if (ageDays < 90) { res.riskScore += 35; res.signals.push(`Domain only ${ageDays}d old — high risk`); }
+    else res.signals.push(`Domain ${ageDays}d old`);
   } catch (e: any) {
     res.error = e.message;
     res.riskScore = 10;
