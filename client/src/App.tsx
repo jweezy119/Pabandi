@@ -51,7 +51,6 @@ const ServiceProviderDirectoryPage = lazy(() => import('./pages/ServiceProviderD
 const ServiceProviderDetailPage = lazy(() => import('./pages/ServiceProviderDetailPage'));
 const ServiceProviderIngestPage = lazy(() => import('./pages/ServiceProviderIngestPage'));
 const DietaryPassportPage = lazy(() => import('./pages/DietaryPassportPage'));
-const EnhancedDashboardPage = lazy(() => import('./pages/EnhancedDashboardPage'));
 const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'));
 
 const PostProjectPage = lazy(() => import('./pages/marketplace/PostProjectPage'));
@@ -185,8 +184,12 @@ function AppShellLayout() {
 }
 
 function AnimatedAppRoutes() {
-  const { isAuthenticated, fetchWalletData } = useAuthStore();
+  const { isAuthenticated, fetchWalletData, user } = useAuthStore();
   const location = useLocation();
+
+  // /dashboard is not a destination of its own — it routes every signed-in user
+  // into their mode-appropriate dashboard: Business → /contact, Personal → /me.
+  const dashboardTarget = (user?.preferredMode === 'personal') ? '/me' : '/contact';
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -251,13 +254,10 @@ function AnimatedAppRoutes() {
         <Route path="/sandbox" element={<SandboxApp />} />
         <Route path="/sandbox/deal" element={<DealSimulatorPage />} />
         <Route element={<AppShellLayout />}>
-            {/* /dashboard is where every signed-in surface sends you: the AppShell
-                wordmark, UserMenu, the marketing header's avatar. It was swept to
-                a PlaceholderPage alongside the legacy routes, so each of those
-                landed on "Undergoing Integration" whose only CTA pointed back at
-                itself — a dead end with no way into ContactOS. The business-aware
-                dashboard is restored here for that reason. */}
-            <Route path="dashboard" element={<EnhancedDashboardPage />} />
+            {/* /dashboard routes to the user's mode-appropriate dashboard
+                (Business → /contact, Personal → /me). It is never a
+                standalone page with hardcoded data. */}
+            <Route path="dashboard" element={<Navigate to={dashboardTarget} replace />} />
             <Route path="profile" element={<PlaceholderPage />} />
 
           <Route path="business" element={<BusinessPage />} />
