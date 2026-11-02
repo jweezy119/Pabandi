@@ -4,10 +4,14 @@ import { useAuthStore } from '../store/authStore';
 import { effectiveMode, safeInternalPath } from '../utils/accountMode';
 import { authService } from '../services/api';
 import { signMessageWithPhantom } from '../utils/web3';
-import { tokens } from '../design-system';
 
 type Mode = 'login' | 'signup';
 type Role = 'customer' | 'business';
+
+type SolanaProvider = {
+  isPhantom?: boolean;
+  connect?: () => Promise<{ publicKey: { toString: () => string } }>;
+};
 
 const GitHubIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -266,8 +270,9 @@ export default function AuthPage() {
   const handleWalletAuth = async () => {
     try {
       setOauthLoading('wallet');
-      const provider = (window as any).solana;
-      if (!provider || !provider.isPhantom) {
+      const solana = (window as unknown as { solana?: unknown }).solana;
+      const provider: SolanaProvider | undefined = solana as SolanaProvider;
+      if (!provider || !provider.isPhantom || !provider.connect) {
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         if (isMobile) {
           const url = encodeURIComponent(window.location.href);
@@ -285,9 +290,10 @@ export default function AuthPage() {
       const { signature } = await signMessageWithPhantom(message);
       await loginWithWallet(address, signature);
       navigate(getPostLoginTarget());
-    } catch (err: any) {
+    } catch (err) {
+      const error = err as { message?: string };
       console.error(err);
-      setError(err.message || 'Wallet authentication failed.');
+      setError(error?.message || 'Wallet authentication failed.');
     } finally {
       setOauthLoading(null);
     }
@@ -343,12 +349,13 @@ export default function AuthPage() {
           fiverrUrl: formData.fiverrUrl || undefined,
           upworkUrl: formData.upworkUrl || undefined,
           refCode: searchParams.get('ref') || undefined,
-        } as any);
+        });
       }
       navigate(getPostLoginTarget());
-    } catch (err: any) {
-      const data = err.response?.data;
-      if (err.message === 'Network Error' || err.code === 'ERR_NETWORK') {
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string; errors?: Record<string, string> } }; message?: string; code?: string };
+      const data = error?.response?.data;
+      if (error?.message === 'Network Error' || error?.code === 'ERR_NETWORK') {
         setError('Cannot connect to the server. If you are on the live site, the backend might be down or redeploying.');
       } else if (data?.errors) {
         setFieldErrors(data.errors);

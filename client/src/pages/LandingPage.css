@@ -333,6 +333,98 @@ img {
   animation: fade-slide-up 0.8s 0.5s var(--ease-clay) both;
 }
 
+/* ── Path Cards ────────────────────────────────────────────────────────── */
+
+.path-cards {
+  display: flex;
+  gap: 1rem;
+  flex-direction: column;
+  animation: fade-slide-up 0.8s 0.6s var(--ease-clay) both;
+}
+
+@media (min-width: 768px) {
+  .path-cards {
+    flex-direction: row;
+  }
+}
+
+.path-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(191, 179, 163, 0.3);
+  background: white;
+  transition: all 0.4s var(--ease-clay);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+
+.path-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--clay);
+  background: var(--cream);
+}
+
+.path-card-business {
+  border-left: 4px solid var(--muted-ochre);
+}
+
+.path-card-agents {
+  border-left: 4px solid var(--clay);
+}
+
+.path-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.path-card-business .path-card-icon {
+  background: var(--muted-ochre);
+  color: white;
+}
+
+.path-card-agents .path-card-icon {
+  background: var(--clay);
+  color: white;
+}
+
+.path-card-title {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--warm-ink);
+  margin: 0 0 0.5rem 0;
+  line-height: 1.3;
+}
+
+.path-card-desc {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--soft-stone);
+  margin: 0 0 1rem 0;
+  flex: 1;
+}
+
+.path-card-arrow {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--terracotta);
+  white-space: nowrap;
+}
+
+.path-card-arrow:hover {
+  color: var(--clay);
+}
+
 /* ── Hero 3D Object ──────────────────────────────────────────────────────── */
 
 .hero-visual {

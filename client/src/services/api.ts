@@ -111,6 +111,12 @@ export const authService = {
     lastName: string;
     phone?: string;
     code?: string;
+    role?: string;
+    businessName?: string;
+    googlePlaceId?: string;
+    fiverrUrl?: string;
+    upworkUrl?: string;
+    refCode?: string;
   }) => apiClient.post('/auth/register', data),
   registerWithCode: (data: {
     email: string;

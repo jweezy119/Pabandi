@@ -34,8 +34,9 @@ export const RegisterPage: React.FC = () => {
       const data = res.data?.data ?? res.data;
       if (!data?.success) throw new Error(data?.message || 'Could not send code');
       setStep('verify');
-    } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || 'Could not send code');
+    } catch (e) {
+      const error = e as { response?: { data?: { message?: string } }; message?: string; code?: string };
+      setError(error?.response?.data?.message || error?.message || 'Could not send code');
     } finally {
       setLoading(false);
     }
@@ -51,8 +52,9 @@ export const RegisterPage: React.FC = () => {
       if (!data?.accessToken) throw new Error(data?.message || 'Registration failed');
       useAuthStore.setState({ user: data.user, token: data.accessToken, isAuthenticated: true });
       window.location.href = isCrm ? '/contact?wizard=true' : '/onboarding';
-    } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || 'Registration failed');
+    } catch (e) {
+      const error = e as { response?: { data?: { message?: string } }; message?: string; code?: string };
+      setError(error?.response?.data?.message || error?.message || 'Registration failed');
     } finally {
       setLoading(false);
     }

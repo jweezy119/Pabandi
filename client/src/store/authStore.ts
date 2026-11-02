@@ -88,6 +88,12 @@ interface RegisterData {
   firstName: string;
   lastName: string;
   phone?: string;
+  role?: string;
+  businessName?: string;
+  googlePlaceId?: string;
+  fiverrUrl?: string;
+  upworkUrl?: string;
+  refCode?: string;
 }
 
 const defaultWallet: WalletState = {

@@ -122,7 +122,7 @@ function WaveDivider() {
   );
 }
 
-function MagneticButton({ children, className = '', ...props }: any) {
+function MagneticButton({ children, className = '', ...props }: { children: React.ReactNode; className?: string; [key: string]: unknown }) {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
 
@@ -421,7 +421,7 @@ export default function LandingPage() {
                     onMouseEnter={() => handleCardHover(mod.tint)}
                     onMouseLeave={handleCardLeave}
                     onClick={(e) => handleCardClick(e, mod.path, mod.id)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleCardClick(e as any, mod.path, mod.id); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCardClick(e as unknown as React.MouseEvent, mod.path, mod.id); } }}
                     tabIndex={0}
                     role="button"
                     aria-label={`${mod.name} module card, opens ${mod.name} dashboard`}
