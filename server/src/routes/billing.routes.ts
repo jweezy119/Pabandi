@@ -3,8 +3,10 @@ import { prisma } from '../utils/database';
 import { authenticate } from '../middleware/auth.middleware';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
-import { getCreditBalance, applyCreditToInvoice } from '../services/saasCredit.service';
+import { getCreditBalance, applyCreditToInvoice, applyCreditToAmount } from '../services/saasCredit.service';
 import { tierDefinition, SUBSCRIPTION_TIERS, PAID_TIERS } from '../config/subscriptions';
+import { resolveSquareCredentials, createSquarePaymentLink, squareBaseUrl } from '../services/square-connection.service';
+import { getSubscription } from '../services/subscription.service';
 
 const router = Router();
 
@@ -303,6 +305,277 @@ router.post('/subscription-invoice', authenticate, async (req: AuthRequest, res:
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[Billing] subscription-invoice error:', message);
+    return res.status(500).json({ success: false, error: message });
+  }
+});
+
+// POST /api/v1/billing/subscribe
+// Generate a subscription invoice for a target tier with saasCredit pre-applied,
+// then create a Square payment link for the net amount. The business pays net
+// through Square; on confirm the credit is deducted and the tier is upgraded.
+router.post('/subscribe', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const businessId = req.user?.businessId;
+    if (!businessId) {
+      return res.status(400).json({ success: false, error: 'Business required' });
+    }
+
+    const { targetTier } = req.body as { targetTier?: string };
+    if (!targetTier || !PAID_TIERS.includes(targetTier as (typeof PAID_TIERS)[number])) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid target tier. Choose from: ${PAID_TIERS.join(', ')}.`,
+      });
+    }
+
+    const tier = targetTier as (typeof PAID_TIERS)[number];
+    const definition = tierDefinition(tier);
+    const monthlyPrice = definition.monthlyPrice;
+    if (!monthlyPrice) {
+      return res.status(400).json({ success: false, error: 'Tier has no price.' });
+    }
+
+    const current = await getSubscription(businessId);
+    if (current.tier === tier && current.isPaying) {
+      return res.status(400).json({
+        success: false,
+        error: `Already subscribed to ${tier}.`,
+      });
+    }
+
+    const amountCents = Math.round(monthlyPrice * 100);
+    const creditBalance = await getCreditBalance(businessId);
+    const creditBalanceCents = Math.round(creditBalance * 100);
+    const creditToApplyCents = Math.min(creditBalanceCents, amountCents);
+    const netAmountCents = amountCents - creditToApplyCents;
+
+    // Create the subscription invoice for the target tier (draft until paid).
+    // subtotal is the net amount the business actually pays; creditToApply is
+    // recorded in metadata and deducted only when payment is confirmed.
+    const invoice = await prisma.invoice.create({
+      data: {
+        businessId,
+        clientId: await resolveSubscriptionClientId(businessId),
+        number: await nextInvoiceNumberForBusiness(businessId),
+        dateDue: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        status: 'sent',
+        lineItems: [{ description: `Upgrade to ${tier} subscription (30 days)`, price: netAmountCents / 100 }],
+        subtotal: netAmountCents / 100,
+        notes: JSON.stringify({
+          text: `Subscription upgrade — ${tier} plan`,
+          metadata: {
+            invoiceType: 'subscription_upgrade',
+            tier,
+            creditToApplyCents,
+            amountCents,
+            netAmountCents,
+          },
+        }),
+      },
+    });
+
+    if (netAmountCents <= 0) {
+      // Credit covers the full cost — upgrade immediately, no payment needed.
+      await applyCreditToInvoice(businessId, invoice.id);
+      await prisma.invoice.update({
+        where: { id: invoice.id },
+        data: { status: 'paid' },
+      });
+      await prisma.merchantSubscription.upsert({
+        where: { businessId },
+        create: {
+          businessId,
+          tier,
+          status: 'active',
+          priceCents: amountCents,
+          currency: 'USD',
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+        update: {
+          tier,
+          status: 'active',
+          priceCents: amountCents,
+        },
+      });
+      logger.info(
+        `[Billing] Subscription upgrade ${businessId} -> ${tier} fully covered by credit`,
+      );
+      return res.json({
+        success: true,
+        data: {
+          invoiceId: invoice.id,
+          tier,
+          amountCents,
+          creditAppliedCents: creditToApplyCents,
+          netAmountCents: 0,
+          paymentRequired: false,
+          message: `Upgraded to ${tier} — covered by saas credit.`,
+        },
+      });
+    }
+
+    // Credit doesn't cover the full cost — create a Square payment link for the net.
+    const credentials = await resolveSquareCredentials(businessId);
+    if (!credentials) {
+      return res.status(404).json({
+        success: false,
+        error: 'Square not connected. Connect your Square account to pay by card.',
+        data: {
+          invoiceId: invoice.id,
+          tier,
+          amountCents,
+          creditAppliedCents: creditToApplyCents,
+          netAmountCents,
+          paymentRequired: true,
+          squareRequired: true,
+        },
+      });
+    }
+
+    const link = await createSquarePaymentLink({
+      credentials,
+      idempotencyKey: `sub-upgrade-${businessId}-${tier}-${invoice.id}`,
+      lineItemName: `Pabandi ${tier} subscription (30 days)`,
+      amount: netAmountCents / 100,
+      currency: 'USD',
+      note: `Pabandi subscription upgrade to ${tier}`,
+      redirectUrl: `${process.env.CLIENT_URL || 'https://pabandi.com'}/contact/settings/subscription?paid=true&invoice=${invoice.id}`,
+      cancelUrl: `${process.env.CLIENT_URL || 'https://pabandi.com'}/contact/settings/subscription?paid=cancelled&invoice=${invoice.id}`,
+      metadata: {
+        invoiceId: invoice.id,
+        businessId,
+        tier,
+        orderPurpose: 'subscription_upgrade',
+      },
+    });
+
+    logger.info(
+      `[Billing] Subscription upgrade ${businessId} -> ${tier}: net=$${(netAmountCents / 100).toFixed(2)} credit=$${(creditToApplyCents / 100).toFixed(2)}`,
+    );
+
+    return res.json({
+      success: true,
+      data: {
+        invoiceId: invoice.id,
+        tier,
+        amountCents,
+        creditAppliedCents: creditToApplyCents,
+        netAmountCents,
+        paymentRequired: true,
+        paymentUrl: link.url,
+        paymentLinkId: link.paymentLinkId,
+        orderId: link.orderId,
+        message: `Pay $${(netAmountCents / 100).toFixed(2)} via Square to upgrade to ${tier}.`,
+      },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('[Billing] subscribe error:', message);
+    return res.status(500).json({ success: false, error: message });
+  }
+});
+
+// POST /api/v1/billing/subscription/confirm
+// Verify a Square payment for a subscription upgrade, deduct saas credit,
+// mark the invoice paid, and upgrade the merchant tier.
+router.post('/subscription/confirm', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const businessId = req.user?.businessId;
+    if (!businessId) {
+      return res.status(400).json({ success: false, error: 'Business required' });
+    }
+
+    const { invoiceId, orderId } = req.body as { invoiceId?: string; orderId?: string };
+    if (!invoiceId) {
+      return res.status(400).json({ success: false, error: 'Invoice required' });
+    }
+
+    const invoice = await prisma.invoice.findFirst({
+      where: { id: invoiceId, businessId },
+    });
+    if (!invoice) {
+      return res.status(404).json({ success: false, error: 'Invoice not found' });
+    }
+    if (invoice.status === 'paid') {
+      return res.json({ success: true, data: { alreadyPaid: true, tier: (invoice.notes as any)?.metadata?.tier } });
+    }
+
+    const notes = JSON.parse(invoice.notes || '{}');
+    const metadata = notes.metadata || {};
+    const tier = metadata.tier;
+    const creditToApplyCents = metadata.creditToApplyCents ?? 0;
+    const squareOrderId = orderId || metadata.squareOrderId;
+
+    // Verify Square payment if an order exists.
+    if (squareOrderId) {
+      const credentials = await resolveSquareCredentials(businessId);
+      if (!credentials) {
+        return res.status(404).json({ success: false, error: 'Square not connected.' });
+      }
+      const orderRes = await fetch(`${squareBaseUrl()}/v2/orders/${squareOrderId}`, {
+        headers: {
+          Authorization: `Bearer ${credentials.accessToken}`,
+          'Content-Type': 'application/json',
+          'Square-Version': '2026-09-16',
+        },
+      });
+      if (!orderRes.ok) {
+        return res.status(400).json({ success: false, error: 'Could not verify Square payment.' });
+      }
+      const order = await orderRes.json();
+      const state = order.order?.state;
+      const tenders = order.order?.tenders ?? [];
+      const paid = state === 'COMPLETED' || tenders.length > 0;
+      if (!paid) {
+        return res.status(400).json({ success: false, error: 'Payment not yet received. Complete the Square checkout first.' });
+      }
+    }
+
+    // Deduct saas credit and mark the invoice paid.
+    if (creditToApplyCents > 0) {
+      await applyCreditToAmount(businessId, creditToApplyCents);
+    }
+    await prisma.invoice.update({
+      where: { id: invoiceId },
+      data: { status: 'paid' },
+    });
+
+    // Upgrade the merchant tier.
+    const amountCents = metadata.amountCents ?? 0;
+    await prisma.merchantSubscription.upsert({
+      where: { businessId },
+      create: {
+        businessId,
+        tier,
+        status: 'active',
+        priceCents: amountCents,
+        currency: 'USD',
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+      update: {
+        tier,
+        status: 'active',
+        priceCents: amountCents,
+      },
+    });
+
+    logger.info(
+      `[Billing] Subscription confirmed ${businessId} -> ${tier}: credit=${creditToApplyCents}c invoice=${invoiceId}`,
+    );
+
+    return res.json({
+      success: true,
+      data: {
+        invoiceId,
+        tier,
+        creditAppliedCents: creditToApplyCents,
+        paid: true,
+        message: `Upgraded to ${tier}.`,
+      },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('[Billing] subscription confirm error:', message);
     return res.status(500).json({ success: false, error: message });
   }
 });

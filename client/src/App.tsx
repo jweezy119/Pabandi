@@ -98,6 +98,7 @@ const PaymentSettingsPage = lazy(() => import('./pages/crm/settings/PaymentSetti
 const TrustSettingsPage = lazy(() => import('./pages/crm/settings/TrustSettingsPage').then((m) => ({ default: m.TrustSettingsPage })));
 const NotificationsPage = lazy(() => import('./pages/crm/settings/NotificationsPage').then((m) => ({ default: m.NotificationsPage })));
 const ApiKeysPage = lazy(() => import('./pages/crm/settings/ApiKeysPage').then((m) => ({ default: m.ApiKeysPage })));
+const ContactSubscriptionPage = lazy(() => import('./pages/crm/settings/ContactSubscriptionPage').then((m) => ({ default: m.default })));
 const WebhooksPage = lazy(() => import('./pages/crm/settings/WebhooksPage').then((m) => ({ default: m.WebhooksPage })));
 const SetupWizardPage = lazy(() => import('./pages/contact/SetupWizardPage'));
 const CapitalOSPage = lazy(() => import('./pages/ledger/LedgerOSPage'));
@@ -313,8 +314,9 @@ function AnimatedAppRoutes() {
            <Route path="contact/settings/custom-fields" element={<BusinessGuard><CustomFieldsPage /></BusinessGuard>} />
            <Route path="contact/settings/pipeline" element={<BusinessGuard><PipelineSettingsPage /></BusinessGuard>} />
            <Route path="contact/settings/services" element={<BusinessGuard><ServiceCatalogPage /></BusinessGuard>} />
-           <Route path="contact/settings/payment" element={<BusinessGuard><PaymentSettingsPage /></BusinessGuard>} />
-           <Route path="contact/settings/trust" element={<BusinessGuard><TrustSettingsPage /></BusinessGuard>} />
+          <Route path="contact/settings/payment" element={<BusinessGuard><PaymentSettingsPage /></BusinessGuard>} />
+          <Route path="contact/settings/subscription" element={<BusinessGuard><ContactSubscriptionPage /></BusinessGuard>} />
+          <Route path="contact/settings/trust" element={<BusinessGuard><TrustSettingsPage /></BusinessGuard>} />
           <Route path="contact/settings/notifications" element={<NotificationsPage />} />
           <Route path="contact/settings/api-keys" element={<ApiKeysPage />} />
           <Route path="contact/settings/webhooks" element={<WebhooksPage />} />

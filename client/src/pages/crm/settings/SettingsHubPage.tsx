@@ -1,4 +1,3 @@
-import React from 'react';
 import DashboardLayout from '../../../components/DashboardLayout';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../../components/primitives/Card';
@@ -10,6 +9,7 @@ export function SettingsHubPage() {
 
   const settingsCards = [
     { id: 'profile', icon: 'storefront', title: 'Business Profile', desc: 'Name, logo, address, timezone', path: '/contact/settings/profile' },
+    { id: 'subscription', icon: 'paid', title: 'Subscription & Billing', desc: 'Tier, saas credit, invoices', path: '/contact/settings/subscription' },
     { id: 'modules', icon: 'extension', title: 'Modules', desc: 'Toggle features and CRM modules', path: '/contact/settings/modules' },
     { id: 'custom-fields', icon: 'text_fields', title: 'Custom Fields', desc: 'Define fields for CRM records', path: '/contact/settings/custom-fields' },
     { id: 'pipeline', icon: 'view_kanban', title: 'Pipeline Settings', desc: 'Manage deal stages and probabilities', path: '/contact/settings/pipeline' },
