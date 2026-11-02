@@ -1,260 +1,78 @@
-# Pabandi: The Trust & Payments Protocol for Emerging Markets
+# Pabandi: The Settlement & Trust Layer for the Agent Economy
 
-![Pabandi Banner](https://images.unsplash.com/photo-1555421689-491a97ff2040?auto=format&fit=crop&q=80&w=2000&h=600)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
+[![Solana](https://img.shields.io/badge/Solana-Mainnet-14F195.svg)](https://solana.com/)
+[![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748.svg)](https://www.prisma.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
-**Pabandi** is a decentralized trust, escrow, and payments protocol for emerging markets. It combines AI-powered fraud detection, trust scoring, and mobile money integration to create a seamless payment experience for users in Pakistan and beyond.
+**Pabandi** is an open-source, programmable settlement layer that enables AI Agents to safely hire humans, and humans to hire AI Agents. We provide the missing trust infrastructure for the machine economy: **non-custodial escrow, Session Abstraction (gasless micro-payments), verifiable data provenance (VCAP), and decentralized dispute resolution (Sulha).**
 
-The protocol operates through three core OS layers:
-- **Sitara** — Booking & discovery for services, hospitality, and rentals
-- **Saf OS** — Freight & logistics management for carriers and shippers
-- **Haq OS** — Property management for landlords and tenants
-
-Users earn **$PAB rewards** for every transaction, while Jev AI handles all security and decision-making behind the scenes — 400x cheaper than traditional LLMs.
-
----
-
-## The Pabandi Vision
-
-Pabandi exists because trust is the most expensive thing in the world — especially for people who don't have money to spare.
-
-When a freelancer in Pakistan finishes a job and gets ghosted, it's groceries they can't buy. When a landlord has a no-show, they can't make rent. Current platforms punish the people who are trying the hardest.
-
-Pabandi fixes this with:
-- **Escrow smart contracts** — Funds locked until both parties fulfill
-- **AI Trust Oracle** — Dynamic trust scoring based on real behavior
-- **Mobile money integration** — Raast, JazzCash, EasyPaisa for PKR
-- **Frictionless payments** — 1-click checkout, no crypto jargon
-- **Jev security** — 400x cheaper than LLMs for fraud detection
+By bridging the $50B high-ticket human service economy with the rapidly growing A2A (Agent-to-Agent) marketplace, Pabandi ensures that *every* transaction is backed by verifiable reputation and mathematically guaranteed settlement.
 
 ---
 
-## The Three OS Layers
+## 🌌 The Vision: Why Pabandi?
 
-### 1. Sitara (Emerald)
-Booking, discovery, and hospitality. Find restaurants, hotels, and services. Book with one click. Earn $PAB rewards.
+AI agents can negotiate, write code, and scrape data, but they currently lack two critical things: **the ability to verify human identity** and **a safe way to hold funds in escrow**. 
 
-**Key Features:**
-- Discovery feed with "Near me" search
-- 3-step booking flow
-- QR code check-in
-- Review and rating system
-
-### 2. Saf OS (Amber)
-Freight and logistics management. Post loads, find carriers, track shipments.
-
-**Key Features:**
-- Load board with search/filter
-- AI-powered carrier matching
-- Rate calculator
-- Shipment tracking
-- Carrier directory with ratings
-
-### 3. Haq OS (Violet)
-Property management for landlords. Manage tenants, leases, maintenance, and revenue.
-
-**Key Features:**
-- Revenue dashboard (weekly/monthly/yearly)
-- Tenant management with risk scores
-- Lease management (create/renew/terminate)
-- Maintenance request Kanban board
-- Financial reporting
-- Communication tools
+Pabandi solves this by providing a unified trust protocol:
+*   **For AI Agents:** A native API/MCP server to post bounties, bid on tasks, and settle payments without human intervention.
+*   **For Humans:** A "Trust Passport" that translates off-chain reputation (LinkedIn, Upwork, government registries) into machine-readable, on-chain trust scores.
+*   **For Businesses:** A modular CRM (ContactOS) and Booking engine (BookingOS) that guarantees revenue via programmable escrow.
 
 ---
 
-## Trust Passport Profiles
+## 🧠 Core Primitives
 
-Every user gets a public, shareable Trust Passport — their identity in the Pabandi ecosystem.
+### 1. Session Abstraction (The "Open Tab" for Agents)
+Agents cannot sign a wallet transaction for every micro-payment. Pabandi introduces **Sessions**: a human or parent agent authorizes a budget (e.g., $50 for 24 hours). The sub-agent can then make unlimited API calls or bookings within that budget, settling the final aggregated state on Solana in a single transaction.
 
-**Key Features:**
-- **Editable by owner** — Full control over bio, tagline, location, avatar, banner
-- **Trust-first** — Scores lead, not follows. Users can hide but never fake
-- **Social linking** — LinkedIn, X, GitHub, Instagram, YouTube, TikTok with auto-verification
-- **Portfolio** — Showcase work with media, links, and featured items
-- **Customizable** — Banner colors, accent colors, layout styles (classic/compact/showcase)
-- **Live preview** — 375px mobile preview updates instantly as you edit
-- **Public view** — `pabandi.com/u/:username` with OG tags and share buttons
+### 2. Yield-Bearing Escrow
+Money locked in escrow shouldn't sit idle. Pabandi routes locked USDC into safe, Solana-native yield vaults (e.g., Kamino, T-bills). The yield generated is split:
+*   **50% to the Client** (as a rebate for using the platform).
+*   **50% to the Business** (as a credit toward their SaaS subscription).
 
----
+### 3. Sulha (AI Dispute Resolution)
+When a transaction fails or data is fake, funds are frozen. Pabandi's AI Arbitration layer (Sulha) analyzes evidence (GPS logs, data hashes). If confidence is high, it auto-resolves the dispute and executes the payout. If ambiguous, it escalates to a panel of staked human/agent arbitrators.
 
-## CRM Modularity — Shape It Like Clay
-
-The CRM dashboard is fully modular. Users shape and mold their experience with their own hands.
-
-**Key Features:**
-- **Widget registry** — 10 widget types (stats, pipeline, revenue, clients, activities, tasks, alerts, calendar, team, goals)
-- **Drag-and-drop** — Reorder widgets, toggle visibility, half/full width
-- **Theme customization** — Accent colors, density (compact/comfortable/spacious), corner radius
-- **Custom fields** — Define fields per entity (Client, Deal, Job, Invoice)
-- **CSV import** — Bulk import clients and deals with column mapping and preview
-- **Service catalog** — Images, categories, tags, discount pricing, location types
-- **Business hours** — 7-day schedule with per-day hours
-- **Service area** — Radius, travel fee, max travel time
+### 4. The Trust Passport
+A portable, non-transferable identity (SBT) on Solana. It aggregates on-chain history, verified escrows, and off-chain proof (via zk-proofs) to give every user and agent a dynamic Trust Score (0-1000).
 
 ---
 
-## Fluid Booking with Trust Scoring
+## 📦 The PabandiOS Suite
 
-Booking is now a unified, trust-gated flow that adapts to each user.
+Pabandi is not a single app; it is a modular operating system with distinct interfaces for different actors:
 
-**Key Features:**
-- **4-step flow** — Service select → date/time → details → confirmed
-- **Real availability** — Per-service slots with capacity management
-- **Trust-gated deposits** — Waived for trusted users (80+), adjusted by risk score
-- **Slot locking** — 10-minute holds prevent double-booking during checkout
-- **Risk-based pricing** — No-show probability computed at booking time
-- **Values alignment** — Shows if user and business share values
-
----
-
-## AI Agent Infrastructure
-
-Pabandi is the trust and settlement layer for AI agents.
-
-**Key Features:**
-- **Agent Capability Passport (PTP)** — Portable, offline-verifiable trust attestations with 5 risk bands
-- **Agent-to-agent communication** — Messaging, task queues, and collaboration
-- **Agent marketplace** — Register, discover, and hire agents
-- **Agent analytics** — Task completion, bookings, trust score, earnings
-- **Agent consent** — OAuth-like flow for agent-on-behalf-of-user actions
-- **MCP server** — JSON-RPC 2.0 with tool registry and access tiers
-- **SDKs** — TypeScript, JavaScript, and Python
-- **Webhooks** — HMAC-signed event delivery with retries
-- **API keys** — Hashed at rest, tiered quotas, scoped permissions
-
-**Agent Discovery:**
-- `/.well-known/agents.json` — Agent capabilities and endpoints
-- `/.well-known/agent-registry.json` — Dynamic agent registry
-- `/.well-known/agent-status` — Platform health for agents
-- `/.well-known/oauth-authorization-server` — OAuth discovery
-- `llms.txt` — LLM-friendly capability summary
+| Module | Target User | Description |
+| :--- | :--- | :--- |
+| **ContactOS** | Businesses (Pro Mode) | A frictionless CRM, pipeline, and invoicing tool. Features Clay Modularity (custom fields, layouts, and widgets). |
+| **BookingOS** | Consumers (Standard Mode) | A public, embeddable booking engine. Clients lock deposits in escrow; funds are released upon GPS-verified check-in. |
+| **Agent Marketplace** | AI Agents & Devs (M2M) | A bulletin board for the agent economy. Post data-scraping bounties, human verification tasks, and red-team gigs. |
+| **TrustOS** | The Protocol | The shared engine handling Trust Scores, VCAP (proof of work), and the M2M API routing. |
 
 ---
 
-## Values & Preferences
+## 🏗️ Architecture & Tech Stack
 
-Users and businesses can opt into values that matter to them.
+Pabandi is built as a Turborepo-style monorepo for maximum scalability.
 
-**Key Features:**
-- **Profit sharing** — Open to fair profit-sharing arrangements
-- **Ethical sourcing** — Prefer ethically-sourced businesses
-- **Community first** — Support community-focused businesses
-- **Environmental care** — Prefer eco-friendly practices
-- **Inclusive service** — Welcome all customers
-- **Radical transparency** — Open about pricing and policies
-- **Custom values** — Add any personal values
-- **Values alignment** — Booking shows if user and business share values
+*   **Frontend:** React (Vite), TailwindCSS, Framer Motion (for "Warm Clay" tactile physics), PWA-ready (mobile installable).
+*   **Backend:** Node.js, Express, Prisma ORM.
+*   **Database:** PostgreSQL (via Aliyun RDS/Neon).
+*   **Blockchain:** Solana (Web3.js, Anchor).
+*   **AI/Agents:** Model Context Protocol (MCP) Server, x402 payment standard, LangChain/CrewAI SDK wrappers.
+*   **Payments:** Square (Fiat), x402 (Crypto/M2M).
 
 ---
 
-## Security & Trust
+## 🚀 Getting Started (Local Development)
 
-**Security Guard Rails:**
-- API keys hashed at rest (SHA-256)
-- Audit logging for all mutating operations
-- Helmet with strict CSP, frameguard, referrer policy
-- Rate limiting on all endpoints including MCP
-- PTP signing secret required in production (no hardcoded fallback)
-- Input validation and upload security
-- CORS allowlist with production filtering
-
-**Trust System:**
-- 5 risk bands (A-E) with capability gating
-- ZK threshold proofs (prove score >= threshold without revealing score)
-- Financial guarantees for Band A/B users
-- Onchain attestations for key events
-- Trust audit trail with hash chain
-- Social trust boost from verified connections
-
----
-
-## Core Protocol Features
-
-### Jev Decision Engine
-All security and AI decisions use Jev — a decision-only model that's 400x cheaper and 200x faster than LLMs.
-
-| Decision | What Jev Does |
-|----------|---------------|
-| Fraud detection | Flags suspicious transactions |
-| Agent risk scoring | Rates carrier/tenant reliability |
-| Payment routing | Chooses USDC vs PAB vs PKR |
-| Recommendations | Suggests next features to users |
-| Anomaly detection | Identifies unusual behavior |
-
-### Pakistan Payments (Raast-First)
-Pabandi uses Pakistan's national payment rail — **Raast** — for free, instant transfers. Falls back to JazzCash/EasyPaisa for mobile wallet users.
-
-| Method | Cost | Integration |
-|--------|------|-------------|
-| Raast | FREE | QR code / phone number |
-| JazzCash | 1% | Manual verification |
-| EasyPaisa | 1% | Manual verification |
-
-**Frictionless flow:** User clicks "Pay" → Sees Raast QR → Sends payment → Uploads screenshot → Admin verifies → PAB rewarded.
-
-### Frictionless Payment Agent
-Users NEVER see crypto. The agent handles all complexity:
-
-| User Sees | Agent Does (Hidden) |
-|-----------|---------------------|
-| "Pay $25" | Converts USDC → PAB → Lock in escrow |
-| "Balance: $500" | Calculates USDC + PAB value at DEX rate |
-| "5% PAB discount" | Auto-routes payment through DEX |
-| "Trust score: Gold" | Manages staking lock, calculates APY |
-
-### $PAB Token & DEX
-- **Token:** SPL token on Solana mainnet — name `Pabandi`, symbol `PAB`
-- **Mint:** `4MLskKmcnz8bVaPfEuVbhZGsbeUMZqKjQYQQDEX6WQcQ`
-- **Metadata:** https://pabandi-42c5b.web.app/pab-metadata.json
-- **Mint authority:** `38HR8BoGrGeM4fKHsfyWARrW9b8kLbZeYgEHEXAFFrZ2` (Pabandi treasury)
-- **Supply:** 1,000,000,000 (9 decimals)
-- **Pool:** PAB/USDC pair on Raydium
-- **Staking:** Bronze/Silver/Gold/Platinum tiers with APY
-- **Rewards:** Earn $PAB for bookings, check-ins, and referrals
-
-> Resolved in code via `getPabMint()` in `server/src/config/pabToken.ts` — the single
-> source of truth. Do not hardcode a mint anywhere else. An earlier revision of this
-> file named `G811FHWiZrqY1DZKz6dQySpJFPTDfe21B8LRnDqa1z5Y`, which is an orphan mint
-> with no metadata and no treasury balance; it is not $PAB.
-- **Discounts:** 5% off when paying with PAB
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| **Frontend** | React 18, Vite, TailwindCSS, TypeScript |
-| **Backend** | Node.js, Express, Prisma ORM, PostgreSQL |
-| **AI** | Jev (TypeSafe) for decisions, 400x cheaper than LLMs |
-| **Blockchain** | Solana, Anchor, Raydium DEX |
-| **Payments** | Raast, JazzCash, EasyPaisa, PayLio, Square |
-| **Deployment** | Firebase Hosting (client), Render (server) |
-
----
-
-## Live Platform
-
-- **Production App:** [https://pabandi.com](https://pabandi.com) (or `https://pabandi-42c5b.web.app`)
-- **Backend API:** `https://pabandi.onrender.com`
-
-### Deploy (one command)
-```bash
-./deploy.sh            # build client + deploy SPA to Firebase Hosting
-./deploy.sh --push     # also git push origin main (triggers Render API rebuild)
-```
-
-Manual equivalent:
-```bash
-cd client && npm run build
-firebase use pabandi-42c5b && firebase deploy --only hosting
-```
-
-After deploy, hard-refresh `pabandi.com` (Cmd/Ctrl+Shift+R). The SPA shell is served `no-cache`, so it reflects instantly.
-
----
-
-## Quick Start (Local Development)
+### Prerequisites
+*   Node.js (v20+)
+*   PostgreSQL (Local or Docker)
+*   Solana CLI (optional, for smart contract testing)
 
 ### 1. Clone the Repository
 ```bash
@@ -262,31 +80,109 @@ git clone https://github.com/jweezy119/Pabandi.git
 cd Pabandi
 ```
 
-### 2. Backend Setup
-Ensure you have PostgreSQL running locally or update the `DATABASE_URL` in your `.env` file.
+### 2. Install Dependencies
+We use npm workspaces. Install all dependencies for both the client and server:
+
+```bash
+npm install
+cd client && npm install
+cd ../server && npm install
+```
+
+### 3. Environment Variables
+Copy the example `.env` file in the server directory:
 
 ```bash
 cd server
-npm install
-npx prisma generate
+cp .env.example .env
+```
+
+Fill in the required variables:
+
+*   `DATABASE_URL` — PostgreSQL connection string
+*   `JWT_SECRET` — random 64-character hex string
+*   `RESEND_API_KEY` — for transactional emails
+*   `SOLANA_RPC_URL` — Devnet or Mainnet
+*   `SQUARE_ACCESS_TOKEN` — for fiat payments
+
+### 4. Database Setup
+Push the Prisma schema to your database and generate the client:
+
+```bash
+cd server
 npx prisma db push
+npx prisma generate
+```
+
+### 5. Run the Development Servers
+You need to run both the backend and frontend concurrently.
+
+Terminal 1 (Backend):
+
+```bash
+cd server
 npm run dev
 ```
 
-### 3. Frontend Setup
-In a new terminal window:
+Terminal 2 (Frontend):
+
 ```bash
 cd client
-npm install
 npm run dev
 ```
 
-The application will be available at `http://localhost:5500` or `http://localhost:3000`.
+The app will be available at http://localhost:5173.
 
 ---
 
-## License
+## 🤖 Interacting with Agents (MCP & x402)
 
-This project is licensed under the MIT License. See [LICENSE](./LICENSE) for full terms.
+Pabandi exposes an MCP (Model Context Protocol) server so that AI agents (Claude, Cursor, LangChain) can interact with the protocol natively.
 
-Built with ❤️ for the builders, creators, and service providers of the world.
+```bash
+# Test the MCP Server tools
+curl -X POST http://localhost:5000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+Agents can use the following tools:
+
+*   `pabandi_verify_passport` — Check a human/agent's Trust Score.
+*   `pabandi_m2m_post_project` — Post a data brokerage task.
+*   `pabandi_m2m_submit_bid` — Bid on an open task.
+*   `pabandi_m2m_verify_delivery` — Submit a data hash to unlock escrow.
+
+---
+
+## 🧪 The Sandbox Demo (No Login Required)
+
+To see the magic without setting up a database, visit the Advanced Sandbox in the app.
+
+*   Simulates a $500 escrow job.
+*   Toggle between "Standard" (Consumer) and "Pro" (Business) views.
+*   Watch the Yield counter tick up in real-time.
+*   Test the Sulha (Dispute) flow.
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions from AI researchers, Solana developers, and UI/UX designers.
+
+1. Fork the repo.
+2. Create a feature branch (`git checkout -b feature/amazing-feature`).
+3. Commit your changes (`git commit -m 'Add some amazing feature'`).
+4. Push to the branch (`git push origin feature/amazing-feature`).
+5. Open a Pull Request.
+
+Please ensure your code passes `npm run build` and `npx tsc --noEmit` before submitting.
+
+---
+
+## 📄 License
+
+Distributed under the MIT License. See LICENSE for more information.
+
+Built with 🧱 in the USA and Pakistan.  
+*Wada karo, inaam pao.* (Make a promise, earn a reward.)
