@@ -36,6 +36,7 @@ const ConsumerHomePage = lazy(() => import('./pages/consumer/ConsumerHomePage'))
 const ConsumerReleasePage = lazy(() => import('./pages/consumer/ConsumerReleasePage'));
 const ConsumerPassportPage = lazy(() => import('./pages/consumer/ConsumerPassportPage'));
 const ConsumerSettingsPage = lazy(() => import('./pages/consumer/ConsumerSettingsPage'));
+const SandboxApp = lazy(() => import('./pages/sandbox/SandboxApp'));
 const DealSimulatorPage = lazy(() => import('./pages/sandbox/DealSimulator'));
 const TrustPassportPublicPage = lazy(() => import('./pages/public/TrustPassportPage'));
 const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
@@ -247,7 +248,8 @@ function AnimatedAppRoutes() {
       >
       <Routes location={location} key={location.pathname}>
         {/* Public sandbox demo — no authentication required */}
-        <Route path="/sandbox" element={<DealSimulatorPage />} />
+        <Route path="/sandbox" element={<SandboxApp />} />
+        <Route path="/sandbox/deal" element={<DealSimulatorPage />} />
         <Route element={<AppShellLayout />}>
             {/* /dashboard is where every signed-in surface sends you: the AppShell
                 wordmark, UserMenu, the marketing header's avatar. It was swept to
