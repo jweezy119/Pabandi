@@ -4489,6 +4489,11 @@ model Project {
   bestAgentId     String? // chosen by recommendation engine
   bestConfidence  Float? // confidence % of the recommendation
   createdBy       String? // owner userId / app id for webhook routing
+  latitude        Float? // gig work location (real coordinates from public sources)
+  longitude       Float?
+  locationLabel   String? // human-readable place label
+  source          String? // provenance: "remotive" | "openstreetmap" | "sme" ...
+  sourceRef       String? // external id at the source, dedupe key with source
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -4496,6 +4501,7 @@ model Project {
 
   @@index([status])
   @@index([category])
+  @@unique([source, sourceRef])
 }
 
 // ── ProjectBid (agent auto-bid on a project) ─────────────────────────────────────
