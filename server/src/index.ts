@@ -645,6 +645,20 @@ try {
 } catch {
   logger.info('ℹ️ Invoice public lookup route not available');
 }
+
+// Dashboard stat aggregates for the dual-mode dashboards. Registered explicitly
+// (not through lazyRoute) because each router mounts at TWO specific prefixes —
+// a lazy default-export mount would collide with the broader /users and
+// /businesses routers that must keep handling everything else under their prefix.
+try {
+  const statsRoutes = require('./routes/stats.routes');
+  // (Each router carries its own `authenticate` middleware internally.)
+  app.use(`/api/${v}/users/me/stats`, statsRoutes.userStatsRouter);
+  app.use(`/api/${v}/business/stats`, statsRoutes.businessStatsRouter);
+  logger.info('✅ Dashboard stats routes registered (/users/me/stats, /business/stats)');
+} catch (e) {
+  logger.error('Failed to register dashboard stats routes', e);
+}
 for (const [routePath, importPath] of routeMap) {
   lazyRoute(routePath, importPath);
 }
