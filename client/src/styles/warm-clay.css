@@ -1,4 +1,14 @@
 /* ═══════════════════════════════════════════════════════════════════
+   Sandbox simulator grid — blueprint backdrop for /sandbox
+   ═══════════════════════════════════════════════════════════════════ */
+.sandbox-grid {
+  background-image:
+    linear-gradient(to right, rgba(201, 123, 90, 0.10) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(201, 123, 90, 0.10) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    Warm Clay Futurism — Design System Tokens
    "Like clay, not cardboard" — tactile, soft, alive.
    ═══════════════════════════════════════════════════════════════════ */
