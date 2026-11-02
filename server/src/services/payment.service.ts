@@ -2,12 +2,14 @@ import crypto from 'crypto';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { PLATFORM_FEE_RATE, AGENT_MARKETPLACE_FEE, assertProfitable, processingCostCents } from '../config/fees';
+import { singleWalletTreasury } from './singleWalletTreasury.service';
 
 // ── Solana USDC Configuration ───────────────────────────────────────────────
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 const PLATFORM_WALLET = process.env.PLATFORM_WALLET || process.env.PABANDI_TREASURY_WALLET || '';
 const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
 const PLATFORM_FEE_BPS = 100; // 1% = 100 basis points (legacy, superseded by config/fees)
+const PLATFORM_FEE_ENABLED = process.env.PLATFORM_FEE_ENABLED === 'true';
 
 // ── PayLio Configuration ─────────────────────────────────────────────────────
 const PAYLIO_API_KEY = process.env.PAYLIO_API_KEY || '';
@@ -445,14 +447,27 @@ export async function releaseEscrow({
   }
 
   // ── Platform fee calculation ────────────────────────────────────────────
-  // 3.5% platform fee on escrow release, capped to remain profitable after
-  // processing costs. Agent marketplace transactions use 2% instead.
-  const amountCents = Math.round(escrow.amount * 100);
-  const isAgentMarketplace = escrow.businessId == null && escrow.userId != null;
-  const rate = isAgentMarketplace ? AGENT_MARKETPLACE_FEE : PLATFORM_FEE_RATE;
-  const feeCents = Math.round(amountCents * rate);
-  const platformFeeAmount = feeCents / 100;
-  const netAmount = escrow.amount - platformFeeAmount;
+  // Gated behind PLATFORM_FEE_ENABLED. When on, collects 3.5% (standard) or
+  // 2% (agent marketplace) on release and sweeps it to the PLATFORM_REV
+  // treasury bucket via existing rails — never Stripe. When off, fee is $0.
+  let platformFeeAmount = 0;
+  let netAmount = escrow.amount;
+
+  if (PLATFORM_FEE_ENABLED) {
+    const amountCents = Math.round(escrow.amount * 100);
+    const isAgentMarketplace = escrow.businessId == null && escrow.userId != null;
+    const rate = isAgentMarketplace ? AGENT_MARKETPLACE_FEE : PLATFORM_FEE_RATE;
+    const feeCents = Math.round(amountCents * rate);
+    platformFeeAmount = feeCents / 100;
+    netAmount = escrow.amount - platformFeeAmount;
+
+    // Sweep the collected fee to the platform revenue treasury bucket.
+    await singleWalletTreasury.collectRevenue({
+      amountUsd: platformFeeAmount,
+      source: 'AGENT_FEES',
+      referenceId: escrowId,
+    });
+  }
 
   await prisma.escrow.update({
     where: { id: escrowId },
@@ -461,7 +476,7 @@ export async function releaseEscrow({
       releasedAt: new Date(),
       releasedBy,
       platformFeeAmount,
-      platformFeeStatus: 'COLLECTED',
+      platformFeeStatus: platformFeeAmount > 0 ? 'COLLECTED' : 'NONE',
     },
   });
 
@@ -475,14 +490,21 @@ export async function releaseEscrow({
       where: { id: escrow.paymentId },
       data: {
         platformFeeAmount,
-        platformFeeStatus: 'COLLECTED',
+        platformFeeStatus: platformFeeAmount > 0 ? 'COLLECTED' : 'NONE',
       },
     }).catch(() => {
       // Payment may not exist for all escrow types; non-fatal
     });
   }
 
-  logger.info(`[PaymentService] Escrow released: ${escrowId} by ${releasedBy}, platformFee: $${platformFeeAmount.toFixed(2)}, net: $${netAmount.toFixed(2)}`);
+  logger.info(
+    '[PaymentService] Escrow released: %s by %s, platformFee: $%s, net: $%s, feeEnabled: %s',
+    escrowId,
+    releasedBy,
+    platformFeeAmount.toFixed(2),
+    netAmount.toFixed(2),
+    PLATFORM_FEE_ENABLED,
+  );
   return { success: true, platformFeeAmount, netAmount };
 }
 
