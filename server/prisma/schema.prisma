@@ -8599,6 +8599,37 @@ model EscrowDispute {
   @@index([sessionId])
 }
 
+// ─── Internet Court Adjudication (ERC-7710 + Sulha) ─────────────────────────
+//
+// AdjudicationCase records a structured EvidenceBundle when a buyer rejects
+// delivered work. Jev (Pabandi's Sulha AI) arbitrates first:
+//   - confidence > 90 → the verdict auto-executes (escrow released or refunded)
+//   - confidence ≤ 90 → escalated to a staked human arbitrator panel
+model AdjudicationCase {
+  id            String   @id @default(cuid())
+  /// The job/escrow being disputed.
+  jobId         String   @unique
+  /// Buyer's claim about why the work is rejected.
+  buyerClaim    String
+  /// IPFS hash (or content hash) of the delivered data/proof.
+  sellerProof   String
+  /// Oracle-side data: price feed, GPS coordinate, etc.
+  oracleData    Json
+  /// The AI verdict: "RELEASE" (seller keeps funds) or "REFUND" (buyer paid back).
+  verdict       String?
+  /// Jev confidence 0-100.
+  confidence    Float?
+  /// Machine or human reasoning for the verdict.
+  reasoning     String?
+  /// "pending" | "auto_executed" | "escalated"
+  status        String   @default("pending")
+  /// When the panel resolves an escalated case.
+  resolvedAt    DateTime?
+  createdAt     DateTime @default(now())
+
+  @@index([jobId, status])
+}
+
 model ScoutedTarget {
   id            String   @id @default(cuid())
   email         String   @unique
