@@ -1,6 +1,7 @@
 import { logger } from '../utils/logger';
 import { trustCore } from '../trust/trust-core';
 import { prisma } from '../utils/database';
+import { getYieldAdapter } from './yield-adapters';
 
 export type EscrowCheckoutEnvironment = 'sandbox' | 'production';
 
@@ -95,10 +96,90 @@ export const escrowService = {
   },
 
   async fundEscrow(passportId: string, amount: number, escrowId: string, invoiceId?: string) {
+    const adapter = getYieldAdapter();
+    try {
+      await adapter.deposit(amount, escrowId);
+      await prisma.escrowYield.create({
+        data: { escrowId, principal: amount, yieldAmount: 0, status: 'active' },
+      });
+    } catch (error: any) {
+      logger.error('[Escrow] yield deposit failed for escrow %s: %s', escrowId, error?.message || error);
+    }
     await trustCore.emit('escrow.funded', { passportId, amount, escrowId, invoiceId });
   },
 
   async releaseEscrow(passportId: string, amount: number, escrowId: string) {
+    const adapter = getYieldAdapter();
+    try {
+      const { principal, yield: yieldAmount } = await adapter.withdraw(amount, escrowId);
+      const clientShare = yieldAmount / 2;
+      const businessShare = yieldAmount / 2;
+
+      await prisma.escrowYield.update({
+        where: { escrowId },
+        data: { yieldAmount, status: 'withdrawn', withdrawnAt: new Date() },
+      });
+
+      const escrow = await prisma.agentEscrow.findUnique({
+        where: { id: escrowId },
+        include: {
+          project: {
+            include: { bids: { where: { isWinning: true } } },
+          },
+        },
+      });
+
+      // 50% of yield to the Client, logged to the Agent Earnings Ledger.
+      if (escrow?.project && clientShare > 0) {
+        const clientWallet = await prisma.agentWallet.findFirst({
+          where: { agentId: escrow.project.posterId },
+        });
+        if (clientWallet) {
+          await prisma.agentEarningsLedger.create({
+            data: {
+              walletId: clientWallet.id,
+              mint: 'USDC',
+              amount: clientShare,
+              type: 'escrow_yield',
+              referenceId: escrowId,
+              txSignature: `yield_${escrowId}`,
+            },
+          });
+        }
+      }
+
+      // 50% of yield to the Business, added to saasCreditBalance.
+      if (escrow?.project && businessShare > 0) {
+        const winningBid = escrow.project.bids[0];
+        if (winningBid) {
+          const bidder = await prisma.agentProfile.findUnique({
+            where: { id: winningBid.bidderId },
+          });
+          if (bidder) {
+            const business = await prisma.business.findFirst({
+              where: { ownerId: bidder.id },
+            });
+            if (business) {
+              await prisma.business.update({
+                where: { id: business.id },
+                data: { saasCreditBalance: { increment: businessShare } },
+              });
+            }
+          }
+        }
+      }
+
+      logger.info(
+        '[Escrow] yield split escrow=%s principal=%s yield=%s clientShare=%s businessShare=%s',
+        escrowId,
+        principal,
+        yieldAmount,
+        clientShare,
+        businessShare,
+      );
+    } catch (error: any) {
+      logger.error('[Escrow] yield withdraw/split failed for escrow %s: %s', escrowId, error?.message || error);
+    }
     await trustCore.emit('escrow.released', { passportId, amount, escrowId });
   },
 
