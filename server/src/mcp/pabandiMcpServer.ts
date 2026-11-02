@@ -24,11 +24,28 @@ import { pabandiToolsRegistry, pabandiPlatformDoc, toolAccessOk } from '../servi
 import { declareDiscoveryExtension } from '@x402/extensions';
 import { didService } from '../services/vc/did.service';
 import { sessionDelegation } from '../services/engine/session.service';
+import { adjudicationService } from '../services/adjudication.service';
 
 const SERVER_NAME = 'pabandi-trust';
 const SERVER_VERSION = '1.0.0';
 const BACKEND = (process.env.BACKEND_URL || 'https://pabandi.onrender.com').replace(/\/+$/, '');
 const PABANDI_ESCROW_CONTRACT = process.env.PABANDI_ESCROW_CONTRACT || '0xPabandiEscrow';
+
+/** Minimum trust score an agent must hold to bid/spend. */
+const MIN_TRUST_SCORE_TO_BID = 500;
+
+/**
+ * MCP error that carries an HTTP status code so the dispatch layer can
+ * return a proper status (e.g. 403 Forbidden) instead of always 200.
+ */
+export class McpError extends Error {
+  readonly statusCode: number;
+  constructor(message: string, statusCode: number = 400) {
+    super(message);
+    this.statusCode = statusCode;
+    this.name = 'McpError';
+  }
+}
 
 /**
  * x402 prices, keyed by the REAL tool names in TOOLS below.
@@ -471,6 +488,61 @@ const ENGINE_TOOLS = [
       required: [],
     },
   },
+  {
+    name: 'pabandi_check_counterparty',
+    description: 'Check a counterparty\'s Trust Passport before bidding. Returns trustScore, tier, verifiedIdentity, and whether they clear a minimum score (default 500). Used by agents to evaluate who to transact with.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        passportId: { type: 'string', description: 'Trust Passport/agent ID to check' },
+        minScore: { type: 'number', description: 'Minimum acceptable trust score (default 500)', default: 500 },
+      },
+      required: ['passportId'],
+    },
+  },
+  {
+    name: 'pabandi_request_escrow',
+    description: 'Lock funds in escrow using an ERC-7710 delegated budget. Requires delegationId (from a prior grant) and amount. Verifies MaxAmount, Expiry, and AllowedContracts caveats before locking. Returns escrowId and remaining delegation budget.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        delegationId: { type: 'string', description: 'ERC-7710 delegation id authorising this spend' },
+        amount: { type: 'number', description: 'Amount in USDC to lock' },
+        description: { type: 'string', description: 'Human-readable description of what the escrow secures' },
+        deliverableHash: { type: 'string', description: 'Optional hash of the expected deliverable' },
+        contractAddress: { type: 'string', description: 'Contract address to call (must be in AllowedContracts)' },
+        payerId: { type: 'string', description: 'Payer/user ID funding the escrow' },
+        payeeId: { type: 'string', description: 'Payee/agent ID receiving the escrow on release' },
+      },
+      required: ['delegationId', 'amount', 'description', 'payerId', 'payeeId'],
+    },
+  },
+  {
+    name: 'pabandi_submit_dispute_evidence',
+    description: 'Submit an EvidenceBundle to open an Internet Court adjudication case. Requires jobId, buyerClaim, sellerProof (IPFS/content hash), and optional oracleData. Returns the case id and status.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', description: 'The job/escrow being disputed' },
+        buyerClaim: { type: 'string', description: "Buyer's claim about why the work is rejected" },
+        sellerProof: { type: 'string', description: 'IPFS/content hash of the delivered data/proof' },
+        oracleData: { type: 'object', description: 'Oracle-side data (price feed, GPS coordinate, etc.)', additionalProperties: true },
+      },
+      required: ['jobId', 'buyerClaim', 'sellerProof'],
+    },
+  },
+  {
+    name: 'pabandi_get_adjudication_status',
+    description: 'Check the status and verdict of an adjudication case. Returns status (pending/auto_executed/escalated), verdict, confidence, and reasoning.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        jobId: { type: 'string', description: 'The job/escrow whose case to look up' },
+        caseId: { type: 'string', description: 'Adjudication case id (alternative to jobId)' },
+      },
+      required: [],
+    },
+  },
 ];
 
 // ── Platform tools (real HTTP proxy) ─────────────────────────────────────────
@@ -701,6 +773,26 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
         const amount = Number(args.amount);
         if (!Number.isFinite(amount) || amount <= 0) {
           throw new Error('amount must be a number greater than zero.');
+        }
+
+        // ── Pre-transaction trust-score gate ────────────────────────────────
+        // An agent whose Trust Score is below 500 cannot bid or spend.
+        // Resolve the score server-side (never from the caller) so an agent
+        // cannot assert a higher band to bypass the gate.
+        const session = await prisma.pabandiSession.findUnique({
+          where: { id: sessionId },
+          select: { id: true, ownerId: true, ownerType: true },
+        });
+        if (!session) {
+          throw new Error('Session not found');
+        }
+        const { resolveTrustScore } = await import('../services/trust.service');
+        const trust = await resolveTrustScore(session.ownerType as 'user' | 'agent', session.ownerId);
+        if (trust.score < MIN_TRUST_SCORE_TO_BID) {
+          throw new McpError(
+            'Trust Score below 500. Request a review or provide more collateral.',
+            403,
+          );
         }
 
         // ── ERC-7710 Delegation verification ────────────────────────────────
@@ -1367,6 +1459,119 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
           ].filter(Boolean),
         };
       }
+
+      // ── Internet Court: check counterparty trust before bidding ──
+      case 'pabandi_check_counterparty': {
+        const { passportId, minScore = MIN_TRUST_SCORE_TO_BID } = args;
+        if (!passportId) throw new Error('passportId is required');
+
+        const passport = await prisma.trustPassport.findUnique({ where: { id: passportId } });
+        if (!passport) throw new Error('passport not found');
+
+        const score = passport.score || 500;
+        const tier = score >= 800 ? 'Platinum' : score >= 650 ? 'Gold' : score >= 500 ? 'Silver' : 'Bronze';
+
+        return {
+          success: true,
+          passportId,
+          trustScore: score,
+          tier,
+          verifiedIdentity: passport.verifiedIdentity || false,
+          clearsMinimum: score >= Number(minScore),
+          minimumScore: Number(minScore),
+          message: score >= Number(minScore)
+            ? 'Counterparty clears the minimum trust score.'
+            : 'Counterparty below minimum trust score — require more collateral or decline.',
+        };
+      }
+
+      // ── Internet Court: lock funds via ERC-7710 delegation ──
+      case 'pabandi_request_escrow': {
+        const { delegationId, amount, description, deliverableHash, contractAddress, payerId, payeeId } = args;
+        if (!delegationId) throw new Error('delegationId is required');
+        if (!amount || amount <= 0) throw new Error('amount must be greater than zero');
+        if (!description) throw new Error('description is required');
+        if (!payerId) throw new Error('payerId is required');
+        if (!payeeId) throw new Error('payeeId is required');
+
+        const { sessionDelegation } = await import('../services/engine/session.service');
+        const verdict = await sessionDelegation.verifyAndDebit({
+          delegationId,
+          amountCents: Math.round(amount * 100),
+          contractAddress: contractAddress ?? PABANDI_ESCROW_CONTRACT,
+        });
+        if (!verdict.ok) {
+          throw new Error(`Escrow lock rejected: ${verdict.error?.code} — ${verdict.error?.message}`);
+        }
+
+        // Record the escrow against the delegation's agent/principal context.
+        const escrow = await prisma.escrow.create({
+          data: {
+            amount: Math.round(amount * 100),
+            status: 'LOCKED',
+            description,
+            deliverableHash,
+            lockedAt: new Date(),
+            payer: { connect: { id: payerId } },
+            payee: { connect: { id: payeeId } },
+          },
+        });
+
+        return {
+          success: true,
+          escrowId: escrow.id,
+          status: escrow.status,
+          amountLocked: escrow.amount / 100,
+          currency: 'USDC',
+          delegationId,
+          remainingCents: verdict.remainingCents,
+          message: `Escrow locked: $${amount} secured for "${description}"`,
+        };
+      }
+
+      // ── Internet Court: submit dispute evidence ──
+      case 'pabandi_submit_dispute_evidence': {
+        const { jobId, buyerClaim, sellerProof, oracleData } = args;
+        if (!jobId) throw new Error('jobId is required');
+        if (!buyerClaim) throw new Error('buyerClaim is required');
+        if (!sellerProof) throw new Error('sellerProof is required');
+
+        const theCase = await adjudicationService.submitEvidence({
+          jobId,
+          buyerClaim,
+          sellerProof,
+          oracleData: oracleData ?? {},
+        });
+
+        return {
+          success: true,
+          caseId: theCase.id,
+          jobId: theCase.jobId,
+          status: theCase.status,
+          message: 'Evidence submitted. Awaiting Sulha AI adjudication.',
+        };
+      }
+
+      // ── Internet Court: get adjudication status ──
+      case 'pabandi_get_adjudication_status': {
+        const { jobId, caseId } = args;
+        if (!jobId && !caseId) throw new Error('jobId or caseId is required');
+
+        const theCase = caseId
+          ? await adjudicationService.getCase(caseId)
+          : await adjudicationService.getCaseByJobId(jobId);
+        if (!theCase) throw new Error('Adjudication case not found');
+
+        return {
+          success: true,
+          caseId: theCase.id,
+          jobId: theCase.jobId,
+          status: theCase.status,
+          verdict: theCase.verdict,
+          confidence: theCase.confidence,
+          reasoning: theCase.reasoning,
+        };
+      }
     }
   }
 
@@ -1397,7 +1602,8 @@ export const mcpHandler = async (req: Request, res: Response) => {
       return res.json(result);
     } catch (e: any) {
       logger.error('[MCP] dispatch error', e);
-      return res.json(jsonRpc(body.id, undefined, { code: -32603, message: e.message }));
+      const status = e instanceof McpError ? e.statusCode : e.code === 402 ? 402 : 500;
+      return res.status(status).json(jsonRpc(body.id, undefined, { code: -32603, message: e.message }));
     }
   });
 };
