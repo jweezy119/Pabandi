@@ -29,12 +29,16 @@ import {
 // (class-instance) because that module exports an instance, not statics.
 import { disputeService } from '../services/dispute.service';
 import { assessFeeSafe } from '../services/fee-assessment.service';
+import { validate, createBookingSchema } from '../validation/gig';
+import { moneyRateLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
 
 // ── POST /api/v1/bookings ──
 // Public - create a booking from the public booking page
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+// Zod-validated (email shape, money bounds, string caps) + money-rate limited:
+// every booking create touches escrow/deposit state.
+router.post('/', moneyRateLimiter, validate(createBookingSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { businessId, slotStart, slotEnd, serviceType, customerName, customerEmail, customerPhone, notes, customFields, depositAmount, clientAddress, clientLat, clientLng } = req.body;
 

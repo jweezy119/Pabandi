@@ -276,26 +276,59 @@ export async function scrapeBroccoliProfile(profileUrl: string): Promise<Partial
 }
 
 /**
+ * SSRF gate: the URL must parse, be https, and its HOSTNAME must actually be one
+ * of the supported marketplaces — not merely contain the domain somewhere in the
+ * string. The old `lowerUrl.includes('fiverr.com')` check happily sent Puppeteer
+ * to `https://evil.com/fiverr.com` or `https://fiverr.com.evil.com/`, navigating a
+ * real headless browser into attacker-controlled pages (cookie jar, internal
+ * redirects).
+ */
+const ALLOWED_SCRAPER_HOSTS = new Set([
+  'fiverr.com', 'www.fiverr.com',
+  'taskrabbit.com', 'www.taskrabbit.com',
+  'upwork.com', 'www.upwork.com',
+  'getjobber.com', 'www.getjobber.com', 'jobber.com', 'www.jobber.com',
+  'broccoli.io', 'www.broccoli.io', 'broccoli.com', 'www.broccoli.com',
+]);
+
+function assertScraperUrl(profileUrl: string): URL {
+  let url: URL;
+  try {
+    url = new URL(profileUrl);
+  } catch {
+    throw new Error(`Invalid URL: ${profileUrl}`);
+  }
+  if (url.protocol !== 'https:') {
+    throw new Error('Only https:// marketplace URLs are accepted');
+  }
+  if (!ALLOWED_SCRAPER_HOSTS.has(url.hostname.toLowerCase())) {
+    throw new Error(`Unsupported marketplace host: ${url.hostname}. Allowed: fiverr.com, taskrabbit.com, upwork.com, getjobber.com, broccoli.io`);
+  }
+  return url;
+}
+
+/**
  * Scrape a provider profile from any supported platform.
- * Auto-detects platform from URL.
+ * Auto-detects platform from URL (hostnames strictly allowlisted).
  */
 export async function scrapeMarketplaceProfile(profileUrl: string): Promise<Partial<ExternalProviderProfile>> {
-  const lowerUrl = profileUrl.toLowerCase();
+  const url = assertScraperUrl(profileUrl);
+  const host = url.hostname.toLowerCase().replace(/^www\./, '');
 
-  if (lowerUrl.includes('fiverr.com')) {
-    return scrapeFiverrProfile(profileUrl);
+  if (host === 'fiverr.com') {
+    return scrapeFiverrProfile(url.href);
   }
-  if (lowerUrl.includes('taskrabbit.com')) {
-    return scrapeTaskRabbitProfile(profileUrl);
+  if (host === 'taskrabbit.com') {
+    return scrapeTaskRabbitProfile(url.href);
   }
-  if (lowerUrl.includes('upwork.com')) {
-    return scrapeUpworkProfile(profileUrl);
+  if (host === 'upwork.com') {
+    return scrapeUpworkProfile(url.href);
   }
-  if (lowerUrl.includes('getjobber.com') || lowerUrl.includes('jobber.com')) {
-    return scrapeJobberProfile(profileUrl);
+  if (host === 'getjobber.com' || host === 'jobber.com') {
+    return scrapeJobberProfile(url.href);
   }
-  if (lowerUrl.includes('broccoli.io') || lowerUrl.includes('broccoli.com')) {
-    return scrapeBroccoliProfile(profileUrl);
+  if (host === 'broccoli.io' || host === 'broccoli.com') {
+    return scrapeBroccoliProfile(url.href);
   }
 
   throw new Error(`Unsupported marketplace URL: ${profileUrl}. Supported: fiverr.com, taskrabbit.com, upwork.com, getjobber.com, broccoli.io`);

@@ -278,16 +278,26 @@ export async function scrapeUpworkProfile(profileUrl: string): Promise<Partial<E
  * Automatically detects the platform from the URL.
  */
 export async function scrapeMarketplaceProfile(profileUrl: string): Promise<Partial<ExternalProviderProfile>> {
-  const lowerUrl = profileUrl.toLowerCase();
+  // SSRF gate — hostname-level allowlist (same policy as unifiedScraper). The old
+  // substring check would navigate Puppeteer to attacker hosts that merely
+  // contained 'fiverr.com' as a substring or subdomain suffix.
+  let url: URL;
+  try { url = new URL(profileUrl); } catch { throw new Error(`Invalid URL: ${profileUrl}`); }
+  if (url.protocol !== 'https:') throw new Error('Only https:// marketplace URLs are accepted');
+  const host = url.hostname.toLowerCase().replace(/^www\./, '');
+  const allowed = new Set(['fiverr.com', 'taskrabbit.com', 'upwork.com']);
+  if (!allowed.has(host)) {
+    throw new Error(`Unsupported marketplace host: ${host}. Allowed: fiverr.com, taskrabbit.com, upwork.com`);
+  }
 
-  if (lowerUrl.includes('fiverr.com')) {
-    return scrapeFiverrProfile(profileUrl);
+  if (host === 'fiverr.com') {
+    return scrapeFiverrProfile(url.href);
   }
-  if (lowerUrl.includes('taskrabbit.com')) {
-    return scrapeTaskRabbitProfile(profileUrl);
+  if (host === 'taskrabbit.com') {
+    return scrapeTaskRabbitProfile(url.href);
   }
-  if (lowerUrl.includes('upwork.com')) {
-    return scrapeUpworkProfile(profileUrl);
+  if (host === 'upwork.com') {
+    return scrapeUpworkProfile(url.href);
   }
 
   throw new Error(`Unsupported marketplace URL: ${profileUrl}. Supported: fiverr.com, taskrabbit.com, upwork.com`);

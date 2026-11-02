@@ -413,7 +413,7 @@ export async function agentBalance(agentId: string): Promise<any> {
 
 /** Controlled PAB faucet — tops up an agent's trust stake (treasury-funded; simulates mint from reserve). */
 export async function agentFaucet(agentId: string, amountPab: number): Promise<any> {
-  if (amountPab <= 0 || amountPab > 10000) throw new Error('Faucet amount must be 1..10000 PAB');
+  if (amountPab <= 0 || amountPab > 1000) throw new Error('Faucet amount must be 1..1000 PAB per request');
   const a = await prisma.web3Agent.findUnique({ where: { id: agentId } });
   if (!a) throw new Error('Agent not found');
   const updated = await prisma.web3Agent.update({ where: { id: agentId }, data: { balancePab: { increment: amountPab } } });

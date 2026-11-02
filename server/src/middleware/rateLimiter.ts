@@ -126,6 +126,41 @@ export const lpAuthRateLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+/**
+ * Money-movement endpoints (gig bid/accept/complete, faucet, booking create).
+ *
+ * The global 100-per-15-min limiter is a DoS budget, not a ledger budget: within
+ * one window a single IP could otherwise POST ~100 bid/complete pairs across the
+ * open board, each of which performs PAB debits/credits or treasury ledger
+ * writes. 30 per window per IP is far above any human tour-bidding session but
+ * turns a bulk escrow-drain script into a month-long task instead of an hour.
+ */
+export const moneyRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: 'Too many money-movement requests from this IP. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/** Self-service faucet: stricter still — this mints trust currency with no cost. */
+export const faucetRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  message: 'Faucet limit reached for this hour.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/** Agent self-registration (agents log in with wallets, not users): strict bot budget. */
+export const agentRegisterRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 15,
+  message: 'Too many agent registrations from this IP.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // AI endpoints: strict rate limit to prevent abuse and control costs.
 export const aiRateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
