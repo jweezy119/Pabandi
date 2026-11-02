@@ -24,17 +24,8 @@ import { AssistiveBanner } from '../../components/AssistiveBanner';
 import { statsService, type BusinessStats } from '../../services/statsService';
 import { apiClient } from '../../services/api';
 
-type AgentActivity = {
-  id: string;
-  agentName: string;
-  action: string;
-  amount?: number;
-  timestamp: string;
-};
-
 export default function ContactOSPage() {
   const [businessName, setBusinessName] = useState<string>('Your Business');
-  const [agentActivity, setAgentActivity] = useState<AgentActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCRMTools, setShowCRMTools] = useState(false);
   const [enrolled, setEnrolled] = useState<boolean | null>(null);
@@ -117,12 +108,6 @@ export default function ContactOSPage() {
         }
 
         if (cancelled) return;
-        // Agent activity (mocked from agent marketplace)
-        setAgentActivity([
-          { id: '1', agentName: 'ScoutBot', action: 'Found 5 new targets', amount: 0, timestamp: new Date(Date.now() - 30 * 60000).toISOString() },
-          { id: '2', agentName: 'BookerAgent', action: 'Booked a $150 job', amount: 150, timestamp: new Date(Date.now() - 2 * 60 * 60000).toISOString() },
-          { id: '3', agentName: 'VerifyAgent', action: 'Verified 2 client identities', amount: 0, timestamp: new Date(Date.now() - 4 * 60 * 60000).toISOString() },
-        ]);
       } catch (err) {
         console.error('[ContactOS] dashboard load error:', err);
       } finally {
@@ -198,8 +183,40 @@ export default function ContactOSPage() {
   if (loading) {
     return (
       <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay">
-        <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 rounded-full border-2 border-[var(--clay)] border-t-transparent animate-spin" />
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }} className="space-y-6">
+          {/* greeting skeleton */}
+          <div className="flex gap-3">
+            <div className="h-10 w-10 rounded-full bg-[var(--warm-sand)] animate-pulse" />
+            <div className="flex-1 space-y-2">
+              <div className="h-5 w-3/4 bg-[var(--warm-sand)] rounded animate-pulse" />
+              <div className="h-3 w-1/2 bg-[var(--warm-sand)] rounded animate-pulse" />
+            </div>
+          </div>
+          {/* stat card skeletons */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="rounded-[var(--radius-card)] border border-[rgba(191,179,163,0.5)] bg-[var(--warm-sand)]/40 p-5 space-y-4">
+                <div className="h-3 w-1/3 bg-[var(--warm-sand)] rounded animate-pulse" />
+                <div className="h-10 w-1/2 rounded-full bg-[var(--warm-sand)] animate-pulse" />
+                <div className="h-3 w-1/3 bg-[var(--warm-sand)] rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+          {/* today's schedule skeleton */}
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="rounded-[var(--radius-card)] border border-[rgba(191,179,163,0.5)] bg-[var(--warm-sand)]/40 p-3 space-y-2">
+                <div className="flex gap-3">
+                  <div className="h-9 w-9 rounded-full bg-[var(--warm-sand)] animate-pulse" />
+                  <div className="flex-1 space-y-1">
+                    <div className="h-3 w-2/3 bg-[var(--warm-sand)] rounded animate-pulse" />
+                    <div className="h-2 w-1/2 bg-[var(--warm-sand)] rounded animate-pulse" />
+                  </div>
+                </div>
+                <div className="h-3 w-1/3 bg-[var(--warm-sand)] rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -296,7 +313,7 @@ export default function ContactOSPage() {
                   )}
                   <p className="text-xs text-[var(--soft-stone)] mt-1">Earned from Solana escrow yield. Applies to your next subscription.</p>
                 </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--sage)] text-white">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--sage)] text-[var(--warm-ink)]">
                   <Wallet className="h-6 w-6" />
                 </div>
               </div>
@@ -361,28 +378,6 @@ export default function ContactOSPage() {
             <ClayButton className="flex w-full items-center justify-center gap-2 py-4" onClick={() => navigate('/wallet')}>
               <Wallet className="h-5 w-5" /> View Wallet
             </ClayButton>
-          </div>
-
-          {/* ── Agent Activity Feed ───────────────────────────────── */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-[var(--warm-ink)] text-lg">Agent Activity</h2>
-              <span className="font-label text-xs font-bold uppercase text-[var(--terracotta)] tracking-wider">AI Scout Active</span>
-            </div>
-            <div className="space-y-2">
-              {agentActivity.map((a) => (
-                <div key={a.id} className="flex items-start justify-between p-3 bg-[var(--cream)] rounded-xl border border-[rgba(191,179,163,0.5)]">
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-[var(--warm-ink)]">{a.agentName}</p>
-                    <p className="text-xs text-[var(--soft-stone)]">{a.action}</p>
-                    {a.amount != null && a.amount > 0 && (
-                      <p className="text-xs font-bold text-[var(--sage)] mt-1">+${(a.amount ?? 0).toLocaleString()}</p>
-                    )}
-                  </div>
-                  <span className="text-xs text-[var(--soft-stone)]">{new Date(a.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* ── CRM tools, collapsed (background) ────────────────── */}
