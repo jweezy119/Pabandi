@@ -10,42 +10,45 @@ interface AssistiveBannerProps {
   actionLabel: string;
   actionHref: string;
   dismissible?: boolean;
+  /** Override the canned title (e.g. real escrow counts from the stats API). */
+  title?: string;
+  /** Override the canned body copy. */
+  body?: string;
 }
 
 const BANNER_CONFIG: Record<BannerVariant, { icon: React.ReactNode; title: string; body: string; action: string; color: string }> = {
   job_complete: {
-    icon: <CheckCircle className="w-5 h-5 text-emerald-500" />,
+    icon: <CheckCircle className="w-5 h-5 text-[var(--sage)]" />,
     title: 'Work finished — review and release',
     body: 'Your roof repair is finished. Tap to review proof and release escrow.',
     action: 'Release Funds',
-    color: 'text-emerald-700 bg-emerald-50',
+    color: 'text-[var(--terracotta)] bg-[var(--sage)]/15 border border-[var(--sage)]/40',
   },
   overdue_invoices: {
-    icon: <AlertTriangle className="w-5 h-5 text-amber-500" />,
+    icon: <AlertTriangle className="w-5 h-5 text-[var(--terracotta)]" />,
     title: 'Overdue invoices need attention',
     body: 'You have 2 overdue invoices. Tap to send a reminder.',
     action: 'Send Reminder',
-    color: 'text-amber-700 bg-amber-50',
+    color: 'text-[var(--warm-ink)] bg-[var(--warm-sand)]/70 border border-[var(--clay)]/40',
   },
   score_dropping: {
-    icon: <Clock className="w-5 h-5 text-amber-500" />,
+    icon: <Clock className="w-5 h-5 text-[var(--terracotta)]" />,
     title: 'Trust Score alert',
     body: 'Your payment score dropped by 10 points. Book a service this week to recover it.',
     action: 'Book a Service',
-    color: 'text-amber-700 bg-amber-50',
+    color: 'text-[var(--warm-ink)] bg-[var(--warm-sand)]/70 border border-[var(--clay)]/40',
   },
   all_well: {
-    icon: <Sparkles className="w-5 h-5 text-emerald-500" />,
+    icon: <Sparkles className="w-5 h-5 text-[var(--sage)]" />,
     title: 'All caught up',
     body: "Your Trust Score is in good standing.",
     action: 'Continue',
-    color: 'text-emerald-700 bg-emerald-50',
+    color: 'text-[var(--warm-ink)] bg-[var(--sage)]/15 border border-[var(--sage)]/40',
   },
 };
 
-export function AssistiveBanner({ variant, actionLabel, actionHref, dismissible = true }: AssistiveBannerProps) {
+export function AssistiveBanner({ variant, actionLabel, actionHref, dismissible = true, title, body }: AssistiveBannerProps) {
   const [dismissed, setDismissed] = useState(false);
-  const { user } = useAuthStore();
   const config = BANNER_CONFIG[variant];
 
   // Auto-dismiss based on context (e.g., if score is good, show less urgently)
@@ -66,13 +69,13 @@ export function AssistiveBanner({ variant, actionLabel, actionHref, dismissible 
         >
           <div className="flex-shrink-0">{config.icon}</div>
           <div className="flex-1">
-            <h3 className="font-bold text-sm {config.color.split(' ')[0]}">{config.title}</h3>
-            <p className="text-xs text-amber-600 mt-1">{config.body}</p>
+            <h3 className="font-bold text-sm">{title ?? config.title}</h3>
+            <p className="text-xs text-[var(--soft-stone)] mt-1">{body ?? config.body}</p>
           </div>
           <div className="flex-shrink-0">
             <Link
               to={actionHref}
-              className="px-3 py-2 rounded-lg bg-white text-amber-700 font-bold text-xs hover:bg-amber-100 transition-colors shadow-sm"
+              className="px-3 py-2 rounded-lg bg-[var(--clay)] text-[var(--warm-ink)] font-label text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-opacity shadow-[var(--shadow-btn)]"
             >
               {actionLabel} <ArrowRight className="w-3 h-3 ml-1" />
             </Link>
@@ -80,7 +83,7 @@ export function AssistiveBanner({ variant, actionLabel, actionHref, dismissible 
           {dismissible && (
             <button
               onClick={() => setDismissed(true)}
-              className="flex-shrink-0 ml-2 p-1 text-amber-400 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
+              className="flex-shrink-0 ml-2 p-1 text-[var(--soft-stone)] hover:text-[var(--warm-ink)] hover:bg-[var(--warm-sand)] rounded transition-colors"
               aria-label="Dismiss"
             >
               <span className="text-[10px]">✕</span>

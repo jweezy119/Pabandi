@@ -1,7 +1,17 @@
 import { Helmet } from 'react-helmet-async';
 import DashboardLayout from '../../components/DashboardLayout';
-import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { AnimatePresence } from 'framer-motion';
+import { Link, useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from 'react-query';
+import {
+  Handshake,
+  Lock,
+  Wallet,
+  CreditCard,
+  ClipboardPlus,
+  CheckCircle2,
+} from 'lucide-react';
 import { useBusinessSettings } from '../../hooks/useBusinessSettings';
 import { useAuthStore } from '../../store/authStore';
 import { getAuthToken } from '../../utils/authToken';
@@ -11,27 +21,8 @@ import { ClayBadge } from '../../components/primitives';
 import { FirstRunChecklist } from './components/FirstRunChecklist';
 import ModularDashboard from '../crm/components/ModularDashboard';
 import { AssistiveBanner } from '../../components/AssistiveBanner';
-
-type Booking = {
-  id: string;
-  clientName?: string;
-  client?: { name?: string };
-  serviceType?: string;
-  slotStart?: string;
-  status?: 'pending' | 'confirmed' | 'completed' | 'no_show' | 'cancelled';
-  depositAmount?: number;
-  depositStatus?: 'pending' | 'funded' | 'released';
-  travelFee?: number;
-};
-
-type Gig = {
-  id: string;
-  title: string;
-  category?: string;
-  budgetUsd?: number;
-  status?: 'OPEN' | 'IN_PROGRESS' | 'COMPLETED';
-  createdBy?: string;
-};
+import { statsService, type BusinessStats } from '../../services/statsService';
+import { apiClient } from '../../services/api';
 
 type AgentActivity = {
   id: string;
@@ -41,30 +32,14 @@ type AgentActivity = {
   timestamp: string;
 };
 
-function formatTime(iso: string | undefined) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-}
-
-function formatDate(iso: string | undefined) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-}
-
 export default function ContactOSPage() {
   const [businessName, setBusinessName] = useState<string>('Your Business');
-  const [todaysRevenue, setTodaysRevenue] = useState(0);
-  const [pendingEscrows, setPendingEscrows] = useState(0);
-  const [activeGigs, setActiveGigs] = useState(0);
-  const [trustScore, setTrustScore] = useState(500);
-  const [todaysBookings, setTodaysBookings] = useState<Booking[]>([]);
   const [agentActivity, setAgentActivity] = useState<AgentActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCRMTools, setShowCRMTools] = useState(false);
   const [enrolled, setEnrolled] = useState<boolean | null>(null);
-  const [saasCredit, setSaasCredit] = useState(0);
   const navigate = useNavigate();
-  const { user, token } = useAuthStore();
+  const { user } = useAuthStore();
 
   const businessId = (user as { business?: { id?: string } | null } | null)?.business?.id
     || (user as { businessId?: string | null } | null)?.businessId
@@ -92,7 +67,38 @@ export default function ContactOSPage() {
   };
 
   const [healed, setHealed] = useState(false);
+  const [checkingInId, setCheckingInId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
+  // ── REAL business stats from the backend aggregate ──
+  // /business/stats returns today's invoice revenue, pending escrow count+value,
+  // SaaS credit and today's scheduled jobs (with CRM client names). Polled every
+  // 30s and invalidated after a check-in so trust movement shows immediately.
+  const { data: stats, isLoading: statsLoading } = useQuery<BusinessStats>(
+    'businessDashboardStats',
+    statsService.business,
+    { refetchInterval: 30_000, retry: 1 },
+  );
+
+  const todayRevenue = stats?.todayRevenue ?? 0;
+  const pendingEscrows = stats?.pendingEscrows.count ?? 0;
+  const pendingEscrowUsd = stats?.pendingEscrows.totalUsd ?? 0;
+  const saasCreditReal = stats?.saasCredit ?? null;
+  const todaysRealJobs = stats?.todayJobs ?? [];
+
+  /** Owner check-in — flips the booking to attended server-side. */
+  const checkIn = async (bookingId: string) => {
+    setCheckingInId(bookingId);
+    try {
+      await apiClient.post(`/bookings/public/${bookingId}/attend`, {});
+    } finally {
+      setCheckingInId(null);
+      // Trust Sync — attendance moves the trust score; refresh now + on next tick.
+      await queryClient.invalidateQueries('businessDashboardStats');
+    }
+  };
+
+  // Registration/fallback lookups only — the numbers above come from the stats API.
   useEffect(() => {
     let cancelled = false;
     const loadData = async () => {
@@ -100,61 +106,17 @@ export default function ContactOSPage() {
         const token = getAuthToken();
         const headers = { Authorization: `Bearer ${token}` };
 
-        // Business profile name
+        // Business profile name (stats API supplies everything else)
         const bizRes = await fetch(
           `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/businesses/${businessId}`,
           { headers }
         );
-        if (bizRes.ok) {
+        if (!cancelled && bizRes.ok) {
           const biz = await bizRes.json();
           setBusinessName(biz.data?.name || biz.name || 'Your Business');
-          setSaasCredit(Number(biz.data?.saasCreditBalance ?? biz.saasCreditBalance ?? 0));
         }
 
-        // Trust score from passport
-        const passportRes = await fetch(
-          `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/trust-passport/me`,
-          { headers }
-        );
-        if (passportRes.ok) {
-          const passportData = await passportRes.json();
-          setTrustScore(passportData.data?.score ?? 500);
-        }
-
-        // Today's revenue from bookings
-        const bookingsRes = await fetch(
-          `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/bookings/business/${businessId}`,
-          { headers }
-        );
-        if (bookingsRes.ok) {
-          const bookingsData = await bookingsRes.json();
-          const bookings: Booking[] = bookingsData.data || bookingsData.bookings || [];
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const todays = bookings.filter((b) => {
-            const d = b.slotStart ? new Date(b.slotStart) : null;
-            return d && d >= today && d < new Date(today.getTime() + 24 * 60 * 60 * 1000);
-          });
-          setTodaysBookings(todays);
-          const revenue = todays.reduce((sum, b) => sum + (b.depositAmount || 0) + (b.travelFee || 0), 0);
-          setTodaysRevenue(revenue);
-
-          // Pending escrows
-          const pending = bookings.filter(b => b.depositStatus === 'pending' || b.depositStatus === 'funded').length;
-          setPendingEscrows(pending);
-        }
-
-        // Active marketplace gigs
-        const gigsRes = await fetch(
-          `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/marketplace/gigs`,
-          { headers }
-        );
-        if (gigsRes.ok) {
-          const gigsData = await gigsRes.json();
-          const gigs: Gig[] = gigsData.data || gigsData.gigs || [];
-          setActiveGigs(gigs.filter(g => g.status === 'OPEN' || g.status === 'IN_PROGRESS').length);
-        }
-
+        if (cancelled) return;
         // Agent activity (mocked from agent marketplace)
         setAgentActivity([
           { id: '1', agentName: 'ScoutBot', action: 'Found 5 new targets', amount: 0, timestamp: new Date(Date.now() - 30 * 60000).toISOString() },
@@ -168,7 +130,8 @@ export default function ContactOSPage() {
       }
     };
     loadData();
-  }, [businessId, token]);
+    return () => { cancelled = true; };
+  }, [businessId]);
 
   // ... enrollment self-heal logic preserved from original
   useEffect(() => {
@@ -180,7 +143,6 @@ export default function ContactOSPage() {
         });
         if (cancelled) return;
         if (res.ok) {
-          const data = await res.json();
           setEnrolled(true);
           return;
         }
@@ -244,11 +206,7 @@ export default function ContactOSPage() {
   }
 
   const now = new Date();
-  const todays = todaysBookings.filter(b => {
-    const d = b.slotStart ? new Date(b.slotStart) : null;
-    return d && d >= now && d < new Date(now.getTime() + 24 * 60 * 60 * 1000);
-  });
-
+  void now;
   return (
     <>
       <Helmet>
@@ -260,28 +218,26 @@ export default function ContactOSPage() {
           <div className="clay-fade mb-6">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <h1 className="text-3xl font-bold text-amber-900">{businessName}</h1>
-                <p className="text-sm text-amber-600">Business dashboard — escrow, gigs, and agent activity</p>
+                <h1 className="text-3xl font-bold text-[var(--warm-ink)]">{businessName}</h1>
+                <p className="text-sm text-[var(--soft-stone)]">Business dashboard — escrow, gigs, and agent activity</p>
               </div>
             </div>
             <AnimatePresence>
-              {pendingEscrows > 2 ? (
+              {pendingEscrows > 0 ? (
                 <AssistiveBanner
                   variant="overdue_invoices"
-                  actionLabel="Send Reminder"
-                  actionHref="/contact/invoices"
-                />
-              ) : trustScore < 500 ? (
-                <AssistiveBanner
-                  variant="score_dropping"
-                  actionLabel="Book a Service"
-                  actionHref="/booking"
+                  title={`${pendingEscrows} pending escrow${pendingEscrows === 1 ? '' : 's'} to verify`}
+                  body={`$${pendingEscrowUsd.toFixed(2)} is held for your work. Verify and release from the bookings page once jobs complete.`}
+                  actionLabel="Review Escrows"
+                  actionHref="/contact/bookings"
                 />
               ) : (
                 <AssistiveBanner
                   variant="all_well"
-                  actionLabel="Continue"
-                  actionHref="/booking"
+                  title="All escrows settled"
+                  body="Nothing needs your attention right now. Post a gig or take a new booking to grow today's revenue."
+                  actionLabel="Post Gig"
+                  actionHref="/gig"
                 />
               )}
             </AnimatePresence>
@@ -292,144 +248,140 @@ export default function ContactOSPage() {
             <FirstRunChecklist />
           </div>
 
-          {/* ── Key Metrics ──────────────────────────────────────── */}
+          {/* ── Key Metrics — REAL numbers from /business/stats ── */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <ClayCard className="bg-white border border-amber-200 p-5">
+            <ClayCard className="border border-[rgba(191,179,163,0.5)] bg-[var(--cream)] p-5">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">Today's Revenue</p>
-                  <p className="text-3xl font-black text-amber-900">${todaysRevenue.toLocaleString()}</p>
+                  <p className="font-label text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--terracotta)]">Today's Revenue</p>
+                  <p className="font-headline text-3xl font-black tabular-nums text-[var(--warm-ink)]">
+                    ${todayRevenue.toFixed(2)}
+                  </p>
+                  <p className="text-[10px] uppercase tracking-widest text-[var(--soft-stone)]">Paid invoices today</p>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
-                  <span className="text-2xl">💰</span>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--sage)]/20 text-[var(--sage)]">
+                  <CreditCard className="h-6 w-6" />
                 </div>
               </div>
             </ClayCard>
-            <ClayCard className="bg-white border border-amber-200 p-5">
+            <ClayCard className="border border-[rgba(191,179,163,0.5)] bg-[var(--cream)] p-5">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">Pending Escrows</p>
-                  <p className="text-3xl font-black text-amber-900">{pendingEscrows}</p>
+                  <p className="font-label text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--terracotta)]">Pending Escrows</p>
+                  {statsLoading ? (
+                    <p className="font-headline text-3xl font-black text-[var(--soft-stone)]">—</p>
+                  ) : (
+                    <p className="font-headline text-3xl font-black tabular-nums text-[var(--warm-ink)]">
+                      {pendingEscrows}
+                      <span className="ml-2 text-sm font-bold text-[var(--terracotta)]">${pendingEscrowUsd.toFixed(2)}</span>
+                    </p>
+                  )}
+                  <p className="text-[10px] uppercase tracking-widest text-[var(--soft-stone)]">Funds held for you, awaiting verification</p>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
-                  <span className="text-2xl">🔒</span>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--clay)]/20 text-[var(--terracotta)]">
+                  <Lock className="h-6 w-6" />
                 </div>
               </div>
             </ClayCard>
-            <ClayCard className="bg-white border border-amber-200 p-5">
+            <ClayCard className="border border-[var(--sage)]/40 bg-[var(--sage)]/10 p-5">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">Active Marketplace Gigs</p>
-                  <p className="text-3xl font-black text-amber-900">{activeGigs}</p>
+                  <p className="font-label text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--terracotta)]">SaaS Credit</p>
+                  {statsLoading ? (
+                    <p className="font-headline text-3xl font-black text-[var(--soft-stone)]">—</p>
+                  ) : (
+                    <p className="font-headline text-3xl font-black tabular-nums text-[var(--warm-ink)]">
+                      ${(saasCreditReal ?? 0).toFixed(2)}
+                    </p>
+                  )}
+                  <p className="text-xs text-[var(--soft-stone)] mt-1">Earned from Solana escrow yield. Applies to your next subscription.</p>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
-                  <span className="text-2xl">🤝</span>
-                </div>
-              </div>
-            </ClayCard>
-            <ClayCard className="bg-white border border-amber-200 p-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">SaaS Credit</p>
-                  <p className="text-3xl font-black text-amber-900">${saasCredit.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}</p>
-                  <p className="text-xs text-amber-500 mt-1">Earned from Solana escrow yield. Applies to your next subscription.</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
-                  <span className="text-2xl">💳</span>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--sage)] text-white">
+                  <Wallet className="h-6 w-6" />
                 </div>
               </div>
             </ClayCard>
           </div>
 
-          {/* ── Today's Schedule ─────────────────────────────────── */}
+          {/* ── Today's Schedule — REAL jobs from /business/stats ─ */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-amber-900 text-lg">Today's Schedule</h2>
-              <Link to="/contact/bookings" className="text-xs font-bold text-amber-500 hover:underline">View all →</Link>
+              <h2 className="font-bold text-[var(--warm-ink)] text-lg">Today's Schedule</h2>
+              <Link to="/contact/bookings" className="text-xs font-bold text-[var(--terracotta)] hover:underline">View all →</Link>
             </div>
             <div className="space-y-3">
-              {todays.length === 0 ? (
-                <div className="p-6 text-center bg-white rounded-xl border border-amber-200">
-                  <p className="text-amber-600 text-sm">No bookings scheduled today</p>
-                  <p className="text-xs text-amber-500 mt-1">Everything is clear — a good day to focus on delivery.</p>
+              {todaysRealJobs.length === 0 ? (
+                <div className="p-6 text-center rounded-xl border border-dashed border-[rgba(191,179,163,0.5)] bg-[var(--warm-sand)]/40">
+                  <p className="text-sm font-semibold text-[var(--warm-ink)]">No bookings scheduled today</p>
+                  <p className="text-xs text-[var(--soft-stone)] mt-1">Everything is clear — a good day to focus on delivery.</p>
                 </div>
               ) : (
-                todays.map((b) => {
-                  const statusColor = b.status === 'confirmed' ? 'text-emerald-700 bg-emerald-50' : b.status === 'pending' ? 'text-amber-700 bg-amber-50' : 'text-slate-700 bg-slate-50';
-                  return (
-                    <div key={b.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-amber-200">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 font-bold text-sm">
-                          {b.clientName?.charAt(0) || 'C'}
-                        </div>
-                        <div>
-                          <p className="font-bold text-amber-900 text-sm">{b.clientName || 'Client'}</p>
-                          <p className="text-xs text-amber-600">{b.serviceType || 'Booking'} • {formatDate(b.slotStart)}</p>
-                        </div>
+                todaysRealJobs.map((job) => (
+                  <div key={job.id} className="flex items-center justify-between p-3 rounded-xl border border-[rgba(191,179,163,0.5)] bg-[var(--cream)]">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--warm-ink)] text-[var(--cream)] font-bold text-sm">
+                        {job.client?.charAt(0) || 'C'}
                       </div>
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className={`px-2 py-1 rounded-full font-bold ${statusColor}`}>
-                          {b.status === 'confirmed' ? 'Upcoming' : b.status === 'pending' ? 'Pending' : b.status === 'no_show' ? 'No-show' : 'Completed'}
-                        </span>
-                        <span className="text-amber-600 font-medium">{formatTime(b.slotStart)}</span>
+                      <div>
+                        <p className="font-bold text-[var(--warm-ink)] text-sm">{job.client}</p>
+                        <p className="text-xs text-[var(--soft-stone)]">{job.service} • {new Date(job.time).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
                     </div>
-                  );
-                })
+                    <div className="flex items-center gap-2 text-xs">
+                      <ClayBadge
+                        label={job.status === 'attended' ? 'Attended' : job.status === 'confirmed' ? 'Confirmed' : 'Pending'}
+                        variant={job.status === 'attended' ? 'success' : job.status === 'confirmed' ? 'info' : 'neutral'}
+                        size="sm"
+                      />
+                      {job.status !== 'attended' && (
+                        <button
+                          onClick={() => checkIn(job.id)}
+                          disabled={checkingInId === job.id}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-[var(--clay)] px-3 py-1.5 font-label text-[10px] font-bold uppercase tracking-widest text-[var(--cream)] shadow-[var(--shadow-btn)] disabled:opacity-60"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          {checkingInId === job.id ? 'Checking in…' : 'Check-in'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
               )}
             </div>
+          </div>
+
+          {/* ── Quick Actions ─────────────────────────────────────── */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <ClayButton className="flex w-full items-center justify-center gap-2 py-4" onClick={() => navigate('/contact/invoices')}>
+              <ClipboardPlus className="h-5 w-5" /> New Invoice
+            </ClayButton>
+            <ClayButton className="flex w-full items-center justify-center gap-2 py-4" onClick={() => navigate('/gig')}>
+              <Handshake className="h-5 w-5" /> Post Gig
+            </ClayButton>
+            <ClayButton className="flex w-full items-center justify-center gap-2 py-4" onClick={() => navigate('/wallet')}>
+              <Wallet className="h-5 w-5" /> View Wallet
+            </ClayButton>
           </div>
 
           {/* ── Agent Activity Feed ───────────────────────────────── */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-amber-900 text-lg">Agent Activity</h2>
-              <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">AI Scout Active</span>
+              <h2 className="font-bold text-[var(--warm-ink)] text-lg">Agent Activity</h2>
+              <span className="font-label text-xs font-bold uppercase text-[var(--terracotta)] tracking-wider">AI Scout Active</span>
             </div>
             <div className="space-y-2">
               {agentActivity.map((a) => (
-                <div key={a.id} className="flex items-start justify-between p-3 bg-white rounded-xl border border-amber-200">
+                <div key={a.id} className="flex items-start justify-between p-3 bg-[var(--cream)] rounded-xl border border-[rgba(191,179,163,0.5)]">
                   <div className="flex-1">
-                    <p className="text-sm font-bold text-amber-900">{a.agentName}</p>
-                    <p className="text-xs text-amber-600">{a.action}</p>
-                    {a.amount > 0 && (
-                      <p className="text-xs font-bold text-emerald-700 mt-1">+${a.amount.toLocaleString()}</p>
+                    <p className="text-sm font-bold text-[var(--warm-ink)]">{a.agentName}</p>
+                    <p className="text-xs text-[var(--soft-stone)]">{a.action}</p>
+                    {a.amount != null && a.amount > 0 && (
+                      <p className="text-xs font-bold text-[var(--sage)] mt-1">+${(a.amount ?? 0).toLocaleString()}</p>
                     )}
                   </div>
-                  <span className="text-xs text-amber-500">{new Date(a.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>
+                  <span className="text-xs text-[var(--soft-stone)]">{new Date(a.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* ── Quick Actions ────────────────────────────────────── */}
-          <div className="mb-8">
-            <h2 className="font-bold text-amber-900 text-lg mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <ClayButton
-                onClick={() => navigate('/contact/invoices')}
-                variant="primary"
-                className="w-full py-4 flex items-center justify-center gap-2"
-              >
-                <span>📄</span> New Invoice
-              </ClayButton>
-              <ClayButton
-                onClick={() => navigate('/gigs')}
-                variant="secondary"
-                className="w-full py-4 flex items-center justify-center gap-2"
-              >
-                <span>🤝</span> Post to Gig Board
-              </ClayButton>
-              <ClayButton
-                onClick={() => navigate('/me/wallet')}
-                variant="secondary"
-                className="w-full py-4 flex items-center justify-center gap-2"
-              >
-                <span>👛</span> View Wallet
-              </ClayButton>
             </div>
           </div>
 
@@ -439,7 +391,7 @@ export default function ContactOSPage() {
               type="button"
               onClick={() => setShowCRMTools((v) => !v)}
               aria-expanded={showCRMTools}
-              className="w-full flex items-center justify-between px-5 py-3 rounded-2xl bg-white transition-all"
+              className="w-full flex items-center justify-between px-5 py-3 rounded-2xl bg-[var(--cream)] transition-all"
               style={{ boxShadow: 'var(--shadow-soft)', color: 'var(--soft-stone)' }}
             >
               <span className="text-sm font-bold">
