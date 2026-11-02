@@ -959,6 +959,10 @@ model ApiClient {
 
   business Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
+  // MCP metering quota (included calls per month, tier-gated).
+  mcpCallsThisMonth    Int      @default(0)
+  mcpQuotaResetsAt     DateTime?
+
   @@index([apiKey])
   @@index([email])
   @@index([businessId])

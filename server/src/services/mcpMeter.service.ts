@@ -1,22 +1,31 @@
 /**
- * mcpMeter.service.ts — x402 per-call MCP metering.
+ * mcpMeter.service.ts — x402 per-call MCP metering with tier-gated quota.
  *
  * Every MCP tool call is metered against a per-API-key prepaid USDC balance.
  * A call deducts its price (X402_PRICING, default MCP_TOOL_CALL = 0.001 USDC)
  * from the balance. When the balance cannot cover a call, the caller receives
  * a 402 with x402 payment requirements so they can top up before calling again.
  *
+ * Tier-gated quota (new):
+ *   - Free tier: 0 included calls — every call is metered per-call.
+ *   - Paid subscribers (starter / pro / business): N calls/month included.
+ *     Within quota, calls are charged 0. Once the monthly quota is exhausted,
+ *     subsequent calls fall back to per-call metering from the prepaid balance.
+ *   - Quota resets on the first call of each calendar month.
+ *
  * Public tools (verify_passport / discover / get_ledger) are price 0 and are
  * never metered — they are the on-ramp, not a revenue surface.
  *
  * Usage is recorded in McpMeter (sliding 60s windows) and the balance lives in
- * McpPrepaidBalance.
+ * McpPrepaidBalance. Monthly quota usage lives on ApiClient
+ * (mcpCallsThisMonth / mcpQuotaResetsAt).
  */
 
 import { z } from 'zod';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
-import { X402_PRICING } from '../config/fees';
+import { X402_PRICING, MCP_QUOTA_BY_TIER } from '../config/fees';
+import { tierDefinition, SUBSCRIPTION_TIERS } from '../config/subscriptions';
 import {
   verifyX402Payment,
   buildPaymentRequired,
@@ -36,6 +45,9 @@ const FREE_TOOLS = new Set([
   'pabandi_discover',
   'pabandi_get_ledger',
 ]);
+
+/** Paid tiers that receive a monthly MCP quota. */
+const PAID_TIERS_WITH_QUOTA = new Set(['starter', 'pro', 'business']);
 
 /**
  * Resolve the caller's API key from the request.
@@ -76,21 +88,57 @@ export function toolPriceUsdc(toolName: string): number {
   return MCP_TOOL_CALL_USDC;
 }
 
+/** Included MCP calls per month for a subscription tier (0 = none). */
+export function tierMonthlyQuota(tier: string | undefined): number {
+  if (!tier || !PAID_TIERS_WITH_QUOTA.has(tier)) return 0;
+  return Number(MCP_QUOTA_BY_TIER[tier] ?? 0);
+}
+
 export interface MeterResult {
   ok: boolean;
   toolName: string;
+  /** List price for the tool (USDC). 0 if covered by quota or a free tool. */
   priceUsdc: number;
+  /** True when this call was covered by the monthly quota (charged 0). */
+  coveredByQuota: boolean;
   balanceBeforeUsdc: number;
   balanceAfterUsdc: number;
   callsInWindow: number;
+  /** Remaining calls in the monthly quota, if the caller is on a paid tier. */
+  quotaRemaining?: number;
 }
 
 /**
- * Meter and charge a single tool call against the caller's prepaid balance.
+ * Resolve the caller's subscription tier from their API key.
  *
- * Returns the post-call meter state on success. Throws an { x402: true,
- * requirements } error when the caller has insufficient balance and has not
- * supplied a valid payment proof — the MCP handler converts this to HTTP 402.
+ * apiKeyHash → apiClient → business → merchantSubscription → tier.
+ * Returns 'free' when there is no active paid subscription.
+ */
+export async function resolveSubscriptionTier(apiKeyHash: string): Promise<string> {
+  const client = await prisma.apiClient.findUnique({
+    where: { apiKeyHash },
+    select: { businessId: true, tier: true },
+  });
+  if (!client || !client.businessId) return 'free';
+
+  const sub = await prisma.merchantSubscription.findUnique({
+    where: { businessId: client.businessId },
+    select: { tier: true, status: true },
+  });
+  if (!sub || sub.status !== 'active') return 'free';
+  return sub.tier;
+}
+
+/**
+ * Meter and charge a single tool call.
+ *
+ * Order of precedence:
+ *   1. Free tools (price 0) — never blocked, never metered against balance.
+ *   2. Monthly quota (paid subscribers) — charged 0 while quota remains.
+ *   3. Prepaid USDC balance — charged MCP_TOOL_CALL per call.
+ *
+ * Throws { x402: true, requirements } when balance cannot cover a call and no
+ * valid payment proof is supplied — the MCP handler converts this to HTTP 402.
  */
 export async function meterCall(
   apiKeyHash: string,
@@ -101,10 +149,36 @@ export async function meterCall(
   if (price <= 0) {
     // Free tool: record zero-cost usage but never block.
     await recordUsage(apiKeyHash, toolName, 0);
-    return { ok: true, toolName, priceUsdc: 0, balanceBeforeUsdc: 0, balanceAfterUsdc: 0, callsInWindow: 0 };
+    return { ok: true, toolName, priceUsdc: 0, coveredByQuota: false, balanceBeforeUsdc: 0, balanceAfterUsdc: 0, callsInWindow: 0 };
   }
 
-  // Ensure a balance row exists.
+  // ── Tier-gated monthly quota ────────────────────────────────────────────
+  const tier = await resolveSubscriptionTier(apiKeyHash);
+  const quota = tierMonthlyQuota(tier);
+
+  if (quota > 0) {
+    const quotaResult = await consumeMonthlyQuota(apiKeyHash, tier, quota);
+    if (quotaResult.consumed) {
+      // Covered by subscription quota — charge 0, record usage.
+      await recordUsage(apiKeyHash, toolName, 0);
+      logger.info(
+        `[McpMeter] quota-covered ${toolName} key=${apiKeyHash.slice(0,8)}... tier=${tier} remaining=${quotaResult.remaining}`,
+      );
+      return {
+        ok: true,
+        toolName,
+        priceUsdc: price,
+        coveredByQuota: true,
+        balanceBeforeUsdc: 0,
+        balanceAfterUsdc: 0,
+        callsInWindow: await windowCallCount(apiKeyHash, toolName),
+        quotaRemaining: quotaResult.remaining,
+      };
+    }
+    // Quota exhausted — fall through to prepaid balance metering.
+  }
+
+  // ── Prepaid balance metering ────────────────────────────────────────────
   let balance = await prisma.mcpPrepaidBalance.findUnique({ where: { apiKeyHash } });
   if (!balance) {
     balance = await prisma.mcpPrepaidBalance.create({
@@ -121,15 +195,17 @@ export async function meterCall(
     });
     await recordUsage(apiKeyHash, toolName, price);
     logger.info(
-      `[McpMeter] charged ${price} USDC for ${toolName} key=${apiKeyHash.slice(0,8)}... balance=${updated.balanceUsdc}`,
+      `[McpMeter] charged ${price} USDC for ${toolName} key=${apiKeyHash.slice(0,8)}... tier=${tier} balance=${updated.balanceUsdc}`,
     );
     return {
       ok: true,
       toolName,
       priceUsdc: price,
+      coveredByQuota: false,
       balanceBeforeUsdc: balanceBefore,
       balanceAfterUsdc: updated.balanceUsdc,
       callsInWindow: await windowCallCount(apiKeyHash, toolName),
+      quotaRemaining: quota > 0 ? 0 : undefined,
     };
   }
 
@@ -139,7 +215,6 @@ export async function meterCall(
   if (paymentProof) {
     const topUp = await topUpBalance(apiKeyHash, paymentProof, price);
     if (topUp.ok) {
-      // Payment verified and credited; now deduct the call cost.
       const afterTopUp = await prisma.mcpPrepaidBalance.findUnique({
         where: { apiKeyHash },
       });
@@ -160,12 +235,13 @@ export async function meterCall(
         ok: true,
         toolName,
         priceUsdc: price,
+        coveredByQuota: false,
         balanceBeforeUsdc: available,
         balanceAfterUsdc: deducted.balanceUsdc,
         callsInWindow: await windowCallCount(apiKeyHash, toolName),
+        quotaRemaining: quota > 0 ? 0 : undefined,
       };
     }
-    // Payment invalid: fall through to 402 with invalid reason.
     throw { x402: true, requirements: { ...requirements, invalidReason: topUp.reason ?? 'payment not verified' } };
   }
 
@@ -174,9 +250,6 @@ export async function meterCall(
 
 /**
  * Credit a prepaid balance from a verified x402 payment.
- *
- * The caller must supply a valid payment proof covering at least `minUsdc`.
- * On success the balance is increased by the verified amount.
  */
 export async function topUpBalance(
   apiKeyHash: string,
@@ -210,7 +283,56 @@ export async function getBalance(apiKeyHash: string): Promise<number> {
   return row?.balanceUsdc ?? 0;
 }
 
+/** Read the current monthly quota state for a key. */
+export async function getQuotaState(apiKeyHash: string): Promise<{ tier: string; quota: number; used: number; remaining: number; resetsAt: Date | null }> {
+  const tier = await resolveSubscriptionTier(apiKeyHash);
+  const quota = tierMonthlyQuota(tier);
+  const client = await prisma.apiClient.findUnique({
+    where: { apiKeyHash },
+    select: { mcpCallsThisMonth: true, mcpQuotaResetsAt: true },
+  });
+  const used = client?.mcpCallsThisMonth ?? 0;
+  return { tier, quota, used, remaining: Math.max(0, quota - used), resetsAt: client?.mcpQuotaResetsAt ?? null };
+}
+
 /* ── internals ─────────────────────────────────────────────────────────── */
+
+const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
+
+async function consumeMonthlyQuota(
+  apiKeyHash: string,
+  tier: string,
+  quota: number,
+): Promise<{ consumed: boolean; remaining: number }> {
+  const now = Date.now();
+  const client = await prisma.apiClient.findUnique({
+    where: { apiKeyHash },
+    select: { mcpCallsThisMonth: true, mcpQuotaResetsAt: true },
+  });
+  const used = client?.mcpCallsThisMonth ?? 0;
+  const resetsAt = client?.mcpQuotaResetsAt ? new Date(client.mcpQuotaResetsAt).getTime() : 0;
+
+  // Reset quota at the start of a new month.
+  let nextUsed = used;
+  let nextResetsAt = resetsAt;
+  if (!resetsAt || now >= resetsAt + MONTH_MS) {
+    nextUsed = 0;
+    nextResetsAt = now + MONTH_MS;
+  }
+
+  if (nextUsed >= quota) {
+    return { consumed: false, remaining: 0 };
+  }
+
+  const updated = await prisma.apiClient.update({
+    where: { apiKeyHash },
+    data: {
+      mcpCallsThisMonth: nextUsed + 1,
+      mcpQuotaResetsAt: new Date(nextResetsAt),
+    },
+  });
+  return { consumed: true, remaining: quota - (nextUsed + 1) };
+}
 
 async function recordUsage(apiKeyHash: string, toolName: string, chargedUsdc: number): Promise<void> {
   const windowStart = new Date(Date.now() - (Date.now() % METER_WINDOW_MS));

@@ -524,6 +524,23 @@ export const X402_PRICING = {
 } as const;
 
 /**
+ * MCP tool-call quota included per month by subscription tier.
+ *
+ * Paid subscribers get N calls included in their monthly subscription.
+ * Free tier gets 0 — every call is metered against the prepaid balance
+ * at MCP_TOOL_CALL_USDC. Once a paid subscriber exhausts their quota,
+ * subsequent calls are also metered per-call from the prepaid balance.
+ *
+ * Quota resets on the first call of each calendar month.
+ */
+export const MCP_QUOTA_BY_TIER: Record<string, number> = {
+  free: 0,
+  starter: 5_000,
+  pro: 20_000,
+  business: 100_000,
+} as const;
+
+/**
  * Agent-layer take rates.
  *
  * These apply to agent-to-agent commerce, which is a different market from local
