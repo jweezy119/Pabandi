@@ -436,6 +436,28 @@ const ENGINE_TOOLS = [
       required: ['masterEscrowId'],
     },
   },
+  {
+    name: 'pabandi_agent_card',
+    description: 'Get an agent\'s A2A agent card (.well-known/agent.json equivalent). Returns capabilities, skills, trust score, and contact info for agent-to-agent discovery.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        agentId: { type: 'string', description: 'Agent/passport ID' },
+      },
+      required: ['agentId'],
+    },
+  },
+  {
+    name: 'pabandi_agent_registry',
+    description: 'Get the agent registry listing all discoverable agents on Pabandi. Returns agent handles, trust scores, and capabilities.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        limit: { type: 'number', description: 'Maximum results (default 50)', default: 50 },
+      },
+      required: [],
+    },
+  },
 ];
 
 // ── Platform tools (real HTTP proxy) ─────────────────────────────────────────
@@ -1208,6 +1230,62 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
           childCount: allChildren.length,
           releasedCount: allChildren.filter(c => c.status === 'RELEASED').length,
           message: allCompleted ? 'All child escrows released - master marked completed' : `Waterfall check: ${allChildren.filter(c => c.status === 'RELEASED').length}/${allChildren.length} children released`,
+        };
+      }
+
+      // ── Kernel syscall: pabandi_agent_card ──
+      case 'pabandi_agent_card': {
+        const { agentId } = args;
+        if (!agentId) throw new Error('agentId is required');
+
+        const passport = await prisma.trustPassport.findUnique({ where: { id: agentId } });
+        if (!passport) throw new Error('agent not found');
+
+        return {
+          success: true,
+          agentCard: {
+            agentId: passport.id,
+            handle: passport.handle,
+            displayName: passport.displayName,
+            name: passport.displayName,
+            description: passport.bio || undefined,
+            walletAddress: passport.walletAddress,
+            url: `https://pabandi.com/trust/${passport.handle}`,
+            avatar: passport.avatarUrl,
+            category: passport.category,
+            skills: Array.isArray(passport.skills) ? passport.skills : [],
+            trustScore: passport.score || 500,
+            tier: (passport.score || 500) >= 800 ? 'Platinum' : (passport.score || 500) >= 650 ? 'Gold' : (passport.score || 500) >= 500 ? 'Silver' : 'Bronze',
+            verifiedIdentity: passport.verifiedIdentity || false,
+            capabilities: ['act:book', 'act:pay', 'act:escrow'],
+            mcpEndpoint: 'https://pabandi.com/mcp',
+            trustEndpoint: `https://pabandi.com/trust/${passport.handle}`,
+          },
+        };
+      }
+
+      // ── Kernel syscall: pabandi_agent_registry ──
+      case 'pabandi_agent_registry': {
+        const { limit = 50 } = args;
+        const passports = await prisma.trustPassport.findMany({
+          where: { visibility: { in: ['PUBLIC', 'MODULE_ONLY'] } },
+          take: Math.min(limit, 100),
+          orderBy: [{ score: 'desc' }],
+        });
+
+        return {
+          success: true,
+          agents: passports.map((p) => ({
+            agentId: p.id,
+            handle: p.handle,
+            displayName: p.displayName,
+            trustScore: p.score || 500,
+            tier: (p.score || 500) >= 800 ? 'Platinum' : (p.score || 500) >= 650 ? 'Gold' : (p.score || 500) >= 500 ? 'Silver' : 'Bronze',
+            category: p.category,
+            skills: Array.isArray(p.skills) ? p.skills : [],
+            verifiedIdentity: p.verifiedIdentity || false,
+          })),
+          count: passports.length,
         };
       }
     }
