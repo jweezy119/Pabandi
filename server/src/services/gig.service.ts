@@ -421,7 +421,7 @@ export async function agentFaucet(agentId: string, amountPab: number): Promise<a
   return { agentId, addedPab: amountPab, balancePab: updated.balancePab };
 }
 
-export async function openBoard(limit = 50): Promise<any[]> {
+export async function openBoard(limit = 100): Promise<any[]> {
   const rows = await prisma.project.findMany({ where: { status: 'OPEN' }, orderBy: { createdAt: 'desc' }, take: limit });
   const ids = rows.map((r: any) => r.id);
   const bids = ids.length ? await prisma.projectBid.groupBy({ by: ['projectId'], where: { projectId: { in: ids }, status: 'PENDING' }, _count: { _all: true }, _min: { quoteUsd: true } }) : [];
@@ -430,6 +430,11 @@ export async function openBoard(limit = 50): Promise<any[]> {
     gigId: r.id, title: r.title, category: r.category, budgetUsd: r.budgetUsd,
     requiredSkills: r.requiredSkills, demandGrowthPct: r.demandGrowthPct, referralCode: extras[r.id]?.referralCode || null,
     competingBids: bidMap[r.id]?.count || 0, lowestQuote: bidMap[r.id]?.minQuote || null,
+    latitude: r.latitude, longitude: r.longitude, locationLabel: r.locationLabel, source: r.source,
+    sourceRef: r.sourceRef, createdAt: r.createdAt, description: r.description,
+    // Attribution travels with real public data (Remotive terms + OSM ODbL).
+    attribution: r.source === 'openstreetmap' ? 'Map data © OpenStreetMap contributors (ODbL 1.0)'
+      : r.source === 'remotive' ? 'Job data via Remotive' : null,
   }));
 }
 
