@@ -9,6 +9,8 @@ import {
   markInvoicePaid 
 } from '../services/invoice.service';
 import { logger } from '../utils/logger';
+import { invoiceCreateSchema } from '../schemas/invoice.schema';
+import { sanitizeObject } from '../utils/sanitize';
 
 const router = Router();
 router.use(requireAuth);
@@ -16,7 +18,20 @@ router.use(requireAuth);
 router.post('/', async (req: any, res) => {
   try {
     const businessId = req.user.businessId;
-    const invoice = await createInvoice(businessId, req.body);
+
+    // ── Zod validation ──
+    const parsed = invoiceCreateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: parsed.error.errors.map(e => ({ path: e.path.join('.'), message: e.message })),
+      });
+    }
+
+    // ── XSS sanitization ── strip HTML from free-text fields before storage
+    const sanitized = sanitizeObject(parsed.data);
+
+    const invoice = await createInvoice(businessId, sanitized);
     res.status(201).json(invoice);
   } catch (err: any) {
     logger.error(`[Invoice] Create error: ${err.message}`);

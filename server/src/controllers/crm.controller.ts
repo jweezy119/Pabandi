@@ -5,6 +5,8 @@ import { requireCrmContext } from '../middleware/crmContext.middleware';
 import { parsePagination, withTotal } from '../utils/pagination';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { clientCreateSchema } from '../schemas/invoice.schema';
+import { sanitizeObject } from '../utils/sanitize';
 import jwt, { type Secret } from 'jsonwebtoken';
 
 // Read the same way auth.controller does, rather than via a shared config module: the
@@ -157,12 +159,28 @@ export async function addClientHandler(
   try {
     const crm = requireCrmContext(req);
     const businessId = crm.serviceBusinessId;
-    // `status`, `company` and `customData` used to be left out of this destructure,
-    // so the form sent them and they were dropped here — the Status dropdown had no
-    // effect on anything at all.
-    const { name, email, phone, address, company, notes, status, customData } = req.body;
+
+    // ── Zod validation ──
+    const parsed = clientCreateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: parsed.error.errors.map(e => ({ path: e.path.join('.'), message: e.message })),
+      });
+    }
+
+    // ── XSS sanitization ──
+    const sanitized = sanitizeObject(parsed.data);
+
     const client = await addClient(businessId, {
-      name, email, phone, address, company, notes, status, customData,
+      name: sanitized.name,
+      email: sanitized.email ?? undefined,
+      phone: sanitized.phone ?? undefined,
+      address: sanitized.address ?? undefined,
+      company: sanitized.company ?? undefined,
+      notes: sanitized.notes ?? undefined,
+      status: sanitized.status ?? undefined,
+      customData: sanitized.customData,
     });
     res.status(201).json({ success: true, data: client });
   } catch (error) {

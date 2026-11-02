@@ -7,21 +7,31 @@ import { referralFeeShareService } from './referral-fee-share.service';
 import { logger } from '../utils/logger';
 import { connectionService } from './connection.service';
 import { applyCreditToInvoice } from './saasCredit.service';
+import { stripHtmlTags } from '../utils/sanitize';
 
 type InvoiceLineItem = {
-  service: string;
-  price: number;
+  service?: string;
+  description?: string;
+  quantity?: number;
+  rate?: number;
+  amount?: number;
   date?: string;
 };
 
 type InvoiceCreateData = {
   clientId: string;
+  invoiceDate?: string;
   dateDue: string;
   lineItems: InvoiceLineItem[];
   subtotal: number;
+  taxPercent?: number;
+  taxAmount?: number;
+  grandTotal?: number;
   notes?: string;
   status?: string;
   requireEscrow?: boolean;
+  depositPercent?: number;
+  depositAmount?: number;
 };
 
 /**
@@ -116,7 +126,8 @@ async function assertClientInBusiness(businessId: string, clientId: string) {
 }
 
 export async function createInvoice(businessId: string, data: InvoiceCreateData) {
-  const { clientId, dateDue, lineItems, subtotal, notes, status, requireEscrow } = data;
+  const { clientId, dateDue, lineItems, subtotal, notes, status, requireEscrow,
+    invoiceDate, taxPercent, taxAmount, grandTotal, depositPercent, depositAmount } = data;
   if (!clientId || !dateDue) throw new CustomError('clientId and dateDue are required', 400);
   if (!businessId) {
     throw new CustomError('Business is not linked to a platform business yet', 400);
@@ -124,11 +135,26 @@ export async function createInvoice(businessId: string, data: InvoiceCreateData)
 
   await assertClientInBusiness(businessId, clientId);
 
-  // requireEscrow has no column, so it rides in the notes envelope. The envelope IS
-  // load-bearing: invoicePublic.routes and money-flow.service both JSON.parse(notes) to
-  // read metadata, and both fall back cleanly when it is not JSON. So the envelope stays
-  // and the caller's text is preserved inside it as `text`.
-  const metadata = { requireEscrow: !!requireEscrow };
+  // Sanitise line-item descriptions (defence in depth — route already sanitises)
+  const cleanLineItems = lineItems.map(item => ({
+    ...item,
+    description: item.description ? stripHtmlTags(item.description) : undefined,
+    service: item.service ? stripHtmlTags(item.service) : undefined,
+  }));
+
+  // requireEscrow + tax/deposit totals ride in the notes metadata envelope.
+  // The envelope IS load-bearing: invoicePublic.routes and money-flow.service
+  // both JSON.parse(notes) to read metadata, and both fall back cleanly when
+  // it is not JSON. The caller's raw text is preserved inside it as `text`.
+  const metadata = {
+    requireEscrow: !!requireEscrow,
+    taxPercent: taxPercent ?? 0,
+    taxAmount: taxAmount ?? 0,
+    grandTotal: grandTotal ?? subtotal,
+    depositPercent: depositPercent ?? 0,
+    depositAmount: depositAmount ?? 0,
+    ...(invoiceDate && { invoiceDate }),
+  };
   const combinedNotes = JSON.stringify({ text: notes || '', metadata });
 
   const number = await nextInvoiceNumber();
@@ -139,7 +165,7 @@ export async function createInvoice(businessId: string, data: InvoiceCreateData)
       clientId,
       number,
       dateDue: new Date(dateDue),
-      lineItems: lineItems as object[],
+      lineItems: cleanLineItems as object[],
       subtotal,
       notes: combinedNotes,
       status: status || 'draft',
