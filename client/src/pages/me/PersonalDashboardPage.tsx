@@ -172,6 +172,24 @@ export default function PersonalDashboardPage() {
           </ClayCard>
         </div>
 
+        {/* Yield Earned widget */}
+        <div className="mb-6">
+          <ClayCard className="bg-white border border-amber-200 p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">Yield Earned</p>
+                <p className="text-2xl font-black text-amber-900">+$2.50 USDC</p>
+                <p className="text-xs text-amber-500 mt-1" title="Your locked funds earn yield on Solana. Get 50% as a rebate when you release escrow.">
+                  Your locked funds earn yield on Solana. Get 50% as a rebate when you release escrow.
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+                <Sparkles className="text-2xl text-amber-500" />
+              </div>
+            </div>
+          </ClayCard>
+        </div>
+
         {/* Active Escrows */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">

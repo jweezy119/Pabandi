@@ -121,6 +121,28 @@ export default function ConsumerReleasePage() {
           <p className="text-lg text-amber-600 mb-6">
             Funds released successfully. The provider has been paid.
           </p>
+
+          {/* Release split */}
+          <div className="w-full max-w-sm mx-auto mb-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-amber-200 p-5">
+              <p className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-3">Release Split</p>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-amber-600">Provider</span>
+                  <span className="font-bold text-amber-900">${escrow?.releaseAmount ?? 0}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-amber-600">Client (yield rebate)</span>
+                  <span className="font-bold text-emerald-700">+${((escrow?.releaseAmount ?? 0) * 0.005).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-amber-600">Business (saas credit)</span>
+                  <span className="font-bold text-emerald-700">+${((escrow?.releaseAmount ?? 0) * 0.005).toFixed(2)} credit</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <button
             onClick={() => navigate('/app')}
             className="px-8 py-3 rounded-xl bg-amber-500 text-white font-bold shadow-lg hover:bg-amber-600 transition-colors"

@@ -62,6 +62,7 @@ export default function ContactOSPage() {
   const [loading, setLoading] = useState(true);
   const [showCRMTools, setShowCRMTools] = useState(false);
   const [enrolled, setEnrolled] = useState<boolean | null>(null);
+  const [saasCredit, setSaasCredit] = useState(0);
   const navigate = useNavigate();
   const { user, token } = useAuthStore();
 
@@ -107,6 +108,7 @@ export default function ContactOSPage() {
         if (bizRes.ok) {
           const biz = await bizRes.json();
           setBusinessName(biz.data?.name || biz.name || 'Your Business');
+          setSaasCredit(Number(biz.data?.saasCreditBalance ?? biz.saasCreditBalance ?? 0));
         }
 
         // Trust score from passport
@@ -322,6 +324,21 @@ export default function ContactOSPage() {
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
                   <span className="text-2xl">🤝</span>
+                </div>
+              </div>
+            </ClayCard>
+            <ClayCard className="bg-white border border-amber-200 p-5">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">SaaS Credit</p>
+                  <p className="text-3xl font-black text-amber-900">${saasCredit.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}</p>
+                  <p className="text-xs text-amber-500 mt-1">Earned from Solana escrow yield. Applies to your next subscription.</p>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+                  <span className="text-2xl">💳</span>
                 </div>
               </div>
             </ClayCard>
