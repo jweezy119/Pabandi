@@ -437,6 +437,17 @@ const ENGINE_TOOLS = [
     },
   },
   {
+    name: 'pabandi_scheduler_priority',
+    description: 'Get an agent\'s scheduling priority based on trust score. Returns tier, session limits, recommended actions, and match priority weight. Higher trust = better job matches and higher session limits.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        passportId: { type: 'string', description: 'Trust Passport/agent ID' },
+      },
+      required: ['passportId'],
+    },
+  },
+  {
     name: 'pabandi_agent_card',
     description: 'Get an agent\'s A2A agent card (.well-known/agent.json equivalent). Returns capabilities, skills, trust score, and contact info for agent-to-agent discovery.',
     inputSchema: {
@@ -1286,6 +1297,48 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
             verifiedIdentity: p.verifiedIdentity || false,
           })),
           count: passports.length,
+        };
+      }
+
+      // ── Kernel syscall: pabandi_scheduler_priority ──
+      case 'pabandi_scheduler_priority': {
+        const { passportId } = args;
+        if (!passportId) throw new Error('passportId is required');
+
+        const passport = await prisma.trustPassport.findUnique({ where: { id: passportId } });
+        if (!passport) throw new Error('passport not found');
+
+        const score = passport.score || 500;
+        const tier = score >= 800 ? 'Platinum' : score >= 650 ? 'Gold' : score >= 500 ? 'Silver' : 'Bronze';
+
+        const tierConfig = {
+          Platinum: { totalLimit: 1000, ttlHours: 24 * 30, priorityWeight: 1.0 },
+          Gold: { totalLimit: 100, ttlHours: 24 * 7, priorityWeight: 0.7 },
+          Silver: { totalLimit: 50, ttlHours: 24 * 3, priorityWeight: 0.5 },
+          Bronze: { totalLimit: 20, ttlHours: 24, priorityWeight: 0.3 },
+        }[tier];
+
+        const claimsCount = passport.claimsCount || 0;
+        const nextTierThreshold = tier === 'Platinum' ? null : tier === 'Gold' ? 800 : tier === 'Silver' ? 650 : 500;
+        const pointsToNextTier = nextTierThreshold ? Math.max(0, nextTierThreshold - score) : 0;
+
+        return {
+          success: true,
+          passportId,
+          trustScore: score,
+          tier,
+          priorityWeight: tierConfig.priorityWeight,
+          sessionLimit: tierConfig.totalLimit,
+          sessionTtlHours: tierConfig.ttlHours,
+          claimsCount,
+          pointsToNextTier,
+          nextTier: nextTierThreshold ? nextTierThreshold : null,
+          recommendations: [
+            score < 500 && 'Complete 5 small jobs to reach Silver tier',
+            score < 650 && 'Maintain 95%+ show-up rate to reach Gold tier',
+            score < 800 && 'Complete 20+ deliveries with perfect reviews to reach Platinum',
+            score >= 800 && 'You are in the top tier - priority access to high-value jobs',
+          ].filter(Boolean),
         };
       }
     }
