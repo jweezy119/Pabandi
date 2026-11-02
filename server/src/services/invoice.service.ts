@@ -6,6 +6,7 @@ import { notifyInvoicePaid, notifyInvoiceOverdue } from './notification.service'
 import { referralFeeShareService } from './referral-fee-share.service';
 import { logger } from '../utils/logger';
 import { connectionService } from './connection.service';
+import { applyCreditToInvoice } from './saasCredit.service';
 
 type InvoiceLineItem = {
   service: string;
@@ -442,18 +443,40 @@ export async function markInvoicePaid(businessId: string, invoiceId: string, tra
   const invoice = await prisma.invoice.findFirst({ where: { id: invoiceId, businessId }, include: { client: true } });
   if (!invoice) throw new CustomError('Invoice not found', 404);
 
+  // ── SaaS Credit auto-apply ─────────────────────────────────────────────
+  // Before the business pays, deduct any available saasCreditBalance from the
+  // invoice subtotal. The credit was earned from Solana escrow yield (50% of
+  // release yield) and is meant to pay for the next subscription invoice.
+  // The net amount is what the business actually owes through their payment rail.
+  let creditAppliedCents = 0;
+  try {
+    const { application } = await applyCreditToInvoice(businessId, invoiceId);
+    creditAppliedCents = application.creditAppliedCents;
+  } catch (err) {
+    // Credit application is non-fatal: if it fails the business still pays full
+    // amount and the credit balance is untouched. Log and continue.
+    logger.warn(
+      `[InvoiceService] saasCredit auto-apply failed for invoice ${invoiceId}: ${err instanceof Error ? err.message : err}`
+    );
+  }
+
   const now = new Date();
   
-  let existingMetadata = { requireEscrow: false, transactionHash: '' };
+  let existingMetadata: Record<string, unknown> = { requireEscrow: false, transactionHash: '' };
   let existingText = '';
   try {
     const parsed = JSON.parse(invoice.notes || '{}');
     existingMetadata = parsed.metadata || {};
-    existingText = parsed.text || '';
+    existingText = typeof parsed.text === 'string' ? parsed.text : '';
   } catch {
     existingText = invoice.notes || '';
   }
   
+  // Preserve any credit application already recorded by applyCreditToInvoice.
+  if (creditAppliedCents > 0) {
+    existingMetadata.saasCreditAppliedCents = creditAppliedCents;
+    existingMetadata.saasCreditAppliedAt = now.toISOString();
+  }
   if (transactionHash) {
     existingMetadata.transactionHash = transactionHash;
   }
