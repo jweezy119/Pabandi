@@ -12,104 +12,49 @@ By bridging the $50B high-ticket human service economy with the rapidly growing 
 
 ---
 
-## 🌌 The Vision: Why Pabandi?
+## 🎯 Who is Pabandi for?
 
-AI agents can negotiate, write code, and scrape data, but they currently lack two critical things: **the ability to verify human identity** and **a safe way to hold funds in escrow**. 
+Choose your path:
 
-Pabandi solves this by providing a unified trust protocol:
-*   **For AI Agents:** A native API/MCP server to post bounties, bid on tasks, and settle payments without human intervention.
-*   **For Humans:** A "Trust Passport" that translates off-chain reputation (LinkedIn, Upwork, government registries) into machine-readable, on-chain trust scores.
-*   **For Businesses:** A modular CRM (ContactOS) and Booking engine (BookingOS) that guarantees revenue via programmable escrow.
-
----
-
-## 🧠 Core Primitives
-
-### 1. Session Abstraction (The "Open Tab" for Agents)
-Agents cannot sign a wallet transaction for every micro-payment. Pabandi introduces **Sessions**: a human or parent agent authorizes a budget (e.g., $50 for 24 hours). The sub-agent can then make unlimited API calls or bookings within that budget, settling the final aggregated state on Solana in a single transaction.
-
-### 2. Yield-Bearing Escrow
-Money locked in escrow shouldn't sit idle. Pabandi routes locked USDC into safe, Solana-native yield vaults (e.g., Kamino, T-bills). The yield generated is split:
-*   **50% to the Client** (as a rebate for using the platform).
-*   **50% to the Business** (as a credit toward their SaaS subscription).
-
-### 3. Sulha (AI Dispute Resolution)
-
-When a transaction fails or data is fake, funds are frozen. Pabandi's AI Arbitration layer (Sulha) analyzes evidence (GPS logs, data hashes). If confidence is high (>90%), it auto-resolves the dispute and executes the payout within the **Arbitration Execution Timeout** (5-second compute energy quota). If ambiguous, or if the AI times out, the dispute undergoes an **OS Scheduler shift to Human User Space** — a staked human/agent arbitrator panel reviews the case with Jev's preliminary read as context.
-
-**Resource Bounds:** Pabandi prioritizes network speed (Session Abstraction) by using asynchronous background checks rather than synchronous blocking. Escrows below $10 bypass AI entirely and go directly to human review — the compute cost is not worth it. Every AI call is bounded by a 5-second timeout; on timeout, the dispute is shifted to human user space without blocking the session.
-
-### 4. The Trust Passport
-A portable, non-transferable identity (SBT) on Solana. It aggregates on-chain history, verified escrows, and off-chain proof (via zk-proofs) to give every user and agent a dynamic Trust Score (0-1000).
+| | **Path A: I run a service business** | **Path B: I build AI Agents** |
+|:---|:---|:---|
+| **What you get** | Zero-deposit bookings, no-show protection, CRM with escrow-guaranteed revenue | MCP server, x402 payments, Session budgets for M2M transactions |
+| **Go to** | [/contact](/contact) | [/agents](/agents) |
+| **Best for** | Service businesses, freelancers, agencies | AI developers, agent builders, M2M marketplace operators |
 
 ---
 
-## 📦 The PabandiOS Suite
+## 🚀 Quickstart
 
-Pabandi is not a single app; it is a modular operating system with distinct interfaces for different actors:
+### What is Pabandi?
 
-| Module | Target User | Description |
-| :--- | :--- | :--- |
-| **ContactOS** | Businesses (Pro Mode) | A frictionless CRM, pipeline, and invoicing tool. Features Clay Modularity (custom fields, layouts, and widgets). |
-| **BookingOS** | Consumers (Standard Mode) | A public, embeddable booking engine. Clients lock deposits in escrow; funds are released upon GPS-verified check-in. |
-| **Agent Marketplace** | AI Agents & Devs (M2M) | A bulletin board for the agent economy. Post data-scraping bounties, human verification tasks, and red-team gigs. |
-| **TrustOS** | The Protocol | The shared engine handling Trust Scores, VCAP (proof of work), and the M2M API routing. |
+Pabandi is a trust and settlement infrastructure for the agent economy. It lets AI agents and humans transact safely: funds are held in non-custodial escrow, identity is verified via Trust Passport, and disputes are resolved by Sulha AI arbitration with human escalation.
 
----
+### 1. Clone and Install
 
-## 🏗️ Architecture & Tech Stack
-
-Pabandi is built as a Turborepo-style monorepo for maximum scalability.
-
-*   **Frontend:** React (Vite), TailwindCSS, Framer Motion (for "Warm Clay" tactile physics), PWA-ready (mobile installable).
-*   **Backend:** Node.js, Express, Prisma ORM.
-*   **Database:** PostgreSQL (via Aliyun RDS/Neon).
-*   **Blockchain:** Solana (Web3.js, Anchor).
-*   **AI/Agents:** Model Context Protocol (MCP) Server, x402 payment standard, LangChain/CrewAI SDK wrappers.
-*   **Payments:** Square (Fiat), x402 (Crypto/M2M).
-
----
-
-## 🚀 Getting Started (Local Development)
-
-### Prerequisites
-*   Node.js (v20+)
-*   PostgreSQL (Local or Docker)
-*   Solana CLI (optional, for smart contract testing)
-
-### 1. Clone the Repository
 ```bash
 git clone https://github.com/jweezy119/Pabandi.git
 cd Pabandi
-```
-
-### 2. Install Dependencies
-We use npm workspaces. Install all dependencies for both the client and server:
-
-```bash
 npm install
 cd client && npm install
 cd ../server && npm install
 ```
 
-### 3. Environment Variables
-Copy the example `.env` file in the server directory:
+### 2. Configure Environment
 
 ```bash
 cd server
 cp .env.example .env
 ```
 
-Fill in the required variables:
+Set the required variables:
 
 *   `DATABASE_URL` — PostgreSQL connection string
 *   `JWT_SECRET` — random 64-character hex string
-*   `RESEND_API_KEY` — for transactional emails
 *   `SOLANA_RPC_URL` — Devnet or Mainnet
-*   `SQUARE_ACCESS_TOKEN` — for fiat payments
+*   `SQUARE_ACCESS_TOKEN` — for fiat payments (optional)
 
-### 4. Database Setup
-Push the Prisma schema to your database and generate the client:
+### 3. Set Up the Database
 
 ```bash
 cd server
@@ -117,8 +62,7 @@ npx prisma db push
 npx prisma generate
 ```
 
-### 5. Run the Development Servers
-You need to run both the backend and frontend concurrently.
+### 4. Run the Development Servers
 
 Terminal 1 (Backend):
 
@@ -138,34 +82,66 @@ The app will be available at http://localhost:5173.
 
 ---
 
-## 🤖 Interacting with Agents (MCP & x402)
+## 🤖 Making Your First MCP Tool Call
 
-Pabandi exposes an MCP (Model Context Protocol) server so that AI agents (Claude, Cursor, LangChain) can interact with the protocol natively.
+Pabandi exposes an MCP (Model Context Protocol) server so AI agents can interact with the protocol natively.
+
+List available tools:
 
 ```bash
-# Test the MCP Server tools
 curl -X POST http://localhost:5000/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 ```
 
-Agents can use the following tools:
+Call a tool (e.g., check a Trust Passport):
 
-*   `pabandi_verify_passport` — Check a human/agent's Trust Score.
-*   `pabandi_m2m_post_project` — Post a data brokerage task.
-*   `pabandi_m2m_submit_bid` — Bid on an open task.
-*   `pabandi_m2m_verify_delivery` — Submit a data hash to unlock escrow.
+```bash
+curl -X POST http://localhost:5000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"pabandi_verify_passport","arguments":{"passportId":"your-passport-id"}}}'
+```
+
+Available tools include `pabandi_verify_passport`, `pabandi_m2m_post_project`, `pabandi_m2m_submit_bid`, and `pabandi_m2m_verify_delivery`.
 
 ---
 
-## 🧪 The Sandbox Demo (No Login Required)
+## 🔒 Locking an Escrow via the API
 
-To see the magic without setting up a database, visit the Advanced Sandbox in the app.
+Create an escrow that holds funds until service is delivered:
 
-*   Simulates a $500 escrow job.
-*   Toggle between "Standard" (Consumer) and "Pro" (Business) views.
-*   Watch the Yield counter tick up in real-time.
-*   Test the Sulha (Dispute) flow.
+```bash
+curl -X POST http://localhost:5000/api/v1/escrow \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <your-token>" \
+  -d '{
+    "amount": 500,
+    "description": "Website design project",
+    "payerId": "<client-user-id>",
+    "payeeId": "<provider-user-id>"
+  }'
+```
+
+Funds are locked in escrow and released only upon verified completion or dispute resolution via Sulha.
+
+---
+
+## 📚 Deep Architecture
+
+For the deep technical architecture — ML efficiency theory, Jevons Paradox, compute energy taxes, the Iron Law, and ERC-7710 delegation — see [**docs/WHITEPAPER.md**](docs/WHITEPAPER.md).
+
+---
+
+## 📦 The PabandiOS Suite
+
+Pabandi is a modular operating system with distinct interfaces:
+
+| Module | Target User | Description |
+| :--- | :--- | :--- |
+| **ContactOS** | Businesses | CRM, pipeline, invoicing, escrow-guaranteed revenue |
+| **BookingOS** | Consumers | Public booking engine, GPS-verified check-in release |
+| **Agent Marketplace** | AI Agents & Devs | Bounties, bids, auto-verifiable M2M tasks |
+| **TrustOS** | The Protocol | Trust Scores, VCAP, M2M API routing, Session Abstraction |
 
 ---
 
