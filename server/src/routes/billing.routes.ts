@@ -5,10 +5,11 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
 import { getCreditBalance, applyCreditToInvoice, applyCreditToAmount } from '../services/saasCredit.service';
 import { tierDefinition, SUBSCRIPTION_TIERS, PAID_TIERS } from '../config/subscriptions';
-import { resolveSquareCredentials, createSquarePaymentLink, squareBaseUrl } from '../services/square-connection.service';
+import { resolveSquareCredentials, createSquarePaymentLink, squareBaseUrl, invoiceNote, parseInvoiceNote } from '../services/square-connection.service';
 import { getSubscription } from '../services/subscription.service';
 import { solanaUsdc } from '../services/solanaUsdc.service';
 import { verifySolanaPayment } from '../services/solana-payment-verification.service';
+import { squareService } from '../services/squareCheckout.service';
 
 const router = Router();
 
@@ -440,7 +441,7 @@ router.post('/subscribe', authenticate, async (req: AuthRequest, res: Response) 
       lineItemName: `Pabandi ${tier} subscription (30 days)`,
       amount: netAmountCents / 100,
       currency: 'USD',
-      note: `Pabandi subscription upgrade to ${tier}`,
+      note: invoiceNote(invoice.id, invoice.number),
       redirectUrl: `${process.env.CLIENT_URL || 'https://pabandi.com'}/contact/settings/subscription?paid=true&invoice=${invoice.id}`,
       cancelUrl: `${process.env.CLIENT_URL || 'https://pabandi.com'}/contact/settings/subscription?paid=cancelled&invoice=${invoice.id}`,
       metadata: {
@@ -674,6 +675,98 @@ router.post('/subscribe/solana/confirm', authenticate, async (req: AuthRequest, 
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[Billing] subscribe/solana/confirm error:', message);
+    return res.status(500).json({ success: false, error: message });
+  }
+});
+
+// POST /api/v1/billing/webhook/square
+// Square webhook auto-confirm for subscription invoices. Square signs the raw
+// request bytes with SQUARE_WEBHOOK_SECRET (x-square-hmacsha256-signature).
+// On payment.completed/updated, parses the pabandi:invoice:<id>:<number> note
+// and confirms the pending subscription invoice (deduct credit, mark paid,
+// upgrade tier). No auth — Square calls this externally.
+router.post('/webhook/square', async (req: Request, res: Response) => {
+  try {
+    const signature =
+      (req.headers['x-square-hmacsha256-signature'] as string | undefined) ??
+      (req.headers['x-square-signature'] as string | undefined);
+    const webhookUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+    const rawBody =
+      typeof (req as Request & { rawBody?: string }).rawBody === 'string'
+        ? ((req as Request & { rawBody?: string }).rawBody as string)
+        : JSON.stringify(req.body ?? {});
+
+    const isValid = await squareService.verifyWebhook(rawBody, signature, webhookUrl);
+    if (!isValid) {
+      logger.warn('[Billing] Square webhook rejected: signature mismatch or missing');
+      return res.status(401).json({ error: 'Invalid webhook signature' });
+    }
+
+    const result = await squareService.processWebhook(req.body);
+    const { type, invoiceId, status, amountCents: squareAmountCents } = result as {
+      type: string;
+      invoiceId?: string;
+      status?: string;
+      amountCents?: number | null;
+    };
+
+    if (type !== 'PAYMENT_UPDATED' || !invoiceId) {
+      // Not a payment we can reconcile; ack so Square doesn't redeliver.
+      return res.json({ received: true, skipped: true });
+    }
+
+    const invoice = await prisma.invoice.findFirst({
+      where: { id: invoiceId },
+    });
+    if (!invoice) {
+      logger.warn(`[Billing] Square webhook: no invoice ${invoiceId}`);
+      return res.json({ received: true, skipped: true, reason: 'invoice not found' });
+    }
+    if (invoice.status === 'paid') {
+      return res.json({ received: true, alreadyPaid: true });
+    }
+
+    const notes = JSON.parse(invoice.notes || '{}');
+    const metadata = notes.metadata || {};
+    if (metadata.invoiceType !== 'subscription_upgrade' && metadata.invoiceType !== 'subscription_upgrade_solana') {
+      return res.json({ received: true, skipped: true, reason: 'not a subscription invoice' });
+    }
+
+    const businessId = invoice.businessId;
+    const tier = metadata.tier;
+    const creditToApplyCents = Number(metadata.creditToApplyCents ?? 0);
+    const netAmountCents = Number(metadata.netAmountCents ?? 0);
+
+    // Verify the amount matches what we expected (Square reports minor units).
+    const paidAmountCents = squareAmountCents != null ? Number(squareAmountCents) : null;
+    if (paidAmountCents != null && paidAmountCents !== netAmountCents && netAmountCents > 0) {
+      logger.warn(
+        `[Billing] Square webhook amount mismatch invoice=${invoiceId}: expected ${netAmountCents}, got ${paidAmountCents}`,
+      );
+      return res.status(400).json({ success: false, error: 'Payment amount does not match invoice' });
+    }
+
+    // Confirm: deduct credit, mark paid, upgrade tier.
+    if (creditToApplyCents > 0) {
+      await applyCreditToAmount(businessId, creditToApplyCents);
+    }
+    await prisma.invoice.update({ where: { id: invoiceId }, data: { status: 'paid' } });
+
+    const amountCents = Number(metadata.amountCents ?? 0);
+    await prisma.merchantSubscription.upsert({
+      where: { businessId },
+      create: { businessId, tier, status: 'active', priceCents: amountCents, currency: 'USD', currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) },
+      update: { tier, status: 'active', priceCents: amountCents },
+    });
+
+    logger.info(
+      `[Billing] Square webhook auto-confirmed subscription ${businessId} -> ${tier}: invoice=${invoiceId} status=${status}`,
+    );
+
+    return res.json({ received: true, confirmed: true, tier });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('[Billing] Square webhook error:', message);
     return res.status(500).json({ success: false, error: message });
   }
 });
