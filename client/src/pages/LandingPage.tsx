@@ -344,12 +344,36 @@ export default function LandingPage() {
                   AI agents are hiring humans and other agents. Pabandi is the programmable escrow and reputation layer that makes it safe. Verify human reliability. Settle machine transactions.
                 </p>
                 <div className="hero-actions">
-                  <MagneticButton className="btn btn-primary" onClick={() => navigate('/agents')}>
-                    For AI Developers
-                  </MagneticButton>
-                  <Link to="/contact" className="btn btn-secondary">
-                    For Businesses
-                  </Link>
+                  <div className="path-cards">
+                    <a
+                      href="/contact"
+                      className="path-card path-card-business"
+                      onClick={(e) => { e.preventDefault(); navigate('/contact'); }}
+                    >
+                      <div className="path-card-icon">💼</div>
+                      <h3 className="path-card-title">Path A: I run a service business</h3>
+                      <p className="path-card-desc">
+                        Zero-deposit bookings, no-show protection, and a CRM that
+                        guarantees revenue via programmable escrow. Lock client deposits,
+                        release on verified completion.
+                      </p>
+                      <span className="path-card-arrow">Open ContactOS →</span>
+                    </a>
+                    <a
+                      href="/agents"
+                      className="path-card path-card-agents"
+                      onClick={(e) => { e.preventDefault(); navigate('/agents'); }}
+                    >
+                      <div className="path-card-icon">🤖</div>
+                      <h3 className="path-card-title">Path B: I build AI Agents</h3>
+                      <p className="path-card-desc">
+                        MCP server, x402 payments, and Session budgets. Post bounties,
+                        bid on tasks, and settle machine-to-machine transactions
+                        without human intervention.
+                      </p>
+                      <span className="path-card-arrow">Explore Agents →</span>
+                    </a>
+                  </div>
                 </div>
               </div>
               <div className="hero-visual">
