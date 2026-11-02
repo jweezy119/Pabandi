@@ -1,300 +1,419 @@
-import { useState, useEffect, useCallback } from 'react';
-import { FiX } from 'react-icons/fi';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { FiX, FiSearch, FiTrash2 } from 'react-icons/fi';
 import { Button } from '../../../components/primitives';
+import { ClayBadge } from '../../../components/primitives/ClayBadge';
 import { getAuthToken } from '../../../utils/authToken';
-
-type Client = { id: string; name: string; passportId?: string; paymentScore?: number };
-type Job = { id: string; clientId: string; serviceType?: string; price?: number; scheduledDate?: string };
-
-type TermsRecommendation = {
-  tier: 'net_30' | 'immediate' | 'deposit_escrow';
-  label: string;
-  dueInDays: number;
-  requireEscrow: boolean;
-  reason: string;
-  paymentScore: number;
-};
-
-type TermsView = {
-  recommendation: TermsRecommendation;
-  suggestedDueDate: string;
-  railReasoning: string | null;
-  clientCountry: string | null;
-  defaulted: boolean;
-};
 
 const CRM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
 
-export function InvoiceFormModal({ onClose, onSave, clients, businessId }: { onClose: () => void; onSave: () => void; clients: Client[]; businessId?: string }) {
-  const [selectedClient, setSelectedClient] = useState('');
-  const [dateRange, setDateRange] = useState({ from: '', to: '' });
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [notes, setNotes] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [requireEscrow, setRequireEscrow] = useState(false);
+type Client = {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  passportId?: string;
+  paymentScore?: number;
+};
 
-  // Terms recommendation
-  const [terms, setTerms] = useState<TermsView | null>(null);
-  const [termsLoading, setTermsLoading] = useState(false);
-  const [acceptedTerms, setAcceptedTerms] = useState<boolean>(true);
-  const [overrideReason, setOverrideReason] = useState('');
-  const [showOverride, setShowOverride] = useState(false);
-  const [termsError, setTermsError] = useState<string | null>(null);
+type LineItem = {
+  id: string;
+  description: string;
+  quantity: number;
+  rate: number;
+  amount: number;
+};
+
+type InvoiceFormModalProps = {
+  onClose: () => void;
+  onSave: () => void;
+  clients?: Client[];
+  businessId?: string;
+};
+
+export function InvoiceFormModal({ onClose, onSave, clients: initialClients = [], businessId }: InvoiceFormModalProps) {
+  const [selectedClient, setSelectedClient] = useState<string>('');
+  const [clientSearch, setClientSearch] = useState('');
+  const [clients, setClients] = useState<Client[]>(initialClients);
+  const [clientsLoading, setClientsLoading] = useState(false);
+
+  const [invoiceDate, setInvoiceDate] = useState('');
+  const [dateDue, setDateDue] = useState('');
+  const [lineItems, setLineItems] = useState<LineItem[]>([
+    { id: crypto.randomUUID(), description: '', quantity: 1, rate: 0, amount: 0 },
+  ]);
+  const [taxPercent, setTaxPercent] = useState(0);
+  const [notes, setNotes] = useState('');
+  const [requireEscrow, setRequireEscrow] = useState(false);
+  const [depositPercent, setDepositPercent] = useState(20);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const today = new Date().toISOString().split('T')[0];
+  const thirtyDaysLater = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
   useEffect(() => {
-    if (!selectedClient) return;
-    const fetchJobs = async () => {
-      try {
-        const res = await fetch(`${CRM_API}/jobs?status=COMPLETED`, {
-          headers: { Authorization: `Bearer ${getAuthToken() || ''}` }
-        });
-        const d = await res.json();
-        const clientJobs = (d.data || []).filter((j: Job) => j.clientId === selectedClient);
-        setJobs(clientJobs);
-      } catch (err) {}
-    };
-    fetchJobs();
-  }, [selectedClient]);
+    setInvoiceDate(today);
+    setDateDue(thirtyDaysLater);
+  }, []);
 
-  const subtotal = jobs.reduce((s, j) => s + (j.price || 0), 0);
-  const today = new Date();
-  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-
-
-  /**
-   * Fetch the trust-adjusted terms recommendation whenever the client or the
-   * invoice total changes, since ticket size feeds the rail router.
-   */
-  const loadTerms = useCallback(async () => {
-    if (!selectedClient) {
-      setTerms(null);
-      return;
-    }
-    setTermsLoading(true);
-    setTermsError(null);
+  // Fetch real clients from the API (searchable)
+  const fetchClients = useCallback(async () => {
+    setClientsLoading(true);
     try {
-      const params = new URLSearchParams({ clientId: selectedClient, amount: String(subtotal) });
+      const params = new URLSearchParams();
+      if (clientSearch.trim()) params.set('search', clientSearch.trim());
       if (businessId) params.set('businessId', businessId);
-      const res = await fetch(`${CRM_API}/invoices/terms-recommendation?${params.toString()}`, {
+      const res = await fetch(`${CRM_API}/clients?${params.toString()}`, {
         headers: { Authorization: `Bearer ${getAuthToken() || ''}` },
       });
-      if (!res.ok) throw new Error('Recommendation unavailable');
+      if (!res.ok) throw new Error('Failed to load clients');
       const d = await res.json();
-      const view = d.data as TermsView | undefined;
-      setTerms(view ?? null);
-      if (view) {
-        setRequireEscrow(view.recommendation.requireEscrow);
-        setAcceptedTerms(true);
-        setShowOverride(false);
-        setOverrideReason('');
-      }
+      setClients(d.data || d || []);
     } catch {
-      setTerms(null);
-      // A missing recommendation must not block invoicing. The business can
-      // still create and send; they just get no trust-based advice.
-      setTermsError('Could not load a terms recommendation for this client.');
+      setClients(initialClients);
     } finally {
-      setTermsLoading(false);
+      setClientsLoading(false);
     }
-  }, [selectedClient, subtotal, businessId]);
+  }, [clientSearch, businessId, initialClients]);
 
-  useEffect(() => { loadTerms(); }, [loadTerms]);
+  useEffect(() => {
+    const t = setTimeout(fetchClients, 300);
+    return () => clearTimeout(t);
+  }, [fetchClients]);
 
-  /** The due date actually used: the recommendation's, or manual entry. */
-  const effectiveDueDate = useCallback((): string => {
-    if (terms && acceptedTerms) {
-      return new Date(terms.suggestedDueDate).toISOString();
+  // Line item amount auto-calculation
+  const handleLineItemChange = (index: number, field: keyof LineItem, value: string | number) => {
+    setLineItems(prev => prev.map((item, i) => {
+      if (i !== index) return item;
+      const next = { ...item, [field]: value };
+      if (field === 'quantity' || field === 'rate') {
+        next.amount = Number(next.quantity) * Number(next.rate);
+      }
+      return next;
+    }));
+  };
+
+  const addLineItem = () => {
+    setLineItems(prev => [...prev, { id: crypto.randomUUID(), description: '', quantity: 1, rate: 0, amount: 0 }]);
+  };
+
+  const removeLineItem = (id: string) => {
+    setLineItems(prev => prev.filter(item => item.id !== id));
+  };
+
+  const subtotal = useMemo(() => lineItems.reduce((s, item) => s + item.amount, 0), [lineItems]);
+  const taxAmount = useMemo(() => subtotal * (taxPercent / 100), [subtotal, taxPercent]);
+  const grandTotal = useMemo(() => subtotal + taxAmount, [subtotal, taxAmount]);
+  const depositAmount = useMemo(() => grandTotal * (depositPercent / 100), [grandTotal, depositPercent]);
+
+  const filteredClients = useMemo(() => {
+    if (!clientSearch.trim()) return clients;
+    const q = clientSearch.toLowerCase();
+    return clients.filter(c => c.name.toLowerCase().includes(q) || (c.email && c.email.toLowerCase().includes(q)));
+  }, [clients, clientSearch]);
+
+  const handleSave = async () => {
+    if (!selectedClient) {
+      setSaveError('Please select a client');
+      return;
     }
-    return new Date(dateRange.to || lastDay).toISOString();
-  }, [terms, acceptedTerms, dateRange.to, lastDay]);
+    if (lineItems.some(item => !item.description.trim() || item.amount <= 0)) {
+      setSaveError('Please complete all line items with a description and positive amount');
+      return;
+    }
+    if (!dateDue) {
+      setSaveError('Due date is required');
+      return;
+    }
 
-  const handleSave = async (status: 'draft' | 'sent') => {
-    if (!selectedClient) return;
     setSaving(true);
+    setSaveError(null);
     try {
-      const payload: Record<string, unknown> = {
+      const payload = {
         clientId: selectedClient,
-        dateDue: effectiveDueDate(),
-        lineItems: jobs.map(j => ({ date: j.scheduledDate, service: j.serviceType, price: j.price })),
+        invoiceDate,
+        dateDue,
+        lineItems: lineItems.map(item => ({
+          description: item.description,
+          quantity: item.quantity,
+          rate: item.rate,
+          amount: item.amount,
+        })),
         subtotal,
+        taxPercent,
+        taxAmount,
+        grandTotal,
         notes,
         requireEscrow,
-        ...(status === 'sent' && { status: 'sent' }),
+        ...(requireEscrow && { depositPercent, depositAmount }),
       };
 
-      if (terms) {
-        payload.terms = {
-          tier: terms.recommendation.tier,
-          label: terms.recommendation.label,
-          dueInDays: acceptedTerms ? terms.recommendation.dueInDays : 0,
-        };
-        if (!acceptedTerms) {
-          payload.overrideReason = overrideReason.trim() || 'No reason given';
-        }
-      }
-
-      await fetch(`${CRM_API}/invoices`, {
+      const res = await fetch(`${CRM_API}/invoices`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() || ''}` },
         body: JSON.stringify(payload),
       });
+
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || 'Failed to create invoice');
+      }
+
       onSave();
-    } finally { setSaving(false); }
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to create invoice');
+    } finally {
+      setSaving(false);
+    }
   };
 
+  if (saveError) {
+    // Auto-dismiss error after 5 seconds
+    setTimeout(() => setSaveError(null), 5000);
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl border border-[var(--soft-stone)]/30 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4 clay-heading">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 md:p-6" onClick={onClose}>
+      <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl border border-[var(--soft-stone)]/30 max-h-[95vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-6 clay-heading">
           <h3 className="text-lg font-bold" style={{ color: 'var(--warm-ink)' }}>Create Invoice</h3>
-          <button onClick={onClose} className="p-2 rounded-lg clay-card--interactive" style={{ backgroundColor: 'rgba(232, 217, 197, 0.3)', color: 'var(--soft-stone)' }}><FiX className="w-5 h-5" /></button>
+          <button onClick={onClose} className="p-2 rounded-lg clay-card--interactive" style={{ backgroundColor: 'rgba(232, 217, 197, 0.3)', color: 'var(--soft-stone)' }}>
+            <FiX className="w-5 h-5" />
+          </button>
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs text-[var(--soft-stone)] font-medium mb-1">Client *</label>
-            <select value={selectedClient} onChange={e => setSelectedClient(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm">
-              <option value="">Select client...</option>
-              {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+        {saveError && (
+          <div className="mb-4 p-3 rounded-xl bg-[var(--dusty-rose)]/10 border border-[var(--dusty-rose)]/30">
+            <p className="text-sm text-[var(--dusty-rose)]">{saveError}</p>
           </div>
+        )}
 
-          {termsLoading && (
-            <p className="text-xs" style={{ color: 'var(--soft-stone)' }}>Checking payment history...</p>
-          )}
-
-          {termsError && !termsLoading && (
-            <div className="clay-alert clay-alert--info">
-              <p className="text-sm" style={{ color: 'var(--warm-ink)' }}>{termsError}</p>
+        <form onSubmit={e => e.preventDefault()} className="space-y-5">
+          {/* ── Client Selector ── */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <label className="text-xs font-bold uppercase text-[var(--soft-stone)]">Client *</label>
+              {clientsLoading && <span className="text-xs text-[var(--clay)] animate-pulse">loading…</span>}
             </div>
-          )}
-
-          {terms && !termsLoading && (
-            <div className="clay-alert clay-alert--info">
-              <div className="flex items-start gap-2">
-                <span className="material-symbols-outlined text-[18px] flex-shrink-0 mt-px" style={{ color: 'var(--clay)' }} aria-hidden="true">
-                  verified
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium" style={{ color: 'var(--warm-ink)' }}>
-                    Recommended: {terms.recommendation.label} (based on client&apos;s {terms.recommendation.paymentScore} payment score)
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: 'var(--soft-stone)' }}>
-                    {terms.recommendation.reason}
-                  </p>
-                  {terms.railReasoning && (
-                    <p className="text-xs mt-1" style={{ color: 'var(--soft-stone)' }}>{terms.railReasoning}</p>
-                  )}
-                  {terms.defaulted && (
-                    <p className="text-xs mt-1 italic" style={{ color: 'var(--soft-stone)' }}>
-                      This client has no payment history yet, so this is a default rather than a judgement.
-                    </p>
-                  )}
-
-                  <div className="flex gap-2 mt-3">
-                    <Button
-                      variant={acceptedTerms ? 'primary' : 'secondary'}
-                      size="sm"
-                      onClick={() => { setAcceptedTerms(true); setShowOverride(false); }}
-                    >
-                      Accept
-                    </Button>
-                    <Button
-                      variant={!acceptedTerms ? 'primary' : 'secondary'}
-                      size="sm"
-                      onClick={() => { setAcceptedTerms(false); setShowOverride(true); }}
-                    >
-                      Override
-                    </Button>
-                  </div>
-
-                  {showOverride && !acceptedTerms && (
-                    <div className="mt-3">
-                      <label className="block text-xs font-medium mb-1" style={{ color: 'var(--soft-stone)' }}>
-                        Why are you overriding? (logged to the audit trail)
-                      </label>
-                      <textarea
-                        value={overrideReason}
-                        onChange={e => setOverrideReason(e.target.value)}
-                        rows={2}
-                        placeholder="e.g. Long-standing client, verbally agreed to net-60"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm"
-                      />
-                      <p className="text-xs mt-1" style={{ color: 'var(--soft-stone)' }}>
-                        The invoice will still be created. The reason is recorded so this decision can be reviewed later.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs text-[var(--soft-stone)] font-medium mb-1">From</label>
-              <input type="date" value={dateRange.from || firstDay.toISOString().split('T')[0]} onChange={e => setDateRange({ ...dateRange, from: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm" />
-            </div>
-            <div>
-              <label className="block text-xs text-[var(--soft-stone)] font-medium mb-1">To</label>
+            <div className="relative">
+              <FiSearch className="absolute left-3 top-3 h-4 w-4 text-[var(--soft-stone)]" />
               <input
-                type="date"
-                value={terms && acceptedTerms ? new Date(terms.suggestedDueDate).toISOString().split('T')[0] : (dateRange.to || lastDay.toISOString().split('T')[0])}
-                onChange={e => { setDateRange({ ...dateRange, to: e.target.value }); setAcceptedTerms(false); }}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm"
+                type="text"
+                value={clientSearch}
+                onChange={e => setClientSearch(e.target.value)}
+                placeholder="Search clients…"
+                className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm focus:outline-none focus:border-[var(--clay)]"
               />
-              {terms && acceptedTerms && (
-                <p className="text-xs mt-1" style={{ color: 'var(--soft-stone)' }}>Set by the recommendation. Change the date to override.</p>
+            </div>
+            {filteredClients.length === 0 && clientSearch.trim() && (
+              <p className="text-xs mt-1 text-[var(--soft-stone)]">No matching clients</p>
+            )}
+            <div className="mt-2 max-h-48 overflow-y-auto border border-[var(--soft-stone)]/30 rounded-lg bg-white">
+              {filteredClients.length === 0 && !clientSearch.trim() ? (
+                <p className="px-3 py-2 text-xs text-[var(--soft-stone)]">Start typing to search clients</p>
+              ) : (
+                filteredClients.map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => { setSelectedClient(c.id); setClientSearch(c.name); }}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm hover:bg-[var(--warm-sand)]/30 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <div className="font-medium text-[var(--warm-ink)]">{c.name}</div>
+                      <div className="text-xs text-[var(--soft-stone)]">{c.email || c.phone || 'No contact info'}</div>
+                    </div>
+                    {selectedClient === c.id && (
+                      <span className="material-symbols-outlined text-xs text-[var(--clay)]" style={{ fontVariationSettings: "'FILL' 1" }}>check</span>
+                    )}
+                  </button>
+                ))
               )}
             </div>
           </div>
 
-          {jobs.length > 0 && (
+          {/* ── Dates ── */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-[var(--soft-stone)] font-medium mb-2">Line Items ({jobs.length} completed jobs)</label>
-              <div className="space-y-2">
-                {jobs.map(j => (
-                  <div key={j.id} className="flex justify-between p-2 rounded-lg bg-[var(--warm-sand)] text-sm">
-                    <span>{j.scheduledDate ? new Date(j.scheduledDate).toLocaleDateString() : ''} · {j.serviceType}</span>
-                    <span className="font-medium">${j.price?.toLocaleString()}</span>
+              <label className="text-xs font-bold uppercase text-[var(--soft-stone)] block mb-1">Invoice Date</label>
+              <input
+                type="date"
+                value={invoiceDate}
+                onChange={e => setInvoiceDate(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm focus:outline-none focus:border-[var(--clay)]"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase text-[var(--soft-stone)] block mb-1">Due Date *</label>
+              <input
+                type="date"
+                value={dateDue}
+                onChange={e => setDateDue(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm focus:outline-none focus:border-[var(--clay)]"
+              />
+            </div>
+          </div>
+
+          {/* ── Line Items ── */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <label className="text-xs font-bold uppercase text-[var(--soft-stone)]">Line Items</label>
+              <Button variant="secondary" size="sm" onClick={addLineItem} icon="add">
+                Add Item
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {lineItems.map((item, index) => (
+                <div key={item.id} className="grid grid-cols-12 gap-2 items-end p-3 rounded-xl border border-[var(--soft-stone)]/30 bg-white">
+                  <div className="col-span-4">
+                    <label className="text-xs text-[var(--soft-stone)] block mb-1">Description</label>
+                    <input
+                      value={item.description}
+                      onChange={e => handleLineItemChange(index, 'description', e.target.value)}
+                      placeholder="e.g. Web design services"
+                      className="w-full px-2.5 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm focus:outline-none focus:border-[var(--clay)]"
+                    />
                   </div>
-                ))}
-                <div className="flex justify-between p-2 rounded-lg bg-[var(--soft-stone)]/20 font-bold text-sm">
-                  <span>Subtotal</span>
-                  <span>${subtotal.toLocaleString()}</span>
+                  <div className="col-span-2">
+                    <label className="text-xs text-[var(--soft-stone)] block mb-1">Qty</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={item.quantity}
+                      onChange={e => handleLineItemChange(index, 'quantity', e.target.value)}
+                      className="w-full px-2.5 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm focus:outline-none focus:border-[var(--clay)]"
+                    />
+                  </div>
+                  <div className="col-span-3">
+                    <label className="text-xs text-[var(--soft-stone)] block mb-1">Rate</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={item.rate}
+                      onChange={e => handleLineItemChange(index, 'rate', e.target.value)}
+                      placeholder="0.00"
+                      className="w-full px-2.5 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm focus:outline-none focus:border-[var(--clay)]"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-xs text-[var(--soft-stone)] block mb-1">Amount</label>
+                    <div className="w-full px-2.5 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/20 text-sm font-medium text-[var(--warm-ink)] flex items-center">
+                      ${item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div className="col-span-1">
+                    <button
+                      onClick={() => removeLineItem(item.id)}
+                      className="p-2 rounded-lg text-[var(--dusty-rose)] hover:bg-[var(--dusty-rose)]/10 transition-colors"
+                      disabled={lineItems.length === 1}
+                    >
+                      <FiTrash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Totals ── */}
+          <div className="rounded-xl border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/20 p-4">
+            <div className="grid grid-cols-4 gap-4 mb-3">
+              <div>
+                <div className="text-xs text-[var(--soft-stone)] uppercase tracking-wider font-bold">Subtotal</div>
+                <div className="text-lg font-bold text-[var(--warm-ink)]">${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+              </div>
+              <div>
+                <div className="text-xs text-[var(--soft-stone)] uppercase tracking-wider font-bold">Tax</div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    value={taxPercent}
+                    onChange={e => setTaxPercent(Number(e.target.value || 0))}
+                    className="w-16 px-2 py-1.5 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm focus:outline-none focus:border-[var(--clay)]"
+                  />
+                  <span className="text-xs text-[var(--soft-stone)]">%</span>
                 </div>
               </div>
-            </div>
-          )}
-
-          <div>
-            <label className="block text-xs text-[var(--soft-stone)] font-medium mb-1">Notes</label>
-            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm" placeholder="Optional notes..." />
-          </div>
-
-          {terms?.recommendation.requireEscrow && (
-            <div className="clay-alert clay-alert--warning">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="escrowToggle"
-                  checked={requireEscrow}
-                  onChange={(e) => setRequireEscrow(e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <label htmlFor="escrowToggle" className="text-sm font-medium" style={{ color: 'var(--warm-ink)' }}>
-                  Deposit required — hold funds in escrow. Recommended for this client&apos;s {terms.recommendation.paymentScore} payment score.
-                </label>
+              <div>
+                <div className="text-xs text-[var(--soft-stone)] uppercase tracking-wider font-bold">Tax Amount</div>
+                <div className="text-lg font-medium text-[var(--warm-ink)]">${taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+              </div>
+              <div>
+                <div className="text-xs text-[var(--soft-stone)] uppercase tracking-wider font-bold">Grand Total</div>
+                <div className="text-lg font-black text-[var(--clay)]">${grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
               </div>
             </div>
-          )}
-
-          <div className="flex gap-3 pt-4">
-            <Button variant="secondary" onClick={() => handleSave('draft')} disabled={saving || !selectedClient}>Save as Draft</Button>
-            <Button variant="primary" onClick={() => handleSave('sent')} disabled={saving || !selectedClient}>Save & Send</Button>
           </div>
-        </div>
+
+          {/* ── Escrow Toggle ── */}
+          <div className="rounded-xl border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/20 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <label className="text-xs font-bold uppercase text-[var(--soft-stone)] block">Escrow Deposit</label>
+                <p className="text-xs text-[var(--soft-stone)]">Hold part of the payment in escrow until work is accepted.</p>
+              </div>
+              <ClayBadge label={requireEscrow ? 'Enabled' : 'Disabled'} variant={requireEscrow ? 'success' : 'neutral'} size="sm" />
+            </div>
+            <div className="flex items-center gap-3 mb-3">
+              <input
+                type="checkbox"
+                id="escrowToggle"
+                checked={requireEscrow}
+                onChange={(e) => setRequireEscrow(e.target.checked)}
+                className="w-4 h-4 text-[var(--clay)] border-[var(--soft-stone)]/30 rounded focus:ring-[var(--clay)]"
+              />
+              <label htmlFor="escrowToggle" className="text-sm font-medium text-[var(--warm-ink)] cursor-pointer">
+                Require Deposit in Escrow
+              </label>
+            </div>
+            {requireEscrow && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-[var(--soft-stone)] block mb-1">Deposit Percentage</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={depositPercent}
+                    onChange={e => setDepositPercent(Number(e.target.value || 0))}
+                    className="w-full px-3 py-2.5 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm focus:outline-none focus:border-[var(--clay)]"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <div className="text-lg font-medium text-[var(--warm-ink)] mr-2">${depositAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                  <span className="text-xs text-[var(--soft-stone)]">deposit</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ── Notes ── */}
+          <div>
+            <label className="text-xs font-bold uppercase text-[var(--soft-stone)] block mb-1">Notes</label>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              rows={3}
+              placeholder="Terms, thank-you message, or special instructions…"
+              className="w-full px-3 py-2.5 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm focus:outline-none focus:border-[var(--clay)]"
+            />
+          </div>
+
+          {/* ── Actions ── */}
+          <div className="flex gap-3 pt-6 border-t border-[var(--soft-stone)]/20">
+            <Button variant="secondary" onClick={onClose} disabled={saving}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleSave} disabled={saving || !selectedClient} className="flex-1">
+              {saving ? 'Creating…' : 'Save Invoice'}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );
