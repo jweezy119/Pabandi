@@ -29,6 +29,12 @@ export const SULHA_ADJUDICATION_PROMPT =
 
 export const ARBITRATION_CONFIDENCE_THRESHOLD = 90;
 
+/** Compute Energy Quota: maximum milliseconds the AI is allowed to run. */
+export const COMPUTE_QUOTA_MS = 5000;
+
+/** Escrows below this amount bypass AI entirely — compute cost not worth it. */
+export const MIN_ESCROW_FOR_AI_USD = 10;
+
 export interface EvidenceBundle {
   /** The job/escrow being disputed. */
   jobId: string;
@@ -115,6 +121,13 @@ export class AdjudicationService {
   /**
    * Run Jev (Sulha AI) over the evidence bundle and issue a verdict.
    *
+   * Compute Energy Quota:
+   *   - Escrows below $10 bypass AI entirely → human review (compute cost
+   *     not worth it).
+   *   - Jev call is wrapped in a 5-second Promise.race. On timeout the AI
+   *     request is aborted and the dispute is escalated to human review
+   *     with an "AI Timeout" note.
+   *
    * Jev > 90% confidence → auto-execute: escrow released or refunded via
    * sulhaService.settleDispute, and the case marked auto_executed.
    * Jev ≤ 90% → escalated to a human arbitrator panel; case marked escalated.
@@ -134,7 +147,58 @@ export class AdjudicationService {
       throw new Error(`Case ${caseId} already ${caseRow.status}`);
     }
 
-    const verdict = await this.runJev(caseRow);
+    // ── Compute quota: bypass AI for small escrows ────────────────────────
+    const escrow = await prisma.universalEscrow.findUnique({
+      where: { referenceId: caseRow.jobId },
+      select: { amount: true },
+    });
+    const amountUsd = Number(escrow?.amount ?? 0);
+    if (amountUsd < MIN_ESCROW_FOR_AI_USD) {
+      const updated = await prisma.adjudicationCase.update({
+        where: { id: caseId },
+        data: {
+          status: 'human_review',
+          reasoning: 'AI Timeout: escrow amount below $10 compute quota — bypassed AI, queued for human review.',
+        },
+      });
+      logger.info(
+        `[Adjudication] case ${caseId} bypassed AI (amount $${amountUsd} < $${MIN_ESCROW_FOR_AI_USD}) → human_review`,
+      );
+      return {
+        verdict: {
+          verdict: 'REFUND',
+          confidence: 0,
+          reasoning: `Bypassed AI — escrow amount $${amountUsd} below $${MIN_ESCROW_FOR_AI_USD} compute quota`,
+        },
+        autoExecuted: false,
+        escalated: true,
+      };
+    }
+
+    const verdict = await this.runJevWithTimeout(caseRow);
+
+    // ── Timeout or Jev unavailable → escalate to human panel ──────────────
+    if (!verdict) {
+      const updated = await prisma.adjudicationCase.update({
+        where: { id: caseId },
+        data: {
+          status: 'human_review',
+          reasoning: 'AI Timeout: Jev compute quota exceeded — escalated to human review.',
+        },
+      });
+      logger.info(
+        `[Adjudication] case ${caseId} AI Timeout → human_review`,
+      );
+      return {
+        verdict: {
+          verdict: 'REFUND',
+          confidence: 0,
+          reasoning: 'AI Timeout: Jev compute quota exceeded',
+        },
+        autoExecuted: false,
+        escalated: true,
+      };
+    }
 
     // ── High confidence: auto-execute ─────────────────────────────────────
     if (verdict.confidence > ARBITRATION_CONFIDENCE_THRESHOLD) {
@@ -182,31 +246,51 @@ export class AdjudicationService {
     sellerProof: string;
     oracleData: unknown;
   }): Promise<AdjudicationVerdict> {
+    const verdict = await this.runJevWithTimeout(caseRow);
+    if (verdict) {
+      return verdict;
+    }
+
+    // Fallback: deterministic rule-based read when Jev times out or is
+    // unavailable. This never returns >90% confidence, which correctly
+    // escalates to the human panel.
+    logger.warn('[Adjudication] Jev unavailable or timed out; using deterministic fallback');
+    const strongSellerProof = typeof caseRow.sellerProof === 'string' && caseRow.sellerProof.length > 10;
+    const hasOracleData = caseRow.oracleData && Object.keys(caseRow.oracleData).length > 0;
+    const v: 'RELEASE' | 'REFUND' = strongSellerProof && hasOracleData ? 'RELEASE' : 'REFUND';
+    return {
+      verdict: v,
+      confidence: 60, // deliberately below the 90% auto-execute threshold
+      reasoning: 'Fallback heuristic (Jev unavailable/timed out): seller proof present and oracle data attached → lean RELEASE; otherwise REFUND. Escalate to human panel for a binding decision.',
+    };
+  }
+
+  /**
+   * Call Jev wrapped in a 5-second Promise.race (Compute Energy Quota).
+   * Returns null on timeout so the caller can escalate to human review.
+   */
+  private async runJevWithTimeout(caseRow: {
+    id: string;
+    jobId: string;
+    buyerClaim: string;
+    sellerProof: string;
+    oracleData: unknown;
+  }): Promise<AdjudicationVerdict | null> {
     const prompt = `${SULHA_ADJUDICATION_PROMPT}\n\n` +
       `Job: ${caseRow.jobId}\n` +
       `Buyer claim: ${caseRow.buyerClaim}\n` +
       `Seller proof (IPFS/content hash): ${caseRow.sellerProof}\n` +
       `Oracle data: ${JSON.stringify(caseRow.oracleData)}`;
 
-    // Attempt the real Jev/typesafe decision endpoint when configured.
-    const jev = await this.callJev(prompt);
-    if (jev) {
-      return jev;
-    }
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Jev compute quota exceeded')), COMPUTE_QUOTA_MS);
+    });
 
-    // Fallback: deterministic rule-based read when Jev is unavailable, so the
-    // adjudication path never hard-fails. This is a stand-in, not a substitute
-    // for the model — it never returns >90% confidence, which correctly
-    // escalates to the human panel when the AI cannot be reached.
-    logger.warn('[Adjudication] Jev unavailable; using deterministic fallback');
-    const strongSellerProof = typeof caseRow.sellerProof === 'string' && caseRow.sellerProof.length > 10;
-    const hasOracleData = caseRow.oracleData && Object.keys(caseRow.oracleData).length > 0;
-    const verdict: 'RELEASE' | 'REFUND' = strongSellerProof && hasOracleData ? 'RELEASE' : 'REFUND';
-    return {
-      verdict,
-      confidence: 60, // deliberately below the 90% auto-execute threshold
-      reasoning: 'Fallback heuristic (Jev unavailable): seller proof present and oracle data attached → lean RELEASE; otherwise REFUND. Escalate to human panel for a binding decision.',
-    };
+    try {
+      return await Promise.race([this.callJev(prompt), timeoutPromise]);
+    } catch {
+      return null;
+    }
   }
 
   /** Call the Jev/typesafe decision endpoint with the strict adjudication prompt. */
@@ -241,7 +325,6 @@ export class AdjudicationService {
             },
           },
         }),
-        signal: AbortSignal.timeout(15000),
       });
 
       if (!response.ok) {
