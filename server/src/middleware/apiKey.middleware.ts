@@ -28,6 +28,8 @@ function hashApiKey(key: string): string {
   return crypto.createHash('sha256').update(key).digest('hex');
 }
 
+export { hashApiKey };
+
 /**
  * Validates the x-api-key header, enforces quota, and attaches
  * the resolved ApiClient to req.apiClient.

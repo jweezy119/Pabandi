@@ -21,10 +21,17 @@ import { passportEconomy, validateCapabilities, PTPRiskBand } from '../services/
 import { PAB_FEE_PER_PASSPORT } from '../config/tokenomics';
 import { optionalAuthenticate } from '../middleware/auth.middleware';
 import { pabandiToolsRegistry, pabandiPlatformDoc, toolAccessOk } from '../services/pabandiTools.service';
-import { declareDiscoveryExtension } from '@x402/extensions';
 import { didService } from '../services/vc/did.service';
 import { sessionDelegation } from '../services/engine/session.service';
 import { adjudicationService } from '../services/adjudication.service';
+import {
+  meterCall,
+  toolPriceUsdc,
+  resolveApiKey,
+  hashKey,
+  type MeterResult,
+} from '../services/mcpMeter.service';
+import { X402_PRICING } from '../config/fees';
 
 const SERVER_NAME = 'pabandi-trust';
 const SERVER_VERSION = '1.0.0';
@@ -48,19 +55,24 @@ export class McpError extends Error {
 }
 
 /**
- * x402 prices, keyed by the REAL tool names in TOOLS below.
+ * x402 per-call MCP metering prices.
  *
- * These keys were `pabandi_initiate_escrow` and `pabandi_create_booking` —
- * names of tools that exist in no registry entry and in no tools/list response.
- * `requireX402` looks up by the tool the caller actually asked for, so both
- * prices were unreachable: escrow and booking ran unmetered while the directory
- * copy advertised them as paid. A quoted price you never charge is worse than no
- * price, because it implies a control that isn't there.
+ * Uses the canonical X402_PRICING from config/fees.ts (the single source of
+ * truth), with MCP_TOOL_CALL (0.001 USDC) as the default for platform tools
+ * that are not explicitly listed. Public on-ramp tools are price 0 and are
+ * never metered.
+ *
+ * Each call is metered against the caller's prepaid USDC balance (McpMeter /
+ * McpPrepaidBalance). Insufficient balance → HTTP 402 with x402 payment
+ * requirements so the agent can top up before calling again.
  */
 const X402_PRICE_USDC: Record<string, number> = {
-  pabandi_issue_passport: 1.0,
-  pabandi_start_escrow: 0.5,
-  pabandi_book_stay: 0.25,
+  // Public on-ramp — always free.
+  pabandi_verify_passport: 0,
+  pabandi_discover: 0,
+  pabandi_get_ledger: 0,
+  // Paid tools — priced per call.
+  ...X402_PRICING,
 };
 
 /**
@@ -73,102 +85,22 @@ const X402_PRICE_USDC: Record<string, number> = {
  * x402 Bazaar reads (`extensions.bazaar`), and `tools/list` still serves the
  * TOOLS table untouched — this is discovery metadata only.
  */
-const X402_TOOLExamples: Record<string, { inputExample: Record<string, unknown>; outputExample: Record<string, unknown> }> = {
-  pabandi_issue_passport: {
-    inputExample: {
-      agentId: 'svc-agent-7',
-      capabilities: ['act:book', 'read'],
-      idempotencyKey: 'iss-3001',
-    },
-    outputExample: {
-      passportId: 'pass_9f8e7d6c',
-      agentId: 'svc-agent-7',
-      capabilities: ['act:book', 'read'],
-      riskBand: 'B',
-      feePAB: 10,
-      idempotentReplay: false,
-    },
-  },
-  pabandi_start_escrow: {
-    inputExample: {
-      bookingId: 'bk_2211',
-      amount: 200,
-    },
-    outputExample: {
-      escrowId: 'esc_4242',
-      status: 'HELD',
-      network: 'solana',
-      amount: 200,
-      currency: 'USDC',
-    },
-  },
-  pabandi_book_stay: {
-    inputExample: {
-      propertyId: 'prop_88',
-      guestEmail: 'guest@example.com',
-      checkIn: '2026-11-02',
-      checkOut: '2026-11-05',
-    },
-    outputExample: {
-      reservationId: 'res_7781',
-      propertyId: 'prop_88',
-      status: 'confirmed',
-      deposit: { amount: 120, currency: 'USDC', escrowStatus: 'HELD' },
-    },
-  },
-};
-
-function bazaarExtensionForTool(toolName: string): Record<string, unknown> | undefined {
-  const tool = TOOLS.find((t: any) => t.name === toolName);
-  const examples = X402_TOOLExamples[toolName];
-  if (!tool || !examples) return undefined;
-  // TOOLS entries type inputSchema loosely (unknown) because half of the table
-  // is plain documentation; a declared schema is required for discovery, and
-  // every paid tool has one.
-  const schema = tool.inputSchema as Record<string, unknown> | undefined;
-  if (!schema) return undefined;
-  return declareDiscoveryExtension({
-    toolName,
-    description: tool.description,
-    transport: 'json-rpc',
-    inputSchema: schema,
-    example: examples.inputExample,
-    output: { example: examples.outputExample },
-  });
-}
 
 async function requireX402(toolName: string, req?: Request): Promise<void> {
-  const price = X402_PRICE_USDC[toolName];
-  if (!price) return;
-  const paymentProof = (req as any)?.headers?.['x-payment'] as string | undefined;
+  const price = toolPriceUsdc(toolName);
+  if (price <= 0) return; // public on-ramp tool, never metered
 
-  const requirements = {
-    x402: true,
-    scheme: 'x402',
-    price: `${price} USDC`,
-    network: 'solana',
-    recipient: process.env.SOLANA_USDC_ADDRESS || 'PABANDI_USDC_WALLET',
-    tool: toolName,
-    paymentMethods: ['solana-usdc', 'x402'],
-    // Computed lazily against a tool lookup, not baked into a static: when a
-    // paid tool's schema changes, its discovery follows without a second edit.
-    extensions: bazaarExtensionForTool(toolName),
-  };
-
-  if (!paymentProof) {
-    throw new Error(JSON.stringify(requirements));
+  // Resolve the caller's API key for per-key metering.
+  let apiKeyHash: string | null = null;
+  if (req) {
+    const key = resolveApiKey(req);
+    if (key) apiKeyHash = hashKey(key);
   }
 
-  const { verifyX402Payment } = await import('../services/x402.service');
-  const result = await verifyX402Payment({
-    paymentHeader: paymentProof,
-    resource: `mcp:${toolName}`,
-    amount: price,
-  });
-
-  if (!result.valid) {
-    throw new Error(JSON.stringify({ ...requirements, invalidReason: result.reason }));
-  }
+  const result = await meterCall(apiKeyHash ?? 'anonymous', toolName, req);
+  // meterCall throws { x402: true, requirements } on insufficient balance;
+  // on success it returns the post-call meter state (nothing to do here).
+  void result;
 }
 
 // ── Engine tools ──────────────────────────────────────────────────────────────

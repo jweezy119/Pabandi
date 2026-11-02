@@ -8657,3 +8657,38 @@ model ReconciliationAlert {
   status          String   @default("open")
   createdAt       DateTime @default(now())
 }
+
+// ─── x402 per-call MCP metering ────────────────────────────────────────────
+//
+// Every MCP tool call is metered against a per-API-key prepaid USDC balance.
+// A call deducts its price (X402_PRICING, default MCP_TOOL_CALL) from the
+// balance. When the balance cannot cover a call, the MCP handler returns 402
+// with x402 payment requirements so the agent can top up before calling again.
+//
+// Public tools (passport verify / discovery / ledger audit) are price 0 and
+// never metered — they are the on-ramp, not a revenue surface.
+//
+// McpPrepaidBalance holds the caller's prepaid USDC balance. McpMeter records
+// each billable call in sliding 60-second windows so usage can be reported and
+// rate-shaped without scanning the full log.
+
+model McpPrepaidBalance {
+  id          String   @id @default(cuid())
+  apiKeyHash  String   @unique
+  balanceUsdc Float    @default(0)
+  updatedAt   DateTime @updatedAt
+
+  @@index([apiKeyHash])
+}
+
+model McpMeter {
+  id           String   @id @default(cuid())
+  apiKeyHash   String
+  toolName     String
+  windowStart  DateTime
+  callsCount   Int      @default(0)
+  chargedUsdc  Float    @default(0)
+
+  @@index([apiKeyHash, toolName, windowStart])
+  @@unique([apiKeyHash, toolName, windowStart])
+}
