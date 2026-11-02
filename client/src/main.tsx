@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 import App from './App';
 import AuthHydrationGate from './components/AuthHydrationGate';
 import './i18n';
+import { PrivyProvider } from './components/PrivyProvider';
 // Root boundary. Deliberately the OUTERMOST element inside StrictMode: it has to sit above
 // the router, the auth gate and every provider, because a throw in any of those — or in any of
 // the ~258 lazy route chunks — currently unmounts the entire tree and leaves a blank page with
@@ -46,9 +47,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <AppErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <AuthHydrationGate>
-            <App />
-          </AuthHydrationGate>
+          <PrivyProvider>
+            <AuthHydrationGate>
+              <App />
+            </AuthHydrationGate>
+          </PrivyProvider>
         </BrowserRouter>
       </QueryClientProvider>
     </AppErrorBoundary>

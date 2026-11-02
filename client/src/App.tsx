@@ -1,6 +1,5 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
-import { PrivyProvider } from './components/PrivyProvider';
 import { ClayToastProvider } from './components/primitives';
 // ─── Route-level code splitting ─────────────────────────────────────────────
 //
@@ -624,9 +623,7 @@ function App() {
   return (
     <HelmetProvider>
       <LanguageProvider>
-        <PrivyProvider>
-          <AnimatedAppRoutes />
-        </PrivyProvider>
+        <AnimatedAppRoutes />
       </LanguageProvider>
     </HelmetProvider>
   );
