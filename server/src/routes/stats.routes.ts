@@ -124,7 +124,20 @@ businessStatsRouter.get(
         select: { id: true, name: true, saasCreditBalance: true },
       });
       if (!business) {
-        res.status(404).json({ success: false, error: 'No business is linked to this account. Switch to Personal mode or claim a business.' });
+        // No business linked yet — return empty stats so the dashboard
+        // doesn't 500. The business can be claimed/created separately.
+        res.json({
+          success: true,
+          data: {
+            businessId: null,
+            businessName: null,
+            todayRevenue: 0,
+            todayRevenueCurrency: 'USDC',
+            pendingEscrows: { count: 0, totalUsd: 0 },
+            saasCredit: 0,
+            todayJobs: [],
+          },
+        });
         return;
       }
 
