@@ -390,6 +390,28 @@ const ENGINE_TOOLS = [
     },
   },
   {
+    name: 'pabandi_identity_register',
+    description: 'Register an agent\'s identity onchain via ERC-8004. Creates a portable onchain identity that can be verified across the ecosystem. Returns the onchain agentId and transaction hash. Gasless for the agent (Pabandi pays gas).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        passportId: { type: 'string', description: 'Trust Passport ID to register onchain' },
+      },
+      required: ['passportId'],
+    },
+  },
+  {
+    name: 'pabandi_identity_reputation_sync',
+    description: 'Sync an agent\'s trust score to the onchain ERC-8004 reputation registry. Posts feedback about completed tasks and success rate. Gasless for the agent (Pabandi pays gas).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        passportId: { type: 'string', description: 'Trust Passport ID to sync reputation for' },
+      },
+      required: ['passportId'],
+    },
+  },
+  {
     name: 'pabandi_discover_agents',
     description: 'Discover agents by skills, trust score, and location. Returns agents sorted by relevance with trust scores and capability badges.',
     inputSchema: {
