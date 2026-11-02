@@ -1,5 +1,7 @@
 require('dotenv').config();
+import cron from 'node-cron';
 import { prisma } from '../utils/database';
+import { logger } from '../utils/logger';
 
 /**
  * Platform seeder account that posts the cold-start flywheel gigs.
@@ -279,11 +281,136 @@ async function main() {
   console.log(`Total projects by ${SEEDER_ID}: ${count}`);
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
+// ── Live gig fetching from Open Jobs A2A marketplace ────────────────────────
+//
+// Pulls live agent-to-agent jobs from OpenJobs (or any OpenJobs-compatible
+// endpoint) and maps them into AgentProject rows so the Gig Board stays fresh
+// between static seed runs. Never crashes the server: network/parse failures
+// are logged and treated as "no new live gigs".
+
+type OpenJobsRaw = {
+  id?: string;
+  title?: string;
+  description?: string;
+  budgetUsd?: number;
+  category?: string;
+  skills?: string[];
+  deadlineDays?: number;
+  [key: string]: unknown;
+};
+
+function mapOpenJobsGig(raw: OpenJobsRaw) {
+  const budget = Number(raw.budgetUsd ?? 0);
+  const clampedBudget = Math.min(Math.max(budget, 50), 500);
+  const skills: string[] = Array.isArray(raw.skills) ? raw.skills : [];
+  const key = `openjobs-${raw.id ?? raw.title ?? Math.random().toString(36).slice(2)}`;
+  const hash =
+    DELIVERABLE_HASHES[key as keyof typeof DELIVERABLE_HASHES] ||
+    '0'.repeat(64);
+  return {
+    key,
+    title: raw.title || 'Untitled OpenJobs gig',
+    description: raw.description || 'No description provided.',
+    category: raw.category || 'research',
+    requiredSkills: skills.length ? skills : ['general'],
+    budgetUsd: clampedBudget,
+    deadlineDays: raw.deadlineDays ?? 7,
+    complexity: 'MEDIUM',
+    requirements: 'Deliver per the OpenJobs job brief; VCAP hash on output.',
+    hash,
+  };
+}
+
+export async function fetchLiveGigsFromOpenJobs(): Promise<number> {
+  const url = process.env.OPENJOBS_API_URL || 'https://api.openjobs.xyz/v1/jobs';
+  let inserted = 0;
+
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) {
+      logger.warn(
+        `[seed-gigs] OpenJobs fetch failed: HTTP ${res.status} ${res.statusText}`,
+      );
+      return 0;
+    }
+    const body = (await res.json()) as OpenJobsRaw[] | { jobs?: OpenJobsRaw[] };
+    const raws: OpenJobsRaw[] = Array.isArray(body) ? body : body.jobs ?? [];
+
+    for (const raw of raws) {
+      const gig = mapOpenJobsGig(raw);
+      const existing = await prisma.agentProject.findFirst({
+        where: { title: gig.title },
+        select: { id: true },
+      });
+      const data = {
+        title: gig.title,
+        description: gig.description,
+        requirements: gig.requirements,
+        posterId: SEEDER_ID,
+        budgetUsd: gig.budgetUsd,
+        budgetPab: gig.budgetUsd * 10,
+        deadline: plusDays(gig.deadlineDays),
+        status: 'OPEN',
+        complexity: gig.complexity,
+        category: gig.category,
+        deliverableHash: gig.hash,
+        metadata: {
+          requiredSkills: gig.requiredSkills,
+          source: 'openjobs-live',
+          verifiable: true,
+          key: gig.key,
+        },
+      };
+      if (existing) {
+        await prisma.agentProject.update({ where: { id: existing.id }, data });
+      } else {
+        await prisma.agentProject.create({ data });
+      }
+      inserted += 1;
+    }
+  } catch (err: any) {
+    logger.warn(
+      `[seed-gigs] OpenJobs live fetch skipped: ${err?.message || err}`,
+    );
+  }
+
+  console.log(`[seed-gigs] Live OpenJobs gigs inserted: ${inserted}`);
+  return inserted;
+}
+
+/**
+ * Refresh the Gig Board: re-seed the static cold-start flywheel, then pull
+ * any live OpenJobs gigs. Safe to run on a schedule.
+ */
+export async function refreshGigBoard(): Promise<void> {
+  await main();
+  await fetchLiveGigsFromOpenJobs();
+}
+
+/**
+ * Start a cron that refreshes the Gig Board every 6 hours.
+ * Fire-and-forget: never blocks server startup.
+ */
+export function startGigRefreshCron() {
+  cron.schedule('0 */6 * * *', async () => {
+    logger.info('[GigRefreshCron] Refreshing Gig Board (static seed + OpenJobs)');
+    try {
+      await refreshGigBoard();
+    } catch (err: any) {
+      logger.error('[GigRefreshCron] Gig board refresh failed: ' + (err?.message || err));
+    }
   });
+  logger.info('[GigRefreshCron] Scheduled Gig Board refresh every 6 hours');
+}
+
+// Only seed when run directly as a script; importing this module does not seed.
+if (typeof require !== 'undefined' && require.main === module) {
+  main()
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

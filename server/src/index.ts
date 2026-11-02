@@ -791,6 +791,10 @@ import { startInvoiceTrustCron } from './utils/invoiceTrustCron';
 compoundingService.startPeriodicCompounding();
 startInvoiceTrustCron();
 
+// Auto-refresh the Gig Board every 6 hours (static seed + live OpenJobs pulls).
+import { startGigRefreshCron } from './scripts/seed-gigs';
+startGigRefreshCron();
+
 // ── Schema self-check ─────────────────────────────────────────────────────────
 //
 // Verifies this process's database has the columns the running code queries,
