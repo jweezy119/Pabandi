@@ -8518,6 +8518,49 @@ model SessionReceipt {
   @@index([sessionId, createdAt])
 }
 
+// ─── ERC-7710 Delegated Budgets ─────────────────────────────────────────────
+//
+// A PabandiSession authorises a tab against a Trust-Score-derived limit. An
+// ERC-7710 Delegation is the bounded-authority object an external agent
+// presents instead: the principal (human/business) grants the delegate
+// (agent) a caveated authorisation to spend against the Pabandi Escrow
+// contract only. Caveats are enforced server-side on every spend:
+//
+//   - MaxAmount: the session budget in USDC cents (hard cap).
+//   - Expiry: the session lifetime (e.g. 24h), after which the delegation is
+//     dead even if unspent.
+//   - AllowedContracts: contract addresses the delegate may call; only the
+//     Pabandi Escrow contract is permitted.
+//
+// Modeled in the database (AgentDelegation) rather than requiring the
+// MetaMask Smart Accounts Kit on-chain today; the shape is ERC-7710-compatible
+// so a future migration can publish these to a real delegator contract.
+model AgentDelegation {
+  id            String   @id @default(cuid())
+  /// The principal (human/business) granting authority.
+  principalId   String
+  /// The delegate (AI agent) receiving authority.
+  agentId       String
+  /// ERC-7710 delegation id (deterministic hash of principal+agent+caveats).
+  delegationId  String   @unique
+  /// MaxAmount caveat: budget cap in USDC cents.
+  maxAmountCents Int
+  /// Expiry caveat: unix-ms after which the delegation is dead.
+  expiryAt      DateTime
+  /// AllowedContracts caveat: contract addresses the delegate may call.
+  allowedContracts Json
+  /// "active" | "revoked" | "expired"
+  status        String   @default("active")
+  /// Amount already spent against this delegation (USDC cents), tracked so
+  /// MaxAmount is enforced across multiple spends.
+  spentCents    Int      @default(0)
+  createdAt     DateTime @default(now())
+  revokedAt     DateTime?
+
+  @@index([agentId, status])
+  @@index([principalId])
+}
+
 // ─── Sulha (Optimistic Arbitration) ──────────────────────────────────────────
 //
 // Sulha is the dispute-resolution layer for escrows. An escrow whose terms are

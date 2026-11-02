@@ -23,10 +23,12 @@ import { optionalAuthenticate } from '../middleware/auth.middleware';
 import { pabandiToolsRegistry, pabandiPlatformDoc, toolAccessOk } from '../services/pabandiTools.service';
 import { declareDiscoveryExtension } from '@x402/extensions';
 import { didService } from '../services/vc/did.service';
+import { sessionDelegation } from '../services/engine/session.service';
 
 const SERVER_NAME = 'pabandi-trust';
 const SERVER_VERSION = '1.0.0';
 const BACKEND = (process.env.BACKEND_URL || 'https://pabandi.onrender.com').replace(/\/+$/, '');
+const PABANDI_ESCROW_CONTRACT = process.env.PABANDI_ESCROW_CONTRACT || '0xPabandiEscrow';
 
 /**
  * x402 prices, keyed by the REAL tool names in TOOLS below.
@@ -699,6 +701,30 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
         const amount = Number(args.amount);
         if (!Number.isFinite(amount) || amount <= 0) {
           throw new Error('amount must be a number greater than zero.');
+        }
+
+        // ── ERC-7710 Delegation verification ────────────────────────────────
+        // If the caller presents a delegationId, the spend is authorised by a
+        // bounded ERC-7710 delegation rather than (or in addition to) the
+        // session's Trust-Score tab. Verify the caveats (MaxAmount, Expiry,
+        // AllowedContracts) and debit the spend before touching the engine.
+        const delegationId = String(args.delegationId ?? '').trim();
+        const contractAddress = String(args.contractAddress ?? PABANDI_ESCROW_CONTRACT);
+        if (delegationId) {
+          const { sessionDelegation } = await import('../services/engine/session.service');
+          const verdict = await sessionDelegation.verifyAndDebit({
+            delegationId,
+            amountCents: Math.round(amount * 100),
+            contractAddress,
+          });
+          if (!verdict.ok) {
+            throw new Error(
+              `Delegation rejected: ${verdict.error?.code} — ${verdict.error?.message}`,
+            );
+          }
+          logger.info(
+            `[MCP] execution via delegation delegationId=${delegationId} amount=${amount}USDC remaining=${verdict.remainingCents}c`,
+          );
         }
 
         const { engineService } = await import('../services/engine.service');
