@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useQueryClient } from 'react-query';
 import { useAuthStore } from '../store/authStore';
 import { useModeTransition } from '../hooks/useModeTransition';
 
 export function ModeToggle() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user, toggleMode } = useAuthStore();
 
   const currentMode = user?.preferredMode || 'business';
@@ -20,16 +22,22 @@ export function ModeToggle() {
     setFailed(false);
     try {
       const newMode = isBusiness ? 'personal' : 'business';
-      
+
       await startTransition(async () => {
         await toggleMode(newMode);
+        // Trust Sync: the mode switch has a different identity context (personal
+        // passport vs business tenant). Drop the cached stats of BOTH views so the
+        // dashboard on the other side fetches fresh aggregates on mount instead of
+        // flashing one mode's numbers with another mode's cache.
+        queryClient.removeQueries('meDashboardStats');
+        queryClient.removeQueries('businessDashboardStats');
         if (newMode === 'business') {
           navigate('/contact');
         } else {
           navigate('/me');
         }
       });
-      
+
     } catch (err) {
       console.error('Failed to toggle mode:', err);
       setFailed(true);

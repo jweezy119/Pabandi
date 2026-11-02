@@ -252,6 +252,27 @@ export const releaseEscrow = async (req: AuthRequest, res: Response) => {
       },
     });
 
+    // Trust Sync — a release is one of the score-affecting moments. Belongs on the
+    // canonical path (escrow.service already emits for its rail; this on-chain
+    // controller was silent, so released escrows never moved anyone's score).
+    try {
+      const { trustCore } = await import('../trust/trust-core');
+      const passport = await prisma.trustPassport.findFirst({ where: { userId: escrow.buyerId } });
+      if (!passport) {
+        logger.warn(`No trust passport for escrow buyer ${escrow.buyerId}; escrow.released not recorded`);
+        void trustCore;
+      } else {
+        await trustCore.emit('escrow.released', {
+          escrowId: escrow.id,
+          amount: escrow.amount,
+          passportId: passport.id,
+          metadata: { rail: 'solana', releasedBy: userId, reference: escrow.reference },
+        });
+      }
+    } catch (trustErr) {
+      logger.warn('Trust event escrow.released failed (non-fatal):', trustErr);
+    }
+
     logger.info(`Solana escrow released: id=${id}, tx=${simulatedTxSig}`);
 
     return res.json({
