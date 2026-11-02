@@ -80,8 +80,43 @@ export default function PersonalDashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--cream)] p-4">
-        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-[var(--clay)]" />
+      <div className="min-h-screen bg-[var(--cream)] pb-[env(safe-area-inset-bottom)] text-[var(--warm-ink)] p-4">
+        <div className="space-y-5">
+          {/* greeting skeleton */}
+          <div className="flex gap-3">
+            <div className="h-10 w-10 rounded-full bg-[var(--warm-sand)] animate-pulse" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-3/4 bg-[var(--warm-sand)] rounded animate-pulse" />
+              <div className="h-3 w-1/2 bg-[var(--warm-sand)] rounded animate-pulse" />
+            </div>
+          </div>
+          {/* trust passport skeleton */}
+          <div className="rounded-[var(--radius-card)] border border-[rgba(191,179,163,0.5)] bg-[var(--warm-sand)]/40 p-5 space-y-4">
+            <div className="h-3 w-1/3 bg-[var(--warm-sand)] rounded animate-pulse" />
+            <div className="h-10 w-1/2 rounded-full bg-[var(--warm-sand)] animate-pulse" />
+            <div className="h-2.5 w-full rounded-full bg-[var(--warm-sand)] animate-pulse" />
+            <div className="h-3 w-1/4 bg-[var(--warm-sand)] rounded animate-pulse" />
+          </div>
+          {/* yield widget skeleton */}
+          <div className="rounded-[var(--radius-card)] border border-[var(--sage)]/40 bg-[var(--sage)]/10 p-5 space-y-4">
+            <div className="h-3 w-1/2 bg-[var(--warm-sand)] rounded animate-pulse" />
+            <div className="h-8 w-1/3 rounded-full bg-[var(--warm-sand)] animate-pulse" />
+            <div className="h-3 w-1/3 bg-[var(--warm-sand)] rounded animate-pulse" />
+          </div>
+          {/* active escrows skeleton */}
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="rounded-[var(--radius-card)] border border-[rgba(191,179,163,0.5)] bg-[var(--warm-sand)]/40 p-5 space-y-3">
+                <div className="flex gap-2">
+                  <div className="h-3 w-1/3 bg-[var(--warm-sand)] rounded animate-pulse" />
+                  <div className="h-3 w-1/2 bg-[var(--warm-sand)] rounded animate-pulse" />
+                </div>
+                <div className="h-8 w-1/2 rounded-full bg-[var(--warm-sand)] animate-pulse" />
+                <div className="h-3 w-1/3 bg-[var(--warm-sand)] rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -181,7 +216,7 @@ export default function PersonalDashboardPage() {
                   Your locked funds earn yield on Solana. Get 50% as a rebate when you release escrow.
                 </p>
               </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--sage)] text-white">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--sage)] text-[var(--warm-ink)]">
                 <Coins className="h-6 w-6" />
               </div>
             </div>
