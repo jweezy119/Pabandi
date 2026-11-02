@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 interface BreadcrumbsProps {
   items?: { label: string; path?: string }[];
@@ -7,8 +7,6 @@ interface BreadcrumbsProps {
 }
 
 export function Breadcrumbs({ items, homePath = '/dashboard' }: BreadcrumbsProps) {
-  const location = useLocation();
-
   if (!items || items.length === 0) return null;
 
   return (
