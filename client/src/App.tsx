@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { PrivyProvider } from './components/PrivyProvider';
+import { ClayToastProvider } from './components/primitives';
 // ─── Route-level code splitting ─────────────────────────────────────────────
 //
 // Every page used to be imported eagerly: 221 static imports meant the whole product
@@ -40,6 +41,7 @@ const SandboxApp = lazy(() => import('./pages/sandbox/SandboxApp'));
 const DealSimulatorPage = lazy(() => import('./pages/sandbox/DealSimulator'));
 const TrustPassportPublicPage = lazy(() => import('./pages/public/TrustPassportPage'));
 const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
+const BackgroundCheckPage = lazy(() => import('./pages/BackgroundCheckPage'));
 const AgentMarketplacePage = lazy(() => import('./pages/AgentMarketplacePage'));
 const PersonalDashboardPage = lazy(() => import('./pages/me/PersonalDashboardPage'));
 const PersonalPassportPage = lazy(() => import('./pages/me/PersonalPassportPage'));
@@ -249,7 +251,8 @@ function AnimatedAppRoutes() {
           </div>
         }
       >
-      <Routes location={location} key={location.pathname}>
+      <ClayToastProvider>
+        <Routes location={location} key={location.pathname}>
         {/* Public sandbox demo — no authentication required */}
         <Route path="/sandbox" element={<SandboxApp />} />
         <Route path="/sandbox/deal" element={<DealSimulatorPage />} />
@@ -443,8 +446,8 @@ function AnimatedAppRoutes() {
             <Route path="trust/jury" element={<PlaceholderPage />} />
             <Route path="agent-passport" element={<PlaceholderPage />} />
             <Route path="agent-onboarding" element={<AgentOnboardingPage />} />
-            <Route path="background-check" element={<PlaceholderPage />} />
-            <Route path="background-check/:id" element={<PlaceholderPage />} />
+            <Route path="background-check" element={<BackgroundCheckPage />} />
+            <Route path="background-check/:id" element={<BackgroundCheckPage />} />
             <Route path="protected-deposit" element={<PlaceholderPage />} />
             <Route path="arbitration" element={<PlaceholderPage />} />
             <Route path="safemeet" element={<PlaceholderPage />} />
@@ -611,6 +614,7 @@ function AnimatedAppRoutes() {
             a bad link strands the user on browser Back. */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      </ClayToastProvider>
       </Suspense>
     </AnimatePresence>
   );

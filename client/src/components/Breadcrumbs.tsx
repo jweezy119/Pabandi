@@ -3,16 +3,17 @@ import { Link, useLocation } from 'react-router-dom';
 
 interface BreadcrumbsProps {
   items?: { label: string; path?: string }[];
+  homePath?: string;
 }
 
-export function Breadcrumbs({ items }: BreadcrumbsProps) {
+export function Breadcrumbs({ items, homePath = '/dashboard' }: BreadcrumbsProps) {
   const location = useLocation();
 
   if (!items || items.length === 0) return null;
 
   return (
     <nav className="flex items-center gap-2 mb-4 text-sm font-body" aria-label="Breadcrumb">
-      <Link to="/dashboard" className="text-[var(--soft-stone)] hover:text-[var(--clay)] transition-colors flex items-center gap-1">
+      <Link to={homePath} className="text-[var(--soft-stone)] hover:text-[var(--clay)] transition-colors flex items-center gap-1">
         <span className="material-symbols-outlined text-[16px]">home</span>
       </Link>
       
