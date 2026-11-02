@@ -667,14 +667,26 @@ for (const [routePath, importPath] of routeMap) {
 }
 
 
-// MCP endpoint with rate limiting
+// MCP endpoint with rate limiting (Jevons Paradox safeguard)
 import { rateLimit } from 'express-rate-limit';
 const mcpLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
-  max: 30,
+  max: 60,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, error: 'MCP rate limit exceeded. Max 30 requests per minute.' },
+  keyGenerator: (req) => {
+    // Per API key when available, else per IP
+    const apiKey = req.headers['x-api-key'] as string | undefined;
+    const bearer = req.headers.authorization
+      ?.startsWith('Bearer ')
+      ? req.headers.authorization.slice(7).trim()
+      : undefined;
+    return apiKey || bearer || `ip-${req.ip}`;
+  },
+  message: {
+    success: false,
+    error: 'Rate limit exceeded. Please upgrade to an Enterprise plan for higher limits.',
+  },
 });
 app.post('/mcp', mcpLimiter, async (req, res) => {
   try {
@@ -684,7 +696,7 @@ app.post('/mcp', mcpLimiter, async (req, res) => {
     res.status(500).json({ success: false, error: 'MCP handler failed to load' });
   }
 });
-app.post(`/api/${v}/mcp`, async (req, res) => {
+app.post(`/api/${v}/mcp`, mcpLimiter, async (req, res) => {
   try {
     const { mcpHandler } = await import('./mcp/pabandiMcpServer');
     mcpHandler(req, res);
@@ -692,6 +704,27 @@ app.post(`/api/${v}/mcp`, async (req, res) => {
     res.status(500).json({ success: false, error: 'MCP handler failed to load' });
   }
 });
+
+// x402 payment routes — rate limited before heavy AI/payment logic
+const x402Limiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const apiKey = req.headers['x-api-key'] as string | undefined;
+    const bearer = req.headers.authorization
+      ?.startsWith('Bearer ')
+      ? req.headers.authorization.slice(7).trim()
+      : undefined;
+    return apiKey || bearer || `ip-${req.ip}`;
+  },
+  message: {
+    success: false,
+    error: 'Rate limit exceeded. Please upgrade to an Enterprise plan for higher limits.',
+  },
+});
+app.use(`/api/${v}/x402`, x402Limiter);
 
 logger.info(`✅ ${routeMap.length} lazy API routes registered`)
 
