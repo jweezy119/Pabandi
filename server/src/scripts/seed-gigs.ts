@@ -1,188 +1,282 @@
 require('dotenv').config();
 import { prisma } from '../utils/database';
 
+/**
+ * Platform seeder account that posts the cold-start flywheel gigs.
+ * All seeded tasks are objective and auto-verifiable so the first agents
+ * can earn redeemable credits on day one without human review.
+ */
+const SEEDER_ID = 'platform-seeder';
+
+const SEEDER_PROFILE = {
+  id: SEEDER_ID,
+  name: 'Platform Seeder',
+  slug: 'platform-seeder',
+  description:
+    'Pabandi platform account that publishes auto-verifiable agent tasks ' +
+    '(code katas, data validation, ledger reconciliation, property valuation) ' +
+    'to seed the Gig Board cold start.',
+  capabilities: ['post-gigs', 'pay-escrow'],
+  walletAddress: '0x' + '0'.repeat(40),
+  publicKey: '0x' + '1'.repeat(40),
+  reputation: 1000,
+  totalEarned: 0,
+  totalSpent: 0,
+  projectsCompleted: 0,
+  projectsFailed: 0,
+  isActive: true,
+  metadata: { type: 'platform', role: 'seeder' },
+  balanceUsdc: 100000,
+  balancePab: 50000,
+};
+
+// Deterministic mock SHA-256 deliverable hashes (64 hex chars) used by VCAP
+// M2M handshake to verify the expected output of each task.
+const DELIVERABLE_HASHES: Record<string, string> = {
+  'binary-search-kata':
+    'a3f5c8e1b2d4f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1',
+  'json-schema-validation':
+    'b4c6d9e2a3f5b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2',
+  'property-valuation-oakwood':
+    'c5d7e0f3b4a6c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3',
+  'ledger-reconciliation':
+    'd6e8f1a4c5b7d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4',
+  'express-security-review':
+    'e7f9a2b5d6c8e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5',
+  'invoice-ocr-transcription':
+    'f8a0b3c6e7d9f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6',
+  'zoning-variance-brief':
+    'a9b1c4d7e8f0a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7',
+  'erc20-reentrancy-audit':
+    'b0c2d5e8f9a1b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8',
+  'en-es-catalog-localization':
+    'c1d3e6f9a0b2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9',
+  'saas-pricing-extraction':
+    'd2e4f7a0b1c3d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0',
+};
+
+const now = Date.now();
+const plusDays = (d: number) => new Date(now + d * 24 * 60 * 60 * 1000);
+
+const GIGS = [
+  {
+    key: 'binary-search-kata',
+    title: 'Code Kata: Fix off-by-one error in Python binary search',
+    description:
+      'Fix the off-by-one bug in the provided Python binary search function. ' +
+      'The task is auto-verifiable: a hidden test suite runs against the ' +
+      'submitted function and asserts it returns the correct index for all ' +
+      'edge cases (empty list, single element, target absent, duplicates). ' +
+      'Deliverable: corrected source file plus passing test output.',
+    category: 'code',
+    requiredSkills: ['python', 'testing', 'algorithms'],
+    budgetUsd: 75,
+    deadlineDays: 3,
+    complexity: 'LOW',
+    requirements:
+      'Python 3.11+, submit corrected binary_search.py, include pytest output showing all edge cases pass.',
+  },
+  {
+    key: 'json-schema-validation',
+    title: 'Data Task: Validate JSON file against provided schema',
+    description:
+      'Validate the attached JSON data file against the provided JSON Schema. ' +
+      'Auto-verifiable by rule engine: every field must conform to the schema ' +
+      'types, required fields must be present, and enum values must match. ' +
+      'Deliverable: validation report listing each violation with path.',
+    category: 'data',
+    requiredSkills: ['json', 'schema-validation', 'data-quality'],
+    budgetUsd: 60,
+    deadlineDays: 2,
+    complexity: 'LOW',
+    requirements:
+      'AJV or equivalent validator, output JSON report with field-path, expected-type, actual-value for each violation.',
+  },
+  {
+    key: 'property-valuation-oakwood',
+    title: 'Property Valuation: Evaluate financial stability of Oakwood Gardens',
+    description:
+      'Evaluate the financial stability of the rental property "Oakwood Gardens" ' +
+      'from the provided rent roll and expense statements. Deliverable: JSON ' +
+      'report with NOI, cap rate, DSCR, and a buy/hold/sell recommendation. ' +
+      'Modeled on Hugging Face OccuBench real-estate analyst tasks.',
+    category: 'research',
+    requiredSkills: ['real-estate', 'financial-analysis', 'valuation'],
+    budgetUsd: 200,
+    deadlineDays: 7,
+    complexity: 'MEDIUM',
+    requirements:
+      'JSON report: noi, capRate, dscr, recommendation, assumptions. Use provided rent roll only.',
+  },
+  {
+    key: 'ledger-reconciliation',
+    title: 'Ledger Reconciliation: Match 50 transactions to bank statement',
+    description:
+      'Match the 50 provided general-ledger transactions to the bank statement ' +
+      'and produce a CSV of mismatches (unmatched ledger entries, unmatched ' +
+      'bank deposits, amount discrepancies). Auto-verifiable by exact-match ' +
+      'rule engine on date + amount.',
+    category: 'data',
+    requiredSkills: ['accounting', 'csv', 'reconciliation'],
+    budgetUsd: 180,
+    deadlineDays: 5,
+    complexity: 'MEDIUM',
+    requirements:
+      'CSV output: ledgerId, bankId, status, reason. Zero false positives on exact date+amount matches.',
+  },
+  {
+    key: 'express-security-review',
+    title: 'Code Review: Find security vulnerabilities in Express middleware',
+    description:
+      'Review the provided Node.js/Express middleware for security issues ' +
+      '(header injection, path traversal, unsafe eval). Auto-verifiable by ' +
+      'static-analysis tool (ESLint security plugin) plus manual confirmation. ' +
+      'Deliverable: findings report with severity and remediation snippets.',
+    category: 'code',
+    requiredSkills: ['nodejs', 'express', 'security'],
+    budgetUsd: 320,
+    deadlineDays: 7,
+    complexity: 'HIGH',
+    requirements:
+      'Markdown report: vulnerability, location (file:line), severity, fix snippet. ESLint output attached.',
+  },
+  {
+    key: 'invoice-ocr-transcription',
+    title: 'Data Entry: Transcribe handwritten invoices to CSV',
+    description:
+      'Transcribe 12 handwritten invoice images into a structured CSV ' +
+      '(vendor, date, total, tax, line items). Auto-verifiable by character-' +
+      'level diff against ground truth for vendor and total fields.',
+    category: 'data',
+    requiredSkills: ['ocr', 'data-entry', 'csv'],
+    budgetUsd: 110,
+    deadlineDays: 4,
+    complexity: 'MEDIUM',
+    requirements:
+      'CSV: vendor, invoiceDate, total, tax, itemsJson. Character-exact vendor names and totals required.',
+  },
+  {
+    key: 'zoning-variance-brief',
+    title: 'Research: Summarize zoning variance application review',
+    description:
+      'Summarize the zoning variance application for parcel 14-022-088. ' +
+      'Extract: applicant, requested variance, zoning district, staff ' +
+      'recommendation, hearing date, and conditions. Deliverable: one-page ' +
+      'brief. Modeled on Hugging Face OccuBench land-use reviewer tasks.',
+    category: 'research',
+    requiredSkills: ['legal', 'research', 'zoning'],
+    budgetUsd: 150,
+    deadlineDays: 6,
+    complexity: 'MEDIUM',
+    requirements:
+      'Brief PDF/markdown: applicant, varianceRequested, district, staffRecommendation, hearingDate, conditions.',
+  },
+  {
+    key: 'erc20-reentrancy-audit',
+    title: 'Smart Contract: Verify ERC-20 token for reentrancy',
+    description:
+      'Audit the provided Solidity ERC-20 token contract for reentrancy, ' +
+      'overflow, and access-control issues. Auto-verifiable by Slither/Mythril ' +
+      'plus manual confirmation of at least one true positive. Deliverable: ' +
+      'formal audit report.',
+    category: 'code',
+    requiredSkills: ['solidity', 'security', 'smart-contracts'],
+    budgetUsd: 450,
+    deadlineDays: 10,
+    complexity: 'HIGH',
+    requirements:
+      'Report: vulnerability, contract:line, severity, fix snippet. Slither JSON output attached.',
+  },
+  {
+    key: 'en-es-catalog-localization',
+    title: 'Translation: Localize product catalog EN → ES',
+    description:
+      'Localize a 200-item product catalog from English to Spanish. ' +
+      'Auto-verifiable by glossary match: all brand names, SKUs, and ' +
+      'approved terminology must appear exactly. Deliverable: localized CSV.',
+    category: 'data',
+    requiredSkills: ['spanish', 'translation', 'localization'],
+    budgetUsd: 90,
+    deadlineDays: 5,
+    complexity: 'LOW',
+    requirements:
+      'CSV: sku, nameEs, descriptionEs. Brand names and SKUs unchanged. Glossary compliance checked.',
+  },
+  {
+    key: 'saas-pricing-extraction',
+    title: 'Web Research: Extract pricing tiers from 20 SaaS sites',
+    description:
+      'Visit 20 SaaS pricing pages and extract each plan name, monthly price, ' +
+      'and feature list into a JSON array. Auto-verifiable by JSON schema ' +
+      '(planName required, priceUsd number, features string array).',
+    category: 'research',
+    requiredSkills: ['web-scraping', 'research', 'json'],
+    budgetUsd: 140,
+    deadlineDays: 6,
+    complexity: 'MEDIUM',
+    requirements:
+      'JSON array: [{planName, priceUsd, features: string[]}]. One entry per pricing tier per site.',
+  },
+] as const;
+
 async function main() {
-  // Create poster profiles first (needed for foreign key)
-  const posters = [];
-  for (let i = 1; i <= 4; i++) {
-    const profile = await prisma.agentProfile.upsert({
-      where: { id: `agent_poster_00${i}` },
-      update: {},
-      create: {
-        id: `agent_poster_00${i}`,
-        name: `Poster Corp ${i}`,
-        slug: `poster-corp-${i}`,
-        description: 'AI project-owner posting trusted gigs on Pabandi',
-        capabilities: ['post-gigs', 'pay-escrow'],
-        walletAddress: `0xposter${i.toString().padStart(40, '0')}`,
-        publicKey: `0xpublic${i.toString().padStart(40, '0')}`,
-        reputation: 800 + i * 10,
-        totalEarned: 0,
-        totalSpent: 0,
-        projectsCompleted: 0,
-        projectsFailed: 0,
-        isActive: true,
-        metadata: { type: 'business' },
-        balanceUsdc: 10000,
-        balancePab: 5000,
-      },
-    });
-    posters.push(profile);
-  }
-  console.log(`Created/verified ${posters.length} poster profiles`);
+  // Ensure the platform-seeder poster profile exists.
+  await prisma.agentProfile.upsert({
+    where: { id: SEEDER_ID },
+    update: {},
+    create: SEEDER_PROFILE,
+  });
+  console.log(`Ensured seeder profile: ${SEEDER_ID}`);
 
-  const categories = ['agent-to-human', 'agent-to-agent', 'agent-qa', 'agent-building'];
-  
-  const gigs = [
-    // agent-to-human
-    {
-      title: 'Verify storefront is open - GPS photo required',
-      description: 'An AI agent needs to verify that a storefront is physically open for business. Requires a geo-tagged photo of the entrance and a timestamp. Escrow: $25.',
-      category: 'agent-to-human',
-      posterId: 'agent_poster_001',
-      budgetUsd: 25,
-      deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      status: 'OPEN',
-      complexity: 'LOW',
-      requirements: 'Must have a smartphone with GPS. Photo must include store signage and current date/time visible.',
-    },
-    {
-      title: 'Roof inspection - $500 Escrow',
-      description: 'Commercial property owner needs a roof inspection before insurance renewal. Requires ladder access, photo documentation of flashing, gutters, and shingle condition. Escrow: $500.',
-      category: 'agent-to-human',
-      posterId: 'agent_poster_002',
-      budgetUsd: 500,
-      deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-      status: 'OPEN',
-      complexity: 'MEDIUM',
-      requirements: 'Ladder access, safety equipment, photo documentation. Must provide written condition report.',
-    },
-    // agent-to-agent
-    {
-      title: 'Scrape 1,000 leads - requires VCAP hash',
-      description: 'Automated lead generation task. Agent must scrape business listings from public directories and deliver results with a VCAP (Verifiable Computation Attestation Protocol) hash proving data integrity. Escrow: $150.',
-      category: 'agent-to-agent',
-      posterId: 'agent_poster_003',
-      budgetUsd: 150,
-      deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-      status: 'OPEN',
-      complexity: 'HIGH',
-      requirements: 'Must implement VCAP hash on deliverables. Output in CSV format with company name, website, contact email.',
-    },
-    {
-      title: 'Sentiment analysis API access',
-      description: 'AI agent needs read-only access to a sentiment analysis API endpoint for processing customer feedback at scale. Must provide API key and rate limit documentation. Escrow: $75.',
-      category: 'agent-to-agent',
-      posterId: 'agent_poster_004',
-      budgetUsd: 75,
-      deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-      status: 'OPEN',
-      complexity: 'LOW',
-      requirements: 'REST API access, rate limit >100 req/min, JSON output format.',
-    },
-    // agent-qa
-    {
-      title: 'Red-team my chatbot for hallucinations',
-      description: 'Test a customer service chatbot for hallucinations, prompt injection, and unsafe responses. Provide a report with 20+ test cases and reproduction steps. Escrow: $300.',
-      category: 'agent-qa',
-      posterId: 'agent_poster_005',
-      budgetUsd: 300,
-      deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
-      status: 'OPEN',
-      complexity: 'HIGH',
-      requirements: '20+ adversarial test cases, reproduction steps, severity ratings, remediation recommendations.',
-    },
-    {
-      title: 'Audit my smart contract',
-      description: 'Solidity smart contract security audit for a DeFi protocol. Check for reentrancy, overflow, access control issues. Provide formal report. Escrow: $1000.',
-      category: 'agent-qa',
-      posterId: 'agent_poster_006',
-      budgetUsd: 1000,
-      deadline: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
-      status: 'OPEN',
-      complexity: 'HIGH',
-      requirements: 'Solidity audit experience, formal vulnerability report, remediation code snippets.',
-    },
-    // agent-building
-    {
-      title: 'Build a LangChain agent for HR',
-      description: 'Build an HR onboarding agent using LangChain that can answer employee benefits questions, schedule interviews, and process time-off requests. Escrow: $800.',
-      category: 'agent-building',
-      posterId: 'agent_poster_007',
-      budgetUsd: 800,
-      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      status: 'OPEN',
-      complexity: 'HIGH',
-      requirements: 'LangChain experience, integration with HRIS API, multi-turn conversation support.',
-    },
-    {
-      title: 'Write a system prompt for a real estate scraper',
-      description: 'Write a production-ready system prompt for an AI agent that scrapes real estate listings. Must include extraction rules, anti-detection measures, and data validation logic. Escrow: $200.',
-      category: 'agent-building',
-      posterId: 'agent_poster_008',
-      budgetUsd: 200,
-      deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-      status: 'OPEN',
-      complexity: 'MEDIUM',
-      requirements: 'System prompt engineering, anti-detection strategies, JSON schema for output validation.',
-    },
-  ];
+  let created = 0;
+  let updated = 0;
+  let skipped = 0;
 
-  // Create additional poster profiles for 005-008
-  for (let i = 5; i <= 8; i++) {
-    const padded = i.toString().padStart(3, '0');
-    const profile = await prisma.agentProfile.upsert({
-      where: { id: `agent_poster_${padded}` },
-      update: {},
-      create: {
-        id: `agent_poster_${padded}`,
-        name: `Poster Corp ${i}`,
-        slug: `poster-corp-${i}`,
-        description: 'AI project-owner posting trusted gigs on Pabandi',
-        capabilities: ['post-gigs', 'pay-escrow'],
-        walletAddress: `0xposter${i.toString().padStart(40, '0')}`,
-        publicKey: `0xpublic${i.toString().padStart(40, '0')}`,
-        reputation: 800 + i * 10,
-        totalEarned: 0,
-        totalSpent: 0,
-        projectsCompleted: 0,
-        projectsFailed: 0,
-        isActive: true,
-        metadata: { type: 'business' },
-        balanceUsdc: 10000,
-        balancePab: 5000,
-      },
-    });
-    posters.push(profile);
-  }
+  for (const gig of GIGS) {
+    const hash = DELIVERABLE_HASHES[gig.key] || '0'.repeat(64);
 
-  for (const gig of gigs) {
     const existing = await prisma.agentProject.findFirst({
       where: { title: gig.title },
+      select: { id: true },
     });
-    if (existing) {
-      console.log(`Skipping existing: ${gig.title}`);
-      continue;
-    }
-    await prisma.agentProject.create({
-      data: {
-        title: gig.title,
-        description: gig.description,
-        category: gig.category,
-        requirements: gig.requirements,
-        posterId: gig.posterId,
-        budgetUsd: gig.budgetUsd,
-        budgetPab: gig.budgetUsd * 10,
-        deadline: gig.deadline,
-        status: 'OPEN',
-        complexity: gig.complexity,
+
+    const data = {
+      title: gig.title,
+      description: gig.description,
+      requirements: gig.requirements,
+      posterId: SEEDER_ID,
+      budgetUsd: gig.budgetUsd,
+      budgetPab: gig.budgetUsd * 10,
+      deadline: plusDays(gig.deadlineDays),
+      status: 'OPEN',
+      complexity: gig.complexity,
+      category: gig.category,
+      deliverableHash: hash,
+      metadata: {
+        requiredSkills: gig.requiredSkills,
+        source: 'platform-seeder',
+        verifiable: true,
+        key: gig.key,
       },
-    });
-    console.log(`Created: ${gig.title} (${gig.category}) - $${gig.budgetUsd}`);
+    };
+
+    if (existing) {
+      await prisma.agentProject.update({
+        where: { id: existing.id },
+        data,
+      });
+      updated += 1;
+      console.log(`Updated: ${gig.title} ($${gig.budgetUsd})`);
+    } else {
+      await prisma.agentProject.create({ data });
+      created += 1;
+      console.log(`Created: ${gig.title} ($${gig.budgetUsd})`);
+    }
   }
 
-  const count = await prisma.agentProject.count();
-  console.log(`\nTotal projects in DB: ${count}`);
+  const count = await prisma.agentProject.count({ where: { posterId: SEEDER_ID } });
+  console.log(`\nSeed complete: ${created} created, ${updated} updated, ${skipped} skipped`);
+  console.log(`Total projects by ${SEEDER_ID}: ${count}`);
 }
 
 main()
