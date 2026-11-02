@@ -7,6 +7,8 @@ import { getCreditBalance, applyCreditToInvoice, applyCreditToAmount } from '../
 import { tierDefinition, SUBSCRIPTION_TIERS, PAID_TIERS } from '../config/subscriptions';
 import { resolveSquareCredentials, createSquarePaymentLink, squareBaseUrl } from '../services/square-connection.service';
 import { getSubscription } from '../services/subscription.service';
+import { solanaUsdc } from '../services/solanaUsdc.service';
+import { verifySolanaPayment } from '../services/solana-payment-verification.service';
 
 const router = Router();
 
@@ -471,6 +473,207 @@ router.post('/subscribe', authenticate, async (req: AuthRequest, res: Response) 
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[Billing] subscribe error:', message);
+    return res.status(500).json({ success: false, error: message });
+  }
+});
+
+// POST /api/v1/billing/subscribe/solana
+// Generate a Solana Pay payment URI for the net subscription amount. The
+// business pays USDC to the platform wallet via their own Solana client, then
+// POSTs the transaction signature to /subscribe/solana/confirm to complete
+// the upgrade. Falls back to a credit-only upgrade when credit covers the
+// full cost (no on-chain payment needed).
+router.post('/subscribe/solana', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const businessId = req.user?.businessId;
+    if (!businessId) {
+      return res.status(400).json({ success: false, error: 'Business required' });
+    }
+
+    const { targetTier } = req.body as { targetTier?: string };
+    if (!targetTier || !PAID_TIERS.includes(targetTier as (typeof PAID_TIERS)[number])) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid target tier. Choose from: ${PAID_TIERS.join(', ')}.`,
+      });
+    }
+
+    const tier = targetTier as (typeof PAID_TIERS)[number];
+    const definition = tierDefinition(tier);
+    const monthlyPrice = definition.monthlyPrice;
+    if (!monthlyPrice) {
+      return res.status(400).json({ success: false, error: 'Tier has no price.' });
+    }
+
+    const current = await getSubscription(businessId);
+    if (current.tier === tier && current.isPaying) {
+      return res.status(400).json({
+        success: false,
+        error: `Already subscribed to ${tier}.`,
+      });
+    }
+
+    const amountCents = Math.round(monthlyPrice * 100);
+    const creditBalance = await getCreditBalance(businessId);
+    const creditBalanceCents = Math.round(creditBalance * 100);
+    const creditToApplyCents = Math.min(creditBalanceCents, amountCents);
+    const netAmountCents = amountCents - creditToApplyCents;
+
+    const platformWallet = solanaUsdc.getPlatformWallet();
+    if (!platformWallet) {
+      return res.status(500).json({
+        success: false,
+        error: 'Platform Solana wallet not configured. Set PLATFORM_WALLET_ADDRESS.',
+      });
+    }
+
+    const usdcMint = process.env.USDC_MINT_ADDRESS || 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+
+    // Create the pending subscription invoice (paid via Solana Pay).
+    const invoice = await prisma.invoice.create({
+      data: {
+        businessId,
+        clientId: await resolveSubscriptionClientId(businessId),
+        number: await nextInvoiceNumberForBusiness(businessId),
+        dateDue: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        status: 'pending',
+        lineItems: [{ description: `Upgrade to ${tier} subscription (30 days) via Solana Pay`, price: netAmountCents / 100 }],
+        subtotal: netAmountCents / 100,
+        notes: JSON.stringify({
+          text: `Subscription upgrade — ${tier} plan (Solana Pay)`,
+          metadata: {
+            invoiceType: 'subscription_upgrade_solana',
+            tier,
+            creditToApplyCents,
+            amountCents,
+            netAmountCents,
+            platformWallet,
+            usdcMint,
+          },
+        }),
+      },
+    });
+
+    if (netAmountCents <= 0) {
+      // Credit covers the full cost — upgrade immediately, no on-chain payment.
+      await applyCreditToAmount(businessId, creditToApplyCents);
+      await prisma.invoice.update({ where: { id: invoice.id }, data: { status: 'paid' } });
+      await prisma.merchantSubscription.upsert({
+        where: { businessId },
+        create: { businessId, tier, status: 'active', priceCents: amountCents, currency: 'USD', currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) },
+        update: { tier, status: 'active', priceCents: amountCents },
+      });
+      logger.info(`[Billing] Solana subscription upgrade ${businessId} -> ${tier} fully covered by credit`);
+      return res.json({
+        success: true,
+        data: { invoiceId: invoice.id, tier, amountCents, creditAppliedCents: creditToApplyCents, netAmountCents: 0, paymentRequired: false, message: `Upgraded to ${tier} — covered by saas credit.` },
+      });
+    }
+
+    // Build the Solana Pay URI: solana:<wallet>?amount=<usdc>&spl-token=<mint>&label=...&message=<invoiceId>
+    const solanaPayUri = `solana:${platformWallet}?amount=${(netAmountCents / 100).toFixed(6)}&spl-token=${usdcMint}&label=${encodeURIComponent(`Pabandi ${tier} subscription`)}&message=${encodeURIComponent(`Invoice ${invoice.number}`)}&reference=${invoice.id}`;
+
+    logger.info(
+      `[Billing] Solana subscription upgrade ${businessId} -> ${tier}: net=$${(netAmountCents / 100).toFixed(2)} credit=$${(creditToApplyCents / 100).toFixed(2)}`,
+    );
+
+    return res.json({
+      success: true,
+      data: {
+        invoiceId: invoice.id,
+        tier,
+        amountCents,
+        creditAppliedCents: creditToApplyCents,
+        netAmountCents,
+        paymentRequired: true,
+        paymentMethod: 'solana',
+        paymentUrl: solanaPayUri,
+        platformWallet,
+        usdcMint,
+        message: `Pay $${(netAmountCents / 100).toFixed(2)} USDC to ${platformWallet} via Solana Pay, then confirm with the transaction signature.`,
+      },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('[Billing] subscribe/solana error:', message);
+    return res.status(500).json({ success: false, error: message });
+  }
+});
+
+// POST /api/v1/billing/subscribe/solana/confirm
+// Verify an on-chain Solana Pay payment for a subscription upgrade, deduct
+// saas credit, mark the invoice paid, and upgrade the merchant tier.
+router.post('/subscribe/solana/confirm', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const businessId = req.user?.businessId;
+    if (!businessId) {
+      return res.status(400).json({ success: false, error: 'Business required' });
+    }
+
+    const { invoiceId, signature } = req.body as { invoiceId?: string; signature?: string };
+    if (!invoiceId) {
+      return res.status(400).json({ success: false, error: 'Invoice required' });
+    }
+    if (!signature) {
+      return res.status(400).json({ success: false, error: 'Transaction signature required' });
+    }
+
+    const invoice = await prisma.invoice.findFirst({ where: { id: invoiceId, businessId } });
+    if (!invoice) {
+      return res.status(404).json({ success: false, error: 'Invoice not found' });
+    }
+    if (invoice.status === 'paid') {
+      return res.json({ success: true, data: { alreadyPaid: true } });
+    }
+
+    const notes = JSON.parse(invoice.notes || '{}');
+    const metadata = notes.metadata || {};
+    const tier = metadata.tier;
+    const creditToApplyCents = Number(metadata.creditToApplyCents ?? 0);
+    const netAmountCents = Number(metadata.netAmountCents ?? 0);
+    const expectedRecipient = metadata.platformWallet || solanaUsdc.getPlatformWallet();
+    const claimedAmountUsdc = netAmountCents / 100;
+
+    if (!expectedRecipient) {
+      return res.status(500).json({ success: false, error: 'Platform wallet not configured on invoice.' });
+    }
+
+    // Verify the on-chain payment: signature, success, expected recipient, amount.
+    const verification = await verifySolanaPayment({
+      signature,
+      claimedAmount: claimedAmountUsdc,
+      expectedRecipient,
+    });
+
+    if (!verification.ok) {
+      return res.status(400).json({ success: false, error: `Payment verification failed: ${verification.reason}` });
+    }
+
+    // Deduct saas credit and mark the invoice paid.
+    if (creditToApplyCents > 0) {
+      await applyCreditToAmount(businessId, creditToApplyCents);
+    }
+    await prisma.invoice.update({ where: { id: invoiceId }, data: { status: 'paid' } });
+
+    // Upgrade the merchant tier.
+    const amountCents = Number(metadata.amountCents ?? 0);
+    await prisma.merchantSubscription.upsert({
+      where: { businessId },
+      create: { businessId, tier, status: 'active', priceCents: amountCents, currency: 'USD', currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) },
+      update: { tier, status: 'active', priceCents: amountCents },
+    });
+
+    logger.info(
+      `[Billing] Solana subscription confirmed ${businessId} -> ${tier}: sig=${signature} credit=${creditToApplyCents}c invoice=${invoiceId}`,
+    );
+
+    return res.json({
+      success: true,
+      data: { invoiceId, tier, creditAppliedCents: creditToApplyCents, paid: true, message: `Upgraded to ${tier} via Solana Pay.` },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('[Billing] subscribe/solana/confirm error:', message);
     return res.status(500).json({ success: false, error: message });
   }
 });
