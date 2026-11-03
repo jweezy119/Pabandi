@@ -30,6 +30,7 @@ export default function ContactSubscriptionPage() {
 
   const [subscription, setSubscription] = useState<{ tier?: string; status?: string; priceCents?: number } | null>(null);
   const [creditBalance, setCreditBalance] = useState(0);
+  const [quotaState, setQuotaState] = useState<{ tier?: string; quota?: number; used?: number; remaining?: number; resetsAt?: string | null } | null>(null);
   const [tiers, setTiers] = useState<Record<string, { netAmount: number; creditApplied: number }>>({});
   const [loading, setLoading] = useState(true);
   const [subscribing, setSubscribing] = useState<string | null>(null);
@@ -38,14 +39,19 @@ export default function ContactSubscriptionPage() {
 
   const load = useCallback(async () => {
     try {
-      const [subRes, creditRes] = await Promise.all([
+      const [subRes, creditRes, quotaRes] = await Promise.all([
         fetch(`${API_BASE}/api/v1/billing/subscription`, { headers: getHeaders() }),
         fetch(`${API_BASE}/api/v1/billing/credit-balance`, { headers: getHeaders() }),
+        fetch(`${API_BASE}/api/v1/billing/mcp-quota`, { headers: getHeaders() }),
       ]);
       if (subRes.ok) setSubscription(await subRes.json().then((d) => d.data ?? d));
       if (creditRes.ok) {
         const d = await creditRes.json();
         setCreditBalance(d?.data?.saasCreditBalance ?? d?.saasCreditBalance ?? 0);
+      }
+      if (quotaRes.ok) {
+        const d = await quotaRes.json();
+        setQuotaState(d?.data ?? d);
       }
     } catch (err) {
       console.error(err);
@@ -173,8 +179,8 @@ export default function ContactSubscriptionPage() {
           </div>
         )}
 
-        {/* Current plan + credit */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Current plan + credit + MCP quota */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card padding="lg" className="bg-[var(--warm-sand)]/30 border border-[var(--soft-stone)]/30">
             <h3 className="font-semibold text-[var(--warm-ink)] mb-1">Current plan</h3>
             <p className="text-xl font-bold text-[var(--clay)]">{currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}</p>
@@ -188,6 +194,31 @@ export default function ContactSubscriptionPage() {
             <p className="text-xs text-[var(--soft-stone)]">
               Earned from Solana escrow yield. Applied to your subscription before you pay.
             </p>
+          </Card>
+          <Card padding="lg" className="bg-white border border-[var(--soft-stone)]/30 shadow-[var(--shadow-soft)]">
+            <h3 className="font-semibold text-[var(--warm-ink)] mb-1">MCP tool-call quota</h3>
+            {quotaState ? (
+              <>
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--soft-stone)] mb-1">
+                  Tier: {quotaState.tier ? quotaState.tier.charAt(0).toUpperCase() + quotaState.tier.slice(1) : '—'}
+                </p>
+                <div className="text-2xl font-bold text-[var(--warm-ink)]">
+                  {quotaState.quota === 0 ? '∞' : quotaState.remaining ?? 0}
+                </div>
+                <p className="text-xs text-[var(--soft-stone)]">
+                  {quotaState.quota === 0
+                    ? 'Pay per call (0.001 USDC). Upgrade for a monthly quota.'
+                    : `${quotaState.used ?? 0} of ${quotaState.quota?.toLocaleString() ?? 0} used this month`}
+                </p>
+                {quotaState.resetsAt && (
+                  <p className="text-xs text-[var(--soft-stone)] mt-1">
+                    Resets {new Date(quotaState.resetsAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </p>
+                )}
+              </>
+            ) : (
+              <div className="h-8 w-8 rounded-full border-2 border-[var(--soft-stone)]/30 border-t-transparent animate-spin" />
+            )}
           </Card>
         </div>
 

@@ -10,6 +10,7 @@ import { getSubscription } from '../services/subscription.service';
 import { solanaUsdc } from '../services/solanaUsdc.service';
 import { verifySolanaPayment } from '../services/solana-payment-verification.service';
 import { squareService } from '../services/squareCheckout.service';
+import { getQuotaState, resolveApiKey, hashKey } from '../services/mcpMeter.service';
 
 const router = Router();
 
@@ -224,6 +225,38 @@ router.get('/credit-balance', authenticate, async (req: AuthRequest, res: Respon
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[Billing] credit-balance error:', message);
+    return res.status(500).json({ success: false, error: message });
+  }
+});
+
+// GET /api/v1/billing/mcp-quota
+// The caller's MCP tool-call quota state: tier, included quota, used this
+// month, remaining calls, and when the quota resets. Resolved from the API
+// key (x-api-key or Bearer header), falling back to the authenticated user's
+// business.
+router.get('/mcp-quota', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    let apiKeyHash: string | null = null;
+    const key = resolveApiKey(req);
+    if (key) {
+      apiKeyHash = hashKey(key);
+    } else if (req.user?.businessId) {
+      // Fall back to the authenticated user's business: find their API client
+      // and use its apiKeyHash so quota state is keyed per key.
+      const client = await prisma.apiClient.findFirst({
+        where: { businessId: req.user.businessId },
+        select: { apiKeyHash: true },
+      });
+      apiKeyHash = client?.apiKeyHash ?? null;
+    }
+    if (!apiKeyHash) {
+      return res.status(400).json({ success: false, error: 'No API key found for this account. Create one at /contact/settings/api-keys.' });
+    }
+    const state = await getQuotaState(apiKeyHash);
+    return res.json({ success: true, data: state });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('[Billing] mcp-quota error:', message);
     return res.status(500).json({ success: false, error: message });
   }
 });
