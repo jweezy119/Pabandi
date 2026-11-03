@@ -1,8 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import { AsyncLocalStorage } from 'async_hooks';
 import { createTenantClient } from './prisma-tenant';
-
-export const tenantContext = new AsyncLocalStorage<{ businessId: string }>();
+import { tenantContext } from './tenant-context';
 
 const prismaClient = new PrismaClient();
 
@@ -12,3 +10,4 @@ export function getPrismaClient(): PrismaClient {
 }
 
 export const prisma = getPrismaClient();
+export { tenantContext };
