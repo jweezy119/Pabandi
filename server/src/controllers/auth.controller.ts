@@ -1348,9 +1348,14 @@ export const toggleUserMode = async (req: AuthRequest, res: Response, next: Next
 
     const businessId = (user.business as { id?: string } | null)?.id ?? null;
 
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error('JWT_SECRET not configured');
+    }
+
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, businessId, activeBusinessId: businessId, mode: user.preferredMode } as JwtPayload,
-      JWT_SECRET as Secret,
+      secret as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
 

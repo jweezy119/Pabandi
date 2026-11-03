@@ -180,7 +180,7 @@ businessStatsRouter.get(
             count: pendingEscrows.length,
             totalUsd: +pendingEscrows.reduce((s, e) => s + e.amount, 0).toFixed(2),
           },
-          saasCredit: +business.saasCreditBalance.toFixed(2),
+          saasCredit: +(business.saasCreditBalance ?? 0).toFixed(2),
           todayJobs: todaysJobs.map((b) => ({
             id: b.id,
             client: b.client?.name ?? 'Walk-in client',
