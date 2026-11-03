@@ -11,6 +11,7 @@ import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
 import { rateLimiter } from './middleware/rateLimiter';
 import { prisma } from './utils/database';
+import { ingestData } from './services/ingestion/pipeline.service';
 
 // Load environment variables FIRST
 dotenv.config();
@@ -766,6 +767,39 @@ cron.schedule('0 10 * * *', async () => {
   }
 });
 
+// Weekly Google Maps ingestion: Mondays 02:00 UTC
+cron.schedule('0 2 * * 1', async () => {
+  try {
+    logger.info('[GoogleMaps Cron] Weekly ingestion starting');
+    const queries = await prisma.googleMapsQuery.findMany({
+      where: { active: true },
+      select: { id: true, query: true, category: true, geo: true, radius: true },
+    });
+
+    for (const q of queries) {
+      try {
+        await ingestData('googlemaps', {
+          query: q.query,
+          category: q.category,
+          geo: q.geo,
+          radius: q.radius,
+        }, q.id);
+        logger.info(`[GoogleMaps Cron] Started ingestion for query: ${q.query}`);
+      } catch (err: any) {
+        logger.error(`[GoogleMaps Cron] Failed for query "${q.query}": ${err.message}`);
+      }
+    }
+
+    logger.info(`[GoogleMaps Cron] Weekly ingestion dispatched for ${queries.length} queries`);
+  } catch (err: any) {
+    logger.error(`[GoogleMaps Cron] Weekly ingestion failed: ${err.message}`);
+  }
+}, {
+  timezone: 'UTC',
+});
+
+logger.info('[GoogleMaps Cron] Weekly scheduler registered (Mondays 02:00 UTC)');
+
 // Daily autonomous scout: discover AI agents on GitHub/Product Hunt, research,
 // and email them a $50 Pabandi referral link. Runs at 8 AM UTC, max 10 emails/day.
 // Set SCOUT_DRY_RUN=false in Render to actually send emails.
@@ -1190,4 +1224,35 @@ app.get('/.well-known/openid-configuration', (_req, res) => {
     id_token_signing_alg_values_supported: ['HS256'],
     scopes_supported: ['openid', 'profile', 'email', 'trust:passport'],
   });
+});
+
+// ── Weekly Google Maps ingestion scheduler ───────────────────────────────
+// Runs every Monday at 02:00 UTC. Iterates active GoogleMapsQuery records
+// and triggers ingestion via the pipeline service (non-blocking).
+cron.schedule('0 2 * * 1', async () => {
+  try {
+    logger.info('[GoogleMaps Cron] Weekly ingestion starting');
+    const queries = await prisma.googleMapsQuery.findMany({
+      where: { active: true },
+      select: { id: true, query: true, category: true, geo: true, radius: true },
+    });
+
+    for (const q of queries) {
+      try {
+        await ingestData('googlemaps', {
+          query: q.query,
+          category: q.category,
+          geo: q.geo,
+          radius: q.radius,
+        }, q.id);
+        logger.info(`[GoogleMaps Cron] Started ingestion for query: ${q.query}`);
+      } catch (err: any) {
+        logger.error(`[GoogleMaps Cron] Failed for query "${q.query}": ${err.message}`);
+      }
+    }
+
+    logger.info(`[GoogleMaps Cron] Weekly ingestion dispatched for ${queries.length} queries`);
+  } catch (err: any) {
+    logger.error(`[GoogleMaps Cron] Weekly ingestion failed: ${err.message}`);
+  }
 });

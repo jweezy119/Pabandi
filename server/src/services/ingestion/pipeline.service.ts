@@ -4,10 +4,12 @@ import { logger } from '../../utils/logger';
 import { RawBusinessProfile, DataSourceAdapter, IngestionResult } from './types';
 import { OpenDirectoriesAdapter } from './opendirectories.adapter';
 import { ApifyAdapter } from './apify.adapter';
+import { GoogleMapsAdapter } from './googlemaps.adapter';
 
 const adapters: Record<string, DataSourceAdapter> = {
   opendirectories: new OpenDirectoriesAdapter(),
   apify: new ApifyAdapter(),
+  googlemaps: new GoogleMapsAdapter(),
 };
 
 export function getAdapter(adapterId: string): DataSourceAdapter | null {
@@ -15,7 +17,12 @@ export function getAdapter(adapterId: string): DataSourceAdapter | null {
 }
 
 export function listAdapters(): { id: string; name: string }[] {
-  return Object.values(adapters).map((a) => ({ id: a.id, name: a.id.charAt(0).toUpperCase() + a.id.slice(1) }));
+  const displayNames: Record<string, string> = {
+    opendirectories: 'OpenDirectories',
+    apify: 'Apify (Freelancer.com)',
+    googlemaps: 'Google Maps',
+  };
+  return Object.values(adapters).map((a) => ({ id: a.id, name: displayNames[a.id] ?? a.id.charAt(0).toUpperCase() + a.id.slice(1) }));
 }
 
 // ── In-memory job store for tracking ingestion progress ──────────────────────
@@ -55,7 +62,7 @@ function updateJob(jobId: string, patch: Partial<IngestionJobProgress>): void {
 
 // ── Pipeline ─────────────────────────────────────────────────────────────────
 
-export async function ingestData(adapterId: string, query: any): Promise<{ jobId: string }> {
+export async function ingestData(adapterId: string, query: any, queryId?: string): Promise<{ jobId: string }> {
   const adapter = getAdapter(adapterId);
   if (!adapter) {
     throw new Error(`Unknown adapter: ${adapterId}`);
@@ -176,6 +183,14 @@ export async function ingestData(adapterId: string, query: any): Promise<{ jobId
         status: 'completed',
         completedAt: new Date(),
       });
+
+      // Update GoogleMapsQuery stats if applicable
+      if (queryId && adapterId === 'googlemaps') {
+        await prisma.googleMapsQuery.update({
+          where: { id: queryId },
+          data: { lastRun: new Date(), totalFound: businesses.length },
+        });
+      }
     } catch (err) {
       updateJob(jobId, {
         status: 'failed',

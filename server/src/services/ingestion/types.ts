@@ -14,7 +14,7 @@ export interface RawBusinessProfile {
   reviewCount?: number;
   verificationStatus?: 'verified' | 'unverified' | 'pending';
   sourceId?: string;
-  source: 'opendirectories' | 'apify';
+  source: 'opendirectories' | 'apify' | 'googlemaps';
 }
 
 export interface DataSourceAdapter {
