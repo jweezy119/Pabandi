@@ -597,8 +597,8 @@ function AnimatedAppRoutes() {
             <Route path="waitlist" element={<PlaceholderPage />} />
             <Route path="r/:code" element={<PlaceholderPage />} />
             <Route path="city/:slug" element={<PlaceholderPage />} />
-            <Route path="admin" element={<IngestionPage />} />
-<Route path="admin/company-intel" element={<CompanyIntelPage />} />
+            <Route path="admin/ingest" element={<IngestionPage />} />
+            <Route path="admin/company-intel" element={<CompanyIntelPage />} />
             <Route path="admin/setup" element={<PlaceholderPage />} />
             <Route path="me" element={<PersonalGuard><PersonalDashboardPage /></PersonalGuard>} />
             <Route path="me/passport" element={<PersonalGuard><PersonalPassportPage /></PersonalGuard>} />
