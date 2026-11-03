@@ -59,6 +59,7 @@ const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'));
 const PostProjectPage = lazy(() => import('./pages/marketplace/PostProjectPage'));
 const AdminRevenuePage = lazy(() => import('./pages/marketplace/AdminRevenuePage'));
 const IngestionPage = lazy(() => import('./pages/admin/IngestionPage'));
+const CompanyIntelPage = lazy(() => import('./pages/admin/CompanyIntelPage'));
 const DemoWalkthroughPage = lazy(() => import('./pages/DemoWalkthroughPage'));
 const AgentOnboardingPage = lazy(() => import('./pages/AgentOnboardingPage'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
@@ -593,6 +594,7 @@ function AnimatedAppRoutes() {
             <Route path="r/:code" element={<PlaceholderPage />} />
             <Route path="city/:slug" element={<PlaceholderPage />} />
             <Route path="admin" element={<IngestionPage />} />
+<Route path="admin/company-intel" element={<CompanyIntelPage />} />
             <Route path="admin/setup" element={<PlaceholderPage />} />
             <Route path="me" element={<PersonalGuard><PersonalDashboardPage /></PersonalGuard>} />
             <Route path="me/passport" element={<PersonalGuard><PersonalPassportPage /></PersonalGuard>} />

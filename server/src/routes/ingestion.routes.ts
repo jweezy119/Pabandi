@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/auth.middleware';
 import { ingestData, getJobProgress, listAdapters, getAdapter, onJobEvent } from '../services/ingestion/pipeline.service';
+import { companyIntel } from '../services/company-intel.service';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 
@@ -124,6 +125,42 @@ router.get('/ingest/stream/:jobId', async (req: Request, res: Response) => {
     if (!res.headersSent) {
       res.status(500).json({ success: false, error: error.message || 'Stream failed' });
     }
+  }
+});
+
+// ── POST /api/v1/admin/ingest/company-intel ──────────────────────────────
+router.post('/company-intel', async (req: Request, res: Response) => {
+  try {
+    const { domain } = req.body;
+    if (!domain || typeof domain !== 'string') {
+      return res.status(400).json({ success: false, error: 'domain is required' });
+    }
+
+    const result = await companyIntel.enrichCompany(domain);
+
+    // Also run legal verification if we have a company name hint from the domain
+    let legal = undefined;
+    try {
+      const legalResult = await companyIntel.verifyLegalEntity(domain.replace(/\..*$/, ''));
+      legal = {
+        verified: legalResult.verified,
+        source: legalResult.source,
+        lei: legalResult.lei,
+        legalName: legalResult.legalName,
+        jurisdiction: legalResult.jurisdiction,
+        companyNumber: legalResult.companyNumber,
+      };
+    } catch {
+      // legal verification is best-effort
+    }
+
+    return res.json({
+      success: true,
+      data: { ...result, legal },
+    });
+  } catch (error: any) {
+    logger.error(`[Admin] Company intel failed: ${error.message}`);
+    return res.status(500).json({ success: false, error: error.message || 'Company intel failed' });
   }
 });
 

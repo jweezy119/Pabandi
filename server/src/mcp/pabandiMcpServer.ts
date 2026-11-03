@@ -21,6 +21,7 @@ import { passportEconomy, validateCapabilities, PTPRiskBand } from '../services/
 import { PAB_FEE_PER_PASSPORT } from '../config/tokenomics';
 import { optionalAuthenticate } from '../middleware/auth.middleware';
 import { pabandiToolsRegistry, pabandiPlatformDoc, toolAccessOk } from '../services/pabandiTools.service';
+import { companyIntel } from '../services/company-intel.service';
 import { didService } from '../services/vc/did.service';
 import { sessionDelegation } from '../services/engine/session.service';
 import { adjudicationService } from '../services/adjudication.service';
@@ -665,6 +666,42 @@ const OWNER_TOOL_DEFS: any[] = [
       });
       if (!res.ok) throw new Error(`Search services failed: ${res.status}`);
       return { success: true, data: await res.json() };
+    },
+  },
+  {
+    name: 'pabandi_enrich_company',
+    description: 'Scrapes a website and government registries (GLEIF, OpenCorporates) to find contact info, tech stack, and legal verification for a business. Use this before onboarding a new business to verify their legitimacy.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        domain: { type: 'string', description: 'Website domain to enrich, e.g. acme-corp.com' },
+      },
+      required: ['domain'],
+    },
+    handler: async (args: any) => {
+      const { domain } = args;
+      if (!domain || typeof domain !== 'string') throw new Error('domain is required');
+
+      const enrichment = await companyIntel.enrichCompany(domain);
+
+      // Also run legal entity verification using the domain name as company name hint
+      const companyNameHint = domain.replace(/\..*$/, '');
+      const legal = await companyIntel.verifyLegalEntity(companyNameHint);
+
+      return {
+        success: true,
+        data: {
+          ...enrichment,
+          legal: {
+            verified: legal.verified,
+            source: legal.source,
+            lei: legal.lei,
+            legalName: legal.legalName,
+            jurisdiction: legal.jurisdiction,
+            companyNumber: legal.companyNumber,
+          },
+        },
+      };
     },
   },
 ];
