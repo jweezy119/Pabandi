@@ -630,6 +630,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/business-verification`, './routes/businessVerification.routes'],
   [`/api/${v}/fluid-booking`, './routes/fluidBooking.routes'],
   [`/api/${v}/values`, './routes/values.routes'],
+  [`/api/${v}/agent-discovery`, './routes/agent-discovery.routes'],
   [`/api/${v}/agent-comm`, './routes/agentCommunication.routes'],
   [`/api/${v}/agents`, './routes/agentSignup.routes'],
   [`/api/${v}/agent-passport`, './routes/agentPassport.routes'],
