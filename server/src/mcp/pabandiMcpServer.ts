@@ -586,7 +586,88 @@ const PLATFORM_TOOL_DEFS = pabandiToolsRegistry
 
 // Gated tools are already included above — building them twice produced
 // duplicate entries in tools/list, which makes an agent pick at random.
-const OWNER_TOOL_DEFS: any[] = [];
+const OWNER_TOOL_DEFS: any[] = [
+  {
+    name: 'pabandi_verify_human',
+    description: 'Verify a human trust passport and get their trust score, tier, and verification status. Use this before booking or transacting with any human counterparty to assess reliability. Price: $0.01 USDC.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        passportId: { type: 'string', description: 'Trust Passport ID to verify' },
+      },
+      required: ['passportId'],
+    },
+    handler: async (args: any, req?: Request) => {
+      const { passportId } = args;
+      if (!passportId) throw new Error('passportId is required');
+      const res = await fetch(`${BACKEND}/api/v1/agent/verify-human/${encodeURIComponent(passportId)}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(req?.headers?.['x-payment'] ? { 'x-payment': req.headers['x-payment'] as string } : {}),
+          ...(req?.headers?.['payment-signature'] ? { 'payment-signature': req.headers['payment-signature'] as string } : {}),
+        },
+      });
+      if (!res.ok) throw new Error(`Verify human failed: ${res.status}`);
+      return { success: true, data: await res.json() };
+    },
+  },
+  {
+    name: 'pabandi_create_escrow',
+    description: 'Create an escrow for an agent-to-agent deal. Locks funds in escrow until the deliverable is verified. Returns escrowId, status, and amount locked. Price: 0.5% of escrow amount.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        amount: { type: 'number', description: 'Amount in USDC to lock in escrow' },
+        description: { type: 'string', description: 'Human-readable description of what the escrow secures' },
+        payerId: { type: 'string', description: 'Payer user/agent ID' },
+        payeeId: { type: 'string', description: 'Payee user/agent ID' },
+      },
+      required: ['amount', 'description', 'payerId', 'payeeId'],
+    },
+    handler: async (args: any, req?: Request) => {
+      const { amount, description, payerId, payeeId } = args;
+      if (!amount || !payerId || !payeeId) throw new Error('amount, payerId, and payeeId are required');
+      const res = await fetch(`${BACKEND}/api/v1/agent/create-escrow`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(req?.headers?.['x-payment'] ? { 'x-payment': req.headers['x-payment'] as string } : {}),
+          ...(req?.headers?.['payment-signature'] ? { 'payment-signature': req.headers['payment-signature'] as string } : {}),
+        },
+        body: JSON.stringify({ amount, description, payerId, payeeId }),
+      });
+      if (!res.ok) throw new Error(`Create escrow failed: ${res.status}`);
+      return { success: true, data: await res.json() };
+    },
+  },
+  {
+    name: 'pabandi_search_services',
+    description: 'Search verified businesses by city and category. Returns business name, trust score, category, and city. Use this to find trustworthy service providers before booking. Price: $0.05 USDC.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        city: { type: 'string', description: 'City to search in (optional)' },
+        category: { type: 'string', description: 'Service category to filter by (optional)' },
+      },
+      required: [],
+    },
+    handler: async (args: any, req?: Request) => {
+      const { city, category } = args;
+      const qs = new URLSearchParams();
+      if (city) qs.set('city', city);
+      if (category) qs.set('category', category);
+      const res = await fetch(`${BACKEND}/api/v1/agent/search-services?${qs.toString()}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(req?.headers?.['x-payment'] ? { 'x-payment': req.headers['x-payment'] as string } : {}),
+          ...(req?.headers?.['payment-signature'] ? { 'payment-signature': req.headers['payment-signature'] as string } : {}),
+        },
+      });
+      if (!res.ok) throw new Error(`Search services failed: ${res.status}`);
+      return { success: true, data: await res.json() };
+    },
+  },
+];
 
 export const TOOLS = (() => {
   const all = [
