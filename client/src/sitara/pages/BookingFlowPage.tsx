@@ -160,7 +160,7 @@ export default function BookingFlowPage() {
 
   const payButtonLabel = loading || state.paymentStatus === 'processing'
     ? 'Processing…'
-    : 'Lock Funds in Escrow - $' + state.depositAmount.toFixed(2);
+    : `Lock Funds in Escrow - $${state.depositAmount.toFixed(2)}`;
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
@@ -206,11 +206,11 @@ export default function BookingFlowPage() {
                   <div className="h-8 w-8 rounded-full bg-[var(--warm-sand)] animate-pulse" />
                   <span className="text-[var(--soft-stone)] text-sm">Loading your business…</span>
                 </div>
-              </div>
-            </div>
-          )}
+                </div>
+                </div>
+              )}
           {!loadingBiz && (
-            <>
+            <div>
               <div className="mb-6">
                 <button
                   onClick={() => navigate(-1)}
@@ -310,7 +310,7 @@ export default function BookingFlowPage() {
                     >
                       Continue →
                     </button>
-                  </div>
+                </div>
                 </div>
               )}
 
@@ -349,7 +349,7 @@ export default function BookingFlowPage() {
                         <h3 className="text-[var(--sage)] font-semibold">You'll earn rewards!</h3>
                       </div>
                       <p className="text-2xl font-bold text-[var(--sage)]">+{state.rewardsPreview.clientEarns.toFixed(2)} PAB</p>
-                      <p className="text-sm text-[var(--soft-stone)]">(${'$' + state.rewardsPreview.clientEarnsUsd.toFixed(2)} USD value)</p>
+                      <p className="text-xs text-[var(--soft-stone)] mt-1">{'$' + state.rewardsPreview.clientEarnsUsd.toFixed(2) + ' USD value'}</p>
                       <p className="text-xs text-[var(--soft-stone)] mt-2">Business earns +{state.rewardsPreview.businessEarns.toFixed(2)} PAB too!</p>
                     </div>
                   )}
@@ -400,10 +400,10 @@ export default function BookingFlowPage() {
                 </div>
               )}
 
-              {state.step === 3 && state.paymentStatus === 'confirmed' && (
+              {((state.step === 3 && state.paymentStatus === 'confirmed')) ? (
                 <div className="space-y-4">
                   <div className="rounded-xl p-8 border border-[rgba(138,154,123,0.3)] bg-[rgba(138,154,123,0.1)] text-center">
-                    <div className="w-20 h-20 bg-[var(--sage)] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[var(--sage)]/40 animate-pulse">
+                    <div className="w-20 h-20 bg-[var(--sage)] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[var(--sage)] animate-pulse">
                       <svg className="w-10 h-10 text-[var(--cream)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                       </svg>
@@ -412,7 +412,7 @@ export default function BookingFlowPage() {
                     <p className="text-[var(--soft-stone)] text-sm mb-4">Your deposit is secured in escrow.</p>
 
                     {state.bookingRef && (
-                      <div className="rounded-xl p-3 mb-4 inline-block border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)]/40">
+                      <div className="rounded-xl p-3 mb-4 inline-block border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)]">
                         <p className="text-xs text-[var(--soft-stone)] font-bold uppercase tracking-wider">Reference</p>
                         <p className="font-mono text-sm text-[var(--warm-ink)] font-bold">{state.bookingRef}</p>
                       </div>
@@ -422,7 +422,7 @@ export default function BookingFlowPage() {
                       <div className="rounded-xl p-5 border border-[rgba(138,154,123,0.3)] bg-[rgba(138,154,123,0.1)] text-center">
                         <p className="text-xs text-[var(--sage)] font-bold uppercase tracking-wider mb-1">PAB Earned</p>
                         <p className="text-3xl font-bold text-[var(--warm-ink)]">+{state.rewardsPreview.clientEarns.toFixed(2)} PAB</p>
-                        <p className="text-xs text-[var(--soft-stone)] mt-1">(${'$' + state.rewardsPreview.clientEarnsUsd.toFixed(2)} USD)</p>
+                        <p className="text-xs text-[var(--soft-stone)] mt-1">{'$' + state.rewardsPreview.clientEarnsUsd.toFixed(2) + ' USD'}</p>
                       </div>
                     )}
 
@@ -445,15 +445,16 @@ export default function BookingFlowPage() {
                         className="w-full py-3 border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)] font-medium rounded-xl hover:bg-[var(--warm-sand)]/40 transition"
                       >
                         View My Bookings
-                  </div>
-                    </div>
                       </button>
-                )}
+                    </div>
+                  </div>
+                </div>
+                ) : null}
               </div>
-            </>
-          )}
-        </div>
-      </ErrorBoundary>
+            )}
+            </div>
+            </div>
+          </ErrorBoundary>
     );
   }
 }
