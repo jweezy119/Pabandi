@@ -3,6 +3,8 @@ import { logger } from '../../utils/logger';
 import { DataSourceAdapter, RawBusinessProfile } from './types';
 
 const OPEN_DIRECTORIES_MCP_URL = 'https://secure-wave--opendirectories-business-data.apify.actor/mcp';
+const MCP_PROTOCOL_VERSION = '2024-11-05';
+const APIFY_API_TOKEN = process.env.APIFY_API_TOKEN || '';
 
 interface McpRequest {
   jsonrpc: '2.0';
@@ -18,17 +20,49 @@ interface McpResponse<T = unknown> {
   error?: { code: number; message: string; data?: unknown };
 }
 
+function parseSseResponse(text: string): McpResponse<unknown> | null {
+  const lines = text.split('\n');
+  let dataBuffer = '';
+
+  for (const line of lines) {
+    if (line.startsWith('data: ')) {
+      dataBuffer += line.slice(6);
+    } else if (line === '' && dataBuffer) {
+      try {
+        return JSON.parse(dataBuffer) as McpResponse<unknown>;
+      } catch {
+        dataBuffer = '';
+      }
+    }
+  }
+
+  if (dataBuffer) {
+    try {
+      return JSON.parse(dataBuffer) as McpResponse<unknown>;
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
 export class OpenDirectoriesAdapter implements DataSourceAdapter {
   readonly id = 'opendirectories';
   private requestId = 0;
+  private sessionId: string | null = null;
 
   async fetchBusinesses(query: any): Promise<RawBusinessProfile[]> {
     const { country, state, category, min_rating } = query || {};
 
     try {
       // Initialize MCP session
-      await this.sendMcpRequest('initialize', {
-        protocolVersion: '2024-11-05',
+      const initResp = await this.sendMcpRequest<{
+        protocolVersion: string;
+        capabilities: Record<string, unknown>;
+        serverInfo: { name: string; version: string };
+      }>('initialize', {
+        protocolVersion: MCP_PROTOCOL_VERSION,
         capabilities: {},
         clientInfo: { name: 'pabandi-ingestion', version: '1.0.0' },
       });
@@ -39,7 +73,7 @@ export class OpenDirectoriesAdapter implements DataSourceAdapter {
 
       if (!toolNames.includes('search_businesses')) {
         logger.warn(`[OpenDirectories] search_businesses tool not found. Available: ${toolNames.join(', ')}`);
-        return [];
+        return this.fallbackBusinesses(category, (query as any)?.limit ?? 20, country, state);
       }
 
       // Call search_businesses
@@ -59,11 +93,63 @@ export class OpenDirectoriesAdapter implements DataSourceAdapter {
         return rawBusinesses.map((b: Record<string, unknown>) => this.mapBusiness(b));
       }
     } catch (error) {
-      logger.warn(`[OpenDirectories] MCP fetch failed (${error instanceof Error ? error.message : String(error)}). Using fallback sample data.`);
+      logger.warn(`[OpenDirectories] MCP fetch failed (${error instanceof Error ? error.message : String(error)}). Set APIFY_API_TOKEN for real data or using fallback sample data.`);
     }
 
     // Fallback: generate realistic sample businesses when MCP is unavailable
     return this.fallbackBusinesses(category, (query as any)?.limit ?? 20, country, state);
+  }
+
+  private async sendMcpRequest<T = unknown>(method: string, params?: Record<string, unknown>): Promise<McpResponse<T>> {
+    const id = ++this.requestId;
+    const payload: McpRequest = { jsonrpc: '2.0', id, method, ...(params ? { params } : {}) };
+
+    const body = JSON.stringify(payload);
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Content-Length': String(Buffer.byteLength(body)),
+      Accept: 'text/event-stream',
+      'Mcp-Protocol-Version': MCP_PROTOCOL_VERSION,
+    };
+
+    // Apify standby Actors require an API token for authentication
+    if (APIFY_API_TOKEN) {
+      headers['Authorization'] = `Bearer ${APIFY_API_TOKEN}`;
+    }
+
+    // Include session ID on all requests after initialize
+    if (this.sessionId) {
+      headers['Mcp-Session-Id'] = this.sessionId;
+    }
+
+    const res = await fetch(OPEN_DIRECTORIES_MCP_URL, {
+      method: 'POST',
+      headers,
+      body,
+    });
+
+    if (res.status !== 200) {
+      throw new Error(`MCP request failed with status ${res.status}`);
+    }
+
+    // Capture session ID from initialize response
+    const sessionHeader = res.headers.get('Mcp-Session-Id');
+    if (sessionHeader && !this.sessionId) {
+      this.sessionId = sessionHeader;
+    }
+
+    const raw = await res.text();
+    const parsed = parseSseResponse(raw);
+
+    if (!parsed) {
+      throw new Error('MCP response did not contain a valid JSON-RPC message');
+    }
+
+    if (parsed.error) {
+      throw new Error(`MCP error ${parsed.error.code}: ${parsed.error.message}`);
+    }
+
+    return parsed as McpResponse<T>;
   }
 
   private fallbackBusinesses(category: string | undefined, limit: number, country?: string, state?: string): RawBusinessProfile[] {
@@ -102,35 +188,6 @@ export class OpenDirectoriesAdapter implements DataSourceAdapter {
       });
     }
     return businesses;
-  }
-
-  private async sendMcpRequest<T = unknown>(method: string, params?: Record<string, unknown>): Promise<McpResponse<T>> {
-    const id = ++this.requestId;
-    const payload: McpRequest = { jsonrpc: '2.0', id, method, ...(params ? { params } : {}) };
-
-    const body = JSON.stringify(payload);
-    const res = await fetch(OPEN_DIRECTORIES_MCP_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': String(Buffer.byteLength(body)),
-        Accept: 'application/json, text/event-stream',
-      },
-      body,
-    });
-
-    if (res.status !== 200) {
-      throw new Error(`MCP request failed with status ${res.status}`);
-    }
-
-    const raw = await res.text();
-    const parsed: McpResponse<T> = JSON.parse(raw);
-
-    if (parsed.error) {
-      throw new Error(`MCP error ${parsed.error.code}: ${parsed.error.message}`);
-    }
-
-    return parsed;
   }
 
   private mapBusiness(b: Record<string, unknown>): RawBusinessProfile {
