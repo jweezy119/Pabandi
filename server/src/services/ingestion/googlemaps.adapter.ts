@@ -72,6 +72,7 @@ export class GoogleMapsAdapter implements DataSourceAdapter {
         '--rm',
         '-v', `${inputFile}:/queries.txt:ro`,
         '-v', `${outputFile}:/out/results.json`,
+        '-e', `APIFY_API_TOKEN=${process.env.APIFY_API_TOKEN || ''}`,
         DOCKER_IMAGE,
         '-input', '/queries.txt',
         '-json',
