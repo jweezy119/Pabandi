@@ -1358,7 +1358,13 @@ export const toggleUserMode = async (req: AuthRequest, res: Response, next: Next
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[Auth] toggleUserMode error:', message);
-    console.error('[Auth] toggleUserMode Prisma error:', error);
+    console.error('[Auth] toggleUserMode error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined,
+      code: error instanceof Error && 'code' in error ? (error as any).code : undefined,
+      meta: error instanceof Error && 'meta' in error ? (error as any).meta : undefined,
+    });
     next(error);
   }
 };
