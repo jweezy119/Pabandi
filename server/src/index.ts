@@ -371,6 +371,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/fee-collection`, './routes/fee-collection.routes'],
   [`/api/${v}/analytics`, './routes/analytics.routes'],
   [`/api/${v}/admin`, './routes/admin.routes'],
+  [`/api/${v}/admin/ingest`, './routes/ingestion.routes'],
   [`/api/${v}/shopify-integration`, './routes/shopify-integration.routes'],
   [`/api/${v}/webhooks`, './routes/webhook.routes'],
   [`/api/${v}/checkout`, './routes/checkout.routes'],

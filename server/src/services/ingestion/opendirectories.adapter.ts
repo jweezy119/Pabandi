@@ -1,4 +1,4 @@
-import { createRequest, type ClientRequest } from 'undici';
+import { fetch } from 'undici';
 import { logger } from '../../utils/logger';
 import { DataSourceAdapter, RawBusinessProfile } from './types';
 
@@ -67,7 +67,7 @@ export class OpenDirectoriesAdapter implements DataSourceAdapter {
     const payload: McpRequest = { jsonrpc: '2.0', id, method, ...(params ? { params } : {}) };
 
     const body = JSON.stringify(payload);
-    const res: ClientRequest = await createRequest(OPEN_DIRECTORIES_MCP_URL, {
+    const res = await fetch(OPEN_DIRECTORIES_MCP_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -77,17 +77,11 @@ export class OpenDirectoriesAdapter implements DataSourceAdapter {
       body,
     });
 
-    const { statusCode, body: bodyStream } = res;
-    if (statusCode !== 200) {
-      throw new Error(`MCP request failed with status ${statusCode}`);
+    if (res.status !== 200) {
+      throw new Error(`MCP request failed with status ${res.status}`);
     }
 
-    const chunks: Buffer[] = [];
-    for await (const chunk of bodyStream) {
-      chunks.push(Buffer.from(chunk as string));
-    }
-
-    const raw = Buffer.concat(chunks).toString();
+    const raw = await res.text();
     const parsed: McpResponse<T> = JSON.parse(raw);
 
     if (parsed.error) {

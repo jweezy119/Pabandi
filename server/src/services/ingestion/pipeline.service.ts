@@ -150,6 +150,7 @@ export async function ingestData(adapterId: string, query: any): Promise<{ jobId
                 isActive: true,
                 source: b.source,
                 externalId: b.sourceId,
+                category: 'OTHER',
                 trustScore: 50.0,
                 karmaScore: 50.0,
                 businessTier: 'STANDARD',
