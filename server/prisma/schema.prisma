@@ -211,6 +211,7 @@ model Business {
   id                    String            @id @default(cuid())
   ownerId               String?           @unique
   name                  String
+  description             String?
 
   /// The merchant's own SMS provider credentials, if connected.
   smsProvider            BusinessSmsProvider?
@@ -591,6 +592,7 @@ model Booking {
   driveMinutes  Int?
   travelFee     Float?  @default(0)
   depositReason String?
+  depositPaid   Boolean     @default(false)
 
   @@index([businessId, slotStart])
 }
@@ -6403,6 +6405,7 @@ model AgentWallet {
   publicKey       String         @unique
   encryptedSecret String
   balanceUsdc     Float          @default(0)
+  usdcBalance     Float          @default(0)
   pabBalance      Float          @default(0)
   delegatedLimit  Float?
   createdAt       DateTime       @default(now())
@@ -7071,6 +7074,7 @@ model Invoice {
   transactionHash       String?               @unique
   reminderCount         Int                   @default(0)
   lastReminderAt        DateTime?
+  clientPassportId      String?
   createdAt             DateTime              @default(now())
   updatedAt             DateTime              @updatedAt
   trustEvents           InvoiceTrustEvent[]
@@ -7765,7 +7769,7 @@ model CrmJob {
   locationVerified      Boolean             @default(false)
   serviceBusinessId     String?
   serviceBusiness       CrmServiceBusiness? @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
-  clientName            String // denormalized snapshot of client name at booking time
+  clientName            String? // denormalized snapshot of client name at booking time
   rating                Int?
   feedback              String?
   actualDurationMinutes Int?
