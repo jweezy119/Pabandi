@@ -1,5 +1,5 @@
 import { fetch } from 'undici';
-import { resolve, resolve4, resolve6, type RecordWithTtl } from 'dns';
+import { resolve4, resolve6 } from 'dns';
 import { promisify } from 'util';
 import * as cheerio from 'cheerio';
 import { logger } from '../utils/logger';
@@ -184,6 +184,98 @@ async function fetchHtml(url: string): Promise<{ html: string; headers: Record<s
   }
 }
 
+interface GleifRecord {
+  lei: string;
+  legalName: string;
+  jurisdiction: string;
+  entityStatus: string;
+}
+
+interface OpenCorporatesRecord {
+  company_name: string;
+  company_number: string;
+  jurisdiction_code: string;
+  incorporation_date?: string;
+  status?: string;
+}
+
+interface LegalEntityResult {
+  verified: boolean;
+  source: 'gleif' | 'opencorporates' | 'none';
+  lei?: string;
+  legalName?: string;
+  jurisdiction?: string;
+  entityStatus?: string;
+  companyNumber?: string;
+  incorporationDate?: string;
+  status?: string;
+}
+
+// Simple rate limiter for GLEIF API (max 1 call per second)
+const gleifCallTimes: number[] = [];
+const GLEIF_MIN_INTERVAL_MS = 1100;
+
+async function rateLimitGleif(): Promise<void> {
+  const now = Date.now();
+  while (gleifCallTimes.length > 0) {
+    const oldest = gleifCallTimes[0];
+    if (now - oldest < GLEIF_MIN_INTERVAL_MS) {
+      await new Promise((r) => setTimeout(r, GLEIF_MIN_INTERVAL_MS - (now - oldest)));
+    } else {
+      break;
+    }
+  }
+  gleifCallTimes.push(Date.now());
+  if (gleifCallTimes.length > 10) gleifCallTimes.shift();
+}
+
+async function fetchGleif(companyName: string): Promise<GleifRecord | null> {
+  try {
+    await rateLimitGleif();
+    const url = `https://api.gleif.org/api/v1/lei-records?filter[entity.legalName]=${encodeURIComponent(companyName)}`;
+    const res = await fetch(url, {
+      headers: { Accept: 'application/vnd.api+json' },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { data: Array<{ id: string; attributes: Record<string, unknown> }> };
+    const records = data?.data || [];
+    if (!records.length) return null;
+    const rec = records[0];
+    const attr = rec.attributes || {};
+    return {
+      lei: String(rec.id || attr['lei'] || ''),
+      legalName: String(attr['entityLegalName'] || ''),
+      jurisdiction: String(attr['entityLegalJurisdiction'] || ''),
+      entityStatus: String(attr['entityStatus'] || ''),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchOpenCorporates(companyName: string): Promise<OpenCorporatesRecord | null> {
+  try {
+    const url = `https://api.opencorporates.com/v0.4/companies/search?q=${encodeURIComponent(companyName)}`;
+    const res = await fetch(url, {
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { results: { companies: Array<{ company: OpenCorporatesRecord }> } };
+    const companies = data?.results?.companies || [];
+    if (!companies.length) return null;
+    const c = companies[0].company;
+    return {
+      company_name: c.company_name || '',
+      company_number: c.company_number || '',
+      jurisdiction_code: c.jurisdiction_code || '',
+      incorporation_date: c.incorporation_date,
+      status: c.status,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export class CompanyIntelService {
   async enrichCompany(domain: string): Promise<EnrichResult> {
     const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/$/, '').split('/')[0];
@@ -239,6 +331,37 @@ export class CompanyIntelService {
       techStack,
       socials,
     };
+  }
+
+  async verifyLegalEntity(companyName: string): Promise<LegalEntityResult> {
+    // 1) Try GLEIF first (free, no auth, rate-limited)
+    const gleif = await fetchGleif(companyName);
+    if (gleif) {
+      return {
+        verified: true,
+        source: 'gleif',
+        lei: gleif.lei,
+        legalName: gleif.legalName,
+        jurisdiction: gleif.jurisdiction,
+        entityStatus: gleif.entityStatus,
+      };
+    }
+
+    // 2) Fallback to OpenCorporates (free tier)
+    const oc = await fetchOpenCorporates(companyName);
+    if (oc) {
+      return {
+        verified: true,
+        source: 'opencorporates',
+        legalName: oc.company_name,
+        jurisdiction: oc.jurisdiction_code,
+        companyNumber: oc.company_number,
+        incorporationDate: oc.incorporation_date,
+        status: oc.status,
+      };
+    }
+
+    return { verified: false, source: 'none' };
   }
 }
 
