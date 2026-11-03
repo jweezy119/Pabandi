@@ -5,6 +5,7 @@ import { getAuthToken } from '../../utils/authToken';
 import { HalalBanner } from '../../components/halal';
 import { ClayCard } from '../../components/clay/ClayCard';
 import BookingSearchBar from '../../components/BookingSearchBar';
+import { LiveNetworkWidget } from '../../components/live-network/LiveNetworkWidget';
 
 const NAV_ITEMS = [
   { path: '/booking', label: 'Discovery', icon: 'explore', end: true },
@@ -215,6 +216,14 @@ export default function BookingOSPage() {
           }))}
           onResultClick={(id) => navigate(`/booking/flow/${id}?location=${encodeURIComponent(location || '')}`)}
         />
+
+        {/* Live Network */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold" style={{ color: 'var(--warm-ink)' }}>Live Network</h2>
+          </div>
+          <LiveNetworkWidget className="rounded-xl p-4" style={{ background: 'var(--warm-sand)', border: '1px solid rgba(191,179,163,0.3)' }} />
+        </div>
 
         {/* Shared ContactOS Clients */}
         <div>

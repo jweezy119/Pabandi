@@ -26,6 +26,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ClayButton } from '../../components/clay/ClayButton';
 import { ClayCard } from '../../components/clay/ClayCard';
 import { ClayBadge } from '../../components/primitives';
+import { LiveNetworkWidget } from '../../components/live-network/LiveNetworkWidget';
 import { AssistiveBanner } from '../../components/AssistiveBanner';
 import ClayVaultLock from '../../components/clay/ClayVaultLock';
 import { useAuthStore } from '../../store/authStore';
@@ -306,6 +307,12 @@ export default function PersonalDashboardPage() {
                 </span>
               </motion.div>
             </Link>
+          </div>
+
+          {/* ── Live Network ────────────────────────────────────── */}
+          <div className="mb-8">
+            <h2 className={`${sectionTitle} mb-4`}>Live Network</h2>
+            <LiveNetworkWidget className="rounded-[var(--radius-card)] border border-[rgba(191,179,163,0.5)] bg-[var(--warm-sand)]/20 p-4" />
           </div>
 
           {/* ── VCAP proof modal ──────────────────────────────────── */}
