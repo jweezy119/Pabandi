@@ -29,6 +29,7 @@ import { ClayBadge } from '../../components/primitives';
 import { AssistiveBanner } from '../../components/AssistiveBanner';
 import ClayVaultLock from '../../components/clay/ClayVaultLock';
 import { useAuthStore } from '../../store/authStore';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
 import {
   statsService,
   type MeStats,
@@ -68,8 +69,6 @@ export default function PersonalDashboardPage() {
       setShowProofModal(null);
       setProofTaken(false);
       setShowVault(true);
-      // Trust Sync: the release fires escrow.released server-side and moves the
-      // trust score — invalidate now so the new score is visible immediately.
       await queryClient.invalidateQueries('meDashboardStats');
     } finally {
       setReleasing(false);
@@ -82,7 +81,6 @@ export default function PersonalDashboardPage() {
     return (
       <div className="min-h-screen bg-[var(--cream)] pb-[env(safe-area-inset-bottom)] text-[var(--warm-ink)] p-4">
         <div className="space-y-5">
-          {/* greeting skeleton */}
           <div className="flex gap-3">
             <div className="h-10 w-10 rounded-full bg-[var(--warm-sand)] animate-pulse" />
             <div className="flex-1 space-y-2">
@@ -90,20 +88,17 @@ export default function PersonalDashboardPage() {
               <div className="h-3 w-1/2 bg-[var(--warm-sand)] rounded animate-pulse" />
             </div>
           </div>
-          {/* trust passport skeleton */}
           <div className="rounded-[var(--radius-card)] border border-[rgba(191,179,163,0.5)] bg-[var(--warm-sand)]/40 p-5 space-y-4">
             <div className="h-3 w-1/3 bg-[var(--warm-sand)] rounded animate-pulse" />
             <div className="h-10 w-1/2 rounded-full bg-[var(--warm-sand)] animate-pulse" />
             <div className="h-2.5 w-full rounded-full bg-[var(--warm-sand)] animate-pulse" />
             <div className="h-3 w-1/4 bg-[var(--warm-sand)] rounded animate-pulse" />
           </div>
-          {/* yield widget skeleton */}
           <div className="rounded-[var(--radius-card)] border border-[var(--sage)]/40 bg-[var(--sage)]/10 p-5 space-y-4">
             <div className="h-3 w-1/2 bg-[var(--warm-sand)] rounded animate-pulse" />
             <div className="h-8 w-1/3 rounded-full bg-[var(--warm-sand)] animate-pulse" />
             <div className="h-3 w-1/3 bg-[var(--warm-sand)] rounded animate-pulse" />
           </div>
-          {/* active escrows skeleton */}
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="rounded-[var(--radius-card)] border border-[rgba(191,179,163,0.5)] bg-[var(--warm-sand)]/40 p-5 space-y-3">
@@ -122,222 +117,223 @@ export default function PersonalDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-[env(safe-area-inset-bottom)] text-[var(--warm-ink)]">
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="px-4 py-6">
-        {/* ── Greeting ─────────────────────────────────────────── */}
-        <div className="mb-6 flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--sage)]/20 text-[var(--sage)]">
-            <Sparkles className="h-5 w-5" />
-          </span>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Welcome back, {user?.firstName || 'there'}</h1>
-            <p className="text-xs text-[var(--soft-stone)]">Your personal trust &amp; escrow hub</p>
+    <ErrorBoundary>
+      <div className="min-h-screen bg-[var(--cream)] pb-[env(safe-area-inset-bottom)] text-[var(--warm-ink)]">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="px-4 py-6">
+          {/* ── Greeting ─────────────────────────────────────────── */}
+          <div className="mb-6 flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--sage)]/20 text-[var(--sage)]">
+              <Sparkles className="h-5 w-5" />
+            </span>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Welcome back, {user?.firstName || 'there'}</h1>
+              <p className="text-xs text-[var(--soft-stone)]">Your personal trust &amp; escrow hub</p>
+            </div>
           </div>
-        </div>
 
-        {/* ── Assistive banner ────────────────────────────────── */}
-        <AnimatePresence>
-          {hasReleaseable ? (
-            <AssistiveBanner
-              variant="job_complete"
-              actionLabel="Verify & Release Now"
-              // The page scrolls to the releaseable escrow; the VCAP modal opens on click.
-              actionHref="#escrows"
-            />
-          ) : (score == null || score < 50) ? (
-            <AssistiveBanner variant="score_dropping" actionLabel="Book a Service" actionHref="/booking" />
-          ) : (
-            <AssistiveBanner variant="all_well" actionLabel="Discover" actionHref="/booking" />
-          )}
-        </AnimatePresence>
+          {/* ── Assistive banner ────────────────────────────────── */}
+          <AnimatePresence>
+            {hasReleaseable ? (
+              <AssistiveBanner
+                variant="job_complete"
+                actionLabel="Verify & Release Now"
+                actionHref="#escrows"
+              />
+            ) : (score == null || score < 50) ? (
+              <AssistiveBanner variant="score_dropping" actionLabel="Book a Service" actionHref="/booking" />
+            ) : (
+              <AssistiveBanner variant="all_well" actionLabel="Discover" actionHref="/booking" />
+            )}
+          </AnimatePresence>
 
-        {/* ── Trust Passport ──────────────────────────────────── */}
-        <div className="mb-6">
-          <ClayCard className="border border-dashed border-[rgba(191,179,163,0.5)] bg-[var(--cream)] p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className={sectionTitle}>Trust Passport</h2>
-                <p className="text-xs text-[var(--soft-stone)]">Your portable reputation across Pabandi</p>
-              </div>
-              {score != null ? (
-                <div className="flex items-baseline gap-2">
-                  <span className="font-headline text-4xl font-black text-[var(--terracotta)] tabular-nums">{score}</span>
-                  <span className="text-lg font-bold text-[var(--soft-stone)]">· {tier ?? '—'}</span>
+          {/* ── Trust Passport ──────────────────────────────────── */}
+          <div className="mb-6">
+            <ClayCard className="border border-dashed border-[rgba(191,179,163,0.5)] bg-[var(--cream)] p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className={sectionTitle}>Trust Passport</h2>
+                  <p className="text-xs text-[var(--soft-stone)]">Your portable reputation across Pabandi</p>
                 </div>
-              ) : (
-                <div className="text-right">
-                  <span className="font-headline text-lg font-bold text-[var(--clay)]">Building Trust</span>
-                  <p className="text-[10px] uppercase tracking-widest text-[var(--soft-stone)]">
-                    Complete an escrowed booking to start
+                {score != null ? (
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-headline text-4xl font-black text-[var(--terracotta)] tabular-nums">{score}</span>
+                    <span className="text-lg font-bold text-[var(--soft-stone)]">· {tier ?? '—'}</span>
+                  </div>
+                ) : (
+                  <div className="text-right">
+                    <span className="font-headline text-lg font-bold text-[var(--clay)]">Building Trust</span>
+                    <p className="text-[10px] uppercase tracking-widest text-[var(--soft-stone)]">
+                      Complete an escrowed booking to start
+                    </p>
+                  </div>
+                )}
+              </div>
+              {/* Trust band bar */}
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-[var(--warm-sand)]">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-[var(--clay)] to-[var(--sage)]"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.min(100, score ?? 0)}%` }}
+                  transition={{ type: 'spring', stiffness: 120, damping: 18 }}
+                />
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <ClayBadge
+                  label={tier ?? 'Building Trust'}
+                  variant={tier === 'GOLD' ? 'success' : tier === 'SILVER' ? 'info' : 'neutral'}
+                  size="sm"
+                />
+                {stats?.trustScore.reliability != null && (
+                  <span className="font-label text-[10px] uppercase tracking-widest text-[var(--soft-stone)]">
+                    Reliability {stats.trustScore.reliability}/100
+                  </span>
+                )}
+              </div>
+            </ClayCard>
+          </div>
+
+          {/* ── Yield widget ────────────────────────────────────── */}
+          <div className="mb-6">
+            <ClayCard className="border border-[var(--sage)]/40 bg-[var(--sage)]/10 p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-label text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--soft-stone)]">
+                    Total Yield Earned
+                  </p>
+                  {yieldEarned != null ? (
+                    <p className="font-headline text-2xl font-black tabular-nums text-[var(--sage)]">
+                      +${yieldEarned.toFixed(2)} USDC
+                    </p>
+                  ) : (
+                    <p className="font-headline text-2xl font-black text-[var(--soft-stone)]">— USDC</p>
+                  )}
+                  <p className="mt-1 max-w-xs text-xs text-[var(--soft-stone)]">
+                    Your locked funds earn yield on Solana. Get 50% as a rebate when you release escrow.
                   </p>
                 </div>
-              )}
-            </div>
-            {/* Trust band bar */}
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-[var(--warm-sand)]">
-              <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-[var(--clay)] to-[var(--sage)]"
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.min(100, score ?? 0)}%` }}
-                transition={{ type: 'spring', stiffness: 120, damping: 18 }}
-              />
-            </div>
-            <div className="mt-3 flex items-center gap-2">
-              <ClayBadge
-                label={tier ?? 'Building Trust'}
-                variant={tier === 'GOLD' ? 'success' : tier === 'SILVER' ? 'info' : 'neutral'}
-                size="sm"
-              />
-              {stats?.trustScore.reliability != null && (
-                <span className="font-label text-[10px] uppercase tracking-widest text-[var(--soft-stone)]">
-                  Reliability {stats.trustScore.reliability}/100
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--sage)] text-[var(--warm-ink)]">
+                  <Coins className="h-6 w-6" />
+                </div>
+              </div>
+            </ClayCard>
+          </div>
+
+          {/* ── Active Escrows ──────────────────────────────────── */}
+          <div id="escrows" className="mb-6 scroll-mt-20">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className={sectionTitle}>Active Escrows</h2>
+              {stats && stats.activeEscrows.count > 0 && (
+                <span className="font-label text-[10px] font-bold uppercase tracking-widest text-[var(--terracotta)]">
+                  ${stats.activeEscrows.totalUsd.toFixed(2)} held
                 </span>
               )}
             </div>
-          </ClayCard>
-        </div>
 
-        {/* ── Yield widget ────────────────────────────────────── */}
-        <div className="mb-6">
-          <ClayCard className="border border-[var(--sage)]/40 bg-[var(--sage)]/10 p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-label text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--soft-stone)]">
-                  Total Yield Earned
-                </p>
-                {yieldEarned != null ? (
-                  <p className="font-headline text-2xl font-black tabular-nums text-[var(--sage)]">
-                    +${yieldEarned.toFixed(2)} USDC
-                  </p>
-                ) : (
-                  <p className="font-headline text-2xl font-black text-[var(--soft-stone)]">— USDC</p>
-                )}
-                <p className="mt-1 max-w-xs text-xs text-[var(--soft-stone)]">
-                  Your locked funds earn yield on Solana. Get 50% as a rebate when you release escrow.
-                </p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--sage)] text-[var(--warm-ink)]">
-                <Coins className="h-6 w-6" />
-              </div>
-            </div>
-          </ClayCard>
-        </div>
+            {escrows.length === 0 ? (
+              <ClayCard className="border border-dashed border-[rgba(191,179,163,0.5)] bg-[var(--warm-sand)]/40 p-8 text-center">
+                <Lock className="mx-auto mb-3 h-8 w-8 text-[var(--soft-stone)]" />
+                <p className="text-sm font-semibold text-[var(--warm-ink)]">No active escrows. Book a service to get started.</p>
+                <p className="mt-1 text-xs text-[var(--soft-stone)]">Funds are held safely until the work is verified.</p>
+                <ClayButton variant="primary" className="mt-4" onClick={() => navigate('/booking')}>
+                  <ArrowRight className="mr-1 inline h-4 w-4" /> Discover Services
+                </ClayButton>
+              </ClayCard>
+            ) : (
+              escrows.map((escrow, i) => (
+                <motion.div
+                  key={escrow.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="mb-3 rounded-[var(--radius-card)] border border-[rgba(191,179,163,0.5)] bg-[var(--cream)] p-5 shadow-[var(--shadow-soft)]"
+                >
+                  <div className="mb-3 flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-sm font-bold text-[var(--warm-ink)]">{escrow.businessName ?? 'Service provider'}</h3>
+                      <p className="font-label text-[10px] uppercase tracking-widest text-[var(--soft-stone)]">
+                        {escrow.reference}
+                      </p>
+                    </div>
+                    <ClayBadge
+                      label={escrow.canRelease ? 'Ready to release' : escrow.jobStatus === 'IN_PROGRESS' ? 'Work under way' : 'Escrow funded'}
+                      variant={escrow.canRelease ? 'warning' : 'info'}
+                      size="sm"
+                    />
+                  </div>
+                  <div className="mb-3 flex items-baseline gap-1">
+                    <span className="font-headline text-2xl font-black tabular-nums text-[var(--warm-ink)]">
+                      ${escrow.amountUsd.toFixed(2)}
+                    </span>
+                    <span className="text-xs text-[var(--soft-stone)]">in escrow</span>
+                  </div>
 
-        {/* ── Active Escrows ──────────────────────────────────── */}
-        <div id="escrows" className="mb-6 scroll-mt-20">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className={sectionTitle}>Active Escrows</h2>
-            {stats && stats.activeEscrows.count > 0 && (
-              <span className="font-label text-[10px] font-bold uppercase tracking-widest text-[var(--terracotta)]">
-                ${stats.activeEscrows.totalUsd.toFixed(2)} held
-              </span>
+                  {escrow.canRelease ? (
+                    <button
+                      onClick={() => {
+                        setProofTaken(false);
+                        setShowProofModal(escrow);
+                      }}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--clay)] py-3 font-label text-sm font-bold uppercase tracking-widest text-[var(--warm-ink)] shadow-[var(--shadow-btn)] transition-shadow hover:shadow-[var(--shadow-btn-hover)]"
+                    >
+                      <LockOpen className="h-4 w-4" />
+                      <span>Verify &amp; Release Funds (VCAP)</span>
+                    </button>
+                  ) : (
+                    <div className="mt-2 flex items-center gap-2 text-xs text-[var(--soft-stone)]">
+                      <Clock className="h-3 w-3" />
+                      <span>Awaiting provider action — funds stay pooled and earning yield meanwhile</span>
+                    </div>
+                  )}
+                </motion.div>
+              ))
             )}
           </div>
 
-          {escrows.length === 0 ? (
-            <ClayCard className="border border-dashed border-[rgba(191,179,163,0.5)] bg-[var(--warm-sand)]/40 p-8 text-center">
-              <Lock className="mx-auto mb-3 h-8 w-8 text-[var(--soft-stone)]" />
-              <p className="text-sm font-semibold text-[var(--warm-ink)]">No active escrows. Book a service to get started.</p>
-              <p className="mt-1 text-xs text-[var(--soft-stone)]">Funds are held safely until the work is verified.</p>
-              <ClayButton variant="primary" className="mt-4" onClick={() => navigate('/booking')}>
-                <ArrowRight className="mr-1 inline h-4 w-4" /> Discover Services
-              </ClayButton>
-            </ClayCard>
-          ) : (
-            escrows.map((escrow, i) => (
+          {/* ── Discover CTA ────────────────────────────────────── */}
+          <div className="mb-8">
+            <h2 className={`${sectionTitle} mb-4`}>Discover</h2>
+            <Link to="/booking" className="block">
               <motion.div
-                key={escrow.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="mb-3 rounded-[var(--radius-card)] border border-[rgba(191,179,163,0.5)] bg-[var(--cream)] p-5 shadow-[var(--shadow-soft)]"
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center justify-between rounded-[var(--radius-card)] bg-gradient-to-br from-[var(--clay)] to-[var(--terracotta)] p-6 shadow-[var(--shadow-lift)]"
               >
-                <div className="mb-3 flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-sm font-bold text-[var(--warm-ink)]">{escrow.businessName ?? 'Service provider'}</h3>
-                    <p className="font-label text-[10px] uppercase tracking-widest text-[var(--soft-stone)]">
-                      {escrow.reference}
-                    </p>
-                  </div>
-                  <ClayBadge
-                    label={escrow.canRelease ? 'Ready to release' : escrow.jobStatus === 'IN_PROGRESS' ? 'Work under way' : 'Escrow funded'}
-                    variant={escrow.canRelease ? 'warning' : 'info'}
-                    size="sm"
-                  />
+                <div className="text-left">
+                  <p className="font-headline text-xl font-bold text-[var(--cream)]">Find new services</p>
+                  <p className="text-xs text-[var(--cream)]/80">Escrow-protected bookings, trusted pros, real reviews</p>
                 </div>
-                <div className="mb-3 flex items-baseline gap-1">
-                  <span className="font-headline text-2xl font-black tabular-nums text-[var(--warm-ink)]">
-                    ${escrow.amountUsd.toFixed(2)}
-                  </span>
-                  <span className="text-xs text-[var(--soft-stone)]">in escrow</span>
-                </div>
-
-                {escrow.canRelease ? (
-                  <button
-                    onClick={() => {
-                      setProofTaken(false);
-                      setShowProofModal(escrow);
-                    }}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--clay)] py-3 font-label text-sm font-bold uppercase tracking-widest text-[var(--warm-ink)] shadow-[var(--shadow-btn)] transition-shadow hover:shadow-[var(--shadow-btn-hover)]"
-                  >
-                    <LockOpen className="h-4 w-4" />
-                    <span>Verify &amp; Release Funds (VCAP)</span>
-                  </button>
-                ) : (
-                  <div className="mt-2 flex items-center gap-2 text-xs text-[var(--soft-stone)]">
-                    <Clock className="h-3 w-3" />
-                    <span>Awaiting provider action — funds stay pooled and earning yield meanwhile</span>
-                  </div>
-                )}
+                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--cream)]/20 text-[var(--cream)]">
+                  <ArrowRight className="h-5 w-5" />
+                </span>
               </motion.div>
-            ))
-          )}
-        </div>
+            </Link>
+          </div>
 
-        {/* ── Discover CTA ────────────────────────────────────── */}
-        <div className="mb-8">
-          <h2 className={`${sectionTitle} mb-4`}>Discover</h2>
-          <Link to="/booking" className="block">
-            <motion.div
-              whileTap={{ scale: 0.98 }}
-              className="flex items-center justify-between rounded-[var(--radius-card)] bg-gradient-to-br from-[var(--clay)] to-[var(--terracotta)] p-6 shadow-[var(--shadow-lift)]"
-            >
-              <div className="text-left">
-                <p className="font-headline text-xl font-bold text-[var(--cream)]">Find new services</p>
-                <p className="text-xs text-[var(--cream)]/80">Escrow-protected bookings, trusted pros, real reviews</p>
-              </div>
-              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--cream)]/20 text-[var(--cream)]">
-                <ArrowRight className="h-5 w-5" />
-              </span>
-            </motion.div>
-          </Link>
-        </div>
-      </motion.div>
+          {/* ── VCAP proof modal ──────────────────────────────────── */}
+          <AnimatePresence>
+            {showProofModal && (
+              <VcapModal
+                escrow={showProofModal}
+                proofTaken={proofTaken}
+                releasing={releasing}
+                onTakePhoto={() => setProofTaken(true)}
+                onSubmit={() => handleRelease(showProofModal)}
+                onClose={() => {
+                  setShowProofModal(null);
+                  setProofTaken(false);
+                }}
+              />
+            )}
+          </AnimatePresence>
 
-      {/* ── VCAP proof modal ──────────────────────────────────── */}
-      <AnimatePresence>
-        {showProofModal && (
-          <VcapModal
-            escrow={showProofModal}
-            proofTaken={proofTaken}
-            releasing={releasing}
-            onTakePhoto={() => setProofTaken(true)}
-            onSubmit={() => handleRelease(showProofModal)}
-            onClose={() => {
-              setShowProofModal(null);
-              setProofTaken(false);
-            }}
+          {/* Vault ritual — plays on release */}
+          <ClayVaultLock
+            open={showVault}
+            message="Funds Released — rebate on its way."
+            onClose={() => setShowVault(false)}
           />
-        )}
-      </AnimatePresence>
-
-      {/* Vault ritual — plays on release */}
-      <ClayVaultLock
-        open={showVault}
-        message="Funds Released — rebate on its way."
-        onClose={() => setShowVault(false)}
-      />
-    </div>
+        </motion.div>
+      </div>
+    </ErrorBoundary>
   );
 }
 
@@ -377,17 +373,11 @@ function VcapModal({ escrow, proofTaken, releasing, onTakePhoto, onSubmit, onClo
           Verify the work (VCAP)
         </h3>
         <p className="mt-1 text-xs text-[var(--soft-stone)]">
-          Take a photo of the completed job at {escrow.businessName ?? 'the provider'} for ${escrow.amountUsd.toFixed(2)}.
-          On-chain verification confirms it before release.
+          Verify the work (VCAP)
         </p>
-
         <button
           onClick={onTakePhoto}
-          className={`mt-4 flex aspect-video w-full items-center justify-center rounded-2xl border-2 border-dashed transition-colors ${
-            proofTaken
-              ? 'border-[var(--sage)] bg-[var(--sage)]/10'
-              : 'border-[var(--clay)]/50 bg-[var(--warm-sand)]/50 hover:bg-[var(--warm-sand)]'
-          }`}
+          className={`mt-4 flex aspect-video w-full items-center justify-center rounded-2xl border-2 border-dashed transition-colors ${proofTaken ? 'border-[var(--sage)] bg-[var(--sage)]/10' : 'border-[var(--clay)]/50 bg-[var(--warm-sand)]/50 hover:bg-[var(--warm-sand)]'}`}
         >
           {proofTaken ? (
             <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center gap-1.5 text-[var(--sage)]">
@@ -405,11 +395,7 @@ function VcapModal({ escrow, proofTaken, releasing, onTakePhoto, onSubmit, onClo
         <button
           disabled={!proofTaken || releasing}
           onClick={onSubmit}
-          className={`mt-4 w-full rounded-[var(--radius-btn)] py-3 font-label text-sm font-bold uppercase tracking-widest transition-colors ${
-            proofTaken && !releasing
-              ? 'bg-[var(--clay)] text-[var(--cream)] shadow-[var(--shadow-btn)]'
-              : 'cursor-not-allowed bg-[var(--warm-sand)] text-[var(--soft-stone)]'
-          }`}
+          className={`mt-4 w-full rounded-[var(--radius-btn)] py-3 font-label text-sm font-bold uppercase tracking-widest transition-colors ${proofTaken && !releasing ? 'bg-[var(--clay)] text-[var(--cream)] shadow-[var(--shadow-btn)]' : 'cursor-not-allowed bg-[var(--warm-sand)] text-[var(--soft-stone)]'}`}
         >
           {releasing ? 'Releasing…' : 'Verify & Release'}
         </button>
