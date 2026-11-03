@@ -97,6 +97,12 @@ model User {
   usdcBalance             Float                    @default(0)
   activeMode              UserMode                 @default(CUSTOMER)
   preferredMode           String                   @default("business") // "business" | "personal"
+  tosAcceptedAt           DateTime?
+  tosAcceptedIp           String?
+  riskAcceptedAt          DateTime?
+  riskAcceptedIp          String?
+  privacyAcceptedAt       DateTime?
+  privacyAcceptedIp       String?
   username                String?                  @unique
   bio                     String?
   tagline                 String?

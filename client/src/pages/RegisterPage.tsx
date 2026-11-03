@@ -22,6 +22,8 @@ export const RegisterPage: React.FC = () => {
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
+  const [tosAccepted, setTosAccepted] = useState(false);
+  const [riskAccepted, setRiskAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -47,7 +49,7 @@ export const RegisterPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await authService.registerWithCode({ email, password, firstName, lastName, phone, code });
+      const res = await authService.registerWithCode({ email, password, firstName, lastName, phone, code, tosAccepted, riskAccepted });
       const data = res.data?.data ?? res.data;
       if (!data?.accessToken) throw new Error(data?.message || 'Registration failed');
       useAuthStore.setState({ user: data.user, token: data.accessToken, isAuthenticated: true });
@@ -106,7 +108,21 @@ export const RegisterPage: React.FC = () => {
               <label className="block text-xs font-semibold text-[var(--warm-ink)] mb-1">Verification code</label>
               <input value={code} onChange={e => setCode(e.target.value)} inputMode="numeric" className="w-full rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] text-center tracking-widest" placeholder="123456" maxLength={8} />
             </div>
-            <button disabled={loading || code.length < 4} onClick={complete} className="w-full rounded-xl bg-[var(--sage)] px-4 py-3 text-sm font-semibold text-[var(--warm-ink)] transition hover:bg-[var(--sage)] disabled:opacity-50">
+            <div className="space-y-3 mt-4 pt-4 border-t border-[rgba(191,179,163,0.2)]">
+              <div className="flex items-start gap-3 cursor-pointer" onClick={() => setTosAccepted(!tosAccepted)} role="checkbox" aria-checked={tosAccepted} tabIndex={0}>
+                <input type="checkbox" checked={tosAccepted} onChange={() => setTosAccepted(!tosAccepted)} className="mt-1 w-4 h-4 rounded border-[rgba(191,179,163,0.4)] bg-[var(--warm-sand)] text-[var(--clay)] focus:ring-2 focus:ring-[var(--clay)]" />
+                <span className="text-sm text-[var(--soft-stone)] leading-relaxed">
+                  I agree to the <Link to="/terms" className="text-[var(--clay)] hover:underline">Terms of Service</Link>
+                </span>
+              </div>
+              <div className="flex items-start gap-3 cursor-pointer" onClick={() => setRiskAccepted(!riskAccepted)} role="checkbox" aria-checked={riskAccepted} tabIndex={0}>
+                <input type="checkbox" checked={riskAccepted} onChange={() => setRiskAccepted(!riskAccepted)} className="mt-1 w-4 h-4 rounded border-[rgba(191,179,163,0.4)] bg-[var(--warm-sand)] text-[var(--clay)] focus:ring-2 focus:ring-[var(--clay)]" />
+                <span className="text-sm text-[var(--soft-stone)] leading-relaxed">
+                  I have read and accept the <Link to="/risk" className="text-[var(--clay)] hover:underline">Risk Disclosure</Link>
+                </span>
+              </div>
+            </div>
+            <button disabled={loading || code.length < 4 || !tosAccepted || !riskAccepted} onClick={complete} className="w-full rounded-xl bg-[var(--sage)] px-4 py-3 text-sm font-semibold text-[var(--warm-ink)] transition hover:bg-[var(--sage)] disabled:opacity-50">
               {loading ? 'Creating account…' : 'Verify & Create Account'}
             </button>
             <button onClick={requestCode} className="w-full rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] px-4 py-3 text-sm text-[var(--warm-ink)] transition hover:bg-[var(--warm-sand)]">Resend code</button>

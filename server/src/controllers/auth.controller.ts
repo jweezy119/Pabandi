@@ -8,6 +8,15 @@ import bs58 from 'bs58';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 
+function getClientIp(req: Request): string | undefined {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    const ips = Array.isArray(forwarded) ? forwarded : forwarded.split(',');
+    return ips[0].trim() || undefined;
+  }
+  return req.ip || req.socket?.remoteAddress || undefined;
+}
+
 // Auto-link/create trust passport for user (frictionless)
 async function ensureTrustPassport(userId: string, firstName?: string | null) {
   try {
@@ -113,6 +122,8 @@ interface RegisterBody {
   googlePlaceId?: string;
   fiverrUrl?: string;
   upworkUrl?: string;
+  tosAccepted?: boolean;
+  riskAccepted?: boolean;
 }
 
 interface AuthRequest extends Request {
@@ -157,7 +168,7 @@ export const register = async (
   next: NextFunction
 ) => {
   try {
-    const { email, password, firstName, lastName, phone, role, refCode, code } = req.body;
+    const { email, password, firstName, lastName, phone, role, refCode, code, tosAccepted, riskAccepted } = req.body;
 
     if (isReservedTestDomain(email)) {
       return res.status(400).json({
@@ -211,6 +222,8 @@ export const register = async (
           verificationCode: null,
           verificationCodeExpires: null,
           isEmailVerified: true,
+          ...(tosAccepted ? { tosAcceptedAt: new Date(), tosAcceptedIp: getClientIp(req) } : {}),
+          ...(riskAccepted ? { riskAcceptedAt: new Date(), riskAcceptedIp: getClientIp(req) } : {}),
           ...(req.body.businessName && role === 'BUSINESS_OWNER' && {
             business: {
               create: {
@@ -363,6 +376,8 @@ export const register = async (
         trustScore: 50.0,
         verificationTier: 'BASIC',
         gracePeriodUntil,
+        ...(tosAccepted ? { tosAcceptedAt: new Date(), tosAcceptedIp: getClientIp(req) } : {}),
+        ...(riskAccepted ? { riskAcceptedAt: new Date(), riskAcceptedIp: getClientIp(req) } : {}),
         ...(referredByUserId ? { referredById: referredByUserId } : {}),
         // Create the frictionless wallet
         wallet: {

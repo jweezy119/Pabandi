@@ -42,6 +42,9 @@ const TrustPassportPublicPage = lazy(() => import('./pages/public/TrustPassportP
 const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
 const GigBoardPage = lazy(() => import('./pages/GigBoardPage'));
 const GigDetailPage = lazy(() => import('./pages/GigDetailPage'));
+const TermsPage = lazy(() => import('./pages/legal/TermsPage'));
+const RiskPage = lazy(() => import('./pages/legal/RiskPage'));
+const PrivacyPage = lazy(() => import('./pages/legal/PrivacyPage'));
 const BackgroundCheckPage = lazy(() => import('./pages/BackgroundCheckPage'));
 const AgentMarketplacePage = lazy(() => import('./pages/AgentMarketplacePage'));
 const PersonalDashboardPage = lazy(() => import('./pages/me/PersonalDashboardPage'));
@@ -402,8 +405,9 @@ function AnimatedAppRoutes() {
             <Route path="trust/escrow" element={<PlaceholderPage />} />
 
             <Route path="blog" element={<PlaceholderPage />} />
-            <Route path="privacy" element={<PlaceholderPage />} />
-            <Route path="terms" element={<PlaceholderPage />} />
+            <Route path="terms" element={<TermsPage />} />
+            <Route path="privacy" element={<PrivacyPage />} />
+            <Route path="risk" element={<RiskPage />} />
 
             <Route path="auth/callback" element={<AuthCallbackPage />} />
             <Route path="login" element={<AuthPage />} />
