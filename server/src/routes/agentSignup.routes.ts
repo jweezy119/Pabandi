@@ -217,5 +217,3 @@ router.post('/generate-key', authenticate, async (req: Request, res: Response) =
 });
 
 export default router;
-
-export default router;

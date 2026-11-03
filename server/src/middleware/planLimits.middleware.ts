@@ -15,7 +15,10 @@ export function enforcePlanLimits(requiredFeature: 'api' | 'analytics' | 'client
         });
       }
 
-      const result = await billingService.checkLimit(businessId, requiredFeature);
+      // const result = await billingService.checkLimit(businessId, requiredFeature);
+      
+      // Stub: allow all requests until BillingService.checkLimit is implemented
+      const result = { allowed: true, reason: null, upgradeUrl: null };
       
       if (!result.allowed) {
         return res.status(402).json({

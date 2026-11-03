@@ -88,34 +88,7 @@ if (requiredEnvVars.length > 0) {
   // Non-fatal in dev; in production this should be escalated to your deploy monitor
 }
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https:"],
-      frameAncestors: ["'self'"],
-      objectSrc: ["'none'"],
-      baseUri: ["'self'"],
-      formAction: ["'self'"],
-      upgradeInsecureRequests: [],
-    },
-  },
-  crossOriginEmbedderPolicy: false,
-  frameguard: { action: 'sameorigin' },
-  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
-  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  permissionsPolicy: {
-    features: {
-      camera: ["'none'"],
-      microphone: ["'none'"],
-      geolocation: ["'self'"],
-      payment: ["'self'"],
-    },
-  },
-}));
+app.use(helmet());
 app.use(compression());
 const corsOrigins = [
   'http://localhost:3000',
