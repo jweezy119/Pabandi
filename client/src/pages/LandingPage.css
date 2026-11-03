@@ -492,26 +492,27 @@ img {
 }
 
 .btn-primary {
-  background: var(--clay);
-  color: white;
+  background: var(--warm-ink);
+  color: var(--cream);
 }
 
 .btn-primary:hover {
-  background: var(--terracotta);
+  background: var(--clay);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(180, 130, 90, 0.2);
-  color: white;
+  color: var(--cream);
 }
 
 .btn-secondary {
-  background: transparent;
+  background: var(--cream);
   color: var(--warm-ink);
-  border-color: var(--soft-stone);
+  border-color: var(--clay);
 }
 
 .btn-secondary:hover {
-  border-color: var(--clay);
-  color: var(--clay);
+  border-color: var(--warm-ink);
+  background: var(--warm-sand);
+  color: var(--warm-ink);
 }
 
 .btn-large {
@@ -814,6 +815,8 @@ img {
   justify-content: center;
   gap: 2rem;
   flex-wrap: wrap;
+  position: relative;
+  overflow: hidden;
 }
 
 .step-card {
@@ -888,7 +891,7 @@ img {
 
 .cta-section {
   padding: 5rem 0;
-  background: var(--warm-sand);
+  background: var(--cream);
   text-align: center;
 }
 
