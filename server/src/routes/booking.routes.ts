@@ -29,7 +29,7 @@ router.get('/businesses', authenticate, async (req: AuthRequest, res: Response) 
     const businesses = await prisma.business.findMany({
       where,
       include: {
-        user: {
+        owner: {
           select: { firstName: true, lastName: true, email: true },
         },
       },
@@ -47,7 +47,7 @@ router.get('/businesses', authenticate, async (req: AuthRequest, res: Response) 
         city: b.city,
         email: b.email,
         website: b.website,
-        ownerName: b.user ? `${b.user.firstName || ''} ${b.user.lastName || ''}`.trim() : undefined,
+        ownerName: b.owner ? `${b.owner.firstName || ''} ${b.owner.lastName || ''}`.trim() : undefined,
       })),
     });
   } catch (error: unknown) {

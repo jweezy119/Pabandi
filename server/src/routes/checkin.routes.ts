@@ -63,7 +63,7 @@ router.post('/job/:jobId', async (req: AuthRequest, res: Response) => {
 
     const job = await prisma.crmJob.findUnique({
       where: { id: jobId },
-      include: { serviceBusiness: true, client: true, booking: true },
+      include: { serviceBusiness: true, client: true, booking: { include: { client: true } } },
     });
 
     if (!job) {
@@ -208,7 +208,7 @@ router.post('/job/:jobId/checkout', async (req: AuthRequest, res: Response) => {
 
     const job = await prisma.crmJob.findUnique({
       where: { id: jobId },
-      include: { serviceBusiness: true, client: true, booking: true },
+      include: { serviceBusiness: true, client: true, booking: { include: { client: true } } },
     });
 
     if (!job) {
@@ -223,15 +223,15 @@ router.post('/job/:jobId/checkout', async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ success: false, error: 'Job not in progress' });
     }
 
-    const checkoutData = {
+    const checkoutData: { checkedOutAt: Date; status: string; completedAt: Date; checkinLat?: number; checkinLng?: number } = {
       checkedOutAt: new Date(),
       status: 'COMPLETED',
       completedAt: new Date(),
     };
 
     if (lat && lng) {
-      checkoutData['checkinLat'] = lat;
-      checkoutData['checkinLng'] = lng;
+      checkoutData.checkinLat = lat;
+      checkoutData.checkinLng = lng;
     }
 
     await prisma.crmJob.update({
@@ -293,19 +293,14 @@ async function awardPabReward(
     });
 
     // Create reward record
-    await prisma.pabReward.create({
+    await prisma.crmPabReward.create({
       data: {
-        userId: clientId,
-        jobId,
-        amount: totalReward,
-        type: 'CHECKIN_REWARD',
-        metadata: {
-          baseReward,
-          locationVerified,
-          locationBonus,
-          onTimeBonus,
-          distanceMeters,
-        },
+        managerId: clientId,
+        name: `Check-in Reward - Job ${jobId}`,
+        description: JSON.stringify({ type: 'CHECKIN_REWARD', jobId, baseReward, locationVerified, locationBonus, onTimeBonus, distanceMeters }),
+        totalAmount: totalReward,
+        recipientCount: 1,
+        status: 'DRAFT',
       },
     });
 

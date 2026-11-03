@@ -163,10 +163,10 @@ export async function retryPendingAttestations(limit = 20) {
         passportId: attestation.passportId,
         eventType: attestation.eventType,
         referenceId: attestation.referenceId,
-        settlementReceiptSignature: attestation.settlementReceiptSignature,
-        buyerAgentId: attestation.buyerAgentId,
-        sellerAgentId: attestation.sellerAgentId,
-        dataHash: attestation.dataHash,
+        settlementReceiptSignature: attestation.settlementReceiptSignature ?? undefined,
+        buyerAgentId: attestation.buyerAgentId ?? undefined,
+        sellerAgentId: attestation.sellerAgentId ?? undefined,
+        dataHash: attestation.dataHash ?? undefined,
       });
 
       if (result.attestation && result.attestation.status === 'confirmed') {

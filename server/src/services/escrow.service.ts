@@ -249,7 +249,7 @@ export const escrowService = {
       });
 
       await trustCore.emit('m2m.provenance_failed', {
-        passportId: null,
+        passportId: undefined,
         metadata: {
           projectId: escrow.project.id,
           escrowId,
@@ -323,7 +323,7 @@ export const escrowService = {
       if (!target.id) continue;
       try {
         await trustCore.emit('m2m.task_completed', {
-          passportId: null,
+          passportId: undefined,
           metadata: {
             projectId: escrow.project.id,
             escrowId,

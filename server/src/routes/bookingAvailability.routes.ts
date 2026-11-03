@@ -12,7 +12,7 @@ router.get('/:businessSlug', async (req: Request, res: Response) => {
 
     const business = await prisma.business.findUnique({
       where: { slug: businessSlug },
-      select: { id: true, name: true, logoUrl: true, settings: true, trustScore: true, isVerified: true },
+      select: { id: true, name: true, logoUrl: true, settings: true, trustScore: true, isVerified: true, isActive: true },
     });
 
     if (!business || !business.isActive) {
@@ -122,7 +122,7 @@ router.get('/:businessId/slots', async (req: Request, res: Response) => {
     const maxConcurrent = business.maxConcurrentBookings || 1;
 
     [...existingBookings, ...existingJobs].forEach(item => {
-      const slotKey = item.slotStart.toISOString();
+      const slotKey = 'slotStart' in item ? item.slotStart.toISOString() : item.scheduledDate.toISOString();
       slotCapacity.set(slotKey, (slotCapacity.get(slotKey) || 0) + 1);
     });
 
@@ -260,13 +260,18 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ success: false, error: 'Not authorized' });
     }
 
-    const availability = await prisma.businessAvailability.upsert({
-      where: {
-        businessId_dayOfWeek: { businessId, dayOfWeek },
-      },
-      update: { startTime, endTime, slotMinutes, bufferMinutes, isActive },
-      create: { businessId, dayOfWeek, startTime, endTime, slotMinutes, bufferMinutes, isActive },
+    const existing = await prisma.businessAvailability.findFirst({
+      where: { businessId, dayOfWeek },
     });
+
+    const availability = existing
+      ? await prisma.businessAvailability.update({
+          where: { id: existing.id },
+          data: { startTime, endTime, slotMinutes, bufferMinutes, isActive },
+        })
+      : await prisma.businessAvailability.create({
+          data: { businessId, dayOfWeek, startTime, endTime, slotMinutes, bufferMinutes, isActive },
+        });
 
     res.json({ success: true, data: availability });
   } catch (e: any) {
