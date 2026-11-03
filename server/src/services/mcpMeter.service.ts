@@ -242,10 +242,26 @@ export async function meterCall(
         quotaRemaining: quota > 0 ? 0 : undefined,
       };
     }
-    throw { x402: true, requirements: { ...requirements, invalidReason: topUp.reason ?? 'payment not verified' } };
+    throw new X402PaymentRequiredError({ ...requirements, invalidReason: topUp.reason ?? 'payment not verified' });
   }
 
-  throw { x402: true, requirements };
+  throw new X402PaymentRequiredError(requirements);
+}
+
+/**
+ * Thrown when an MCP caller's prepaid balance is insufficient to cover a
+ * tool call. Carries the x402 payment requirements the client must satisfy
+ * before retrying. The MCP dispatch layer converts this to an HTTP 402 with
+ * a `Payment-Required` header so spec-compliant clients can discover how
+ * much to pay and where to send it.
+ */
+export class X402PaymentRequiredError extends Error {
+  readonly requirements: Record<string, unknown>;
+  constructor(requirements: Record<string, unknown>) {
+    super(JSON.stringify(requirements));
+    this.name = 'X402PaymentRequiredError';
+    this.requirements = requirements;
+  }
 }
 
 /**

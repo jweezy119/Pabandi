@@ -30,8 +30,10 @@ import {
   resolveApiKey,
   hashKey,
   type MeterResult,
+  X402PaymentRequiredError,
 } from '../services/mcpMeter.service';
 import { X402_PRICING } from '../config/fees';
+import { encodePaymentRequired, buildPaymentRequired } from '../services/x402.service';
 
 const SERVER_NAME = 'pabandi-trust';
 const SERVER_VERSION = '1.0.0';
@@ -627,14 +629,18 @@ async function dispatch(method: string, params: any, id: any, req?: Request): Pr
       try {
         const out = await callTool(name, args, req);
         return jsonRpc(id, { content: [{ type: 'text', text: JSON.stringify(out, null, 2) }], isError: false });
-      } catch (e: any) {
-        let x402Error: any = null;
-        try { x402Error = JSON.parse(e.message); } catch { /* not x402 */ }
-        if (x402Error?.x402) {
-          return jsonRpc(id, undefined, { code: 402, message: 'Payment required', data: x402Error });
-        }
-        return jsonRpc(id, { content: [{ type: 'text', text: `Error: ${e.message}` }], isError: true });
+    } catch (e: any) {
+      // Re-throw x402 payment errors so mcpHandler can set the Payment-Required
+      // HTTP header. Other errors are handled below as JSON-RPC errors.
+      if (e instanceof X402PaymentRequiredError) throw e;
+
+      let x402Error: any = null;
+      try { x402Error = JSON.parse(e.message); } catch { /* not x402 */ }
+      if (x402Error?.x402) {
+        return jsonRpc(id, undefined, { code: 402, message: 'Payment required', data: x402Error });
       }
+      return jsonRpc(id, { content: [{ type: 'text', text: `Error: ${e.message}` }], isError: true });
+    }
     }
 
     default:
@@ -1534,6 +1540,14 @@ export const mcpHandler = async (req: Request, res: Response) => {
       return res.json(result);
     } catch (e: any) {
       logger.error('[MCP] dispatch error', e);
+      // x402 payment required: serve HTTP 402 with Payment-Required header
+      // so spec-compliant clients can discover how much to pay and where.
+      if (e instanceof X402PaymentRequiredError) {
+        res.setHeader('Payment-Required', encodePaymentRequired(e.requirements));
+        return res.status(402).json(
+          jsonRpc(body.id, undefined, { code: -32603, message: 'Payment required', data: e.requirements }),
+        );
+      }
       const status = e instanceof McpError ? e.statusCode : e.code === 402 ? 402 : 500;
       return res.status(status).json(jsonRpc(body.id, undefined, { code: -32603, message: e.message }));
     }
