@@ -500,6 +500,7 @@ function AnimatedAppRoutes() {
             <Route path="live-selling" element={<PlaceholderPage />} />
             <Route path="freelance" element={<PlaceholderPage />} />
             <Route path="storefront" element={<PlaceholderPage />} />
+          <Route path="gig" element={<Navigate to="/gigs" replace />} />
           <Route path="gigs" element={<GigBoardPage />} />
           <Route path="gigs/:id" element={<GigDetailPage />} />
             <Route path="jobs/:id" element={<PlaceholderPage />} />

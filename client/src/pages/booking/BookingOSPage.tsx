@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { path: '/booking/flow', label: 'Bookings', icon: 'event' },
   { path: '/booking#favorites', label: 'Favorites', icon: 'favorite' },
   { path: '/booking#map', label: 'Map', icon: 'map' },
+  { path: '/gig', label: 'Gig OS', icon: 'work' },
 ];
 
 const CATEGORIES = [
@@ -49,7 +50,7 @@ function ClayStat({ icon, value, label, trend, color = 'terracotta' }: { icon: s
 function BusinessCard({ business }: { business: any }) {
   return (
     <Link
-      to={`/book/slug/${business.id}`}
+      to={`/booking/flow/${business.id}?location=${encodeURIComponent(location || '')}`}
       className="block"
     >
       <ClayCard className="overflow-hover" hover={true}>
@@ -88,6 +89,7 @@ export default function BookingOSPage() {
   const [clientSearch, setClientSearch] = useState('');
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loadingBusinesses, setLoadingBusinesses] = useState(true);
+  const [location, setLocation] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -158,6 +160,35 @@ export default function BookingOSPage() {
           <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Find restaurants, salons, spas, and more near you.</p>
         </div>
 
+        {/* Location input */}
+        <div className="rounded-xl p-4" style={{ background: 'var(--warm-sand)', border: '1px solid rgba(191,179,163,0.3)' }}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--clay)' }}>location_on</span>
+              <label className="text-xs font-medium text-[var(--soft-stone)]">Service location</label>
+            </div>
+            <input
+              type="text"
+              placeholder="Enter city, neighborhood, or address…"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && setSearchQuery(e.target.value)}
+              className="flex-1 px-4 py-2.5 rounded-lg text-sm focus:outline-none"
+              style={{ background: 'white', border: '1px solid rgba(191,179,163,0.3)', color: 'var(--warm-ink)' }}
+            />
+            <button
+              onClick={() => navigate(`/booking?search=${encodeURIComponent(searchQuery.trim())}&category=${selectedCategory || 'ALL'}&location=${encodeURIComponent(location.trim())}`)}
+              className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
+              style={{ background: 'var(--clay)', color: 'white', boxShadow: 'var(--shadow-soft)' }}
+            >
+              Search
+            </button>
+          </div>
+          {location && (
+            <p className="text-xs mt-2 text-[var(--soft-stone)]">Showing results near: {location}</p>
+          )}
+        </div>
+
         {/* Halal compliance banner */}
         <HalalBanner compact />
 
@@ -182,7 +213,7 @@ export default function BookingOSPage() {
             image: b.logoUrl,
             trustScore: b.trustScore,
           }))}
-          onResultClick={(id) => navigate(`/book/slug/${id}`)}
+          onResultClick={(id) => navigate(`/booking/flow/${id}?location=${encodeURIComponent(location || '')}`)}
         />
 
         {/* Shared ContactOS Clients */}
