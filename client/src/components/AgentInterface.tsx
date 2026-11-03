@@ -98,28 +98,28 @@ export const AgentInterface: React.FC = () => {
               placeholder="Agent Name"
               value={agentName}
               onChange={(e) => setAgentName(e.target.value)}
-              className="px-4 py-2.5 rounded-lg border border-white/10 bg-white/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
+              className="px-4 py-2.5 rounded-lg border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
             />
             <input
               type="text"
               placeholder="Wallet Address (Solana)"
               value={agentWallet}
               onChange={(e) => setAgentWallet(e.target.value)}
-              className="px-4 py-2.5 rounded-lg border border-white/10 bg-white/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
+              className="px-4 py-2.5 rounded-lg border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
             />
             <input
               type="text"
               placeholder="Capabilities (comma-separated)"
               value={agentCapabilities}
               onChange={(e) => setAgentCapabilities(e.target.value)}
-              className="px-4 py-2.5 rounded-lg border border-white/10 bg-white/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
+              className="px-4 py-2.5 rounded-lg border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
             />
             <input
               type="text"
               placeholder="Description"
               value={agentDescription}
               onChange={(e) => setAgentDescription(e.target.value)}
-              className="px-4 py-2.5 rounded-lg border border-white/10 bg-white/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
+              className="px-4 py-2.5 rounded-lg border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
             />
           </div>
           <div className="mt-4">
@@ -145,12 +145,12 @@ export const AgentInterface: React.FC = () => {
               placeholder="Enter agent slug or ID"
               value={selectedAgentId}
               onChange={(e) => setSelectedAgentId(e.target.value)}
-              className="flex-1 px-4 py-2.5 rounded-lg border border-white/10 bg-white/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
+              className="flex-1 px-4 py-2.5 rounded-lg border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
             />
           </div>
 
           {agentProfile && (
-            <div className="mt-4 p-4 rounded-lg bg-white/5 border border-white/10">
+            <div className="mt-4 p-4 rounded-lg bg-[var(--warm-sand)]/5 border border-[var(--soft-stone)]/10">
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <div className="font-bold text-slate-100">{agentProfile.name}</div>
@@ -190,7 +190,7 @@ export const AgentInterface: React.FC = () => {
               )}
 
               {/* Task Completion */}
-              <div className="mt-4 pt-3 border-t border-white/10">
+              <div className="mt-4 pt-3 border-t border-[var(--soft-stone)]/10">
                 <h4 className="text-xs font-bold text-slate-200 mb-2">Complete Task</h4>
                 <div className="flex gap-2">
                   <Button
@@ -213,7 +213,7 @@ export const AgentInterface: React.FC = () => {
             <h3 className="text-sm font-bold text-slate-100 mb-4">Top Agents</h3>
             <div className="space-y-2">
               {leaderboard.slice(0, 10).map((agent: any, i: number) => (
-                <div key={agent.id || i} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                <div key={agent.id || i} className="flex items-center justify-between p-3 rounded-lg bg-[var(--warm-sand)]/5">
                   <div className="flex items-center gap-3">
                     <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-indigo-500/20 text-indigo-300">
                       {i + 1}

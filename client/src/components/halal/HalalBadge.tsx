@@ -16,7 +16,7 @@ const sizeMap = {
 const variantMap = {
   default: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
   outline: 'bg-transparent text-emerald-400 border-emerald-500/30',
-  solid: 'bg-emerald-500 text-white border-emerald-500',
+  solid: 'bg-emerald-500 text-[var(--warm-ink)] border-emerald-500',
 };
 
 export const HalalBadge: React.FC<HalalBadgeProps> = ({

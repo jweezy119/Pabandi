@@ -118,7 +118,7 @@ export default function ProView() {
                 animate={{ opacity: 1, y: -6, scale: 1.15 }}
                 exit={{ opacity: 0, y: -22, scale: 0.9 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 14 }}
-                className="mb-1 inline-flex items-center gap-1 rounded-full bg-[var(--sage)] px-3 py-1 text-xs font-black text-white shadow-lg"
+                className="mb-1 inline-flex items-center gap-1 rounded-full bg-[var(--sage)] px-3 py-1 text-xs font-black text-[var(--warm-ink)] shadow-lg"
               >
                 +{money(rebate)} yield credit
               </motion.span>

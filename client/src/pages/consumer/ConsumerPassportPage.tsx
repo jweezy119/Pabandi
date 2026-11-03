@@ -124,7 +124,7 @@ export default function ConsumerPassportPage() {
                 ? navigator.share({ title: 'My Pabandi Trust Passport', url })
                 : navigator.clipboard.writeText(url).then(() => alert('Passport link copied!'));
             }}
-            className="mt-6 w-full py-4 rounded-xl bg-amber-500 text-white font-bold flex items-center justify-center gap-2 shadow-lg hover:bg-amber-600 transition-colors"
+            className="mt-6 w-full py-4 rounded-xl bg-amber-500 text-[var(--warm-ink)] font-bold flex items-center justify-center gap-2 shadow-lg hover:bg-amber-600 transition-colors"
           >
             <span>🔗</span> Share Passport
           </button>

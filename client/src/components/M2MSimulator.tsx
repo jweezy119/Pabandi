@@ -40,7 +40,7 @@ export default function M2MSimulator() {
               transition={{ duration: 0.5 }}
             >
               <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-[#8A9A7B] to-[#6B7B5B] flex items-center justify-center shadow-lg">
-                <Bot className="w-8 h-8 text-white" />
+                <Bot className="w-8 h-8 text-[var(--warm-ink)]" />
               </div>
               <span className="text-sm text-[#F5EFE6] font-semibold">Buyer Agent</span>
               <AnimatePresence>
@@ -130,7 +130,7 @@ export default function M2MSimulator() {
               transition={{ duration: 0.5 }}
             >
               <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-[#C97B5A] to-[#A85A3C] flex items-center justify-center shadow-lg">
-                <User className="w-8 h-8 text-white" />
+                <User className="w-8 h-8 text-[var(--warm-ink)]" />
               </div>
               <span className="text-sm text-[#F5EFE6] font-semibold">Seller Agent</span>
               <AnimatePresence>

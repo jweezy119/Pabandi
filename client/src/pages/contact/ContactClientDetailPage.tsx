@@ -145,7 +145,7 @@ export default function ContactClientDetailPage() {
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 clay-heading">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-[var(--clay)] text-white text-2xl font-bold shadow-md">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-[var(--clay)] text-[var(--warm-ink)] text-2xl font-bold shadow-md">
               {client.name.charAt(0)}
             </div>
             <div>

@@ -146,7 +146,7 @@ export const NotificationsPage: React.FC = () => {
               {t === 'all' ? <EnvelopeOpenIcon className="w-4 h-4" /> : <ExclamationCircleIcon className="w-4 h-4" />}
               {t === 'all' ? 'All' : 'Unread'}
               {tab === 'unread' && unreadCount > 0 && (
-                <span className="w-5 h-5 min-w-5 rounded-full bg-[var(--terracotta)] text-white text-[10px] font-bold flex items-center justify-center">
+                <span className="w-5 h-5 min-w-5 rounded-full bg-[var(--terracotta)] text-[var(--warm-ink)] text-[10px] font-bold flex items-center justify-center">
                   {unreadCount}
                 </span>
               )}

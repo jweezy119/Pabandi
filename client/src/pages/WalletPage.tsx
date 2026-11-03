@@ -24,7 +24,7 @@ export default function WalletPage() {
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-[var(--warm-ink)] to-[#1a1816] p-8 rounded-3xl text-white shadow-lg relative overflow-hidden">
+            <div className="bg-gradient-to-br from-[var(--warm-ink)] to-[#1a1816] p-8 rounded-3xl text-[var(--warm-ink)] shadow-lg relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
               
               <div className="flex items-center gap-2 opacity-80 mb-2">
@@ -37,7 +37,7 @@ export default function WalletPage() {
                 <Button variant="primary" onClick={handleAction} className="bg-white text-[var(--warm-ink)] hover:bg-[rgba(255,255,255,0.9)] border-none">
                   Deposit
                 </Button>
-                <Button variant="secondary" onClick={handleAction} className="bg-[rgba(255,255,255,0.1)] text-white hover:bg-[rgba(255,255,255,0.2)] border-none">
+                <Button variant="secondary" onClick={handleAction} className="bg-[rgba(255,255,255,0.1)] text-[var(--warm-ink)] hover:bg-[rgba(255,255,255,0.2)] border-none">
                   Withdraw
                 </Button>
               </div>

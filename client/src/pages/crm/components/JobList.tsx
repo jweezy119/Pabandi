@@ -32,7 +32,7 @@ export function JobList({ jobs, onJobClick }: { jobs: Job[], onJobClick: (id: st
           className="max-w-xs"
         />
         <select 
-          className="border border-white/10 bg-black/40 text-white rounded-lg px-4"
+          className="border border-white/10 bg-[var(--cream)]/40 text-[var(--warm-ink)] rounded-lg px-4"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         >
@@ -45,9 +45,9 @@ export function JobList({ jobs, onJobClick }: { jobs: Job[], onJobClick: (id: st
 
       <div className="grid gap-4">
         {filteredJobs.map(job => (
-          <Card key={job.id} className="p-4 flex justify-between items-center cursor-pointer hover:border-white/20 transition-colors" onClick={() => onJobClick(job.id)}>
+          <Card key={job.id} className="p-4 flex justify-between items-center cursor-pointer hover:border-[var(--soft-stone)]/20 transition-colors" onClick={() => onJobClick(job.id)}>
             <div>
-              <div className="font-semibold text-white">{job.serviceType}</div>
+              <div className="font-semibold text-[var(--warm-ink)]">{job.serviceType}</div>
               <div className="text-sm text-gray-400">
                 {new Date(job.scheduledDate).toLocaleDateString()} at {job.scheduledTime}
               </div>
@@ -60,7 +60,7 @@ export function JobList({ jobs, onJobClick }: { jobs: Job[], onJobClick: (id: st
               }`}>
                 {job.status}
               </span>
-              <div className="text-white font-medium">${job.price}</div>
+              <div className="text-[var(--warm-ink)] font-medium">${job.price}</div>
             </div>
           </Card>
         ))}

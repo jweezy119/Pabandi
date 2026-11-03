@@ -213,7 +213,7 @@ export default function AgentProfilePage() {
                 credLoading
                   ? 'bg-[rgba(191,179,163,0.3)] text-[var(--soft-stone)] cursor-not-allowed'
                   : credentials
-                    ? 'bg-[var(--sage)] text-white hover:bg-[var(--sage)]/90'
+                    ? 'bg-[var(--sage)] text-[var(--warm-ink)] hover:bg-[var(--sage)]/90'
                     : 'bg-[rgba(191,179,163,0.3)] text-[var(--dusty-rose)] border border-[var(--dusty-rose)] hover:bg-[var(--dusty-rose)]/10'
               }`}
             >
@@ -238,7 +238,7 @@ export default function AgentProfilePage() {
                   Copy JSON
                 </button>
               </div>
-              <div className="bg-black/20 rounded-lg p-4 font-mono text-xs overflow-x-auto whitespace-pre break-all text-[var(--soft-stone)]">
+              <div className="bg-[var(--warm-sand)]/20 rounded-lg p-4 font-mono text-xs overflow-x-auto whitespace-pre break-all text-[var(--soft-stone)]">
                 {JSON.stringify(credentials, null, 2)}
               </div>
             </div>

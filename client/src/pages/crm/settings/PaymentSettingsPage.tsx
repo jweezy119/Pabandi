@@ -158,7 +158,7 @@ export function PaymentSettingsPage() {
                 <div key={m.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-[var(--warm-sand)] rounded-xl gap-4">
                   <div>
                     <div className="font-bold flex items-center gap-2 text-[var(--warm-ink)]">
-                      <span className="px-2 py-0.5 bg-[var(--clay)] text-white text-xs rounded">{railLabels[m.railId] || m.railId}</span>
+                      <span className="px-2 py-0.5 bg-[var(--clay)] text-[var(--warm-ink)] text-xs rounded">{railLabels[m.railId] || m.railId}</span>
                       {m.displayName}
                     </div>
                     <div className="text-sm text-[var(--soft-stone)] truncate max-w-sm mt-1">

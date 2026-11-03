@@ -173,7 +173,7 @@ export function InvoiceFormModal({ onClose, onSave, clients: initialClients = []
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 md:p-6" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--cream)]/30 p-4 md:p-6" onClick={onClose}>
       <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl border border-[var(--soft-stone)]/30 max-h-[95vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-6 clay-heading">
           <h3 className="text-lg font-bold" style={{ color: 'var(--warm-ink)' }}>Create Invoice</h3>

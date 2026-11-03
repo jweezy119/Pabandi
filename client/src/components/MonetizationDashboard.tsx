@@ -62,7 +62,7 @@ export default function MonetizationDashboard() {
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="p-4 rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl"
+            className="p-4 rounded-xl border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 backdrop-blur-xl"
           >
             <div className="flex items-center gap-2 mb-2">
               <stat.icon size={16} style={{ color: stat.color }} />
@@ -82,7 +82,7 @@ export default function MonetizationDashboard() {
             buyerId: 'marketplace-partner',
           });
         }}
-        className="w-full p-3 text-xs font-bold uppercase rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90 transition-opacity"
+        className="w-full p-3 text-xs font-bold uppercase rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-[var(--warm-ink)] hover:opacity-90 transition-opacity"
       >
         Generate Trust Data Bundle for Sale
       </button>

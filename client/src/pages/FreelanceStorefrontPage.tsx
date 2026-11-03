@@ -77,7 +77,7 @@ export default function FreelanceStorefrontPage() {
         {/* Owner Edit Ability */}
         {user && (
           <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button className="bg-black/50 backdrop-blur-sm border border-white/20 text-[var(--warm-ink)] px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-black/70">
+            <button className="bg-[var(--warm-sand)]/50 backdrop-blur-sm border border-[var(--soft-stone)]/20 text-[var(--warm-ink)] px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-[var(--terracotta)]/20">
               <span>✏️</span> Edit Storefront Banner
             </button>
           </div>
@@ -225,7 +225,7 @@ export default function FreelanceStorefrontPage() {
                   <div ref={messagesEndRef} />
                 </div>
 
-                <form onSubmit={handleChatSubmit} className="p-4 bg-black/20 border-t border-[var(--soft-stone)]/30">
+                <form onSubmit={handleChatSubmit} className="p-4 bg-[var(--warm-sand)]/20 border-t border-[var(--soft-stone)]/30">
                   <div className="flex items-center gap-2 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl p-2 focus-within:border-indigo-500/50 transition-colors">
                     <input 
                       type="text" 

@@ -38,24 +38,24 @@ export default function DisputeButton({ contextType, contextId, label = 'Dispute
         value={againstId}
         onChange={e => setAgainstId(e.target.value)}
         placeholder="Disputed party user id"
-        className="w-full px-2 py-1.5 rounded-lg text-xs mb-2 bg-white/5 text-slate-200 border border-white/10 focus:outline-none focus:border-rose-400"
+        className="w-full px-2 py-1.5 rounded-lg text-xs mb-2 bg-[var(--warm-sand)]/5 text-slate-200 border border-[var(--soft-stone)]/10 focus:outline-none focus:border-rose-400"
       />
       <textarea
         value={description}
         onChange={e => setDescription(e.target.value)}
         placeholder="What went wrong?"
         rows={2}
-        className="w-full px-2 py-1.5 rounded-lg text-xs bg-white/5 text-slate-200 border border-white/10 focus:outline-none focus:border-rose-400"
+        className="w-full px-2 py-1.5 rounded-lg text-xs bg-[var(--warm-sand)]/5 text-slate-200 border border-[var(--soft-stone)]/10 focus:outline-none focus:border-rose-400"
       />
       <div className="flex gap-2 mt-2">
         <button
           onClick={() => mutation.mutate()}
           disabled={mutation.isLoading || !againstId || !description}
-          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50 transition-colors"
+          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-500 text-[var(--warm-ink)] hover:bg-rose-600 disabled:opacity-50 transition-colors"
         >
           {mutation.isLoading ? 'Filing…' : 'Submit'}
         </button>
-        <button onClick={() => setOpen(false)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 transition-colors">
+        <button onClick={() => setOpen(false)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--warm-sand)]/5 text-slate-300 border border-[var(--soft-stone)]/10 hover:bg-[var(--warm-sand)]/10 transition-colors">
           Cancel
         </button>
       </div>

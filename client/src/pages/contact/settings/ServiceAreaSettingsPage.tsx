@@ -323,7 +323,7 @@ function MapPreview({ address, lat, lng, radius }: { address: string; lat: numbe
         </div>
       )}
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+        <div className="absolute inset-0 flex items-center justify-center bg-[var(--cream)]/30">
           <div className="animate-spin w-8 h-8 border-2 border-[var(--clay)] border-t-transparent rounded-full" />
         </div>
       )}

@@ -236,7 +236,7 @@ export default function ValuesPreferencesPage() {
                 />
                 <button
                   onClick={addCustomValue}
-                  className="px-4 py-2 rounded-xl bg-[var(--clay)] text-white text-sm font-medium hover:bg-[var(--terracotta)]"
+                  className="px-4 py-2 rounded-xl bg-[var(--clay)] text-[var(--warm-ink)] text-sm font-medium hover:bg-[var(--terracotta)]"
                 >
                   Add
                 </button>

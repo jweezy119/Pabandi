@@ -315,7 +315,7 @@ export default function ClientListTable({
           screen, and the selection can span a full page, so the count is
           stated explicitly rather than "are you sure?" */}
       {confirmingDelete && onBulkDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={() => setConfirmingDelete(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--cream)]/30 p-4" onClick={() => setConfirmingDelete(false)}>
           <div
             className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl border border-[rgba(191,179,163,0.3)]"
             onClick={(e) => e.stopPropagation()}

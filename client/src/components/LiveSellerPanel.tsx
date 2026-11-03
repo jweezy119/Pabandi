@@ -133,7 +133,7 @@ export default function LiveSellerPanel({ businessId, user }: { businessId?: str
                       <div className="relative">
                         <textarea
                           readOnly
-                          className="w-full h-24 bg-black/50 border border-outline-variant/30 rounded-xl p-3 text-[10px] text-zinc-300 font-mono resize-none"
+                          className="w-full h-24 bg-[var(--cream)]/50 border border-outline-variant/30 rounded-xl p-3 text-[10px] text-zinc-300 font-mono resize-none"
                           value={`<a href="https://pabandi.com/s/${businessId}?mode=instant" style="display:inline-block;padding:12px 24px;background:#14F195;color:#000;font-weight:bold;text-decoration:none;border-radius:8px;text-align:center;width:100%;max-width:300px;font-family:sans-serif;">Book with escrow — powered by Pabandi</a>`}
                         />
                         <button

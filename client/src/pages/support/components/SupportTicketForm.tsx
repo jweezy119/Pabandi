@@ -31,7 +31,7 @@ export function SupportTicketForm({ onClose, onSuccess }: { onClose: () => void,
           <label className="block text-sm font-medium text-slate-300 mb-1">Subject</label>
           <input 
             type="text" required value={subject} onChange={e => setSubject(e.target.value)}
-            className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-3 py-2 text-white"
+            className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-3 py-2 text-[var(--warm-ink)]"
             placeholder="Brief summary of the issue"
           />
         </div>
@@ -40,7 +40,7 @@ export function SupportTicketForm({ onClose, onSuccess }: { onClose: () => void,
             <label className="block text-sm font-medium text-slate-300 mb-1">Category</label>
             <select 
               value={category} onChange={e => setCategory(e.target.value)}
-              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-3 py-2 text-white"
+              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-3 py-2 text-[var(--warm-ink)]"
             >
               <option>General</option>
               <option>Technical Issue</option>
@@ -52,7 +52,7 @@ export function SupportTicketForm({ onClose, onSuccess }: { onClose: () => void,
             <label className="block text-sm font-medium text-slate-300 mb-1">Priority</label>
             <select 
               value={priority} onChange={e => setPriority(e.target.value)}
-              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-3 py-2 text-white"
+              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-3 py-2 text-[var(--warm-ink)]"
             >
               <option>Low</option>
               <option>Normal</option>
@@ -65,7 +65,7 @@ export function SupportTicketForm({ onClose, onSuccess }: { onClose: () => void,
           <label className="block text-sm font-medium text-slate-300 mb-1">Description</label>
           <textarea 
             required rows={4} value={description} onChange={e => setDescription(e.target.value)}
-            className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-3 py-2 text-white"
+            className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-3 py-2 text-[var(--warm-ink)]"
             placeholder="Please describe your issue in detail..."
           />
         </div>

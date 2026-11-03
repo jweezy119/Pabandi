@@ -102,7 +102,7 @@ export const UnifiedInbox: React.FC<UnifiedInboxProps> = ({ businessId }) => {
               onClick={() => setFilterChannel(ch)}
               className={`px-3 py-1 rounded-full text-xs font-medium ${
                 filterChannel === ch
-                  ? 'bg-indigo-600 text-white'
+                  ? 'bg-indigo-600 text-[var(--warm-ink)]'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -161,7 +161,7 @@ export const UnifiedInbox: React.FC<UnifiedInboxProps> = ({ businessId }) => {
                 <button
                   onClick={() => sendReply(msg)}
                   disabled={sending}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700 disabled:opacity-50"
+                  className="px-4 py-2 bg-indigo-600 text-[var(--warm-ink)] rounded-md text-sm hover:bg-indigo-700 disabled:opacity-50"
                 >
                   {sending ? '...' : 'Send'}
                 </button>

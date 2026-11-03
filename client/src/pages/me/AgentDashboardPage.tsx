@@ -156,7 +156,7 @@ export default function AgentDashboardPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-                activeTab === tab.id ? 'bg-[var(--clay)] text-white' : 'bg-[var(--warm-sand)]/50 text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'
+                activeTab === tab.id ? 'bg-[var(--clay)] text-[var(--warm-ink)]' : 'bg-[var(--warm-sand)]/50 text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'
               }`}
             >
               <tab.icon size={16} />
@@ -256,7 +256,7 @@ export default function AgentDashboardPage() {
                   <button
                     onClick={handleCreateTask}
                     disabled={saving}
-                    className="flex-1 py-2 rounded-xl bg-[var(--clay)] text-white text-sm font-medium hover:bg-[var(--terracotta)]"
+                    className="flex-1 py-2 rounded-xl bg-[var(--clay)] text-[var(--warm-ink)] text-sm font-medium hover:bg-[var(--terracotta)]"
                   >
                     {saving ? 'Creating...' : 'Create Task'}
                   </button>
@@ -319,7 +319,7 @@ export default function AgentDashboardPage() {
                 <button
                   onClick={handleSendMessage}
                   disabled={saving}
-                  className="w-full py-2 rounded-xl bg-[var(--clay)] text-white text-sm font-medium hover:bg-[var(--terracotta)]"
+                  className="w-full py-2 rounded-xl bg-[var(--clay)] text-[var(--warm-ink)] text-sm font-medium hover:bg-[var(--terracotta)]"
                 >
                   {saving ? 'Sending...' : 'Send Message'}
                 </button>

@@ -37,7 +37,7 @@ export function SettingsHubPage() {
               className="cursor-pointer hover:shadow-md transition-shadow group flex items-start gap-4"
               onClick={() => navigate(card.path)}
             >
-              <div className="w-10 h-10 rounded-full bg-[var(--clay)]/10 flex items-center justify-center text-[var(--clay)] group-hover:bg-[var(--clay)] group-hover:text-white transition-colors">
+              <div className="w-10 h-10 rounded-full bg-[var(--clay)]/10 flex items-center justify-center text-[var(--clay)] group-hover:bg-[var(--clay)] group-hover:text-[var(--warm-ink)] transition-colors">
                 <span className="material-symbols-outlined text-[20px]">{card.icon}</span>
               </div>
               <div className="flex-1">

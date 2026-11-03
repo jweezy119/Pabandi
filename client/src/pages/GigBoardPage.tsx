@@ -261,7 +261,7 @@ export default function GigBoardPage() {
             onClick={() => setActiveTab('discover')}
             className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
               activeTab === 'discover'
-                ? 'bg-[var(--clay)] text-white shadow-[var(--shadow-soft)]'
+                ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-[var(--shadow-soft)]'
                 : 'bg-[var(--cream)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)] border border-[var(--soft-stone)]/30'
             }`}
           >
@@ -272,7 +272,7 @@ export default function GigBoardPage() {
               onClick={() => setActiveTab('mine')}
               className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
                 activeTab === 'mine'
-                  ? 'bg-[var(--clay)] text-white shadow-[var(--shadow-soft)]'
+                  ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-[var(--shadow-soft)]'
                   : 'bg-[var(--cream)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)] border border-[var(--soft-stone)]/30'
               }`}
             >
@@ -462,7 +462,7 @@ export default function GigBoardPage() {
 
       {/* Post Gig Modal */}
       {postOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setPostOpen(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--warm-sand)]/50 backdrop-blur-sm" onClick={() => setPostOpen(false)}>
           <div className="bg-[var(--warm-sand)] rounded-2xl p-6 max-w-md w-full border border-[var(--soft-stone)]/30" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-4">{heroCta}</h3>
             <form onSubmit={handlePostGig} className="space-y-4">
@@ -510,7 +510,7 @@ export default function GigBoardPage() {
 
       {/* Bid Modal */}
       {bidOpenGig && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setBidOpenGig(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--warm-sand)]/50 backdrop-blur-sm" onClick={() => setBidOpenGig(null)}>
           <div className="bg-[var(--warm-sand)] rounded-2xl p-6 max-w-md w-full border border-[var(--soft-stone)]/30" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-4">Place Your Bid</h3>
             <p className="text-sm text-[var(--soft-stone)] mb-4">Enter your quote in USD for this project.</p>

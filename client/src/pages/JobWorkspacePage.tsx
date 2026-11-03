@@ -97,7 +97,7 @@ const JobWorkspacePage: React.FC = () => {
         </button>
 
         {/* Job Header */}
-        <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-8 mb-8 relative overflow-hidden">
+        <div className="bg-[var(--cream)]/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-8 mb-8 relative overflow-hidden">
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-[var(--clay)]/10 rounded-full blur-3xl" />
           
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
@@ -127,7 +127,7 @@ const JobWorkspacePage: React.FC = () => {
           
           {/* Main Action Area */}
           <div className="md:col-span-2 space-y-8">
-            <div className="bg-gray-900/30 border border-gray-800 rounded-2xl p-6">
+            <div className="bg-[var(--cream)]/30 border border-gray-800 rounded-2xl p-6">
               <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-4 flex items-center gap-2">
                 <UploadCloud className="w-5 h-5 text-[var(--clay)]" /> Submit Deliverables
               </h2>
@@ -166,13 +166,13 @@ const JobWorkspacePage: React.FC = () => {
               <button
                 onClick={handleArbitration}
                 disabled={arbitrating || job.status !== 'CHECKED_IN'}
-                className={`w-full py-3 rounded-xl font-bold transition-all border ${arbitrating || job.status !== 'CHECKED_IN' ? 'bg-gray-900/50 text-gray-600 border-gray-800 cursor-not-allowed' : 'bg-[var(--terracotta)]/10 text-[var(--terracotta)] border-red-500/30 hover:bg-[var(--terracotta)]/20'}`}
+                className={`w-full py-3 rounded-xl font-bold transition-all border ${arbitrating || job.status !== 'CHECKED_IN' ? 'bg-[var(--cream)]/50 text-gray-600 border-gray-800 cursor-not-allowed' : 'bg-[var(--terracotta)]/10 text-[var(--terracotta)] border-red-500/30 hover:bg-[var(--terracotta)]/20'}`}
               >
                 {arbitrating ? 'Summoning...' : job.status !== 'CHECKED_IN' ? 'Submit Work First' : 'Summon Arbitrator'}
               </button>
             </div>
 
-            <div className="bg-gray-900/30 border border-gray-800 rounded-2xl p-6">
+            <div className="bg-[var(--cream)]/30 border border-gray-800 rounded-2xl p-6">
               <h3 className="text-sm font-bold text-[var(--warm-ink)] mb-4 flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-[var(--soft-stone)]" /> Recent Notes
               </h3>

@@ -177,7 +177,7 @@ export default function StandardView() {
               initial={{ scale: 0, rotate: -20 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: 'spring', stiffness: 220, damping: 12, delay: 0.15 }}
-              className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--sage)] text-white shadow-lg"
+              className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--sage)] text-[var(--warm-ink)] shadow-lg"
             >
               <CheckCircle2 className="h-8 w-8" />
             </motion.div>
@@ -248,7 +248,7 @@ function TooltipBubble({ text }: { text: string }) {
       onFocus={() => setOpen(true)}
       onBlur={() => setOpen(false)}
       onClick={() => setOpen((o) => !o)}
-      className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--sage)] text-white shadow"
+      className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--sage)] text-[var(--warm-ink)] shadow"
       aria-label={text}
     >
       <Info className="h-3.5 w-3.5" />

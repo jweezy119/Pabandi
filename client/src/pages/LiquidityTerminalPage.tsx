@@ -144,7 +144,7 @@ export default function LiquidityTerminalPage() {
               placeholder="x-api-key"
               value={apiKey}
               onChange={e => setApiKey(e.target.value)}
-              className="rounded-lg border border-[var(--soft-stone)]/30 bg-black/50 px-4 py-2 text-sm text-[var(--warm-ink)] focus:border-indigo-500 focus:outline-none"
+              className="rounded-lg border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/50 px-4 py-2 text-sm text-[var(--warm-ink)] focus:border-indigo-500 focus:outline-none"
             />
             {authError && <p className="text-xs text-rose-400">{authError}</p>}
             <Button type="submit" className="w-full">Connect Terminal</Button>
@@ -170,7 +170,7 @@ export default function LiquidityTerminalPage() {
         className="hidden"
       />
 
-      <header className="sticky top-0 z-10 border-b border-white/[0.05] bg-black/80 backdrop-blur-sm px-4 py-3 sm:px-6 flex justify-between items-center">
+      <header className="sticky top-0 z-10 border-b border-white/[0.05] bg-[var(--cream)]/80 backdrop-blur-sm px-4 py-3 sm:px-6 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <h1 className="font-headline text-xl font-bold text-[var(--warm-ink)]">LP Terminal</h1>
           <div className="flex items-center gap-1.5 rounded-full bg-[var(--cream)] px-2.5 py-1 text-[10px] font-bold tracking-widest text-[var(--warm-ink)]/60">

@@ -38,7 +38,7 @@ export function TaskList({
                   onClick={() => onToggleTask(task.id, task.completed)}
                   className={`w-6 h-6 rounded flex items-center justify-center transition-colors ${
                     task.completed
-                      ? 'bg-[var(--sage)] text-white'
+                      ? 'bg-[var(--sage)] text-[var(--warm-ink)]'
                       : 'border border-[var(--soft-stone)] text-transparent hover:border-[var(--clay)]'
                   }`}
                 >

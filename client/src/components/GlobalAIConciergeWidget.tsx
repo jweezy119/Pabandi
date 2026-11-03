@@ -49,18 +49,18 @@ export default function GlobalAIConciergeWidget() {
 return (
     <div className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+80px)] md:bottom-6 right-4 md:right-6 z-50">
       {isOpen ? (
-        <div className="bg-[#0f172a] shadow-2xl rounded-2xl w-[calc(100vw-2rem)] sm:w-80 md:w-96 flex flex-col h-[500px] max-h-[calc(100vh-120px)] border border-white/10 overflow-hidden">
+        <div className="bg-[#0f172a] shadow-2xl rounded-2xl w-[calc(100vw-2rem)] sm:w-80 md:w-96 flex flex-col h-[500px] max-h-[calc(100vh-120px)] border border-[var(--soft-stone)]/10 overflow-hidden">
           <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-4 flex justify-between items-center">
-            <h3 className="text-white font-bold flex items-center gap-2">
+            <h3 className="text-[var(--warm-ink)] font-bold flex items-center gap-2">
               <span className="text-xl">✨</span> Pabandi AI Concierge
             </h3>
             <div className="flex items-center gap-3">
               {wallet?.address && (
-                <div className="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-md text-[10px] font-bold text-white uppercase tracking-wider">
+                <div className="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-md text-[10px] font-bold text-[var(--warm-ink)] uppercase tracking-wider">
                   <span>◎</span> Web3 Profile Active
                 </div>
               )}
-              <button onClick={() => setIsOpen(false)} className="text-indigo-200 hover:text-white">
+              <button onClick={() => setIsOpen(false)} className="text-indigo-200 hover:text-[var(--warm-ink)]">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -81,7 +81,7 @@ return (
             )}
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                <div className={`px-4 py-2 rounded-2xl max-w-[85%] ${msg.role === 'user' ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-br-none' : 'bg-white/5 text-slate-200 border border-white/10 rounded-bl-none'}`}>
+                <div className={`px-4 py-2 rounded-2xl max-w-[85%] ${msg.role === 'user' ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-[var(--warm-ink)] rounded-br-none' : 'bg-[var(--warm-sand)]/5 text-slate-200 border border-[var(--soft-stone)]/10 rounded-bl-none'}`}>
                   {msg.content}
                 </div>
                 {msg.proposal && (
@@ -92,7 +92,7 @@ return (
                     <p className="text-xs text-slate-400">{msg.proposal.numberOfGuests} Guests</p>
                     <button 
                       onClick={() => handleBook(msg.proposal)}
-                      className="mt-2 w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-bold py-1.5 rounded hover:opacity-90 transition-opacity"
+                      className="mt-2 w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-[var(--warm-ink)] text-xs font-bold py-1.5 rounded hover:opacity-90 transition-opacity"
                     >
                       Book Now (1% Cashback)
                     </button>
@@ -102,7 +102,7 @@ return (
             ))}
             {loading && (
               <div className="flex items-start">
-                <div className="bg-white/5 px-4 py-2 rounded-2xl rounded-bl-none border border-white/10">
+                <div className="bg-[var(--warm-sand)]/5 px-4 py-2 rounded-2xl rounded-bl-none border border-[var(--soft-stone)]/10">
                   <div className="flex space-x-1">
                     <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
                     <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
@@ -113,18 +113,18 @@ return (
             )}
           </div>
 
-          <form onSubmit={handleSubmit} className="p-3 border-t border-white/10 bg-[#0f172a] flex gap-2">
+          <form onSubmit={handleSubmit} className="p-3 border-t border-[var(--soft-stone)]/10 bg-[#0f172a] flex gap-2">
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="E.g., Find a romantic Italian place for 2 on Friday at 7pm..."
-              className="flex-1 px-3 py-2 border border-white/10 rounded-full text-sm bg-white/5 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="flex-1 px-3 py-2 border border-[var(--soft-stone)]/10 rounded-full text-sm bg-[var(--warm-sand)]/5 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
             <button 
               type="submit" 
               disabled={loading || !query.trim()}
-              className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full w-10 h-10 flex items-center justify-center hover:opacity-90 disabled:opacity-50 transition-opacity"
+              className="bg-gradient-to-r from-indigo-500 to-purple-600 text-[var(--warm-ink)] rounded-full w-10 h-10 flex items-center justify-center hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
             </button>
@@ -133,7 +133,7 @@ return (
       ) : (
         <button
           onClick={() => setIsOpen(true)}
-          className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:scale-105 transition-all duration-200"
+          className="bg-gradient-to-r from-indigo-500 to-purple-600 text-[var(--warm-ink)] rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:scale-105 transition-all duration-200"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
         </button>

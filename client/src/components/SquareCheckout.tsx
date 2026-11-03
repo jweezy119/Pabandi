@@ -158,7 +158,7 @@ export default function SquareCheckout({
       <button
         onClick={createCheckout}
         disabled={status === 'creating'}
-        className="w-full py-3 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full py-3 bg-slate-900 text-[var(--warm-ink)] font-medium rounded-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         <span className="text-lg">💳</span>
         {status === 'creating' ? 'Redirecting...' : `Pay with Card (Square) — $${amount.toFixed(2)}`}

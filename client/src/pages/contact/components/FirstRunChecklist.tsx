@@ -210,7 +210,7 @@ export function FirstRunChecklist() {
                   </div>
                   <Link
                     to={step.href}
-                    className="shrink-0 px-3 py-1.5 rounded-full text-xs font-medium text-white whitespace-nowrap"
+                    className="shrink-0 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--warm-ink)] whitespace-nowrap"
                     style={{ background: 'var(--clay)' }}
                   >
                     {step.cta}

@@ -235,7 +235,7 @@ export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: 
   return (
     <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[12vh] px-4">
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-[var(--cream)]/40 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />

@@ -185,7 +185,7 @@ function QuestLog({ completed }: { completed: QuestId[] }) {
             >
               <span
                 className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-black ${
-                  done ? 'bg-[var(--sage)] text-white' : 'border-[var(--soft-stone)]/40'
+                  done ? 'bg-[var(--sage)] text-[var(--warm-ink)]' : 'border-[var(--soft-stone)]/40'
                 }`}
               >
                 {done ? <Check className="h-3.5 w-3.5" /> : i + 1}

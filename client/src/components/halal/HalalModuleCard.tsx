@@ -79,10 +79,10 @@ export const HalalModuleCard: React.FC<HalalModuleCardProps> = ({
           🛡️ Halal
         </Badge>
       </div>
-      <h3 className="font-bold text-white/90 text-base mb-1 group-hover:text-emerald-300 transition-colors">
+      <h3 className="font-bold text-[var(--warm-ink)]/90 text-base mb-1 group-hover:text-emerald-300 transition-colors">
         {content.title}
       </h3>
-      <p className="text-xs text-white/50 leading-relaxed mb-3">
+      <p className="text-xs text-[var(--warm-ink)]/50 leading-relaxed mb-3">
         {language === 'en' ? content.desc : content.descUr}
       </p>
       <div className="text-[10px] font-semibold text-emerald-400/80 bg-emerald-500/8 rounded-lg px-2 py-1">

@@ -85,7 +85,7 @@ export const EscrowInterface: React.FC = () => {
             placeholder="Enter your email to view escrows"
             value={userEmail}
             onChange={(e) => setUserEmail(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-lg border border-white/10 bg-white/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500 transition-all"
+            className="w-full px-4 py-2.5 rounded-lg border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500 transition-all"
           />
         </Surface>
 
@@ -98,28 +98,28 @@ export const EscrowInterface: React.FC = () => {
               placeholder="Item Title"
               value={formData.itemTitle}
               onChange={(e) => setFormData({ ...formData, itemTitle: e.target.value })}
-              className="px-4 py-2.5 rounded-lg border border-white/10 bg-white/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
+              className="px-4 py-2.5 rounded-lg border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
             />
             <input
               type="number"
               placeholder="Amount (USD)"
               value={formData.amount}
               onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-              className="px-4 py-2.5 rounded-lg border border-white/10 bg-white/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
+              className="px-4 py-2.5 rounded-lg border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
             />
             <input
               type="email"
               placeholder="Seller Email"
               value={formData.sellerEmail}
               onChange={(e) => setFormData({ ...formData, sellerEmail: e.target.value })}
-              className="px-4 py-2.5 rounded-lg border border-white/10 bg-white/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
+              className="px-4 py-2.5 rounded-lg border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
             />
             <input
               type="email"
               placeholder="Buyer Email (optional)"
               value={formData.buyerEmail}
               onChange={(e) => setFormData({ ...formData, buyerEmail: e.target.value })}
-              className="px-4 py-2.5 rounded-lg border border-white/10 bg-white/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
+              className="px-4 py-2.5 rounded-lg border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
             />
           </div>
           <div className="mt-4">
@@ -148,7 +148,7 @@ export const EscrowInterface: React.FC = () => {
           ) : (
             <div className="space-y-3">
               {activeEscrows.map((escrow: any) => (
-                <div key={escrow.id} className="p-4 rounded-lg bg-white/5 border border-white/10">
+                <div key={escrow.id} className="p-4 rounded-lg bg-[var(--warm-sand)]/5 border border-[var(--soft-stone)]/10">
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <div className="font-semibold text-slate-100">{escrow.itemTitle || 'Untitled'}</div>
@@ -196,7 +196,7 @@ export const EscrowInterface: React.FC = () => {
             <h3 className="text-sm font-bold text-slate-100 mb-4">History ({completedEscrows.length})</h3>
             <div className="space-y-2">
               {completedEscrows.map((escrow: any) => (
-                <div key={escrow.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                <div key={escrow.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--warm-sand)]/5">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full" style={{ background: STATUS_COLORS[escrow.status] || '#666' }} />
                     <div>
@@ -226,14 +226,14 @@ export const EscrowInterface: React.FC = () => {
                 placeholder="Delivered Data Hash (SHA-256)"
                 value={verifyForm.deliveredDataHash}
                 onChange={(e) => setVerifyForm({ ...verifyForm, deliveredDataHash: e.target.value })}
-                className="px-4 py-2.5 rounded-lg border border-white/10 bg-white/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
+                className="px-4 py-2.5 rounded-lg border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
               />
               <input
                 type="text"
                 placeholder="Source URL (optional)"
                 value={verifyForm.sourceUrl}
                 onChange={(e) => setVerifyForm({ ...verifyForm, sourceUrl: e.target.value })}
-                className="px-4 py-2.5 rounded-lg border border-white/10 bg-white/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
+                className="px-4 py-2.5 rounded-lg border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"
               />
             </div>
             <div className="mt-4 flex gap-3">

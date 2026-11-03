@@ -48,7 +48,7 @@ export function PartnerDirectoryPage() {
             {partners.map(partner => (
               <Surface key={partner.id} className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--clay)] to-[var(--muted-ochre)] flex items-center justify-center text-white font-bold text-lg">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--clay)] to-[var(--muted-ochre)] flex items-center justify-center text-[var(--warm-ink)] font-bold text-lg">
                     {partner.name[0]}
                   </div>
                   <div className="flex-1">

@@ -40,6 +40,8 @@ const SandboxApp = lazy(() => import('./pages/sandbox/SandboxApp'));
 const DealSimulatorPage = lazy(() => import('./pages/sandbox/DealSimulator'));
 const TrustPassportPublicPage = lazy(() => import('./pages/public/TrustPassportPage'));
 const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
+const GigBoardPage = lazy(() => import('./pages/GigBoardPage'));
+const GigDetailPage = lazy(() => import('./pages/GigDetailPage'));
 const BackgroundCheckPage = lazy(() => import('./pages/BackgroundCheckPage'));
 const AgentMarketplacePage = lazy(() => import('./pages/AgentMarketplacePage'));
 const PersonalDashboardPage = lazy(() => import('./pages/me/PersonalDashboardPage'));
@@ -391,7 +393,7 @@ function AnimatedAppRoutes() {
             {/* Post a project + instant Trust-Score matching */}
             <Route path="marketplace/post" element={<PostProjectPage />} />
             <Route path="marketplace/freelancers" element={<PlaceholderPage />} />
-            <Route path="marketplace/gigs" element={<PlaceholderPage />} />
+            <Route path="marketplace/gigs" element={<Navigate to="/gigs" replace />} />
             <Route path="marketplace/hospitality" element={<PlaceholderPage />} />
             <Route path="trust/passports" element={<PlaceholderPage />} />
             <Route path="trust/deposits" element={<PlaceholderPage />} />
@@ -498,8 +500,8 @@ function AnimatedAppRoutes() {
             <Route path="live-selling" element={<PlaceholderPage />} />
             <Route path="freelance" element={<PlaceholderPage />} />
             <Route path="storefront" element={<PlaceholderPage />} />
-            <Route path="gigs" element={<PlaceholderPage />} />
-            <Route path="gigs/:id" element={<PlaceholderPage />} />
+          <Route path="gigs" element={<GigBoardPage />} />
+          <Route path="gigs/:id" element={<GigDetailPage />} />
             <Route path="jobs/:id" element={<PlaceholderPage />} />
             <Route path="jobs" element={<PlaceholderPage />} />
             <Route path="workspace/:id" element={<PlaceholderPage />} />

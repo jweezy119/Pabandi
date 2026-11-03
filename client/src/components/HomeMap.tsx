@@ -131,7 +131,7 @@ export default function HomeMap({ center, selectedPlace, userLocation, places = 
                     onClick={() => {
                       onPlaceSelect?.(place);
                     }}
-                    className="mt-2 w-full bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-xs font-bold py-1.5 rounded-lg hover:opacity-90"
+                    className="mt-2 w-full bg-gradient-to-r from-indigo-500 to-violet-500 text-[var(--warm-ink)] text-xs font-bold py-1.5 rounded-lg hover:opacity-90"
                   >
                     View
                   </button>
@@ -146,7 +146,7 @@ export default function HomeMap({ center, selectedPlace, userLocation, places = 
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-300/80">Selected</p>
-              <h3 className="text-base font-bold text-white leading-snug truncate">{selectedPlace.name}</h3>
+              <h3 className="text-base font-bold text-[var(--warm-ink)] leading-snug truncate">{selectedPlace.name}</h3>
               {selectedPlace.subtitle && <p className="text-sm text-slate-300 truncate">{selectedPlace.subtitle}</p>}
             </div>
             <button
@@ -155,7 +155,7 @@ export default function HomeMap({ center, selectedPlace, userLocation, places = 
                 onPlaceSelect?.(selectedPlace);
               }}
               aria-label="Center map"
-              className="shrink-0 w-9 h-9 rounded-full bg-white/10 text-slate-200 hover:bg-white/20 flex items-center justify-center"
+              className="shrink-0 w-9 h-9 rounded-full bg-[var(--warm-sand)]/10 text-slate-200 hover:bg-white/20 flex items-center justify-center"
             >
               <span className="material-symbols-outlined text-[18px]">near_me</span>
             </button>
@@ -165,7 +165,7 @@ export default function HomeMap({ center, selectedPlace, userLocation, places = 
               href={`https://www.google.com/maps/search/?api=1&query=${selectedPlace.lat},${selectedPlace.lng}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 text-center text-xs font-bold bg-gradient-to-r from-indigo-500 to-violet-500 text-white py-2.5 rounded-xl hover:opacity-90"
+              className="flex-1 text-center text-xs font-bold bg-gradient-to-r from-indigo-500 to-violet-500 text-[var(--warm-ink)] py-2.5 rounded-xl hover:opacity-90"
             >
               Open in Google Maps
             </a>
@@ -173,7 +173,7 @@ export default function HomeMap({ center, selectedPlace, userLocation, places = 
               href={`https://www.openstreetmap.org/?mlat=${selectedPlace.lat}&mlon=${selectedPlace.lng}#map=16/${selectedPlace.lat}/${selectedPlace.lng}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3 py-2.5 rounded-xl border border-indigo-400/30 text-xs font-bold text-slate-200 hover:bg-white/10"
+              className="px-3 py-2.5 rounded-xl border border-indigo-400/30 text-xs font-bold text-slate-200 hover:bg-[var(--warm-sand)]/10"
             >
               OSM
             </a>

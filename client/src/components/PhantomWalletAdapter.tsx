@@ -61,7 +61,7 @@ function PhantomWalletAdapter({ onConnect, onDisconnect }: PhantomWalletAdapterP
   return (
     <div className="phantom-wallet-adapter">
       {!connected ? (
-        <button onClick={connect} className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 font-semibold text-white shadow-lg shadow-purple-500/25 transition-all hover:scale-105">
+        <button onClick={connect} className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 font-semibold text-[var(--warm-ink)] shadow-lg shadow-purple-500/25 transition-all hover:scale-105">
           Connect Phantom Wallet
         </button>
       ) : (

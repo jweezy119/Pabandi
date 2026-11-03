@@ -61,7 +61,7 @@ export default function PaymentLinkGenerator() {
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0f172a]/50 backdrop-blur-xl p-6">
+    <div className="rounded-2xl border border-[var(--soft-stone)]/10 bg-[#0f172a]/50 backdrop-blur-xl p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-300 shrink-0">
@@ -91,7 +91,7 @@ export default function PaymentLinkGenerator() {
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
-                className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-slate-100 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none transition-all"
+                className="w-full bg-[var(--warm-sand)]/5 border border-[var(--soft-stone)]/10 rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-slate-100 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none transition-all"
               />
             </div>
           </div>
@@ -106,7 +106,7 @@ export default function PaymentLinkGenerator() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="e.g. Vintage leather jacket"
-                className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-100 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none transition-all"
+                className="w-full bg-[var(--warm-sand)]/5 border border-[var(--soft-stone)]/10 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-100 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none transition-all"
               />
             </div>
           </div>
@@ -115,14 +115,14 @@ export default function PaymentLinkGenerator() {
         <button
           type="submit"
           disabled={generateLink.isLoading}
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-headline font-bold text-sm transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
+          className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-[var(--warm-ink)] font-headline font-bold text-sm transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
         >
           {generateLink.isLoading ? 'Generating...' : 'Create Escrow Link'}
         </button>
       </form>
 
       {generatedLink && (
-        <div className="mt-6 pt-6 border-t border-white/10 animate-in fade-in slide-in-from-top-2">
+        <div className="mt-6 pt-6 border-t border-[var(--soft-stone)]/10 animate-in fade-in slide-in-from-top-2">
           <p className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">
             Your Checkout Link
           </p>
@@ -131,11 +131,11 @@ export default function PaymentLinkGenerator() {
               type="text"
               readOnly
               value={generatedLink}
-              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-indigo-300 font-medium outline-none truncate"
+              className="flex-1 bg-[var(--warm-sand)]/5 border border-[var(--soft-stone)]/10 rounded-xl px-4 py-3 text-sm text-indigo-300 font-medium outline-none truncate"
             />
             <button
               onClick={handleCopy}
-              className="shrink-0 p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-slate-300 transition-colors"
+              className="shrink-0 p-3 bg-[var(--warm-sand)]/5 hover:bg-[var(--warm-sand)]/10 border border-[var(--soft-stone)]/10 rounded-xl text-slate-300 transition-colors"
               title="Copy to clipboard"
             >
               {copied ? <CheckIcon className="w-5 h-5 text-green-400" /> : <DocumentDuplicateIcon className="w-5 h-5" />}

@@ -40,7 +40,7 @@ export default function SupportTicketsPage() {
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">My Tickets</h1>
+          <h1 className="text-2xl font-bold text-[var(--warm-ink)] tracking-tight">My Tickets</h1>
           <p className="text-slate-400">View and track your support requests.</p>
         </div>
         <ClayButton variant="primary" onClick={() => setIsFormOpen(true)}>
@@ -66,7 +66,7 @@ export default function SupportTicketsPage() {
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-white">{ticket.subject}</span>
+                    <span className="text-sm font-medium text-[var(--warm-ink)]">{ticket.subject}</span>
                     <span className="text-xs text-slate-500">#{ticket.id.slice(0,8)}</span>
                   </div>
                   <div className="text-xs text-slate-400">

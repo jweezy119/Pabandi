@@ -93,7 +93,7 @@ export const TelegramSetup: React.FC<TelegramSetupProps> = ({ businessId, onSetu
           <button
             onClick={testConnection}
             disabled={testing}
-            className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="flex-1 bg-blue-600 text-[var(--warm-ink)] py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
             {testing ? 'Testing...' : 'Test & Connect'}
           </button>

@@ -30,14 +30,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link to={isBusiness ? "/dashboard" : "/me"} className="flex items-center gap-2">
             {isBusiness ? (
               <>
-                <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)] flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)] flex items-center justify-center text-[var(--warm-ink)] font-bold text-sm shadow-sm">
                   P
                 </div>
                 <span className="hidden sm:inline font-bold text-[var(--text-main)] font-headline">PabandiOS</span>
               </>
             ) : (
               <>
-                <div className="w-8 h-8 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                <div className="w-8 h-8 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-[var(--warm-ink)] font-bold text-sm shadow-sm">
                   {user?.firstName?.[0] || user?.name?.[0] || 'U'}
                 </div>
                 <span className="hidden sm:inline font-bold text-[var(--text-main)] font-headline">{user?.firstName || user?.name || 'Personal'}</span>

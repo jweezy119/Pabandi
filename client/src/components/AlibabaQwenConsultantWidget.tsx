@@ -89,7 +89,7 @@ You can ask me questions like:
       <div className="flex items-center justify-between pb-4 border-b border-outline-variant/30">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#FF6A00] to-[#FF1200] flex items-center justify-center shadow-md">
-            <SparklesIcon className="h-5 w-5 text-white animate-pulse" />
+            <SparklesIcon className="h-5 w-5 text-[var(--warm-ink)] animate-pulse" />
           </div>
           <div>
             <h2 className="text-sm font-black text-on-surface flex items-center gap-1.5">
@@ -119,7 +119,7 @@ You can ask me questions like:
                 className={`max-w-[85%] rounded-2xl p-4 text-sm font-body leading-relaxed shadow-sm ${
                   isQwen 
                     ? 'bg-surface-container border border-outline-variant/20 text-on-surface rounded-tl-sm' 
-                    : 'bg-gradient-to-r from-[#FF6A00] to-[#FF1200] text-white rounded-tr-sm'
+                    : 'bg-gradient-to-r from-[#FF6A00] to-[#FF1200] text-[var(--warm-ink)] rounded-tr-sm'
                 }`}
               >
                 {isQwen ? (
@@ -144,7 +144,7 @@ You can ask me questions like:
                 ) : (
                   <p className="text-xs">{msg.text}</p>
                 )}
-                <span className={`block text-[9px] mt-1.5 text-right ${isQwen ? 'text-on-surface-variant' : 'text-white/70'}`}>
+                <span className={`block text-[9px] mt-1.5 text-right ${isQwen ? 'text-on-surface-variant' : 'text-[var(--warm-ink)]/70'}`}>
                   {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
@@ -178,7 +178,7 @@ You can ask me questions like:
         <button 
           type="submit"
           disabled={!input.trim() || mutation.isLoading}
-          className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#FF6A00] to-[#FF1200] text-white flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-50 shadow-md shrink-0"
+          className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#FF6A00] to-[#FF1200] text-[var(--warm-ink)] flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-50 shadow-md shrink-0"
         >
           <PaperAirplaneIcon className="h-4.5 w-4.5 -rotate-45" />
         </button>

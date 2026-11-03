@@ -18,11 +18,11 @@ export const HalalStakingInfo: React.FC<HalalStakingInfoProps> = ({
       <div className={`rounded-xl bg-white/[0.03] border border-white/8 p-3 ${className}`}>
         <div className="flex items-center gap-2 mb-1">
           <span className="text-sm">💰</span>
-          <span className="text-xs font-bold text-white/90">
+          <span className="text-xs font-bold text-[var(--warm-ink)]/90">
             {language === 'en' ? 'Halal Staking' : 'Halal Staking'}
           </span>
         </div>
-        <p className="text-[10px] text-white/50 leading-relaxed">
+        <p className="text-[10px] text-[var(--warm-ink)]/50 leading-relaxed">
           {language === 'en'
             ? 'Stake $PAB to earn profit-sharing from platform revenue. No fixed interest — pure Mudarabah.'
             : '$PAB stake karein aur platform revenue se profit-sharing kamayein. Koi fixed interest nahi — siraf Mudarabah.'}
@@ -36,10 +36,10 @@ export const HalalStakingInfo: React.FC<HalalStakingInfoProps> = ({
       <div className="flex items-center gap-3 mb-4">
         <span className="text-2xl">💰</span>
         <div>
-          <h3 className="font-bold text-white/90 text-base">
+          <h3 className="font-bold text-[var(--warm-ink)]/90 text-base">
             {language === 'en' ? 'Halal Staking — Mudarabah Model' : 'Halal Staking — Mudarabah Model'}
           </h3>
-          <p className="text-xs text-white/50 mt-0.5">
+          <p className="text-xs text-[var(--warm-ink)]/50 mt-0.5">
             {language === 'en'
               ? 'Stake $PAB to earn profit-sharing from platform revenue. No fixed interest — pure Mudarabah.'
               : '$PAB stake karein aur platform revenue se profit-sharing kamayein. Koi fixed interest nahi — siraf Mudarabah.'}
@@ -50,10 +50,10 @@ export const HalalStakingInfo: React.FC<HalalStakingInfoProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="rounded-xl bg-white/[0.03] border border-white/8 p-3">
           <div className="text-lg mb-1">📊</div>
-          <div className="text-xs font-bold text-white/80 mb-1">
+          <div className="text-xs font-bold text-[var(--warm-ink)]/80 mb-1">
             {language === 'en' ? 'Real Revenue Share' : 'Real Revenue Share'}
           </div>
-          <p className="text-[10px] text-white/50 leading-relaxed">
+          <p className="text-[10px] text-[var(--warm-ink)]/50 leading-relaxed">
             {language === 'en'
               ? 'Earn a proportional share of actual platform revenue from bookings, freight, and services.'
               : 'Bookings, freight, aur services se haqeeqi platform revenue ka hissa kamayein.'}
@@ -61,10 +61,10 @@ export const HalalStakingInfo: React.FC<HalalStakingInfoProps> = ({
         </div>
         <div className="rounded-xl bg-white/[0.03] border border-white/8 p-3">
           <div className="text-lg mb-1">⚖️</div>
-          <div className="text-xs font-bold text-white/80 mb-1">
+          <div className="text-xs font-bold text-[var(--warm-ink)]/80 mb-1">
             {language === 'en' ? 'Risk-Sharing' : 'Risk-Sharing'}
           </div>
-          <p className="text-[10px] text-white/50 leading-relaxed">
+          <p className="text-[10px] text-[var(--warm-ink)]/50 leading-relaxed">
             {language === 'en'
               ? 'If the platform earns no revenue, stakers earn no profit. Shared risk and reward.'
               : 'Agar platform revenue nahi kamata, toh stakers ko bhi munafa nahi milta. Mushtarika risk.'}
@@ -72,10 +72,10 @@ export const HalalStakingInfo: React.FC<HalalStakingInfoProps> = ({
         </div>
         <div className="rounded-xl bg-white/[0.03] border border-white/8 p-3">
           <div className="text-lg mb-1">🛡️</div>
-          <div className="text-xs font-bold text-white/80 mb-1">
+          <div className="text-xs font-bold text-[var(--warm-ink)]/80 mb-1">
             {language === 'en' ? 'No Riba' : 'Koi Riba Nahi'}
           </div>
-          <p className="text-[10px] text-white/50 leading-relaxed">
+          <p className="text-[10px] text-[var(--warm-ink)]/50 leading-relaxed">
             {language === 'en'
               ? 'Unlike traditional DeFi, no guaranteed fixed returns. Profit comes from real economic activity.'
               : 'Traditional DeFi ke kabil nahi, koi fixed returns nahi. Munafa haqeeqi economic activity se ata hai.'}
@@ -87,7 +87,7 @@ export const HalalStakingInfo: React.FC<HalalStakingInfoProps> = ({
         <Badge tone="success" className="text-[10px]">
           🛡️ Sharia-Compliant
         </Badge>
-        <span className="text-[10px] text-white/40">
+        <span className="text-[10px] text-[var(--warm-ink)]/40">
           {language === 'en'
             ? 'Mudarabah profit-sharing · No interest · No speculation'
             : 'Mudarabah profit-sharing · Koi sood nahi · Koi speculation nahi'}

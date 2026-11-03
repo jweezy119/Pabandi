@@ -114,7 +114,7 @@ export function NotificationBell() {
       >
         <BellIcon className="w-5 h-5 text-[var(--warm-ink)]" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 w-5 h-5 min-w-5 rounded-full bg-[var(--terracotta)] text-white text-[10px] font-bold flex items-center justify-center">
+          <span className="absolute -top-0.5 -right-0.5 w-5 h-5 min-w-5 rounded-full bg-[var(--terracotta)] text-[var(--warm-ink)] text-[10px] font-bold flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}

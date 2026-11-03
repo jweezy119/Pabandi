@@ -81,7 +81,7 @@ const TenantPortalPage: React.FC = () => {
         <div className="text-center p-8 rounded-2xl bg-white shadow-sm border border-[var(--soft-stone)]/30 max-w-md">
           <h1 className="text-2xl font-bold text-[var(--warm-ink)] mb-2">Portal not found</h1>
           <p className="text-[var(--soft-stone)]">{err}</p>
-          <Link to="/" className="inline-block mt-4 px-6 py-2 bg-[var(--clay)] text-white rounded-xl text-sm font-medium">Go to Pabandi</Link>
+          <Link to="/" className="inline-block mt-4 px-6 py-2 bg-[var(--clay)] text-[var(--warm-ink)] rounded-xl text-sm font-medium">Go to Pabandi</Link>
         </div>
       </div>
     );
@@ -129,7 +129,7 @@ const TenantPortalPage: React.FC = () => {
               </div>
               <textarea value={applyForm.message} onChange={e => setApplyForm({ ...applyForm, message: e.target.value })} placeholder="Tell the manager about yourself..." rows={3} className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-[var(--warm-ink)] text-sm mt-3" />
               {applyStatus === 'error' && <p className="mt-2 text-sm text-[var(--terracotta)]">{applyMsg}</p>}
-              <button onClick={apply} disabled={applyStatus === 'working' || !applyForm.email} className="mt-4 px-6 py-2.5 text-white rounded-xl text-sm font-semibold disabled:opacity-50 transition" style={{ background: `linear-gradient(135deg, ${brand}, #A85A3C)` }}>
+              <button onClick={apply} disabled={applyStatus === 'working' || !applyForm.email} className="mt-4 px-6 py-2.5 text-[var(--warm-ink)] rounded-xl text-sm font-semibold disabled:opacity-50 transition" style={{ background: `linear-gradient(135deg, ${brand}, #A85A3C)` }}>
                 {applyStatus === 'working' ? 'Submitting…' : 'Submit application'}
               </button>
             </>
@@ -154,7 +154,7 @@ const TenantPortalPage: React.FC = () => {
               </div>
               <div className="text-right">
                 {l.rentAmount && <div className="text-2xl font-bold" style={{ color: brand }}>${l.rentAmount}<span className="text-sm text-[var(--soft-stone)] font-normal">/{l.rentPeriod === 'MONTH' ? 'mo' : 'wk'}</span></div>}
-                <button onClick={() => { setSelectedProperty(l.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="mt-2 px-4 py-2 text-white rounded-lg text-sm font-semibold transition" style={{ background: `linear-gradient(135deg, ${brand}, #A85A3C)` }}>Apply</button>
+                <button onClick={() => { setSelectedProperty(l.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="mt-2 px-4 py-2 text-[var(--warm-ink)] rounded-lg text-sm font-semibold transition" style={{ background: `linear-gradient(135deg, ${brand}, #A85A3C)` }}>Apply</button>
               </div>
             </div>
           ))}

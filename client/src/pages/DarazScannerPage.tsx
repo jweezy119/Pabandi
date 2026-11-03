@@ -133,7 +133,7 @@ export default function DarazScannerPage() {
                    <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] mb-2 tracking-widest">Sample Scraped Reviews ({result.rawReviewsScraped})</p>
                    <div className="space-y-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
                      {result.sampleReviews.map((review: string, i: number) => (
-                       <div key={i} className="text-xs text-[var(--soft-stone)] bg-black/20 p-2 rounded-lg border border-[var(--soft-stone)]/30">
+                       <div key={i} className="text-xs text-[var(--soft-stone)] bg-[var(--warm-sand)]/20 p-2 rounded-lg border border-[var(--soft-stone)]/30">
                          "{review}"
                        </div>
                      ))}

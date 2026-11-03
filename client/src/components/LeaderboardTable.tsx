@@ -26,7 +26,7 @@ export default function LeaderboardTable({ entries }: { entries: Entry[] }) {
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-xs text-slate-400 border-b border-white/10">
+          <tr className="text-xs text-slate-400 border-b border-[var(--soft-stone)]/10">
             <th className="text-left py-2 px-2">#</th>
             <th className="text-left py-2">Agent</th>
             <th className="text-right py-2 px-2">Rep</th>
@@ -35,7 +35,7 @@ export default function LeaderboardTable({ entries }: { entries: Entry[] }) {
         </thead>
         <tbody>
           {entries.map((entry, i) => (
-            <tr key={entry.id} className={`border-b border-white/5 hover:bg-white/5 ${i < 3 ? 'bg-white/5' : ''}`}>
+            <tr key={entry.id} className={`border-b border-white/5 hover:bg-[var(--warm-sand)]/5 ${i < 3 ? 'bg-[var(--warm-sand)]/5' : ''}`}>
               <td className="py-2 px-2 text-center">
                 {getMedalEmoji(i) || <span className="text-slate-400">{i + 1}</span>}
               </td>

@@ -38,7 +38,7 @@ export function JobFormModal({ isOpen, onClose, onSubmit, clients }: JobFormModa
       <div className="space-y-4">
         <div className="space-y-1">
           <label className="block text-sm text-gray-400 mb-1">Client</label>
-          {/* Was `bg-black/40 border-white/10 text-white` — a dark control sitting on a
+          {/* Was `bg-[var(--cream)]/40 border-white/10 text-[var(--warm-ink)]` — a dark control sitting on a
               clay form, which is why this screen never looked like the rest of
               Contact OS. */}
           <select

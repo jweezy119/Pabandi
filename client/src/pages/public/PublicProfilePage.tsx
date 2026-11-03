@@ -307,19 +307,19 @@ function ShowcaseLayout({ profile }: { profile: PublicProfile }) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
         <div className="relative px-6 md:px-10 pt-20 pb-8">
           <div className="flex flex-col md:flex-row items-start md:items-end gap-5">
-            <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl border-4 border-white/20 overflow-hidden shadow-2xl" style={{ background: profile.accentColor + '40' }}>
+            <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl border-4 border-[var(--soft-stone)]/20 overflow-hidden shadow-2xl" style={{ background: profile.accentColor + '40' }}>
               {profile.avatarUrl ? (
                 <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-3xl md:text-4xl font-bold text-white">
+                <div className="w-full h-full flex items-center justify-center text-3xl md:text-4xl font-bold text-[var(--warm-ink)]">
                   {displayName.charAt(0).toUpperCase()}
                 </div>
               )}
             </div>
             <div className="flex-1">
-              <h1 className="text-2xl md:text-4xl font-bold text-white font-headline">{displayName}</h1>
-              <p className="text-white/80 font-medium mt-1">@{profile.username}</p>
-              {profile.tagline && <p className="text-white/70 mt-2 text-sm md:text-base">{profile.tagline}</p>}
+              <h1 className="text-2xl md:text-4xl font-bold text-[var(--warm-ink)] font-headline">{displayName}</h1>
+              <p className="text-[var(--warm-ink)]/80 font-medium mt-1">@{profile.username}</p>
+              {profile.tagline && <p className="text-[var(--warm-ink)]/70 mt-2 text-sm md:text-base">{profile.tagline}</p>}
             </div>
           </div>
         </div>
@@ -482,7 +482,7 @@ export default function PublicProfilePage() {
         </div>
         <h1 className="text-xl font-bold text-[var(--warm-ink)] font-headline">Profile not found</h1>
         <p className="text-[var(--soft-stone)] mt-2 text-center">This profile doesn't exist or is set to private.</p>
-        <Link to="/" className="mt-6 flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--clay)] text-white text-sm font-medium hover:bg-[var(--terracotta)] transition-colors">
+        <Link to="/" className="mt-6 flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--clay)] text-[var(--warm-ink)] text-sm font-medium hover:bg-[var(--terracotta)] transition-colors">
           <ArrowLeft size={14} /> Back to home
         </Link>
       </div>

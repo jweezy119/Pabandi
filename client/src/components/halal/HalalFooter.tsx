@@ -16,10 +16,10 @@ export const HalalFooter: React.FC<HalalFooterProps> = ({ className = '' }) => {
           <div className="flex items-center gap-3">
             <span className="text-lg">🛡️</span>
             <div>
-              <p className="text-xs font-bold text-white/80">
+              <p className="text-xs font-bold text-[var(--warm-ink)]/80">
                 {language === 'en' ? 'Sharia-Compliant by Design' : 'Sharia ke mutabiq tayar karda'}
               </p>
-              <p className="text-[10px] text-white/40">
+              <p className="text-[10px] text-[var(--warm-ink)]/40">
                 {language === 'en'
                   ? 'No Riba · No Gharar · No Maysir · Profit-sharing from real economic activity'
                   : 'Koi Riba nahi · Koi Gharar nahi · Koi Maysir nahi · Haqeeqi economic activity se profit-sharing'}

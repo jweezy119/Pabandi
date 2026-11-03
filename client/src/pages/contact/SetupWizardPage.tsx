@@ -144,7 +144,7 @@ function VerticalStep({
       <button
         onClick={onNext}
         disabled={!selected}
-        className="w-full py-4 rounded-2xl font-bold text-white transition-all duration-200"
+        className="w-full py-4 rounded-2xl font-bold text-[var(--warm-ink)] transition-all duration-200"
         style={{
           backgroundColor: selected ? 'var(--clay)' : 'var(--soft-stone)',
           opacity: selected ? 1 : 0.5,
@@ -283,7 +283,7 @@ function FeatureReviewStep({
         <button
           onClick={onConfirm}
           disabled={!canConfirm || enrolling}
-          className="flex-[2] py-4 rounded-2xl font-bold text-white transition-all duration-200 hover:opacity-90 disabled:opacity-40"
+          className="flex-[2] py-4 rounded-2xl font-bold text-[var(--warm-ink)] transition-all duration-200 hover:opacity-90 disabled:opacity-40"
           style={{ backgroundColor: 'var(--clay)', fontSize: '1rem' }}
         >
           {enrolling ? 'Setting up…' : "Looks good — let's go 🎉"}
@@ -317,7 +317,7 @@ function DoneStep({ verticalId, onEnter }: { verticalId: string; onEnter: () => 
 
       <button
         onClick={onEnter}
-        className="w-full py-5 rounded-2xl font-bold text-white text-lg transition-all duration-200 hover:opacity-90 shadow-lg"
+        className="w-full py-5 rounded-2xl font-bold text-[var(--warm-ink)] text-lg transition-all duration-200 hover:opacity-90 shadow-lg"
         style={{ backgroundColor: 'var(--clay)' }}
       >
         Enter my workspace →

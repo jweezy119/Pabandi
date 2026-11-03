@@ -327,7 +327,7 @@ export default function FluidBookingPage() {
           {[1, 2, 3, 4].map(s => (
             <div key={s} className="flex items-center gap-2">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                step >= s ? 'bg-[var(--clay)] text-white' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)]'
+                step >= s ? 'bg-[var(--clay)] text-[var(--warm-ink)]' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)]'
               }`}>
                 {step > s ? <Check size={14} /> : s}
               </div>
@@ -378,7 +378,7 @@ export default function FluidBookingPage() {
 
             <button
               onClick={() => setStep(2)}
-              className="w-full py-3 rounded-xl bg-[var(--clay)] text-white font-semibold hover:bg-[var(--terracotta)] transition-colors"
+              className="w-full py-3 rounded-xl bg-[var(--clay)] text-[var(--warm-ink)] font-semibold hover:bg-[var(--terracotta)] transition-colors"
             >
               {services.length > 0 ? 'Continue' : 'Book Now'}
             </button>
@@ -452,7 +452,7 @@ export default function FluidBookingPage() {
               <button
                 onClick={() => setStep(3)}
                 disabled={!selectedDate || !selectedTime}
-                className="flex-1 py-3 rounded-xl bg-[var(--clay)] text-white font-semibold disabled:opacity-40 hover:bg-[var(--terracotta)] transition-colors"
+                className="flex-1 py-3 rounded-xl bg-[var(--clay)] text-[var(--warm-ink)] font-semibold disabled:opacity-40 hover:bg-[var(--terracotta)] transition-colors"
               >
                 Continue
               </button>
@@ -537,7 +537,7 @@ export default function FluidBookingPage() {
               <button
                 onClick={handleBook}
                 disabled={submitting || !customerInfo.name || !customerInfo.email}
-                className="flex-1 py-3 rounded-xl bg-[var(--clay)] text-white font-semibold disabled:opacity-40 hover:bg-[var(--terracotta)] transition-colors"
+                className="flex-1 py-3 rounded-xl bg-[var(--clay)] text-[var(--warm-ink)] font-semibold disabled:opacity-40 hover:bg-[var(--terracotta)] transition-colors"
               >
                 {submitting ? 'Securing your booking…' : 'Secure My Booking'}
               </button>
@@ -673,7 +673,7 @@ export default function FluidBookingPage() {
               </p>
             </div>
 
-            <Link to="/" className="inline-block px-6 py-3 rounded-xl bg-[var(--clay)] text-white font-semibold hover:bg-[var(--terracotta)] transition-colors">
+            <Link to="/" className="inline-block px-6 py-3 rounded-xl bg-[var(--clay)] text-[var(--warm-ink)] font-semibold hover:bg-[var(--terracotta)] transition-colors">
               Back to Home
             </Link>
 

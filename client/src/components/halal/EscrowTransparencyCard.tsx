@@ -58,10 +58,10 @@ export const EscrowTransparencyCard: React.FC<EscrowTransparencyCardProps> = ({
       <div className={`rounded-xl bg-white/[0.03] border border-white/8 p-3 flex items-center gap-3 ${className}`}>
         <span className="text-xl">{content.icon}</span>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-white/90 truncate">
+          <p className="text-xs font-bold text-[var(--warm-ink)]/90 truncate">
             {language === 'en' ? content.title : content.titleUr}
           </p>
-          <p className="text-[10px] text-white/50 truncate">
+          <p className="text-[10px] text-[var(--warm-ink)]/50 truncate">
             {language === 'en' ? content.desc : content.descUr}
           </p>
         </div>
@@ -74,10 +74,10 @@ export const EscrowTransparencyCard: React.FC<EscrowTransparencyCardProps> = ({
       <div className="flex items-start gap-4">
         <div className="text-3xl">{content.icon}</div>
         <div className="flex-1">
-          <h3 className="font-bold text-white/90 text-base mb-2">
+          <h3 className="font-bold text-[var(--warm-ink)]/90 text-base mb-2">
             {language === 'en' ? content.title : content.titleUr}
           </h3>
-          <p className="text-sm text-white/60 leading-relaxed">
+          <p className="text-sm text-[var(--warm-ink)]/60 leading-relaxed">
             {language === 'en' ? content.desc : content.descUr}
           </p>
           <div className="mt-3 flex items-center gap-2">

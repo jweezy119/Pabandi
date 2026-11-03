@@ -39,7 +39,7 @@ function ClayStat({ icon, value, label, trend, color = 'terracotta' }: { icon: s
           {trend && <p className="text-xs mt-1" style={{ color: 'var(--sage)' }}>{trend}</p>}
         </div>
         <div className={`w-11 h-11 rounded-xl ${colorMap[color]} flex items-center justify-center`}>
-          <span className="material-symbols-outlined text-white text-[20px]">{icon}</span>
+          <span className="material-symbols-outlined text-[var(--warm-ink)] text-[20px]">{icon}</span>
         </div>
       </div>
     </ClayCard>

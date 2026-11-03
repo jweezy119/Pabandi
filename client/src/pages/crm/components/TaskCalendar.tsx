@@ -57,7 +57,7 @@ export function TaskCalendar({ tasks, onTaskClick }: { tasks: any[], onTaskClick
 
           return (
             <div key={day.toISOString()} className="bg-white p-1 flex flex-col overflow-hidden">
-              <div className={`text-xs p-1 mb-1 font-medium w-6 h-6 flex justify-center items-center rounded-full ${isToday ? 'bg-[var(--clay)] text-white' : 'text-[var(--soft-stone)]'}`}>
+              <div className={`text-xs p-1 mb-1 font-medium w-6 h-6 flex justify-center items-center rounded-full ${isToday ? 'bg-[var(--clay)] text-[var(--warm-ink)]' : 'text-[var(--soft-stone)]'}`}>
                 {day.getDate()}
               </div>
               <div className="flex-1 overflow-y-auto space-y-1 pr-1 mobile-scroll">

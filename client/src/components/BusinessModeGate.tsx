@@ -72,7 +72,7 @@ export function BusinessModeGate({ areaName = 'this tool' }: { areaName?: string
           type="button"
           onClick={handleSwitch}
           disabled={isSwitching}
-          className="px-5 py-2.5 rounded-full font-headline text-sm font-bold text-white disabled:opacity-60"
+          className="px-5 py-2.5 rounded-full font-headline text-sm font-bold text-[var(--warm-ink)] disabled:opacity-60"
           style={{ background: 'var(--clay)' }}
         >
           {isSwitching ? 'Switching…' : 'Switch to Business'}

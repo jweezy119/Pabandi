@@ -136,7 +136,7 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
         <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant/20">
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-primary">Hospitality Connect</p>
-            <h2 className="text-sm font-bold text-white">
+            <h2 className="text-sm font-bold text-[var(--warm-ink)]">
               {state.step === 1 && 'Step 1 — Choose Your PMS'}
               {state.step === 2 && 'Step 2 — Property Details'}
               {state.step === 3 && 'Step 3 — API Credentials'}
@@ -157,7 +157,7 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
                 />
               ))}
             </div>
-            <button onClick={onClose} className="text-on-surface-variant hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10">
+            <button onClick={onClose} className="text-on-surface-variant hover:text-[var(--warm-ink)] transition-colors p-1 rounded-lg hover:bg-[var(--warm-sand)]/10">
               <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
@@ -184,7 +184,7 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-bold text-white">{label}</span>
+                      <span className="text-sm font-bold text-[var(--warm-ink)]">{label}</span>
                       <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
                         style={{ background: `${color}20`, color, border: `1px solid ${color}30` }}
                       >{badge}</span>
@@ -210,7 +210,7 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
                   placeholder="e.g. River North Loft, West Loop Suites"
                   value={state.propertyName}
                   onChange={(e) => update({ propertyName: e.target.value })}
-                  className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors"
+                  className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-2.5 text-sm text-[var(--warm-ink)] placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors"
                 />
               </div>
 
@@ -248,16 +248,16 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
                   placeholder="e.g. UAE, Kenya, USA"
                   value={state.country}
                   onChange={(e) => update({ country: e.target.value })}
-                  className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors"
+                  className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-2.5 text-sm text-[var(--warm-ink)] placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors"
                 />
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button onClick={() => update({ step: 1 })} className="flex-1 py-2.5 text-xs font-bold rounded-xl bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 transition-colors">← Back</button>
+                <button onClick={() => update({ step: 1 })} className="flex-1 py-2.5 text-xs font-bold rounded-xl bg-[var(--warm-sand)]/5 text-slate-300 border border-[var(--soft-stone)]/10 hover:bg-[var(--warm-sand)]/10 transition-colors">← Back</button>
                 <button
                   onClick={() => update({ step: 3 })}
                   disabled={!state.propertyName || !state.propertyType}
-                  className="flex-1 py-2.5 text-xs font-bold rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white disabled:opacity-40 hover:opacity-90 transition-opacity"
+                  className="flex-1 py-2.5 text-xs font-bold rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-[var(--warm-ink)] disabled:opacity-40 hover:opacity-90 transition-opacity"
                 >
                   Continue →
                 </button>
@@ -272,7 +272,7 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
                 className="p-3 rounded-xl border text-[11px] text-on-surface-variant leading-relaxed"
                 style={{ background: 'rgba(99,102,241,0.06)', borderColor: 'rgba(99,102,241,0.2)' }}
               >
-                <strong className="text-white">For {state.provider === 'beds24' ? 'Beds24' : state.provider === 'cloudbeds' ? 'Cloudbeds' : state.provider === 'lodgify' ? 'Lodgify' : 'your PMS'}: </strong>
+                <strong className="text-[var(--warm-ink)]">For {state.provider === 'beds24' ? 'Beds24' : state.provider === 'cloudbeds' ? 'Cloudbeds' : state.provider === 'lodgify' ? 'Lodgify' : 'your PMS'}: </strong>
                 {state.provider === 'beds24' && 'Go to Settings → Properties → Access → API Keys. Generate a new API key with "Bookings" read permission.'}
                 {state.provider === 'cloudbeds' && 'Go to Marketplace → Pabandi → Connect. You\'ll be redirected to authorize OAuth access.'}
                 {state.provider === 'lodgify' && 'Go to Settings → Integrations → API → Create New Key with bookings scope.'}
@@ -289,7 +289,7 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
                   placeholder={state.provider === 'beds24' ? 'e.g. 12345' : 'Your PMS property identifier'}
                   value={state.pmsPropertyId}
                   onChange={(e) => update({ pmsPropertyId: e.target.value })}
-                  className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary font-mono transition-colors"
+                  className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-2.5 text-sm text-[var(--warm-ink)] placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary font-mono transition-colors"
                 />
               </div>
 
@@ -303,7 +303,7 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
                   placeholder="Paste your PMS API key here"
                   value={state.apiKey}
                   onChange={(e) => update({ apiKey: e.target.value })}
-                  className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary font-mono transition-colors"
+                  className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-2.5 text-sm text-[var(--warm-ink)] placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary font-mono transition-colors"
                 />
                 <p className="text-[10px] text-on-surface-variant mt-1.5 flex items-center gap-1">
                   <span className="text-emerald-400">🔒</span> Encrypted at rest. Never logged or shared.
@@ -317,14 +317,14 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
               )}
 
               <div className="flex gap-3 pt-2">
-                <button onClick={() => update({ step: 2 })} className="flex-1 py-2.5 text-xs font-bold rounded-xl bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 transition-colors">
+                <button onClick={() => update({ step: 2 })} className="flex-1 py-2.5 text-xs font-bold rounded-xl bg-[var(--warm-sand)]/5 text-slate-300 border border-[var(--soft-stone)]/10 hover:bg-[var(--warm-sand)]/10 transition-colors">
                   ← Back
                 </button>
                 <button
                   id="connect-submit-btn"
                   onClick={handleSubmit}
                   disabled={!state.pmsPropertyId || !state.apiKey || isSubmitting}
-                  className="flex-1 py-2.5 text-xs font-bold rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white disabled:opacity-40 flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+                  className="flex-1 py-2.5 text-xs font-bold rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-[var(--warm-ink)] disabled:opacity-40 flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
                 >
                   {isSubmitting ? (
                     <span className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" />
@@ -344,9 +344,9 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
                 <div className="w-14 h-14 rounded-full bg-emerald-500/15 border-2 border-emerald-500/30 flex items-center justify-center mx-auto mb-3">
                   <CheckIcon className="h-7 w-7 text-emerald-400" />
                 </div>
-                <p className="font-bold text-white text-sm">Property Connected!</p>
+                <p className="font-bold text-[var(--warm-ink)] text-sm">Property Connected!</p>
                 <p className="text-[11px] text-on-surface-variant mt-1">
-                  <strong className="text-white">{state.propertyName}</strong> is now linked to Pabandi escrow.
+                  <strong className="text-[var(--warm-ink)]">{state.propertyName}</strong> is now linked to Pabandi escrow.
                 </p>
               </div>
 
@@ -368,7 +368,7 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
                         className={`text-[10px] font-bold px-2 py-1 rounded shrink-0 transition-all duration-200 flex items-center gap-1 ${
                           copiedField === 'url'
                             ? 'bg-emerald-500/20 text-emerald-400'
-                            : 'text-on-surface-variant hover:text-white bg-surface-container-high'
+                            : 'text-on-surface-variant hover:text-[var(--warm-ink)] bg-surface-container-high'
                         }`}
                       >
                         {copiedField === 'url' ? (
@@ -391,7 +391,7 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
                         className={`text-[10px] font-bold px-2 py-1 rounded shrink-0 transition-all duration-200 flex items-center gap-1 ${
                           copiedField === 'secret'
                             ? 'bg-emerald-500/20 text-emerald-400'
-                            : 'text-on-surface-variant hover:text-white bg-surface-container-high'
+                            : 'text-on-surface-variant hover:text-[var(--warm-ink)] bg-surface-container-high'
                         }`}
                       >
                         {copiedField === 'secret' ? (
@@ -425,7 +425,7 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
                       ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
                       : testResult === 'error'
                       ? 'bg-red-500/15 border-red-500/30 text-red-400'
-                      : 'bg-white/5 border-white/15 text-on-surface-variant hover:text-white hover:border-white/30'
+                      : 'bg-[var(--warm-sand)]/5 border-[var(--soft-stone)]/15 text-on-surface-variant hover:text-[var(--warm-ink)] hover:border-white/30'
                   }`}
                 >
                   {testResult === 'loading' && (
@@ -445,7 +445,7 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
 <button
                   id="wizard-done-btn"
                   onClick={onClose}
-                  className="w-full py-3 text-xs font-bold rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90 transition-opacity"
+                  className="w-full py-3 text-xs font-bold rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-[var(--warm-ink)] hover:opacity-90 transition-opacity"
                 >
                   Done
                 </button>

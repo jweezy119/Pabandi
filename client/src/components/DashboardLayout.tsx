@@ -245,7 +245,7 @@ export default function DashboardLayout({
         <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid rgba(191,179,163,0.2)' }}>
           <Link to={osRoot} className="flex items-center gap-3">
             <div
-              className={`w-10 h-10 rounded-xl ${colors.icon} flex items-center justify-center text-white font-bold text-lg`}
+              className={`w-10 h-10 rounded-xl ${colors.icon} flex items-center justify-center text-[var(--warm-ink)] font-bold text-lg`}
               style={{ boxShadow: '0 2px 8px rgba(180, 130, 90, 0.20)' }}
             >
               {osIcon}
@@ -470,7 +470,7 @@ export default function DashboardLayout({
         {/* Mobile header */}
         <div className="lg:hidden flex items-center justify-between p-4 bg-[var(--warm-sand)] border-b border-[rgba(191,179,163,0.2)]">
           <div className="flex items-center gap-3">
-            <div className={`w-8 h-8 rounded-lg ${colors.icon} flex items-center justify-center text-white font-bold text-sm`}>
+            <div className={`w-8 h-8 rounded-lg ${colors.icon} flex items-center justify-center text-[var(--warm-ink)] font-bold text-sm`}>
               {osIcon}
             </div>
             <h1 className="text-base font-bold text-[var(--warm-ink)]">{osName}</h1>

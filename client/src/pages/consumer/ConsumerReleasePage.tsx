@@ -145,7 +145,7 @@ export default function ConsumerReleasePage() {
 
           <button
             onClick={() => navigate('/app')}
-            className="px-8 py-3 rounded-xl bg-amber-500 text-white font-bold shadow-lg hover:bg-amber-600 transition-colors"
+            className="px-8 py-3 rounded-xl bg-amber-500 text-[var(--warm-ink)] font-bold shadow-lg hover:bg-amber-600 transition-colors"
           >
             Back to Home
           </button>
@@ -172,9 +172,9 @@ export default function ConsumerReleasePage() {
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border ${
                   stepStatus(s, step) === 'completed'
-                    ? 'bg-green-700 text-white border-green-700'
+                    ? 'bg-green-700 text-[var(--warm-ink)] border-green-700'
                     : stepStatus(s, step) === 'active'
-                    ? 'bg-amber-500 text-white border-amber-500'
+                    ? 'bg-amber-500 text-[var(--warm-ink)] border-amber-500'
                     : 'bg-white text-amber-600 border-amber-200'
                 }`}
               >
@@ -222,7 +222,7 @@ export default function ConsumerReleasePage() {
 
                 <button
                   onClick={() => setStep(2)}
-                  className="mt-6 w-full py-4 rounded-xl bg-amber-500 text-white font-bold shadow-lg hover:bg-amber-600 transition-colors"
+                  className="mt-6 w-full py-4 rounded-xl bg-amber-500 text-[var(--warm-ink)] font-bold shadow-lg hover:bg-amber-600 transition-colors"
                 >
                   Upload Proof of Work →
                 </button>
@@ -288,7 +288,7 @@ export default function ConsumerReleasePage() {
                 className="w-full py-4 rounded-xl font-bold shadow-lg transition-colors ${
                   !imageFile
                     ? 'bg-amber-200 text-amber-400'
-                    : 'bg-amber-500 text-white hover:bg-amber-600'
+                    : 'bg-amber-500 text-[var(--warm-ink)] hover:bg-amber-600'
                 }"
               >
                 {releasing ? 'Releasing Funds...' : 'Confirm & Release Funds →'}

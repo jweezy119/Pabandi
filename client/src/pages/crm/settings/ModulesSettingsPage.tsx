@@ -125,7 +125,7 @@ export default function ModulesSettingsPage() {
                   <Card hover={false} className={`p-6 ${!isModuleEnabled && !isContact ? 'opacity-70' : ''}`}>
                     <div className="flex items-center justify-between mb-6 clay-heading">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white clay-stat-icon" style={{ backgroundColor: `var(--${mod.accentColor})` }}>
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-[var(--warm-ink)] clay-stat-icon" style={{ backgroundColor: `var(--${mod.accentColor})` }}>
                           <span className="material-symbols-outlined">{mod.icon}</span>
                         </div>
                         <div>

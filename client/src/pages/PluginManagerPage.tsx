@@ -70,16 +70,16 @@ export const PluginManagerPage = () => {
     <div className="max-w-6xl mx-auto px-4 py-8" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
       <div className="mb-8 flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold text-[var(--warm-ink)] dark:text-[var(--warm-ink)] mb-2">
+          <h1 className="text-3xl font-bold text-[var(--warm-ink)] text-[var(--warm-ink)] mb-2">
             WhatsApp Plugin Manager
           </h1>
-          <p className="text-[var(--soft-stone)] dark:text-[var(--soft-stone)]">
+          <p className="text-[var(--soft-stone)] text-[var(--soft-stone)]">
             Customize your Pabandi business experience by toggling AI and automation plugins for WhatsApp.
           </p>
         </div>
         
         {stats && (
-          <div className="flex space-x-6 bg-white dark:bg-[var(--warm-sand)] p-4 rounded-xl shadow-[var(--shadow-soft)] border border-[rgba(191,179,163,0.3)] dark:border-[rgba(191,179,163,0.3)]">
+          <div className="flex space-x-6 bg-white bg-[var(--warm-sand)] p-4 rounded-xl shadow-[var(--shadow-soft)] border border-[rgba(191,179,163,0.3)] border-[rgba(191,179,163,0.3)]">
             <div>
               <p className="text-sm text-[var(--soft-stone)]">Active Sessions</p>
               <p className="text-xl font-semibold">{stats.activeSessions} / {stats.totalSessions}</p>
@@ -106,32 +106,32 @@ export const PluginManagerPage = () => {
           return (
             <div 
               key={plugin.id}
-              className={`bg-white dark:bg-[var(--warm-sand)] rounded-[var(--radius-card)] shadow-[var(--shadow-soft)] border ${isActive ? 'border-[var(--sage)]/50' : 'border-[rgba(191,179,163,0.3)] dark:border-[rgba(191,179,163,0.3)]'} p-6 transition-all duration-200 hover:shadow-md`}
+              className={`bg-white bg-[var(--warm-sand)] rounded-[var(--radius-card)] shadow-[var(--shadow-soft)] border ${isActive ? 'border-[var(--sage)]/50' : 'border-[rgba(191,179,163,0.3)] border-[rgba(191,179,163,0.3)]'} p-6 transition-all duration-200 hover:shadow-md`}
             >
               <div className="flex justify-between items-start mb-4">
-                <div className="p-3 bg-gray-50 dark:bg-[var(--soft-stone)]/50 rounded-xl">
+                <div className="p-3 bg-gray-50 bg-[var(--soft-stone)]/50 rounded-xl">
                   {getIcon(plugin.keywords)}
                 </div>
                 <div>
                   <button
                     onClick={() => !isRequired && togglePlugin(plugin.id, isActive)}
                     disabled={isRequired || toggling === plugin.id}
-                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-[rgba(191,179,163,0.3)] transition-colors duration-200 ease-in-out focus:outline-none ${isActive ? 'bg-[var(--sage)]' : 'bg-gray-200 dark:bg-[var(--soft-stone)]'} ${isRequired ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-[rgba(191,179,163,0.3)] transition-colors duration-200 ease-in-out focus:outline-none ${isActive ? 'bg-[var(--sage)]' : 'bg-gray-200 bg-[var(--soft-stone)]'} ${isRequired ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isActive ? 'translate-x-5' : 'translate-x-0'}`} />
                   </button>
                 </div>
               </div>
               
-              <h3 className="text-lg font-semibold text-[var(--warm-ink)] dark:text-[var(--warm-ink)] mb-1">
+              <h3 className="text-lg font-semibold text-[var(--warm-ink)] text-[var(--warm-ink)] mb-1">
                 {plugin.name}
               </h3>
-              <p className="text-sm text-[var(--soft-stone)] dark:text-[var(--soft-stone)] mb-4 h-10">
+              <p className="text-sm text-[var(--soft-stone)] text-[var(--soft-stone)] mb-4 h-10">
                 {plugin.description}
               </p>
               
-              <div className="flex items-center justify-between pt-4 border-t border-[rgba(191,179,163,0.3)] dark:border-[rgba(191,179,163,0.3)]">
-                <span className="text-xs font-medium px-2 py-1 bg-gray-100 dark:bg-[var(--soft-stone)] text-[var(--soft-stone)] dark:text-[var(--warm-ink)] rounded-md">
+              <div className="flex items-center justify-between pt-4 border-t border-[rgba(191,179,163,0.3)] border-[rgba(191,179,163,0.3)]">
+                <span className="text-xs font-medium px-2 py-1 bg-gray-100 bg-[var(--soft-stone)] text-[var(--soft-stone)] text-[var(--warm-ink)] rounded-md">
                   v{plugin.version}
                 </span>
                 

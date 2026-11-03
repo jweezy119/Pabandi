@@ -50,8 +50,8 @@ export function SupportWidget() {
     <div className="fixed bottom-6 right-6 w-80 sm:w-96 flex flex-col z-50">
       <ClayCard className="flex flex-col h-[500px] max-h-[80vh] p-0 overflow-hidden shadow-2xl">
         <div className="p-4 border-b border-slate-800 bg-slate-900 flex justify-between items-center">
-          <div className="font-semibold text-white">Help & Support</div>
-          <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white">
+          <div className="font-semibold text-[var(--warm-ink)]">Help & Support</div>
+          <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-[var(--warm-ink)]">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -64,7 +64,7 @@ export function SupportWidget() {
               placeholder="Search help articles..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-sm text-white"
+              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-sm text-[var(--warm-ink)]"
             />
           </div>
 

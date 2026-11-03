@@ -98,7 +98,7 @@ export default function ConsumerHomePage() {
           </div>
           <button
             onClick={() => navigate('/app/passport')}
-            className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-white shadow-md"
+            className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-[var(--warm-ink)] shadow-md"
           >
             <span className="text-sm">◈</span>
           </button>
@@ -183,7 +183,7 @@ export default function ConsumerHomePage() {
                   <button
                     key={escrow.id}
                     onClick={() => navigate(`/app/release/${escrow.id}`)}
-                    className="mt-3 w-full py-3 rounded-xl bg-amber-500 text-white font-bold flex items-center justify-center gap-2 shadow-lg hover:bg-amber-600 transition-colors"
+                    className="mt-3 w-full py-3 rounded-xl bg-amber-500 text-[var(--warm-ink)] font-bold flex items-center justify-center gap-2 shadow-lg hover:bg-amber-600 transition-colors"
                   >
                     <span>Review &amp; Release Funds</span>
                   </button>

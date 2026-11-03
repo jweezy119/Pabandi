@@ -41,7 +41,7 @@ export default function RewardCard({ transaction }: RewardCardProps) {
           <span className="text-lg">{TYPE_ICONS[transaction.type] || '🪙'}</span>
         </div>
         <div>
-          <p className="text-white font-medium">{TYPE_LABELS[transaction.type] || transaction.type}</p>
+          <p className="text-[var(--warm-ink)] font-medium">{TYPE_LABELS[transaction.type] || transaction.type}</p>
           <p className="text-slate-400 text-sm">{formattedDate}</p>
         </div>
       </div>

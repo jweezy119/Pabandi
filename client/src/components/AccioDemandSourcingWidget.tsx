@@ -184,7 +184,7 @@ export default function AccioDemandSourcingWidget({ businessId }: AccioDemandSou
                 <button
                   onClick={handleConfirmOrder}
                   disabled={confirmMutation.isLoading}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-[#FF6A00] to-[#FF1200] text-white font-body font-bold text-sm hover:opacity-90 transition-opacity shadow-md disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-[#FF6A00] to-[#FF1200] text-[var(--warm-ink)] font-body font-bold text-sm hover:opacity-90 transition-opacity shadow-md disabled:opacity-50"
                 >
                   <SparklesIcon className="h-4.5 w-4.5 animate-pulse" />
                   {confirmMutation.isLoading ? 'Routing Sourcing Order...' : '1-Click Auto-Source via Accio'}
@@ -254,7 +254,7 @@ function Step({ label, active, completed, isEstimate }: StepProps) {
       <div 
         className={`w-6.5 h-6.5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-all duration-300 ${
           completed 
-            ? 'bg-[#FF6A00] border-[#FF6A00] text-white' 
+            ? 'bg-[#FF6A00] border-[#FF6A00] text-[var(--warm-ink)]' 
             : active 
               ? 'bg-white border-[#FF6A00] text-[#FF6A00] shadow-sm animate-pulse' 
               : 'bg-white border-surface-container-high text-on-surface-variant'

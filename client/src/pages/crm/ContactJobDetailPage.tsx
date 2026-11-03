@@ -79,13 +79,13 @@ export function ContactJobDetailPage() {
     }
   };
 
-  if (!job) return <div className="p-8 text-white">Loading job...</div>;
+  if (!job) return <div className="p-8 text-[var(--warm-ink)]">Loading job...</div>;
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={() => navigate(-1)}>← Back</Button>
-        <h1 className="text-2xl font-bold text-white flex-1">{job.serviceType}</h1>
+        <h1 className="text-2xl font-bold text-[var(--warm-ink)] flex-1">{job.serviceType}</h1>
         {!isEditing ? (
           <Button variant="secondary" onClick={() => setIsEditing(true)}>Edit Job</Button>
         ) : (
@@ -104,14 +104,14 @@ export function ContactJobDetailPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Job Details</h3>
+          <h3 className="text-lg font-semibold text-[var(--warm-ink)] mb-4">Job Details</h3>
           <div className="space-y-4">
             <div>
               <label className="text-sm text-gray-400">Service Type</label>
               {isEditing ? (
                 <Input value={editForm.serviceType} onChange={e => setEditForm({...editForm, serviceType: e.target.value})} />
               ) : (
-                <div className="text-white">{job.serviceType}</div>
+                <div className="text-[var(--warm-ink)]">{job.serviceType}</div>
               )}
             </div>
             <div>
@@ -122,7 +122,7 @@ export function ContactJobDetailPage() {
                   <Input type="time" value={editForm.scheduledTime} onChange={e => setEditForm({...editForm, scheduledTime: e.target.value})} />
                 </div>
               ) : (
-                <div className="text-white">{new Date(job.scheduledDate).toLocaleDateString()} at {job.scheduledTime}</div>
+                <div className="text-[var(--warm-ink)]">{new Date(job.scheduledDate).toLocaleDateString()} at {job.scheduledTime}</div>
               )}
             </div>
             <div>
@@ -130,18 +130,18 @@ export function ContactJobDetailPage() {
               {isEditing ? (
                 <Input type="number" value={editForm.price} onChange={e => setEditForm({...editForm, price: parseFloat(e.target.value)})} />
               ) : (
-                <div className="text-white">${job.price}</div>
+                <div className="text-[var(--warm-ink)]">${job.price}</div>
               )}
             </div>
           </div>
         </Card>
 
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Client & Invoice</h3>
+          <h3 className="text-lg font-semibold text-[var(--warm-ink)] mb-4">Client & Invoice</h3>
           <div className="space-y-4">
             <div>
               <label className="text-sm text-gray-400">Client</label>
-              <div className="text-white">{job.client?.name || 'No client linked'}</div>
+              <div className="text-[var(--warm-ink)]">{job.client?.name || 'No client linked'}</div>
             </div>
             <div>
               <label className="text-sm text-gray-400">Related Invoice</label>
@@ -156,11 +156,11 @@ export function ContactJobDetailPage() {
 
         {job.assignments && job.assignments.length > 0 && (
           <Card className="p-6 md:col-span-2">
-            <h3 className="text-lg font-semibold text-white mb-4">Assigned Team</h3>
+            <h3 className="text-lg font-semibold text-[var(--warm-ink)] mb-4">Assigned Team</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {job.assignments.map((assignment: any) => (
                 <div key={assignment.employee.id} className="bg-[var(--warm-sand)]/10 p-4 rounded-xl border border-[var(--warm-sand)]/20">
-                  <div className="font-semibold text-white">{assignment.employee.name}</div>
+                  <div className="font-semibold text-[var(--warm-ink)]">{assignment.employee.name}</div>
                   <div className="text-sm text-[var(--soft-stone)] mt-1 flex items-center gap-2">
                     Delivery Score: <span className="font-medium text-[var(--sage)]">{assignment.employee.deliveryScore}%</span>
                   </div>

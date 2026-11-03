@@ -58,7 +58,7 @@ export default function TrustFluxWidget({ userId }: { userId?: string }) {
     : '➖';
 
   return (
-    <div className="rounded-2xl p-6 mb-8 border border-white/10 bg-white/5 backdrop-blur-xl">
+    <div className="rounded-2xl p-6 mb-8 border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 backdrop-blur-xl">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg" style={{ background: velocityBg, color: velocityColor }}>
@@ -77,7 +77,7 @@ export default function TrustFluxWidget({ userId }: { userId?: string }) {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-        <div className="text-center p-3 rounded-xl bg-black/20 border border-white/10">
+        <div className="text-center p-3 rounded-xl bg-[var(--cream)]/20 border border-[var(--soft-stone)]/10">
           <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Velocity</p>
           <p className="text-2xl font-bold mt-1" style={{ color: velocityColor }}>
             {isPositive && <ArrowTrendingUpIcon className="h-5 w-5 inline mb-0.5" />}
@@ -86,21 +86,21 @@ export default function TrustFluxWidget({ userId }: { userId?: string }) {
           </p>
         </div>
 
-        <div className="text-center p-3 rounded-xl bg-black/20 border border-white/10">
+        <div className="text-center p-3 rounded-xl bg-[var(--cream)]/20 border border-[var(--soft-stone)]/10">
           <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Confidence</p>
           <p className="text-2xl font-bold mt-1 text-slate-100">
             {Math.round(fluxData.confidence * 100)}%
           </p>
         </div>
 
-        <div className="text-center p-3 rounded-xl bg-black/20 border border-white/10">
+        <div className="text-center p-3 rounded-xl bg-[var(--cream)]/20 border border-[var(--soft-stone)]/10">
           <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400">30d Projection</p>
           <p className="text-2xl font-bold mt-1 text-indigo-300">
             {fluxData.predictedScore30d}
           </p>
         </div>
 
-        <div className="text-center p-3 rounded-xl bg-black/20 border border-white/10">
+        <div className="text-center p-3 rounded-xl bg-[var(--cream)]/20 border border-[var(--soft-stone)]/10">
           <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400">90d Projection</p>
           <p className="text-2xl font-bold mt-1 text-purple-300">
             {fluxData.predictedScore90d}

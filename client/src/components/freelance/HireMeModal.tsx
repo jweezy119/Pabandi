@@ -113,7 +113,7 @@ export const HireMeModal: React.FC<HireMeModalProps> = ({ isOpen, onClose, freel
           <button 
             onClick={handleProceed}
             disabled={isSubmitting}
-            className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl hover:bg-indigo-700 transition-colors flex justify-center items-center gap-2 shadow-lg shadow-indigo-200"
+            className="w-full bg-indigo-600 text-[var(--warm-ink)] font-bold py-4 rounded-xl hover:bg-indigo-700 transition-colors flex justify-center items-center gap-2 shadow-lg shadow-indigo-200"
           >
             <CreditCard className="w-5 h-5" />
             {isSubmitting ? 'Locking...' : 'Lock Funds in Escrow'}

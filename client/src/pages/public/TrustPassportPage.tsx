@@ -24,7 +24,7 @@ export default function TrustPassportPage() {
     <div className="min-h-screen bg-[var(--cream)] py-12 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-2xl shadow-lg border border-[rgba(191,179,163,0.3)] overflow-hidden">
-          <div className="bg-gradient-to-r from-[var(--clay)] to-[var(--terracotta)] p-8 text-white">
+          <div className="bg-gradient-to-r from-[var(--clay)] to-[var(--terracotta)] p-8 text-[var(--warm-ink)]">
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center">
                 <Shield className="w-10 h-10" />

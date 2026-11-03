@@ -104,11 +104,11 @@ function MobileMoreSheet({ onClose, pathname }: { onClose: () => void; pathname:
     ]},
   ];
   return (
-    <div className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex items-end justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] bg-[var(--cream)]/50 backdrop-blur-sm flex items-end justify-center p-4" onClick={onClose}>
       <div className="w-full max-w-lg max-h-[80vh] overflow-y-auto bg-surface-bright border border-outline-variant/20 rounded-3xl p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-3">
           <p className="font-headline font-bold text-base">Explore Pabandi</p>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center touch-target">
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[var(--warm-sand)]/10 flex items-center justify-center touch-target">
             <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
         </div>
@@ -167,7 +167,7 @@ function SearchSheet({ onClose }: { onClose: () => void }) {
     onClose();
   };
   return (
-    <div className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] bg-[var(--cream)]/50 backdrop-blur-sm flex items-end md:items-center justify-center p-4" onClick={onClose}>
       <div className="w-full max-w-lg bg-surface-bright border border-outline-variant/20 rounded-3xl p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2 rounded-2xl border border-outline-variant/20 bg-surface-container-low px-3 py-2">
           <span className="material-symbols-outlined text-outline">search</span>
@@ -330,15 +330,15 @@ export default function Layout() {
    return (
     <div className="bg-transparent text-on-surface font-body antialiased min-h-screen flex flex-col relative w-full overflow-x-hidden">
       {offline && (
-        <div className="fixed top-0 left-0 right-0 z-[60] bg-amber-500 text-white text-center text-xs font-bold py-1.5 px-4">
+        <div className="fixed top-0 left-0 right-0 z-[60] bg-amber-500 text-[var(--warm-ink)] text-center text-xs font-bold py-1.5 px-4">
           You are offline — some features may be limited
         </div>
       )}
       {showInstall && (
         <div className="fixed top-0 left-0 right-0 z-[60] bg-primary text-on-primary text-center text-xs font-bold py-2 px-4 flex items-center justify-center gap-3">
           <span>Install Pabandi CRM</span>
-          <button onClick={handleInstall} className="px-3 py-1 rounded-lg bg-white/20 text-white text-xs">Install</button>
-          <button onClick={() => setShowInstall(false)} className="text-white/70 hover:text-white">Dismiss</button>
+          <button onClick={handleInstall} className="px-3 py-1 rounded-lg bg-white/20 text-[var(--warm-ink)] text-xs">Install</button>
+          <button onClick={() => setShowInstall(false)} className="text-[var(--warm-ink)]/70 hover:text-[var(--warm-ink)]">Dismiss</button>
         </div>
       )}
       {/* Background */}
@@ -349,7 +349,7 @@ export default function Layout() {
         <header className={`flex justify-between items-center w-full px-3 sm:px-6 h-14 sm:h-16 fixed top-0 z-40 border-b transition-all duration-300 ${scrolled ? 'bg-[var(--cream)]/80 backdrop-blur-xl border-[var(--soft-stone)]/30 shadow-sm' : 'bg-[var(--cream)]/60 backdrop-blur-xl border-[var(--soft-stone)]/20'}`}>
           <div className="flex items-center gap-2 sm:gap-3">
             {isAuthenticated ? (
-              <Link to={isOwnerOrAdmin ? '/dashboard' : '/profile'} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[var(--clay)] text-white flex items-center justify-center text-xs sm:text-sm font-bold shrink-0 touch-target">
+              <Link to={isOwnerOrAdmin ? '/dashboard' : '/profile'} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[var(--clay)] text-[var(--warm-ink)] flex items-center justify-center text-xs sm:text-sm font-bold shrink-0 touch-target">
                 {initials}
               </Link>
             ) : (
@@ -382,12 +382,12 @@ export default function Layout() {
           </nav>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <button onClick={() => setSearchOpen(true)} className="md:hidden w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 backdrop-blur text-on-surface flex items-center justify-center touch-target hover:bg-white/20 active:scale-95 transition-all duration-200">
+            <button onClick={() => setSearchOpen(true)} className="md:hidden w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[var(--warm-sand)]/10 backdrop-blur text-on-surface flex items-center justify-center touch-target hover:bg-white/20 active:scale-95 transition-all duration-200">
               <span className="material-symbols-outlined text-[18px] sm:text-[20px]">search</span>
             </button>
             {isAuthenticated ? (
               <div className="flex items-center gap-1">
-                <Link to={isOwnerOrAdmin ? '/dashboard' : '/profile'} className="md:hidden w-9 h-9 rounded-full bg-white/10 flex items-center justify-center touch-target">
+                <Link to={isOwnerOrAdmin ? '/dashboard' : '/profile'} className="md:hidden w-9 h-9 rounded-full bg-[var(--warm-sand)]/10 flex items-center justify-center touch-target">
                   <span className="material-symbols-outlined text-[18px]">person</span>
                 </Link>
                 <NotificationBell />
@@ -405,11 +405,11 @@ export default function Layout() {
               </div>
             ) : (
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <Link to="/login" className="md:hidden w-9 h-9 rounded-full bg-white/10 flex items-center justify-center touch-target">
+                <Link to="/login" className="md:hidden w-9 h-9 rounded-full bg-[var(--warm-sand)]/10 flex items-center justify-center touch-target">
                   <span className="material-symbols-outlined text-[18px]">person</span>
                 </Link>
                 <Link to="/login" className="hidden sm:inline text-sm font-medium px-3 py-1.5 text-on-surface-variant hover:text-primary transition-all duration-200">Sign In</Link>
-                <Link to="/register" className="px-3 py-1.5 sm:px-4 sm:py-1.5 rounded-xl bg-indigo-500 text-white text-xs sm:text-sm font-bold shadow-lg shadow-indigo-500/20 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-[1px] transition-all duration-200">Sign Up</Link>
+                <Link to="/register" className="px-3 py-1.5 sm:px-4 sm:py-1.5 rounded-xl bg-indigo-500 text-[var(--warm-ink)] text-xs sm:text-sm font-bold shadow-lg shadow-indigo-500/20 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-[1px] transition-all duration-200">Sign Up</Link>
               </div>
             )}
           </div>

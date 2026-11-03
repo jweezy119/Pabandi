@@ -72,7 +72,7 @@ return (
             {data.recentRewards.slice(0, 5).map((r: { id: string; type: string; amount: number; createdAt: string }) => (
               <div
                 key={r.id}
-                className="flex items-center justify-between text-sm py-2 px-3 rounded-lg bg-white/5 border border-white/10"
+                className="flex items-center justify-between text-sm py-2 px-3 rounded-lg bg-[var(--warm-sand)]/5 border border-[var(--soft-stone)]/10"
               >
                 <span className="text-slate-400">{REWARD_LABELS[r.type] || r.type}</span>
                 <span className="font-bold text-emerald-400">+{r.amount} $PAB</span>
@@ -96,7 +96,7 @@ function RewardRule({
 }) {
   return (
     <div
-      className="rounded-xl p-4 border border-white/10 bg-white/5"
+      className="rounded-xl p-4 border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5"
       style={highlight ? { background: 'rgba(240,180,41,0.08)', borderColor: 'rgba(240,180,41,0.25)' } : {}}
     >
       <p className="text-2xl font-black text-amber-400">

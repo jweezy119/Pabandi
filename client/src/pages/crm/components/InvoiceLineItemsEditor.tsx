@@ -126,7 +126,7 @@ export function InvoiceLineItemsEditor({
         <button
           onClick={save}
           disabled={saving}
-          className="px-4 py-2 rounded-full text-sm font-medium text-white disabled:opacity-40"
+          className="px-4 py-2 rounded-full text-sm font-medium text-[var(--warm-ink)] disabled:opacity-40"
           style={{ background: 'var(--clay)' }}
         >
           Save lines

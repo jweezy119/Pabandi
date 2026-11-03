@@ -72,18 +72,18 @@ export function ContactJobsPage({ businessId }: { businessId: string }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-semibold text-white">Jobs</h2>
+        <h2 className="text-2xl font-semibold text-[var(--warm-ink)]">Jobs</h2>
         <div className="flex items-center gap-4">
           <div className="flex bg-white/5 rounded-lg p-1">
             <button 
               onClick={() => setView('List')}
-              className={`px-3 py-1 text-sm rounded ${view === 'List' ? 'bg-white/10 text-white' : 'text-gray-400'}`}
+              className={`px-3 py-1 text-sm rounded ${view === 'List' ? 'bg-white/10 text-[var(--warm-ink)]' : 'text-gray-400'}`}
             >
               List
             </button>
             <button 
               onClick={() => setView('Calendar')}
-              className={`px-3 py-1 text-sm rounded ${view === 'Calendar' ? 'bg-white/10 text-white' : 'text-gray-400'}`}
+              className={`px-3 py-1 text-sm rounded ${view === 'Calendar' ? 'bg-white/10 text-[var(--warm-ink)]' : 'text-gray-400'}`}
             >
               Calendar
             </button>

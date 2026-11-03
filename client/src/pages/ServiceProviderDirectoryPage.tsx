@@ -122,7 +122,7 @@ export default function ServiceProviderDirectoryPage() {
               <button
                 onClick={() => setPage(0)}
                 onMouseDown={e => e.preventDefault()}
-                className="px-6 py-3 rounded-xl bg-[var(--clay)] text-white font-semibold hover:opacity-90 transition-colors"
+                className="px-6 py-3 rounded-xl bg-[var(--clay)] text-[var(--warm-ink)] font-semibold hover:opacity-90 transition-colors"
                 disabled={loading}
               >
                 Apply Filters

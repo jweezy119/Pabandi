@@ -83,7 +83,7 @@ export const ChannelAnalytics: React.FC<ChannelAnalyticsProps> = ({ businessId }
         </div>
         <button
           onClick={fetchStats}
-          className="px-4 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"
+          className="px-4 py-1 bg-indigo-600 text-[var(--warm-ink)] rounded text-sm hover:bg-indigo-700"
         >
           Refresh
         </button>

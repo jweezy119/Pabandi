@@ -177,7 +177,7 @@ export default function TrustVerifyPage() {
           <button
             onClick={() => check(code)}
             disabled={!code.trim() || result.state === 'checking'}
-            className="px-5 py-2.5 rounded-full text-sm font-medium text-white disabled:opacity-40"
+            className="px-5 py-2.5 rounded-full text-sm font-medium text-[var(--warm-ink)] disabled:opacity-40"
             style={{ background: 'var(--clay)' }}
           >
             {result.state === 'checking' ? 'Checking…' : 'Check it'}

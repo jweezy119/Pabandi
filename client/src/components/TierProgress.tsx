@@ -24,7 +24,7 @@ export default function TierProgress({ tiers, currentTier, stakedAmount }: TierP
 
   return (
     <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-6 border border-slate-700 mb-8">
-      <h2 className="text-xl font-bold text-white mb-4">Tier Progress</h2>
+      <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-4">Tier Progress</h2>
       
       <div className="flex flex-wrap gap-3 mb-6">
         {tiers.map((tier) => (

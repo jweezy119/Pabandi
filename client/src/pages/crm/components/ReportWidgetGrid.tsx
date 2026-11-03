@@ -95,7 +95,7 @@ export function ReportWidgetGrid({ data, loading }: { data: any, loading: boolea
             <div 
               key={`toggle-${item.id}`} 
               onClick={() => toggleVisibility(item.id)}
-              className={`px-3 py-1.5 rounded-full text-sm cursor-pointer border transition-colors ${item.visible ? 'bg-[var(--clay)] text-white border-[var(--clay)]' : 'bg-white text-[var(--soft-stone)] border-[var(--warm-sand)]'}`}
+              className={`px-3 py-1.5 rounded-full text-sm cursor-pointer border transition-colors ${item.visible ? 'bg-[var(--clay)] text-[var(--warm-ink)] border-[var(--clay)]' : 'bg-white text-[var(--soft-stone)] border-[var(--warm-sand)]'}`}
             >
               {item.title} {item.visible ? '✓' : '+'}
             </div>

@@ -70,10 +70,10 @@ export const HalalContractCard: React.FC<HalalContractCardProps> = ({
       <div className={`rounded-xl bg-white/[0.03] border border-white/8 p-3 ${className}`}>
         <div className="flex items-center gap-2 mb-1">
           <span>{c.icon}</span>
-          <span className="text-xs font-bold text-white/90">{c.name}</span>
-          <span className="text-[10px] text-white/40">{c.nameUr}</span>
+          <span className="text-xs font-bold text-[var(--warm-ink)]/90">{c.name}</span>
+          <span className="text-[10px] text-[var(--warm-ink)]/40">{c.nameUr}</span>
         </div>
-        <p className="text-[10px] text-white/50 leading-relaxed">
+        <p className="text-[10px] text-[var(--warm-ink)]/50 leading-relaxed">
           {language === 'en' ? c.useCase : c.useCaseUr}
         </p>
       </div>
@@ -85,11 +85,11 @@ export const HalalContractCard: React.FC<HalalContractCardProps> = ({
       <div className="flex items-center gap-3 mb-3">
         <span className="text-2xl">{c.icon}</span>
         <div>
-          <h3 className="font-bold text-white/90 text-sm">{c.name}</h3>
-          <p className="text-xs text-white/40">{c.nameUr}</p>
+          <h3 className="font-bold text-[var(--warm-ink)]/90 text-sm">{c.name}</h3>
+          <p className="text-xs text-[var(--warm-ink)]/40">{c.nameUr}</p>
         </div>
       </div>
-      <p className="text-xs text-white/60 leading-relaxed mb-3">
+      <p className="text-xs text-[var(--warm-ink)]/60 leading-relaxed mb-3">
         {language === 'en' ? c.desc : c.descUr}
       </p>
       <div className="text-[10px] font-semibold text-emerald-400/80 bg-emerald-500/8 rounded-lg px-2 py-1">

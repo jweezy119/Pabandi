@@ -180,7 +180,7 @@ export default function HospitalityPropertiesPanel() {
           <button
             onClick={handleVerify}
             disabled={verifying}
-            className="rounded-xl text-[11px] font-bold px-3 py-2 border border-outline-variant/30 bg-white/5 text-on-surface-variant hover:text-primary hover:border-primary/50 transition-colors inline-flex items-center gap-2 disabled:opacity-50"
+            className="rounded-xl text-[11px] font-bold px-3 py-2 border border-outline-variant/30 bg-[var(--warm-sand)]/5 text-on-surface-variant hover:text-primary hover:border-primary/50 transition-colors inline-flex items-center gap-2 disabled:opacity-50"
           >
             {verifying ? (
               <>
@@ -253,7 +253,7 @@ export default function HospitalityPropertiesPanel() {
                   {!reminder.sent ? (
                     <button
                       onClick={() => markReminderSent(reminder.id)}
-                      className="inline-flex items-center gap-2 font-body text-[11px] font-bold px-3 py-2 rounded-lg bg-white/5 border border-outline-variant/30 text-on-surface-variant hover:text-primary hover:border-primary/50 transition-colors"
+                      className="inline-flex items-center gap-2 font-body text-[11px] font-bold px-3 py-2 rounded-lg bg-[var(--warm-sand)]/5 border border-outline-variant/30 text-on-surface-variant hover:text-primary hover:border-primary/50 transition-colors"
                     >
                       <BellAlertIcon className="h-3.5 w-3.5" />
                       Send reminder

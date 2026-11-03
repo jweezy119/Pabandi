@@ -41,7 +41,7 @@ export const PaymentLinkCard = ({ businessId, businessName, amount = '0', curren
         </div>
 
         <div className="flex items-center gap-3">
-          <a href={whatsapp()} className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] text-white font-headline text-xs font-bold py-2.5 hover:bg-[#20ba5a] transition-colors">
+          <a href={whatsapp()} className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] text-[var(--warm-ink)] font-headline text-xs font-bold py-2.5 hover:bg-[#20ba5a] transition-colors">
             Share on WhatsApp
           </a>
           <a href={url} className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-surface border border-outline-variant/40 text-on-surface font-headline text-xs font-bold py-2.5 hover:bg-surface-container transition-colors">

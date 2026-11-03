@@ -31,7 +31,7 @@ export default function SupportKbArticlePage() {
     <div className="p-6 max-w-3xl mx-auto">
       <button 
         onClick={() => navigate('/support/kb')}
-        className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors mb-8"
+        className="flex items-center gap-2 text-sm text-slate-400 hover:text-[var(--warm-ink)] transition-colors mb-8"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Knowledge Base
@@ -44,7 +44,7 @@ export default function SupportKbArticlePage() {
             <span className="text-slate-600">•</span>
             <span className="text-slate-500">Updated {new Date(article.updatedAt).toLocaleDateString()}</span>
           </div>
-          <h1 className="text-4xl font-bold text-white tracking-tight mb-4">{article.title}</h1>
+          <h1 className="text-4xl font-bold text-[var(--warm-ink)] tracking-tight mb-4">{article.title}</h1>
         </div>
         
         <div className="text-slate-300 whitespace-pre-wrap leading-relaxed text-lg">

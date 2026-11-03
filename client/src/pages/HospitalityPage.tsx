@@ -286,7 +286,7 @@ export default function HospitalityPage() {
               <button
                 key={label}
                 onClick={() => handleOpenWizard(wizardType)}
-                className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white/[0.03] p-5 text-left transition-all hover:border-white/20 group"
+                className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white/[0.03] p-5 text-left transition-all hover:border-[var(--soft-stone)]/20 group"
               >
                 <span className="mb-3 block text-3xl">{icon}</span>
                 <h3 className="text-sm font-bold text-[var(--warm-ink)] group-hover:text-primary transition-colors">{label}</h3>
@@ -305,7 +305,7 @@ export default function HospitalityPage() {
           </div>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
             {PMS_PARTNERS.map(({ name, badge, badgeColor }) => (
-              <div key={name} className="flex flex-col items-center gap-2 rounded-xl border border-[var(--soft-stone)]/30 bg-white/[0.03] p-4 transition-colors hover:border-white/20">
+              <div key={name} className="flex flex-col items-center gap-2 rounded-xl border border-[var(--soft-stone)]/30 bg-white/[0.03] p-4 transition-colors hover:border-[var(--soft-stone)]/20">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--warm-sand)]">
                   <span className="text-lg">🔗</span>
                 </div>

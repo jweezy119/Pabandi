@@ -170,7 +170,7 @@ export default function ContactLeadDetailPage() {
               </div>
               <p className="text-[var(--soft-stone)] mb-4">No invoices yet.</p>
               <button onClick={() => { window.location.href = `/contact/invoices?clientId=${id}`; }}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-[var(--clay)] text-white hover:bg-[var(--terracotta)]">
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-[var(--clay)] text-[var(--warm-ink)] hover:bg-[var(--terracotta)]">
                 + Create Invoice
               </button>
             </div>

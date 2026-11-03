@@ -40,7 +40,7 @@ export default function SupportKbPage() {
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8">
       <div className="text-center space-y-4">
-        <h1 className="text-3xl font-bold text-white tracking-tight">Knowledge Base</h1>
+        <h1 className="text-3xl font-bold text-[var(--warm-ink)] tracking-tight">Knowledge Base</h1>
         <p className="text-slate-400">Find answers, guides, and tutorials for Pabandi.</p>
         
         <form onSubmit={handleSearch} className="max-w-2xl mx-auto relative mt-6">
@@ -50,7 +50,7 @@ export default function SupportKbPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search articles..."
-            className="w-full bg-slate-900/50 border border-slate-700 rounded-2xl pl-12 pr-4 py-4 text-white focus:ring-1 focus:ring-emerald-500 transition-all"
+            className="w-full bg-slate-900/50 border border-slate-700 rounded-2xl pl-12 pr-4 py-4 text-[var(--warm-ink)] focus:ring-1 focus:ring-emerald-500 transition-all"
           />
         </form>
       </div>
@@ -75,7 +75,7 @@ export default function SupportKbPage() {
                     <BookOpen className="w-6 h-6 text-emerald-400" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white group-hover:text-emerald-400 transition-colors">
+                    <h3 className="text-lg font-semibold text-[var(--warm-ink)] group-hover:text-emerald-400 transition-colors">
                       {article.title}
                     </h3>
                     <p className="text-sm text-slate-400 mt-1 line-clamp-2">

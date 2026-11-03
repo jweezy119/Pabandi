@@ -19,11 +19,11 @@ export default function TenantLayout() {
       <aside className="hidden lg:flex flex-col w-64 border-r border-white/5 bg-[#0f172a]/80 backdrop-blur-xl">
         <div className="p-6 border-b border-white/5">
           <Link to="/tenant-portal" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-white font-bold text-lg">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-[var(--warm-ink)] font-bold text-lg">
               P
             </div>
             <div>
-              <div className="text-white font-bold text-lg leading-tight">Pabandi</div>
+              <div className="text-[var(--warm-ink)] font-bold text-lg leading-tight">Pabandi</div>
               <div className="text-xs text-slate-500">Tenant Portal</div>
             </div>
           </Link>
@@ -40,7 +40,7 @@ export default function TenantLayout() {
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                   active
                     ? 'bg-gradient-to-r from-emerald-500/20 to-cyan-500/10 text-emerald-300 border border-emerald-500/20'
-                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    : 'text-slate-400 hover:text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]/5'
                 }`}
               >
                 <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
@@ -52,7 +52,7 @@ export default function TenantLayout() {
         <div className="p-4 border-t border-white/5">
           <div className="rounded-xl bg-gradient-to-br from-emerald-500/10 to-purple-500/10 border border-emerald-500/20 p-4">
             <div className="text-xs text-slate-400 mb-1">Need help?</div>
-            <div className="text-sm text-white font-medium">Contact Support</div>
+            <div className="text-sm text-[var(--warm-ink)] font-medium">Contact Support</div>
             <div className="text-xs text-emerald-400 mt-1">jay@pabandi.com</div>
           </div>
         </div>
@@ -64,10 +64,10 @@ export default function TenantLayout() {
         <header className="lg:hidden sticky top-0 z-40 bg-[#0f172a]/90 backdrop-blur-xl border-b border-white/5 px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-[var(--warm-ink)] font-bold text-sm">
                 P
               </div>
-              <span className="text-white font-bold">Pabandi</span>
+              <span className="text-[var(--warm-ink)] font-bold">Pabandi</span>
             </div>
             <MobileMenu />
           </div>
@@ -90,16 +90,16 @@ function MobileMenu() {
     <>
       <button
         onClick={() => setOpen(!open)}
-        className="lg:hidden p-2 rounded-lg bg-white/5 text-white"
+        className="lg:hidden p-2 rounded-lg bg-[var(--warm-sand)]/5 text-[var(--warm-ink)]"
       >
         <span className="material-symbols-outlined">{open ? 'close' : 'menu'}</span>
       </button>
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-0 bottom-0 w-72 bg-[#0f172a] border-l border-white/10 p-6">
+          <div className="absolute inset-0 bg-[var(--cream)]/60" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-0 bottom-0 w-72 bg-[#0f172a] border-l border-[var(--soft-stone)]/10 p-6">
             <div className="flex items-center justify-between mb-8">
-              <span className="text-white font-bold text-lg">Menu</span>
+              <span className="text-[var(--warm-ink)] font-bold text-lg">Menu</span>
               <button onClick={() => setOpen(false)} className="text-slate-400">
                 <span className="material-symbols-outlined">close</span>
               </button>
@@ -117,7 +117,7 @@ function MobileMenu() {
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                       active
                         ? 'bg-emerald-500/20 text-emerald-300'
-                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                        : 'text-slate-400 hover:text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]/5'
                     }`}
                   >
                     <span className="material-symbols-outlined text-[20px]">{item.icon}</span>

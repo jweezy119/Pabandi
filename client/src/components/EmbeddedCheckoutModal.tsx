@@ -65,7 +65,7 @@ export function EmbeddedCheckoutModal({ prompt, onClose, onFunded }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--cream)]/50 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label="Complete your deposit"
@@ -129,7 +129,7 @@ export function EmbeddedCheckoutModal({ prompt, onClose, onFunded }: Props) {
           </div>
           <button
             onClick={onFunded}
-            className="w-full py-3 rounded-xl bg-[var(--clay)] text-white font-semibold hover:bg-[var(--terracotta)] transition-colors"
+            className="w-full py-3 rounded-xl bg-[var(--clay)] text-[var(--warm-ink)] font-semibold hover:bg-[var(--terracotta)] transition-colors"
           >
             I&apos;ve funded it
           </button>

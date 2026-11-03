@@ -58,7 +58,7 @@ export const HalalSection: React.FC<HalalSectionProps> = ({
             {language === 'en' ? headline.title : headline.titleUr}
           </span>
         </div>
-        <p className="text-[11px] text-white/50 leading-relaxed">
+        <p className="text-[11px] text-[var(--warm-ink)]/50 leading-relaxed">
           {language === 'en' ? headline.subtitle : headline.subtitleUr}
         </p>
       </div>
@@ -70,10 +70,10 @@ export const HalalSection: React.FC<HalalSectionProps> = ({
       <div className="flex items-center gap-3 mb-4">
         <HalalBadge size="lg" />
         <div>
-          <h2 className="text-xl font-bold text-white/90">
+          <h2 className="text-xl font-bold text-[var(--warm-ink)]/90">
             {language === 'en' ? headline.title : headline.titleUr}
           </h2>
-          <p className="text-sm text-white/50 mt-1">
+          <p className="text-sm text-[var(--warm-ink)]/50 mt-1">
             {language === 'en' ? headline.subtitle : headline.subtitleUr}
           </p>
         </div>

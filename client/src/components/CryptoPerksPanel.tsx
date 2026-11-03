@@ -76,7 +76,7 @@ export default function CryptoPerksPanel({ settlement, arbitrage }: CryptoPerksP
       {perks.map((perk) => (
         <div
           key={perk.label}
-          className="p-3 rounded-xl bg-slate-800/50 border border-white/5 hover:border-white/10 transition-all"
+          className="p-3 rounded-xl bg-slate-800/50 border border-white/5 hover:border-[var(--soft-stone)]/10 transition-all"
         >
           <div className="flex items-center gap-2 mb-1">
             <span className="text-base">{perk.icon}</span>

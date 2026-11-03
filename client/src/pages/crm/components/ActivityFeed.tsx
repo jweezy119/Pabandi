@@ -22,7 +22,7 @@ export function ActivityFeed({ activities, onToggleTask, onActivityClick }: { ac
               onClick={(e) => { e.stopPropagation(); onToggleTask(act.id, act.completed); }}
               className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
                 act.completed
-                  ? 'bg-[var(--sage)] text-white'
+                  ? 'bg-[var(--sage)] text-[var(--warm-ink)]'
                   : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] hover:border-[var(--clay)]'
               }`}
             >

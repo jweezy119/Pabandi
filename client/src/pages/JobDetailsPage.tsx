@@ -75,8 +75,8 @@ export default function JobDetailsPage() {
         {/* Header Card */}
         <div className="rounded-[2rem] p-8 sm:p-10 relative overflow-hidden bg-white" style={{ boxShadow: 'var(--shadow-soft)' }}>
           <div className="absolute top-0 right-0 px-6 py-3 rounded-bl-3xl flex items-center space-x-2" style={{ background: 'var(--sage)' }}>
-            <ShieldCheck className="w-5 h-5 text-white" />
-            <span className="font-semibold text-sm text-white">Payment Guaranteed</span>
+            <ShieldCheck className="w-5 h-5 text-[var(--warm-ink)]" />
+            <span className="font-semibold text-sm text-[var(--warm-ink)]">Payment Guaranteed</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mt-4" style={{ color: 'var(--warm-ink)' }}>
@@ -103,13 +103,13 @@ export default function JobDetailsPage() {
         {hasApplied ? (
           <div className="rounded-[2rem] p-10 text-center" style={{ background: 'var(--warm-sand)' }}>
             <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: 'var(--sage)' }}>
-              <CheckCircle2 className="w-10 h-10 text-white" />
+              <CheckCircle2 className="w-10 h-10 text-[var(--warm-ink)]" />
             </div>
             <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--warm-ink)' }}>Application Submitted!</h3>
             <p className="mb-8 max-w-md mx-auto" style={{ color: 'var(--soft-stone)' }}>
               The client has received your profile. Stand out by completing your Pabandi Trust Passport while you wait.
             </p>
-            <button onClick={() => navigate('/dashboard')} className="px-8 py-3.5 rounded-full font-semibold text-white" style={{ background: 'var(--clay)' }}>
+            <button onClick={() => navigate('/dashboard')} className="px-8 py-3.5 rounded-full font-semibold text-[var(--warm-ink)]" style={{ background: 'var(--clay)' }}>
               Go to Dashboard
             </button>
           </div>
@@ -123,7 +123,7 @@ export default function JobDetailsPage() {
             </div>
 
             <div className="md:col-span-1">
-              <div className="sticky top-8 rounded-[2rem] p-8 text-white" style={{ background: 'var(--clay)', boxShadow: 'var(--shadow-lift)' }}>
+              <div className="sticky top-8 rounded-[2rem] p-8 text-[var(--warm-ink)]" style={{ background: 'var(--clay)', boxShadow: 'var(--shadow-lift)' }}>
                 <h3 className="text-xl font-bold mb-2">Ready to apply?</h3>
                 <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.8)' }}>
                   {isAuthenticated ? "Complete your application below." : "Sign in to securely submit your profile."}
@@ -138,7 +138,7 @@ export default function JobDetailsPage() {
                         required
                         value={resumeUrl}
                         onChange={e => setResumeUrl(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white"
+                        className="w-full px-4 py-3 rounded-xl text-[var(--warm-ink)] placeholder-[var(--warm-ink)]/50 focus:outline-none focus:ring-2 focus:ring-white"
                         style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }}
                         placeholder="https://"
                       />
@@ -146,7 +146,7 @@ export default function JobDetailsPage() {
                     <button 
                       type="submit" 
                       disabled={isSubmitting}
-                      className="w-full font-bold py-3.5 rounded-xl flex justify-center items-center gap-2 text-white"
+                      className="w-full font-bold py-3.5 rounded-xl flex justify-center items-center gap-2 text-[var(--warm-ink)]"
                       style={{ background: 'var(--terracotta)' }}
                     >
                       {isSubmitting ? 'Sending...' : 'Submit Profile'}

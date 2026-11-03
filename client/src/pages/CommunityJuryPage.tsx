@@ -2,7 +2,7 @@ import { CommunityJury } from '../components/CommunityJury';
 
 export const CommunityJuryPage = () => {
   return (
-    <div className="min-h-screen bg-black text-[var(--warm-ink)] p-4 md:p-8">
+    <div className="min-h-screen bg-[var(--cream)] text-[var(--warm-ink)] p-4 md:p-8">
       <div className="max-w-lg mx-auto">
         <div className="mb-4">
           <h1 className="text-2xl font-bold">Community Jury</h1>

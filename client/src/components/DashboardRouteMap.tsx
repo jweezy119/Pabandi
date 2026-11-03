@@ -139,7 +139,7 @@ export function DashboardRouteMap() {
             onClick={() => setViewMode(mode)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
               viewMode === mode
-                ? 'bg-[var(--clay)] text-white'
+                ? 'bg-[var(--clay)] text-[var(--warm-ink)]'
                 : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] hover:bg-[var(--warm-sand)]'
             }`}
           >
@@ -185,7 +185,7 @@ export function DashboardRouteMap() {
             key={job.id}
             className="flex items-center gap-3 p-3 rounded-lg bg-[var(--warm-sand)]/50 border border-[rgba(191,179,163,0.2)]"
           >
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: getStatusColor(job.status) }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--warm-ink)] text-sm font-bold" style={{ backgroundColor: getStatusColor(job.status) }}>
               {i + 1}
             </div>
             <div className="flex-1 min-w-0">

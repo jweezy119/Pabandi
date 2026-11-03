@@ -71,7 +71,7 @@ export default function MarketplaceRevenuePanel() {
   ];
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
+    <div className="rounded-xl border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 p-4 backdrop-blur-xl">
       <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">
         Agent Marketplace Revenue
       </h4>

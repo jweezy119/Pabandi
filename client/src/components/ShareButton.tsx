@@ -100,9 +100,9 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
   };
 
   const variantClasses = {
-    primary: 'bg-green-600 hover:bg-green-700 text-white',
+    primary: 'bg-green-600 hover:bg-green-700 text-[var(--warm-ink)]',
     outline: 'border-2 border-green-600 text-green-600 hover:bg-green-50',
-    icon: 'bg-green-600 hover:bg-green-700 text-white p-2 rounded-full',
+    icon: 'bg-green-600 hover:bg-green-700 text-[var(--warm-ink)] p-2 rounded-full',
   };
 
   return (

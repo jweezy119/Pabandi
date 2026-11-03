@@ -79,7 +79,7 @@ export default function BillingPage() {
               <li className="flex items-center gap-2 text-sm text-[var(--warm-ink)]"><CheckCircle className="w-4 h-4 text-green-500" />SMS reminders & Analytics</li>
               <li className="flex items-center gap-2 text-sm text-[var(--warm-ink)]"><CheckCircle className="w-4 h-4 text-green-500" />Priority support</li>
             </ul>
-            <button onClick={() => handleUpgrade('pro')} disabled={loading} className="w-full px-6 py-3 bg-[var(--clay)] text-white rounded-lg hover:bg-[var(--terracotta)] flex items-center justify-center gap-2">
+            <button onClick={() => handleUpgrade('pro')} disabled={loading} className="w-full px-6 py-3 bg-[var(--clay)] text-[var(--warm-ink)] rounded-lg hover:bg-[var(--terracotta)] flex items-center justify-center gap-2">
               <CreditCard className="w-5 h-5" />Upgrade to PRO<ExternalLink className="w-4 h-4" />
             </button>
           </div>
@@ -98,7 +98,7 @@ export default function BillingPage() {
               <li className="flex items-center gap-2 text-sm text-[var(--warm-ink)]"><CheckCircle className="w-4 h-4 text-green-500" />M2M API Access</li>
               <li className="flex items-center gap-2 text-sm text-[var(--warm-ink)]"><CheckCircle className="w-4 h-4 text-green-500" />Webhooks & White label</li>
             </ul>
-            <button onClick={() => handleUpgrade('business')} disabled={loading} className="w-full px-6 py-3 bg-[var(--clay)] text-white rounded-lg hover:bg-[var(--terracotta)] flex items-center justify-center gap-2">
+            <button onClick={() => handleUpgrade('business')} disabled={loading} className="w-full px-6 py-3 bg-[var(--clay)] text-[var(--warm-ink)] rounded-lg hover:bg-[var(--terracotta)] flex items-center justify-center gap-2">
               <CreditCard className="w-5 h-5" />Upgrade to Business<ExternalLink className="w-4 h-4" />
             </button>
           </div>

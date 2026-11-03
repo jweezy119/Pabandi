@@ -73,9 +73,9 @@ export default function ConsumerSandboxPage() {
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border ${
                     stepStatus(n, step) === 'completed'
-                      ? 'bg-green-700 text-white border-green-700'
+                      ? 'bg-green-700 text-[var(--warm-ink)] border-green-700'
                       : stepStatus(n, step) === 'active'
-                      ? 'bg-amber-500 text-white border-amber-500'
+                      ? 'bg-amber-500 text-[var(--warm-ink)] border-amber-500'
                       : 'bg-white text-amber-600 border-amber-200'
                   }`}
                 >
@@ -113,7 +113,7 @@ export default function ConsumerSandboxPage() {
               <button
                 onClick={handleBook}
                 disabled={animating}
-                className="w-full py-4 rounded-xl bg-amber-500 text-white font-bold shadow-lg hover:bg-amber-600 transition-colors disabled:opacity-50"
+                className="w-full py-4 rounded-xl bg-amber-500 text-[var(--warm-ink)] font-bold shadow-lg hover:bg-amber-600 transition-colors disabled:opacity-50"
               >
                 {animating ? 'Locking Escrow...' : 'Book & Lock Escrow ($100)'}
               </button>
@@ -149,7 +149,7 @@ export default function ConsumerSandboxPage() {
               <button
                 onClick={handleComplete}
                 disabled={animating}
-                className="mt-6 w-full py-4 rounded-xl bg-green-700 text-white font-bold shadow-lg hover:bg-green-800 transition-colors disabled:opacity-50"
+                className="mt-6 w-full py-4 rounded-xl bg-green-700 text-[var(--warm-ink)] font-bold shadow-lg hover:bg-green-800 transition-colors disabled:opacity-50"
               >
                 {animating ? 'Verifying...' : 'Job Completed by Provider'}
               </button>
@@ -175,7 +175,7 @@ export default function ConsumerSandboxPage() {
               <button
                 onClick={handleUpload}
                 disabled={animating}
-                className="w-full py-4 rounded-xl bg-amber-500 text-white font-bold shadow-lg hover:bg-amber-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full py-4 rounded-xl bg-amber-500 text-[var(--warm-ink)] font-bold shadow-lg hover:bg-amber-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 <span>📷</span>
                 <span>Upload Photo (Demo)</span>
@@ -214,7 +214,7 @@ export default function ConsumerSandboxPage() {
             <div className="mt-8">
               <button
                 onClick={() => navigate('/app')}
-                className="w-full py-4 rounded-xl bg-amber-500 text-white font-bold shadow-lg hover:bg-amber-600 transition-colors"
+                className="w-full py-4 rounded-xl bg-amber-500 text-[var(--warm-ink)] font-bold shadow-lg hover:bg-amber-600 transition-colors"
               >
                 Back to Consumer App
               </button>

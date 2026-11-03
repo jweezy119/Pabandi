@@ -21,7 +21,7 @@ export function JobCalendar({ jobs, onJobClick }: { jobs: Job[], onJobClick: (id
             key={v}
             onClick={() => setView(v)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              view === v ? 'bg-white text-black' : 'bg-white/5 text-gray-400 hover:text-white'
+              view === v ? 'bg-white text-black' : 'bg-white/5 text-gray-400 hover:text-[var(--warm-ink)]'
             }`}
           >
             {v}
@@ -39,7 +39,7 @@ export function JobCalendar({ jobs, onJobClick }: { jobs: Job[], onJobClick: (id
                 onClick={() => onJobClick(job.id)}
                 className="bg-white/5 p-2 rounded text-left cursor-pointer hover:bg-white/10"
               >
-                <div className="text-white text-sm">{job.serviceType}</div>
+                <div className="text-[var(--warm-ink)] text-sm">{job.serviceType}</div>
                 <div className="text-xs text-gray-400">{new Date(job.scheduledDate).toLocaleDateString()}</div>
               </div>
             ))}

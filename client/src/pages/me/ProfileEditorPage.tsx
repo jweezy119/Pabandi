@@ -153,7 +153,7 @@ function LivePreview({ profile }: { profile: ProfileData }) {
         {/* Banner */}
         <div className="h-32 relative" style={{ background: profile.bannerUrl ? `url(${profile.bannerUrl}) center/cover` : profile.bannerColor }}>
           {profile.isPublic && (
-            <div className="absolute top-3 right-3 bg-black/30 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded-full flex items-center gap-1">
+            <div className="absolute top-3 right-3 bg-[var(--cream)]/30 backdrop-blur-sm text-[var(--warm-ink)] text-[10px] px-2 py-1 rounded-full flex items-center gap-1">
               <Globe size={10} /> Public
             </div>
           )}
@@ -442,7 +442,7 @@ export default function ProfileEditorPage() {
             <button onClick={handleReset} disabled={!dirty} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-[var(--soft-stone)] hover:bg-[var(--warm-sand)]/50 disabled:opacity-40 transition-colors">
               <RotateCcw size={14} /> Reset
             </button>
-            <button onClick={handleSave} disabled={saving || !dirty} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--clay)] text-white hover:bg-[var(--terracotta)] disabled:opacity-40 transition-colors shadow-sm">
+            <button onClick={handleSave} disabled={saving || !dirty} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--clay)] text-[var(--warm-ink)] hover:bg-[var(--terracotta)] disabled:opacity-40 transition-colors shadow-sm">
               {saving ? 'Saving...' : 'Save changes'}
             </button>
           </div>
@@ -602,7 +602,7 @@ export default function ProfileEditorPage() {
                     </div>
                     <input value={newDisplayName} onChange={e => setNewDisplayName(e.target.value)} placeholder="Display name (optional)" className="w-full px-3 py-2 rounded-lg border border-[rgba(191,179,163,0.3)] bg-white/50 text-sm" />
                     <div className="flex gap-2">
-                      <button onClick={handleAddSocialLink} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--clay)] text-white hover:bg-[var(--terracotta)]">Add</button>
+                      <button onClick={handleAddSocialLink} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--clay)] text-[var(--warm-ink)] hover:bg-[var(--terracotta)]">Add</button>
                       <button onClick={() => setShowAddLink(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--soft-stone)] hover:bg-[var(--warm-sand)]/50">Cancel</button>
                     </div>
                   </div>
@@ -637,7 +637,7 @@ export default function ProfileEditorPage() {
                     <input value={newPortfolio.description} onChange={e => setNewPortfolio({ ...newPortfolio, description: e.target.value })} placeholder="Description" className="w-full px-3 py-2 rounded-lg border border-[rgba(191,179,163,0.3)] bg-white/50 text-sm" />
                     <input value={newPortfolio.linkUrl} onChange={e => setNewPortfolio({ ...newPortfolio, linkUrl: e.target.value })} placeholder="Link URL" className="w-full px-3 py-2 rounded-lg border border-[rgba(191,179,163,0.3)] bg-white/50 text-sm" />
                     <div className="flex gap-2">
-                      <button onClick={handleAddPortfolio} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--clay)] text-white hover:bg-[var(--terracotta)]">Add</button>
+                      <button onClick={handleAddPortfolio} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--clay)] text-[var(--warm-ink)] hover:bg-[var(--terracotta)]">Add</button>
                       <button onClick={() => setShowAddPortfolio(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--soft-stone)] hover:bg-[var(--warm-sand)]/50">Cancel</button>
                     </div>
                   </div>
@@ -697,7 +697,7 @@ export default function ProfileEditorPage() {
         <button onClick={handleReset} disabled={!dirty} className="flex-1 py-3 rounded-xl text-sm font-medium text-[var(--soft-stone)] border border-[rgba(191,179,163,0.2)] disabled:opacity-40">
           Reset
         </button>
-        <button onClick={handleSave} disabled={saving || !dirty} className="flex-[2] py-3 rounded-xl text-sm font-semibold bg-[var(--clay)] text-white disabled:opacity-40">
+        <button onClick={handleSave} disabled={saving || !dirty} className="flex-[2] py-3 rounded-xl text-sm font-semibold bg-[var(--clay)] text-[var(--warm-ink)] disabled:opacity-40">
           {saving ? 'Saving...' : 'Save changes'}
         </button>
       </div>

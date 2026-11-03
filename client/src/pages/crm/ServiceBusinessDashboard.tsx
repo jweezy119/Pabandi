@@ -137,11 +137,11 @@ export default function ServiceBusinessDashboard() {
       <header className="border-b border-[var(--soft-stone)]/30 bg-white sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[var(--clay)] flex items-center justify-center text-white font-bold">C</div>
+            <div className="w-10 h-10 rounded-xl bg-[var(--clay)] flex items-center justify-center text-[var(--warm-ink)] font-bold">C</div>
             <div><h1 className="text-lg font-bold text-[var(--warm-ink)]">Contact OS</h1><p className="text-xs text-[var(--soft-stone)]">Service & Property CRM</p></div>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => setTab('properties')} className="px-4 py-2 bg-[var(--clay)] text-white rounded-xl text-sm font-medium">Add Property</button>
+            <button onClick={() => setTab('properties')} className="px-4 py-2 bg-[var(--clay)] text-[var(--warm-ink)] rounded-xl text-sm font-medium">Add Property</button>
             <button onClick={() => setTab('clients')} className="px-4 py-2 bg-white border border-[var(--soft-stone)]/30 rounded-xl text-sm font-medium text-[var(--warm-ink)]">Add Tenant</button>
           </div>
         </div>
@@ -168,7 +168,7 @@ export default function ServiceBusinessDashboard() {
 
         <div className="flex gap-1 mb-6 bg-white rounded-xl p-1 border border-[var(--soft-stone)]/30 overflow-x-auto">
           {(['today', 'calendar', 'properties', 'clients', 'jobs', 'team', 'invoices', 'money', 'pipeline'] as Tab[]).map(t => (
-            <button key={t} onClick={() => setTab(t)} className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all capitalize whitespace-nowrap ${tab === t ? 'bg-[var(--clay)] text-white' : 'text-[var(--soft-stone)] hover:text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'}`}>{t}</button>
+            <button key={t} onClick={() => setTab(t)} className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all capitalize whitespace-nowrap ${tab === t ? 'bg-[var(--clay)] text-[var(--warm-ink)]' : 'text-[var(--soft-stone)] hover:text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'}`}>{t}</button>
           ))}
         </div>
 
@@ -288,7 +288,7 @@ function StatCard({ icon: Icon, label, value, sub, color }: { icon: any; label: 
     <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-5">
       <div className="flex items-start justify-between">
         <div><p className="text-xs text-[var(--soft-stone)] font-medium uppercase tracking-wider">{label}</p><p className="text-2xl font-bold text-[var(--warm-ink)] mt-1">{value}</p>{sub && <p className="text-xs text-[var(--soft-stone)] mt-1">{sub}</p>}</div>
-        <div className={`p-3 rounded-xl ${colors[color || 'blue']} shadow-lg`}><Icon className="w-5 h-5 text-white" /></div>
+        <div className={`p-3 rounded-xl ${colors[color || 'blue']} shadow-lg`}><Icon className="w-5 h-5 text-[var(--warm-ink)]" /></div>
       </div>
     </div>
   );
@@ -345,7 +345,7 @@ function OverviewTab({ jobs, properties, maintenance, clients }: any) {
           {topClients.length === 0 ? <p className="text-sm text-[var(--soft-stone)]">No clients yet</p> : (
             <div className="space-y-3">{topClients.map((c: any) => (
               <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl bg-[var(--warm-sand)]">
-                <div className="w-10 h-10 rounded-full bg-[var(--dusty-rose)] flex items-center justify-center text-white font-bold">{(c.name || '?')[0]}</div>
+                <div className="w-10 h-10 rounded-full bg-[var(--dusty-rose)] flex items-center justify-center text-[var(--warm-ink)] font-bold">{(c.name || '?')[0]}</div>
                 <div className="flex-1 min-w-0"><p className="font-medium text-[var(--warm-ink)] truncate">{c.name}</p><p className="text-xs text-[var(--soft-stone)]">{c.totalJobs || 0} jobs · ${(c.totalSpent || 0).toLocaleString()} spent</p></div>
               </div>
             ))}</div>
@@ -439,7 +439,7 @@ function PropertiesTab({ properties, onRefresh }: { properties: any[]; onRefresh
           <button onClick={() => setShowMaintenance(!showMaintenance)} className="px-4 py-2 bg-white border border-[var(--soft-stone)]/30 rounded-xl text-sm font-medium text-[var(--warm-ink)]">
             Log Maintenance
           </button>
-          <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-[var(--clay)] text-white rounded-xl text-sm font-medium">Add Property</button>
+          <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-[var(--clay)] text-[var(--warm-ink)] rounded-xl text-sm font-medium">Add Property</button>
         </div>
       </div>
       {showForm && <PropertyForm onClose={() => setShowForm(false)} onSave={() => { setShowForm(false); onRefresh(); }} />}
@@ -499,7 +499,7 @@ function TenantsTab({ tenants, properties, leases, onRefresh }: { tenants: any[]
         <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-[var(--dusty-rose)] flex items-center justify-center text-white font-bold">{(selectedTenant.firstName || selectedTenant.email || '?')[0]}</div>
+              <div className="w-12 h-12 rounded-full bg-[var(--dusty-rose)] flex items-center justify-center text-[var(--warm-ink)] font-bold">{(selectedTenant.firstName || selectedTenant.email || '?')[0]}</div>
               <div>
                 <h3 className="font-bold text-[var(--warm-ink)]">{selectedTenant.firstName} {selectedTenant.lastName}</h3>
                 <p className="text-sm text-[var(--soft-stone)]">{selectedTenant.email} · {selectedTenant.phone}</p>
@@ -555,7 +555,7 @@ function TenantsTab({ tenants, properties, leases, onRefresh }: { tenants: any[]
     <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-[var(--warm-ink)]">Clients</h2>
-        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-[var(--clay)] text-white rounded-xl text-sm font-medium flex items-center gap-2">
+        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-[var(--clay)] text-[var(--warm-ink)] rounded-xl text-sm font-medium flex items-center gap-2">
           <FiPlus className="w-4 h-4" /> Add Client
         </button>
       </div>
@@ -567,7 +567,7 @@ function TenantsTab({ tenants, properties, leases, onRefresh }: { tenants: any[]
           const tenantLeases = leases.filter((l: any) => l.tenantEmail === t.email);
           return (
             <div key={t.id} className="flex items-center gap-4 p-4 rounded-xl border border-[var(--soft-stone)]/30 hover:border-[var(--clay)]/30 transition cursor-pointer" onClick={() => handleSelectTenant(t)}>
-              <div className="w-10 h-10 rounded-full bg-[var(--dusty-rose)] flex items-center justify-center text-white font-bold">{(t.firstName || t.email || '?')[0]}</div>
+              <div className="w-10 h-10 rounded-full bg-[var(--dusty-rose)] flex items-center justify-center text-[var(--warm-ink)] font-bold">{(t.firstName || t.email || '?')[0]}</div>
               <div className="flex-1"><p className="font-medium text-[var(--warm-ink)]">{t.firstName} {t.lastName}</p><p className="text-sm text-[var(--soft-stone)]">{t.email} · {t.phone}</p></div>
               <div className="text-right">
                 <Badge variant={t.riskBand === 'HIGH' ? 'red' : t.riskBand === 'MEDIUM' ? 'yellow' : 'green'}>{t.riskBand || 'LOW'}</Badge>
@@ -587,7 +587,7 @@ function JobsTab({ jobs, clients, employees, onRefresh }: { jobs: any[]; clients
     <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-[var(--warm-ink)]">Jobs</h2>
-        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-[var(--clay)] text-white rounded-xl text-sm font-medium">New Job</button>
+        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-[var(--clay)] text-[var(--warm-ink)] rounded-xl text-sm font-medium">New Job</button>
       </div>
       {showForm && <JobForm clients={clients} employees={employees} onClose={() => setShowForm(false)} onSave={() => { setShowForm(false); onRefresh(); }} />}
       {jobs.length === 0 ? <p className="text-[var(--soft-stone)]">No jobs yet</p> : (
@@ -612,7 +612,7 @@ function PropertyForm({ onClose, onSave }: { onClose: () => void; onSave: () => 
       <input placeholder="Address" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white" />
       <div className="grid grid-cols-3 gap-3"><input placeholder="City" value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} className="px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white" /><input placeholder="State" value={form.state} onChange={e => setForm({ ...form, state: e.target.value })} className="px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white" /><input placeholder="Zip" value={form.zip} onChange={e => setForm({ ...form, zip: e.target.value })} className="px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white" /></div>
       <div className="grid grid-cols-3 gap-3"><input type="number" placeholder="Beds" value={form.bedrooms} onChange={e => setForm({ ...form, bedrooms: +e.target.value })} className="px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white" /><input type="number" placeholder="Baths" value={form.bathrooms} onChange={e => setForm({ ...form, bathrooms: +e.target.value })} className="px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white" /><input type="number" placeholder="Rent" value={form.rentAmount} onChange={e => setForm({ ...form, rentAmount: e.target.value })} className="px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white" /></div>
-      <div className="flex gap-3"><button onClick={save} className="px-4 py-2 bg-[var(--clay)] text-white rounded-xl text-sm">Save</button><button onClick={onClose} className="px-4 py-2 border border-[var(--soft-stone)]/30 rounded-xl text-sm">Cancel</button></div>
+      <div className="flex gap-3"><button onClick={save} className="px-4 py-2 bg-[var(--clay)] text-[var(--warm-ink)] rounded-xl text-sm">Save</button><button onClick={onClose} className="px-4 py-2 border border-[var(--soft-stone)]/30 rounded-xl text-sm">Cancel</button></div>
     </div>
   );
 }
@@ -629,7 +629,7 @@ function TenantForm({ properties, onClose, onSave }: { properties: any[]; onClos
         <option value="">Select property</option>
         {properties.map((p: any) => <option key={p.id} value={p.id}>{p.title}</option>)}
       </select>
-      <div className="flex gap-3"><button onClick={save} className="px-4 py-2 bg-[var(--clay)] text-white rounded-xl text-sm">Save</button><button onClick={onClose} className="px-4 py-2 border border-[var(--soft-stone)]/30 rounded-xl text-sm">Cancel</button></div>
+      <div className="flex gap-3"><button onClick={save} className="px-4 py-2 bg-[var(--clay)] text-[var(--warm-ink)] rounded-xl text-sm">Save</button><button onClick={onClose} className="px-4 py-2 border border-[var(--soft-stone)]/30 rounded-xl text-sm">Cancel</button></div>
     </div>
   );
 }
@@ -644,7 +644,7 @@ function JobForm({ clients, employees, onClose, onSave }: { clients: any[]; empl
       <div className="grid grid-cols-2 gap-3"><input type="date" value={form.scheduledDate} onChange={e => setForm({ ...form, scheduledDate: e.target.value })} className="px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white" /><input type="time" value={form.scheduledTime} onChange={e => setForm({ ...form, scheduledTime: e.target.value })} className="px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white" /></div>
       <input placeholder="Address" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white" />
       <div className="grid grid-cols-2 gap-3"><input type="number" placeholder="Price" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} className="px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white" /><select value={form.employeeId} onChange={e => setForm({ ...form, employeeId: e.target.value })} className="px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white"><option value="">Unassigned</option>{employees.map((e: any) => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
-      <div className="flex gap-3"><button onClick={save} className="px-4 py-2 bg-[var(--clay)] text-white rounded-xl text-sm">Save</button><button onClick={onClose} className="px-4 py-2 border border-[var(--soft-stone)]/30 rounded-xl text-sm">Cancel</button></div>
+      <div className="flex gap-3"><button onClick={save} className="px-4 py-2 bg-[var(--clay)] text-[var(--warm-ink)] rounded-xl text-sm">Save</button><button onClick={onClose} className="px-4 py-2 border border-[var(--soft-stone)]/30 rounded-xl text-sm">Cancel</button></div>
     </div>
   );
 }
@@ -657,7 +657,7 @@ function MaintenanceForm({ onClose, onSave }: { onClose: () => void; onSave: () 
       <input placeholder="Title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white" />
       <textarea placeholder="Description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white" />
       <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white"><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option><option value="URGENT">Urgent</option></select>
-      <div className="flex gap-3"><button onClick={save} className="px-4 py-2 bg-[var(--clay)] text-white rounded-xl text-sm">Save</button><button onClick={onClose} className="px-4 py-2 border border-[var(--soft-stone)]/30 rounded-xl text-sm">Cancel</button></div>
+      <div className="flex gap-3"><button onClick={save} className="px-4 py-2 bg-[var(--clay)] text-[var(--warm-ink)] rounded-xl text-sm">Save</button><button onClick={onClose} className="px-4 py-2 border border-[var(--soft-stone)]/30 rounded-xl text-sm">Cancel</button></div>
     </div>
   );
 }

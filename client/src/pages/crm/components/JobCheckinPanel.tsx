@@ -15,11 +15,11 @@ type JobCheckinPanelProps = {
 export function JobCheckinPanel({ job, onCheckIn, onCheckOut }: JobCheckinPanelProps) {
   return (
     <Card className="p-6 border-blue-500/30 bg-blue-500/5">
-      <h3 className="text-lg font-semibold text-white mb-4">Job Execution</h3>
+      <h3 className="text-lg font-semibold text-[var(--warm-ink)] mb-4">Job Execution</h3>
       
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-400">
-          Current Status: <strong className="text-white ml-2">{job.status}</strong>
+          Current Status: <strong className="text-[var(--warm-ink)] ml-2">{job.status}</strong>
         </div>
         
         <div className="flex gap-3">

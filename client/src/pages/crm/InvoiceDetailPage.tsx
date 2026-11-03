@@ -111,17 +111,17 @@ export default function InvoiceDetailPage() {
 
         <div className="flex gap-3">
           {invoice.status === 'draft' && (
-            <button onClick={() => updateStatus('sent')} className="px-4 py-2 bg-[var(--muted-ochre)] text-white rounded-xl text-sm font-medium flex items-center gap-2">
+            <button onClick={() => updateStatus('sent')} className="px-4 py-2 bg-[var(--muted-ochre)] text-[var(--warm-ink)] rounded-xl text-sm font-medium flex items-center gap-2">
               <FiSend className="w-4 h-4" /> Mark as Sent
             </button>
           )}
           {invoice.status === 'sent' && (
-            <button onClick={() => updateStatus('paid')} className="px-4 py-2 bg-[var(--sage)] text-white rounded-xl text-sm font-medium flex items-center gap-2">
+            <button onClick={() => updateStatus('paid')} className="px-4 py-2 bg-[var(--sage)] text-[var(--warm-ink)] rounded-xl text-sm font-medium flex items-center gap-2">
               <FiCheckCircle className="w-4 h-4" /> Mark as Paid
             </button>
           )}
           {invoice.status === 'draft' && (
-            <button onClick={deleteInvoice} className="px-4 py-2 bg-[var(--terracotta)] text-white rounded-xl text-sm font-medium flex items-center gap-2">
+            <button onClick={deleteInvoice} className="px-4 py-2 bg-[var(--terracotta)] text-[var(--warm-ink)] rounded-xl text-sm font-medium flex items-center gap-2">
               <FiTrash2 className="w-4 h-4" /> Delete
             </button>
           )}

@@ -104,8 +104,8 @@ export default function BusinessServicesManager({ businessId }: { businessId: st
   }
 
   return (
-    <div className="bg-white/10 border border-white/10 rounded-2xl p-6 backdrop-blur-lg">
-      <h2 className="text-xl font-bold text-white mb-6">Service Catalog</h2>
+    <div className="bg-[var(--warm-sand)]/10 border border-[var(--soft-stone)]/10 rounded-2xl p-6 backdrop-blur-lg">
+      <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-6">Service Catalog</h2>
       
       {error && (
         <div className="bg-red-500/20 text-red-300 p-4 rounded-xl mb-6">
@@ -116,9 +116,9 @@ export default function BusinessServicesManager({ businessId }: { businessId: st
       {/* Service List */}
       <div className="space-y-4 mb-8">
         {services.map(service => (
-          <div key={service.id} className="bg-white/5 border border-white/10 rounded-xl p-4 flex justify-between items-center">
+          <div key={service.id} className="bg-[var(--warm-sand)]/5 border border-[var(--soft-stone)]/10 rounded-xl p-4 flex justify-between items-center">
             <div>
-              <h3 className="text-white font-semibold flex items-center gap-2">
+              <h3 className="text-[var(--warm-ink)] font-semibold flex items-center gap-2">
                 {service.name} 
                 {!service.isActive && <span className="text-xs bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full">Inactive</span>}
               </h3>
@@ -129,7 +129,7 @@ export default function BusinessServicesManager({ businessId }: { businessId: st
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => startEdit(service)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-300 hover:text-white transition-colors">
+              <button onClick={() => startEdit(service)} className="p-2 bg-[var(--warm-sand)]/5 hover:bg-[var(--warm-sand)]/10 rounded-lg text-gray-300 hover:text-[var(--warm-ink)] transition-colors">
                 <PencilIcon className="h-5 w-5" />
               </button>
               <button onClick={() => handleDelete(service.id)} className="p-2 bg-red-500/10 hover:bg-red-500/20 rounded-lg text-red-400 hover:text-red-300 transition-colors">
@@ -146,8 +146,8 @@ export default function BusinessServicesManager({ businessId }: { businessId: st
       </div>
 
       {/* Add/Edit Form */}
-      <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">
+      <div className="bg-[var(--warm-sand)]/5 border border-[var(--soft-stone)]/10 rounded-xl p-6">
+        <h3 className="text-lg font-semibold text-[var(--warm-ink)] mb-4">
           {isEditing ? 'Edit Service' : 'Add New Service'}
         </h3>
         <form onSubmit={handleSave} className="space-y-4">
@@ -159,7 +159,7 @@ export default function BusinessServicesManager({ businessId }: { businessId: st
                 required
                 value={form.name}
                 onChange={e => setForm({...form, name: e.target.value})}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full bg-[var(--warm-sand)]/5 border border-[var(--soft-stone)]/10 rounded-xl px-4 py-2.5 text-[var(--warm-ink)] focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="e.g. Premium Haircut"
               />
             </div>
@@ -172,7 +172,7 @@ export default function BusinessServicesManager({ businessId }: { businessId: st
                 step="0.01"
                 value={form.price}
                 onChange={e => setForm({...form, price: e.target.value})}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full bg-[var(--warm-sand)]/5 border border-[var(--soft-stone)]/10 rounded-xl px-4 py-2.5 text-[var(--warm-ink)] focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="30.00"
               />
             </div>
@@ -185,7 +185,7 @@ export default function BusinessServicesManager({ businessId }: { businessId: st
                 step="5"
                 value={form.duration}
                 onChange={e => setForm({...form, duration: e.target.value})}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full bg-[var(--warm-sand)]/5 border border-[var(--soft-stone)]/10 rounded-xl px-4 py-2.5 text-[var(--warm-ink)] focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="45"
               />
             </div>
@@ -197,7 +197,7 @@ export default function BusinessServicesManager({ businessId }: { businessId: st
                   checked={form.isActive}
                   onChange={e => setForm({...form, isActive: e.target.checked})}
                 />
-                <div className="w-11 h-6 bg-white/10 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                <div className="w-11 h-6 bg-[var(--warm-sand)]/10 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
                 <span className="ml-3 text-sm font-medium text-gray-300">Active (Visible to customers)</span>
               </label>
             </div>
@@ -207,7 +207,7 @@ export default function BusinessServicesManager({ businessId }: { businessId: st
             <textarea
               value={form.description}
               onChange={e => setForm({...form, description: e.target.value})}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-[var(--warm-sand)]/5 border border-[var(--soft-stone)]/10 rounded-xl px-4 py-2.5 text-[var(--warm-ink)] focus:outline-none focus:ring-2 focus:ring-indigo-500"
               rows={2}
               placeholder="Briefly describe this service..."
             />
@@ -216,7 +216,7 @@ export default function BusinessServicesManager({ businessId }: { businessId: st
           <div className="flex gap-3 pt-2">
             <button
               type="submit"
-              className="px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-medium transition-colors flex items-center gap-2"
+              className="px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-[var(--warm-ink)] rounded-xl font-medium transition-colors flex items-center gap-2"
             >
               {isEditing ? <PencilIcon className="h-5 w-5" /> : <PlusIcon className="h-5 w-5" />}
               {isEditing ? 'Save Changes' : 'Add Service'}
@@ -225,7 +225,7 @@ export default function BusinessServicesManager({ businessId }: { businessId: st
               <button
                 type="button"
                 onClick={resetForm}
-                className="px-6 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition-colors"
+                className="px-6 py-2.5 bg-[var(--warm-sand)]/10 hover:bg-white/20 text-[var(--warm-ink)] rounded-xl font-medium transition-colors"
               >
                 Cancel
               </button>

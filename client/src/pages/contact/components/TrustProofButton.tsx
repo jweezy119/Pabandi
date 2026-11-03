@@ -129,7 +129,7 @@ export function TrustProofButton({ clientId }: { clientId: string }) {
           <button
             onClick={create}
             disabled={busy}
-            className="mt-4 px-4 py-2 rounded-full text-sm font-medium text-white disabled:opacity-40"
+            className="mt-4 px-4 py-2 rounded-full text-sm font-medium text-[var(--warm-ink)] disabled:opacity-40"
             style={{ background: 'var(--clay)' }}
           >
             {busy ? 'Creating…' : 'Create a proof'}
@@ -155,7 +155,7 @@ export function TrustProofButton({ clientId }: { clientId: string }) {
 
           <button
             onClick={copy}
-            className="mt-3 px-4 py-2 rounded-full text-sm font-medium text-white"
+            className="mt-3 px-4 py-2 rounded-full text-sm font-medium text-[var(--warm-ink)]"
             style={{ background: 'var(--clay)' }}
           >
             {copied ? 'Copy again' : 'Copy the code'}

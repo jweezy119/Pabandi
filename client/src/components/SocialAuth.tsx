@@ -25,7 +25,7 @@ export const SocialLoginButtons: React.FC = () => {
           <button
             key={login.id}
             onClick={() => handleSocialLogin(login.url)}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-white font-medium transition-all ${login.color}`}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[var(--warm-ink)] font-medium transition-all ${login.color}`}
           >
             <span>{login.icon}</span>
             <span>{login.name}</span>
@@ -65,14 +65,14 @@ export const ShareButtons: React.FC<{ venue: any }> = ({ venue }) => {
         <button
           key={channel.id}
           onClick={() => shareVenue(channel.id)}
-          className={`px-3 py-1.5 rounded-lg text-white text-xs font-medium transition-all ${channel.color}`}
+          className={`px-3 py-1.5 rounded-lg text-[var(--warm-ink)] text-xs font-medium transition-all ${channel.color}`}
         >
           {channel.icon}
         </button>
       ))}
       <button
         onClick={() => shareVenue('copy')}
-        className={`px-3 py-1.5 rounded-lg text-white text-xs font-medium transition-all ${copied ? 'bg-green-600' : 'bg-gray-600 hover:bg-gray-500'}`}
+        className={`px-3 py-1.5 rounded-lg text-[var(--warm-ink)] text-xs font-medium transition-all ${copied ? 'bg-green-600' : 'bg-gray-600 hover:bg-gray-500'}`}
       >
         {copied ? '✓' : '🔗'}
       </button>

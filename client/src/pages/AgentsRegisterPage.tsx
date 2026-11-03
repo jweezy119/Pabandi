@@ -123,7 +123,7 @@ export default function AgentsRegisterPage() {
               {result.data.setupChecklist.map((item) => (
                 <div key={item.step} className="border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-input)] overflow-hidden">
                   <div className="p-4 bg-[var(--warm-sand)]/40 flex items-center gap-3">
-                    <span className="w-7 h-7 rounded-full bg-[var(--clay)] text-white flex items-center justify-center text-sm font-label">
+                    <span className="w-7 h-7 rounded-full bg-[var(--clay)] text-[var(--warm-ink)] flex items-center justify-center text-sm font-label">
                       {item.step}
                     </span>
                     <div>
@@ -153,7 +153,7 @@ export default function AgentsRegisterPage() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               to="/marketplace"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-[var(--radius-btn)] bg-[var(--clay)] text-white hover:bg-[var(--terracotta)] transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-[var(--radius-btn)] bg-[var(--clay)] text-[var(--warm-ink)] hover:bg-[var(--terracotta)] transition-colors"
             >
               Browse Jobs <ArrowRight className="w-4 h-4" />
             </Link>
@@ -245,7 +245,7 @@ export default function AgentsRegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 rounded-[var(--radius-btn)] bg-[var(--clay)] text-white hover:bg-[var(--terracotta)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg font-label"
+              className="w-full py-4 rounded-[var(--radius-btn)] bg-[var(--clay)] text-[var(--warm-ink)] hover:bg-[var(--terracotta)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg font-label"
             >
               {loading ? 'Registering...' : <>Get API Key <ArrowRight className="w-5 h-5" /></>}
             </button>

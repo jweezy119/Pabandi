@@ -296,7 +296,7 @@ const SolanaEscrowPayment: React.FC<{
             <button
               onClick={connectWallet}
               disabled={wallet.connecting}
-              className="px-4 py-2 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
+              className="px-4 py-2 text-sm bg-purple-600 text-[var(--warm-ink)] rounded-md hover:bg-purple-700 disabled:opacity-50"
             >
               {wallet.connecting ? 'Connecting...' : 'Connect Wallet'}
             </button>
@@ -378,7 +378,7 @@ const SolanaEscrowPayment: React.FC<{
           <button
             onClick={fundEscrow}
             disabled={loading || !wallet.connected}
-            className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+            className="px-4 py-2 text-sm bg-green-600 text-[var(--warm-ink)] rounded-md hover:bg-green-700 disabled:opacity-50"
           >
             {loading ? 'Processing...' : 'Fund Escrow'}
           </button>
@@ -388,21 +388,21 @@ const SolanaEscrowPayment: React.FC<{
             <button
               onClick={releaseFunds}
               disabled={loading}
-              className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 text-sm bg-blue-600 text-[var(--warm-ink)] rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
               Release to Seller
             </button>
             <button
               onClick={refundFunds}
               disabled={loading}
-              className="px-4 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50"
+              className="px-4 py-2 text-sm bg-gray-600 text-[var(--warm-ink)] rounded-md hover:bg-gray-700 disabled:opacity-50"
             >
               Refund to Buyer
             </button>
             <button
               onClick={raiseDispute}
               disabled={loading}
-              className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+              className="px-4 py-2 text-sm bg-red-600 text-[var(--warm-ink)] rounded-md hover:bg-red-700 disabled:opacity-50"
             >
               Raise Dispute
             </button>
@@ -412,7 +412,7 @@ const SolanaEscrowPayment: React.FC<{
           <button
             onClick={raiseDispute}
             disabled={loading}
-            className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+            className="px-4 py-2 text-sm bg-red-600 text-[var(--warm-ink)] rounded-md hover:bg-red-700 disabled:opacity-50"
           >
             Raise Dispute
           </button>

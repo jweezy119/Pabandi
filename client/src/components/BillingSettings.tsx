@@ -76,7 +76,7 @@ export default function BillingSettings() {
           <button
             onClick={() => handleUpgrade('pro')}
             disabled={loading}
-            className="mt-4 px-6 py-2 bg-[var(--clay)] text-white rounded-lg hover:bg-[var(--terracotta)] transition-colors flex items-center gap-2"
+            className="mt-4 px-6 py-2 bg-[var(--clay)] text-[var(--warm-ink)] rounded-lg hover:bg-[var(--terracotta)] transition-colors flex items-center gap-2"
           >
             <Zap className="w-4 h-4" />
             Upgrade to PRO
@@ -93,7 +93,7 @@ export default function BillingSettings() {
               <li className="flex items-center gap-2"><CheckCircle className="w-3 h-3 text-green-500" />SMS reminders</li>
               <li className="flex items-center gap-2"><CheckCircle className="w-3 h-3 text-green-500" />Analytics</li>
             </ul>
-            <button onClick={() => handleUpgrade('pro')} className="w-full px-4 py-2 bg-[var(--clay)] text-white rounded-lg text-sm">Upgrade to PRO</button>
+            <button onClick={() => handleUpgrade('pro')} className="w-full px-4 py-2 bg-[var(--clay)] text-[var(--warm-ink)] rounded-lg text-sm">Upgrade to PRO</button>
           </div>
           <div className="p-5 bg-white rounded-xl border border-[rgba(191,179,163,0.3)]">
             <h4 className="font-bold text-[var(--warm-ink)] mb-2">Business - $149/mo</h4>
@@ -102,7 +102,7 @@ export default function BillingSettings() {
               <li className="flex items-center gap-2"><CheckCircle className="w-3 h-3 text-green-500" />M2M API Access</li>
               <li className="flex items-center gap-2"><CheckCircle className="w-3 h-3 text-green-500" />Webhooks</li>
             </ul>
-            <button onClick={() => handleUpgrade('business')} className="w-full px-4 py-2 bg-[var(--clay)] text-white rounded-lg text-sm">Upgrade to Business</button>
+            <button onClick={() => handleUpgrade('business')} className="w-full px-4 py-2 bg-[var(--clay)] text-[var(--warm-ink)] rounded-lg text-sm">Upgrade to Business</button>
           </div>
         </div>
       )}

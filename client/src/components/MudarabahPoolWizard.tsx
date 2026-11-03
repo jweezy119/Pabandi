@@ -135,7 +135,7 @@ function FormInput({
       min={min}
       max={max}
       step={step}
-      className={`w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none transition-all focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/30 disabled:opacity-50 ${className}`}
+      className={`w-full rounded-lg border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 px-3 py-2 text-sm text-slate-100 outline-none transition-all focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/30 disabled:opacity-50 ${className}`}
     />
   );
 }
@@ -152,7 +152,7 @@ function FormTextarea({
       placeholder={placeholder}
       required={required}
       rows={rows}
-      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none transition-all focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/30"
+      className="w-full rounded-lg border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 px-3 py-2 text-sm text-slate-100 outline-none transition-all focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/30"
     />
   );
 }
@@ -166,7 +166,7 @@ function FormSelect({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className={`w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none transition-all focus:border-indigo-400/60 ${className}`}
+      className={`w-full rounded-lg border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 px-3 py-2 text-sm text-slate-100 outline-none transition-all focus:border-indigo-400/60 ${className}`}
     >
       {options.map((o) => (
         <option key={o.value} value={o.value} className="bg-slate-900">{o.label}</option>
@@ -193,7 +193,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
 function StepIndicator({ current }: { current: number }) {
   return (
     <div className="mb-8">
-      <div className="relative mb-3 h-2 overflow-hidden rounded-full bg-white/10">
+      <div className="relative mb-3 h-2 overflow-hidden rounded-full bg-[var(--warm-sand)]/10">
         <div
           className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500"
           style={{ width: `${(current / STEPS.length) * 100}%` }}
@@ -208,10 +208,10 @@ function StepIndicator({ current }: { current: number }) {
           >
             <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
               s.id === current
-                ? 'bg-indigo-500 text-white shadow-[0_0_12px_rgba(99,102,241,0.5)]'
+                ? 'bg-indigo-500 text-[var(--warm-ink)] shadow-[0_0_12px_rgba(99,102,241,0.5)]'
                 : s.id < current
                   ? 'bg-emerald-500/20 text-emerald-300'
-                  : 'bg-white/10 text-slate-400'
+                  : 'bg-[var(--warm-sand)]/10 text-slate-400'
             }`}>
               {s.id < current ? '✓' : s.id}
             </div>
@@ -445,7 +445,7 @@ export function MudarabahPoolWizard({ onSubmit, onCancel }: { onSubmit: (data: F
                 className={`rounded-lg border px-3 py-2 text-sm font-medium transition-all ${
                   form.profitShareRatio === p
                     ? 'border-indigo-400/60 bg-indigo-500/20 text-indigo-200'
-                    : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20'
+                    : 'border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 text-slate-300 hover:border-white/20'
                 }`}
               >
                 {p}
@@ -491,7 +491,7 @@ export function MudarabahPoolWizard({ onSubmit, onCancel }: { onSubmit: (data: F
                 className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-all ${
                   form.profitCalcMethod === m.value
                     ? 'border-indigo-400/60 bg-indigo-500/10'
-                    : 'border-white/10 bg-white/5 hover:border-white/20'
+                    : 'border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 hover:border-white/20'
                 }`}
               >
                 <input
@@ -594,7 +594,7 @@ export function MudarabahPoolWizard({ onSubmit, onCancel }: { onSubmit: (data: F
           </div>
 
           {form.fundBreakdown.map((item, idx) => (
-            <div key={idx} className="mb-3 grid grid-cols-1 gap-2 rounded-lg border border-white/10 bg-white/5 p-3 sm:grid-cols-12">
+            <div key={idx} className="mb-3 grid grid-cols-1 gap-2 rounded-lg border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 p-3 sm:grid-cols-12">
               <div className="sm:col-span-3">
                 <FormInput value={item.category} onChange={(v) => {
                   const items = [...form.fundBreakdown];
@@ -657,7 +657,7 @@ export function MudarabahPoolWizard({ onSubmit, onCancel }: { onSubmit: (data: F
                 className={`rounded-lg border px-4 py-2 text-sm font-medium transition-all ${
                   form.riskBand === b.value
                     ? 'border-current shadow-md'
-                    : 'border-white/10 bg-white/5 text-slate-400'
+                    : 'border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 text-slate-400'
                 }`}
                 style={form.riskBand === b.value ? { color: b.color, borderColor: b.color, backgroundColor: `${b.color}15` } : {}}
               >
@@ -818,7 +818,7 @@ export function MudarabahPoolWizard({ onSubmit, onCancel }: { onSubmit: (data: F
             type="checkbox"
             checked={form.termsAccepted}
             onChange={(e) => update('termsAccepted', e.target.checked)}
-            className="mt-1 h-4 w-4 rounded border-white/20 bg-white/5 accent-indigo-500"
+            className="mt-1 h-4 w-4 rounded border-white/20 bg-[var(--warm-sand)]/5 accent-indigo-500"
           />
           <span className="text-sm text-slate-300">
             I accept the <strong>Mudarabah Pool Terms & Conditions</strong> and confirm all information provided is accurate and complete. *
@@ -831,7 +831,7 @@ export function MudarabahPoolWizard({ onSubmit, onCancel }: { onSubmit: (data: F
             type="checkbox"
             checked={form.shariaDeclaration}
             onChange={(e) => update('shariaDeclaration', e.target.checked)}
-            className="mt-1 h-4 w-4 rounded border-white/20 bg-white/5 accent-indigo-500"
+            className="mt-1 h-4 w-4 rounded border-white/20 bg-[var(--warm-sand)]/5 accent-indigo-500"
           />
           <span className="text-sm text-slate-300">
             I declare that this Mudarabah pool structure is <strong>Sharia compliant</strong> — free from riba (interest), gharar (excessive uncertainty), and haram activities. *
@@ -876,7 +876,7 @@ export function MudarabahPoolWizard({ onSubmit, onCancel }: { onSubmit: (data: F
       </div>
 
       {/* Navigation */}
-      <div className="mt-8 flex items-center justify-between border-t border-white/10 pt-6">
+      <div className="mt-8 flex items-center justify-between border-t border-[var(--soft-stone)]/10 pt-6">
         <div className="flex gap-2">
           {step > 1 && (
             <Button variant="outline" onClick={goBack}>

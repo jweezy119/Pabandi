@@ -55,7 +55,7 @@ export const TrustPulse = ({ userId, refreshKey }: { userId?: string; refreshKey
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Live Trust Pulse</p>
-          <p className="text-3xl font-black text-white">{score.toFixed(1)}</p>
+          <p className="text-3xl font-black text-[var(--warm-ink)]">{score.toFixed(1)}</p>
           <p className={`text-xs font-bold ${tierColor}`}>{tier}</p>
         </div>
         <div className="text-right">

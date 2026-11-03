@@ -70,7 +70,7 @@ export const CommunityJury = ({ disputeId }: { disputeId?: string }) => {
   return (
     <div className="rounded-2xl border border-zinc-800 bg-[#121212] p-4 space-y-4">
       <div>
-        <h3 className="text-sm font-bold text-white">Community Jury</h3>
+        <h3 className="text-sm font-bold text-[var(--warm-ink)]">Community Jury</h3>
         <p className="text-xs text-zinc-500">Trust Score &gt;90 can vote. First to 3 wins.</p>
       </div>
 
@@ -80,8 +80,8 @@ export const CommunityJury = ({ disputeId }: { disputeId?: string }) => {
           const reporterVotes = tally.filter(v => v.voteForId === d.reportedById).length;
           const userVotes = tally.filter(v => v.voteForId === d.userId).length;
           return (
-            <div key={d.id} className="rounded-xl border border-zinc-800 bg-black/40 p-3">
-              <p className="text-xs font-bold text-white">Case {d.id}</p>
+            <div key={d.id} className="rounded-xl border border-zinc-800 bg-[var(--cream)]/40 p-3">
+              <p className="text-xs font-bold text-[var(--warm-ink)]">Case {d.id}</p>
               <p className="text-[11px] text-zinc-400">{d.description}</p>
               <div className="mt-2 flex items-center gap-3 text-xs text-zinc-300">
                 <span>Reporter {reporterVotes}/3</span>
@@ -98,7 +98,7 @@ export const CommunityJury = ({ disputeId }: { disputeId?: string }) => {
                 <button
                   type="button"
                   onClick={() => vote(d, 'user')}
-                  className="px-3 py-2 rounded-lg bg-zinc-900 text-white font-bold text-xs border border-zinc-800"
+                  className="px-3 py-2 rounded-lg bg-zinc-900 text-[var(--warm-ink)] font-bold text-xs border border-zinc-800"
                 >
                   Vote User
                 </button>
@@ -123,7 +123,7 @@ export const CommunityJury = ({ disputeId }: { disputeId?: string }) => {
       <button
         type="button"
         onClick={loadDisputes}
-        className="w-full py-2 rounded-xl bg-zinc-900 text-white font-bold text-xs border border-zinc-800"
+        className="w-full py-2 rounded-xl bg-zinc-900 text-[var(--warm-ink)] font-bold text-xs border border-zinc-800"
       >
         {loading ? 'Refreshing...' : 'Refresh jury board'}
       </button>

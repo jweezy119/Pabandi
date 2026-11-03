@@ -57,7 +57,7 @@ export default function DashboardPage() {
                     className="group block p-5 bg-white rounded-3xl shadow-sm border border-[rgba(191,179,163,0.2)] hover:shadow-md hover:border-[rgba(191,179,163,0.4)] transition-all"
                   >
                     <div 
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center text-white mb-4 shadow-sm"
+                      className="w-12 h-12 rounded-2xl flex items-center justify-center text-[var(--warm-ink)] mb-4 shadow-sm"
                       style={{ backgroundColor: mod.color }}
                     >
                       <span className="material-symbols-outlined">{mod.icon}</span>

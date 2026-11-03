@@ -179,8 +179,8 @@ export const PublicBookingPage: React.FC = () => {
     <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
       {/* Hero */}
       <div className="relative h-48 md:h-64 bg-gradient-to-br from-[var(--clay)] via-[var(--terracotta)] to-[var(--muted-ochre)]">
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="absolute inset-0 flex items-end px-4 md:px-8 pb-6 text-white">
+        <div className="absolute inset-0 bg-[var(--warm-sand)]/20" />
+        <div className="absolute inset-0 flex items-end px-4 md:px-8 pb-6 text-[var(--warm-ink)]">
           <div className="max-w-4xl mx-auto w-full">
             {business.logoUrl && (
               <img src={business.logoUrl} alt="" className="h-16 w-auto mb-4" />
@@ -231,7 +231,7 @@ export const PublicBookingPage: React.FC = () => {
                       onClick={() => handleDateClick(dateStr)}
                       className={`col-span-1 aspect-square rounded-xl transition-all ${
                         isSelected
-                          ? 'bg-[var(--clay)] text-white shadow-lg'
+                          ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-lg'
                           : isToday
                           ? 'bg-[var(--clay)]/10 text-[var(--clay)] border border-[var(--clay)]'
                           : 'bg-white hover:bg-[var(--warm-sand)] text-[var(--warm-ink)]'
@@ -447,7 +447,7 @@ function PaymentMapPreview({
           </div>
         )}
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+          <div className="absolute inset-0 flex items-center justify-center bg-[var(--warm-sand)]/20">
             <div className="animate-spin w-6 h-6 border-2 border-[var(--clay)] border-t-transparent rounded-full" />
           </div>
         )}

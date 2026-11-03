@@ -29,7 +29,7 @@ export default function EmployeesTab({ employees, onRefresh }: { employees: any[
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-[var(--warm-ink)]">Team Management</h2>
-        <button onClick={() => { setSelectedEmployee(null); setShowForm(true); }} className="px-4 py-2 bg-[var(--clay)] text-white rounded-xl text-sm font-medium flex items-center gap-2">
+        <button onClick={() => { setSelectedEmployee(null); setShowForm(true); }} className="px-4 py-2 bg-[var(--clay)] text-[var(--warm-ink)] rounded-xl text-sm font-medium flex items-center gap-2">
           <FiPlus className="w-4 h-4" /> Add Employee
         </button>
       </div>
@@ -104,7 +104,7 @@ function EmployeeCard({ employee, onEdit, onDelete, onClick }: { employee: any; 
   return (
     <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-4 hover:border-[var(--clay)]/30 transition cursor-pointer group" onClick={onClick}>
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--sage)] to-[var(--muted-ochre)] flex items-center justify-center text-white font-bold text-lg">
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--sage)] to-[var(--muted-ochre)] flex items-center justify-center text-[var(--warm-ink)] font-bold text-lg">
           {employee.name?.charAt(0) || '?'}
         </div>
         <div className="flex-1 min-w-0">
@@ -158,7 +158,7 @@ function EmployeeFormModal({ employee, onClose, onSave }: { employee: any; onClo
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--cream)]/30 p-4" onClick={onClose}>
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-[var(--soft-stone)]/30" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-[var(--warm-ink)]">{employee ? 'Edit Employee' : 'Add Employee'}</h3>
@@ -199,7 +199,7 @@ function EmployeeFormModal({ employee, onClose, onSave }: { employee: any; onClo
           </div>
           <div className="flex gap-3 pt-4">
             <button type="button" onClick={onClose} className="flex-1 py-2 rounded-xl border border-[var(--soft-stone)]/30 text-sm font-medium text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]">Cancel</button>
-            <button type="submit" disabled={saving} className="flex-1 py-2 rounded-xl bg-[var(--clay)] text-white text-sm font-medium disabled:opacity-50">{saving ? 'Saving...' : employee ? 'Update' : 'Add Employee'}</button>
+            <button type="submit" disabled={saving} className="flex-1 py-2 rounded-xl bg-[var(--clay)] text-[var(--warm-ink)] text-sm font-medium disabled:opacity-50">{saving ? 'Saving...' : employee ? 'Update' : 'Add Employee'}</button>
           </div>
         </form>
       </div>
@@ -209,14 +209,14 @@ function EmployeeFormModal({ employee, onClose, onSave }: { employee: any; onClo
 
 function EmployeeDetailModal({ employee, onClose }: { employee: any; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--cream)]/30 p-4" onClick={onClose}>
       <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl border border-[var(--soft-stone)]/30" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-bold text-[var(--warm-ink)]">Employee Details</h3>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-[var(--warm-sand)] text-[var(--soft-stone)]"><FiX className="w-5 h-5" /></button>
         </div>
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[var(--sage)] to-[var(--muted-ochre)] flex items-center justify-center text-white font-bold text-2xl">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[var(--sage)] to-[var(--muted-ochre)] flex items-center justify-center text-[var(--warm-ink)] font-bold text-2xl">
             {employee.name?.charAt(0) || '?'}
           </div>
           <div>

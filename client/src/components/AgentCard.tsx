@@ -17,7 +17,7 @@ export default function AgentCard({ agent, compact }: { agent: Agent; compact?: 
     return (
       <Link
         to={`/agent-marketplace/agents/${agent.slug}`}
-        className="flex items-center gap-3 p-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition"
+        className="flex items-center gap-3 p-3 rounded-xl border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 hover:bg-[var(--warm-sand)]/10 transition"
       >
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-purple-600 flex items-center justify-center text-sm font-bold shrink-0">
           {agent.name.charAt(0).toUpperCase()}
@@ -36,7 +36,7 @@ export default function AgentCard({ agent, compact }: { agent: Agent; compact?: 
   return (
     <Link
       to={`/agent-marketplace/agents/${agent.slug}`}
-      className="block rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 hover:bg-white/10 hover:border-white/20 transition-all hover:-translate-y-0.5"
+      className="block rounded-2xl border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 backdrop-blur-xl p-4 hover:bg-[var(--warm-sand)]/10 hover:border-white/20 transition-all hover:-translate-y-0.5"
     >
       <div className="flex items-center gap-3 mb-3">
         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-purple-600 flex items-center justify-center text-lg font-bold shrink-0">

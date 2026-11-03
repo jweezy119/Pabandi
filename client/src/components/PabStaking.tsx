@@ -109,7 +109,7 @@ export const PabStaking: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h2 className="text-3xl font-bold text-white mb-6">PAB Staking</h2>
+      <h2 className="text-3xl font-bold text-[var(--warm-ink)] mb-6">PAB Staking</h2>
 
       {message && (
         <div className="mb-4 p-3 rounded-lg bg-blue-900/50 border border-blue-500 text-blue-200">
@@ -148,7 +148,7 @@ export const PabStaking: React.FC = () => {
             } ${tier.active ? 'ring-2 ring-green-500' : ''}`}
           >
             <div className={`text-3xl mb-2`}>{TIER_ICONS[tier.tier]}</div>
-            <div className="font-bold text-white">{tier.tier}</div>
+            <div className="font-bold text-[var(--warm-ink)]">{tier.tier}</div>
             <div className="text-sm text-gray-400">{tier.minAmount} PAB</div>
             <div className="text-xs text-green-400 mt-1">+{tier.trustBoost} trust</div>
             <div className="text-xs text-yellow-400">{tier.apy}% APY</div>
@@ -163,7 +163,7 @@ export const PabStaking: React.FC = () => {
       <button
         onClick={handleStake}
         disabled={loading}
-        className={`w-full py-3 rounded-xl font-bold text-white bg-gradient-to-r ${TIER_COLORS[selectedTier]} disabled:opacity-50`}
+        className={`w-full py-3 rounded-xl font-bold text-[var(--warm-ink)] bg-gradient-to-r ${TIER_COLORS[selectedTier]} disabled:opacity-50`}
       >
         {loading ? 'Processing...' : `Stake ${selectedTier}`}
       </button>
@@ -171,21 +171,21 @@ export const PabStaking: React.FC = () => {
       {/* Active Positions */}
       {status && status.records.filter(r => r.status === 'ACTIVE').length > 0 && (
         <div className="mt-8">
-          <h3 className="text-xl font-bold text-white mb-4">Your Positions</h3>
+          <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-4">Your Positions</h3>
           <div className="space-y-3">
             {status.records
               .filter((r: any) => r.status === 'ACTIVE')
               .map((record: any) => (
                 <div key={record.id} className="bg-gray-800 rounded-lg p-4 flex justify-between items-center">
                   <div>
-                    <span className="font-bold text-white">{record.tier}</span>
+                    <span className="font-bold text-[var(--warm-ink)]">{record.tier}</span>
                     <span className="ml-3 text-gray-400">{record.amountPab} PAB</span>
                     <span className="ml-3 text-green-400">+{record.trustBoost} trust</span>
                   </div>
                   <button
                     onClick={() => handleUnstake(record.id)}
                     disabled={loading || new Date(record.unlockAt) > new Date()}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white rounded-lg text-sm"
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-[var(--warm-ink)] rounded-lg text-sm"
                   >
                     {new Date(record.unlockAt) > new Date()
                       ? `Locked until ${new Date(record.unlockAt).toLocaleDateString()}`

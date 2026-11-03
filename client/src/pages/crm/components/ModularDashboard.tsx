@@ -175,7 +175,7 @@ export default function ModularDashboard({ businessId, clients }: ModularDashboa
           <button
             onClick={() => setEditMode(editMode === 'layout' ? 'none' : 'layout')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              editMode === 'layout' ? 'bg-[var(--clay)] text-white' : 'bg-[var(--warm-sand)]/50 text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'
+              editMode === 'layout' ? 'bg-[var(--clay)] text-[var(--warm-ink)]' : 'bg-[var(--warm-sand)]/50 text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'
             }`}
           >
             <Settings size={12} />
@@ -184,7 +184,7 @@ export default function ModularDashboard({ businessId, clients }: ModularDashboa
           <button
             onClick={() => setEditMode(editMode === 'theme' ? 'none' : 'theme')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              editMode === 'theme' ? 'bg-[var(--clay)] text-white' : 'bg-[var(--warm-sand)]/50 text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'
+              editMode === 'theme' ? 'bg-[var(--clay)] text-[var(--warm-ink)]' : 'bg-[var(--warm-sand)]/50 text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'
             }`}
           >
             <Palette size={12} />
@@ -222,7 +222,7 @@ export default function ModularDashboard({ businessId, clients }: ModularDashboa
                   <button
                     key={d}
                     onClick={() => { const t = { ...theme, density: d }; setTheme(t); saveLayout(layout, t); }}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium capitalize ${theme.density === d ? 'bg-[var(--clay)] text-white' : 'bg-[var(--warm-sand)]/50 text-[var(--warm-ink)]'}`}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium capitalize ${theme.density === d ? 'bg-[var(--clay)] text-[var(--warm-ink)]' : 'bg-[var(--warm-sand)]/50 text-[var(--warm-ink)]'}`}
                   >
                     {d}
                   </button>
@@ -236,7 +236,7 @@ export default function ModularDashboard({ businessId, clients }: ModularDashboa
                   <button
                     key={r}
                     onClick={() => { const t = { ...theme, borderRadius: r }; setTheme(t); saveLayout(layout, t); }}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium capitalize ${theme.borderRadius === r ? 'bg-[var(--clay)] text-white' : 'bg-[var(--warm-sand)]/50 text-[var(--warm-ink)]'}`}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium capitalize ${theme.borderRadius === r ? 'bg-[var(--clay)] text-[var(--warm-ink)]' : 'bg-[var(--warm-sand)]/50 text-[var(--warm-ink)]'}`}
                   >
                     {r}
                   </button>
@@ -291,7 +291,7 @@ export default function ModularDashboard({ businessId, clients }: ModularDashboa
       )}
 
       {showAddWidget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={() => setShowAddWidget(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--cream)]/30 backdrop-blur-sm" onClick={() => setShowAddWidget(false)}>
           <div className="bg-[var(--cream)] rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-[var(--warm-ink)] font-headline">Add Widget</h3>
@@ -344,7 +344,7 @@ export default function ModularDashboard({ businessId, clients }: ModularDashboa
       </div>
 
       {saving && (
-        <div className="fixed bottom-4 right-4 px-3 py-2 rounded-lg bg-[var(--warm-ink)] text-white text-xs font-medium shadow-lg">
+        <div className="fixed bottom-4 right-4 px-3 py-2 rounded-lg bg-[var(--warm-ink)] text-[var(--warm-ink)] text-xs font-medium shadow-lg">
           Saving...
         </div>
       )}

@@ -47,7 +47,7 @@ export default function SupportAdminPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">Support Dashboard</h1>
+        <h1 className="text-2xl font-bold text-[var(--warm-ink)] tracking-tight">Support Dashboard</h1>
         <p className="text-slate-400">Manage all customer support tickets across your tenant.</p>
       </div>
 
@@ -75,7 +75,7 @@ export default function SupportAdminPage() {
                   className="hover:bg-slate-800/30 cursor-pointer transition-colors"
                 >
                   <td className="p-4">
-                    <div className="font-medium text-white">{ticket.subject}</div>
+                    <div className="font-medium text-[var(--warm-ink)]">{ticket.subject}</div>
                     <div className="text-xs text-slate-500">#{ticket.id.slice(0,8)} • {ticket.category}</div>
                   </td>
                   <td className="p-4">

@@ -21,7 +21,7 @@ function ClayCard({ children, className = '', hover = true, ...props }: any) {
 function ClayButton({ children, variant = 'primary', className = '', ...props }: any) {
   const base = 'inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 cursor-pointer border-2';
   const variants: Record<string, string> = {
-    primary: 'bg-[var(--clay)] text-white border-[var(--clay)] hover:bg-[var(--terracotta)] hover:border-[var(--terracotta)] hover:-translate-y-0.5 active:scale-95',
+    primary: 'bg-[var(--clay)] text-[var(--warm-ink)] border-[var(--clay)] hover:bg-[var(--terracotta)] hover:border-[var(--terracotta)] hover:-translate-y-0.5 active:scale-95',
     secondary: 'bg-transparent text-[var(--warm-ink)] border-[var(--soft-stone)] hover:border-[var(--clay)] hover:text-[var(--clay)]',
     ghost: 'bg-transparent text-[var(--soft-stone)] border-transparent hover:bg-[var(--warm-sand)]',
   };
@@ -498,7 +498,7 @@ export default function ContactJobsPage() {
                     </span>
                     {dayJobs.length > 0 && (
                       <div className="mt-0.5 w-full px-1">
-                        <div className="text-[10px] bg-[var(--clay)] text-white rounded-full px-1 py-0.5 truncate text-center">
+                        <div className="text-[10px] bg-[var(--clay)] text-[var(--warm-ink)] rounded-full px-1 py-0.5 truncate text-center">
                           {dayJobs.length}
                         </div>
                       </div>

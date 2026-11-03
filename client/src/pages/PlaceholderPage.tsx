@@ -29,7 +29,7 @@ export default function PlaceholderPage() {
       <p className="font-body text-lg text-on-surface-variant max-w-md mb-8">
         We are currently upgrading the Pabandi ecosystem. Standalone features (like {title}) are being integrated directly into our 5 core OS layers (Contact, Booking, Property, Freight, Capital) for a seamless experience. Check back soon.
       </p>
-      <Link to="/dashboard" className="px-6 py-3 rounded-xl bg-[var(--clay)] text-white font-bold hover:shadow-lg hover:-translate-y-1 transition-all">
+      <Link to="/dashboard" className="px-6 py-3 rounded-xl bg-[var(--clay)] text-[var(--warm-ink)] font-bold hover:shadow-lg hover:-translate-y-1 transition-all">
         Back to Dashboard
       </Link>
     </div>

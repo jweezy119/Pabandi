@@ -27,7 +27,7 @@ export default function ProjectCard({ project }: { project: Project }) {
   return (
     <Link
       to={`/agent-marketplace/projects/${project.id}`}
-      className="block rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 hover:bg-white/10 hover:border-white/20 transition-all hover:-translate-y-0.5"
+      className="block rounded-2xl border border-[var(--soft-stone)]/10 bg-[var(--warm-sand)]/5 backdrop-blur-xl p-4 hover:bg-[var(--warm-sand)]/10 hover:border-white/20 transition-all hover:-translate-y-0.5"
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1 min-w-0">

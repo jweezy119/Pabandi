@@ -82,7 +82,7 @@ export default function AgentPaymentsPage() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               to="/marketplace"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-[var(--radius-btn)] bg-[var(--clay)] text-white hover:bg-[var(--terracotta)] transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-[var(--radius-btn)] bg-[var(--clay)] text-[var(--warm-ink)] hover:bg-[var(--terracotta)] transition-colors"
             >
               Browse Jobs <ArrowRight className="w-4 h-4" />
             </Link>

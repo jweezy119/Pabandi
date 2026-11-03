@@ -87,7 +87,7 @@ export const TrustPassportPage: React.FC = () => {
               <button
                 onClick={issueTrustPassportVC}
                 disabled={issuingVC}
-                className="px-4 py-2 rounded-[var(--radius-btn)] bg-[var(--clay)] text-white hover:bg-[var(--terracotta)] transition-colors disabled:opacity-50 text-sm flex items-center gap-2"
+                className="px-4 py-2 rounded-[var(--radius-btn)] bg-[var(--clay)] text-[var(--warm-ink)] hover:bg-[var(--terracotta)] transition-colors disabled:opacity-50 text-sm flex items-center gap-2"
               >
                 <FileText className="w-4 h-4" />
                 {issuingVC ? 'Issuing...' : vcData ? 'Re-issue VC' : 'Get Verifiable Credential'}
@@ -104,7 +104,7 @@ export const TrustPassportPage: React.FC = () => {
               <span className="text-sm text-green-800 flex-1">VC issued successfully</span>
               <button
                 onClick={downloadVC}
-                className="px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors text-sm flex items-center gap-1"
+                className="px-3 py-1.5 rounded-lg bg-green-600 text-[var(--warm-ink)] hover:bg-green-700 transition-colors text-sm flex items-center gap-1"
               >
                 <Download className="w-4 h-4" />
                 Download VC

@@ -13,7 +13,7 @@ export function PrivyWalletConnector({ onConnect, onDisconnect }: PrivyWalletCon
       <div className="privy-wallet-connector">
         <button
           disabled
-          className="w-full py-3 rounded-xl font-semibold text-white opacity-50 transition-all hover:opacity-50"
+          className="w-full py-3 rounded-xl font-semibold text-[var(--warm-ink)] opacity-50 transition-all hover:opacity-50"
           style={{ background: 'var(--clay)', color: 'var(--warm-ink)' }}
         >
           Wallet not configured
@@ -63,7 +63,7 @@ export function PrivyWalletConnector({ onConnect, onDisconnect }: PrivyWalletCon
     <div className="privy-wallet-connector">
       <button
         onClick={handleConnect}
-        className="w-full py-3 rounded-xl font-semibold text-white transition-all hover:opacity-90"
+        className="w-full py-3 rounded-xl font-semibold text-[var(--warm-ink)] transition-all hover:opacity-90"
         style={{ background: 'var(--clay)', color: 'var(--warm-ink)' }}
       >
         {user?.email ? `Sign in as ${user.email}` : 'Sign in with email'}

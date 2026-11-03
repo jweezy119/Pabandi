@@ -73,7 +73,7 @@ export default function BusinessMap({ latitude = 0, longitude = 0, name, zoom = 
         href={`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-slate-900/90 text-slate-200 text-[11px] font-semibold px-2.5 py-1.5 rounded-full shadow-md hover:bg-slate-800 transition-colors z-[1000] border border-white/10"
+        className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-slate-900/90 text-slate-200 text-[11px] font-semibold px-2.5 py-1.5 rounded-full shadow-md hover:bg-slate-800 transition-colors z-[1000] border border-[var(--soft-stone)]/10"
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>

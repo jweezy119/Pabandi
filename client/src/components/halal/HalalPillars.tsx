@@ -57,7 +57,7 @@ export const HalalPillars: React.FC<HalalPillarsProps> = ({
             className={`rounded-lg bg-gradient-to-br ${p.color} border border-white/5 p-3 text-center`}
           >
             <div className="text-xl mb-1">{p.icon}</div>
-            <div className="text-[10px] font-bold text-white/90 leading-tight">
+            <div className="text-[10px] font-bold text-[var(--warm-ink)]/90 leading-tight">
               {language === 'en' ? p.title : p.titleUr}
             </div>
           </div>
@@ -71,13 +71,13 @@ export const HalalPillars: React.FC<HalalPillarsProps> = ({
       {PILLARS.map((p) => (
         <div
           key={p.title}
-          className={`rounded-2xl bg-gradient-to-br ${p.color} border border-white/8 p-5 hover:border-white/15 transition-all duration-300`}
+          className={`rounded-2xl bg-gradient-to-br ${p.color} border border-white/8 p-5 hover:border-[var(--soft-stone)]/15 transition-all duration-300`}
         >
           <div className="text-3xl mb-3">{p.icon}</div>
-          <h3 className="font-bold text-white/90 text-sm mb-2">
+          <h3 className="font-bold text-[var(--warm-ink)]/90 text-sm mb-2">
             {language === 'en' ? p.title : p.titleUr}
           </h3>
-          <p className="text-xs text-white/60 leading-relaxed">
+          <p className="text-xs text-[var(--warm-ink)]/60 leading-relaxed">
             {language === 'en' ? p.desc : p.descUr}
           </p>
         </div>

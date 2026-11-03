@@ -76,7 +76,7 @@ export default function IntegrationsPage() {
               <div className="flex gap-2">
                 <Link
                   to={integration.docs}
-                  className="px-4 py-2 rounded-[var(--radius-btn)] bg-[var(--clay)] text-white hover:bg-[var(--terracotta)] transition-colors text-sm flex items-center gap-1"
+                  className="px-4 py-2 rounded-[var(--radius-btn)] bg-[var(--clay)] text-[var(--warm-ink)] hover:bg-[var(--terracotta)] transition-colors text-sm flex items-center gap-1"
                 >
                   Docs <ArrowRight className="w-4 h-4" />
                 </Link>

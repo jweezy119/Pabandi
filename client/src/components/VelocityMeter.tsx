@@ -35,7 +35,7 @@ export default function VelocityMeter({ current, max, efficiency, revenuePerCycl
       {/* Main velocity bar */}
       <div>
         <div className="flex justify-between text-xs text-slate-400 mb-2">
-          <span className="font-semibold text-white">{current.toFixed(0)} cycles/day</span>
+          <span className="font-semibold text-[var(--warm-ink)]">{current.toFixed(0)} cycles/day</span>
           <span>Max: {max}</span>
         </div>
         <div className="relative w-full h-4 bg-slate-700 rounded-full overflow-hidden">

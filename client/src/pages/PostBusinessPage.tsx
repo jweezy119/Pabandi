@@ -37,7 +37,7 @@ export default function PostBusinessPage() {
       <div className="min-h-screen bg-[var(--cream)] flex items-center justify-center p-4">
         <div className="text-center max-w-md">
           <div className="w-16 h-16 rounded-full bg-[var(--sage)] flex items-center justify-center mx-auto mb-4">
-            <FiCheck className="w-8 h-8 text-white" />
+            <FiCheck className="w-8 h-8 text-[var(--warm-ink)]" />
           </div>
           <h1 className="text-2xl font-bold text-[var(--warm-ink)] mb-2">Business Posted!</h1>
           <p className="text-[var(--soft-stone)] mb-4">Setting up your CRM now...</p>
@@ -69,7 +69,7 @@ export default function PostBusinessPage() {
         <div className="flex items-center justify-center gap-2 mb-8">
           {[1, 2, 3].map(s => (
             <div key={s} className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step >= s ? 'bg-[var(--clay)] text-white' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)]'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step >= s ? 'bg-[var(--clay)] text-[var(--warm-ink)]' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)]'}`}>
                 {s}
               </div>
               {s < 3 && <div className={`w-8 h-0.5 ${step > s ? 'bg-[var(--clay)]' : 'bg-[var(--soft-stone)]/30'}`} />}
@@ -144,7 +144,7 @@ export default function PostBusinessPage() {
               </div>
               <div className="flex gap-3 pt-4">
                 <button type="button" onClick={() => setStep(1)} className="flex-1 py-2 rounded-xl border border-[var(--soft-stone)]/30 text-sm font-medium text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]">Back</button>
-                <button type="button" onClick={() => setStep(3)} className="flex-1 py-2 rounded-xl bg-[var(--clay)] text-white text-sm font-medium hover:bg-[var(--terracotta)]">Continue</button>
+                <button type="button" onClick={() => setStep(3)} className="flex-1 py-2 rounded-xl bg-[var(--clay)] text-[var(--warm-ink)] text-sm font-medium hover:bg-[var(--terracotta)]">Continue</button>
               </div>
             </div>
           )}
@@ -174,7 +174,7 @@ export default function PostBusinessPage() {
               </div>
               <div className="flex gap-3">
                 <button type="button" onClick={() => setStep(2)} className="flex-1 py-2 rounded-xl border border-[var(--soft-stone)]/30 text-sm font-medium text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]">Back</button>
-                <button type="submit" className="flex-1 py-2 rounded-xl bg-[var(--clay)] text-white text-sm font-medium hover:bg-[var(--terracotta)]">Post Business</button>
+                <button type="submit" className="flex-1 py-2 rounded-xl bg-[var(--clay)] text-[var(--warm-ink)] text-sm font-medium hover:bg-[var(--terracotta)]">Post Business</button>
               </div>
             </div>
           )}

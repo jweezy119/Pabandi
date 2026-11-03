@@ -169,7 +169,7 @@ export default function ContactJobDetailPage() {
                   });
                   navigate('/contact/deals');
                 }}
-                className="w-full bg-[var(--clay)] text-white px-4 py-3 rounded-xl font-bold hover:opacity-90 transition mt-4"
+                className="w-full bg-[var(--clay)] text-[var(--warm-ink)] px-4 py-3 rounded-xl font-bold hover:opacity-90 transition mt-4"
               >
                 Create Deal
               </button>
@@ -189,9 +189,9 @@ export default function ContactJobDetailPage() {
           <h1 className="text-2xl font-bold text-[var(--warm-ink)]">Job Details</h1>
           <div className="flex items-center gap-3">
             <Link to="/contact/jobs" className="text-sm text-[var(--terracotta)]">← Back to Jobs</Link>
-            {job.status === 'scheduled' && <button onClick={() => setShowCheckIn(true)} className="bg-[var(--clay)] text-white px-4 py-2 rounded-full font-medium">Check In</button>}
-            {checkedInAt && !checkedOutAt && <button onClick={() => setShowCheckOut(true)} className="bg-[var(--sage)] text-white px-4 py-2 rounded-full font-medium">Check Out</button>}
-            {['scheduled', 'in progress'].includes(job.status) && <button onClick={cancelJob} className="bg-[var(--dusty-rose)] text-white px-4 py-2 rounded-full font-medium">Cancel</button>}
+            {job.status === 'scheduled' && <button onClick={() => setShowCheckIn(true)} className="bg-[var(--clay)] text-[var(--warm-ink)] px-4 py-2 rounded-full font-medium">Check In</button>}
+            {checkedInAt && !checkedOutAt && <button onClick={() => setShowCheckOut(true)} className="bg-[var(--sage)] text-[var(--warm-ink)] px-4 py-2 rounded-full font-medium">Check Out</button>}
+            {['scheduled', 'in progress'].includes(job.status) && <button onClick={cancelJob} className="bg-[var(--dusty-rose)] text-[var(--warm-ink)] px-4 py-2 rounded-full font-medium">Cancel</button>}
             <button onClick={delJob} className="bg-[var(--soft-stone)]/20 text-[var(--warm-ink)] px-3 py-2 rounded-full text-xs">Delete</button>
           </div>
         </div>
@@ -304,32 +304,32 @@ export default function ContactJobDetailPage() {
               <span className="text-sm text-[var(--soft-stone)]">{invoice.status}</span>
             </div>
             <p className="text-[var(--warm-ink)] text-lg font-bold mt-2">${invoice.subtotal?.toFixed(2) || 0}</p>
-            <div className="mt-4"><Link to={`/contact/invoices/${invoice.id}`} className="bg-[var(--clay)] text-white px-4 py-2 rounded-full text-sm">View Invoice</Link></div>
+            <div className="mt-4"><Link to={`/contact/invoices/${invoice.id}`} className="bg-[var(--clay)] text-[var(--warm-ink)] px-4 py-2 rounded-full text-sm">View Invoice</Link></div>
           </ClayCard>
         )}
       </div>
 
       {showCheckIn && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--cream)]/30">
           <div className="bg-white rounded-[28px] w-full max-w-md p-6">
             <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-4">Check In</h2>
             <p className="text-[var(--soft-stone)] mb-4">Confirm check-in?</p>
             <div className="flex justify-end gap-3">
               <button onClick={() => setShowCheckIn(false)} className="text-[var(--soft-stone)] hover:text-[var(--warm-ink)]">Cancel</button>
-              <button onClick={chkIn} className="bg-[var(--clay)] text-white px-4 py-2 rounded-full">Check In</button>
+              <button onClick={chkIn} className="bg-[var(--clay)] text-[var(--warm-ink)] px-4 py-2 rounded-full">Check In</button>
             </div>
           </div>
         </div>
       )}
 
       {showCheckOut && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--cream)]/30">
           <div className="bg-white rounded-[28px] w-full max-w-md p-6">
             <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-4">Check Out</h2>
             <p className="text-[var(--soft-stone)] mb-4">Complete this job?</p>
             <div className="flex justify-end gap-3">
               <button onClick={() => setShowCheckOut(false)} className="text-[var(--soft-stone)] hover:text-[var(--warm-ink)]">Cancel</button>
-              <button onClick={chkOut} className="bg-[var(--sage)] text-white px-4 py-2 rounded-full">Check Out</button>
+              <button onClick={chkOut} className="bg-[var(--sage)] text-[var(--warm-ink)] px-4 py-2 rounded-full">Check Out</button>
             </div>
           </div>
         </div>

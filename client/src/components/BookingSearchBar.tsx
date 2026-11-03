@@ -70,7 +70,7 @@ export default function BookingSearchBar({ results = [], onResultClick }: Bookin
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--soft-stone)]" />
           <button
             type="submit"
-            className="px-5 py-3 rounded-xl bg-[var(--clay)] text-white font-bold hover:bg-[var(--terracotta)] transition-colors"
+            className="px-5 py-3 rounded-xl bg-[var(--clay)] text-[var(--warm-ink)] font-bold hover:bg-[var(--terracotta)] transition-colors"
           >
             Search
           </button>
@@ -85,7 +85,7 @@ export default function BookingSearchBar({ results = [], onResultClick }: Bookin
             onClick={() => setSelectedCategory(cat)}
             className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold transition-all ${
               selectedCategory === cat
-                ? 'bg-[var(--clay)] text-white shadow-sm shadow-[var(--clay)]/20'
+                ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-sm shadow-[var(--clay)]/20'
                 : 'bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]/80'
             }`}
           >
@@ -137,7 +137,7 @@ export default function BookingSearchBar({ results = [], onResultClick }: Bookin
                 )}
               </div>
             </div>
-            <button className="px-3 py-2 rounded-lg bg-[var(--clay)] text-white text-sm font-bold hover:bg-[var(--terracotta)] transition-colors">
+            <button className="px-3 py-2 rounded-lg bg-[var(--clay)] text-[var(--warm-ink)] text-sm font-bold hover:bg-[var(--terracotta)] transition-colors">
               Book
             </button>
           </div>

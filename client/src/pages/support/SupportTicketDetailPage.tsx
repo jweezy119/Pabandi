@@ -48,7 +48,7 @@ export default function SupportTicketDetailPage() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">{ticket.subject}</h1>
+          <h1 className="text-2xl font-bold text-[var(--warm-ink)] tracking-tight">{ticket.subject}</h1>
           <p className="text-sm text-slate-400">
             Ticket #{ticket.id.slice(0,8)} • {ticket.status} • {ticket.priority} Priority
           </p>
@@ -57,7 +57,7 @@ export default function SupportTicketDetailPage() {
 
       <ClayCard className="p-6 space-y-4 bg-slate-800/20">
         <div className="flex justify-between items-start mb-4">
-          <div className="font-medium text-white">{ticket.user?.firstName} {ticket.user?.lastName}</div>
+          <div className="font-medium text-[var(--warm-ink)]">{ticket.user?.firstName} {ticket.user?.lastName}</div>
           <div className="text-xs text-slate-500">{new Date(ticket.createdAt).toLocaleString()}</div>
         </div>
         <p className="text-slate-300 whitespace-pre-wrap">{ticket.description}</p>
@@ -67,7 +67,7 @@ export default function SupportTicketDetailPage() {
         {ticket.replies?.map((reply: any) => (
           <ClayCard key={reply.id} className={`p-6 ${reply.isInternal ? 'border-amber-500/30 bg-amber-500/5' : ''}`}>
             <div className="flex justify-between items-start mb-4">
-              <div className="font-medium text-white">
+              <div className="font-medium text-[var(--warm-ink)]">
                 {reply.author?.firstName} {reply.author?.lastName} {reply.isInternal && <span className="text-amber-400 text-xs ml-2">(Internal Note)</span>}
               </div>
               <div className="text-xs text-slate-500">{new Date(reply.createdAt).toLocaleString()}</div>
@@ -83,7 +83,7 @@ export default function SupportTicketDetailPage() {
             value={replyBody}
             onChange={(e) => setReplyBody(e.target.value)}
             placeholder="Type your reply here..."
-            className="w-full bg-slate-900/50 border border-slate-700 rounded-xl p-3 text-white focus:ring-1 focus:ring-emerald-500 min-h-[100px]"
+            className="w-full bg-slate-900/50 border border-slate-700 rounded-xl p-3 text-[var(--warm-ink)] focus:ring-1 focus:ring-emerald-500 min-h-[100px]"
           />
           <div className="flex justify-end mt-3">
             <ClayButton variant="primary" onClick={handleReply} disabled={!replyBody.trim()}>
