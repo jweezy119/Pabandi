@@ -11,7 +11,7 @@ async function getBrowser() {
   if (!browser) {
     const puppeteer = await import('puppeteer');
     browser = await puppeteer.launch({
-      headless: 'new',
+      headless: 'new' as any,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -321,9 +321,9 @@ export async function scrapeAndIngestProfiles(
       const scraped = await scrapeMarketplaceProfile(url);
       const profile: ExternalProviderProfile = {
         source: scraped.source as ExternalProviderProfile['source'],
-        sourceId: scraped.sourceId,
-        name: scraped.name,
-        handle: scraped.handle,
+        sourceId: scraped.sourceId ?? '',
+        name: scraped.name ?? '',
+        handle: scraped.handle ?? '',
         bio: scraped.bio,
         location: scraped.location,
         websiteUrl: scraped.websiteUrl,

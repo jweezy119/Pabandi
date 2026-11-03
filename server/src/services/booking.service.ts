@@ -475,8 +475,8 @@ export async function confirmPaymentAndCreateEscrow(
   let booking: any = null;
   try {
     booking = await prisma.booking.findFirst({
-      where: { reference: bookingReference },
-      include: { business: true, customer: true },
+      where: { id: bookingReference },
+      include: { business: true },
     });
   } catch {}
 
@@ -494,7 +494,7 @@ export async function confirmPaymentAndCreateEscrow(
           confirmationCode: booking.reference,
         });
       } catch (err) {
-        console.warn('[BookingService] booking confirmation email failed:', err?.message || err);
+        console.warn('[BookingService] booking confirmation email failed:', (err as any)?.message || err);
       }
     }
   }

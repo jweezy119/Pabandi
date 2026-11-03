@@ -267,7 +267,7 @@ router.post('/pay', writeLimiter, validateBody(x402PaySchema), async (req: Reque
   }
 
   const result = await verifyX402Payment({
-    paymentHeader,
+    paymentHeader: String(paymentHeader),
     resource: PAYMENT_RESOURCE,
     amount,
   });

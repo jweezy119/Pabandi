@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import crypto from 'crypto';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 

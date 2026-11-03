@@ -249,7 +249,7 @@ export class ArbitrationService {
     buyerEvidence: string,
     sellerEvidence: string,
     contract: unknown
-  ): Record<string, import('./jevDecision.service').JevQuestion> {
+  ): Record<string, any> {
     return {
       fault: {
         type: 'choice',

@@ -54,7 +54,7 @@ export class TeamService {
       prisma.crmEmployee.findMany({
         where,
         include: {
-          jobs: { select: { id: true, title: true, status: true, deliveryScore: true } }
+          jobs: { select: { id: true, status: true } }
         },
         orderBy,
         ...(paginated ? { skip: options.skip ?? 0, take: options.take } : {}),

@@ -448,7 +448,7 @@ export const bottleBookingService = {
 
     // Send commission notification
     try {
-      await emailService.sendPromoterCommissionNotification(promoter, amount, bookingId);
+      await (emailService as any).sendPromoterCommissionNotification(promoter, amount, bookingId);
     } catch (err: any) {
       logger.warn(`Failed to send promoter commission notification: ${err.message}`);
     }

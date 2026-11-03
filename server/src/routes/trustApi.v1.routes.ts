@@ -142,9 +142,6 @@ router.get('/passport/:id', trustApiKeyAuth, trustRateLimit, async (req: Request
         _count: {
           select: { invoiceTrustEvents: true },
         },
-        business: {
-          select: { acceptsAgentBookings: true },
-        },
       },
     });
 
@@ -184,6 +181,7 @@ router.get('/score/:id', trustApiKeyAuth, trustRateLimit, async (req: Request, r
         showUpSampleSize: true,
         deliverySampleSize: true,
         verifiedIdentity: true,
+        visibility: true,
       },
     });
 

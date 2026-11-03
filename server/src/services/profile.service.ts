@@ -84,13 +84,9 @@ export class ProfileService {
   async getPublic(handle: string) {
     const passport = await prisma.trustPassport.findUnique({
       where: { handle },
-      include: {
-        endorsements: {
-          include: {
-            endorser: { select: { firstName: true, lastName: true } },
-          },
+        include: {
+          endorsements: true,
         },
-      },
     });
 
     if (!passport || !passport.showOnPublicProfile) return null;

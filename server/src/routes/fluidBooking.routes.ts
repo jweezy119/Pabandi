@@ -79,7 +79,7 @@ router.get('/availability/:businessId', apiLimiter, async (req, res: Response) =
     const slotCapacity = new Map<string, number>();
     const maxConcurrent = business.maxConcurrentBookings || 1;
     [...existingBookings, ...existingJobs].forEach(item => {
-      const key = item.slotStart.toISOString();
+      const key = 'slotStart' in item ? item.slotStart.toISOString() : item.scheduledDate.toISOString();
       slotCapacity.set(key, (slotCapacity.get(key) || 0) + 1);
     });
 
@@ -299,7 +299,6 @@ router.get('/booking/:id/status', apiLimiter, async (req, res: Response) => {
       select: {
         id: true, status: true, slotStart: true, slotEnd: true,
         depositAmount: true, depositPaid: true, depositStatus: true,
-        noShowProbability: true, riskScore: true, qrCode: true,
         business: { select: { name: true, address: true } },
       },
     });

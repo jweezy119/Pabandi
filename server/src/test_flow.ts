@@ -45,17 +45,15 @@ async function main() {
   if (!invoice) {
     invoice = await prisma.invoice.create({
       data: {
+        number: 'INV-001',
         businessId: business.id,
         clientId: client.id,
-        clientPassportId: passport.id,
-        clientName: client.name,
+        lineItems: [],
         currency: 'USD',
         subtotal: 100,
-        tax: 0,
-        total: 100,
         status: 'draft',
-        dueDate: new Date(),
-        issueDate: new Date(),
+        dateDue: new Date(),
+        dateIssued: new Date(),
       }
     });
   }
