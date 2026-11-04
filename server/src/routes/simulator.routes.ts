@@ -14,6 +14,7 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { runSwarm } from '../services/simulator/swarm.service';
 import { squareService } from '../services/squareCheckout.service';
+import { safepayService } from '../services/safepay.service';
 import { universalEscrowService } from '../services/universal-escrow.service';
 import { z } from 'zod';
 
@@ -29,7 +30,7 @@ const SteerBodySchema = z.object({
 });
 
 const PublicFundBodySchema = z.object({
-  rail: z.enum(['square', 'solana']).default('square'),
+  rail: z.enum(['square', 'solana', 'safepay']).default('square'),
   milestoneMode: z.enum(['full', 'deposit_50']).default('full'),
   clientName: z.string().max(120).optional(),
   clientEmail: z.string().email().optional().or(z.literal('')),
@@ -93,7 +94,7 @@ router.get(
   async (req: Request, res: Response, _next: NextFunction) => {
     try {
       const { id } = req.params;
-      const simulation = await prisma.projectSimulation.findUnique({
+      let simulation = await prisma.projectSimulation.findUnique({
         where: { id },
         include: {
           agentRuns: {
@@ -110,6 +111,38 @@ router.get(
           },
         },
       });
+
+      // Auto-seed the live interactive demo proposal when `/p/estimate/demo` is visited
+      if (!simulation && id === 'demo') {
+        const demoFactors = { timelineUrgency: 3, quality: 4, scale: 3 };
+        await prisma.projectSimulation.create({
+          data: {
+            id: 'demo',
+            userId: 'pabandi-demo-provider',
+            projectType: 'app-development',
+            initialFactors: demoFactors as any,
+            status: 'draft',
+          },
+        });
+        await runSwarm('demo', demoFactors);
+        simulation = await prisma.projectSimulation.findUnique({
+          where: { id: 'demo' },
+          include: {
+            agentRuns: {
+              orderBy: { createdAt: 'asc' },
+              select: {
+                id: true,
+                agentRole: true,
+                inputPayload: true,
+                outputPayload: true,
+                status: true,
+                executionTimeMs: true,
+                createdAt: true,
+              },
+            },
+          },
+        });
+      }
 
       if (!simulation) {
         return res.status(404).json({ success: false, error: 'Proposal not found' });
@@ -262,7 +295,7 @@ router.post(
           : Math.round(totalCost * 100) / 100;
 
       const referenceId = `sim-${simulation.id}`;
-      const currency = rail === 'solana' ? 'USDC' : 'USD';
+      const currency = rail === 'solana' ? 'USDC' : rail === 'safepay' ? 'PKR' : 'USD';
 
       // Create or update draft UniversalEscrow
       const existingEscrow = await prisma.universalEscrow
@@ -357,6 +390,29 @@ router.post(
             totalCost,
             milestoneMode,
             checkoutUrl: checkout.url,
+          },
+        });
+      }
+
+      if (rail === 'safepay') {
+        const amountPkr = Math.round(amountToFund * 278);
+        const safepayConfigured = Boolean(
+          process.env.SAFEPAY_API_KEY && process.env.SAFEPAY_SECRET_KEY,
+        );
+        const checkoutUrl = await safepayService.createCheckoutUrl(amountPkr, referenceId);
+
+        return res.json({
+          success: true,
+          data: {
+            rail: 'safepay',
+            referenceId,
+            amount: amountToFund,
+            amountPkr,
+            totalCost,
+            milestoneMode,
+            checkoutUrl,
+            safepayConfigured,
+            raastIban: process.env.PABANDI_RAAST_IBAN || 'PK36MEZN0001010100492817',
           },
         });
       }

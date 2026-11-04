@@ -47,6 +47,7 @@ const GigDetailPage = lazy(() => import('./pages/GigDetailPage'));
 const TermsPage = lazy(() => import('./pages/legal/TermsPage'));
 const RiskPage = lazy(() => import('./pages/legal/RiskPage'));
 const PrivacyPage = lazy(() => import('./pages/legal/PrivacyPage'));
+const MerchantCompliancePage = lazy(() => import('./pages/legal/MerchantCompliancePage'));
 const BackgroundCheckPage = lazy(() => import('./pages/BackgroundCheckPage'));
 const AgentMarketplacePage = lazy(() => import('./pages/AgentMarketplacePage'));
 const PersonalDashboardPage = lazy(() => import('./pages/me/PersonalDashboardPage'));
@@ -262,10 +263,12 @@ function AnimatedAppRoutes() {
       >
       <ClayToastProvider>
         <Routes location={location} key={location.pathname}>
-        {/* Public sandbox demo & shareable interactive simulator proposal — no authentication required */}
+        {/* Public sandbox demo, shareable interactive simulator proposal, and merchant compliance/pricing — no authentication required */}
         <Route path="/sandbox" element={<SandboxApp />} />
         <Route path="/sandbox/deal" element={<DealSimulatorPage />} />
         <Route path="/p/estimate/:simulationId" element={<PublicProposalPage />} />
+        <Route path="/compliance" element={<MerchantCompliancePage />} />
+        <Route path="/pricing" element={<MerchantCompliancePage />} />
         <Route element={<AppShellLayout />}>
             {/* /dashboard routes to the user's mode-appropriate dashboard
                 (Business → /contact, Personal → /me). It is never a
@@ -543,7 +546,8 @@ function AnimatedAppRoutes() {
             <Route path="business/plugins" element={<PlaceholderPage />} />
             <Route path="business-model" element={<PlaceholderPage />} />
             <Route path="join" element={<PlaceholderPage />} />
-            <Route path="pricing" element={<PlaceholderPage />} />
+            <Route path="pricing" element={<MerchantCompliancePage />} />
+            <Route path="compliance" element={<MerchantCompliancePage />} />
             <Route path="checkout/:sessionId" element={<PlaceholderPage />} />
             <Route path="checkout-success" element={<PlaceholderPage />} />
             <Route path="checkout-cancel" element={<PlaceholderPage />} />

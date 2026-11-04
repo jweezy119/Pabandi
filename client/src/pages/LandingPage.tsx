@@ -469,6 +469,9 @@ export default function LandingPage() {
           <p className="footer-tagline">Business OS · Human Portal — Powered by TrustOS</p>
           <nav className="footer-nav" aria-label="Footer">
             <Link to="/guarantee">The Guarantee</Link>
+            <Link to="/pricing">Pricing</Link>
+            <Link to="/compliance">Compliance & Refunds</Link>
+            <Link to="/p/estimate/demo">Live Proposal Demo</Link>
             <Link to="/developers">Developers</Link>
             <Link to="/agents">For AI Developers</Link>
             <Link to="/about">About</Link>

@@ -154,6 +154,13 @@ export default function PublicProposalPage() {
     referenceId: string;
     amount: number;
   } | null>(null);
+  const [safepayCheckout, setSafepayCheckout] = useState<{
+    checkoutUrl: string;
+    referenceId: string;
+    amountPkr: number;
+    raastIban: string;
+    safepayConfigured: boolean;
+  } | null>(null);
   const [solanaTxSig, setSolanaTxSig] = useState('');
   const [verifyingSolana, setVerifyingSolana] = useState(false);
   const [redirectFundedBanner, setRedirectFundedBanner] = useState<{
@@ -248,10 +255,12 @@ export default function PublicProposalPage() {
     }
   };
 
-  const handleFund = async (rail: 'square' | 'solana') => {
+  const handleFund = async (rail: 'square' | 'solana' | 'safepay') => {
     if (!simulationId || !proposal?.finalEstimate) return;
     setIsFunding(true);
     setError(null);
+    setSolanaCheckout(null);
+    setSafepayCheckout(null);
     try {
       const res = await apiClient.post(`/simulator/public/${simulationId}/fund`, {
         rail,
@@ -263,6 +272,20 @@ export default function PublicProposalPage() {
       const payload = res.data?.data;
       if (rail === 'square' && payload?.checkoutUrl) {
         window.location.href = payload.checkoutUrl;
+        return;
+      }
+      if (rail === 'safepay' && payload) {
+        if (payload.safepayConfigured && payload.checkoutUrl && !payload.checkoutUrl.includes('safepay_disabled=true')) {
+          window.location.href = payload.checkoutUrl;
+          return;
+        }
+        setSafepayCheckout({
+          checkoutUrl: payload.checkoutUrl,
+          referenceId: payload.referenceId,
+          amountPkr: payload.amountPkr,
+          raastIban: payload.raastIban || 'PK36MEZN0001010100492817',
+          safepayConfigured: Boolean(payload.safepayConfigured),
+        });
         return;
       }
       if (rail === 'solana' && payload?.solanaPayUrl) {
@@ -767,30 +790,74 @@ export default function PublicProposalPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <button
                     type="button"
                     disabled={isFunding}
                     onClick={() => handleFund('square')}
-                    className="py-4 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-extrabold text-base shadow-lg shadow-indigo-600/25 transition-all flex items-center justify-center gap-2"
+                    className="py-4 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-extrabold text-sm shadow-lg shadow-indigo-600/25 transition-all flex items-center justify-center gap-2"
                   >
-                    💳 Fund via Square — ${payableAmount.toFixed(2)}
+                    💳 Square (Card / Apple Pay) — ${payableAmount.toFixed(2)}
                   </button>
                   <button
                     type="button"
                     disabled={isFunding}
                     onClick={() => handleFund('solana')}
-                    className="py-4 px-6 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 disabled:opacity-50 text-emerald-300 font-extrabold text-base transition-all flex items-center justify-center gap-2"
+                    className="py-4 px-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 disabled:opacity-50 text-emerald-300 font-extrabold text-sm transition-all flex items-center justify-center gap-2"
                   >
-                    ⚡ Fund via Solana Pay — {payableAmount.toFixed(2)} USDC
+                    ⚡ Solana Pay — {payableAmount.toFixed(2)} USDC
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isFunding}
+                    onClick={() => handleFund('safepay')}
+                    className="py-4 px-4 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 disabled:opacity-50 text-amber-200 font-extrabold text-sm transition-all flex items-center justify-center gap-2"
+                  >
+                    🇵🇰 Safepay / Raast — PKR {Math.round(payableAmount * 278).toLocaleString('en-US')}
                   </button>
                 </div>
 
                 <p className="text-xs text-center text-[#64748b]">
                   Square accepts Visa, Mastercard, Amex, Apple Pay, Google Pay, and Cash App Pay.
-                  Solana Pay settles instantly in USDC with zero foreign-exchange fees.
+                  Solana Pay settles instantly in USDC. Safepay & Raast settle in PKR (Rs.) under Pabandi Sulha Escrow protection.
                 </p>
               </>
+            )}
+
+            {/* Inline Safepay / Raast PKR Drawer */}
+            {safepayCheckout && !isFunded && (
+              <div className="p-6 rounded-2xl border border-amber-500/30 bg-[#020617] space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="text-sm font-bold text-amber-300 flex items-center gap-2">
+                      🇵🇰 Safepay & Raast PKR Escrow Checkout
+                    </div>
+                    <p className="text-xs text-[#94a3b8]">
+                      Escrow Reference <code className="text-amber-200">{safepayCheckout.referenceId}</code> • Amount:{' '}
+                      <strong className="text-white">
+                        PKR {safepayCheckout.amountPkr.toLocaleString('en-US')}
+                      </strong>{' '}
+                      (${payableAmount.toFixed(2)} USD @ 278 PKR)
+                    </p>
+                  </div>
+                  <Link
+                    to="/compliance"
+                    className="text-xs font-semibold text-indigo-300 hover:text-indigo-200 underline"
+                  >
+                    View Safepay Merchant Compliance & Refund Terms →
+                  </Link>
+                </div>
+                <div className="p-4 rounded-xl border border-white/10 bg-[#0f172a] space-y-2 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[#94a3b8]">Instant Raast / IBAN Escrow Account:</span>
+                    <code className="font-mono font-bold text-white">{safepayCheckout.raastIban}</code>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[#94a3b8]">Required Payment Reference / Note:</span>
+                    <code className="font-mono font-bold text-amber-300">{safepayCheckout.referenceId}</code>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Inline Solana Pay QR + Verification Drawer */}
@@ -847,6 +914,30 @@ export default function PublicProposalPage() {
             )}
           </section>
         )}
+
+        {/* Footer with Compliance & Pricing links */}
+        <footer className="pt-6 pb-8 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#64748b]">
+          <div>
+            © {new Date().getFullYear()} Pabandi Inc. • Programmable Escrow & Trust OS
+          </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <Link to="/pricing" className="hover:text-white transition-colors">
+              Pricing (USD & PKR)
+            </Link>
+            <Link to="/compliance" className="hover:text-white transition-colors">
+              Merchant Compliance & Refund Policy
+            </Link>
+            <Link to="/terms" className="hover:text-white transition-colors">
+              Terms of Service
+            </Link>
+            <Link to="/privacy" className="hover:text-white transition-colors">
+              Privacy Policy
+            </Link>
+            <Link to="/verify-trust" className="hover:text-white transition-colors">
+              Verify Trust Passport
+            </Link>
+          </div>
+        </footer>
       </main>
     </div>
   );
