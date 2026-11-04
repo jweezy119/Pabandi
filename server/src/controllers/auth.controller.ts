@@ -122,8 +122,6 @@ interface RegisterBody {
   googlePlaceId?: string;
   fiverrUrl?: string;
   upworkUrl?: string;
-  tosAccepted?: boolean;
-  riskAccepted?: boolean;
 }
 
 interface AuthRequest extends Request {
@@ -168,7 +166,7 @@ export const register = async (
   next: NextFunction
 ) => {
   try {
-    const { email, password, firstName, lastName, phone, role, refCode, code, tosAccepted, riskAccepted } = req.body;
+    const { email, password, firstName, lastName, phone, role, refCode, code } = req.body;
 
     if (isReservedTestDomain(email)) {
       return res.status(400).json({
@@ -222,8 +220,6 @@ export const register = async (
           verificationCode: null,
           verificationCodeExpires: null,
           isEmailVerified: true,
-          ...(tosAccepted ? { tosAcceptedAt: new Date(), tosAcceptedIp: getClientIp(req) } : {}),
-          ...(riskAccepted ? { riskAcceptedAt: new Date(), riskAcceptedIp: getClientIp(req) } : {}),
           ...(req.body.businessName && role === 'BUSINESS_OWNER' && {
             business: {
               create: {
@@ -376,8 +372,6 @@ export const register = async (
         trustScore: 50.0,
         verificationTier: 'BASIC',
         gracePeriodUntil,
-        ...(tosAccepted ? { tosAcceptedAt: new Date(), tosAcceptedIp: getClientIp(req) } : {}),
-        ...(riskAccepted ? { riskAcceptedAt: new Date(), riskAcceptedIp: getClientIp(req) } : {}),
         ...(referredByUserId ? { referredById: referredByUserId } : {}),
         // Create the frictionless wallet
         wallet: {
@@ -551,23 +545,10 @@ export const login = async (
     logger.info(`Login controller received email: '${email}'`);
 
     // Find user
-    let user;
-    try {
-      user = await prisma.user.findUnique({
-        where: { email },
-        include: { business: true, memberships: true },
-      });
-    } catch (err: any) {
-      if (err.code === 'P2021') {
-        // Table or column does not exist - database is out of sync with schema
-        logger.error(`Database schema out of sync: ${err.message}`);
-        throw new CustomError(
-          'Database schema is out of sync. Please contact support to resolve.',
-          503
-        );
-      }
-      throw err;
-    }
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { business: true, memberships: true },
+    });
 
     if (!user) {
       throw new CustomError('Invalid email or password', 401);
