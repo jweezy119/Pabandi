@@ -22,6 +22,7 @@ const ALL_MODULES: Array<{ id: string; label: string; path: string; icon: string
   { id: 'my-bookings', label: 'My Bookings', path: '/me/bookings', icon: 'event', color: 'var(--sage)', modes: ['personal'] },
   { id: 'rewards', label: 'My Rewards', path: '/me/rewards', icon: 'toll', color: 'var(--muted-ochre)', modes: ['personal'] },
   { id: 'booking', label: 'BookingOS', path: '/booking', icon: 'book_online', color: 'var(--sage)', modes: ['business', 'personal'] },
+  { id: 'simulator', label: 'Project Simulator', path: '/simulator', icon: 'architecture', color: 'var(--clay)', modes: ['business', 'personal'] },
 ];
 
 export function ModuleSwitcher() {

@@ -55,56 +55,90 @@ type StaffingOutput = z.infer<typeof StaffingOutputSchema>;
 type TimelineOutput = z.infer<typeof TimelineOutputSchema>;
 type FinalEstimate = z.infer<typeof FinalEstimateSchema>;
 
-// ── Agent simulators (deterministic, no external LLM dependency) ────────────
+// ── Agent simulators (deterministic, supports both 1..5 numeric sliders and string enums) ──
+
+function resolveScaleMultiplier(scale: unknown): number {
+  if (typeof scale === 'number' && Number.isFinite(scale)) {
+    // 1 -> 0.5x, 2 -> 0.75x, 3 -> 1.0x, 4 -> 1.5x, 5 -> 2.0x
+    const table: Record<number, number> = { 1: 0.5, 2: 0.75, 3: 1.0, 4: 1.5, 5: 2.0 };
+    return table[Math.min(5, Math.max(1, Math.round(scale)))] ?? 1.0;
+  }
+  if (typeof scale === 'string') {
+    return { small: 0.5, medium: 1.0, large: 2.0 }[scale] ?? 1.0;
+  }
+  return 1.0;
+}
+
+function resolveQualityMultiplier(quality: unknown): number {
+  if (typeof quality === 'number' && Number.isFinite(quality)) {
+    // 1 -> 0.75x, 2 -> 0.9x, 3 -> 1.0x, 4 -> 1.25x, 5 -> 1.6x
+    const table: Record<number, number> = { 1: 0.75, 2: 0.9, 3: 1.0, 4: 1.25, 5: 1.6 };
+    return table[Math.min(5, Math.max(1, Math.round(quality)))] ?? 1.0;
+  }
+  if (typeof quality === 'string') {
+    return { budget: 0.8, standard: 1.0, premium: 1.5 }[quality] ?? 1.0;
+  }
+  return 1.0;
+}
+
+function resolveUrgencyMultiplier(urgency: unknown): { durationMult: number; laborSurgeMult: number } {
+  if (typeof urgency === 'number' && Number.isFinite(urgency)) {
+    const clamped = Math.min(5, Math.max(1, Math.round(urgency)));
+    const durationTable: Record<number, number> = { 1: 1.5, 2: 1.25, 3: 1.0, 4: 0.8, 5: 0.65 };
+    const surgeTable: Record<number, number> = { 1: 0.95, 2: 0.98, 3: 1.0, 4: 1.15, 5: 1.35 };
+    return { durationMult: durationTable[clamped] ?? 1.0, laborSurgeMult: surgeTable[clamped] ?? 1.0 };
+  }
+  if (typeof urgency === 'string') {
+    const durationMult = { low: 1.5, medium: 1.0, high: 0.7 }[urgency] ?? 1.0;
+    const laborSurgeMult = { low: 0.95, medium: 1.0, high: 1.25 }[urgency] ?? 1.0;
+    return { durationMult, laborSurgeMult };
+  }
+  return { durationMult: 1.0, laborSurgeMult: 1.0 };
+}
 
 async function materialAgent(factors: any): Promise<MaterialsOutput> {
-  const scale = (factors.scale ?? 'medium') as 'small' | 'medium' | 'large';
-  const quality = (factors.quality ?? 'budget') as 'budget' | 'standard' | 'premium';
   const baseItems = [
     { item: 'Concrete', quantity: 10, unitCost: 120 },
     { item: 'Lumber', quantity: 20, unitCost: 45 },
     { item: 'Roofing Shingles', quantity: 30, unitCost: 25 },
   ];
-  const scaleMult = { small: 0.5, medium: 1, large: 2 }[scale] ?? 1;
-  const qualityMult = { budget: 0.8, standard: 1, premium: 1.5 }[quality] ?? 1;
+  const scaleMult = resolveScaleMultiplier(factors?.scale);
+  const qualityMult = resolveQualityMultiplier(factors?.quality);
   const materials = baseItems.map((it) => ({
     item: it.item,
-    quantity: Math.round(it.quantity * scaleMult),
+    quantity: Math.max(1, Math.round(it.quantity * scaleMult)),
     unitCost: Math.round(it.unitCost * qualityMult * 100) / 100,
   }));
-  const totalMaterialCost = materials.reduce(
-    (sum, it) => sum + it.quantity * it.unitCost,
-    0,
-  );
+  const totalMaterialCost = Math.round(
+    materials.reduce((sum, it) => sum + it.quantity * it.unitCost, 0) * 100,
+  ) / 100;
   return MaterialsOutputSchema.parse({ materials, totalMaterialCost });
 }
 
 async function staffingAgent(factors: any): Promise<StaffingOutput> {
-  const scale = (factors.scale ?? 'medium') as 'small' | 'medium' | 'large';
   const baseRoles = [
     { role: 'Project Manager', count: 1, hourlyRate: 85 },
     { role: 'Skilled Laborer', count: 2, hourlyRate: 45 },
     { role: 'Apprentice', count: 1, hourlyRate: 25 },
   ];
-  const scaleMult = { small: 0.5, medium: 1, large: 2 }[scale] ?? 1;
+  const scaleMult = resolveScaleMultiplier(factors?.scale);
+  const { laborSurgeMult } = resolveUrgencyMultiplier(factors?.timelineUrgency);
   const roles = baseRoles.map((r) => ({
     role: r.role,
     count: Math.max(1, Math.round(r.count * scaleMult)),
-    hourlyRate: r.hourlyRate,
+    hourlyRate: Math.round(r.hourlyRate * laborSurgeMult * 100) / 100,
   }));
-  const totalLaborCost = roles.reduce(
-    (sum, r) => sum + r.count * r.hourlyRate * 40,
-    0,
-  );
+  const totalLaborCost = Math.round(
+    roles.reduce((sum, r) => sum + r.count * r.hourlyRate * 40, 0) * 100,
+  ) / 100;
   return StaffingOutputSchema.parse({ roles, totalLaborCost });
 }
 
 async function timelineAgent(factors: any): Promise<TimelineOutput> {
-  const scale = (factors.scale ?? 'medium') as 'small' | 'medium' | 'large';
-  const urgency = (factors.timelineUrgency ?? 'medium') as 'low' | 'medium' | 'high';
-  const baseDays = { small: 7, medium: 14, large: 30 }[scale] ?? 14;
-  const urgencyMult = { low: 1.5, medium: 1, high: 0.7 }[urgency] ?? 1;
-  const estimatedDays = Math.max(1, Math.round(baseDays * urgencyMult));
+  const scaleMult = resolveScaleMultiplier(factors?.scale);
+  const { durationMult } = resolveUrgencyMultiplier(factors?.timelineUrgency);
+  const baseDays = Math.round(14 * scaleMult);
+  const estimatedDays = Math.max(1, Math.round(baseDays * durationMult));
   const criticalPath = 'Procurement → Foundation → Framing → Roofing → Finish';
   return TimelineOutputSchema.parse({ estimatedDays, criticalPath });
 }

@@ -145,22 +145,25 @@ export default function SimulatorPage() {
   const fetchSimulation = useCallback(async (id: string) => {
     try {
       const res: SimResponse = await apiClient.get(`/simulator/${id}`);
-      setSimulation(res.data.data);
+      const sim = res.data.data;
+      setSimulation(sim);
+      if (sim && (sim.status === 'completed' || sim.status === 'failed')) {
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
+      }
     } catch (err: any) {
       console.error('[Simulator] fetch error:', err.message);
     }
   }, []);
 
-  // Poll every 2 seconds while running
+  // Poll every 1.5 seconds while running
   const startPolling = (id: string) => {
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     pollIntervalRef.current = window.setInterval(() => {
       fetchSimulation(id);
-      const s = simulation;
-      if (s && (s.status === 'completed' || s.status === 'failed')) {
-        stopPolling();
-      }
-    }, 2000);
+    }, 1500);
   };
 
   const stopPolling = () => {
