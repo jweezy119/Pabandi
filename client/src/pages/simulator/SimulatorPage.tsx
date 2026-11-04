@@ -38,6 +38,10 @@ type Simulation = {
     totalCost: number;
     breakdown: { materials: number; labor: number; contingency: number };
     contingencyPercent: number;
+    escrowStatus?: string;
+    escrowReferenceId?: string;
+    squarePaymentId?: string;
+    fundedAt?: string;
   };
   createdAt: string;
   updatedAt: string;
@@ -246,14 +250,15 @@ export default function SimulatorPage() {
       }).catch(() => null);
 
       if (rail === 'square') {
-        // Attempt Square hosted checkout link first
+        // Create Square hosted checkout link with exact webhook note prefix (`pabandi:universalescrow:<ref>`)
         const sqRes = await apiClient.post('/square-checkout/checkout', {
           referenceId,
           amount: totalCost,
           currency: 'USD',
-          redirectUrl: `${window.location.origin}/simulator?funded=${referenceId}&rail=square`,
-          cancelUrl: `${window.location.origin}/simulator`,
-          note: `Escrow ${referenceId} for ${projectType}`,
+          redirectUrl: `${window.location.origin}/simulator?simId=${simulation.id}&funded=${referenceId}&rail=square`,
+          cancelUrl: `${window.location.origin}/simulator?simId=${simulation.id}`,
+          note: `pabandi:universalescrow:${referenceId}`,
+          label: `Pabandi Project Escrow (${projectType})`,
           customerEmail: user?.email,
         }).catch(() => null);
 
@@ -275,10 +280,20 @@ export default function SimulatorPage() {
     }
   };
 
-  // Cleanup interval on unmount
+  // Restore simulation & funded status on return from Square Checkout redirect
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const simId = params.get('simId');
+    const fundedRef = params.get('funded');
+    const rail = (params.get('rail') as 'square' | 'solana') || 'square';
+    if (simId) {
+      fetchSimulation(simId);
+    }
+    if (fundedRef) {
+      setEscrowSuccess({ rail, referenceId: fundedRef });
+    }
     return () => stopPolling();
-  }, []);
+  }, [fetchSimulation]);
 
   // Derive agent display state
   const agentStates: Array<{ role: AgentRole; status: string; output?: unknown; elapsedMs?: number }> =
@@ -483,12 +498,17 @@ export default function SimulatorPage() {
                     ⚡ Fund via Solana Pay — {simulation.finalEstimate?.totalCost.toFixed(2) ?? '0.00'} USDC
                   </Button>
                 </div>
-                {escrowSuccess && (
+                {(escrowSuccess || simulation.finalEstimate?.escrowStatus === 'funded') && (
                   <div className="mt-4 p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-200 text-sm space-y-2">
-                    <div className="font-bold">
-                      ✓ Escrow Created ({escrowSuccess.referenceId}) via {escrowSuccess.rail === 'square' ? 'Square Checkout' : 'Solana Pay USDC'}
+                    <div className="font-bold flex items-center gap-2">
+                      <span>
+                        ✓ {simulation.finalEstimate?.escrowStatus === 'funded' ? 'Escrow Funded & Verified' : 'Escrow Created'} ({escrowSuccess?.referenceId || simulation.finalEstimate?.escrowReferenceId || `sim-${simulation.id}`}) via {escrowSuccess?.rail === 'solana' ? 'Solana Pay USDC' : 'Square Checkout'}
+                      </span>
+                      {simulation.finalEstimate?.escrowStatus === 'funded' && (
+                        <Chip tone="success">FUNDED</Chip>
+                      )}
                     </div>
-                    {escrowSuccess.paymentUrl && (
+                    {escrowSuccess?.paymentUrl && (
                       <div className="flex flex-wrap items-center gap-3">
                         <a
                           href={escrowSuccess.paymentUrl}

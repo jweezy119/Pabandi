@@ -1,6 +1,6 @@
 import { SquareClient, SquareEnvironment } from 'square';
 import { logger } from '../utils/logger';
-import { squareEnvironment, squareBaseUrl, parseInvoiceNote, parseBookingNote, parseAgentEscrowNote } from './square-connection.service';
+import { squareEnvironment, squareBaseUrl, parseInvoiceNote, parseBookingNote, parseAgentEscrowNote, parseUniversalEscrowNote } from './square-connection.service';
 
 const accessToken = process.env.SQUARE_ACCESS_TOKEN || '';
 
@@ -46,6 +46,8 @@ export type SquareWebhookResult =
       bookingId: string | null;
       /** Set when the payment funded an agent marketplace escrow. */
       escrowId: string | null;
+      /** Set when the payment funded a UniversalEscrow (e.g., Project Simulator). */
+      universalEscrowRef: string | null;
       reconciliation?: SquareReconciliationNote;
     }
   | {
@@ -83,12 +85,13 @@ export class SquareService {
     redirectUrl: string;
     cancelUrl: string;
     note?: string;
+    label?: string;
     customerEmail?: string;
   }) {
     const cents = Math.round(params.amount);
     if (!Number.isFinite(cents) || cents <= 0) throw new Error('Invalid amount');
 
-    let locationId = SQUARE_LOCATION_ID;
+    let locationId = SQUARE_LOCATION_ID || process.env.SQUARE_LOCATION_ID || '';
     if (!locationId) {
       const loc = await this.getDefaultLocation();
       if (!loc) throw new Error('No Square location found. Set SQUARE_LOCATION_ID.');
@@ -104,7 +107,7 @@ export class SquareService {
           location_id: locationId,
           line_items: [
             {
-              name: 'Pabandi Booking #' + params.referenceId.slice(-8),
+              name: params.label || ('Pabandi #' + params.referenceId.slice(-8)),
               quantity: '1',
               base_price_money: { amount: cents, currency: params.currency },
             },
@@ -213,6 +216,7 @@ export class SquareService {
         const ours = parseInvoiceNote(note);
         const booking = parseBookingNote(note);
         const agentEscrow = parseAgentEscrowNote(note);
+        const universalEscrow = parseUniversalEscrowNote(note);
 
         return {
           type: 'PAYMENT_UPDATED',
@@ -231,6 +235,8 @@ export class SquareService {
           bookingId: booking?.bookingId ?? null,
           /** Set when the payment funded an agent marketplace escrow. */
           escrowId: agentEscrow?.escrowId ?? null,
+          /** Set when the payment funded a UniversalEscrow. */
+          universalEscrowRef: universalEscrow?.referenceId ?? null,
         };
       }
       case 'refund.created':
