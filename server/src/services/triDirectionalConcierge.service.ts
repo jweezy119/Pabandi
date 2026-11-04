@@ -363,18 +363,29 @@ class TriDirectionalConciergeService {
   }
 
   private async getOrCreateCustomerUser(phone: string, name: string) {
+    const cleanPhone = phone.replace(/\D/g, '');
+    const fallbackEmail = `${cleanPhone || crypto.randomBytes(4).toString('hex')}@pabandi.local`;
     const existing = await prisma.user.findFirst({
       where: {
-        OR: [{ phone: { contains: phone.slice(-8) } }, { email: `${phone.replace(/\D/g, '')}@pabandi.local` }],
+        OR: [
+          ...(cleanPhone.length >= 6 ? [{ phone: { contains: cleanPhone.slice(-8) } }] : []),
+          { email: fallbackEmail },
+        ],
       },
     });
     if (existing) return existing;
 
+    const nameParts = (name || 'Agent Guest').trim().split(/\s+/);
+    const firstName = nameParts[0] || 'Agent';
+    const lastName = nameParts.slice(1).join(' ') || 'Guest';
+
     return prisma.user.create({
       data: {
-        email: `${phone.replace(/\D/g, '') || crypto.randomBytes(4).toString('hex')}@pabandi.local`,
-        name: name || 'Agent Guest',
-        phone: phone || null,
+        email: fallbackEmail,
+        firstName,
+        lastName,
+        passwordHash: 'concierge-managed-account',
+        phone: cleanPhone ? phone : null,
         role: 'CUSTOMER',
       },
     });
