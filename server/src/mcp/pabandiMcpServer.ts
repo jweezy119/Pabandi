@@ -704,6 +704,54 @@ const OWNER_TOOL_DEFS: any[] = [
       };
     },
   },
+  {
+    name: 'pabandi_a2a_negotiate',
+    description: 'Autonomous Agent-to-Agent (A2A) booking negotiation. Connects with Pabandi AI Concierge to propose a reservation, verify trust score, calculate dynamic escrow terms, and trigger merchant A2H approval when necessary. Returns proposalId, status, and escrow parameters.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        agentId: { type: 'string', description: 'Unique ID of caller agent' },
+        businessId: { type: 'string', description: 'Target venue ID' },
+        customerName: { type: 'string', description: 'Customer or guest name' },
+        customerPhone: { type: 'string', description: 'Optional customer contact' },
+        reservationDate: { type: 'string', description: 'Date in YYYY-MM-DD' },
+        reservationTime: { type: 'string', description: 'Time in HH:mm' },
+        numberOfGuests: { type: 'number', description: 'Party size' },
+        escrowDepositUsdc: { type: 'number', description: 'Offered escrow deposit amount in USDC' },
+        specialRequests: { type: 'string', description: 'Special requirements or notes' },
+        webhookCallbackUrl: { type: 'string', description: 'Webhook endpoint to receive async resolution alert' },
+      },
+      required: ['agentId', 'businessId', 'customerName', 'reservationDate', 'reservationTime', 'numberOfGuests'],
+    },
+  },
+  {
+    name: 'pabandi_a2a_subscribe_alerts',
+    description: 'Subscribe agent to proactive Pabandi alerts: flash inventory slots, no-show/risk score alerts, and escrow settlement milestones. Supports webhook push.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        agentId: { type: 'string', description: 'Unique agent ID' },
+        targetUrl: { type: 'string', description: 'Webhook callback URL' },
+        events: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Events: inventory.slot_available, booking.risk_elevated, escrow.funded, agent.proposal_resolved',
+        },
+      },
+      required: ['agentId'],
+    },
+  },
+  {
+    name: 'pabandi_a2a_get_proposal',
+    description: 'Lookup the status of a pending A2A negotiation proposal by proposalId.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        proposalId: { type: 'string', description: 'Proposal ID (e.g. prop_...)' },
+      },
+      required: ['proposalId'],
+    },
+  },
 ];
 
 export const TOOLS = (() => {
@@ -1627,6 +1675,35 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
           confidence: theCase.confidence,
           reasoning: theCase.reasoning,
         };
+      }
+      case 'pabandi_a2a_negotiate': {
+        const { triDirectionalConciergeService } = await import('../services/triDirectionalConcierge.service');
+        return triDirectionalConciergeService.handleA2ARequest({
+          agentId: String(args.agentId),
+          businessId: String(args.businessId),
+          customerName: String(args.customerName),
+          customerPhone: args.customerPhone ? String(args.customerPhone) : undefined,
+          reservationDate: String(args.reservationDate),
+          reservationTime: String(args.reservationTime),
+          numberOfGuests: Number(args.numberOfGuests),
+          escrowDepositUsdc: Number(args.escrowDepositUsdc || 0),
+          specialRequests: args.specialRequests ? String(args.specialRequests) : undefined,
+          webhookCallbackUrl: args.webhookCallbackUrl ? String(args.webhookCallbackUrl) : undefined,
+        });
+      }
+      case 'pabandi_a2a_subscribe_alerts': {
+        const { agentAlertService } = await import('../services/agentAlert.service');
+        return agentAlertService.subscribe({
+          agentId: String(args.agentId),
+          targetUrl: args.targetUrl ? String(args.targetUrl) : undefined,
+          events: Array.isArray(args.events) ? args.events : [],
+        });
+      }
+      case 'pabandi_a2a_get_proposal': {
+        const { triDirectionalConciergeService } = await import('../services/triDirectionalConcierge.service');
+        const proposal = triDirectionalConciergeService.getProposal(String(args.proposalId));
+        if (!proposal) throw new Error(`Proposal ${args.proposalId} not found`);
+        return proposal;
       }
     }
   }

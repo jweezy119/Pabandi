@@ -167,6 +167,22 @@ async function handleIncomingMessage(payload: OpenWAWebhookPayload): Promise<voi
   }
 
   // -------------------------------------------------------------------
+  // 1.8. Tri-Directional Concierge A2H / H2A Handshake Check
+  // -------------------------------------------------------------------
+  try {
+    const { triDirectionalConciergeService } = await import('./triDirectionalConcierge.service');
+    const h2aResult = await triDirectionalConciergeService.handleH2AMessage(senderPhone, messageBody);
+    if (h2aResult.handled) {
+      if (h2aResult.replyText) {
+        await openwaService.sendText(senderPhone, h2aResult.replyText, { sessionId });
+      }
+      return;
+    }
+  } catch (err: any) {
+    logger.debug(`[WebhookHandler] TriConcierge H2A check error: ${err?.message}`);
+  }
+
+  // -------------------------------------------------------------------
   // 2. Check if sender is a known customer → resolve business context
   // -------------------------------------------------------------------
   let business: any = null;
