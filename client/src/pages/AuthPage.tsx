@@ -260,8 +260,7 @@ export default function AuthPage() {
     const fromQuery = safeInternalPath(searchParams.get('redirect'));
     if (fromQuery) return fromQuery;
 
-    const currentUser = useAuthStore.getState().user ?? user;
-    return effectiveMode(currentUser) === 'business' ? '/contact' : '/me';
+    return effectiveMode(user) === 'business' ? '/contact' : '/me';
   };
 
   if (isAuthenticated) {

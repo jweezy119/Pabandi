@@ -93,7 +93,7 @@ export default defineConfig(({ mode }) => {
     // precache — a customer stuck on an old bundle cannot be told so.
     VitePWA({
       registerType: 'autoUpdate',
-      disable: false,
+      disable: true,
       includeAssets: ['favicon.ico'],
       workbox: { maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 },
       manifest: {

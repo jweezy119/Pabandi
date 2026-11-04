@@ -58,7 +58,6 @@ export async function writeAttestation({
         buyerAgentId,
         sellerAgentId,
         dataHash,
-        ...metadata,
       },
     });
 

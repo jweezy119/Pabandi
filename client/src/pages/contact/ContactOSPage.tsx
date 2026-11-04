@@ -76,6 +76,13 @@ export default function ContactOSPage() {
   const pendingEscrowUsd = stats?.pendingEscrows.totalUsd ?? 0;
   const saasCreditReal = stats?.saasCredit ?? null;
   const todaysRealJobs = stats?.todayJobs ?? [];
+  const deals: Array<{ stage?: string }> = [];
+  const activeDeals = deals.filter((d) => d.stage !== 'WON' && d.stage !== 'LOST').length;
+  const recentClients = ([] as Array<{ createdAt?: string }>)
+    .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime())
+    .slice(0, 5);
+  void activeDeals;
+  void recentClients;
 
   /** Owner check-in — flips the booking to attended server-side. */
   const checkIn = async (bookingId: string) => {

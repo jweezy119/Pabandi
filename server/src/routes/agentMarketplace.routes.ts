@@ -13,10 +13,10 @@ const router = Router();
 // Public routes
 router.get('/stats', getMarketplaceStats);
 // M2M routes
-router.post('/m2m/post-project', m2mPostProject);
+router.post('/m2m/post-project', authenticate, m2mPostProject);
 router.get('/m2m/projects', m2mListProjects);
-router.post('/m2m/bid', m2mSubmitBid);
-router.post('/m2m/award', m2mAwardProject);
+router.post('/m2m/bid', authenticate, m2mSubmitBid);
+router.post('/m2m/award', authenticate, m2mAwardProject);
 // Capacity for the operator: lifetime platform revenue, committed and pending
 // fees, and a 30-day fee series.
 router.get('/revenue', authenticate, authorize('ADMIN'), getRevenue);

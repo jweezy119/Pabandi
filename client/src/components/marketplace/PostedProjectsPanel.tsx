@@ -7,6 +7,7 @@ import EscrowStatusBadge from './EscrowStatus';
 import type { PostedProjectSummary } from './types';
 import { apiUrl } from '../../utils/apiHost';
 import { getAuthToken } from '../../utils/authToken';
+import { PabandiCheckoutModal } from '../PabandiCheckoutModal';
 
 interface MineResponse {
   success: boolean;
@@ -33,6 +34,7 @@ export function PostedProjectsPanel() {
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [fundingId, setFundingId] = useState<string | null>(null);
+  const [solanaModalProject, setSolanaModalProject] = useState<PostedProjectSummary | null>(null);
 
   const token = getAuthToken();
 
@@ -144,15 +146,24 @@ export function PostedProjectsPanel() {
               <div className="flex items-center gap-3">
                 {project.escrow && <EscrowStatusBadge status={project.escrow.status} amount={project.escrow.releaseAmount} />}
                 {project.escrow?.status === 'AWAITING_PAYMENT' && (
-                  <button
-                    type="button"
-                    disabled={fundingId === project.id}
-                    onClick={() => payEscrow(project)}
-                    className="rounded-[var(--radius-btn)] px-4 py-2 font-label text-sm text-[var(--cream)] bg-[var(--sage)] hover:bg-[var(--clay)] transition-colors disabled:opacity-50 shrink-0"
-                    style={{ boxShadow: 'var(--shadow-btn)' }}
-                  >
-                    {fundingId === project.id ? 'Opening…' : 'Pay escrow'}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={fundingId === project.id}
+                      onClick={() => payEscrow(project)}
+                      className="rounded-[var(--radius-btn)] px-4 py-2 font-label text-sm text-[var(--cream)] bg-[var(--sage)] hover:bg-[var(--clay)] transition-colors disabled:opacity-50 shrink-0"
+                      style={{ boxShadow: 'var(--shadow-btn)' }}
+                    >
+                      {fundingId === project.id ? 'Opening…' : '💳 Pay via Square'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSolanaModalProject(project)}
+                      className="rounded-[var(--radius-btn)] px-3 py-2 font-label text-xs text-[var(--warm-ink)] bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.4)] hover:bg-[var(--clay)] hover:text-[var(--cream)] transition-colors shrink-0"
+                    >
+                      ⚡ Solana Pay
+                    </button>
+                  </div>
                 )}
                 {project.status === 'FUNDED' && project.escrow?.status !== 'AWAITING_PAYMENT' && (
                   <button
@@ -173,6 +184,19 @@ export function PostedProjectsPanel() {
 
       {error && <p className="mt-3 text-sm text-[var(--terracotta)]">{error}</p>}
       {note && <p className="mt-3 text-sm text-[var(--sage)]">{note}</p>}
+
+      {solanaModalProject && (
+        <PabandiCheckoutModal
+          open={Boolean(solanaModalProject)}
+          onClose={() => setSolanaModalProject(null)}
+          title={`Agent Escrow — ${solanaModalProject.title}`}
+          subtitle="Fund Agent Marketplace Escrow"
+          amount={solanaModalProject.budgetUsd}
+          currency="USDC"
+          referenceId={`agentescrow-${solanaModalProject.id}`}
+          squareNote={`pabandi:agentescrow:${solanaModalProject.id}`}
+        />
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Badge, Button, tokens } from '../design-system';
 import { API_HOST } from '../utils/apiHost';
+import { PabandiCheckoutModal } from '../components/PabandiCheckoutModal';
 
 const WARM_CLAY = {
   clay: '#C97B5A',
@@ -18,6 +19,7 @@ export default function PayInvoicePage() {
   const [invoice, setInvoice] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [result, setResult] = useState<{ success: boolean; error?: string } | null>(null);
 
   useEffect(() => {
@@ -40,11 +42,7 @@ export default function PayInvoicePage() {
   }, [invoiceId]);
 
   const handlePayClick = () => {
-    if (invoice?.paymentLink) {
-      window.open(invoice.paymentLink, '_blank');
-    } else {
-      alert("No payment method configured for this business.");
-    }
+    setCheckoutOpen(true);
   };
 
   const handleClaimPaid = async () => {
@@ -178,15 +176,9 @@ export default function PayInvoicePage() {
             </div>
           ) : (
             <>
-              {invoice?.paymentLink ? (
-                <Button variant="primary" onClick={handlePayClick} style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}>
-                  Pay {invoice.subtotal} {invoice.currency}
-                </Button>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '1rem', background: WARM_CLAY.warmSand, color: WARM_CLAY.warmInk, borderRadius: '8px' }}>
-                  Contact the business for payment instructions.
-                </div>
-              )}
+              <Button variant="primary" onClick={handlePayClick} style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}>
+                💳 Pay {invoice?.subtotal} {invoice?.currency || 'USD'} (Square / Solana Pay)
+              </Button>
               
               <Button variant="outline" onClick={handleClaimPaid} disabled={claiming} style={{ width: '100%', padding: '1rem' }}>
                 {claiming ? '⏳ Updating...' : "I've Paid"}
@@ -194,6 +186,20 @@ export default function PayInvoicePage() {
             </>
           )}
         </div>
+
+        {invoice && (
+          <PabandiCheckoutModal
+            open={checkoutOpen}
+            onClose={() => setCheckoutOpen(false)}
+            title={`Invoice #${invoice.number || invoice.id}`}
+            subtitle={invoice.business?.name ? `Pay ${invoice.business.name}` : 'Pabandi Invoice Settlement'}
+            amount={Number(invoice.subtotal || 0)}
+            currency={invoice.currency || 'USD'}
+            referenceId={`inv-${invoice.id}`}
+            squareNote={`pabandi:invoice:${invoice.id}:${invoice.number || invoice.id}`}
+            existingPaymentLink={invoice.paymentLink}
+          />
+        )}
 
         {result && !result.success && (
           <div style={styles.statusBox}>
