@@ -35,7 +35,7 @@ export default function ContactOSPage() {
   const businessId = (user as { business?: { id?: string } | null } | null)?.business?.id
     || (user as { businessId?: string | null } | null)?.businessId
     || localStorage.getItem('businessId')
-    || 'default';
+    || undefined;
 
   const enrollNow = async (fallbackName: string): Promise<boolean> => {
     try {
