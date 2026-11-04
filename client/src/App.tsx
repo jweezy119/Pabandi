@@ -37,6 +37,7 @@ const ConsumerReleasePage = lazy(() => import('./pages/consumer/ConsumerReleaseP
 const ConsumerPassportPage = lazy(() => import('./pages/consumer/ConsumerPassportPage'));
 const ConsumerSettingsPage = lazy(() => import('./pages/consumer/ConsumerSettingsPage'));
 const SandboxApp = lazy(() => import('./pages/sandbox/SandboxApp'));
+const SimulatorPage = lazy(() => import('./pages/simulator/SimulatorPage'));
 const DealSimulatorPage = lazy(() => import('./pages/sandbox/DealSimulator'));
 const TrustPassportPublicPage = lazy(() => import('./pages/public/TrustPassportPage'));
 const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
@@ -289,6 +290,7 @@ function AnimatedAppRoutes() {
           {/* BookingOS (formerly Sitara) - Booking & Discovery */}
           <Route path="booking" element={<BookingOSPage />} />
           <Route path="booking/flow" element={<BookingFlowPage />} />
+          <Route path="simulator" element={<SimulatorPage />} />
           <Route path="pay/:invoiceId" element={<PayInvoicePage />} />
 
            {/* Contact OS - CRM & Sales */}
