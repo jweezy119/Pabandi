@@ -8721,3 +8721,36 @@ model McpMeter {
   @@index([apiKeyHash, toolName, windowStart])
   @@unique([apiKeyHash, toolName, windowStart])
 }
+
+model ProjectSimulation {
+  id              String   @id @default(cuid())
+  userId          String
+  projectType     String
+  initialFactors  Json
+  status          String   @default("draft") // draft | running | completed | failed
+  finalEstimate   Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  agentRuns       SimulationAgentRun[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model SimulationAgentRun {
+  id             String   @id @default(cuid())
+  simulationId   String
+  agentRole      String   // materials | staffing | timeline | cost
+  inputPayload   Json
+  outputPayload  Json?
+  status         String   @default("pending") // pending | running | completed | failed
+  executionTimeMs Int?
+  createdAt      DateTime @default(now())
+
+  simulation     ProjectSimulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+
+  @@index([simulationId])
+  @@index([agentRole])
+  @@index([status])
+}
