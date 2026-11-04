@@ -55,7 +55,7 @@ export class InvoiceGenerationService {
 
     const subtotal = lineItems.reduce((sum, item) => sum + item.amount, 0);
 
-    // Apply deposit if applicable
+    // Apply deposit if applicable ('FUNDED' is not a value anything writes on the dead bus)
     let depositApplied = 0;
     if (job.escrowStatus === 'FUNDED' && job.price > 0) {
       // Assuming full price is escrowed when FUNDED
