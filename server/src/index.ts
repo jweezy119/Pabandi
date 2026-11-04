@@ -250,6 +250,9 @@ app.get('/health', (_req, res) => {
       ),
       // Payment provider readiness — these gate paid features; a false here
       // means checkout features are degraded even if routes exist.
+      squareConfigured: Boolean((process.env.SQUARE_ACCESS_TOKEN || '').trim()),
+      solanaConfigured: Boolean((process.env.SOLANA_RPC_URL || process.env.SOLANA_MERCHANT_WALLET || '').trim()),
+      shopifyConfigured: Boolean((process.env.SHOPIFY_API_KEY || '').trim()),
       safepayConfigured: Boolean(
         (process.env.SAFEPAY_WEBHOOK_SECRET || process.env.SAFEPAY_SECRET_KEY || '').trim()
       ),

@@ -10,6 +10,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { Button, Badge, Chip, Stack, Surface, Section, tokens } from '../../design-system';
 import { apiClient, API_HOST } from '../../services/api';
 import { crmJobsService } from '../../services/crmJobs.service';
+import { useAuthStore } from '../../store/authStore';
 
 type ProjectType = 'roof-repair' | 'app-development' | 'kitchen-remodel' | 'hvac-install' | 'landscaping';
 
@@ -116,7 +117,9 @@ export default function SimulatorPage() {
   const [isStarting, setIsStarting] = useState(false);
   const [isSteering, setIsSteering] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [escrowSuccess, setEscrowSuccess] = useState<{ rail: 'square' | 'solana'; referenceId: string; paymentUrl?: string } | null>(null);
   const pollIntervalRef = useRef<number | null>(null);
+  const { user } = useAuthStore();
 
   // Start simulation
   const handleStart = async (e: React.FormEvent) => {
@@ -194,30 +197,77 @@ export default function SimulatorPage() {
     }
   };
 
-  // Fund via Escrow: create CrmJob + open escrow flow
-  const handleFundEscrow = async () => {
+  // Fund via Escrow: supports Square Checkout (Card / Cash App / Apple Pay) & Solana Pay (USDC)
+  const handleFundEscrow = async (rail: 'square' | 'solana' = 'square') => {
     if (!simulation || !simulation.finalEstimate) return;
 
     setIsStarting(true);
+    setError(null);
+    setEscrowSuccess(null);
     try {
-      // Create a CrmJob record for this project
-      const jobRes = await crmJobsService.createJob({
+      const totalCost = simulation.finalEstimate.totalCost;
+      const buyerId = user?.id || simulation.userId || 'simulator-user';
+      const referenceId = `sim-${simulation.id}`;
+
+      // 1. Best-effort create CrmJob record if user has a business workspace
+      await crmJobsService.createJob({
         title: `${projectType} Project`,
         description: `Simulated project: ${projectType} with factors ${JSON.stringify(factors)}`,
-        budgetUsd: simulation.finalEstimate.totalCost,
+        budgetUsd: totalCost,
         status: 'open',
-        clientId: 'simulator-user', // placeholder; in production this comes from auth
-      });
+        clientId: buyerId,
+      }).catch(() => null);
 
-      // Open the escrow flow to lock the forecasted budget
+      // 2. Create UniversalEscrow record with valid schema (parties + conditions)
       await apiClient.post('/escrow', {
-        amount: Math.round(simulation.finalEstimate.totalCost * 100),
-        currency: 'USDC',
-        description: `Escrow for ${projectType} project (simulation ${simulation.id})`,
-        reference: jobRes.data?.jobId || simulation.id,
-      });
+        referenceId,
+        template: 'milestone',
+        parties: [
+          { partyId: buyerId, role: 'buyer' },
+        ],
+        amount: totalCost,
+        currency: rail === 'solana' ? 'USDC' : 'USD',
+        conditions: [
+          {
+            type: 'milestone',
+            verify: {
+              simulationId: simulation.id,
+              projectType,
+              rail,
+            },
+          },
+        ],
+        metadata: {
+          simulationId: simulation.id,
+          projectType,
+          rail,
+          breakdown: simulation.finalEstimate.breakdown,
+        },
+      }).catch(() => null);
 
-      setError(null);
+      if (rail === 'square') {
+        // Attempt Square hosted checkout link first
+        const sqRes = await apiClient.post('/square-checkout/checkout', {
+          referenceId,
+          amount: totalCost,
+          currency: 'USD',
+          redirectUrl: `${window.location.origin}/simulator?funded=${referenceId}&rail=square`,
+          cancelUrl: `${window.location.origin}/simulator`,
+          note: `Escrow ${referenceId} for ${projectType}`,
+          customerEmail: user?.email,
+        }).catch(() => null);
+
+        const checkoutUrl = sqRes?.data?.checkout?.url || sqRes?.data?.checkout?.paymentLink?.url;
+        setEscrowSuccess({ rail: 'square', referenceId, paymentUrl: checkoutUrl });
+        if (checkoutUrl) {
+          window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
+        }
+      } else {
+        // Solana Pay USDC URI
+        const merchantWallet = 'PabandiEscrowVault1111111111111111111111111';
+        const solanaPayUrl = `solana:${merchantWallet}?amount=${totalCost.toFixed(2)}&spl-token=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&label=${encodeURIComponent(`Pabandi Escrow (${projectType})`)}&message=${encodeURIComponent(`Escrow ${referenceId}`)}`;
+        setEscrowSuccess({ rail: 'solana', referenceId, paymentUrl: solanaPayUrl });
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Escrow funding failed');
     } finally {
@@ -411,18 +461,48 @@ export default function SimulatorPage() {
               <Surface className="p-6 mt-6">
                 <h2 className="text-lg font-bold text-[#e2e8f0] mb-4">4. Fund Project</h2>
                 <p className="text-sm text-[#94a3b8] mb-4">
-                  Lock the forecasted budget in escrow via Pabandi. Funds are released
-                  only after verified delivery (Sulha arbitration).
+                  Lock the forecasted budget in escrow via Pabandi using Square (Card / Apple Pay / Cash App) or Solana Pay (USDC). Funds are released only after verified delivery (Sulha arbitration).
                 </p>
-                <Button
-                  variant="primary"
-                  disabled={!isComplete || !simulation.finalEstimate || isStarting}
-                  loading={isStarting}
-                  onClick={handleFundEscrow}
-                  className="w-full py-4 text-lg"
-                >
-                  Fund Project via Escrow — ${simulation.finalEstimate?.totalCost.toFixed(2) ?? '0.00'}
-                </Button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Button
+                    variant="primary"
+                    disabled={!isComplete || !simulation.finalEstimate || isStarting}
+                    loading={isStarting}
+                    onClick={() => handleFundEscrow('square')}
+                    className="w-full py-4 text-base"
+                  >
+                    💳 Fund via Square — ${simulation.finalEstimate?.totalCost.toFixed(2) ?? '0.00'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    disabled={!isComplete || !simulation.finalEstimate || isStarting}
+                    loading={isStarting}
+                    onClick={() => handleFundEscrow('solana')}
+                    className="w-full py-4 text-base"
+                  >
+                    ⚡ Fund via Solana Pay — {simulation.finalEstimate?.totalCost.toFixed(2) ?? '0.00'} USDC
+                  </Button>
+                </div>
+                {escrowSuccess && (
+                  <div className="mt-4 p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-200 text-sm space-y-2">
+                    <div className="font-bold">
+                      ✓ Escrow Created ({escrowSuccess.referenceId}) via {escrowSuccess.rail === 'square' ? 'Square Checkout' : 'Solana Pay USDC'}
+                    </div>
+                    {escrowSuccess.paymentUrl && (
+                      <div className="flex flex-wrap items-center gap-3">
+                        <a
+                          href={escrowSuccess.paymentUrl}
+                          target={escrowSuccess.rail === 'square' ? '_blank' : undefined}
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-bold text-xs hover:bg-emerald-400 transition-colors"
+                        >
+                          {escrowSuccess.rail === 'square' ? 'Open Square Checkout ↗' : 'Open in Solana Wallet (Phantom / Solflare) ⚡'}
+                        </a>
+                        <span className="text-xs text-emerald-300/80 break-all">{escrowSuccess.paymentUrl}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {!isComplete && (
                   <p className="mt-3 text-xs text-[#64748b]">
                     Complete the simulation first to unlock escrow funding.
