@@ -6,7 +6,7 @@
  * funding the project via Escrow.
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { DashboardLayout } from '../../components/DashboardLayout';
+import DashboardLayout from '../../components/DashboardLayout';
 import { Button, Badge, Chip, Stack, Surface, Section, tokens } from '../../design-system';
 import { apiClient, API_HOST } from '../../services/api';
 import { crmJobsService } from '../../services/crmJobs.service';
