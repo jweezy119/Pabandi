@@ -24,6 +24,14 @@ Choose your path:
 
 ---
 
+## 🔒 Core Primitives
+
+Pabandi is built with enterprise-grade security: **Autonomy Boundaries** (capped session quotas), **Scoped Identity** (cryptographic agent passports), and **Intent Contracts** (VCAP hash verification before escrow release).
+
+These three primitives ensure that every agent transaction is bounded, verified, and cryptographically attested — no funds move without verified intent, and no agent operates outside its assigned capability envelope.
+
+---
+
 ## 🚀 Quickstart
 
 ### What is Pabandi?

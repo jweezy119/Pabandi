@@ -94,3 +94,27 @@ Delegations are modeled in the database (`AgentDelegation`) with idempotent SHA-
 - 429 response: "Rate limit exceeded. Please upgrade to an Enterprise plan for higher limits."
 - Rate limiters mounted before heavy AI logic to block traffic early
 - API key-based key generation where available, IP-based fallback
+
+---
+
+## 9. Security & Trust Architecture
+
+Pabandi implements enterprise-grade security through three core concepts: **Autonomy Boundaries**, **Scoped Identity**, and **Intent Contracts**.
+
+### 9.1 Autonomy Boundaries
+
+Pabandi uses **Session Abstraction** to create capability envelopes that bound every agent's operational scope. Every agent is assigned a strict quota covering both budget (maximum spendable amount) and time (session lifetime). Once a quota is exhausted, the agent can no longer initiate tool calls or escrow actions until the session is refreshed by a human parent agent.
+
+Our rate-limiter acts as an operational circuit breaker to prevent runaway loops. MCP and x402 endpoints are capped at 60 requests per minute per API key, returning 429 with an enterprise upsell message when exceeded. Rate limiters are mounted before heavy AI logic to block traffic early, ensuring that a malfunctioning or compromised agent cannot drain compute budgets or escrow funds through unbounded execution.
+
+### 9.2 Scoped Identity
+
+Every agent is bound to a cryptographic identity represented by a **Trust Passport** or API Key. These identities are not generic bearer tokens — they carry least-privilege caveats that restrict which tools, contracts, and cluster boundaries an agent may cross.
+
+The MCP server validates least-privilege tokens on every tool call, verifying that the requesting agent holds the necessary permissions for the specific operation. This prevents unauthorized privilege escalation across cluster boundaries: an agent authenticated for BookingOS cannot suddenly access ContactOS administrative functions or settle escrow on behalf of another user without explicit delegation.
+
+### 9.3 Intent Contracts
+
+Before any escrow release, Pabandi requires a cryptographic approval — a **VCAP (Verifiable Credential Attestation Package) data hash** that binds the escrow release to verified evidence of service delivery. This hash is stored immutably on-chain and serves as the root of trust for dispute resolution via Sulha.
+
+We validate tool arguments via **Zod schemas** to detect semantic drift and ensure post-condition invariants are met. Every MCP tool call is validated against its declared schema before execution, catching malformed arguments, type mismatches, and out-of-bounds values at the edge. Combined with VCAP hash verification, this ensures that no funds are released unless the cryptographic intent matches the verified outcome.
