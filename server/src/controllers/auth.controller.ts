@@ -551,10 +551,23 @@ export const login = async (
     logger.info(`Login controller received email: '${email}'`);
 
     // Find user
-    const user = await prisma.user.findUnique({
-      where: { email },
-      include: { business: true, memberships: true },
-    });
+    let user;
+    try {
+      user = await prisma.user.findUnique({
+        where: { email },
+        include: { business: true, memberships: true },
+      });
+    } catch (err: any) {
+      if (err.code === 'P2021') {
+        // Table or column does not exist - database is out of sync with schema
+        logger.error(`Database schema out of sync: ${err.message}`);
+        throw new CustomError(
+          'Database schema is out of sync. Please contact support to resolve.',
+          503
+        );
+      }
+      throw err;
+    }
 
     if (!user) {
       throw new CustomError('Invalid email or password', 401);
