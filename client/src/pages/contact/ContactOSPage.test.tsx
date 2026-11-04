@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
+import { QueryClient, QueryClientProvider } from 'react-query';
 import { LanguageProvider } from '../../context/LanguageContext';
 
 /**
@@ -57,18 +58,23 @@ async function renderContactOS(status: number) {
   // happened during render, the tree never committed, and every assertion below
   // timed out instead — so these three tests had been green-by-absence, guarding a
   // regression they could not see.
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
-    <HelmetProvider>
-      <LanguageProvider>
-        <MemoryRouter initialEntries={['/contact']}>
-          <LocationProbe />
-          <Routes>
-            <Route path="/contact" element={<ContactOSPage />} />
-            <Route path="/contact/setup" element={<div>setup wizard</div>} />
-          </Routes>
-        </MemoryRouter>
-      </LanguageProvider>
-    </HelmetProvider>,
+    <QueryClientProvider client={queryClient}>
+      <HelmetProvider>
+        <LanguageProvider>
+          <MemoryRouter initialEntries={['/contact']}>
+            <LocationProbe />
+            <Routes>
+              <Route path="/contact" element={<ContactOSPage />} />
+              <Route path="/contact/setup" element={<div>setup wizard</div>} />
+            </Routes>
+          </MemoryRouter>
+        </LanguageProvider>
+      </HelmetProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -108,7 +114,7 @@ describe('ContactOSPage redirect', () => {
     // the page rendered and that it rendered the right page.
     renderContactOS(200);
 
-    await waitFor(() => expect(screen.getByText(/here is the money secured behind your bookings/i)).toBeTruthy(),
+    await waitFor(() => expect(screen.getByText(/business dashboard — escrow, gigs, and agent activity/i)).toBeTruthy(),
       { timeout: RENDER_TIMEOUT_MS });
     expect(screen.queryByText('setup wizard')).toBeNull();
     expect(screen.getByTestId('path').textContent).toBe('/contact');
@@ -129,7 +135,7 @@ describe('ContactOSPage redirect', () => {
     // account into the wizard whenever the API had a bad minute.
     renderContactOS(500);
 
-    await waitFor(() => expect(screen.getByText(/here is the money secured behind your bookings/i)).toBeTruthy(),
+    await waitFor(() => expect(screen.getByText(/business dashboard — escrow, gigs, and agent activity/i)).toBeTruthy(),
       { timeout: RENDER_TIMEOUT_MS });
     expect(screen.queryByText('setup wizard')).toBeNull();
   });

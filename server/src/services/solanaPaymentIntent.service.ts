@@ -2,12 +2,10 @@
 // Endpoint: POST /api/v1/payments/solana/payment-intent
 // Creates a Solana payment intent for escrow funding
 
-import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
+import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { z } from 'zod';
-
-const prisma = new PrismaClient();
 
 export interface SolanaPaymentIntentRequest {
   escrowId: string;

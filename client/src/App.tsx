@@ -343,6 +343,18 @@ function AnimatedAppRoutes() {
           <Route path="capital/expenses" element={<LedgerExpensesPage />} />
           <Route path="capital/accounts" element={<LedgerAccountsPage />} />
           <Route path="capital/reports" element={<LedgerReportsPage />} />
+
+          {/* Personal Mode (/me) — inside AppShellLayout so ModeToggle, ModuleSwitcher,
+              Universal Balance, and UserMenu remain accessible in Personal Mode */}
+          <Route path="me" element={<PersonalGuard><PersonalDashboardPage /></PersonalGuard>} />
+          <Route path="me/passport" element={<PersonalGuard><PersonalPassportPage /></PersonalGuard>} />
+          <Route path="me/bookings" element={<PersonalGuard><PersonalBookingsPage /></PersonalGuard>} />
+          <Route path="me/rewards" element={<PersonalGuard><PersonalRewardsPage /></PersonalGuard>} />
+          <Route path="me/profile" element={<PersonalGuard><ProfileEditorPage /></PersonalGuard>} />
+          <Route path="me/verification" element={<PersonalGuard><BusinessVerificationPage /></PersonalGuard>} />
+          <Route path="me/quick-post" element={<PersonalGuard><QuickPostPage /></PersonalGuard>} />
+          <Route path="me/values" element={<PersonalGuard><ValuesPreferencesPage /></PersonalGuard>} />
+          <Route path="me/agent" element={<PersonalGuard><AgentDashboardPage /></PersonalGuard>} />
         </Route>
 
         {/* Redirects from old routes */}
@@ -433,8 +445,6 @@ function AnimatedAppRoutes() {
             <Route path="onramp" element={<PlaceholderPage />} />
             <Route path="offramp" element={<PlaceholderPage />} />
             <Route path="token" element={<PlaceholderPage />} />
-            <Route path="dashboard" element={<PlaceholderPage />} />
-            <Route path="profile" element={<PlaceholderPage />} />
             <Route path="calculator" element={<PlaceholderPage />} />
             <Route path="smart-search" element={<PlaceholderPage />} />
             <Route path="ai/chat" element={<PlaceholderPage />} />
@@ -537,8 +547,6 @@ function AnimatedAppRoutes() {
             <Route path="s/:sellerId" element={<PlaceholderPage />} />
             <Route path="t/pay/:sellerId" element={<PlaceholderPage />} />
             <Route path="b/:slug" element={<PlaceholderPage />} />
-            <Route path="onboarding" element={<PlaceholderPage />} />
-            <Route path="dashboard" element={<PlaceholderPage />} />
             <Route path="web3" element={<PlaceholderPage />} />
             <Route path="lp-terminal" element={<PlaceholderPage />} />
             <Route path="solana-escrow" element={<PlaceholderPage />} />
@@ -600,15 +608,6 @@ function AnimatedAppRoutes() {
             <Route path="admin/ingest" element={<IngestionPage />} />
             <Route path="admin/company-intel" element={<CompanyIntelPage />} />
             <Route path="admin/setup" element={<PlaceholderPage />} />
-            <Route path="me" element={<PersonalGuard><PersonalDashboardPage /></PersonalGuard>} />
-            <Route path="me/passport" element={<PersonalGuard><PersonalPassportPage /></PersonalGuard>} />
-            <Route path="me/bookings" element={<PersonalGuard><PersonalBookingsPage /></PersonalGuard>} />
-            <Route path="me/rewards" element={<PersonalGuard><PersonalRewardsPage /></PersonalGuard>} />
-            <Route path="me/profile" element={<PersonalGuard><ProfileEditorPage /></PersonalGuard>} />
-            <Route path="me/verification" element={<PersonalGuard><BusinessVerificationPage /></PersonalGuard>} />
-            <Route path="me/quick-post" element={<PersonalGuard><QuickPostPage /></PersonalGuard>} />
-            <Route path="me/values" element={<PersonalGuard><ValuesPreferencesPage /></PersonalGuard>} />
-            <Route path="me/agent" element={<PersonalGuard><AgentDashboardPage /></PersonalGuard>} />
           </Route>
 
           {/* Consumer mobile app — standalone mobile shell, no B2B sidebar */}

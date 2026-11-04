@@ -2,6 +2,7 @@ import { Outlet, Link, useNavigate, useLocation, useNavigationType } from 'react
 import { PageTransition } from './PageTransition';
 import GlobalAIConciergeWidget from './GlobalAIConciergeWidget';
 import { NotificationBell } from './NotificationBell';
+import { ModeToggle } from './ModeToggle';
 import { useAuthStore } from '../store/authStore';
 import { useEffect, useState, useRef } from 'react';
 
@@ -299,7 +300,9 @@ export default function Layout() {
   const isStandalone = /^\/(booking|freight|property|contact|capital|sitara)(\/|$)/.test(location.pathname);
   const [searchOpen, setSearchOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : '';
+  const initials = user
+    ? `${user.firstName?.[0] || user.email?.[0] || 'U'}${user.lastName?.[0] || ''}`.toUpperCase()
+    : '';
   const isOwnerOrAdmin = user?.role === 'BUSINESS_OWNER' || user?.role === 'ADMIN';
   const scrolled = useScrolled();
 
@@ -386,8 +389,9 @@ export default function Layout() {
               <span className="material-symbols-outlined text-[18px] sm:text-[20px]">search</span>
             </button>
             {isAuthenticated ? (
-              <div className="flex items-center gap-1">
-                <Link to={isOwnerOrAdmin ? '/dashboard' : '/profile'} className="md:hidden w-9 h-9 rounded-full bg-[var(--warm-sand)]/10 flex items-center justify-center touch-target">
+              <div className="flex items-center gap-1.5">
+                <ModeToggle />
+                <Link to="/dashboard" className="md:hidden w-9 h-9 rounded-full bg-[var(--warm-sand)]/10 flex items-center justify-center touch-target">
                   <span className="material-symbols-outlined text-[18px]">person</span>
                 </Link>
                 <NotificationBell />

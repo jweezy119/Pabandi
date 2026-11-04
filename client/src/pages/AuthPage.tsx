@@ -260,7 +260,8 @@ export default function AuthPage() {
     const fromQuery = safeInternalPath(searchParams.get('redirect'));
     if (fromQuery) return fromQuery;
 
-    return effectiveMode(user) === 'business' ? '/contact' : '/me';
+    const currentUser = useAuthStore.getState().user ?? user;
+    return effectiveMode(currentUser) === 'business' ? '/contact' : '/me';
   };
 
   if (isAuthenticated) {
@@ -307,10 +308,14 @@ export default function AuthPage() {
     // the session landed in the API origin's localStorage — signed in on
     // pabandi.onrender.com, still signed out on pabandi.com, and back to the
     // login page on the next click. That loop is what this parameter ends.
+    const redirectTarget =
+      safeInternalPath((location.state as { from?: string } | null)?.from) ||
+      safeInternalPath(searchParams.get('redirect')) ||
+      '/dashboard';
     const params = new URLSearchParams({
       role,
       origin: window.location.origin,
-      return_to: `${location.pathname}${location.search}`,
+      return_to: redirectTarget,
     });
     window.location.href = `${backendUrl}/api/v1/auth/social/github?${params.toString()}`;
   };

@@ -217,6 +217,7 @@ export const register = async (
           lastName,
           phone,
           role: role === 'BUSINESS_OWNER' ? UserRole.BUSINESS_OWNER : UserRole.CUSTOMER,
+          preferredMode: role === 'BUSINESS_OWNER' ? 'business' : 'personal',
           verificationCode: null,
           verificationCodeExpires: null,
           isEmailVerified: true,
@@ -357,6 +358,7 @@ export const register = async (
         lastName,
         phone,
         role: resolvedRole,
+        preferredMode: resolvedRole === UserRole.BUSINESS_OWNER ? 'business' : 'personal',
         // `reliabilityScore` is deliberately ABSENT.
         //
         // It used to be written here as a hardcoded 750, which resolved to
@@ -1342,43 +1344,72 @@ export const toggleUserMode = async (req: AuthRequest, res: Response, next: Next
       return res.status(400).json({ success: false, message: 'mode must be business or personal' });
     }
 
-    // Check if User model has preferredMode field
-    const user = await prisma.user.update({
-      where: { id: req.user!.id },
-      data: { preferredMode: mode },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        preferredMode: true,
-        business: true,
-      },
-    });
+    let userRecord: {
+      id: string;
+      email: string;
+      firstName?: string | null;
+      lastName?: string | null;
+      role: string;
+      preferredMode: string;
+      business?: { id?: string } | null;
+    };
 
-    const businessId = (user.business as { id?: string } | null)?.id ?? null;
+    try {
+      userRecord = await prisma.user.update({
+        where: { id: req.user!.id },
+        data: { preferredMode: mode },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          preferredMode: true,
+          business: true,
+        },
+      });
+    } catch (dbErr) {
+      logger.warn('[Auth] toggleUserMode DB update fallback:', dbErr);
+      const existing = await prisma.user.findUnique({
+        where: { id: req.user!.id },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          business: true,
+        },
+      }).catch(() => null);
 
-    const secret = process.env.JWT_SECRET;
+      userRecord = {
+        id: existing?.id || req.user!.id,
+        email: existing?.email || req.user!.email,
+        firstName: existing?.firstName ?? req.user!.firstName,
+        lastName: existing?.lastName ?? req.user!.lastName,
+        role: existing?.role || req.user!.role,
+        preferredMode: mode,
+        business: existing?.business ?? (req.user!.businessId ? { id: req.user!.businessId } : null),
+      };
+    }
+
+    const businessId = (userRecord.business as { id?: string } | null)?.id ?? req.user?.businessId ?? null;
+
+    const secret = process.env.JWT_SECRET || JWT_SECRET;
     if (!secret) {
       throw new Error('JWT_SECRET not configured');
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, businessId, activeBusinessId: businessId, mode: user.preferredMode } as JwtPayload,
+      { id: userRecord.id, email: userRecord.email, role: userRecord.role, businessId, activeBusinessId: businessId, mode } as JwtPayload,
       secret as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
 
-    res.json({ success: true, data: { user: { ...user, businessId }, token } });
+    res.json({ success: true, data: { user: { ...userRecord, preferredMode: mode, businessId }, token } });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[Auth] toggleUserMode error:', message);
-    console.error('[Auth] toggleUserMode error details:', {
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : undefined,
-      code: error instanceof Error && 'code' in error ? (error as any).code : undefined,
-      meta: error instanceof Error && 'meta' in error ? (error as any).meta : undefined,
-    });
     next(error);
   }
 };

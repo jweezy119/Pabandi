@@ -236,7 +236,7 @@ export default function LandingPage() {
             <Link to="/booking">Human Portal</Link>
           </nav>
           {isAuthenticated ? (
-            <Link to="/contact" className="cta-nav">Dashboard</Link>
+            <Link to="/dashboard" className="cta-nav">Dashboard</Link>
           ) : (
             <Link to="/signup?module=contact" className="cta-nav">Get Started</Link>
           )}

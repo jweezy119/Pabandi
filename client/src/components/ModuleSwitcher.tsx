@@ -15,8 +15,12 @@ import { useAuthStore } from '../store/authStore';
  */
 type AccountMode = 'business' | 'personal';
 
-const ALL_MODULES: Array<{ id: string; label: string; path: string; icon: string; color: string; modes: AccountMode[] }> = [
+const ALL_MODULES: Array<{ id: string; label: string; path: string; icon: string; color: string; modes: AccountMode[]; exact?: boolean }> = [
   { id: 'contact', label: 'ContactOS', path: '/contact', icon: 'contacts', color: 'var(--clay)', modes: ['business'] },
+  { id: 'me', label: 'My Hub', path: '/me', icon: 'person', color: 'var(--sage)', modes: ['personal'], exact: true },
+  { id: 'passport', label: 'Trust Passport', path: '/me/passport', icon: 'verified_user', color: 'var(--clay)', modes: ['personal'] },
+  { id: 'my-bookings', label: 'My Bookings', path: '/me/bookings', icon: 'event', color: 'var(--sage)', modes: ['personal'] },
+  { id: 'rewards', label: 'My Rewards', path: '/me/rewards', icon: 'toll', color: 'var(--muted-ochre)', modes: ['personal'] },
   { id: 'booking', label: 'BookingOS', path: '/booking', icon: 'book_online', color: 'var(--sage)', modes: ['business', 'personal'] },
 ];
 
@@ -28,9 +32,14 @@ export function ModuleSwitcher() {
 
   const activeMode: AccountMode = user?.preferredMode === 'personal' ? 'personal' : 'business';
   const modules = ALL_MODULES.filter((m) => m.modes.includes(activeMode));
-  // A personal account has no business modules, so fall back to the full list
-  // rather than indexing an empty array and crashing the switcher.
-  const currentModule = modules.find((m) => location.pathname.startsWith(m.path)) ?? ALL_MODULES[0];
+  const currentModule =
+    modules.find((m) =>
+      m.exact
+        ? location.pathname === m.path
+        : location.pathname === m.path || location.pathname.startsWith(m.path + '/')
+    ) ??
+    modules[0] ??
+    ALL_MODULES[0];
 
   return (
     <div className="relative">

@@ -23,3 +23,6 @@ CREATE TABLE IF NOT EXISTS "AgentMarketplace" (
 CREATE UNIQUE INDEX IF NOT EXISTS "AgentMarketplace_apiKeyHash_key" ON "AgentMarketplace" ("apiKeyHash") WHERE "apiKeyHash" IS NOT NULL;
 CREATE INDEX IF NOT EXISTS "AgentMarketplace_ownerEmail_idx" ON "AgentMarketplace" ("ownerEmail");
 CREATE INDEX IF NOT EXISTS "AgentMarketplace_status_idx" ON "AgentMarketplace" ("status");
+
+-- Ensure User.preferredMode column exists for Business <-> Personal mode switching
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "preferredMode" TEXT NOT NULL DEFAULT 'business';

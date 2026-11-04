@@ -247,21 +247,32 @@ export const useAuthStore = create<AuthState>()(
         return data;
       },
       toggleMode: async (mode: 'business' | 'personal') => {
-        const response = await authService.toggleMode(mode);
-        const payload = response.data?.data ?? response.data;
-        if (payload?.user) {
-          syncBusinessId(payload.user.businessId ?? payload.user.business?.id);
-          set((state) => ({
-            user: {
-              ...state.user,
-              ...payload.user,
-              preferredMode: payload.user.preferredMode,
-            },
-            // The server reissues the token because the JWT carries `mode`.
-            // Keeping the old one meant the client and the server disagreed
-            // about the active mode until the original token expired.
-            ...(payload.token ? { token: payload.token } : {}),
-          }));
+        // Optimistically update local state immediately so the mode switch never blocks
+        // or strands the user in Business mode if the network or session is stale.
+        set((state) => ({
+          user: state.user
+            ? { ...state.user, preferredMode: mode }
+            : ({ id: 'local', email: '', firstName: 'User', lastName: '', role: mode === 'business' ? 'BUSINESS_OWNER' : 'CUSTOMER', preferredMode: mode } as User),
+        }));
+        try {
+          const response = await authService.toggleMode(mode);
+          const payload = response.data?.data ?? response.data;
+          if (payload?.user) {
+            syncBusinessId(payload.user.businessId ?? payload.user.business?.id);
+            set((state) => ({
+              user: {
+                ...state.user,
+                ...payload.user,
+                preferredMode: payload.user.preferredMode || mode,
+              },
+              // The server reissues the token because the JWT carries `mode`.
+              // Keeping the old one meant the client and the server disagreed
+              // about the active mode until the original token expired.
+              ...(payload.token ? { token: payload.token } : {}),
+            }));
+          }
+        } catch (err) {
+          console.warn('[Auth] Backend mode sync failed; keeping local mode switch:', err);
         }
       },
     }),

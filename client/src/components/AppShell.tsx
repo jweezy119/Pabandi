@@ -9,9 +9,17 @@ import { WalletModal } from './WalletModal';
 import { useWalletModal } from '../hooks/useWalletModal';
 import { ModeTransitionOverlay } from './ModeTransitionOverlay';
 
-const MOBILE_MODULES = [
-  { id: 'contact', label: 'Contact', path: '/contact', icon: 'contacts', color: 'var(--clay)' },
-  { id: 'booking', label: 'Book', path: '/booking', icon: 'book_online', color: 'var(--sage)' },
+const BUSINESS_MOBILE_MODULES = [
+  { id: 'contact', label: 'Contact', path: '/contact', icon: 'contacts', color: 'var(--clay)', end: false },
+  { id: 'booking', label: 'Book', path: '/booking', icon: 'book_online', color: 'var(--sage)', end: false },
+];
+
+const PERSONAL_MOBILE_MODULES = [
+  { id: 'me', label: 'My Hub', path: '/me', icon: 'person', color: 'var(--sage)', end: true },
+  { id: 'passport', label: 'Passport', path: '/me/passport', icon: 'verified_user', color: 'var(--clay)', end: false },
+  { id: 'bookings', label: 'Bookings', path: '/me/bookings', icon: 'event', color: 'var(--sage)', end: false },
+  { id: 'rewards', label: 'Rewards', path: '/me/rewards', icon: 'toll', color: 'var(--muted-ochre)', end: false },
+  { id: 'booking', label: 'Discover', path: '/booking', icon: 'explore', color: 'var(--clay)', end: false },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -20,7 +28,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { openModal } = useWalletModal();
   const activeMode = (user?.preferredMode || 'business').toUpperCase();
   const isBusiness = activeMode === 'BUSINESS';
-  const visibleModules = MOBILE_MODULES;
+  const visibleModules = isBusiness ? BUSINESS_MOBILE_MODULES : PERSONAL_MOBILE_MODULES;
 
   return (
     <div className="flex flex-col h-screen bg-[var(--bg-main)] overflow-hidden" data-mode={user?.preferredMode || 'business'}>
@@ -61,7 +69,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-hidden relative">
+      <div className="flex-1 overflow-y-auto relative">
         {children}
         <SupportWidget />
       </div>
@@ -69,12 +77,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden flex-none h-16 bg-white border-t border-[rgba(191,179,163,0.2)] flex items-center justify-around z-50 safe-area-bottom">
         {visibleModules.map(module => {
-          const isActive = location.pathname.startsWith(module.path);
+          const isActive = module.end
+            ? location.pathname === module.path
+            : location.pathname === module.path || location.pathname.startsWith(module.path + '/');
           return (
             <Link
               key={module.id}
               to={module.path}
-              className="flex flex-col items-center gap-0.5 py-1 px-2 min-w-[64px]"
+              className="flex flex-col items-center gap-0.5 py-1 px-2 min-w-[56px]"
               style={{ color: isActive ? module.color : 'var(--soft-stone)' }}
             >
               <span className="material-symbols-outlined text-[22px]">{module.icon}</span>

@@ -50,12 +50,18 @@ export default function AuthCallbackPage() {
     window.history.replaceState({}, '', window.location.pathname);
 
     const claims = decodeJwtPayload(token);
+    const resolvedRole = role || claims?.role || 'CUSTOMER';
+    const preferredMode: 'business' | 'personal' =
+      claims?.mode === 'personal' || resolvedRole === 'CUSTOMER' || resolvedRole === 'customer'
+        ? 'personal'
+        : 'business';
     const user = {
       id: claims?.id || '',
       email: claims?.email || '',
       firstName: claims?.firstName || '',
       lastName: claims?.lastName || '',
-      role: role || claims?.role || 'CUSTOMER',
+      role: resolvedRole,
+      preferredMode,
       reliabilityScore: 750,
       trustScore: 73.8,
       verificationTier: 'BASIC',
