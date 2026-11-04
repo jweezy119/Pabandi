@@ -150,23 +150,29 @@ router.get(
 
       // Best-effort lookup of creator & escrow state
       const [creatorUser, creatorBusiness, escrow] = await Promise.all([
-        prisma.user
-          .findUnique({
-            where: { id: simulation.userId },
-            select: { id: true, firstName: true, lastName: true, email: true },
-          })
+        Promise.resolve()
+          .then(() =>
+            prisma.user.findUnique({
+              where: { id: simulation.userId },
+              select: { id: true, firstName: true, lastName: true, email: true },
+            }),
+          )
           .catch(() => null),
-        prisma.platformBusiness
-          .findFirst({
-            where: { ownerId: simulation.userId },
-            select: { id: true, name: true, slug: true },
-          })
+        Promise.resolve()
+          .then(() =>
+            (prisma as any).business?.findFirst?.({
+              where: { ownerId: simulation.userId },
+              select: { id: true, name: true, slug: true },
+            }) ?? null,
+          )
           .catch(() => null),
-        prisma.universalEscrow
-          .findUnique({
-            where: { referenceId: `sim-${simulation.id}` },
-            select: { referenceId: true, status: true, amount: true, currency: true, metadata: true },
-          })
+        Promise.resolve()
+          .then(() =>
+            prisma.universalEscrow.findUnique({
+              where: { referenceId: `sim-${simulation.id}` },
+              select: { referenceId: true, status: true, amount: true, currency: true, metadata: true },
+            }),
+          )
           .catch(() => null),
       ]);
 
