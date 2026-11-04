@@ -122,6 +122,7 @@ export default function SimulatorPage() {
   const [isSteering, setIsSteering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [escrowSuccess, setEscrowSuccess] = useState<{ rail: 'square' | 'solana'; referenceId: string; paymentUrl?: string } | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
   const pollIntervalRef = useRef<number | null>(null);
   const { user } = useAuthStore();
 
@@ -471,6 +472,61 @@ export default function SimulatorPage() {
                   </div>
                 </Surface>
               )}
+
+              {/* ── Shareable Interactive Proposal Link (/p/estimate/:id) ── */}
+              <Surface className="p-6 mt-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                  <div>
+                    <h2 className="text-lg font-bold text-[#e2e8f0] flex items-center gap-2">
+                      🔗 Share Interactive Client Proposal
+                      <Chip tone="info">VIRAL CHECKOUT LINK</Chip>
+                    </h2>
+                    <p className="text-xs text-[#94a3b8] mt-1">
+                      Send this public link to your client. They can adjust scope sliders, view the live 4-agent breakdown, and lock the Milestone 1 escrow in one click via Square or Solana Pay.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`${window.location.origin}/p/estimate/${simulation.id}`}
+                    className="flex-1 px-3.5 py-2.5 rounded-xl border border-white/[0.12] bg-[#0f172a] text-xs font-mono text-indigo-200 focus:outline-none"
+                  />
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={() => {
+                      const url = `${window.location.origin}/p/estimate/${simulation.id}`;
+                      navigator.clipboard?.writeText(url);
+                      setCopiedLink(true);
+                      window.setTimeout(() => setCopiedLink(false), 2500);
+                    }}
+                  >
+                    {copiedLink ? '✓ Link Copied!' : '📋 Copy Proposal Link'}
+                  </Button>
+                  <a
+                    href={`/p/estimate/${simulation.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-200 font-semibold text-xs transition-colors whitespace-nowrap"
+                  >
+                    Preview Client Page ↗
+                  </a>
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(
+                      `Here is your interactive project scope & escrow estimate ($${
+                        simulation.finalEstimate?.totalCost.toFixed(2) ?? '0.00'
+                      }) on Pabandi: ${window.location.origin}/p/estimate/${simulation.id}`,
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-semibold text-xs transition-colors whitespace-nowrap"
+                  >
+                    💬 WhatsApp Client
+                  </a>
+                </div>
+              </Surface>
 
               {/* ── Execution Section ── */}
               <Surface className="p-6 mt-6">

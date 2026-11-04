@@ -38,6 +38,7 @@ const ConsumerPassportPage = lazy(() => import('./pages/consumer/ConsumerPasspor
 const ConsumerSettingsPage = lazy(() => import('./pages/consumer/ConsumerSettingsPage'));
 const SandboxApp = lazy(() => import('./pages/sandbox/SandboxApp'));
 const SimulatorPage = lazy(() => import('./pages/simulator/SimulatorPage'));
+const PublicProposalPage = lazy(() => import('./pages/simulator/PublicProposalPage'));
 const DealSimulatorPage = lazy(() => import('./pages/sandbox/DealSimulator'));
 const TrustPassportPublicPage = lazy(() => import('./pages/public/TrustPassportPage'));
 const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
@@ -261,9 +262,10 @@ function AnimatedAppRoutes() {
       >
       <ClayToastProvider>
         <Routes location={location} key={location.pathname}>
-        {/* Public sandbox demo — no authentication required */}
+        {/* Public sandbox demo & shareable interactive simulator proposal — no authentication required */}
         <Route path="/sandbox" element={<SandboxApp />} />
         <Route path="/sandbox/deal" element={<DealSimulatorPage />} />
+        <Route path="/p/estimate/:simulationId" element={<PublicProposalPage />} />
         <Route element={<AppShellLayout />}>
             {/* /dashboard routes to the user's mode-appropriate dashboard
                 (Business → /contact, Personal → /me). It is never a
