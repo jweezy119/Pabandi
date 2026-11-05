@@ -619,6 +619,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/simulator`, './routes/simulator.routes'],
   [`/api/${v}/realestate`, './routes/realestate.routes'],
   [`/api/${v}/pabandi`, './routes/pabandiTools.routes'],
+  [`/api/${v}/public/stats`, './routes/publicStats.routes'],
   // agentDiscovery.routes declares absolute /.well-known/* paths, so it mounts at root
   ['/', './routes/agentDiscovery.routes'],
 ];

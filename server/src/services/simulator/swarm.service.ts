@@ -50,10 +50,36 @@ const FinalEstimateSchema = z.object({
   contingencyPercent: z.number().min(0).max(100),
 });
 
-type MaterialsOutput = z.infer<typeof MaterialsOutputSchema>;
-type StaffingOutput = z.infer<typeof StaffingOutputSchema>;
-type TimelineOutput = z.infer<typeof TimelineOutputSchema>;
-type FinalEstimate = z.infer<typeof FinalEstimateSchema>;
+export type MaterialsOutput = z.infer<typeof MaterialsOutputSchema>;
+export type StaffingOutput = z.infer<typeof StaffingOutputSchema>;
+export type TimelineOutput = z.infer<typeof TimelineOutputSchema>;
+export type FinalEstimate = z.infer<typeof FinalEstimateSchema>;
+
+export interface SwarmSimulationResult {
+  materials: MaterialsOutput;
+  staffing: StaffingOutput;
+  timeline: TimelineOutput;
+  estimate: FinalEstimate;
+}
+
+/**
+ * Pure, in-memory deterministic forecast compiler.
+ * Does not write to database, suitable for stateless public quoting.
+ */
+export async function computeEstimate(factors: any): Promise<SwarmSimulationResult> {
+  const [materials, staffing, timeline] = await Promise.all([
+    materialAgent(factors),
+    staffingAgent(factors),
+    timelineAgent(factors),
+  ]);
+  const estimate = await costCompilerAgent(materials, staffing, timeline);
+  return {
+    materials,
+    staffing,
+    timeline,
+    estimate,
+  };
+}
 
 // ── Agent simulators (deterministic, supports both 1..5 numeric sliders and string enums) ──
 

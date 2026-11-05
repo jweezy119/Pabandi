@@ -12,13 +12,22 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
-import { runSwarm } from '../services/simulator/swarm.service';
+import { runSwarm, computeEstimate } from '../services/simulator/swarm.service';
 import { squareService } from '../services/squareCheckout.service';
 import { safepayService } from '../services/safepay.service';
 import { universalEscrowService } from '../services/universal-escrow.service';
+import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
 
 const router = Router();
+
+const quoteRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many quote requests. Please wait a moment.' },
+});
 
 const StartBodySchema = z.object({
   projectType: z.string().min(1),
@@ -26,6 +35,11 @@ const StartBodySchema = z.object({
 });
 
 const SteerBodySchema = z.object({
+  factors: z.record(z.string(), z.unknown()),
+});
+
+const PublicQuoteBodySchema = z.object({
+  projectType: z.string().default('app-development'),
   factors: z.record(z.string(), z.unknown()),
 });
 
@@ -88,6 +102,32 @@ router.post(
 
 // ── Public Interactive Proposal Endpoints (/p/estimate/:id) ───────────────
 // Declared BEFORE `GET /:id` so literal `/public/...` paths are matched first.
+
+router.post(
+  '/public/quote',
+  quoteRateLimiter,
+  async (req: Request, res: Response, _next: NextFunction) => {
+    try {
+      const { projectType, factors } = PublicQuoteBodySchema.parse(req.body ?? {});
+      const result = await computeEstimate(factors);
+      return res.json({
+        success: true,
+        data: {
+          projectType,
+          factors,
+          materials: result.materials,
+          staffing: result.staffing,
+          timeline: result.timeline,
+          estimate: result.estimate,
+        },
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('[Simulator] public quote error:', message);
+      return res.status(400).json({ success: false, error: message });
+    }
+  },
+);
 
 router.get(
   '/public/:id',
@@ -160,10 +200,10 @@ router.get(
           .catch(() => null),
         Promise.resolve()
           .then(() =>
-            (prisma as any).business?.findFirst?.({
+            prisma.business.findFirst({
               where: { ownerId: simulation.userId },
-              select: { id: true, name: true, slug: true },
-            }) ?? null,
+              select: { id: true, name: true },
+            }),
           )
           .catch(() => null),
         Promise.resolve()
@@ -196,7 +236,7 @@ router.get(
           creator: {
             id: simulation.userId,
             name: creatorDisplayName,
-            businessSlug: creatorBusiness?.slug ?? null,
+            businessId: creatorBusiness?.id ?? null,
           },
           escrow: escrow ?? null,
         },
