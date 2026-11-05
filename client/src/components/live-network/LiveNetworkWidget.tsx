@@ -48,7 +48,7 @@ export function LiveNetworkWidget({ className = '', style }: LiveNetworkWidgetPr
   if (loading) {
     return (
       <div
-        className={`bg-[var(--warm-sand)] text-[var(--warm-ink)] border border-[rgba(191,179,163,0.35)] rounded-2xl p-4 ${className}`}
+        className={`bg-[var(--warm-sand)] text-[var(--warm-ink)] border border-[rgba(191,179,163,0.35)] rounded-2xl p-4 shadow-sm ${className}`}
         style={style}
       >
         <h3 className="text-sm font-bold mb-3 text-[var(--warm-ink)]">
@@ -62,7 +62,7 @@ export function LiveNetworkWidget({ className = '', style }: LiveNetworkWidgetPr
   if (error) {
     return (
       <div
-        className={`bg-[var(--warm-sand)] text-[var(--warm-ink)] border border-[rgba(191,179,163,0.35)] rounded-2xl p-4 ${className}`}
+        className={`bg-[var(--warm-sand)] text-[var(--warm-ink)] border border-[rgba(191,179,163,0.35)] rounded-2xl p-4 shadow-sm ${className}`}
         style={style}
       >
         <h3 className="text-sm font-bold mb-2 text-[var(--warm-ink)]">
@@ -77,7 +77,7 @@ export function LiveNetworkWidget({ className = '', style }: LiveNetworkWidgetPr
 
   return (
     <div
-      className={`bg-[var(--warm-sand)] text-[var(--warm-ink)] border border-[rgba(191,179,163,0.35)] rounded-2xl p-4 ${className}`}
+      className={`bg-[var(--warm-sand)] text-[var(--warm-ink)] border border-[rgba(191,179,163,0.35)] rounded-2xl p-4 shadow-sm ${className}`}
       style={style}
     >
       <div className="flex items-center justify-between mb-3">

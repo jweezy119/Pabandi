@@ -86,6 +86,7 @@ const PropertyFinancialsPage = lazy(() => import('./pages/property/PropertyFinan
 // const FreightCarriersPage = lazy(() => import('./pages/freight/FreightCarriersPage'));
 // const FreightRateCalculatorPage = lazy(() => import('./pages/freight/FreightRateCalculatorPage'));
 const BookingOSPage = lazy(() => import('./pages/booking/BookingOSPage'));
+const BookingMapPage = lazy(() => import('./pages/booking/BookingMapPage'));
 const BookingFlowPage = lazy(() => import('./pages/booking/BookingFlowPage'));
 const ContactOSPage = lazy(() => import('./pages/contact/ContactOSPage'));
 const ContactClientsPage = lazy(() => import('./pages/contact/ContactClientsPage'));
@@ -295,6 +296,7 @@ function AnimatedAppRoutes() {
 
           {/* BookingOS (formerly Sitara) - Booking & Discovery */}
           <Route path="booking" element={<BookingOSPage />} />
+          <Route path="booking/map" element={<BookingMapPage />} />
           <Route path="booking/flow" element={<BookingFlowPage />} />
           <Route path="simulator" element={<SimulatorPage />} />
           <Route path="pay/:invoiceId" element={<PayInvoicePage />} />
