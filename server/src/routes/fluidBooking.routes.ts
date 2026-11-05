@@ -3,6 +3,8 @@ import { authenticate, AuthRequest, optionalAuthenticate } from '../middleware/a
 import { prisma } from '../utils/database';
 import { apiLimiter, writeLimiter } from '../middleware/rateLimit.middleware';
 import { logger } from '../utils/logger';
+import fs from 'fs';
+import path from 'path';
 
 const router = Router();
 
@@ -11,17 +13,70 @@ router.get('/availability/:businessId', apiLimiter, async (req, res: Response) =
     const { businessId } = req.params;
     const { date, serviceId } = req.query;
 
-    const business = await prisma.business.findUnique({
-      where: { id: businessId },
+    let business: any = await prisma.business.findFirst({
+      where: {
+        OR: [{ id: businessId }, { slug: businessId }],
+      },
       select: {
         id: true, name: true, slug: true, logoUrl: true, coverImageUrl: true,
         trustScore: true, isVerified: true, maxConcurrentBookings: true,
         depositAmount: true, depositPercentage: true, requireDeposit: true,
-        cancellationHours: true, serviceAddress: true, valuesPreferences: true,
+        cancellationHours: true, serviceAddress: true, valuesPreferences: true, category: true,
       },
     });
 
-    if (!business) return res.status(404).json({ success: false, error: 'Business not found' });
+    if (!business) {
+      if (businessId.startsWith('gh-')) {
+        const login = businessId.replace(/^gh-/, '');
+        let headline = 'Software Engineer';
+        try {
+          const seedPath = path.join(__dirname, '..', 'data', 'seedProfiles.json');
+          if (fs.existsSync(seedPath)) {
+            const profiles = JSON.parse(fs.readFileSync(seedPath, 'utf8'));
+            const match = profiles.find((p: any) => p.login.toLowerCase() === login.toLowerCase());
+            if (match) headline = match.headline || headline;
+          }
+        } catch {}
+
+        business = {
+          id: businessId,
+          name: `${login} (${headline})`,
+          slug: businessId,
+          logoUrl: `https://github.com/${login}.png`,
+          coverImageUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1200',
+          trustScore: 95,
+          isVerified: true,
+          maxConcurrentBookings: 2,
+          depositAmount: 50,
+          depositPercentage: 20,
+          requireDeposit: true,
+          cancellationHours: 24,
+          serviceAddress: 'Remote (Worldwide)',
+          category: 'FREELANCE',
+          valuesPreferences: {},
+        };
+      } else if (businessId.startsWith('osm-')) {
+        business = {
+          id: businessId,
+          name: 'OpenStreetMap Verified Listing',
+          slug: businessId,
+          logoUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=400',
+          coverImageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200',
+          trustScore: 88,
+          isVerified: true,
+          maxConcurrentBookings: 5,
+          depositAmount: 25,
+          depositPercentage: 20,
+          requireDeposit: true,
+          cancellationHours: 24,
+          serviceAddress: 'Verified POI',
+          category: 'RESTAURANT',
+          valuesPreferences: {},
+        };
+      } else {
+        return res.status(404).json({ success: false, error: 'Business not found' });
+      }
+    }
 
     let userPreferences: Record<string, unknown> = {};
     if (req.user) {
@@ -90,11 +145,18 @@ router.get('/availability/:businessId', apiLimiter, async (req, res: Response) =
       remainingCapacity: number;
     }> = [];
 
-    if (availability && !blackout) {
-      const [startHour, startMin] = availability.startTime.split(':').map(Number);
-      const [endHour, endMin] = availability.endTime.split(':').map(Number);
-      const slotMinutes = availability.slotMinutes;
-      const bufferMinutes = availability.bufferMinutes;
+    const activeAvailability = availability || (dayOfWeek !== 0 ? {
+      startTime: '09:00',
+      endTime: '18:00',
+      slotMinutes: 60,
+      bufferMinutes: 15,
+    } : null);
+
+    if (activeAvailability && !blackout) {
+      const [startHour, startMin] = activeAvailability.startTime.split(':').map(Number);
+      const [endHour, endMin] = activeAvailability.endTime.split(':').map(Number);
+      const slotMinutes = activeAvailability.slotMinutes;
+      const bufferMinutes = activeAvailability.bufferMinutes;
 
       let current = new Date(targetDate);
       current.setHours(startHour, startMin, 0, 0);
@@ -155,8 +217,55 @@ router.post('/book', optionalAuthenticate, writeLimiter, async (req: AuthRequest
       return res.status(400).json({ success: false, error: 'Missing required fields' });
     }
 
-    const business = await prisma.business.findUnique({ where: { id: businessId } });
-    if (!business) return res.status(404).json({ success: false, error: 'Business not found' });
+    let business = await prisma.business.findFirst({
+      where: {
+        OR: [{ id: businessId }, { slug: businessId }],
+      },
+    });
+
+    if (!business) {
+      if (businessId.startsWith('gh-')) {
+        const login = businessId.replace(/^gh-/, '');
+        business = await prisma.business.create({
+          data: {
+            id: businessId,
+            name: `${login} (Open-Source Developer)`,
+            slug: businessId,
+            category: 'FREELANCE',
+            phone: `https://github.com/${login}`,
+            email: `${login}@github.com`,
+            website: `https://github.com/${login}`,
+            logoUrl: `https://github.com/${login}.png`,
+            isVerified: true,
+            isActive: true,
+            requireDeposit: true,
+            depositAmount: 50,
+            address: 'Remote (Worldwide)',
+            city: 'Remote',
+          },
+        });
+      } else if (businessId.startsWith('osm-')) {
+        business = await prisma.business.create({
+          data: {
+            id: businessId,
+            name: 'OpenStreetMap Verified Listing',
+            slug: businessId,
+            category: 'RESTAURANT',
+            phone: 'Contact via app',
+            email: 'contact@pabandi.com',
+            website: 'https://www.openstreetmap.org',
+            isVerified: true,
+            isActive: true,
+            requireDeposit: true,
+            depositAmount: 25,
+            address: 'Verified POI',
+            city: 'Local',
+          },
+        });
+      } else {
+        return res.status(404).json({ success: false, error: 'Business not found' });
+      }
+    }
 
     const slotStart = new Date(`${date}T${time}:00`);
     const service = serviceId

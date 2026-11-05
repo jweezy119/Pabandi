@@ -33,9 +33,11 @@ interface BusinessListing {
   logoUrl?: string;
   coverImageUrl?: string;
   isVerified?: boolean;
+  isClaimed?: boolean;
   requireDeposit?: boolean;
   depositAmount?: number;
   ownerName?: string;
+  source?: 'github' | 'openstreetmap' | 'pabandi' | string;
 }
 
 interface CrmClientItem {
@@ -92,7 +94,7 @@ function ClayStat({
 }
 
 function BusinessCard({ business }: { business: BusinessListing }) {
-  const targetUrl = business.slug ? `/book/${business.slug}` : `/book/${business.id}`;
+  const targetUrl = `/book/slug/${business.slug || business.id}`;
   const displayImage =
     business.coverImageUrl ||
     business.logoUrl ||
@@ -109,6 +111,7 @@ function BusinessCard({ business }: { business: BusinessListing }) {
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               loading="lazy"
             />
+            {/* Top Right: Rating and Trust Score */}
             <div className="absolute top-3 right-3 flex items-center gap-1.5">
               <span
                 className="px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-sm"
@@ -125,10 +128,37 @@ function BusinessCard({ business }: { business: BusinessListing }) {
                 </span>
               )}
             </div>
+
+            {/* Top Left: Authentic Open-Source Origin Badge */}
+            <div className="absolute top-3 left-3 flex flex-wrap gap-1">
+              {business.source === 'github' ? (
+                <span
+                  className="px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-sm flex items-center gap-1"
+                  style={{ background: 'rgba(28,25,23,0.88)', color: 'white' }}
+                >
+                  <span className="text-[13px]">🐙</span> GitHub Dev
+                </span>
+              ) : business.source === 'openstreetmap' ? (
+                <span
+                  className="px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-sm flex items-center gap-1"
+                  style={{ background: 'rgba(15,118,110,0.92)', color: 'white' }}
+                >
+                  <span className="text-[13px]">🗺️</span> OpenStreetMap
+                </span>
+              ) : (
+                <span
+                  className="px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-sm flex items-center gap-1"
+                  style={{ background: 'rgba(197,110,74,0.92)', color: 'white' }}
+                >
+                  <span>✓</span> Verified Partner
+                </span>
+              )}
+            </div>
+
             {business.category === 'FREELANCE' && (
               <div className="absolute bottom-3 left-3">
                 <span
-                  className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider backdrop-blur-md shadow-sm"
+                  className="px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider backdrop-blur-md shadow-sm"
                   style={{ background: 'rgba(28,25,23,0.85)', color: 'var(--cream)' }}
                 >
                   Freelance Specialist
@@ -156,9 +186,28 @@ function BusinessCard({ business }: { business: BusinessListing }) {
               )}
             </div>
 
-            <p className="text-xs line-clamp-2 mb-3 leading-relaxed" style={{ color: 'var(--soft-stone)' }}>
+            <p className="text-xs line-clamp-2 mb-2 leading-relaxed" style={{ color: 'var(--soft-stone)' }}>
               {business.description || `${business.category} services backed by Pabandi smart escrow.`}
             </p>
+
+            {business.website && (
+              <div className="mb-2">
+                <a
+                  href={business.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1 text-[11px] font-medium hover:underline"
+                  style={{ color: 'var(--clay)' }}
+                >
+                  {business.source === 'github'
+                    ? 'View GitHub Profile ↗'
+                    : business.source === 'openstreetmap'
+                    ? 'View OpenStreetMap POI ↗'
+                    : 'Visit Official Site ↗'}
+                </a>
+              </div>
+            )}
           </div>
         </div>
 
