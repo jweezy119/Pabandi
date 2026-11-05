@@ -14,12 +14,13 @@ export interface RawBusinessProfile {
   reviewCount?: number;
   verificationStatus?: 'verified' | 'unverified' | 'pending';
   sourceId?: string;
-  source: 'opendirectories' | 'apify' | 'googlemaps';
+  source: 'opendirectories' | 'apify' | 'googlemaps' | 'osm' | 'github';
+  category?: string;
 }
 
 export interface DataSourceAdapter {
   id: string;
-  fetchBusinesses(query: any): Promise<RawBusinessProfile[]>;
+  fetchBusinesses(query: Record<string, unknown>): Promise<RawBusinessProfile[]>;
 }
 
 export interface IngestionResult {

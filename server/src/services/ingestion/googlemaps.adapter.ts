@@ -55,8 +55,8 @@ interface GoogleMapsAdapterOptions {
 export class GoogleMapsAdapter implements DataSourceAdapter {
   readonly id = 'googlemaps';
 
-  async fetchBusinesses(query: any): Promise<RawBusinessProfile[]> {
-    const { query: searchQuery, category, geo, radius, limit = 50 } = query || {};
+  async fetchBusinesses(query: Record<string, unknown>): Promise<RawBusinessProfile[]> {
+    const { query: searchQuery, category, geo, radius, limit = 50 } = (query || {}) as Record<string, unknown>;
 
     if (!searchQuery) {
       logger.warn('[GoogleMaps] No query provided');
