@@ -15,6 +15,7 @@ import { ClayToastProvider } from './components/primitives';
 // client and the layout shell are needed by almost every route, so splitting them would
 // add a waterfall without saving anything.
 const DeveloperPortalPage = lazy(() => import('./pages/DeveloperPortalPage'));
+const IamConsolePage = lazy(() => import('./pages/developer/IamConsolePage'));
 const AgentPaymentsPage = lazy(() => import('./pages/AgentPaymentsPage'));
 const AgentsLandingPage = lazy(() => import('./pages/AgentsLandingPage'));
 const AgentsRegisterPage = lazy(() => import('./pages/AgentsRegisterPage'));
@@ -578,6 +579,9 @@ function AnimatedAppRoutes() {
             {/* Developer / agent portal. Inside Layout so the dashboard chrome
                 stays, which is what a portal read after signup needs. */}
             <Route path="developers" element={<DeveloperPortalPage />} />
+            <Route path="developer/iam" element={<IamConsolePage />} />
+            <Route path="developers/iam" element={<IamConsolePage />} />
+            <Route path="iam" element={<Navigate to="/developer/iam" replace />} />
             <Route path="agent-payments" element={<AgentPaymentsPage />} />
             <Route path="agents" element={<AgentsLandingPage />} />
             <Route path="agents/register" element={<AgentsRegisterPage />} />
