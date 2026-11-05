@@ -1228,11 +1228,26 @@ app.get('/.well-known/openid-configuration', (_req, res) => {
     token_endpoint: 'https://pabandi.onrender.com/api/v1/oauth/token',
     userinfo_endpoint: 'https://pabandi.onrender.com/api/v1/oauth/userinfo',
     jwks_uri: 'https://pabandi.com/.well-known/jwks.json',
+    introspection_endpoint: 'https://pabandi.onrender.com/api/v1/oauth/introspect',
+    revocation_endpoint: 'https://pabandi.onrender.com/api/v1/oauth/revoke',
     response_types_supported: ['code'],
+    grant_types_supported: ['authorization_code', 'client_credentials', 'refresh_token', 'siws'],
     subject_types_supported: ['public'],
-    id_token_signing_alg_values_supported: ['HS256'],
-    scopes_supported: ['openid', 'profile', 'email', 'trust:passport'],
+    id_token_signing_alg_values_supported: ['RS256'],
+    scopes_supported: ['openid', 'profile', 'email', 'trust:passport', 'agent:execute', 'agent:lease'],
+    claims_supported: ['sub', 'iss', 'aud', 'email', 'name', 'trust_score', 'trust_band', 'principal_type', 'delegation_max_spend_cents', 'jkt'],
   });
+});
+
+app.get('/.well-known/jwks.json', (_req, res) => {
+  try {
+    const { getJwks } = require('./utils/iamKeys');
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.json(getJwks());
+  } catch {
+    res.json({ keys: [] });
+  }
 });
 
 // ── Weekly Google Maps ingestion scheduler ───────────────────────────────
