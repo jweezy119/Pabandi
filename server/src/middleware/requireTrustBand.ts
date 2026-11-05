@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyOidcToken, calculateJwkThumbprint, IamTokenClaims, TrustBand } from '../utils/iamKeys';
+import { verifyOidcToken, IamTokenClaims, TrustBand } from '../utils/iamKeys';
+import { validateDPoPProof } from '../utils/dpop';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
-import jwt from 'jsonwebtoken';
 
 export interface IamAuthRequest extends Request {
   iamAuth?: IamTokenClaims;
@@ -19,54 +19,6 @@ const BAND_RANK: Record<TrustBand, number> = {
 export interface TrustBandOptions {
   minBand?: TrustBand;
   maxSpendCentsWithoutHitl?: number;
-}
-
-/**
- * Validates an RFC 9449 DPoP proof header against the expected JWK thumbprint (jkt)
- */
-function verifyDPoPHeader(
-  dpopHeader: string | undefined,
-  expectedJkt: string,
-  method: string,
-  url: string
-): boolean {
-  if (!dpopHeader) return false;
-
-  try {
-    const decoded = jwt.decode(dpopHeader, { complete: true });
-    if (!decoded || !decoded.header || typeof decoded.header !== 'object') return false;
-
-    const jwk = (decoded.header as Record<string, unknown>).jwk;
-    if (!jwk || typeof jwk !== 'object') return false;
-
-    // Calculate thumbprint of the provided public key
-    const computedJkt = calculateJwkThumbprint(jwk as Record<string, unknown>);
-    if (computedJkt !== expectedJkt) {
-      logger.warn(`[DPoP] Thumbprint mismatch: expected ${expectedJkt}, got ${computedJkt}`);
-      return false;
-    }
-
-    const payload = decoded.payload as Record<string, unknown>;
-    // Verify HTTP method and URI binding (htm, htu) if present
-    if (payload.htm && String(payload.htm).toUpperCase() !== method.toUpperCase()) {
-      logger.warn(`[DPoP] Method mismatch: expected ${method}, got ${payload.htm}`);
-      return false;
-    }
-
-    // Verify proof is not expired (DPoP proofs should be fresh within 5 minutes)
-    if (payload.iat && typeof payload.iat === 'number') {
-      const ageSeconds = Math.floor(Date.now() / 1000) - payload.iat;
-      if (ageSeconds > 300 || ageSeconds < -30) {
-        logger.warn(`[DPoP] Proof expired or from the future: age ${ageSeconds}s`);
-        return false;
-      }
-    }
-
-    return true;
-  } catch (err: unknown) {
-    logger.warn('[DPoP] Proof parsing failed: ' + (err instanceof Error ? err.message : String(err)));
-    return false;
-  }
 }
 
 /**
@@ -149,13 +101,13 @@ export function requireTrustBand(
       if (claims.jkt) {
         const dpopHeader = req.headers['dpop'] as string | undefined;
         const targetUrl = `${req.protocol}://${req.get('host')}${req.originalUrl || req.url}`;
-        const isValidDPoP = verifyDPoPHeader(dpopHeader, claims.jkt, req.method, targetUrl);
+        const dpopResult = validateDPoPProof(dpopHeader, req.method, targetUrl, claims.jkt);
 
-        if (!isValidDPoP) {
+        if (!dpopResult.valid) {
           res.status(403).json({
             success: false,
             error: 'INVALID_DPOP_PROOF',
-            message: 'Valid DPoP proof matching the token key thumbprint is required',
+            message: `Valid DPoP proof matching the token key thumbprint is required: ${dpopResult.error || 'verification failed'}`,
           });
           return;
         }

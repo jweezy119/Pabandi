@@ -2,21 +2,17 @@ import { Router, Request, Response } from 'express';
 import { authenticate, optionalAuthenticate, AuthRequest } from '../middleware/auth.middleware';
 import { prisma } from '../utils/database';
 import crypto from 'crypto';
-import bs58 from 'bs58';
-import nacl from 'tweetnacl';
-import { PublicKey } from '@solana/web3.js';
 import {
   getJwks,
   signOidcToken,
   verifyOidcToken,
-  calculateJwkThumbprint,
   scoreToTrustBand,
   IamTokenClaims,
   TrustBand,
   PrincipalType,
 } from '../utils/iamKeys';
+import { validateDPoPProof, verifySiwsSignature } from '../utils/dpop';
 import { logger } from '../utils/logger';
-import jwt from 'jsonwebtoken';
 
 const router = Router();
 const ISSUER = 'https://pabandi.com';
@@ -381,28 +377,12 @@ router.post('/token', async (req: Request, res: Response) => {
         return;
       }
 
-      // Verify Solana ed25519 signature
-      try {
-        const pubKeyObj = new PublicKey(String(address));
-        const messageBytes = new TextEncoder().encode(String(message));
-
-        let signatureBytes: Uint8Array;
-        const sigStr = String(signature);
-        if (sigStr.length === 88 || sigStr.endsWith('=')) {
-          signatureBytes = Buffer.from(sigStr, 'base64');
-        } else {
-          signatureBytes = bs58.decode(sigStr);
-        }
-
-        const isValidSig = nacl.sign.detached.verify(messageBytes, signatureBytes, pubKeyObj.toBytes());
-        if (!isValidSig) {
-          res.status(401).json({ error: 'invalid_grant', error_description: 'Invalid Solana wallet signature' });
-          return;
-        }
-      } catch (sigErr: unknown) {
-        res.status(400).json({
+      // Verify Solana signature
+      const siwsResult = verifySiwsSignature(String(address), String(signature), String(message));
+      if (!siwsResult.valid) {
+        res.status(401).json({
           error: 'invalid_grant',
-          error_description: 'Malformed Solana signature or wallet address',
+          error_description: `Solana signature verification failed: ${siwsResult.error || 'Invalid signature'}`,
         });
         return;
       }
