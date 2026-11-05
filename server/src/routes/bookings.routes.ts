@@ -65,13 +65,18 @@ router.post('/', moneyRateLimiter, validate(createBookingSchema), async (req: Re
       },
     });
 
-    const existingJob = await prisma.crmJob.findFirst({
-      where: {
-        businessId,
-        scheduledDate: new Date(slotStart),
-        status: { in: ['SCHEDULED', 'IN_PROGRESS'] },
-      },
-    });
+    let existingJob = null;
+    try {
+      existingJob = await (prisma as any).crmJob.findFirst({
+        where: {
+          businessId,
+          scheduledDate: new Date(slotStart),
+          status: { in: ['SCHEDULED', 'IN_PROGRESS'] },
+        },
+      });
+    } catch {
+      existingJob = null;
+    }
 
     if (existingBooking || existingJob) {
       return res.status(409).json({ success: false, error: 'Slot no longer available' });

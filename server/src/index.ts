@@ -435,6 +435,8 @@ const routeMap: [string, string][] = [
   [`/api/${v}/reviews`, './routes/pabandiReview.routes'],
   [`/api/${v}/best-fit`, './routes/bestFit.routes'],
   [`/api/${v}/web3`, './routes/web3.routes'],
+  [`/api/${v}/public/stats`, './routes/publicStats.routes'],
+  [`/api/${v}/public-stats`, './routes/publicStats.routes'],
   [`/api/${v}/public`, './routes/api-public.routes'],
   [`/api/${v}/api-subscription`, './routes/api-subscription.routes'],
   [`/api/${v}/social`, './routes/social.routes'],

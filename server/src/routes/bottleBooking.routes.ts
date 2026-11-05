@@ -119,8 +119,66 @@ router.get('/my-bookings', async (req: Request, res: Response, next: NextFunctio
     });
 
     const userId = (req as any).user?.id;
-    const bookings = await bottleBookingService.getUserBookings(userId);
-    res.json({ success: true, data: bookings });
+    const userEmail = (req as any).user?.email;
+
+    // Fetch unified personal bookings: service bookings, reservations, and bottle bookings
+    const [regularBookings, reservations, bottleBookings] = await Promise.all([
+      prisma.booking.findMany({
+        where: {
+          OR: [
+            { clientId: userId },
+            ...(userEmail ? [{ metadata: { path: ['customerEmail'], equals: userEmail } }] : []),
+          ],
+        },
+        include: {
+          business: {
+            select: { id: true, name: true, logoUrl: true, city: true, address: true, category: true, slug: true },
+          },
+        },
+        orderBy: { slotStart: 'desc' },
+      }).catch(() => []),
+
+      prisma.reservation.findMany({
+        where: { userId },
+        include: {
+          business: {
+            select: { id: true, name: true, logoUrl: true, city: true, address: true, category: true, slug: true },
+          },
+        },
+        orderBy: { reservationTime: 'desc' },
+      }).catch(() => []),
+
+      bottleBookingService.getUserBookings(userId).catch(() => []),
+    ]);
+
+    const formattedRegular = regularBookings.map((b) => ({
+      id: b.id,
+      serviceType: b.serviceType,
+      slotStart: b.slotStart,
+      slotEnd: b.slotEnd,
+      status: b.status,
+      depositAmount: b.depositAmount,
+      depositStatus: b.depositStatus,
+      depositPaid: b.depositPaid,
+      business: b.business,
+      createdAt: b.createdAt,
+    }));
+
+    const formattedReservations = reservations.map((r) => ({
+      id: r.id,
+      serviceType: 'Dine-In Reservation',
+      slotStart: r.reservationTime,
+      slotEnd: r.reservationTime,
+      status: r.status,
+      depositAmount: r.depositAmount,
+      depositStatus: r.depositPaid ? 'funded' : 'required',
+      depositPaid: r.depositPaid,
+      business: r.business,
+      createdAt: r.createdAt,
+    }));
+
+    const allBookings = [...formattedRegular, ...formattedReservations, ...bottleBookings];
+    res.json({ success: true, data: allBookings });
   } catch (err: any) {
     if (err.message?.includes('Authentication') || err.message?.includes('token')) {
       return res.status(401).json({ success: false, error: err.message });

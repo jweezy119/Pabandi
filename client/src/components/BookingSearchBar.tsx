@@ -4,11 +4,17 @@ import { Search, FilterList, Zap } from 'lucide-react';
 import { ClayBadge } from './primitives';
 import { ClayButton } from '../../components/clay/ClayButton';
 
-const SERVICE_CATEGORIES = ['ALL', 'RESTAURANT', 'SALON', 'SPA', 'HOTEL', 'FITNESS_CENTER', 'EVENT_VENUE', 'HEALTHCARE'];
+const SERVICE_CATEGORIES = ['ALL', 'FREELANCE', 'RESTAURANT', 'SALON', 'CLINIC', 'SPA', 'FITNESS_CENTER', 'EVENT_VENUE'];
 
 const categoryLabels: Record<string, string> = {
-  ALL: 'All Categories', RESTAURANT: 'Restaurants', SALON: 'Salons', SPA: 'Spas',
-  HOTEL: 'Hotels', FITNESS_CENTER: 'Fitness', EVENT_VENUE: 'Venues', HEALTHCARE: 'Healthcare',
+  ALL: 'All Services',
+  FREELANCE: 'Freelancers & Tech',
+  RESTAURANT: 'Restaurants',
+  SALON: 'Salons',
+  CLINIC: 'Clinics & Health',
+  SPA: 'Spas & Wellness',
+  FITNESS_CENTER: 'Fitness & Gyms',
+  EVENT_VENUE: 'Venues',
 };
 
 interface SearchResult {
@@ -51,7 +57,7 @@ export default function BookingSearchBar({ results = [], onResultClick }: Bookin
     if (onResultClick) {
       onResultClick(id);
     } else {
-      navigate(`/book/slug/${id}`);
+      navigate(`/book/${id}`);
     }
   };
 
@@ -120,7 +126,15 @@ export default function BookingSearchBar({ results = [], onResultClick }: Bookin
               {business.image ? (
                 <img src={business.image} alt="" className="w-full h-full rounded-lg object-cover" />
               ) : (
-                <span className="text-xl">{business.category === 'restaurant' ? '🍽️' : business.category === 'salon' ? '💇' : business.category === 'spa' ? '🧖' : business.category === 'hotel' ? '🏨' : '🏪'}</span>
+                <span className="text-xl">
+                  {business.category === 'FREELANCE' ? '💻' :
+                   business.category === 'CLINIC' ? '🏥' :
+                   business.category === 'RESTAURANT' ? '🍽️' :
+                   business.category === 'SALON' ? '💇' :
+                   business.category === 'SPA' ? '🧖' :
+                   business.category === 'FITNESS_CENTER' ? '🏋️' :
+                   business.category === 'EVENT_VENUE' ? '🎉' : '🏪'}
+                </span>
               )}
             </div>
             <div className="flex-1">

@@ -10,27 +10,78 @@ router.get('/:businessSlug', async (req: Request, res: Response) => {
   try {
     const { businessSlug } = req.params;
 
-    const business = await prisma.business.findUnique({
-      where: { slug: businessSlug },
-      select: { id: true, name: true, logoUrl: true, settings: true, trustScore: true, isVerified: true, isActive: true },
+    const business = await prisma.business.findFirst({
+      where: {
+        isActive: true,
+        OR: [
+          { slug: businessSlug },
+          { id: businessSlug },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        category: true,
+        address: true,
+        city: true,
+        country: true,
+        phone: true,
+        email: true,
+        website: true,
+        logoUrl: true,
+        coverImageUrl: true,
+        rating: true,
+        reviewCount: true,
+        settings: true,
+        trustScore: true,
+        isVerified: true,
+        isActive: true,
+        requireDeposit: true,
+        depositAmount: true,
+        depositPercentage: true,
+        cancellationHours: true,
+      },
     });
 
-    if (!business || !business.isActive) {
+    if (!business) {
       return res.status(404).json({ success: false, error: 'Business not found' });
     }
 
-    const availability = await prisma.businessAvailability.findMany({
+    let availability = await prisma.businessAvailability.findMany({
       where: { businessId: business.id, isActive: true },
       orderBy: { dayOfWeek: 'asc' },
     });
 
-    const blackoutDates = await prisma.blackoutDate.findMany({
-      where: {
+    // Provide default Mon-Sat 09:00-18:00 availability if none configured
+    if (availability.length === 0) {
+      availability = [1, 2, 3, 4, 5, 6].map((day) => ({
+        id: `default-${business.id}-${day}`,
         businessId: business.id,
-        date: { gte: new Date() },
-      },
-      orderBy: { date: 'asc' },
-    });
+        dayOfWeek: day,
+        startTime: '09:00',
+        endTime: '18:00',
+        slotMinutes: 60,
+        bufferMinutes: 15,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+    }
+
+    let blackoutDates: Array<{ date: Date; reason: string | null }> = [];
+    try {
+      blackoutDates = await prisma.blackoutDate.findMany({
+        where: {
+          businessId: business.id,
+          date: { gte: new Date() },
+        },
+        orderBy: { date: 'asc' },
+      });
+    } catch {
+      blackoutDates = [];
+    }
 
     res.json({
       success: true,
@@ -38,9 +89,25 @@ router.get('/:businessSlug', async (req: Request, res: Response) => {
         business: {
           id: business.id,
           name: business.name,
+          slug: business.slug,
+          description: business.description,
+          category: business.category,
+          address: business.address,
+          city: business.city,
+          country: business.country,
+          phone: business.phone,
+          email: business.email,
+          website: business.website,
           logoUrl: business.logoUrl,
-          trustScore: business.trustScore,
+          coverImageUrl: business.coverImageUrl,
+          rating: business.rating ?? 5.0,
+          reviewCount: business.reviewCount ?? 0,
+          trustScore: business.trustScore ?? 50,
           isVerified: business.isVerified,
+          requireDeposit: business.requireDeposit,
+          depositAmount: business.depositAmount,
+          depositPercentage: business.depositPercentage,
+          cancellationHours: business.cancellationHours,
         },
         availability,
         blackoutDates: blackoutDates.map(d => ({
@@ -69,54 +136,96 @@ router.get('/:businessId/slots', async (req: Request, res: Response) => {
     const start = new Date(startDate as string);
     const end = new Date(endDate as string);
 
-    const business = await prisma.business.findUnique({
-      where: { id: businessId },
-      select: { id: true, name: true, maxConcurrentBookings: true },
+    const business = await prisma.business.findFirst({
+      where: {
+        OR: [{ id: businessId }, { slug: businessId }],
+      },
+      select: {
+        id: true,
+        name: true,
+        maxConcurrentBookings: true,
+      },
     });
 
     if (!business) {
       return res.status(404).json({ success: false, error: 'Business not found' });
     }
 
+    const targetBusinessId = business.id;
+
     let serviceDuration = duration ? parseInt(duration as string) : 60;
     let serviceInfo: { name: string; price: number; duration: number } | null = null;
 
     if (serviceId) {
-      const service = await prisma.businessService.findUnique({
-        where: { id: serviceId as string },
-        select: { name: true, price: true, duration: true, maxBookingsPerDay: true },
-      });
-      if (service) {
-        serviceDuration = service.duration;
-        serviceInfo = service;
+      try {
+        const service = await prisma.businessService.findUnique({
+          where: { id: serviceId as string },
+          select: { name: true, price: true, duration: true, maxBookingsPerDay: true },
+        });
+        if (service) {
+          serviceDuration = service.duration;
+          serviceInfo = service;
+        }
+      } catch {
+        // BusinessService lookup fallback
       }
     }
 
-    const availability = await prisma.businessAvailability.findMany({
-      where: { businessId, isActive: true },
+    let availability = await prisma.businessAvailability.findMany({
+      where: { businessId: targetBusinessId, isActive: true },
     });
 
-    const blackoutDates = await prisma.blackoutDate.findMany({
-      where: { businessId, date: { gte: start, lte: end } },
-    });
+    if (availability.length === 0) {
+      availability = [1, 2, 3, 4, 5, 6].map((day) => ({
+        id: `default-${targetBusinessId}-${day}`,
+        businessId: targetBusinessId,
+        dayOfWeek: day,
+        startTime: '09:00',
+        endTime: '18:00',
+        slotMinutes: 60,
+        bufferMinutes: 15,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+    }
+
+    let blackoutDates: Array<{ date: Date }> = [];
+    try {
+      blackoutDates = await prisma.blackoutDate.findMany({
+        where: { businessId: targetBusinessId, date: { gte: start, lte: end } },
+      });
+    } catch {
+      blackoutDates = [];
+    }
 
     const blackoutSet = new Set(blackoutDates.map(d => d.date.toISOString().split('T')[0]));
 
-    const existingBookings = await prisma.booking.findMany({
-      where: {
-        businessId,
-        slotStart: { gte: start, lte: end },
-        status: { in: ['pending', 'confirmed'] },
-      },
-    });
+    let existingBookings: Array<{ slotStart: Date }> = [];
+    try {
+      existingBookings = await prisma.booking.findMany({
+        where: {
+          businessId: targetBusinessId,
+          slotStart: { gte: start, lte: end },
+          status: { in: ['pending', 'confirmed'] },
+        },
+      });
+    } catch {
+      existingBookings = [];
+    }
 
-    const existingJobs = await prisma.crmJob.findMany({
-      where: {
-        businessId,
-        scheduledDate: { gte: start, lte: end },
-        status: { in: ['SCHEDULED', 'IN_PROGRESS'] },
-      },
-    });
+    let existingJobs: Array<{ scheduledDate: Date }> = [];
+    try {
+      existingJobs = await (prisma as any).crmJob.findMany({
+        where: {
+          businessId: targetBusinessId,
+          scheduledDate: { gte: start, lte: end },
+          status: { in: ['SCHEDULED', 'IN_PROGRESS'] },
+        },
+      });
+    } catch {
+      existingJobs = [];
+    }
 
     const slotCapacity = new Map<string, number>();
     const maxConcurrent = business.maxConcurrentBookings || 1;

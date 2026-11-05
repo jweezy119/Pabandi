@@ -6,8 +6,8 @@ import { logger } from '../utils/logger';
 
 const router = Router();
 
-// GET /api/v1/booking/businesses - List businesses for BookingOS Discovery
-router.get('/businesses', authenticate, async (req: AuthRequest, res: Response) => {
+// GET /api/v1/booking/businesses - List businesses for BookingOS Discovery (Public)
+router.get('/businesses', async (req: Request, res: Response) => {
   try {
     const { search, category } = req.query;
 
@@ -15,14 +15,16 @@ router.get('/businesses', authenticate, async (req: AuthRequest, res: Response) 
       isActive: true,
     };
 
-    if (search) {
+    if (search && typeof search === 'string' && search.trim()) {
+      const q = search.trim();
       where.OR = [
-        { name: { contains: search as string, mode: 'insensitive' } },
-        { description: { contains: search as string, mode: 'insensitive' } },
+        { name: { contains: q, mode: 'insensitive' } },
+        { description: { contains: q, mode: 'insensitive' } },
+        { city: { contains: q, mode: 'insensitive' } },
       ];
     }
 
-    if (category) {
+    if (category && typeof category === 'string' && category !== 'ALL') {
       where.category = category;
     }
 
@@ -33,7 +35,11 @@ router.get('/businesses', authenticate, async (req: AuthRequest, res: Response) 
           select: { firstName: true, lastName: true, email: true },
         },
       },
-      orderBy: { rating: 'desc' },
+      orderBy: [
+        { rating: 'desc' },
+        { trustScore: 'desc' },
+      ],
+      take: 60,
     });
 
     return res.json({
@@ -41,12 +47,23 @@ router.get('/businesses', authenticate, async (req: AuthRequest, res: Response) 
       data: businesses.map((b) => ({
         id: b.id,
         name: b.name,
+        slug: b.slug || b.id,
+        description: b.description,
         category: b.category as string,
         rating: b.rating ?? 0,
+        reviewCount: b.reviewCount ?? 0,
+        trustScore: b.trustScore ?? 50,
         address: b.address,
         city: b.city,
+        country: b.country,
         email: b.email,
+        phone: b.phone,
         website: b.website,
+        logoUrl: b.logoUrl,
+        coverImageUrl: b.coverImageUrl,
+        isVerified: b.isVerified,
+        requireDeposit: b.requireDeposit,
+        depositAmount: b.depositAmount,
         ownerName: b.owner ? `${b.owner.firstName || ''} ${b.owner.lastName || ''}`.trim() : undefined,
       })),
     });
