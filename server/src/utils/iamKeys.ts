@@ -113,10 +113,15 @@ export function signOidcToken(
   const defaultExpiry = isAgent ? '15m' : '1h';
   const expiresIn = options?.expiresIn || defaultExpiry;
 
-  const payload: IamTokenClaims = {
+  const payload: IamTokenClaims & { cnf?: { jkt: string } } = {
     ...claims,
     iss: ISSUER,
   };
+
+  // RFC 9449: Confirmation claim binding access token to DPoP key thumbprint
+  if (claims.jkt) {
+    payload.cnf = { jkt: claims.jkt };
+  }
 
   const signOptions: SignOptions = {
     algorithm: 'RS256',

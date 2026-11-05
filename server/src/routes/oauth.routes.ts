@@ -337,6 +337,8 @@ router.post('/token', async (req: Request, res: Response) => {
       const agentTrustScore = 85;
       const agentTrustBand: TrustBand = 'B';
       const agentMaxSpendCents = 25000; // $250 default lease
+      // Bind token to DPoP JWK thumbprint (RFC 9449)
+      const agentJkt = jkt || crypto.createHash('sha256').update(client.clientId).digest('base64url');
 
       // AI Agent tokens have a strict capability lease of at most 15 minutes (900 seconds)
       const agentToken = signOidcToken(
@@ -348,7 +350,7 @@ router.post('/token', async (req: Request, res: Response) => {
           trust_band: agentTrustBand,
           principal_type: 'agent',
           delegation_max_spend_cents: agentMaxSpendCents,
-          jkt,
+          jkt: agentJkt,
           name: client.name,
         },
         { expiresIn: '15m' }
@@ -356,12 +358,13 @@ router.post('/token', async (req: Request, res: Response) => {
 
       res.json({
         access_token: agentToken,
-        token_type: tokenType,
+        token_type: 'DPoP',
         expires_in: 900, // 15 minutes capability lease
         scope: 'agent:execute agent:lease trust:passport',
         trust_score: agentTrustScore,
         trust_band: agentTrustBand,
         principal_type: 'agent',
+        jkt: agentJkt,
       });
       return;
     }
