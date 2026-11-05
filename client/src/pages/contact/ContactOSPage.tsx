@@ -101,6 +101,11 @@ export default function ContactOSPage() {
     let cancelled = false;
     const loadData = async () => {
       try {
+        if (!businessId || businessId === 'undefined') {
+          setLoading(false);
+          return;
+        }
+
         const token = getAuthToken();
         const headers = { Authorization: `Bearer ${token}` };
 

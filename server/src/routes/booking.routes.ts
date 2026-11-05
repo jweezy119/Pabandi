@@ -31,7 +31,7 @@ router.get('/businesses', async (req: Request, res: Response) => {
   try {
     const { search, category, location } = req.query;
 
-    const where: any = {
+    const where: Record<string, unknown> = {
       isActive: true,
     };
 
@@ -44,8 +44,26 @@ router.get('/businesses', async (req: Request, res: Response) => {
       ];
     }
 
-    if (category && typeof category === 'string' && category !== 'ALL') {
-      where.category = category;
+    if (location && typeof location === 'string' && location.trim()) {
+      const loc = location.trim();
+      const locConditions = [
+        { city: { contains: loc, mode: 'insensitive' } },
+        { address: { contains: loc, mode: 'insensitive' } },
+        { country: { contains: loc, mode: 'insensitive' } },
+      ];
+      if (Array.isArray(where.OR)) {
+        where.AND = [
+          { OR: where.OR },
+          { OR: locConditions },
+        ];
+        delete where.OR;
+      } else {
+        where.OR = locConditions;
+      }
+    }
+
+    if (category && typeof category === 'string' && category.toUpperCase() !== 'ALL') {
+      where.category = category.toUpperCase();
     }
 
     // 1. Fetch from local database (real claimed and active businesses)
@@ -63,7 +81,7 @@ router.get('/businesses', async (req: Request, res: Response) => {
       take: 60,
     });
 
-    const results: any[] = dbBusinesses.map((b) => ({
+    const results: Array<Record<string, unknown>> = dbBusinesses.map((b) => ({
       id: b.id,
       name: b.name,
       slug: b.slug || b.id,

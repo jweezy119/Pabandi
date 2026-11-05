@@ -240,7 +240,25 @@ export default function BookingOSPage() {
   const [loadingClients, setLoadingClients] = useState(false);
   const [clientSearch, setClientSearch] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [totalBusinessCount, setTotalBusinessCount] = useState<number | null>(null);
   const navigate = useNavigate();
+
+  // Load real business count from /api/v1/businesses/count
+  useEffect(() => {
+    let isMounted = true;
+    fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/businesses/count`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (isMounted && json && typeof json.count === 'number') {
+          setTotalBusinessCount(json.count);
+        }
+      })
+      .catch((err) => console.warn('Business count fetch:', err));
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Load businesses publicly (accessible without auth)
   useEffect(() => {
@@ -419,8 +437,9 @@ export default function BookingOSPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <ClayStat
             icon="storefront"
-            value={businesses.length}
-            label="Active Providers"
+            value={totalBusinessCount ?? businesses.length}
+            label="Active Businesses"
+            trend={totalBusinessCount ? `${totalBusinessCount} Onboarded` : undefined}
             color="terracotta"
           />
           <ClayStat
