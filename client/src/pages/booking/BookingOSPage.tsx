@@ -6,9 +6,11 @@ import { HalalBanner } from '../../components/halal';
 import { ClayCard } from '../../components/clay/ClayCard';
 import BookingSearchBar from '../../components/BookingSearchBar';
 import { LiveNetworkWidget } from '../../components/live-network/LiveNetworkWidget';
+import { apiClient } from '../../services/api';
 
 const NAV_ITEMS = [
   { path: '/booking', label: 'Discovery', icon: 'explore', end: true },
+  { path: '/booking/map', label: 'Map', icon: 'map' },
   { path: '/me/bookings', label: 'My Bookings', icon: 'event' },
   { path: '/simulator', label: 'Project Simulator', icon: 'model_training' },
   { path: '/contact', label: 'Business CRM', icon: 'storefront' },
@@ -25,8 +27,11 @@ interface BusinessListing {
   reviewCount?: number;
   trustScore?: number;
   city?: string;
+  state?: string;
   country?: string;
   address?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   email?: string;
   phone?: string;
   website?: string;
@@ -37,7 +42,7 @@ interface BusinessListing {
   requireDeposit?: boolean;
   depositAmount?: number;
   ownerName?: string;
-  source?: 'github' | 'openstreetmap' | 'pabandi' | string;
+  source?: 'github' | 'openstreetmap' | 'pabandi' | 'osm' | string;
 }
 
 interface CrmClientItem {
@@ -246,14 +251,24 @@ export default function BookingOSPage() {
   // Load real business count from /api/v1/businesses/count
   useEffect(() => {
     let isMounted = true;
-    fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/businesses/count`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((json) => {
-        if (isMounted && json && typeof json.count === 'number') {
-          setTotalBusinessCount(json.count);
+    apiClient
+      .get('/businesses/count')
+      .then((res) => {
+        if (isMounted && res.data && typeof res.data.count === 'number') {
+          setTotalBusinessCount(res.data.count);
         }
       })
-      .catch((err) => console.warn('Business count fetch:', err));
+      .catch((err: unknown) => {
+        console.warn('Business count fetch fallback to raw fetch:', err);
+        fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/businesses/count`)
+          .then((res) => (res.ok ? res.json() : null))
+          .then((json) => {
+            if (isMounted && json && typeof json.count === 'number') {
+              setTotalBusinessCount(json.count);
+            }
+          })
+          .catch(() => {});
+      });
 
     return () => {
       isMounted = false;
@@ -267,25 +282,29 @@ export default function BookingOSPage() {
       setLoadingBusinesses(true);
       try {
         const token = getAuthToken();
-        const headers: Record<string, string> = {};
         if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
           setIsAuthenticated(true);
         }
 
-        const res = await fetch(
-          `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/booking/businesses`,
-          { headers }
-        );
-
-        if (res.ok) {
-          const json = await res.json();
-          if (isMounted) {
-            setBusinesses(json.data || []);
-          }
+        const res = await apiClient.get('/booking/businesses');
+        if (isMounted && res.data?.data) {
+          setBusinesses(res.data.data);
         }
-      } catch (e) {
-        console.error('Failed to fetch businesses:', e);
+      } catch (e: unknown) {
+        console.warn('apiClient fetch failed, falling back to window.fetch:', e);
+        try {
+          const res = await fetch(
+            `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/booking/businesses`
+          );
+          if (res.ok) {
+            const json = await res.json();
+            if (isMounted && json.data) {
+              setBusinesses(json.data);
+            }
+          }
+        } catch (fetchErr: unknown) {
+          console.error('Failed to fetch businesses:', fetchErr);
+        }
       } finally {
         if (isMounted) setLoadingBusinesses(false);
       }
