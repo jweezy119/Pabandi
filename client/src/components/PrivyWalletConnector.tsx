@@ -7,6 +7,9 @@ interface PrivyWalletConnectorProps {
 }
 
 export function PrivyWalletConnector({ onConnect, onDisconnect }: PrivyWalletConnectorProps) {
+  const { login, logout, user, authenticated } = usePrivy()
+  const { wallet } = useEmbeddedSolanaWallet()
+
   // If Privy is not configured, show a disabled connector
   if (!import.meta.env.VITE_PRIVY_APP_ID) {
     return (
@@ -21,9 +24,6 @@ export function PrivyWalletConnector({ onConnect, onDisconnect }: PrivyWalletCon
       </div>
     )
   }
-
-  const { login, logout, user, authenticated } = usePrivy()
-  const { wallet } = useEmbeddedSolanaWallet()
 
   // Derive public key from Privy wallet
   const publicKey = wallet?.address ?? ''
