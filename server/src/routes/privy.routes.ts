@@ -1,8 +1,15 @@
 import { Router, Request, Response } from 'express';
-import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { verifyPrivyWebhookSignature } from '../utils/privyWebhookVerify';
 import { evaluatePrivyTrustBand, PrivyUserPayload } from '../services/privyTrustScoring';
+import {
+  applyTrustBandEvaluation,
+  PrivySyncError,
+  resolvePabandiUserForPrivy,
+  syncPrivyIdentityForUser,
+} from '../services/privyTrustSync.service';
+import { authenticate, AuthRequest } from '../middleware/auth.middleware';
+import { rateLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
 
@@ -16,11 +23,67 @@ const SUPPORTED_EVENTS = new Set([
 ]);
 
 /**
+ * POST /api/v1/privy/sync
+ *
+ * Pull-based trust-band scoring — the path this account actually uses.
+ *
+ * Privy webhooks are Enterprise-only, so no event will ever reach
+ * POST /webhooks below. The client presents its Privy access token here, the
+ * server verifies it against Privy's JWKS, re-reads the raw user, scores it and
+ * writes the band through `applyTrustBandEvaluation` — the same writer the
+ * webhook path uses.
+ *
+ * Requires BOTH:
+ *   - `authenticate`  -> the Pabandi session JWT (who the score is written to)
+ *   - a Privy access token in the body -> proof the caller owns the identity
+ * The two are cross-checked; neither alone is enough to claim an identity.
+ */
+router.post('/sync', rateLimiter, authenticate, async (req: AuthRequest, res: Response) => {
+  const body = (req.body ?? {}) as { privyAccessToken?: unknown };
+  const accessToken = typeof body.privyAccessToken === 'string' ? body.privyAccessToken.trim() : '';
+
+  if (!accessToken) {
+    return res.status(400).json({ error: 'privyAccessToken is required' });
+  }
+  if (!req.user?.id) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  try {
+    const result = await syncPrivyIdentityForUser({
+      userId: req.user.id,
+      accessToken,
+    });
+    return res.json({ success: true, ...result });
+  } catch (err: unknown) {
+    if (err instanceof PrivySyncError) {
+      if (err.statusCode >= 500) {
+        logger.error(`[PrivySync] Sync failed for user ${req.user.id}: ${err.message}`);
+      } else {
+        logger.warn(`[PrivySync] Sync rejected for user ${req.user.id}: ${err.message}`);
+      }
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    logger.error(
+      `[PrivySync] Unexpected failure for user ${req.user.id}: ${err instanceof Error ? err.message : String(err)}`
+    );
+    return res.status(500).json({ error: 'Trust band sync failed' });
+  }
+});
+
+/**
  * POST /api/v1/privy/webhooks
- * 
+ *
  * Verified webhook receiver for Privy identity lifecycle events.
- * Guardrail 1: All trust-band scoring happens on the backend driven by Privy webhooks.
+ * Guardrail 1: All trust-band scoring happens on the backend.
  * Guardrail 6: Signature verification is strictly enforced before processing.
+ *
+ * INERT ON THIS ACCOUNT: Privy webhooks are Enterprise-only, so
+ * PRIVY_WEBHOOK_SECRET can never be set. Without a secret
+ * `verifyPrivyWebhookSignature` returns false and every request is rejected
+ * 401 — fail-closed, deliberately. POST /sync above is the live path. This
+ * receiver is kept because the scoring/write logic is shared with it and it
+ * needs no changes if the account is ever upgraded to Enterprise.
  */
 router.post('/webhooks', async (req: Request, res: Response) => {
   const signature =
@@ -78,108 +141,17 @@ router.post('/webhooks', async (req: Request, res: Response) => {
       `[PrivyWebhook] Event '${eventType}' for Privy User ${privyUser.id} -> Band ${evaluation.band} (Score: ${evaluation.score})`
     );
 
-    // 3. Match User in Database
-    // Try matching by Privy UserAuthMethod first
-    let authMethod = await prisma.userAuthMethod.findUnique({
-      where: {
-        provider_providerId: {
-          provider: 'privy',
-          providerId: privyUser.id,
-        },
-      },
-      include: { user: true },
-    });
-
-    let userId = authMethod?.userId;
-
-    // Fallback: match by email from linked accounts
-    if (!userId) {
-      const accounts = privyUser.linkedAccounts || privyUser.linked_accounts || [];
-      const emailAcc = accounts.find(
-        (a) => (a.type === 'email' || a.type === 'google_oauth') && typeof a.address === 'string'
-      );
-      const email = (emailAcc?.address as string | undefined) || (emailAcc?.email as string | undefined);
-
-      if (email) {
-        const existingUser = await prisma.user.findUnique({ where: { email } });
-        if (existingUser) {
-          userId = existingUser.id;
-        }
-      }
-    }
-
-    // Fallback: match by wallet address
-    if (!userId) {
-      const accounts = privyUser.linkedAccounts || privyUser.linked_accounts || [];
-      const walletAcc = accounts.find((a) => a.type === 'wallet' && typeof a.address === 'string');
-      const walletAddress = walletAcc?.address as string | undefined;
-
-      if (walletAddress) {
-        const existingUser = await prisma.user.findUnique({ where: { walletAddress } });
-        if (existingUser) {
-          userId = existingUser.id;
-        }
-      }
-    }
+    // 3. Match User in Database (shared with the pull path)
+    const userId = await resolvePabandiUserForPrivy(privyUser);
 
     // 4. Update Database
     if (userId) {
-      await prisma.$transaction([
-        prisma.user.update({
-          where: { id: userId },
-          data: {
-            trustScore: evaluation.score,
-            verificationTier: `BAND_${evaluation.band}`,
-          },
-        }),
-        prisma.userAuthMethod.upsert({
-          where: {
-            provider_providerId: {
-              provider: 'privy',
-              providerId: privyUser.id,
-            },
-          },
-          update: {
-            metadata: {
-              trustBand: evaluation.band,
-              trustScore: evaluation.score,
-              reason: evaluation.reason,
-              totalLinks: evaluation.totalLinks,
-              lastEvent: eventType,
-              updatedAt: new Date().toISOString(),
-            },
-            lastUsedAt: new Date(),
-          },
-          create: {
-            userId,
-            provider: 'privy',
-            providerId: privyUser.id,
-            metadata: {
-              trustBand: evaluation.band,
-              trustScore: evaluation.score,
-              reason: evaluation.reason,
-              totalLinks: evaluation.totalLinks,
-              lastEvent: eventType,
-              updatedAt: new Date().toISOString(),
-            },
-          },
-        }),
-      ]);
-
-      // If user has a TrustPassport, update its score and riskBand
-      await prisma.trustPassport.updateMany({
-        where: { userId },
-        data: {
-          score: evaluation.score,
-          riskBand: evaluation.band,
-        },
-      }).catch((passportErr) => {
-        logger.warn(`[PrivyWebhook] Could not update TrustPassport for user ${userId}: ${passportErr}`);
+      await applyTrustBandEvaluation({
+        userId,
+        privyUserId: privyUser.id,
+        evaluation,
+        source: `webhook:${eventType}`,
       });
-
-      logger.info(
-        `[PrivyWebhook] Successfully synced Trust Band ${evaluation.band} for Pabandi User ${userId}.`
-      );
     } else {
       logger.info(
         `[PrivyWebhook] No matching Pabandi user found for Privy user ${privyUser.id} yet. Recorded for future link.`

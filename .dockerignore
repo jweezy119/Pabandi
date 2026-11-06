@@ -8,6 +8,14 @@
 **/.env.*
 *.pem
 **/*.pem
+# Exception: the client's VITE_* values are not secrets — they are compiled
+# into the public JS bundle by Vite, so excluding them buys nothing and breaks
+# the build. client/.env.production is the only env file Vite reads during
+# `npm run build` in the Dockerfile (mode=production), and VITE_PRIVY_APP_ID
+# has NO code fallback: without it PrivyProvider renders children unauthenticated
+# and every Privy feature is disabled in production, no matter what is set in
+# Render. Keep server/.env and server/.env.production excluded above this line.
+!client/.env.production
 
 # --- repo hygiene ---
 .git

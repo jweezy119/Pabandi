@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import {
   Shield,
@@ -11,9 +11,12 @@ import {
   Lock,
   Info,
   Wallet,
+  RefreshCw,
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import DashboardLayout from '../../components/DashboardLayout';
+import { privyTrustService } from '../../services/api';
+import { getAuthToken } from '../../utils/authToken';
 
 type LinkFn = (options?: unknown) => Promise<void> | void;
 type UnlinkFn = (identifier?: string) => Promise<void> | void;
@@ -94,7 +97,7 @@ export default function TrustVerificationPage() {
             </h3>
             <p className="text-sm text-[var(--soft-stone)] max-w-md mx-auto">
               Privy programmatic key-management infrastructure is awaiting production App ID configuration.
-              Verification scoring is evaluated via verified webhooks.
+              Verification scoring is evaluated server-side against your Privy identity.
             </p>
           </div>
         )}
@@ -104,7 +107,7 @@ export default function TrustVerificationPage() {
           <p>
             * Privy provides programmatic key-management infrastructure. Cryptographic keys and embedded wallets are generated
             and held in isolated security enclaves (TEEs) and are never accessible to Pabandi servers without user authorization.
-            Trust Bands are determined strictly via server-side verification webhooks.
+            Trust Bands are determined strictly via server-side verification of your Privy identity.
           </p>
         </div>
       </div>
@@ -114,10 +117,72 @@ export default function TrustVerificationPage() {
 
 function TrustVerificationActive() {
   const privyState = usePrivy();
-  const { user, authenticated, login } = privyState;
+  const { user, authenticated, login, getAccessToken } = privyState;
 
   // In Privy React SDK, link & unlink methods are exposed on usePrivy
   const privyMethods = privyState as unknown as Record<string, LinkFn | undefined>;
+
+  // ── Pull-based trust-band sync ────────────────────────────────────────────
+  // Privy webhooks are Enterprise-only, so the server is never pushed events.
+  // We hand it our Privy access token instead; it verifies the token, re-reads
+  // our identity from Privy and records the band. Runs once on mount, and
+  // again whenever an identity is linked.
+  const [sync, setSync] = useState<{
+    status: 'idle' | 'syncing' | 'synced' | 'error';
+    band?: 'A' | 'B' | 'C' | 'D';
+    score?: number;
+    reason?: string;
+    message?: string;
+  }>({ status: 'idle' });
+  const autoSyncStarted = useRef(false);
+
+  const runSync = useCallback(
+    async ({ silent = false }: { silent?: boolean } = {}) => {
+      setSync((prev) => ({ ...prev, status: 'syncing', message: undefined }));
+
+      try {
+        if (!getAuthToken()) {
+          setSync({ status: 'idle', message: 'Sign in to Pabandi to record your trust band.' });
+          if (!silent) toast.error('Sign in to Pabandi first, then retry.');
+          return;
+        }
+
+        const accessToken = await getAccessToken();
+        if (!accessToken) {
+          setSync({
+            status: 'idle',
+            message: 'Your Privy session is not active. Sign in again, then retry.',
+          });
+          if (!silent) toast.error('Your Privy session is not active. Sign in again.');
+          return;
+        }
+
+        const response = await privyTrustService.sync(accessToken);
+        const data = response.data as {
+          band: 'A' | 'B' | 'C' | 'D';
+          score: number;
+          reason: string;
+        };
+
+        setSync({ status: 'synced', band: data.band, score: data.score, reason: data.reason });
+        if (!silent) toast.success(`Trust Band ${data.band} recorded (score ${data.score})`);
+      } catch (err: unknown) {
+        const e = err as { response?: { data?: { error?: string } }; message?: string };
+        const message = e?.response?.data?.error || e?.message || 'Could not reach the server.';
+        setSync({ status: 'error', message });
+        if (!silent) toast.error(message);
+      }
+    },
+    [getAccessToken]
+  );
+
+  // One automatic sync per mount so the recorded band is never stale after the
+  // user links something new elsewhere in the app.
+  useEffect(() => {
+    if (!authenticated || autoSyncStarted.current) return;
+    autoSyncStarted.current = true;
+    void runSync({ silent: true });
+  }, [authenticated, runSync]);
 
   const linkedAccounts = useMemo(() => {
     return user?.linkedAccounts || [];
@@ -146,6 +211,8 @@ function TrustVerificationActive() {
     try {
       await fn();
       toast.success(`Identity link initiated for ${name}`);
+      // Re-score immediately so the recorded band reflects the new link.
+      void runSync({ silent: true });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes('already linked')) {
@@ -304,6 +371,59 @@ function TrustVerificationActive() {
 
   return (
     <div className="space-y-6">
+      {/* Server-recorded trust band — the pull-based sync result */}
+      <div className="p-6 rounded-2xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.4)] shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div
+              className={`p-2.5 rounded-xl ${
+                sync.status === 'synced' && sync.band
+                  ? 'bg-emerald-500/10 text-emerald-700'
+                  : 'bg-[var(--terracotta)]/15 text-[var(--terracotta)]'
+              }`}
+            >
+              <Shield className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--soft-stone)]">
+                Recorded Trust Band
+              </p>
+              {sync.status === 'synced' && sync.band ? (
+                <>
+                  <p className="text-xl font-bold text-[var(--warm-ink)]">
+                    Band {sync.band} <span className="text-sm font-medium">· score {sync.score}</span>
+                  </p>
+                  <p className="text-xs text-[var(--soft-stone)]">{sync.reason}</p>
+                </>
+              ) : sync.status === 'syncing' ? (
+                <p className="text-sm text-[var(--soft-stone)]">Evaluating your identity…</p>
+              ) : sync.status === 'error' ? (
+                <p className="text-sm text-red-700">{sync.message}</p>
+              ) : (
+                <p className="text-sm text-[var(--soft-stone)]">
+                  {sync.message || 'Not evaluated yet for this session.'}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <button
+            onClick={() => runSync()}
+            disabled={sync.status === 'syncing'}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-[var(--clay)] text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${sync.status === 'syncing' ? 'animate-spin' : ''}`} />
+            {sync.status === 'syncing' ? 'Evaluating…' : 'Re-evaluate'}
+          </button>
+        </div>
+
+        <p className="mt-4 text-xs text-[var(--soft-stone)] leading-relaxed">
+          Your band is computed on our server by re-reading your Privy identity — linked accounts
+          and MFA — and is stored against your Pabandi profile. Privy webhooks are unavailable on
+          our plan, so scoring happens here instead of in the background.
+        </p>
+      </div>
+
       {/* Trust Band A Roadmap Box */}
       <div className="p-6 rounded-2xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.4)] shadow-sm">
         <div className="flex items-center justify-between mb-4">
@@ -345,7 +465,11 @@ function TrustVerificationActive() {
         {totalLinked >= 4 && hasPhishingResistant ? (
           <div className="mt-4 p-3 rounded-xl bg-emerald-600/10 text-emerald-800 text-xs font-medium flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>Criteria met! Your backend Trust Band A status will be registered automatically via webhook.</span>
+            <span>
+              {sync.status === 'synced' && sync.band === 'A'
+                ? 'Criteria met and recorded server-side as Trust Band A.'
+                : 'Criteria met! Use Re-evaluate above to record Trust Band A with the server.'}
+            </span>
           </div>
         ) : (
           <div className="mt-4 p-3 rounded-xl bg-[var(--cream)] text-[var(--soft-stone)] text-xs flex items-center gap-2">

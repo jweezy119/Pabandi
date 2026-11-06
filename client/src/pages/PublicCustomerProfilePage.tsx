@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { tokens } from '../design-system';
 import { useAuthStore } from '../store/authStore';
 import api from '../services/api';
+import { tierLabel, tierTitle } from '../utils/trustBand';
 
 export const PublicCustomerProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -148,7 +149,12 @@ export const PublicCustomerProfilePage: React.FC = () => {
                 <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-widest mb-1">Trust Passport</p>
                 <div className="flex items-end gap-2">
                   <span className="text-3xl font-black text-[var(--sage)]">{userProfile.reliabilityScore}</span>
-                  <span className="text-sm text-[var(--sage)]/70 font-bold mb-1">{userProfile.verificationTier}</span>
+                  <span
+                    className="text-sm text-[var(--sage)]/70 font-bold mb-1"
+                    title={tierTitle(userProfile.verificationTier)}
+                  >
+                    {tierLabel(userProfile.verificationTier)}
+                  </span>
                 </div>
              </div>
              <div className="w-px bg-[var(--warm-sand)]"></div>

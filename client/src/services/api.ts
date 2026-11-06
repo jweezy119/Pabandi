@@ -1477,3 +1477,16 @@ export const userProfileService = {
   deletePortfolioItem: (id: string) => apiClient.delete(`/user/portfolio/${id}`),
   reorderPortfolioItems: (ids: string[]) => apiClient.patch('/user/portfolio/reorder', { ids }),
 };
+
+/**
+ * Pull-based Privy trust-band sync.
+ *
+ * Privy webhooks are Enterprise-only, so the server cannot be pushed events.
+ * Instead it verifies the Privy access token we hand it, re-reads our identity
+ * from Privy and records the resulting band. Requires an authenticated Pabandi
+ * session (the interceptor attaches it) — the score is written to *that* user.
+ */
+export const privyTrustService = {
+  sync: (privyAccessToken: string) => apiClient.post('/privy/sync', { privyAccessToken }),
+  rules: () => apiClient.get('/privy/trust-band-rules'),
+};

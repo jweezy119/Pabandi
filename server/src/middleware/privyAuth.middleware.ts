@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { logger } from '../utils/logger';
 
 declare global {
   namespace Express {
@@ -22,50 +23,71 @@ export async function requirePrivyAuth(req: Request, res: Response, next: NextFu
 
   const token = authHeader.slice(7);
   try {
-    // 1. If @privy-io/server-auth is installed, use official PrivyClient
+    // 1. Official PrivyClient verification (JWKS-backed signature check).
+    //
+    // The package-missing case and the token-invalid case must NOT share a
+    // catch. They used to: `catch {}` here swallowed every error from
+    // verifyAuthToken — including a bad signature — and fell through to step 2,
+    // which calls jwt.decode() when PRIVY_VERIFICATION_KEY is unset. jwt.decode
+    // checks exp/iss/aud but NEVER the signature, so an attacker who signed
+    // their own ES256 token with iss:'privy.io' and this app's aud was accepted
+    // as any user they named in `sub`. Verified against this middleware: a
+    // forged token reached next() with an attacker-chosen privyUserId.
+    //
+    // Only MODULE_NOT_FOUND may fall through. Anything else means the token
+    // was presented and rejected: that is an authentication failure, not a
+    // missing dependency.
+    let privyPackageMissing = false;
+    let privyPkg: { PrivyClient?: new (a: string, b: string) => {
+      verifyAuthToken(t: string, k?: string): Promise<{ userId: string }>;
+    } } | undefined;
     try {
-      const privyPkg = require('@privy-io/server-auth');
-      if (privyPkg?.PrivyClient) {
-        const client = new privyPkg.PrivyClient(
-          process.env.PRIVY_APP_ID || '',
-          process.env.PRIVY_APP_SECRET || ''
-        );
-        const claims = await client.verifyAuthToken(
-          token,
-          process.env.PRIVY_VERIFICATION_KEY
-        );
-        req.privyUserId = claims.userId;
-        return next();
+      privyPkg = require('@privy-io/server-auth');
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException)?.code === 'MODULE_NOT_FOUND') {
+        privyPackageMissing = true;
+      } else {
+        throw err;
       }
-    } catch {
-      // Dynamic fallback to standard cryptographic verification below
     }
 
-    // 2. Cryptographic JWT verification of the Privy access token
+    if (!privyPackageMissing && privyPkg?.PrivyClient) {
+      const client = new privyPkg.PrivyClient(
+        process.env.PRIVY_APP_ID || '',
+        process.env.PRIVY_APP_SECRET || ''
+      );
+      // Empty second arg is deliberate: verifyAuthToken then resolves the key
+      // itself from getAppSettings()/JWKS, so a misconfigured env var cannot
+      // silently downgrade verification.
+      const claims = await client.verifyAuthToken(
+        token,
+        process.env.PRIVY_VERIFICATION_KEY || undefined
+      );
+      req.privyUserId = claims.userId;
+      return next();
+    }
+
+    // 2. Fallback — only reachable when @privy-io/server-auth is not installed.
+    //
+    // Signature verification is mandatory here. jwt.verify without a key is
+    // impossible, and jwt.decode is not verification at all, so a missing
+    // PRIVY_VERIFICATION_KEY is a hard 401 rather than an implicit downgrade
+    // to accepting unsigned tokens.
     const verificationKey = process.env.PRIVY_VERIFICATION_KEY;
     const appId = process.env.PRIVY_APP_ID;
 
-    let decoded: Record<string, unknown> | null = null;
-    if (verificationKey) {
-      decoded = jwt.verify(token, verificationKey, {
-        issuer: 'privy.io',
-        ...(appId ? { audience: appId } : {}),
-      }) as Record<string, unknown>;
-    } else {
-      decoded = jwt.decode(token) as Record<string, unknown> | null;
-      if (!decoded || typeof decoded !== 'object') {
-        throw new Error('Malformed token');
-      }
-      if (decoded.iss !== 'privy.io') {
-        throw new Error('Invalid issuer');
-      }
-      if (appId && decoded.aud !== appId) {
-        throw new Error('Invalid audience');
-      }
-      if (typeof decoded.exp === 'number' && Date.now() >= decoded.exp * 1000) {
-        throw new Error('Token expired');
-      }
+    if (!verificationKey) {
+      logger.error(
+        '[PrivyAuth] @privy-io/server-auth is not installed and PRIVY_VERIFICATION_KEY is unset — ' +
+          'cannot verify token signatures. Refusing to accept unverifiable tokens.'
+      );
+      return res.status(401).json({ error: 'Invalid token' });
     }
+
+    const decoded = jwt.verify(token, verificationKey, {
+      issuer: 'privy.io',
+      ...(appId ? { audience: appId } : {}),
+    }) as Record<string, unknown>;
 
     const userId = (decoded?.userId as string | undefined) || (decoded?.sub as string | undefined);
     if (!userId || typeof userId !== 'string') {

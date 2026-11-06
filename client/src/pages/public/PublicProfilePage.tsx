@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { userProfileService } from '../../services/api';
+import { tierLabel, tierTitle } from '../../utils/trustBand';
 import {
   MapPin, Globe, ExternalLink, Check, Star, Shield,
   ArrowLeft, Share2, Copy
@@ -85,8 +86,12 @@ function TrustScoresRow({ profile }: { profile: PublicProfile }) {
         <p className="text-[10px] uppercase tracking-wider text-[var(--soft-stone)] font-semibold mt-0.5">Trust</p>
       </div>
       <div className="text-center p-3 rounded-xl bg-white/60 border border-[rgba(191,179,163,0.15)] min-w-[80px]">
-        <p className="text-sm font-bold px-2 py-1 rounded-md inline-block" style={{ background: profile.accentColor + '20', color: profile.accentColor }}>
-          {profile.verificationTier}
+        <p
+          className="text-sm font-bold px-2 py-1 rounded-md inline-block"
+          style={{ background: profile.accentColor + '20', color: profile.accentColor }}
+          title={tierTitle(profile.verificationTier)}
+        >
+          {tierLabel(profile.verificationTier)}
         </p>
         <p className="text-[10px] uppercase tracking-wider text-[var(--soft-stone)] font-semibold mt-1">Tier</p>
       </div>
@@ -244,8 +249,12 @@ function CompactLayout({ profile }: { profile: PublicProfile }) {
                 <span className="text-[10px] text-[var(--soft-stone)] uppercase">Trust</span>
               </div>
               <div className="w-px h-6 bg-[rgba(191,179,163,0.2)]" />
-              <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ background: profile.accentColor + '20', color: profile.accentColor }}>
-                {profile.verificationTier}
+              <span
+                className="text-xs font-bold px-2 py-0.5 rounded"
+                style={{ background: profile.accentColor + '20', color: profile.accentColor }}
+                title={tierTitle(profile.verificationTier)}
+              >
+                {tierLabel(profile.verificationTier)}
               </span>
             </div>
           )}
@@ -337,8 +346,12 @@ function ShowcaseLayout({ profile }: { profile: PublicProfile }) {
               <p className="text-[10px] uppercase tracking-wider text-[var(--soft-stone)] font-semibold mt-0.5">Trust</p>
             </div>
             <div className="text-center p-4 rounded-xl bg-white/60 border border-[rgba(191,179,163,0.15)] min-w-[100px]">
-              <p className="text-sm font-bold px-3 py-1.5 rounded-md inline-block" style={{ background: profile.accentColor + '20', color: profile.accentColor }}>
-                {profile.verificationTier}
+              <p
+                className="text-sm font-bold px-3 py-1.5 rounded-md inline-block"
+                style={{ background: profile.accentColor + '20', color: profile.accentColor }}
+                title={tierTitle(profile.verificationTier)}
+              >
+                {tierLabel(profile.verificationTier)}
               </p>
               <p className="text-[10px] uppercase tracking-wider text-[var(--soft-stone)] font-semibold mt-1">Tier</p>
             </div>

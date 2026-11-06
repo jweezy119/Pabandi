@@ -104,6 +104,32 @@ services:
       # recommended for real traffic.
       - key: SOLANA_RPC_URL
         value: https://api.mainnet-beta.solana.com
+      # ── Privy (embedded wallets, sign-in, trust-band scoring) ──────────────
+      # Runtime values for the API. Set them in the Render dashboard — do NOT
+      # put the secret in this file, it is committed.
+      #
+      # VITE_PRIVY_APP_ID is deliberately NOT here: Vite bakes it into the JS
+      # bundle at build time from client/.env.production (see the .dockerignore
+      # exception), so it is not a runtime variable and Render cannot supply it.
+      #
+      # Without PRIVY_APP_ID/SECRET the server logs "Privy server features
+      # disabled" and any PrivyClient call fails.
+      #
+      # PRIVY_WEBHOOK_SECRET is ABSENT ON PURPOSE. Privy webhooks are an
+      # Enterprise-only feature and this account cannot enable them, so no
+      # secret can be set and no event will ever arrive. The receiver at
+      # POST /api/v1/privy/webhooks therefore stays fail-closed (401 without a
+      # secret) and is inert — see the note in privy.routes.ts.
+      - key: PRIVY_APP_ID
+        sync: false
+      - key: PRIVY_APP_SECRET
+        sync: false
+      # Optional. Only consulted by privyAuth.middleware's fallback path, which
+      # is reachable solely when @privy-io/server-auth is missing. The primary
+      # path resolves the key from JWKS automatically, so leaving this unset is
+      # the normal configuration.
+      - key: PRIVY_VERIFICATION_KEY
+        sync: false
 
   # ── BACKGROUND WORKER ─────────────────────────────────────────────────────
   # Consumes the pabandi-email and pabandi-webhook BullMQ queues, and sweeps

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { userProfileService } from '../../services/api';
+import { tierLabel, tierTitle } from '../../utils/trustBand';
 import toast from 'react-hot-toast';
 import {
   User, Link2, Briefcase, Palette, ChevronDown, ChevronUp, GripVertical,
@@ -194,8 +195,12 @@ function LivePreview({ profile }: { profile: ProfileData }) {
                 </div>
                 <div className="w-px h-8 bg-[rgba(191,179,163,0.2)]" />
                 <div className="text-center">
-                  <p className="text-sm font-bold px-2 py-1 rounded-md" style={{ background: profile.accentColor + '20', color: profile.accentColor }}>
-                    {profile.verificationTier || 'BASIC'}
+                  <p
+                    className="text-sm font-bold px-2 py-1 rounded-md"
+                    style={{ background: profile.accentColor + '20', color: profile.accentColor }}
+                    title={tierTitle(profile.verificationTier)}
+                  >
+                    {tierLabel(profile.verificationTier)}
                   </p>
                   <p className="text-[10px] text-[var(--soft-stone)] mt-1">Tier</p>
                 </div>
