@@ -35,7 +35,9 @@ function isChunkLoadError(error: unknown): boolean {
     /error loading dynamically imported module/i.test(message) ||
     /importing a module script failed/i.test(message) ||
     /chunkloaderror/i.test(String((error as { name?: string })?.name ?? '')) ||
-    /loading chunk \d+ failed/i.test(message)
+    /loading chunk \d+ failed/i.test(message) ||
+    /failed to load module script/i.test(message) ||
+    /error resolving module specifier/i.test(message)
   );
 }
 
@@ -100,6 +102,20 @@ export class AppErrorBoundary extends Component<Props, State> {
     this.setState({ error: null, isReloading: false });
   };
 
+  private handleHardReload = () => {
+    try {
+      sessionStorage.clear();
+      if (typeof window !== 'undefined' && 'caches' in window) {
+        caches.keys().then((names) => {
+          names.forEach((name) => caches.delete(name));
+        });
+      }
+    } catch {
+      /* non-fatal */
+    }
+    window.location.href = window.location.origin + window.location.pathname + '?reload=' + Date.now();
+  };
+
   render() {
     const { error, isReloading } = this.state;
     if (!error) return this.props.children;
@@ -149,11 +165,18 @@ export class AppErrorBoundary extends Component<Props, State> {
           <p className="text-sm mb-6" style={{ color: 'var(--soft-stone, #8A8178)' }}>
             Something failed while drawing the page. The details are in your browser console.
           </p>
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={this.handleHardReload}
+              className="px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-sm"
+              style={{ background: 'var(--clay, #C97B5A)', color: '#fff' }}
+            >
+              Reload & Clear Cache
+            </button>
             <button
               onClick={this.handleRetry}
               className="px-5 py-2.5 rounded-xl font-semibold text-sm"
-              style={{ background: 'var(--clay, #C97B5A)', color: '#fff' }}
+              style={{ border: '1px solid rgba(191,179,163,0.5)', color: 'var(--warm-ink, #2A2622)' }}
             >
               Try again
             </button>
@@ -165,6 +188,22 @@ export class AppErrorBoundary extends Component<Props, State> {
               Go to home
             </button>
           </div>
+
+          {error && (
+            <div className="mt-5 text-left p-3.5 rounded-xl bg-[rgba(201,123,90,0.08)] border border-[rgba(201,123,90,0.2)]">
+              <div className="text-xs font-mono font-semibold text-[var(--warm-ink, #2A2622)] mb-1">
+                {error.name || 'Error'}: {error.message || String(error)}
+              </div>
+              {error.stack && (
+                <details className="text-[11px] font-mono text-[var(--soft-stone, #8A8178)] mt-2">
+                  <summary className="cursor-pointer hover:underline">View details</summary>
+                  <pre className="mt-2 p-2 bg-white/70 rounded border border-black/5 overflow-x-auto whitespace-pre-wrap max-h-48 text-[10px]">
+                    {error.stack}
+                  </pre>
+                </details>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
