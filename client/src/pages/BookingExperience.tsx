@@ -50,7 +50,7 @@ export default function BookingExperience() {
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [guests, setGuests] = useState(2);
   const [specialRequests, setSpecialRequests] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'safepay' | 'solana' | 'bsc'>('safepay');
+  const [paymentMethod, setPaymentMethod] = useState<'square' | 'solana' | 'safepay' | 'bsc'>('square');
   const [bookingComplete, setBookingComplete] = useState(false);
   /**
    * The deposit the engine charged for this reservation, for the confirmation
@@ -484,13 +484,13 @@ export default function BookingExperience() {
               <h3 className="font-bold text-[var(--warm-ink)] mb-4">Payment Method</h3>
               <div className="space-y-2">
                 <button
-                  onClick={() => setPaymentMethod('safepay')}
+                  onClick={() => setPaymentMethod('square')}
                   className={`w-full p-3 rounded-lg text-left transition-all ${
-                    paymentMethod === 'safepay' ? 'bg-[rgba(var(--clay),0.15)] border border-[var(--clay)]' : 'bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)]'
+                    paymentMethod === 'square' ? 'bg-[rgba(var(--clay),0.15)] border border-[var(--clay)]' : 'bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)]'
                   }`}
                 >
-                  <div className="font-medium text-[var(--warm-ink)]">💳 SafePay</div>
-                  <div className="text-xs text-[var(--soft-stone)]">Pay with card or bank</div>
+                  <div className="font-medium text-[var(--warm-ink)]">💳 Square Checkout</div>
+                  <div className="text-xs text-[var(--soft-stone)]">Card, Apple Pay, Google Pay, or Cash App</div>
                 </button>
                 <button
                   onClick={() => setPaymentMethod('solana')}
@@ -498,8 +498,17 @@ export default function BookingExperience() {
                     paymentMethod === 'solana' ? 'bg-[rgba(var(--clay),0.15)] border border-[var(--clay)]' : 'bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)]'
                   }`}
                 >
-                  <div className="font-medium text-[var(--warm-ink)]">◎ Solana</div>
-                  <div className="text-xs text-[var(--soft-stone)]">Pay with SOL or $PAB</div>
+                  <div className="font-medium text-[var(--warm-ink)]">⚡ Solana Pay</div>
+                  <div className="text-xs text-[var(--soft-stone)]">Instant USDC, SOL, or $PAB</div>
+                </button>
+                <button
+                  onClick={() => setPaymentMethod('safepay')}
+                  className={`w-full p-3 rounded-lg text-left transition-all ${
+                    paymentMethod === 'safepay' ? 'bg-[rgba(var(--clay),0.15)] border border-[var(--clay)]' : 'bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)]'
+                  }`}
+                >
+                  <div className="font-medium text-[var(--warm-ink)]">🏦 SafePay / Raast</div>
+                  <div className="text-xs text-[var(--soft-stone)]">PKR Bank or local card</div>
                 </button>
               </div>
             </Surface>

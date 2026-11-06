@@ -1167,6 +1167,10 @@ enum BusinessCategory {
   MARKETPLACE
   LIVE_SELLER
   CLEANING
+  ROOFING
+  HVAC
+  SECURITY
+  CONTRACTOR
 }
 
 enum LiveSellerPlatform {

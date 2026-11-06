@@ -120,11 +120,7 @@ export const getBusiness = async (
   try {
     const { id } = req.params;
 
-    // Reject ids that are neither a UUID nor an OSM-derived id early,
-    // so Prisma never sees a malformed value and the caller gets a clean 404
-    // instead of a 500.
-    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-    if (!uuidRegex.test(id) && !id.startsWith('osm-')) {
+    if (!id || typeof id !== 'string' || !id.trim()) {
       const notFoundError = new CustomError('Business not found', 404);
       (notFoundError as any).code = 'BUSINESS_NOT_FOUND';
       throw notFoundError;
@@ -134,6 +130,7 @@ export const getBusiness = async (
       where: {
         OR: [
           { id },
+          { slug: id },
           { googlePlaceId: id }
         ]
       },

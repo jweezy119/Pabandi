@@ -144,6 +144,20 @@ const ENGINE_TOOLS = [
     },
   },
   {
+    name: 'pabandi_open_session',
+    description:
+      'Open a Trust-Score-derived PabandiSession tab so the agent or user can transact repeatedly via pabandi_execute_transaction without per-call wallet signatures.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        ownerType: { type: 'string', enum: ['agent', 'user'], description: 'Principal type opening the session' },
+        ownerId: { type: 'string', description: 'Agent or User ID opening the session' },
+        currency: { type: 'string', description: 'Optional currency (defaults to USDC)' },
+      },
+      required: ['ownerType', 'ownerId'],
+    },
+  },
+  {
     name: 'pabandi_execute_transaction',
     description:
       'Spend against an open PabandiSession -- book a service, pay an invoice, or fund an escrow. ' +

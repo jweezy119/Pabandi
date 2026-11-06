@@ -548,6 +548,57 @@ router.get('/me', authenticate, async (req: any, res, next) => {
   }
 });
 
+// GET /businesses/recent — 10 most recently added businesses
+router.get('/recent', async (_req, res) => {
+  try {
+    const { prisma } = await import('../utils/database');
+    const businesses = await prisma.business.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        category: true,
+        address: true,
+        city: true,
+        state: true,
+        country: true,
+        rating: true,
+        reviewCount: true,
+        trustScore: true,
+        logoUrl: true,
+        coverImageUrl: true,
+        isVerified: true,
+        isClaimed: true,
+        createdAt: true,
+      },
+    });
+    res.json({ success: true, data: businesses });
+  } catch (err: unknown) {
+    res.status(500).json({
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to fetch recent businesses',
+    });
+  }
+});
+
+// GET /businesses/count — total active businesses count
+router.get('/count', async (_req, res) => {
+  try {
+    const { prisma } = await import('../utils/database');
+    const count = await prisma.business.count({ where: { isActive: true } });
+    res.json({ success: true, count, data: { count } });
+  } catch (err: unknown) {
+    res.status(500).json({
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to fetch business count',
+    });
+  }
+});
+
 // Publicly accessible business routes (optional auth)
 router.get('/slug/:slug', optionalAuthenticate, getBusinessBySlug);
 router.get('/:id/reviews', optionalAuthenticate, getBusinessReviews);
@@ -556,7 +607,13 @@ router.get('/:id/services', optionalAuthenticate, getBusinessServices);
 // GET /businesses/:id — PUBLIC lookup (sanitized). Powers every profile/booking
 // page across the app. Returns owner PII only when the caller owns the business
 // or is an admin; everyone else gets a safe public projection.
-router.get('/:id', optionalAuthenticate, getBusiness);
+router.get('/:id', optionalAuthenticate, (req, res, next) => {
+  if (req.params.id === 'undefined' || !req.params.id) {
+    res.status(400).json({ success: false, error: 'Invalid or missing business id' });
+    return;
+  }
+  return getBusiness(req, res, next);
+});
 
 // GET /businesses/:id/full — FULL lookup with owner PII. Requires auth.
 router.get('/:id/full', authenticate, getBusinessFull);

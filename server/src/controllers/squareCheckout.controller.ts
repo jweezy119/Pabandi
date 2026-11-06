@@ -7,10 +7,11 @@ import { reconcileIncomingPayment } from '../services/auto-reconciliation.servic
 import { advanceBookingEscrow } from '../services/booking-escrow.service';
 import { settleStatementFromSquareInvoice } from '../services/fee-collection.service';
 import { assessFeeSafe } from '../services/fee-assessment.service';
+import { universalEscrowService } from '../services/universal-escrow.service';
 
 export const createSquareCheckout = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { referenceId, amount, currency, redirectUrl, cancelUrl, note, customerEmail } = req.body;
+    const { referenceId, amount, currency, redirectUrl, cancelUrl, note, label, customerEmail } = req.body;
     
     const checkout = await squareService.createCheckout({
       referenceId,
@@ -19,6 +20,7 @@ export const createSquareCheckout = async (req: Request, res: Response, next: Ne
       redirectUrl,
       cancelUrl,
       note,
+      label,
       customerEmail,
     });
 
@@ -158,6 +160,80 @@ export const handleSquareWebhook = async (req: Request, res: Response, next: Nex
           return res.json({ received: true, funded: true });
         } catch (escrowErr) {
           logger.error(`[SquareWebhook] escrow funding update failed for ${result.escrowId}: ${escrowErr}`);
+          return res.json({ received: true, funded: false });
+        }
+      }
+
+      if (result.universalEscrowRef) {
+        try {
+          const uEscrow = await prisma.universalEscrow.findUnique({
+            where: { referenceId: result.universalEscrowRef },
+          });
+          if (!uEscrow) {
+            logger.info(`[SquareWebhook] UniversalEscrow ${result.universalEscrowRef} not found; acking.`);
+            return res.json({ received: true, funded: false, reason: 'not found' });
+          }
+          if (uEscrow.status === 'funded') {
+            return res.json({ received: true, funded: true, duplicate: true });
+          }
+          if (uEscrow.status !== 'draft') {
+            logger.info(`[SquareWebhook] UniversalEscrow ${uEscrow.referenceId} in state ${uEscrow.status}; acking.`);
+            return res.json({ received: true, funded: false, reason: 'not awaiting payment' });
+          }
+          const expectedCents = Math.round(uEscrow.amount * 100);
+          if (result.amountCents != null && result.amountCents !== expectedCents) {
+            logger.warn(
+              `[SquareWebhook] UniversalEscrow ${uEscrow.referenceId} collected $${(result.amountCents / 100).toFixed(2)} but $${(expectedCents / 100).toFixed(2)} was due. Leaving unfunded.`,
+            );
+            return res.json({ received: true, funded: false, reason: 'amount mismatch' });
+          }
+
+          await universalEscrowService.updateStatus(uEscrow.referenceId, 'funded');
+
+          const existingMeta = (uEscrow.metadata as Record<string, unknown>) || {};
+          const fundedAtIso = new Date().toISOString();
+          await prisma.universalEscrow.update({
+            where: { referenceId: uEscrow.referenceId },
+            data: {
+              metadata: {
+                ...existingMeta,
+                squarePaymentId: result.paymentId,
+                fundedAt: fundedAtIso,
+                amountPaidUsd: uEscrow.amount,
+                paidVia: 'square',
+              } as unknown as Prisma.InputJsonValue,
+            },
+          });
+
+          const simulationId =
+            (typeof existingMeta.simulationId === 'string' && existingMeta.simulationId) ||
+            (uEscrow.referenceId.startsWith('sim-') ? uEscrow.referenceId.slice(4) : null);
+
+          if (simulationId) {
+            const sim = await prisma.projectSimulation.findUnique({ where: { id: simulationId } }).catch(() => null);
+            if (sim) {
+              const prevEstimate = (sim.finalEstimate as Record<string, unknown>) || {};
+              await prisma.projectSimulation.update({
+                where: { id: simulationId },
+                data: {
+                  finalEstimate: {
+                    ...prevEstimate,
+                    escrowStatus: 'funded',
+                    escrowReferenceId: uEscrow.referenceId,
+                    squarePaymentId: result.paymentId,
+                    fundedAt: fundedAtIso,
+                  } as unknown as Prisma.InputJsonValue,
+                },
+              }).catch((simErr) => {
+                logger.warn(`[SquareWebhook] Failed to annotate ProjectSimulation ${simulationId}: ${simErr}`);
+              });
+            }
+          }
+
+          logger.info(`[SquareWebhook] UniversalEscrow ${uEscrow.referenceId} funded via Square.`);
+          return res.json({ received: true, funded: true, referenceId: uEscrow.referenceId });
+        } catch (uEscrowErr) {
+          logger.error(`[SquareWebhook] UniversalEscrow funding update failed for ${result.universalEscrowRef}: ${uEscrowErr}`);
           return res.json({ received: true, funded: false });
         }
       }

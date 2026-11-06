@@ -369,3 +369,21 @@ export function parseAgentEscrowNote(note: string | null | undefined): { escrowI
   if (!escrowId) return null;
   return { escrowId };
 }
+
+/**
+ * Universal escrow funding (Project Simulator, Milestone, Freight, Goods, etc.)
+ * on the same signed-webhook note scheme (`pabandi:universalescrow:<referenceId>`).
+ */
+export const UNIVERSAL_ESCROW_NOTE_PREFIX = 'pabandi:universalescrow:';
+
+export function universalEscrowNote(referenceId: string): string {
+  return `${UNIVERSAL_ESCROW_NOTE_PREFIX}${referenceId}`;
+}
+
+/** Pull the universal escrow referenceId back out of a payment note. Null if it is not ours. */
+export function parseUniversalEscrowNote(note: string | null | undefined): { referenceId: string } | null {
+  if (!note || !note.startsWith(UNIVERSAL_ESCROW_NOTE_PREFIX)) return null;
+  const referenceId = note.slice(UNIVERSAL_ESCROW_NOTE_PREFIX.length);
+  if (!referenceId) return null;
+  return { referenceId };
+}

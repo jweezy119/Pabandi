@@ -1,34 +1,43 @@
-import { useWallets } from '@privy-io/react-auth/solana'
-import { useMemo } from 'react'
+import { useWallets } from '@privy-io/react-auth/solana';
+import { useMemo } from 'react';
+
+export interface EmbeddedWalletInfo {
+  address?: string;
+  standardWallet?: { name?: string };
+  [key: string]: unknown;
+}
 
 /**
  * Returns the embedded Privy wallet (auto-created for email users) or
  * the first available external wallet. Returns null until wallets are ready.
  *
- * If Privy is not configured (no VITE_PRIVY_APP_ID), useWallets throws.
- * We catch that and return an empty/waiting state so the app doesn't crash.
+ * If Privy is not configured (no valid VITE_PRIVY_APP_ID), returns safe null state.
  */
 export function useEmbeddedSolanaWallet() {
-  let wallets: any[] = []
-  let ready = false
+  const isPrivyConfigured = Boolean(
+    import.meta.env.VITE_PRIVY_APP_ID &&
+      typeof import.meta.env.VITE_PRIVY_APP_ID === 'string' &&
+      import.meta.env.VITE_PRIVY_APP_ID.length === 25
+  );
 
-  try {
-    const result = useWallets()
-    wallets = result.wallets
-    ready = result.ready
-  } catch {
-    // Privy is not configured; no wallets available
-    wallets = []
-    ready = false
+  let wallets: EmbeddedWalletInfo[] = [];
+  let ready = false;
+
+  if (isPrivyConfigured) {
+    try {
+      const result = useWallets();
+      wallets = (result?.wallets ?? []) as unknown as EmbeddedWalletInfo[];
+      ready = result?.ready ?? false;
+    } catch {
+      wallets = [];
+      ready = false;
+    }
   }
 
   const wallet = useMemo(() => {
-    if (!ready || !wallets.length) return null
-    // Prefer the embedded Privy wallet; fallback to first available
-    return (
-      wallets.find(w => w.standardWallet?.name === 'Privy') ?? wallets[0]
-    )
-  }, [wallets, ready])
+    if (!ready || !wallets.length) return null;
+    return wallets.find((w) => w.standardWallet?.name === 'Privy') ?? wallets[0];
+  }, [wallets, ready]);
 
-  return { wallet, ready }
+  return { wallet, ready };
 }

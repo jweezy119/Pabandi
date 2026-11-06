@@ -172,7 +172,7 @@ export const matchAndPost = async (req: Request, res: Response, next: NextFuncti
     // Same rule as postProject: the poster is who the token says it is, never
     // who the body claims.
     const { user } = req as AuthRequest;
-    if (!user?.id) return res.status(401).json({ success: false, error: 'Authentication required' });
+    if (!user?.id) return next(Object.assign(new Error('Authentication required'), { statusCode: 401 }));
 
     const { title, description, budget, requiredSkills, templateKey, autoBook } = req.body ?? {};
     // Template-aware validation: a templateKey may supply title, description
@@ -245,7 +245,7 @@ export const getMyWork = async (req: Request, res: Response, next: NextFunction)
 export const bookProject = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { user } = req as AuthRequest;
-    if (!user?.id) return res.status(401).json({ success: false, error: 'Authentication required' });
+    if (!user?.id) return next(Object.assign(new Error('Authentication required'), { statusCode: 401 }));
     const data = await agentMarketplace.bookProject(req.params.projectId, user.id);
     return res.json({ success: true, data });
   } catch (err) { next(err); }
@@ -254,7 +254,7 @@ export const bookProject = async (req: Request, res: Response, next: NextFunctio
 export const getMyProjects = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { user } = req as AuthRequest;
-    if (!user?.id) return res.status(401).json({ success: false, error: 'Authentication required' });
+    if (!user?.id) return next(Object.assign(new Error('Authentication required'), { statusCode: 401 }));
     const client = await prisma.agentProfile.findUnique({
       where: { slug: `client-${user.id}` },
       select: { id: true },
@@ -277,7 +277,7 @@ export const hireProvider = async (req: Request, res: Response, next: NextFuncti
     // Poster identity comes from the token, same rule as everywhere else in
     // this controller. passportId is the only thing the body contributes.
     const { user } = req as AuthRequest;
-    if (!user?.id) return res.status(401).json({ success: false, error: 'Authentication required' });
+    if (!user?.id) return next(Object.assign(new Error('Authentication required'), { statusCode: 401 }));
     const passportId = req.body?.passportId;
     if (typeof passportId !== 'string' || passportId.trim().length === 0) {
       return res.status(400).json({ success: false, error: 'passportId is required' });
@@ -295,7 +295,7 @@ export const hireProvider = async (req: Request, res: Response, next: NextFuncti
 export const fundEscrowCheckout = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { user } = req as AuthRequest;
-    if (!user?.id) return res.status(401).json({ success: false, error: 'Authentication required' });
+    if (!user?.id) return next(Object.assign(new Error('Authentication required'), { statusCode: 401 }));
     const data = await agentMarketplace.getFundCheckoutUrl(req.params.projectId, user.id);
     return res.json({ success: true, data });
   } catch (err) { next(err); }
@@ -327,7 +327,7 @@ export const completeProject = async (req: Request, res: Response, next: NextFun
     // The actor id is what the ownership check runs against, so it comes from the
     // token — never the body.
     const { user } = req as AuthRequest;
-    if (!user?.id) return res.status(401).json({ success: false, error: 'Authentication required' });
+    if (!user?.id) return next(Object.assign(new Error('Authentication required'), { statusCode: 401 }));
     //
     // Poster bridge. There are two ways a project got its posterId:
     //   - the legacy `/projects` flow stores the raw token user id,

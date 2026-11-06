@@ -15,6 +15,7 @@ import { ClayToastProvider } from './components/primitives';
 // client and the layout shell are needed by almost every route, so splitting them would
 // add a waterfall without saving anything.
 const DeveloperPortalPage = lazy(() => import('./pages/DeveloperPortalPage'));
+const IamConsolePage = lazy(() => import('./pages/developer/IamConsolePage'));
 const AgentPaymentsPage = lazy(() => import('./pages/AgentPaymentsPage'));
 const AgentsLandingPage = lazy(() => import('./pages/AgentsLandingPage'));
 const AgentsRegisterPage = lazy(() => import('./pages/AgentsRegisterPage'));
@@ -27,6 +28,7 @@ const LedgerExpenseNewPage = lazy(() => import('./pages/ledger/LedgerExpenseNewP
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const GuaranteePage = lazy(() => import('./pages/GuaranteePage'));
 const TrustVerifyPage = lazy(() => import('./pages/TrustVerifyPage'));
+const TrustVerificationPage = lazy(() => import('./pages/settings/TrustVerificationPage'));
 const AuthPage = lazy(() => import('./pages/AuthPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
 const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'));
@@ -38,6 +40,7 @@ const ConsumerPassportPage = lazy(() => import('./pages/consumer/ConsumerPasspor
 const ConsumerSettingsPage = lazy(() => import('./pages/consumer/ConsumerSettingsPage'));
 const SandboxApp = lazy(() => import('./pages/sandbox/SandboxApp'));
 const SimulatorPage = lazy(() => import('./pages/simulator/SimulatorPage'));
+const PublicProposalPage = lazy(() => import('./pages/simulator/PublicProposalPage'));
 const DealSimulatorPage = lazy(() => import('./pages/sandbox/DealSimulator'));
 const TrustPassportPublicPage = lazy(() => import('./pages/public/TrustPassportPage'));
 const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
@@ -46,6 +49,7 @@ const GigDetailPage = lazy(() => import('./pages/GigDetailPage'));
 const TermsPage = lazy(() => import('./pages/legal/TermsPage'));
 const RiskPage = lazy(() => import('./pages/legal/RiskPage'));
 const PrivacyPage = lazy(() => import('./pages/legal/PrivacyPage'));
+const MerchantCompliancePage = lazy(() => import('./pages/legal/MerchantCompliancePage'));
 const BackgroundCheckPage = lazy(() => import('./pages/BackgroundCheckPage'));
 const AgentMarketplacePage = lazy(() => import('./pages/AgentMarketplacePage'));
 const PersonalDashboardPage = lazy(() => import('./pages/me/PersonalDashboardPage'));
@@ -83,6 +87,7 @@ const PropertyFinancialsPage = lazy(() => import('./pages/property/PropertyFinan
 // const FreightCarriersPage = lazy(() => import('./pages/freight/FreightCarriersPage'));
 // const FreightRateCalculatorPage = lazy(() => import('./pages/freight/FreightRateCalculatorPage'));
 const BookingOSPage = lazy(() => import('./pages/booking/BookingOSPage'));
+const BookingMapPage = lazy(() => import('./pages/booking/BookingMapPage'));
 const BookingFlowPage = lazy(() => import('./pages/booking/BookingFlowPage'));
 const ContactOSPage = lazy(() => import('./pages/contact/ContactOSPage'));
 const ContactClientsPage = lazy(() => import('./pages/contact/ContactClientsPage'));
@@ -261,9 +266,12 @@ function AnimatedAppRoutes() {
       >
       <ClayToastProvider>
         <Routes location={location} key={location.pathname}>
-        {/* Public sandbox demo — no authentication required */}
+        {/* Public sandbox demo, shareable interactive simulator proposal, and merchant compliance/pricing — no authentication required */}
         <Route path="/sandbox" element={<SandboxApp />} />
         <Route path="/sandbox/deal" element={<DealSimulatorPage />} />
+        <Route path="/p/estimate/:simulationId" element={<PublicProposalPage />} />
+        <Route path="/compliance" element={<MerchantCompliancePage />} />
+        <Route path="/pricing" element={<MerchantCompliancePage />} />
         <Route element={<AppShellLayout />}>
             {/* /dashboard routes to the user's mode-appropriate dashboard
                 (Business → /contact, Personal → /me). It is never a
@@ -289,6 +297,7 @@ function AnimatedAppRoutes() {
 
           {/* BookingOS (formerly Sitara) - Booking & Discovery */}
           <Route path="booking" element={<BookingOSPage />} />
+          <Route path="booking/map" element={<BookingMapPage />} />
           <Route path="booking/flow" element={<BookingFlowPage />} />
           <Route path="simulator" element={<SimulatorPage />} />
           <Route path="pay/:invoiceId" element={<PayInvoicePage />} />
@@ -354,6 +363,9 @@ function AnimatedAppRoutes() {
           <Route path="me/rewards" element={<PersonalGuard><PersonalRewardsPage /></PersonalGuard>} />
           <Route path="me/profile" element={<PersonalGuard><ProfileEditorPage /></PersonalGuard>} />
           <Route path="me/verification" element={<PersonalGuard><BusinessVerificationPage /></PersonalGuard>} />
+          <Route path="me/trust" element={<PersonalGuard><TrustVerificationPage /></PersonalGuard>} />
+          <Route path="settings/trust" element={<TrustVerificationPage />} />
+          <Route path="settings/verification" element={<TrustVerificationPage />} />
           <Route path="me/quick-post" element={<PersonalGuard><QuickPostPage /></PersonalGuard>} />
           <Route path="me/values" element={<PersonalGuard><ValuesPreferencesPage /></PersonalGuard>} />
           <Route path="me/agent" element={<PersonalGuard><AgentDashboardPage /></PersonalGuard>} />
@@ -541,7 +553,8 @@ function AnimatedAppRoutes() {
             <Route path="business/plugins" element={<PlaceholderPage />} />
             <Route path="business-model" element={<PlaceholderPage />} />
             <Route path="join" element={<PlaceholderPage />} />
-            <Route path="pricing" element={<PlaceholderPage />} />
+            <Route path="pricing" element={<MerchantCompliancePage />} />
+            <Route path="compliance" element={<MerchantCompliancePage />} />
             <Route path="checkout/:sessionId" element={<PlaceholderPage />} />
             <Route path="checkout-success" element={<PlaceholderPage />} />
             <Route path="checkout-cancel" element={<PlaceholderPage />} />
@@ -572,6 +585,9 @@ function AnimatedAppRoutes() {
             {/* Developer / agent portal. Inside Layout so the dashboard chrome
                 stays, which is what a portal read after signup needs. */}
             <Route path="developers" element={<DeveloperPortalPage />} />
+            <Route path="developer/iam" element={<IamConsolePage />} />
+            <Route path="developers/iam" element={<IamConsolePage />} />
+            <Route path="iam" element={<Navigate to="/developer/iam" replace />} />
             <Route path="agent-payments" element={<AgentPaymentsPage />} />
             <Route path="agents" element={<AgentsLandingPage />} />
             <Route path="agents/register" element={<AgentsRegisterPage />} />

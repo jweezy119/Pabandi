@@ -5,11 +5,13 @@ import { RawBusinessProfile, DataSourceAdapter, IngestionResult } from './types'
 import { OpenDirectoriesAdapter } from './opendirectories.adapter';
 import { ApifyAdapter } from './apify.adapter';
 import { GoogleMapsAdapter } from './googlemaps.adapter';
+import { OsmAdapter } from './osm.adapter';
 
 const adapters: Record<string, DataSourceAdapter> = {
   opendirectories: new OpenDirectoriesAdapter(),
   apify: new ApifyAdapter(),
   googlemaps: new GoogleMapsAdapter(),
+  osm: new OsmAdapter(),
 };
 
 export function getAdapter(adapterId: string): DataSourceAdapter | null {
@@ -21,6 +23,7 @@ export function listAdapters(): { id: string; name: string }[] {
     opendirectories: 'OpenDirectories',
     apify: 'Apify (Freelancer.com)',
     googlemaps: 'Google Maps',
+    osm: 'OpenStreetMap',
   };
   return Object.values(adapters).map((a) => ({ id: a.id, name: displayNames[a.id] ?? a.id.charAt(0).toUpperCase() + a.id.slice(1) }));
 }
@@ -62,7 +65,7 @@ function updateJob(jobId: string, patch: Partial<IngestionJobProgress>): void {
 
 // ── Pipeline ─────────────────────────────────────────────────────────────────
 
-export async function ingestData(adapterId: string, query: any, queryId?: string): Promise<{ jobId: string }> {
+export async function ingestData(adapterId: string, query: Record<string, unknown>, queryId?: string): Promise<{ jobId: string }> {
   const adapter = getAdapter(adapterId);
   if (!adapter) {
     throw new Error(`Unknown adapter: ${adapterId}`);

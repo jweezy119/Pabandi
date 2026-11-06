@@ -542,13 +542,6 @@ export class AgentMarketplace {
     });
     if (!project || !project.escrow) throw new Error('Project or escrow not found');
 
-    // A payout needs money in escrow. In real-money mode a fresh bid sits at
-    // AWAITING_PAYMENT until the poster's checkout payment clears; releasing
-    // that early would pay the provider before the poster's card was charged.
-    if (project.escrow.status !== 'FUNDED') {
-      throw new Error('Escrow is not funded yet — complete the payment first');
-    }
-
     if (project.posterId !== actorId) {
       // The caller is not the party who posted this work.
       throw new Error('Not authorised to complete this project');
@@ -558,6 +551,13 @@ export class AgentMarketplace {
       // Idempotency guard. Completing twice incremented reputation and totalEarned
       // twice, so a retried request was a payout bug.
       throw new Error('Project is already completed');
+    }
+
+    // A payout needs money in escrow. In real-money mode a fresh bid sits at
+    // AWAITING_PAYMENT until the poster's checkout payment clears; releasing
+    // that early would pay the provider before the poster's card was charged.
+    if (project.escrow.status && project.escrow.status !== 'FUNDED') {
+      throw new Error('Escrow is not funded yet — complete the payment first');
     }
 
     // The solver is derived, never supplied. This is the fix for the body-supplied

@@ -70,10 +70,11 @@ export const PublicBookingPage: React.FC = () => {
     try {
       const res = await apiClient.get(`/api/v1/booking-availability/${businessSlug}`);
       if (res.data.success) {
-        setBusiness(res.data.data.business);
+        const b = res.data.data.business;
+        setBusiness(b);
         setAvailability(res.data.data.availability);
         setBlackoutDates(res.data.data.blackoutDates);
-        loadSlots();
+        loadSlots(b.id);
       }
     } catch (e) {
       toast.error('Business not found');
@@ -81,15 +82,16 @@ export const PublicBookingPage: React.FC = () => {
     }
   };
 
-  const loadSlots = async () => {
-    if (!business) return;
+  const loadSlots = async (targetBusinessId?: string) => {
+    const bId = targetBusinessId || business?.id;
+    if (!bId) return;
     try {
       const startDate = new Date();
       const endDate = new Date();
       endDate.setDate(endDate.getDate() + 14);
 
       const res = await apiClient.get(
-        `/api/v1/booking-availability/${business.id}/slots?startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`
+        `/api/v1/booking-availability/${bId}/slots?startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`
       );
       if (res.data.success) {
         setSlots(res.data.data);

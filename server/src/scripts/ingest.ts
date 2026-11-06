@@ -30,13 +30,13 @@ async function main() {
   const limit = parseInt(args.limit || args.l || '20', 10);
 
   if (!source) {
-    console.error('Usage: npx tsx src/scripts/ingest.ts --source=opendirectories|apify|googlemaps --query="..." [--geo=...] [--radius=...] [--limit=20] [--country=US] [--state=TX] [--category=restaurant]');
+    console.error('Usage: npx tsx src/scripts/ingest.ts --source=opendirectories|osm|apify|googlemaps --query="..." [--geo=...] [--radius=...] [--limit=20] [--country=US] [--state=TX] [--category=restaurant]');
     process.exitCode = 1;
     return;
   }
 
-  if (!['opendirectories', 'apify', 'googlemaps'].includes(source)) {
-    console.error(`Invalid source '${source}'. Must be 'opendirectories', 'apify', or 'googlemaps'.`);
+  if (!['opendirectories', 'osm', 'apify', 'googlemaps'].includes(source)) {
+    console.error(`Invalid source '${source}'. Must be 'opendirectories', 'osm', 'apify', or 'googlemaps'.`);
     process.exitCode = 1;
     return;
   }

@@ -52,8 +52,9 @@ export class OpenDirectoriesAdapter implements DataSourceAdapter {
   private requestId = 0;
   private sessionId: string | null = null;
 
-  async fetchBusinesses(query: any): Promise<RawBusinessProfile[]> {
-    const { country, state, category, min_rating } = query || {};
+  async fetchBusinesses(query: Record<string, unknown>): Promise<RawBusinessProfile[]> {
+    const { country, state, category, min_rating, limit } = (query || {}) as Record<string, unknown>;
+    const queryLimit = typeof limit === 'number' ? limit : 20;
 
     try {
       // Initialize MCP session
@@ -69,11 +70,11 @@ export class OpenDirectoriesAdapter implements DataSourceAdapter {
 
       // List available tools to confirm search_businesses exists
       const toolsResp = await this.sendMcpRequest<{ tools: Array<{ name: string; description?: string; inputSchema?: Record<string, unknown> }> }>('tools/list', {});
-      const toolNames = toolsResp.result?.tools?.map((t: any) => t.name) || [];
+      const toolNames = toolsResp.result?.tools?.map((t: { name: string }) => t.name) || [];
 
       if (!toolNames.includes('search_businesses')) {
         logger.warn(`[OpenDirectories] search_businesses tool not found. Available: ${toolNames.join(', ')}`);
-        return this.fallbackBusinesses(category, (query as any)?.limit ?? 20, country, state);
+        return this.fallbackBusinesses(typeof category === 'string' ? category : undefined, queryLimit, typeof country === 'string' ? country : undefined, typeof state === 'string' ? state : undefined);
       }
 
       // Call search_businesses
@@ -84,7 +85,7 @@ export class OpenDirectoriesAdapter implements DataSourceAdapter {
           state,
           category,
           min_rating,
-          limit: query.limit || 50,
+          limit: queryLimit,
         },
       });
 
@@ -97,7 +98,7 @@ export class OpenDirectoriesAdapter implements DataSourceAdapter {
     }
 
     // Fallback: generate realistic sample businesses when MCP is unavailable
-    return this.fallbackBusinesses(category, (query as any)?.limit ?? 20, country, state);
+    return this.fallbackBusinesses(typeof category === 'string' ? category : undefined, queryLimit, typeof country === 'string' ? country : undefined, typeof state === 'string' ? state : undefined);
   }
 
   private async sendMcpRequest<T = unknown>(method: string, params?: Record<string, unknown>): Promise<McpResponse<T>> {

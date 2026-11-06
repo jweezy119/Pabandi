@@ -4,6 +4,7 @@ import { ClayButton } from '../../components/clay/ClayButton';
 import { ClayCard } from '../../components/clay/ClayCard';
 import { apiClient, API_HOST } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
+import { PabandiCheckoutModal } from '../../components/PabandiCheckoutModal';
 
 const NAV_ITEMS = [
   { path: '/booking', label: 'Discovery', icon: 'explore' },
@@ -37,6 +38,7 @@ export default function BookingFlowPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ bookingId: string; escrowId: string } | null>(null);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   const fetchBusinesses = async () => {
     try {
@@ -81,6 +83,7 @@ export default function BookingFlowPage() {
           bookingId: res.data.data.bookingId,
           escrowId: res.data.data.escrowId,
         });
+        setCheckoutOpen(true);
       }
     } catch (err: any) {
       if (err.response?.status === 409) {
@@ -109,11 +112,31 @@ export default function BookingFlowPage() {
           )}
 
           {success && (
-            <div className="mb-4 p-4 rounded-xl border border-[var(--sage)] bg-[var(--sage)]/10 text-[var(--sage)]">
-              <h2 className="text-sm font-bold mb-1">Booking Confirmed ✓</h2>
-              <p className="text-[var(--soft-stone)] text-sm">
-                Booking #{success.bookingId} created. Escrow #{success.escrowId} funded with ${depositAmount.toFixed(2)}.
-              </p>
+            <div className="mb-4 p-4 rounded-xl border border-[var(--sage)] bg-[var(--sage)]/10 text-[var(--sage)] space-y-3">
+              <div>
+                <h2 className="text-sm font-bold mb-1">Booking Created ✓</h2>
+                <p className="text-[var(--soft-stone)] text-sm">
+                  Booking #{success.bookingId} created. Fund your ${depositAmount.toFixed(2)} deposit via Square or Solana Pay to lock escrow #{success.escrowId}.
+                </p>
+              </div>
+              <ClayButton
+                onClick={() => setCheckoutOpen(true)}
+                variant="primary"
+                className="w-full py-2.5"
+              >
+                💳 Fund ${depositAmount.toFixed(2)} Deposit (Square / Solana Pay)
+              </ClayButton>
+              <PabandiCheckoutModal
+                open={checkoutOpen}
+                onClose={() => setCheckoutOpen(false)}
+                title={`Booking Deposit — ${selectedBusiness?.name || 'Service'}`}
+                subtitle={`Booking #${success.bookingId}`}
+                amount={depositAmount}
+                currency="USD"
+                referenceId={`booking-${success.bookingId}`}
+                squareNote={`pabandi:booking:${success.bookingId}`}
+                customerEmail={user?.email}
+              />
             </div>
           )}
 

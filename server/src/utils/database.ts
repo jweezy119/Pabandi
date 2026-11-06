@@ -24,8 +24,10 @@ if (process.env.NODE_ENV !== 'production') {
 
 // Graceful shutdown
 process.on('beforeExit', async () => {
-  await prisma.$disconnect();
-  logger.info('Database connection closed');
+  if (typeof (prisma as { $disconnect?: unknown })?.$disconnect === 'function') {
+    await prisma.$disconnect();
+    logger.info('Database connection closed');
+  }
 });
 
 export default prisma;

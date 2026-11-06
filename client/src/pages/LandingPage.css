@@ -1114,12 +1114,18 @@ img {
 /* Desktop: 1025px and up */
 @media (min-width: 1025px) {
   .hero-inner {
-    grid-template-columns: 1fr min(400px, 40%);
-    gap: 5%;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 3.5rem;
+    align-items: center;
   }
   .hero-content {
     text-align: left;
     max-width: none;
+  }
+  .hero-visual {
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
   .clay-earth {
     width: 400px;
@@ -1137,9 +1143,13 @@ img {
   }
   .hero-content {
     text-align: center;
+    margin: 0 auto;
+    max-width: 640px;
   }
   .hero-visual {
     order: 2;
+    display: flex;
+    justify-content: center;
   }
   .clay-earth {
     width: 320px;
@@ -1158,6 +1168,8 @@ img {
   }
   .hero-visual {
     order: 2;
+    display: flex;
+    justify-content: center;
   }
   .clay-earth {
     width: 220px;
@@ -1165,3 +1177,351 @@ img {
     animation: none;
   }
 }
+
+/* ── Hero Trust Badges & Micro Copy ───────────────────────────────────────── */
+
+.hero-trust-row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-top: 1.75rem;
+  flex-wrap: wrap;
+  font-size: 0.8125rem;
+  color: var(--soft-stone);
+}
+
+.hero-trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  background: white;
+  border: 1px solid rgba(191, 179, 163, 0.4);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  color: var(--warm-ink);
+  box-shadow: var(--shadow-sm);
+  font-size: 0.75rem;
+}
+
+/* ── Bento Grid Feature Section ─────────────────────────────────────────── */
+
+.bento-section {
+  padding: 5.5rem 0;
+  background: var(--cream);
+  position: relative;
+}
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 3rem;
+}
+
+.bento-card {
+  background: white;
+  border: 1px solid rgba(191, 179, 163, 0.35);
+  border-radius: var(--radius-lg);
+  padding: 2.25rem;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.35s var(--ease-clay);
+  box-shadow: var(--shadow-sm);
+}
+
+.bento-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--clay);
+}
+
+.bento-card-large {
+  grid-column: span 2;
+  background: linear-gradient(135deg, white 0%, rgba(245, 239, 230, 0.5) 100%);
+}
+
+.bento-card-tall {
+  grid-column: span 1;
+  grid-row: span 2;
+  background: linear-gradient(180deg, white 0%, rgba(232, 217, 197, 0.3) 100%);
+}
+
+.bento-card-medium {
+  grid-column: span 2;
+}
+
+.bento-card-wide {
+  grid-column: span 3;
+  background: linear-gradient(135deg, white 0%, rgba(217, 168, 84, 0.08) 100%);
+}
+
+.bento-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--terracotta);
+  background: var(--warm-sand);
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  margin-bottom: 0.875rem;
+  width: fit-content;
+}
+
+.bento-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--warm-ink);
+  margin-bottom: 0.5rem;
+  line-height: 1.25;
+}
+
+.bento-desc {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--soft-stone);
+  margin-bottom: 1.25rem;
+  flex-grow: 1;
+}
+
+.bento-visual-slot {
+  background: var(--cream);
+  border: 1px solid rgba(191, 179, 163, 0.3);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  margin-top: auto;
+}
+
+@media (max-width: 1024px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+  .bento-card-large,
+  .bento-card-tall,
+  .bento-card-medium,
+  .bento-card-wide {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+}
+
+/* ── Dynamic Social Proof & Partner Strip ───────────────────────────────── */
+
+.social-proof-section {
+  padding: 5rem 0;
+  background: var(--warm-sand);
+  text-align: center;
+}
+
+.partner-logo-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin: 2rem 0 3rem;
+}
+
+.partner-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
+  border: 1px solid rgba(191, 179, 163, 0.4);
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--warm-ink);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.partner-pill:hover {
+  transform: translateY(-2px);
+  border-color: var(--clay);
+}
+
+.platform-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin: 2.5rem 0;
+}
+
+.platform-metric-card {
+  background: white;
+  border: 1px solid rgba(191, 179, 163, 0.35);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 1.25rem;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.platform-metric-number {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--terracotta);
+  line-height: 1.1;
+  margin-bottom: 0.25rem;
+}
+
+.platform-metric-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--warm-ink);
+  margin-bottom: 0.25rem;
+}
+
+.platform-metric-sub {
+  font-size: 0.75rem;
+  color: var(--soft-stone);
+}
+
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 3rem;
+  text-align: left;
+}
+
+.testimonial-card {
+  background: white;
+  border: 1px solid rgba(191, 179, 163, 0.35);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+}
+
+.testimonial-quote {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--warm-ink);
+  margin-bottom: 1.25rem;
+  font-style: italic;
+}
+
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.testimonial-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--clay);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.testimonial-name {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--warm-ink);
+}
+
+.testimonial-role {
+  font-size: 0.75rem;
+  color: var(--soft-stone);
+}
+
+/* ── Pricing Teaser ──────────────────────────────────────────────────────── */
+
+.pricing-teaser-section {
+  padding: 5.5rem 0;
+  background: var(--cream);
+  text-align: center;
+}
+
+.pricing-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin: 3rem 0 2rem;
+  text-align: left;
+}
+
+.pricing-card {
+  background: white;
+  border: 1px solid rgba(191, 179, 163, 0.35);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s var(--ease-clay);
+  box-shadow: var(--shadow-sm);
+}
+
+.pricing-card.featured {
+  border: 2px solid var(--clay);
+  background: linear-gradient(180deg, white 0%, rgba(201, 123, 90, 0.04) 100%);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+}
+
+.pricing-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--clay);
+}
+
+.pricing-card-tier {
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--terracotta);
+  margin-bottom: 0.5rem;
+}
+
+.pricing-card-price {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--warm-ink);
+  line-height: 1.1;
+  margin-bottom: 0.5rem;
+}
+
+.pricing-card-desc {
+  font-size: 0.875rem;
+  color: var(--soft-stone);
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.pricing-card-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem 0;
+  flex-grow: 1;
+}
+
+.pricing-card-features li {
+  font-size: 0.875rem;
+  color: var(--warm-ink);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pricing-card-features li span.check {
+  color: #8A9A7B;
+  font-weight: 800;
+}
+

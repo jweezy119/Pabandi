@@ -9,12 +9,12 @@ export class ApifyAdapter implements DataSourceAdapter {
     this.apiKey = process.env.APIFY_API_KEY || '';
   }
 
-  async fetchBusinesses(query: any): Promise<RawBusinessProfile[]> {
+  async fetchBusinesses(query: Record<string, unknown>): Promise<RawBusinessProfile[]> {
     if (!this.apiKey) {
       throw new Error('APIFY_API_KEY is not configured');
     }
 
-    const { country, state, category, limit = 50 } = query || {};
+    const { country, state, category, limit = 50 } = (query || {}) as Record<string, unknown>;
 
     try {
       // Call Apify actor for Freelancer.com scraper

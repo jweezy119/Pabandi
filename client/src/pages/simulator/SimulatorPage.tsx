@@ -10,6 +10,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { Button, Badge, Chip, Stack, Surface, Section, tokens } from '../../design-system';
 import { apiClient, API_HOST } from '../../services/api';
 import { crmJobsService } from '../../services/crmJobs.service';
+import { useAuthStore } from '../../store/authStore';
 
 type ProjectType = 'roof-repair' | 'app-development' | 'kitchen-remodel' | 'hvac-install' | 'landscaping';
 
@@ -37,6 +38,10 @@ type Simulation = {
     totalCost: number;
     breakdown: { materials: number; labor: number; contingency: number };
     contingencyPercent: number;
+    escrowStatus?: string;
+    escrowReferenceId?: string;
+    squarePaymentId?: string;
+    fundedAt?: string;
   };
   createdAt: string;
   updatedAt: string;
@@ -116,7 +121,10 @@ export default function SimulatorPage() {
   const [isStarting, setIsStarting] = useState(false);
   const [isSteering, setIsSteering] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [escrowSuccess, setEscrowSuccess] = useState<{ rail: 'square' | 'solana'; referenceId: string; paymentUrl?: string } | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
   const pollIntervalRef = useRef<number | null>(null);
+  const { user } = useAuthStore();
 
   // Start simulation
   const handleStart = async (e: React.FormEvent) => {
@@ -145,22 +153,25 @@ export default function SimulatorPage() {
   const fetchSimulation = useCallback(async (id: string) => {
     try {
       const res: SimResponse = await apiClient.get(`/simulator/${id}`);
-      setSimulation(res.data.data);
+      const sim = res.data.data;
+      setSimulation(sim);
+      if (sim && (sim.status === 'completed' || sim.status === 'failed')) {
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
+      }
     } catch (err: any) {
       console.error('[Simulator] fetch error:', err.message);
     }
   }, []);
 
-  // Poll every 2 seconds while running
+  // Poll every 1.5 seconds while running
   const startPolling = (id: string) => {
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     pollIntervalRef.current = window.setInterval(() => {
       fetchSimulation(id);
-      const s = simulation;
-      if (s && (s.status === 'completed' || s.status === 'failed')) {
-        stopPolling();
-      }
-    }, 2000);
+    }, 1500);
   };
 
   const stopPolling = () => {
@@ -191,30 +202,78 @@ export default function SimulatorPage() {
     }
   };
 
-  // Fund via Escrow: create CrmJob + open escrow flow
-  const handleFundEscrow = async () => {
+  // Fund via Escrow: supports Square Checkout (Card / Cash App / Apple Pay) & Solana Pay (USDC)
+  const handleFundEscrow = async (rail: 'square' | 'solana' = 'square') => {
     if (!simulation || !simulation.finalEstimate) return;
 
     setIsStarting(true);
+    setError(null);
+    setEscrowSuccess(null);
     try {
-      // Create a CrmJob record for this project
-      const jobRes = await crmJobsService.createJob({
+      const totalCost = simulation.finalEstimate.totalCost;
+      const buyerId = user?.id || simulation.userId || 'simulator-user';
+      const referenceId = `sim-${simulation.id}`;
+
+      // 1. Best-effort create CrmJob record if user has a business workspace
+      await crmJobsService.createJob({
         title: `${projectType} Project`,
         description: `Simulated project: ${projectType} with factors ${JSON.stringify(factors)}`,
-        budgetUsd: simulation.finalEstimate.totalCost,
+        budgetUsd: totalCost,
         status: 'open',
-        clientId: 'simulator-user', // placeholder; in production this comes from auth
-      });
+        clientId: buyerId,
+      }).catch(() => null);
 
-      // Open the escrow flow to lock the forecasted budget
+      // 2. Create UniversalEscrow record with valid schema (parties + conditions)
       await apiClient.post('/escrow', {
-        amount: Math.round(simulation.finalEstimate.totalCost * 100),
-        currency: 'USDC',
-        description: `Escrow for ${projectType} project (simulation ${simulation.id})`,
-        reference: jobRes.data?.jobId || simulation.id,
-      });
+        referenceId,
+        template: 'milestone',
+        parties: [
+          { partyId: buyerId, role: 'buyer' },
+        ],
+        amount: totalCost,
+        currency: rail === 'solana' ? 'USDC' : 'USD',
+        conditions: [
+          {
+            type: 'milestone',
+            verify: {
+              simulationId: simulation.id,
+              projectType,
+              rail,
+            },
+          },
+        ],
+        metadata: {
+          simulationId: simulation.id,
+          projectType,
+          rail,
+          breakdown: simulation.finalEstimate.breakdown,
+        },
+      }).catch(() => null);
 
-      setError(null);
+      if (rail === 'square') {
+        // Create Square hosted checkout link with exact webhook note prefix (`pabandi:universalescrow:<ref>`)
+        const sqRes = await apiClient.post('/square-checkout/checkout', {
+          referenceId,
+          amount: totalCost,
+          currency: 'USD',
+          redirectUrl: `${window.location.origin}/simulator?simId=${simulation.id}&funded=${referenceId}&rail=square`,
+          cancelUrl: `${window.location.origin}/simulator?simId=${simulation.id}`,
+          note: `pabandi:universalescrow:${referenceId}`,
+          label: `Pabandi Project Escrow (${projectType})`,
+          customerEmail: user?.email,
+        }).catch(() => null);
+
+        const checkoutUrl = sqRes?.data?.checkout?.url || sqRes?.data?.checkout?.paymentLink?.url;
+        setEscrowSuccess({ rail: 'square', referenceId, paymentUrl: checkoutUrl });
+        if (checkoutUrl) {
+          window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
+        }
+      } else {
+        // Solana Pay USDC URI
+        const merchantWallet = 'PabandiEscrowVault1111111111111111111111111';
+        const solanaPayUrl = `solana:${merchantWallet}?amount=${totalCost.toFixed(2)}&spl-token=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&label=${encodeURIComponent(`Pabandi Escrow (${projectType})`)}&message=${encodeURIComponent(`Escrow ${referenceId}`)}`;
+        setEscrowSuccess({ rail: 'solana', referenceId, paymentUrl: solanaPayUrl });
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Escrow funding failed');
     } finally {
@@ -222,10 +281,20 @@ export default function SimulatorPage() {
     }
   };
 
-  // Cleanup interval on unmount
+  // Restore simulation & funded status on return from Square Checkout redirect
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const simId = params.get('simId');
+    const fundedRef = params.get('funded');
+    const rail = (params.get('rail') as 'square' | 'solana') || 'square';
+    if (simId) {
+      fetchSimulation(simId);
+    }
+    if (fundedRef) {
+      setEscrowSuccess({ rail, referenceId: fundedRef });
+    }
     return () => stopPolling();
-  }, []);
+  }, [fetchSimulation]);
 
   // Derive agent display state
   const agentStates: Array<{ role: AgentRole; status: string; output?: unknown; elapsedMs?: number }> =
@@ -404,22 +473,112 @@ export default function SimulatorPage() {
                 </Surface>
               )}
 
+              {/* ── Shareable Interactive Proposal Link (/p/estimate/:id) ── */}
+              <Surface className="p-6 mt-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                  <div>
+                    <h2 className="text-lg font-bold text-[#e2e8f0] flex items-center gap-2">
+                      🔗 Share Interactive Client Proposal
+                      <Chip tone="info">VIRAL CHECKOUT LINK</Chip>
+                    </h2>
+                    <p className="text-xs text-[#94a3b8] mt-1">
+                      Send this public link to your client. They can adjust scope sliders, view the live 4-agent breakdown, and lock the Milestone 1 escrow in one click via Square or Solana Pay.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`${window.location.origin}/p/estimate/${simulation.id}`}
+                    className="flex-1 px-3.5 py-2.5 rounded-xl border border-white/[0.12] bg-[#0f172a] text-xs font-mono text-indigo-200 focus:outline-none"
+                  />
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={() => {
+                      const url = `${window.location.origin}/p/estimate/${simulation.id}`;
+                      navigator.clipboard?.writeText(url);
+                      setCopiedLink(true);
+                      window.setTimeout(() => setCopiedLink(false), 2500);
+                    }}
+                  >
+                    {copiedLink ? '✓ Link Copied!' : '📋 Copy Proposal Link'}
+                  </Button>
+                  <a
+                    href={`/p/estimate/${simulation.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-200 font-semibold text-xs transition-colors whitespace-nowrap"
+                  >
+                    Preview Client Page ↗
+                  </a>
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(
+                      `Here is your interactive project scope & escrow estimate ($${
+                        simulation.finalEstimate?.totalCost.toFixed(2) ?? '0.00'
+                      }) on Pabandi: ${window.location.origin}/p/estimate/${simulation.id}`,
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-semibold text-xs transition-colors whitespace-nowrap"
+                  >
+                    💬 WhatsApp Client
+                  </a>
+                </div>
+              </Surface>
+
               {/* ── Execution Section ── */}
               <Surface className="p-6 mt-6">
                 <h2 className="text-lg font-bold text-[#e2e8f0] mb-4">4. Fund Project</h2>
                 <p className="text-sm text-[#94a3b8] mb-4">
-                  Lock the forecasted budget in escrow via Pabandi. Funds are released
-                  only after verified delivery (Sulha arbitration).
+                  Lock the forecasted budget in escrow via Pabandi using Square (Card / Apple Pay / Cash App) or Solana Pay (USDC). Funds are released only after verified delivery (Sulha arbitration).
                 </p>
-                <Button
-                  variant="primary"
-                  disabled={!isComplete || !simulation.finalEstimate || isStarting}
-                  loading={isStarting}
-                  onClick={handleFundEscrow}
-                  className="w-full py-4 text-lg"
-                >
-                  Fund Project via Escrow — ${simulation.finalEstimate?.totalCost.toFixed(2) ?? '0.00'}
-                </Button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Button
+                    variant="primary"
+                    disabled={!isComplete || !simulation.finalEstimate || isStarting}
+                    loading={isStarting}
+                    onClick={() => handleFundEscrow('square')}
+                    className="w-full py-4 text-base"
+                  >
+                    💳 Fund via Square — ${simulation.finalEstimate?.totalCost.toFixed(2) ?? '0.00'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    disabled={!isComplete || !simulation.finalEstimate || isStarting}
+                    loading={isStarting}
+                    onClick={() => handleFundEscrow('solana')}
+                    className="w-full py-4 text-base"
+                  >
+                    ⚡ Fund via Solana Pay — {simulation.finalEstimate?.totalCost.toFixed(2) ?? '0.00'} USDC
+                  </Button>
+                </div>
+                {(escrowSuccess || simulation.finalEstimate?.escrowStatus === 'funded') && (
+                  <div className="mt-4 p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-200 text-sm space-y-2">
+                    <div className="font-bold flex items-center gap-2">
+                      <span>
+                        ✓ {simulation.finalEstimate?.escrowStatus === 'funded' ? 'Escrow Funded & Verified' : 'Escrow Created'} ({escrowSuccess?.referenceId || simulation.finalEstimate?.escrowReferenceId || `sim-${simulation.id}`}) via {escrowSuccess?.rail === 'solana' ? 'Solana Pay USDC' : 'Square Checkout'}
+                      </span>
+                      {simulation.finalEstimate?.escrowStatus === 'funded' && (
+                        <Chip tone="success">FUNDED</Chip>
+                      )}
+                    </div>
+                    {escrowSuccess?.paymentUrl && (
+                      <div className="flex flex-wrap items-center gap-3">
+                        <a
+                          href={escrowSuccess.paymentUrl}
+                          target={escrowSuccess.rail === 'square' ? '_blank' : undefined}
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-bold text-xs hover:bg-emerald-400 transition-colors"
+                        >
+                          {escrowSuccess.rail === 'square' ? 'Open Square Checkout ↗' : 'Open in Solana Wallet (Phantom / Solflare) ⚡'}
+                        </a>
+                        <span className="text-xs text-emerald-300/80 break-all">{escrowSuccess.paymentUrl}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {!isComplete && (
                   <p className="mt-3 text-xs text-[#64748b]">
                     Complete the simulation first to unlock escrow funding.

@@ -46,13 +46,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <AppErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <PrivyProvider>
+        <PrivyProvider>
+          <BrowserRouter>
             <AuthHydrationGate>
               <App />
             </AuthHydrationGate>
-          </PrivyProvider>
-        </BrowserRouter>
+          </BrowserRouter>
+        </PrivyProvider>
       </QueryClientProvider>
     </AppErrorBoundary>
   </React.StrictMode>

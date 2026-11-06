@@ -49,7 +49,7 @@ export async function writeAttestation({
         passportId,
         eventType,
         referenceId,
-        txSignature: '',
+        txSignature: `pending:${hash}`,
         hash,
         explorerUrl: '',
         status: 'pending',
@@ -58,7 +58,6 @@ export async function writeAttestation({
         buyerAgentId,
         sellerAgentId,
         dataHash,
-        ...metadata,
       },
     });
 
@@ -124,7 +123,7 @@ export async function writeAttestation({
         passportId,
         eventType,
         referenceId,
-        txSignature: '',
+        txSignature: `failed:${hash}`,
         hash,
         explorerUrl: '',
         status: 'failed',
