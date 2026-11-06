@@ -55,8 +55,8 @@ export default function BookingMapPage() {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Default center: Austin, TX
-  const defaultCenter = useMemo<[number, number]>(() => [30.2672, -97.7431], []);
+  // Default center: Chicago, IL (Loop / Michigan Ave)
+  const defaultCenter = useMemo<[number, number]>(() => [41.8781, -87.6298], []);
 
   useEffect(() => {
     let isMounted = true;
@@ -125,7 +125,7 @@ export default function BookingMapPage() {
               Interactive Discovery Map
             </h1>
             <p className="text-sm mt-1 leading-relaxed" style={{ color: 'var(--soft-stone)' }}>
-              Explore verified locations across Austin and surrounding areas. Every pinned merchant offers non-custodial smart escrow guarantees.
+              Explore verified locations across Chicago and surrounding neighborhoods. Every pinned merchant offers non-custodial smart escrow guarantees.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -219,8 +219,10 @@ export default function BookingMapPage() {
                 <RecenterMap lat={defaultCenter[0]} lng={defaultCenter[1]} />
 
                 {filteredPins.map((b) => {
-                  const isSalon = b.category === 'SALON';
-                  const markerColor = isSalon ? '#d97706' : '#c2410c';
+                  let markerColor = '#c2410c'; // RESTAURANT (terracotta)
+                  if (b.category === 'SALON') markerColor = '#d97706'; // amber
+                  else if (b.category === 'SPA') markerColor = '#059669'; // emerald
+                  else if (b.category === 'FITNESS_CENTER') markerColor = '#4f46e5'; // indigo
 
                   return (
                     <CircleMarker
@@ -250,7 +252,7 @@ export default function BookingMapPage() {
                             {b.name}
                           </h4>
                           <p className="text-[11px] text-slate-600 line-clamp-2">
-                            {b.address || `${b.city}, ${b.state || 'TX'}`}
+                            {b.address || `${b.city}, ${b.state || 'IL'}`}
                           </p>
                           <Link
                             to={`/book/${b.slug || b.id}`}
@@ -276,10 +278,10 @@ export default function BookingMapPage() {
                 }}
               >
                 <span>
-                  Showing {filteredPins.length} verified businesses in Texas · Real OSM Nodes
+                  Showing {filteredPins.length} verified businesses in Chicago · Real OSM Nodes
                 </span>
                 <span className="font-medium text-[var(--clay)]">
-                  ● Terracotta = Restaurants · ● Gold = Salons
+                  ● Terracotta = Food · ● Gold = Salons · ● Emerald = Spas · ● Indigo = Fitness
                 </span>
               </div>
             </div>

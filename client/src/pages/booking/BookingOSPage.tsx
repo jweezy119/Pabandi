@@ -447,6 +447,24 @@ export default function BookingOSPage() {
               </button>
             )}
           </div>
+          <div className="flex items-center gap-2 pt-2.5 flex-wrap text-xs">
+            <span className="text-[var(--soft-stone)]">Popular hubs:</span>
+            {['Chicago', 'Austin', 'Lahore', 'Karachi', 'Remote'].map((city) => (
+              <button
+                key={city}
+                type="button"
+                onClick={() => setLocationInput(locationInput === city ? '' : city)}
+                className="px-2.5 py-1 rounded-lg font-medium transition-all"
+                style={{
+                  background: locationInput.toLowerCase() === city.toLowerCase() ? 'var(--clay)' : 'rgba(191,179,163,0.2)',
+                  color: locationInput.toLowerCase() === city.toLowerCase() ? 'white' : 'var(--warm-ink)',
+                  border: '1px solid rgba(191,179,163,0.3)',
+                }}
+              >
+                📍 {city}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Halal Compliance Banner */}

@@ -49,9 +49,9 @@ function resolveCategory(cat: string): BusinessCategory {
   return BusinessCategory.RESTAURANT;
 }
 
-export async function seedOsmBusinesses(city = 'Austin', category = 'restaurant', limit = 20): Promise<number> {
+export async function seedOsmBusinesses(city = 'Chicago', category = 'restaurant', limit = 20): Promise<number> {
   const resolvedCategory = resolveCategory(category);
-  const queryTerm = `${category} in ${city} TX US`;
+  const queryTerm = `${category} in ${city} IL US`;
   console.log(`[seed-osm] Fetching OSM businesses: "${queryTerm}" (Category: ${resolvedCategory})...`);
 
   try {
@@ -76,11 +76,11 @@ export async function seedOsmBusinesses(city = 'Austin', category = 'restaurant'
       const addr = item.address || {};
       const name = item.name || item.display_name?.split(',')[0] || `${city} ${category}`;
       const itemCity = addr.city || addr.town || addr.village || city;
-      const state = addr.state || 'TX';
+      const state = addr.state || 'Illinois';
       const country = addr.country || 'United States';
-      const postalCode = addr.postcode || '78701';
-      const lat = parseFloat(item.lat) || 30.2672;
-      const lng = parseFloat(item.lon) || -97.7431;
+      const postalCode = addr.postcode || '60601';
+      const lat = parseFloat(item.lat) || 41.8781;
+      const lng = parseFloat(item.lon) || -87.6298;
 
       const cleanSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       const osmIdStr = String(item.osm_id);
@@ -148,7 +148,7 @@ export async function seedOsmBusinesses(city = 'Austin', category = 'restaurant'
 }
 
 async function main() {
-  const city = process.argv[2] || 'Austin';
+  const city = process.argv[2] || 'Chicago';
   const category = process.argv[3] || 'restaurant';
   await seedOsmBusinesses(city, category, 20);
 }
