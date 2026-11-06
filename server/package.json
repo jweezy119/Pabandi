@@ -47,7 +47,6 @@
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@noir-lang/noir_wasm": "^1.0.0-rc.3",
     "@prisma/client": "^5.22.0",
-    "@privy-io/server-auth": "^1.18.0",
     "@raydium-io/raydium-sdk-v2": "^0.2.71-alpha",
     "@shopify/shopify-api": "^13.1.0",
     "@solana/spl-token": "^0.4.15",

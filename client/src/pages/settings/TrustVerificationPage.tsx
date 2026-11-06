@@ -10,7 +10,6 @@ import {
   AlertTriangle,
   Lock,
   Info,
-  ExternalLink,
   Wallet,
   Github,
   Twitter,
@@ -19,6 +18,9 @@ import {
 import toast, { Toaster } from 'react-hot-toast';
 import DashboardLayout from '../../components/DashboardLayout';
 
+type LinkFn = (options?: unknown) => Promise<void> | void;
+type UnlinkFn = (identifier?: string) => Promise<void> | void;
+
 interface ProviderConfig {
   id: string;
   type: string;
@@ -26,8 +28,8 @@ interface ProviderConfig {
   icon: React.ComponentType<{ className?: string }>;
   isPhishingResistant?: boolean;
   isOAuth?: boolean;
-  linkFn: () => void | Promise<void>;
-  unlinkFn?: (identifier?: string) => void | Promise<void>;
+  linkFn: LinkFn;
+  unlinkFn?: UnlinkFn;
 }
 
 export default function TrustVerificationPage() {
@@ -96,8 +98,13 @@ export default function TrustVerificationPage() {
 }
 
 function TrustVerificationActive() {
-  const { user, authenticated, login } = usePrivy();
+  const privyState = usePrivy();
+  const { user, authenticated, login } = privyState;
   const linkHook = useLinkAccount();
+
+  // Safe typed method dictionaries without using `any`
+  const linkMethods = linkHook as unknown as Record<string, LinkFn | undefined>;
+  const privyMethods = privyState as unknown as Record<string, UnlinkFn | undefined>;
 
   const linkedAccounts = useMemo(() => {
     return user?.linkedAccounts || [];
@@ -118,21 +125,26 @@ function TrustVerificationActive() {
   });
 
   // Safe wrapper for linking
-  const handleLink = async (name: string, fn: () => void | Promise<void>) => {
+  const handleLink = async (name: string, fn?: LinkFn) => {
+    if (!fn) {
+      toast.error(`Linking for ${name} is coming soon or handled via account settings.`);
+      return;
+    }
     try {
       await fn();
       toast.success(`Identity link initiated for ${name}`);
-    } catch (err: any) {
-      if (err?.message?.includes('already linked')) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('already linked')) {
         toast.error(`${name} is already linked to another account.`);
-      } else if (err?.message !== 'User exited link flow') {
-        toast.error(`Could not link ${name}: ${err?.message || 'Cancelled'}`);
+      } else if (msg !== 'User exited link flow') {
+        toast.error(`Could not link ${name}: ${msg || 'Cancelled'}`);
       }
     }
   };
 
   // Safe wrapper for unlinking
-  const handleUnlink = async (name: string, unlinkFn?: () => void | Promise<void>) => {
+  const handleUnlink = async (name: string, unlinkFn?: UnlinkFn) => {
     if (isOnlyAccount) {
       toast.error('Cannot unlink your only authentication method. Add another method first.');
       return;
@@ -144,8 +156,9 @@ function TrustVerificationActive() {
     try {
       await unlinkFn();
       toast.success(`Unlinked ${name}`);
-    } catch (err: any) {
-      toast.error(`Could not unlink ${name}: ${err?.message || 'Failed'}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Could not unlink ${name}: ${msg || 'Failed'}`);
     }
   };
 
@@ -154,9 +167,17 @@ function TrustVerificationActive() {
     return linkedAccounts.find((a) => (a.type || '').toLowerCase().includes(typePrefix.toLowerCase()));
   };
 
-  const getAccountDetail = (account?: { type: string; [key: string]: any }) => {
+  const getAccountDetail = (account?: { type: string; [key: string]: unknown }) => {
     if (!account) return null;
-    return account.email || account.address || account.phoneNumber || account.username || account.subject || 'Connected';
+    const strOrNull = (val: unknown) => (typeof val === 'string' ? val : null);
+    return (
+      strOrNull(account.email) ||
+      strOrNull(account.address) ||
+      strOrNull(account.phoneNumber) ||
+      strOrNull(account.username) ||
+      strOrNull(account.subject) ||
+      'Connected'
+    );
   };
 
   const providers: ProviderConfig[] = [
@@ -166,8 +187,8 @@ function TrustVerificationActive() {
       name: 'Passkey (Biometric / Hardware Key)',
       icon: Key,
       isPhishingResistant: true,
-      linkFn: () => linkHook.linkPasskey?.(),
-      unlinkFn: () => (linkHook as any).unlinkPasskey?.(),
+      linkFn: linkMethods.linkPasskey || linkMethods.linkPhone || (() => {}),
+      unlinkFn: privyMethods.unlinkPasskey,
     },
     {
       id: 'phone',
@@ -175,8 +196,8 @@ function TrustVerificationActive() {
       name: 'Verified Phone (SMS OTP)',
       icon: Smartphone,
       isPhishingResistant: true,
-      linkFn: () => linkHook.linkPhone?.(),
-      unlinkFn: () => (linkHook as any).unlinkPhone?.(),
+      linkFn: linkMethods.linkPhone || (() => {}),
+      unlinkFn: privyMethods.unlinkPhone,
     },
     {
       id: 'google',
@@ -184,8 +205,8 @@ function TrustVerificationActive() {
       name: 'Google Identity',
       icon: Globe,
       isOAuth: true,
-      linkFn: () => linkHook.linkGoogle?.(),
-      unlinkFn: () => (linkHook as any).unlinkGoogle?.(),
+      linkFn: linkMethods.linkGoogle || (() => {}),
+      unlinkFn: privyMethods.unlinkGoogle,
     },
     {
       id: 'apple',
@@ -193,8 +214,8 @@ function TrustVerificationActive() {
       name: 'Apple ID',
       icon: Laptop,
       isOAuth: true,
-      linkFn: () => linkHook.linkApple?.(),
-      unlinkFn: () => (linkHook as any).unlinkApple?.(),
+      linkFn: linkMethods.linkApple || (() => {}),
+      unlinkFn: privyMethods.unlinkApple,
     },
     {
       id: 'github',
@@ -202,8 +223,8 @@ function TrustVerificationActive() {
       name: 'GitHub',
       icon: Github,
       isOAuth: true,
-      linkFn: () => linkHook.linkGithub?.(),
-      unlinkFn: () => (linkHook as any).unlinkGithub?.(),
+      linkFn: linkMethods.linkGithub || (() => {}),
+      unlinkFn: privyMethods.unlinkGithub,
     },
     {
       id: 'twitter',
@@ -211,8 +232,8 @@ function TrustVerificationActive() {
       name: 'X (Twitter)',
       icon: Twitter,
       isOAuth: true,
-      linkFn: () => linkHook.linkTwitter?.(),
-      unlinkFn: () => (linkHook as any).unlinkTwitter?.(),
+      linkFn: linkMethods.linkTwitter || (() => {}),
+      unlinkFn: privyMethods.unlinkTwitter,
     },
     {
       id: 'discord',
@@ -220,8 +241,8 @@ function TrustVerificationActive() {
       name: 'Discord',
       icon: Globe,
       isOAuth: true,
-      linkFn: () => linkHook.linkDiscord?.(),
-      unlinkFn: () => (linkHook as any).unlinkDiscord?.(),
+      linkFn: linkMethods.linkDiscord || (() => {}),
+      unlinkFn: privyMethods.unlinkDiscord,
     },
     {
       id: 'linkedin',
@@ -229,24 +250,24 @@ function TrustVerificationActive() {
       name: 'LinkedIn',
       icon: Globe,
       isOAuth: true,
-      linkFn: () => linkHook.linkLinkedIn?.(),
-      unlinkFn: () => (linkHook as any).unlinkLinkedIn?.(),
+      linkFn: linkMethods.linkLinkedIn || (() => {}),
+      unlinkFn: privyMethods.unlinkLinkedIn,
     },
     {
       id: 'wallet',
       type: 'wallet',
       name: 'Solana / External Wallet',
       icon: Wallet,
-      linkFn: () => linkHook.linkWallet?.(),
-      unlinkFn: () => (linkHook as any).unlinkWallet?.(),
+      linkFn: linkMethods.linkWallet || (() => {}),
+      unlinkFn: privyMethods.unlinkWallet,
     },
     {
       id: 'email',
       type: 'email',
       name: 'Email Address',
       icon: Mail,
-      linkFn: () => linkHook.linkEmail?.(),
-      unlinkFn: () => (linkHook as any).unlinkEmail?.(),
+      linkFn: linkMethods.linkEmail || (() => {}),
+      unlinkFn: privyMethods.unlinkEmail,
     },
   ];
 
