@@ -6,12 +6,12 @@ interface PrivyWalletConnectorProps {
   onDisconnect?: () => void
 }
 
-export function PrivyWalletConnector({ onConnect, onDisconnect }: PrivyWalletConnectorProps) {
-  const { login, logout, user, authenticated } = usePrivy()
-  const { wallet } = useEmbeddedSolanaWallet()
+export function PrivyWalletConnector(props: PrivyWalletConnectorProps) {
+  const appId = import.meta.env.VITE_PRIVY_APP_ID
+  const isConfigured = Boolean(appId && typeof appId === 'string' && appId.length === 25)
 
-  // If Privy is not configured, show a disabled connector
-  if (!import.meta.env.VITE_PRIVY_APP_ID) {
+  // If Privy is not configured, show a disabled connector without calling hooks
+  if (!isConfigured) {
     return (
       <div className="privy-wallet-connector">
         <button
@@ -25,14 +25,18 @@ export function PrivyWalletConnector({ onConnect, onDisconnect }: PrivyWalletCon
     )
   }
 
+  return <PrivyWalletConnectorActive {...props} />
+}
+
+function PrivyWalletConnectorActive({ onConnect, onDisconnect }: PrivyWalletConnectorProps) {
+  const { login, logout, user, authenticated } = usePrivy()
+  const { wallet } = useEmbeddedSolanaWallet()
+
   // Derive public key from Privy wallet
   const publicKey = wallet?.address ?? ''
 
   const handleConnect = async () => {
-    // login() triggers Privy modal — email or existing wallet
     await login()
-    // After login, Privy auto-creates embedded wallet if needed.
-    // The useEmbeddedSolanaWallet hook picks it up on next render.
     onConnect?.(publicKey)
   }
 

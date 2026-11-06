@@ -2,7 +2,13 @@ import React from 'react';
 import { PrivyProvider as PrivyReactProvider, type PrivyClientConfig } from '@privy-io/react-auth';
 
 export function PrivyProvider({ children }: { children: React.ReactNode }) {
-  const appId = import.meta.env.VITE_PRIVY_APP_ID || 'cm1pabandi_dev_app';
+  const appId = import.meta.env.VITE_PRIVY_APP_ID;
+
+  // Privy strictly enforces a 25-character app ID string.
+  // When no valid Privy App ID is configured, render children directly without throwing.
+  if (!appId || typeof appId !== 'string' || appId.length !== 25) {
+    return <>{children}</>;
+  }
 
   const config: PrivyClientConfig = {
     solana: {

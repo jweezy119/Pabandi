@@ -31,7 +31,8 @@ export interface PaymentResult {
 export async function payInvoice(invoiceId: string): Promise<PaymentResult> {
   try {
     // If Privy is not configured, wallet payments are unavailable
-    if (!import.meta.env.VITE_PRIVY_APP_ID) {
+    const appId = import.meta.env.VITE_PRIVY_APP_ID;
+    if (!appId || typeof appId !== 'string' || appId.length !== 25) {
       return { success: false, error: 'Wallet payments not configured.' };
     }
 
