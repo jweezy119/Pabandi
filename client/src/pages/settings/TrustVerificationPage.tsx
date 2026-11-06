@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { usePrivy, useLinkAccount } from '@privy-io/react-auth';
+import { usePrivy } from '@privy-io/react-auth';
 import {
   Shield,
   Key,
@@ -100,11 +100,9 @@ export default function TrustVerificationPage() {
 function TrustVerificationActive() {
   const privyState = usePrivy();
   const { user, authenticated, login } = privyState;
-  const linkHook = useLinkAccount();
 
-  // Safe typed method dictionaries without using `any`
-  const linkMethods = linkHook as unknown as Record<string, LinkFn | undefined>;
-  const privyMethods = privyState as unknown as Record<string, UnlinkFn | undefined>;
+  // In Privy React SDK, link & unlink methods are exposed on usePrivy
+  const privyMethods = privyState as unknown as Record<string, LinkFn | undefined>;
 
   const linkedAccounts = useMemo(() => {
     return user?.linkedAccounts || [];
@@ -187,7 +185,7 @@ function TrustVerificationActive() {
       name: 'Passkey (Biometric / Hardware Key)',
       icon: Key,
       isPhishingResistant: true,
-      linkFn: linkMethods.linkPasskey || linkMethods.linkPhone || (() => {}),
+      linkFn: privyMethods.linkPasskey || privyMethods.linkPhone || (() => {}),
       unlinkFn: privyMethods.unlinkPasskey,
     },
     {
@@ -196,7 +194,7 @@ function TrustVerificationActive() {
       name: 'Verified Phone (SMS OTP)',
       icon: Smartphone,
       isPhishingResistant: true,
-      linkFn: linkMethods.linkPhone || (() => {}),
+      linkFn: privyMethods.linkPhone || (() => {}),
       unlinkFn: privyMethods.unlinkPhone,
     },
     {
@@ -205,7 +203,7 @@ function TrustVerificationActive() {
       name: 'Google Identity',
       icon: Globe,
       isOAuth: true,
-      linkFn: linkMethods.linkGoogle || (() => {}),
+      linkFn: privyMethods.linkGoogle || (() => {}),
       unlinkFn: privyMethods.unlinkGoogle,
     },
     {
@@ -214,7 +212,7 @@ function TrustVerificationActive() {
       name: 'Apple ID',
       icon: Laptop,
       isOAuth: true,
-      linkFn: linkMethods.linkApple || (() => {}),
+      linkFn: privyMethods.linkApple || (() => {}),
       unlinkFn: privyMethods.unlinkApple,
     },
     {
@@ -223,7 +221,7 @@ function TrustVerificationActive() {
       name: 'GitHub',
       icon: Github,
       isOAuth: true,
-      linkFn: linkMethods.linkGithub || (() => {}),
+      linkFn: privyMethods.linkGithub || (() => {}),
       unlinkFn: privyMethods.unlinkGithub,
     },
     {
@@ -232,7 +230,7 @@ function TrustVerificationActive() {
       name: 'X (Twitter)',
       icon: Twitter,
       isOAuth: true,
-      linkFn: linkMethods.linkTwitter || (() => {}),
+      linkFn: privyMethods.linkTwitter || (() => {}),
       unlinkFn: privyMethods.unlinkTwitter,
     },
     {
@@ -241,7 +239,7 @@ function TrustVerificationActive() {
       name: 'Discord',
       icon: Globe,
       isOAuth: true,
-      linkFn: linkMethods.linkDiscord || (() => {}),
+      linkFn: privyMethods.linkDiscord || (() => {}),
       unlinkFn: privyMethods.unlinkDiscord,
     },
     {
@@ -250,7 +248,7 @@ function TrustVerificationActive() {
       name: 'LinkedIn',
       icon: Globe,
       isOAuth: true,
-      linkFn: linkMethods.linkLinkedIn || (() => {}),
+      linkFn: privyMethods.linkLinkedIn || (() => {}),
       unlinkFn: privyMethods.unlinkLinkedIn,
     },
     {
@@ -258,7 +256,7 @@ function TrustVerificationActive() {
       type: 'wallet',
       name: 'Solana / External Wallet',
       icon: Wallet,
-      linkFn: linkMethods.linkWallet || (() => {}),
+      linkFn: privyMethods.linkWallet || (() => {}),
       unlinkFn: privyMethods.unlinkWallet,
     },
     {
@@ -266,7 +264,7 @@ function TrustVerificationActive() {
       type: 'email',
       name: 'Email Address',
       icon: Mail,
-      linkFn: linkMethods.linkEmail || (() => {}),
+      linkFn: privyMethods.linkEmail || (() => {}),
       unlinkFn: privyMethods.unlinkEmail,
     },
   ];
