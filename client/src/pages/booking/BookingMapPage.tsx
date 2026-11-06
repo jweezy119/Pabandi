@@ -32,6 +32,9 @@ interface BusinessPin {
 
 const CATEGORIES = [
   { id: 'ALL', label: 'All Services', icon: 'apps' },
+  { id: 'ROOFING', label: 'Roofing & Solar', icon: 'roofing' },
+  { id: 'HVAC', label: 'HVAC & Climate', icon: 'mode_fan' },
+  { id: 'SECURITY', label: 'Security & Alarms', icon: 'shield' },
   { id: 'RESTAURANT', label: 'Restaurants', icon: 'restaurant' },
   { id: 'SALON', label: 'Salons', icon: 'content_cut' },
   { id: 'SPA', label: 'Spas & Wellness', icon: 'spa' },
@@ -220,7 +223,10 @@ export default function BookingMapPage() {
 
                 {filteredPins.map((b) => {
                   let markerColor = '#c2410c'; // RESTAURANT (terracotta)
-                  if (b.category === 'SALON') markerColor = '#d97706'; // amber
+                  if (b.category === 'ROOFING') markerColor = '#334155'; // slate
+                  else if (b.category === 'HVAC') markerColor = '#0284c7'; // sky blue
+                  else if (b.category === 'SECURITY') markerColor = '#7c3aed'; // violet
+                  else if (b.category === 'SALON') markerColor = '#d97706'; // amber
                   else if (b.category === 'SPA') markerColor = '#059669'; // emerald
                   else if (b.category === 'FITNESS_CENTER') markerColor = '#4f46e5'; // indigo
 
@@ -278,10 +284,10 @@ export default function BookingMapPage() {
                 }}
               >
                 <span>
-                  Showing {filteredPins.length} verified businesses in Chicago · Real OSM Nodes
+                  Showing {filteredPins.length} verified businesses in Chicago · Licensed City of Chicago & OSM
                 </span>
                 <span className="font-medium text-[var(--clay)]">
-                  ● Terracotta = Food · ● Gold = Salons · ● Emerald = Spas · ● Indigo = Fitness
+                  ● Slate = Roofers · ● Blue = HVAC · ● Purple = Security · ● Terracotta = Food · ● Gold = Salons · ● Emerald = Spas
                 </span>
               </div>
             </div>

@@ -53,6 +53,9 @@ interface CrmClientItem {
 
 const CATEGORIES = [
   { id: 'ALL', label: 'All Services', icon: 'apps' },
+  { id: 'ROOFING', label: 'Roofing & Solar', icon: 'roofing' },
+  { id: 'HVAC', label: 'HVAC & Climate', icon: 'mode_fan' },
+  { id: 'SECURITY', label: 'Security & Alarms', icon: 'shield' },
   { id: 'FREELANCE', label: 'Freelancers & Tech', icon: 'terminal' },
   { id: 'RESTAURANT', label: 'Restaurants', icon: 'restaurant' },
   { id: 'SALON', label: 'Salons', icon: 'content_cut' },
@@ -136,14 +139,21 @@ function BusinessCard({ business }: { business: BusinessListing }) {
 
             {/* Top Left: Authentic Open-Source Origin Badge */}
             <div className="absolute top-3 left-3 flex flex-wrap gap-1">
-              {business.source === 'github' ? (
+              {business.source === 'city_of_chicago' ? (
+                <span
+                  className="px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-sm flex items-center gap-1"
+                  style={{ background: 'rgba(30,58,138,0.92)', color: 'white' }}
+                >
+                  <span className="text-[13px]">🏛️</span> Chicago Licensed
+                </span>
+              ) : business.source === 'github' ? (
                 <span
                   className="px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-sm flex items-center gap-1"
                   style={{ background: 'rgba(28,25,23,0.88)', color: 'white' }}
                 >
                   <span className="text-[13px]">🐙</span> GitHub Dev
                 </span>
-              ) : business.source === 'openstreetmap' ? (
+              ) : business.source === 'openstreetmap' || business.source === 'osm' ? (
                 <span
                   className="px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-sm flex items-center gap-1"
                   style={{ background: 'rgba(15,118,110,0.92)', color: 'white' }}
@@ -160,7 +170,16 @@ function BusinessCard({ business }: { business: BusinessListing }) {
               )}
             </div>
 
-            {business.category === 'FREELANCE' && (
+            {business.requireDeposit ? (
+              <div className="absolute bottom-3 left-3">
+                <span
+                  className="px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider backdrop-blur-md shadow-sm flex items-center gap-1"
+                  style={{ background: 'rgba(28,25,23,0.88)', color: 'var(--cream)' }}
+                >
+                  <span>🔒</span> Milestone Escrow
+                </span>
+              </div>
+            ) : business.category === 'FREELANCE' ? (
               <div className="absolute bottom-3 left-3">
                 <span
                   className="px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider backdrop-blur-md shadow-sm"
@@ -169,7 +188,7 @@ function BusinessCard({ business }: { business: BusinessListing }) {
                   Freelance Specialist
                 </span>
               </div>
-            )}
+            ) : null}
           </div>
 
           <div className="px-1">
