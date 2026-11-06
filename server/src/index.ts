@@ -436,6 +436,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/best-fit`, './routes/bestFit.routes'],
   [`/api/${v}/web3`, './routes/web3.routes'],
   [`/api/${v}/public/stats`, './routes/publicStats.routes'],
+  [`/api/${v}/privy`, './routes/privy.routes'],
   [`/api/${v}/public-stats`, './routes/publicStats.routes'],
   [`/api/${v}/public`, './routes/api-public.routes'],
   [`/api/${v}/api-subscription`, './routes/api-subscription.routes'],
@@ -622,6 +623,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/realestate`, './routes/realestate.routes'],
   [`/api/${v}/pabandi`, './routes/pabandiTools.routes'],
   [`/api/${v}/public/stats`, './routes/publicStats.routes'],
+  [`/api/${v}/privy`, './routes/privy.routes'],
   // agentDiscovery.routes declares absolute /.well-known/* paths, so it mounts at root
   ['/', './routes/agentDiscovery.routes'],
 ];

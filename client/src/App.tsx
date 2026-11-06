@@ -28,6 +28,7 @@ const LedgerExpenseNewPage = lazy(() => import('./pages/ledger/LedgerExpenseNewP
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const GuaranteePage = lazy(() => import('./pages/GuaranteePage'));
 const TrustVerifyPage = lazy(() => import('./pages/TrustVerifyPage'));
+const TrustVerificationPage = lazy(() => import('./pages/settings/TrustVerificationPage'));
 const AuthPage = lazy(() => import('./pages/AuthPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
 const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'));
@@ -362,6 +363,9 @@ function AnimatedAppRoutes() {
           <Route path="me/rewards" element={<PersonalGuard><PersonalRewardsPage /></PersonalGuard>} />
           <Route path="me/profile" element={<PersonalGuard><ProfileEditorPage /></PersonalGuard>} />
           <Route path="me/verification" element={<PersonalGuard><BusinessVerificationPage /></PersonalGuard>} />
+          <Route path="me/trust" element={<PersonalGuard><TrustVerificationPage /></PersonalGuard>} />
+          <Route path="settings/trust" element={<TrustVerificationPage />} />
+          <Route path="settings/verification" element={<TrustVerificationPage />} />
           <Route path="me/quick-post" element={<PersonalGuard><QuickPostPage /></PersonalGuard>} />
           <Route path="me/values" element={<PersonalGuard><ValuesPreferencesPage /></PersonalGuard>} />
           <Route path="me/agent" element={<PersonalGuard><AgentDashboardPage /></PersonalGuard>} />
