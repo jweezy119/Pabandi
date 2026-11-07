@@ -10,6 +10,14 @@ import {
 } from '../services/privyTrustSync.service';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { rateLimiter } from '../middleware/rateLimiter';
+import {
+  getAttestationKeyBundle,
+  PUBLISHED_SCORING_MODEL_HASH,
+  PUBLISHED_SCORING_MODEL_ID,
+  SignedTrustAttestation,
+  verifySignedTrustAttestation,
+} from '../services/signedAttestation.service';
+import { verifySdJwtPresentation } from '../services/sdJwtCredential.service';
 
 const router = Router();
 
@@ -172,7 +180,7 @@ router.post('/webhooks', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/v1/privy/trust-band
+ * GET /api/v1/privy/trust-band-rules
  * Get current trust band rules & scoring configuration
  */
 router.get('/trust-band-rules', (_req: Request, res: Response) => {
@@ -184,6 +192,55 @@ router.get('/trust-band-rules', (_req: Request, res: Response) => {
       bandC: { label: 'Band C (Standard Deposit)', minLinks: 1, requirement: 'At least 1 verified link beyond email' },
       bandD: { label: 'Band D (High Deposit)', minLinks: 0, requirement: 'Email-only or unlinked account' },
     },
+  });
+});
+
+/**
+ * GET /api/v1/privy/attestation-key
+ * Publishes Pabandi's Ed25519 verification key and scoring model digest
+ * for third-party / auditor verification of signed trust attestations and SD-JWTs.
+ */
+router.get('/attestation-key', (_req: Request, res: Response) => {
+  const keyBundle = getAttestationKeyBundle();
+  res.json({
+    success: true,
+    keyId: keyBundle.keyId,
+    algorithm: 'Ed25519',
+    publicKeyPem: keyBundle.publicKeyPem,
+    modelId: PUBLISHED_SCORING_MODEL_ID,
+    modelHash: PUBLISHED_SCORING_MODEL_HASH,
+  });
+});
+
+/**
+ * POST /api/v1/privy/verify-attestation
+ * Verifies an Ed25519 SignedTrustAttestation tuple (Tier 2 lightweight attestation).
+ */
+router.post('/verify-attestation', rateLimiter, (req: Request, res: Response) => {
+  const attestation = req.body?.attestation as SignedTrustAttestation | undefined;
+  if (!attestation) {
+    return res.status(400).json({ error: 'attestation object is required' });
+  }
+  const verification = verifySignedTrustAttestation(attestation);
+  return res.status(verification.valid ? 200 : 400).json({
+    success: verification.valid,
+    ...verification,
+  });
+});
+
+/**
+ * POST /api/v1/privy/verify-sd-jwt
+ * Verifies a W3C VC + SD-JWT presentation (`<jwt>~<d1>~<d2>~`) and returns the verified disclosed claims.
+ */
+router.post('/verify-sd-jwt', rateLimiter, (req: Request, res: Response) => {
+  const presentation = typeof req.body?.presentation === 'string' ? req.body.presentation.trim() : '';
+  if (!presentation) {
+    return res.status(400).json({ error: 'presentation string is required' });
+  }
+  const verification = verifySdJwtPresentation(presentation);
+  return res.status(verification.valid ? 200 : 400).json({
+    success: verification.valid,
+    ...verification,
   });
 });
 

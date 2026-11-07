@@ -1,7 +1,26 @@
-# Pabandi Trust, Verification & Privacy Architecture (v2.1 — Engineering Implementation Contract)
+# Pabandi Trust, Verification & Privacy Architecture (v2.1 — Series B Blueprint & Year-0 Extraction)
 ## Implementation Specification: Three-Tier Attestation, Cryptographic Verification, and Governance
 
-> **Document Status:** Engineering Implementation Contract (v2.1). Incorporates final pre-implementation corrections: split holder/verifier BBS+ latency benchmarks, degree-bound SRS sizing, domain-separated commitment hashes (Poseidon for circuit-bound vs. BLAKE3 for off-chain audit), AWS Nitro operational requirements, Solana Groth16 compute-unit budgeting with public-input compression, UX policy overlay derivation, HPKE auditor key lifecycle, value-scaled optimistic bonds, and Heckman sample-size gates.
+> **Document Status & Sequencing Mandate:**  
+> *"We have a complete three-tier cryptographic architecture designed and deferred until transaction volume justifies it. In Year-0 we ship Ed25519 signed attestations, SD-JWT selective-disclosure credentials, and our ML governance framework—delivering 90% of the counterparty trust value at 5% of the engineering cost while we focus on Privy identity linking, Shopify distribution, and our first 100+ escrow bookings."*
+
+---
+
+## 0. Stage-Gate Sequencing: Year-0 Active Stack vs. Series B Cryptographic Deferral
+
+### 0.1 Shipped Today (Year-0 Active Production Stack)
+These three components are extracted and live in the production backend today (`server/src/services/`):
+1. **ML Governance & Actionable Counterfactuals ([`trustGovernance.service.ts`](file:///C:/Users/Jawad/.gemini/antigravity/scratch/Pabandi/server/src/services/trustGovernance.service.ts)):** Bayesian cold-start prior grounded in verified Privy links, actionable counterfactual recourse generator (*"To advance from Band C to Band B: link 1 OAuth provider..."*), 14-day shadow-mode drift evaluation, and Chicago/Lahore regional FPR parity checks.
+2. **Lightweight Ed25519 Signed Attestations ([`signedAttestation.service.ts`](file:///C:/Users/Jawad/.gemini/antigravity/scratch/Pabandi/server/src/services/signedAttestation.service.ts)):** Signs `(ModelHash || InputFeatureHash || PredictedScore || TrustBand || SHAPVectorHash || Nonce || Timestamp)` with an Ed25519 key (`node:crypto`) and publishes the public verification key (`/api/v1/privy/attestation-key`).
+3. **Selective Disclosure Credentials via W3C VC + SD-JWT ([`sdJwtCredential.service.ts`](file:///C:/Users/Jawad/.gemini/antigravity/scratch/Pabandi/server/src/services/sdJwtCredential.service.ts)):** Issues and verifies IETF SD-JWT credentials with SHA-256 salted disclosures so principals can prove `trust_band == 'A'` or `zero_deposit_eligible == true` without exposing raw PII or exact link counts.
+
+### 0.2 Deferred to Series B (Unlock Gates for BBS+, Nitro Enclaves, and Groth16)
+The heavy cryptographic layers specified in Sections 1–4 below (BLS12-381 BBS+ pairing proofs, AWS Nitro `AF_VSOCK` enclaves, threshold HPKE auditor DKG, and Tier 3 Solana Groth16 settlement circuits) are **explicitly deferred** until **all five** of the following stage-gates are met:
+1. **Volume Gate:** Pabandi processes **>\$10M/month** in escrowed GMV (making fraud loss and dispute arbitration costs economically material).
+2. **Counterparty Gate:** At least one paying enterprise or institutional partner contractually requires cryptographic proof of inference rather than signed Ed25519 audit logs.
+3. **Empirical Lift Gate:** Trained GBDT models outperform the heuristic/Bayesian baseline on real held-out booking outcomes with statistical significance ($N_{\text{completed}} \ge 2,000, \; N_{\text{rejected}} \ge 500$).
+4. **Regulatory Gate:** Escrow money-transmission / licensing structure is formally cleared across active corridors.
+5. **Specialist Gate:** Dedicated cryptographic engineering capacity is on staff or under audit contract.
 
 ---
 

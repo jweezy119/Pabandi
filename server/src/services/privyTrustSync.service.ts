@@ -8,6 +8,18 @@ import {
   PrivyUserPayload,
   TrustBandEvaluation,
 } from './privyTrustScoring';
+import {
+  computeBayesianColdStartScore,
+  CounterfactualRecourse,
+  generateCounterfactualRecourse,
+} from './trustGovernance.service';
+import {
+  createSignedTrustAttestation,
+  SignedTrustAttestation,
+} from './signedAttestation.service';
+import {
+  issueSdJwtTrustCredential,
+} from './sdJwtCredential.service';
 
 /**
  * Pull-based Privy trust-band sync.
@@ -39,11 +51,19 @@ export interface TrustBandSyncResult {
   privyUserId: string;
   band: TrustBandEvaluation['band'];
   score: number;
+  bayesianScore?: number;
   reason: string;
   totalLinks: number;
   hasPhishingResistant: boolean;
   hasOAuth: boolean;
   verificationTier: string;
+  counterfactual?: CounterfactualRecourse;
+  attestation?: SignedTrustAttestation;
+  sdJwt?: {
+    minimalPresentation: string;
+    sdJwtFull: string;
+    expiresAt: string;
+  };
 }
 
 let cachedClient: { key: string; client: PrivyClient } | null = null;
@@ -286,15 +306,35 @@ export async function syncPrivyIdentityForUser({
   const evaluation = evaluatePrivyTrustBand(rawUser);
   await applyTrustBandEvaluation({ userId, privyUserId, evaluation, source: 'pull-sync' });
 
+  const { bayesianScore, attribution } = computeBayesianColdStartScore({ evaluation });
+  const counterfactual = generateCounterfactualRecourse(evaluation);
+  const attestation = createSignedTrustAttestation({
+    subjectId: userId,
+    evaluation,
+    attribution,
+  });
+  const sdCredential = issueSdJwtTrustCredential({
+    subjectId: userId,
+    evaluation,
+  });
+
   return {
     userId,
     privyUserId,
     band: evaluation.band,
     score: evaluation.score,
+    bayesianScore,
     reason: evaluation.reason,
     totalLinks: evaluation.totalLinks,
     hasPhishingResistant: evaluation.hasPhishingResistant,
     hasOAuth: evaluation.hasOAuth,
     verificationTier: `BAND_${evaluation.band}`,
+    counterfactual,
+    attestation,
+    sdJwt: {
+      minimalPresentation: sdCredential.minimalPresentation,
+      sdJwtFull: sdCredential.sdJwtFull,
+      expiresAt: sdCredential.expiresAt,
+    },
   };
 }
