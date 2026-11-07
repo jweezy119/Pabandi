@@ -347,6 +347,11 @@ export const getBusiness = async (
         googleReviews: business.googleReviews,
         latitude: business.latitude,
         longitude: business.longitude,
+        slug: business.slug,
+        requireDeposit: business.requireDeposit,
+        depositPercentage: business.depositPercentage,
+        depositAmount: business.depositAmount,
+        services: business.services,
       };
 
       return ok(res, { business: publicBusiness });
