@@ -22,6 +22,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import DashboardLayout from '../../components/DashboardLayout';
 import { privyTrustService } from '../../services/api';
 import { getAuthToken } from '../../utils/authToken';
+import { EmbeddedCheckoutModal, type DepositPrompt } from '../../components/EmbeddedCheckoutModal';
 
 type LinkFn = (options?: unknown) => Promise<void> | void;
 type UnlinkFn = (identifier?: string) => Promise<void> | void;
@@ -206,6 +207,8 @@ function TrustVerificationActive() {
   const [expiresInHours, setExpiresInHours] = useState<number>(24);
   const [provisioningWallet, setProvisioningWallet] = useState(false);
   const [provisionedWallet, setProvisionedWallet] = useState<Record<string, unknown> | null>(null);
+  const [mcpTopupPrompt, setMcpTopupPrompt] = useState<DepositPrompt | null>(null);
+  const [mcpTopupAmount, setMcpTopupAmount] = useState<number>(25);
   const autoSyncStarted = useRef(false);
 
   const runSync = useCallback(
@@ -926,6 +929,42 @@ function TrustVerificationActive() {
               {copiedMcpConfig ? 'Copied' : 'Copy Config'}
             </button>
           </div>
+
+          {/* Self-Serve MCP Prepaid Balance Top-Up */}
+          <div className="pt-2 border-t border-[rgba(191,179,163,0.3)] flex flex-wrap items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold text-[var(--soft-stone)]">
+              Top Up x402 MCP Prepaid Credit:
+            </span>
+            <div className="flex items-center gap-1.5">
+              {[10, 25, 50].map((amt) => (
+                <button
+                  key={amt}
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      setMcpTopupAmount(amt);
+                      const res = await privyTrustService.quoteMcpTopup(amt, mcpAgentKey?.apiKey);
+                      const quote = res.data?.data;
+                      if (!quote?.checkoutUrl) throw new Error('Could not generate top-up quote');
+                      setMcpTopupPrompt({
+                        title: `Top Up $${amt} USDC MCP Prepaid Credit`,
+                        checkoutUrl: quote.checkoutUrl,
+                        description: quote.description,
+                        amount: amt,
+                        currency: 'USDC',
+                        referenceId: quote.referenceId,
+                      });
+                    } catch (err: unknown) {
+                      toast.error(err instanceof Error ? err.message : 'Could not quote MCP top-up');
+                    }
+                  }}
+                  className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--warm-ink)] text-[var(--cream)] hover:opacity-90 transition-opacity"
+                >
+                  +${amt} USDC
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Panel 2: Phase 3 Privy TEE Policy-Enforced Agent Wallet */}
@@ -1126,6 +1165,31 @@ function TrustVerificationActive() {
           </p>
         )}
       </div>
+
+      <EmbeddedCheckoutModal
+        prompt={mcpTopupPrompt}
+        onClose={() => setMcpTopupPrompt(null)}
+        onFunded={async (txHash, fromWallet) => {
+          const currentPrompt = mcpTopupPrompt;
+          setMcpTopupPrompt(null);
+          try {
+            const res = await privyTrustService.confirmMcpTopup({
+              amountUsdc: mcpTopupAmount,
+              txHash: txHash || `topup_${Date.now().toString(36)}`,
+              apiKey: mcpAgentKey?.apiKey,
+              fromWallet,
+              referenceId: currentPrompt?.referenceId,
+            });
+            const newBal = res.data?.data?.newBalanceUsdc;
+            if (mcpAgentKey && typeof newBal === 'number') {
+              setMcpAgentKey({ ...mcpAgentKey, starterCreditUsdc: newBal });
+            }
+            toast.success(`Credited $${mcpTopupAmount} USDC to MCP prepaid balance!`);
+          } catch (err: unknown) {
+            toast.error(err instanceof Error ? err.message : 'Mint an MCP Agent Key first to credit your balance.');
+          }
+        }}
+      />
     </div>
   );
 }

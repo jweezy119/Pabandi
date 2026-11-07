@@ -17,11 +17,13 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 vi.mock('../src/utils/database', () => ({
   prisma: {
-    business: { findUnique: vi.fn() },
+    business: { findUnique: vi.fn(), findFirst: vi.fn() },
     merchantSubscription: { findUnique: vi.fn(), create: vi.fn(), upsert: vi.fn(), update: vi.fn() },
     invoice: { create: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn(), update: vi.fn(), count: vi.fn() },
     crmServiceBusiness: { findUnique: vi.fn() },
     crmClient: { findFirst: vi.fn(), create: vi.fn() },
+    apiClient: { findFirst: vi.fn() },
+    mcpPrepaidBalance: { upsert: vi.fn() },
   },
 }));
 
@@ -315,5 +317,51 @@ describe('POST /api/v1/billing/subscribe', () => {
     expect(status).toBe(400);
     expect(body.success).toBe(false);
     expect(body.error).toContain('Already subscribed');
+  });
+});
+
+describe('POST /api/v1/billing/checkout & self-serve monetization endpoints', () => {
+  it('returns a real Solana USDC checkout URI without fake placeholder URLs', async () => {
+    const { status, body } = await call('post', '/api/v1/billing/checkout', {
+      tier: 'pro',
+      paymentMethod: 'solana',
+    });
+
+    expect(status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(body.checkoutUrl).toMatch(/^solana:/);
+    expect(body.checkoutUrl).not.toContain('placeholder');
+    expect(body.data.amount).toBe(49);
+  });
+
+  it('quotes a self-serve MCP prepaid USDC top-up', async () => {
+    const { status, body } = await call('post', '/api/v1/billing/mcp-topup/quote', {
+      amountUsdc: 25,
+    });
+
+    expect(status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(body.data.amountUsdc).toBe(25);
+    expect(body.data.estimatedToolCalls).toBe(25000);
+    expect(body.data.checkoutUrl).toMatch(/^solana:/);
+  });
+
+  it('quotes a $9 Counterparty Litigation & Trust Dossier', async () => {
+    vi.mocked((prisma.business as any).findFirst).mockResolvedValueOnce({
+      id: 'matthews-roofing-chicago',
+      name: 'Matthews Roofing Company',
+      city: 'Chicago',
+      category: 'ROOFING',
+      trustScore: 95,
+    } as never);
+
+    const { status, body } = await call('post', '/api/v1/billing/trust-dossier/quote', {
+      businessId: 'matthews-roofing-chicago',
+    });
+
+    expect(status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(body.data.amount).toBe(9);
+    expect(body.data.checkoutUrl).toMatch(/^solana:/);
   });
 });

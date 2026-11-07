@@ -1865,9 +1865,13 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
         const defaultVault =
           process.env.PLATFORM_WALLET_ADDRESS || 'GsbwXfJraMomNxBcjYLcG3mxkBUiyWXAB32fGbSQQRre';
         const depositAmount = quote.amount ?? 0;
+        const platformFeeRate = 0.02;
+        const platformFeeUsdc = depositAmount > 0 ? Math.round(depositAmount * platformFeeRate * 100) / 100 : 0;
+        const totalPayableUsdc = Math.round((depositAmount + platformFeeUsdc) * 100) / 100;
+        const resolvedServiceName = String(args.serviceName || 'Contractor Escrow Milestone');
         const checkoutUrl =
           depositAmount > 0
-            ? `solana:${defaultVault}?amount=${depositAmount.toFixed(2)}&spl-token=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&reference=${encodeURIComponent(
+            ? `solana:${defaultVault}?amount=${totalPayableUsdc.toFixed(2)}&spl-token=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&reference=${encodeURIComponent(
                 receiptId
               )}&label=${encodeURIComponent(business.name)}`
             : null;
@@ -1884,7 +1888,7 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
             address: business.address,
           },
           booking: {
-            serviceName: args.serviceName || 'Contractor Escrow Milestone',
+            serviceName: resolvedServiceName,
             serviceValueUsdc: serviceValue,
             date,
             time,
@@ -1899,11 +1903,14 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
             required: depositAmount > 0,
             amountUsdc: depositAmount,
             baseDepositUsdc: Number(baseDeposit.toFixed(2)),
+            platformFeeRate,
+            platformFeeUsdc,
+            totalPayableUsdc,
             currency: 'USDC',
             trustBand: verifiedBand,
             explanation: quote.explanation,
             checkoutUrl,
-            webBookingUrl: `https://pabandi.com/book/${business.id}`,
+            webBookingUrl: `https://pabandi.com/book/${business.id}?amount=${encodeURIComponent(String(serviceValue))}&service=${encodeURIComponent(resolvedServiceName)}`,
           },
         };
       }

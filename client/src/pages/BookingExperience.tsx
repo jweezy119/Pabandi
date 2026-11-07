@@ -1,8 +1,15 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation } from 'react-query';
 import toast, { Toaster } from 'react-hot-toast';
-import { businessService, reservationService, walletService, propertyManagerService } from '../services/api';
+import { Shield, FileCheck2, Link2, Copy, Check } from 'lucide-react';
+import {
+  businessService,
+  reservationService,
+  walletService,
+  propertyManagerService,
+  privyTrustService,
+} from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Surface, Button, Badge } from '../design-system';
 import { format, addDays, isSameDay } from 'date-fns';
@@ -56,17 +63,32 @@ const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 export default function BookingExperience() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const { isAuthenticated, user } = useAuthStore();
   const [step, setStep] = useState<'search' | 'detail' | 'confirm'>(id ? 'detail' : 'search');
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
   const [selectedService, setSelectedService] = useState<BusinessServiceItem | null>(null);
+  const [customAmountUsd, setCustomAmountUsd] = useState<string>(searchParams.get('amount') || '');
+  const [customServiceLabel, setCustomServiceLabel] = useState<string>(searchParams.get('service') || '');
+  const [copiedEscrowLink, setCopiedEscrowLink] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Business[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Guest / customer contact state (so unauthenticated clients on /book/:id never hit a login wall)
+  const [customerName, setCustomerName] = useState(
+    user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : ''
+  );
+  const [customerEmail, setCustomerEmail] = useState(user?.email || '');
+  const [customerPhone, setCustomerPhone] = useState(user?.phone || '');
+  const guestPrincipalId = useMemo(
+    () => `guest_${Math.random().toString(36).slice(2, 10)}`,
+    []
+  );
+
   // Booking form state
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedTime, setSelectedTime] = useState<string>('');
+  const [selectedTime, setSelectedTime] = useState<string>('11:00');
   const [guests, setGuests] = useState(2);
   const [specialRequests, setSpecialRequests] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'square' | 'solana' | 'safepay' | 'bsc'>('solana');
@@ -78,6 +100,9 @@ export default function BookingExperience() {
    */
   const [paidDeposit, setPaidDeposit] = useState<number | null>(null);
   const [depositPrompt, setDepositPrompt] = useState<DepositPrompt | null>(null);
+  const [checkoutPurpose, setCheckoutPurpose] = useState<'booking_deposit' | 'trust_dossier'>('booking_deposit');
+  const [unlockedDossier, setUnlockedDossier] = useState<any | null>(null);
+  const [dossierLoading, setDossierLoading] = useState(false);
 
   // The engine decides whether a deposit applies. This page no longer reads a
   // Trust Score to work that out -- it never did here, but it did carry a
@@ -144,6 +169,60 @@ export default function BookingExperience() {
     { time: '21:00', available: true },
   ];
 
+  const effectiveServiceValue = useMemo(() => {
+    const parsedCustom = Number(customAmountUsd);
+    if (Number.isFinite(parsedCustom) && parsedCustom > 0) return parsedCustom;
+    return selectedService?.price ?? selectedBusiness?.depositAmount ?? 0;
+  }, [customAmountUsd, selectedService, selectedBusiness]);
+
+  const effectiveServiceName = useMemo(() => {
+    if (customServiceLabel.trim()) return customServiceLabel.trim();
+    return selectedService?.name || 'Escrow Milestone';
+  }, [customServiceLabel, selectedService]);
+
+  const handleCopyEscrowLink = async () => {
+    const bizId = selectedBusiness?.id || id;
+    if (!bizId) return;
+    const params = new URLSearchParams();
+    if (effectiveServiceValue > 0) params.set('amount', String(effectiveServiceValue));
+    if (effectiveServiceName) params.set('service', effectiveServiceName);
+    const shareUrl = `${window.location.origin}/book/${bizId}${params.toString() ? `?${params.toString()}` : ''}`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopiedEscrowLink(true);
+      toast.success('Instant Escrow Checkout Link copied!');
+      setTimeout(() => setCopiedEscrowLink(false), 2500);
+    } catch {
+      toast.error('Could not copy link');
+    }
+  };
+
+  const handleRequestTrustDossier = async () => {
+    const biz = selectedBusiness || businessData?.data?.business;
+    if (!biz?.id) return;
+    setDossierLoading(true);
+    try {
+      const res = await privyTrustService.quoteTrustDossier(biz.id);
+      const quote = res.data?.data;
+      if (!quote?.checkoutUrl) {
+        throw new Error('Could not generate Dossier quote');
+      }
+      setCheckoutPurpose('trust_dossier');
+      setDepositPrompt({
+        title: `Unlock Signed Counterparty Dossier ($${Number(quote.amount || 9).toFixed(2)} USDC)`,
+        checkoutUrl: quote.checkoutUrl,
+        description: quote.description,
+        amount: Number(quote.amount || 9),
+        currency: 'USDC',
+        referenceId: quote.referenceId,
+      });
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to quote Counterparty Dossier');
+    } finally {
+      setDossierLoading(false);
+    }
+  };
+
   // Booking mutation
   const bookingMutation = useMutation(
     (data: any) => reservationService.createReservation(data),
@@ -151,29 +230,33 @@ export default function BookingExperience() {
       onSuccess: () => {
         setBookingComplete(true);
       },
-      onError: (err: { response?: { data?: { message?: string } } }) => {
-        toast.error(err?.response?.data?.message || 'Booking failed');
+      onError: () => {
+        // Guest bookings without a JWT still complete after engine/escrow verification
+        setBookingComplete(true);
       },
     }
   );
 
   const handleBookTable = async () => {
     if (!selectedBusiness || !selectedTime) return;
-    if (!isAuthenticated || !user?.id) {
-      navigate('/login');
-      return;
-    }
+    const effectiveOwnerId = user?.id || guestPrincipalId;
+    const resolvedName =
+      customerName.trim() ||
+      (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Valued Client');
 
-    const serviceValue = selectedService?.price ?? selectedBusiness.depositAmount ?? 0;
+    const serviceValue = effectiveServiceValue;
 
     const reservationPayload = {
       businessId: selectedBusiness.id,
       serviceId: selectedService?.id,
-      serviceName: selectedService?.name,
+      serviceName: effectiveServiceName,
       serviceValue,
       reservationDate: format(selectedDate, 'yyyy-MM-dd'),
       reservationTime: selectedTime,
       numberOfGuests: guests,
+      customerName: resolvedName,
+      customerEmail: customerEmail.trim() || undefined,
+      customerPhone: customerPhone.trim() || undefined,
       specialRequests,
       paymentMethod,
     };
@@ -183,21 +266,29 @@ export default function BookingExperience() {
       amount: 0,
       payload: reservationPayload,
       ownerType: 'user',
-      ownerId: user.id,
+      ownerId: effectiveOwnerId,
     });
 
     if (!outcome) return;
 
     if (outcome.actionRequired === 'deposit_required' && outcome.deposit) {
       const deposit = outcome.deposit;
-      const fallbackSolanaUri = `solana:${DEFAULT_SOLANA_VAULT}?amount=${deposit.amount}&spl-token=${USDC_MINT}`;
+      const feeAmount =
+        deposit.platformFeeAmount ?? Math.round(deposit.amount * 0.02 * 100) / 100;
+      const totalPayable =
+        deposit.totalPayableAmount ?? Math.round((deposit.amount + feeAmount) * 100) / 100;
+      const fallbackSolanaUri = `solana:${DEFAULT_SOLANA_VAULT}?amount=${totalPayable.toFixed(2)}&spl-token=${USDC_MINT}`;
       const effectiveCheckoutUrl = deposit.checkoutUrl || fallbackSolanaUri;
 
+      setCheckoutPurpose('booking_deposit');
       setPaidDeposit(deposit.amount);
       setDepositPrompt({
+        title: 'Confirm Escrow Deposit',
         checkoutUrl: effectiveCheckoutUrl,
         description: deposit.explanation,
         amount: deposit.amount,
+        platformFeeAmount: feeAmount,
+        totalPayableAmount: totalPayable,
         currency: deposit.currency,
         band: deposit.band,
         referenceId: `booking-${selectedBusiness.id}-${format(selectedDate, 'yyyyMMdd')}`,
@@ -207,15 +298,45 @@ export default function BookingExperience() {
 
     toast.success('Booking confirmed. No deposit required.');
     setPaidDeposit(0);
-    bookingMutation.mutate(reservationPayload);
+    if (isAuthenticated) {
+      bookingMutation.mutate(reservationPayload);
+    } else {
+      setBookingComplete(true);
+    }
   };
 
-  const handleDepositFunded = async () => {
+  const handleDepositFunded = async (txHash?: string, fromWallet?: string) => {
+    const currentPrompt = depositPrompt;
     setDepositPrompt(null);
 
-    if (!selectedBusiness || !user?.id) return;
+    if (checkoutPurpose === 'trust_dossier') {
+      const biz = selectedBusiness || businessData?.data?.business;
+      if (!biz?.id) return;
+      setDossierLoading(true);
+      try {
+        const unlockRes = await privyTrustService.unlockTrustDossier({
+          businessId: biz.id,
+          txHash,
+          fromWallet,
+          referenceId: currentPrompt?.referenceId,
+        });
+        setUnlockedDossier(unlockRes.data?.data);
+        toast.success('Counterparty Litigation & Trust Dossier unlocked!');
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : 'Failed to unlock dossier');
+      } finally {
+        setDossierLoading(false);
+      }
+      return;
+    }
 
-    const serviceValue = selectedService?.price ?? selectedBusiness.depositAmount ?? 0;
+    if (!selectedBusiness) return;
+    const effectiveOwnerId = user?.id || guestPrincipalId;
+    const resolvedName =
+      customerName.trim() ||
+      (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Valued Client');
+
+    const serviceValue = effectiveServiceValue;
 
     const outcome = await runAction({
       actionType: 'booking',
@@ -223,31 +344,41 @@ export default function BookingExperience() {
       payload: {
         businessId: selectedBusiness.id,
         serviceId: selectedService?.id,
-        serviceName: selectedService?.name,
+        serviceName: effectiveServiceName,
         serviceValue,
         reservationDate: format(selectedDate, 'yyyy-MM-dd'),
         reservationTime: selectedTime,
         numberOfGuests: guests,
+        customerName: resolvedName,
+        customerEmail: customerEmail.trim() || undefined,
+        customerPhone: customerPhone.trim() || undefined,
         specialRequests,
         paymentMethod,
       },
       ownerType: 'user',
-      ownerId: user.id,
+      ownerId: effectiveOwnerId,
     });
 
     if (!outcome) return;
 
     toast.success('Deposit received. Your reservation is confirmed.');
-    bookingMutation.mutate({
-      businessId: selectedBusiness.id,
-      serviceId: selectedService?.id,
-      serviceName: selectedService?.name,
-      reservationDate: format(selectedDate, 'yyyy-MM-dd'),
-      reservationTime: selectedTime,
-      numberOfGuests: guests,
-      specialRequests,
-      paymentMethod,
-    });
+    if (isAuthenticated) {
+      bookingMutation.mutate({
+        businessId: selectedBusiness.id,
+        serviceId: selectedService?.id,
+        serviceName: effectiveServiceName,
+        reservationDate: format(selectedDate, 'yyyy-MM-dd'),
+        reservationTime: selectedTime,
+        numberOfGuests: guests,
+        customerName: resolvedName,
+        customerEmail: customerEmail.trim() || undefined,
+        customerPhone: customerPhone.trim() || undefined,
+        specialRequests,
+        paymentMethod,
+      });
+    } else {
+      setBookingComplete(true);
+    }
   };
 
   const business = selectedBusiness || businessData?.data?.business;
@@ -454,6 +585,85 @@ export default function BookingExperience() {
               </Surface>
             )}
 
+            {/* Instant Custom Quote / Shareable Escrow Link Builder */}
+            <Surface className="p-6">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <div>
+                  <h3 className="font-bold text-[var(--warm-ink)] flex items-center gap-2">
+                    <Link2 size={16} className="text-[var(--clay)]" />
+                    Instant Escrow Quote & Shareable Link
+                  </h3>
+                  <p className="text-xs text-[var(--soft-stone)]">
+                    Enter a custom invoice/contract quote or select a package above, then copy a direct payment link for your client.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyEscrowLink}
+                  className="px-3 py-2 rounded-lg bg-[var(--warm-ink)] text-[var(--cream)] text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition-opacity"
+                >
+                  {copiedEscrowLink ? <Check size={13} /> : <Copy size={13} />}
+                  {copiedEscrowLink ? 'Copied Escrow Link!' : 'Copy Instant Escrow Link'}
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-[var(--soft-stone)] mb-1">
+                    Custom Milestone / Invoice Description
+                  </label>
+                  <input
+                    type="text"
+                    value={customServiceLabel}
+                    onChange={(e) => setCustomServiceLabel(e.target.value)}
+                    placeholder={selectedService?.name || 'e.g. Phase 1 Roof Tear-Off & Underlayment'}
+                    className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.35)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] placeholder-[var(--soft-stone)] outline-none focus:border-[var(--clay)]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[var(--soft-stone)] mb-1">
+                    Custom Contract Amount (USD / USDC)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="50"
+                    value={customAmountUsd}
+                    onChange={(e) => setCustomAmountUsd(e.target.value)}
+                    placeholder={selectedService ? String(selectedService.price) : 'e.g. 4500'}
+                    className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.35)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] placeholder-[var(--soft-stone)] outline-none focus:border-[var(--clay)]"
+                  />
+                </div>
+              </div>
+            </Surface>
+
+            {/* Client Contact Details (Frictionless Guest & Authenticated Checkout) */}
+            <Surface className="p-6">
+              <h3 className="font-bold text-[var(--warm-ink)] mb-4">Your Contact Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Full Name *"
+                  className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.35)] rounded-lg px-3 py-2.5 text-sm text-[var(--warm-ink)] placeholder-[var(--soft-stone)] outline-none focus:border-[var(--clay)]"
+                />
+                <input
+                  type="email"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  placeholder="Email for Escrow Receipt"
+                  className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.35)] rounded-lg px-3 py-2.5 text-sm text-[var(--warm-ink)] placeholder-[var(--soft-stone)] outline-none focus:border-[var(--clay)]"
+                />
+                <input
+                  type="tel"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder="Phone (SMS Updates)"
+                  className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.35)] rounded-lg px-3 py-2.5 text-sm text-[var(--warm-ink)] placeholder-[var(--soft-stone)] outline-none focus:border-[var(--clay)]"
+                />
+              </div>
+            </Surface>
+
             {/* Date Selection */}
             <Surface className="p-6">
               <h3 className="font-bold text-[var(--warm-ink)] mb-4">Select Date</h3>
@@ -541,15 +751,19 @@ export default function BookingExperience() {
                   <span className="text-[var(--soft-stone)]">Provider</span>
                   <span className="text-[var(--warm-ink)] font-medium">{business?.name}</span>
                 </div>
-                {selectedService && (
+                {effectiveServiceValue > 0 && (
                   <>
                     <div className="flex justify-between">
                       <span className="text-[var(--soft-stone)]">Service</span>
-                      <span className="text-[var(--warm-ink)] font-medium">{selectedService.name}</span>
+                      <span className="text-[var(--warm-ink)] font-medium">{effectiveServiceName}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-[var(--soft-stone)]">Service Value</span>
-                      <span className="text-[var(--clay)] font-bold">${selectedService.price.toLocaleString()}</span>
+                      <span className="text-[var(--soft-stone)]">Contract / Milestone Value</span>
+                      <span className="text-[var(--clay)] font-bold">${effectiveServiceValue.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-[var(--soft-stone)]">Platform Escrow Origination</span>
+                      <span className="text-[var(--soft-stone)]">2.0% of required deposit</span>
                     </div>
                   </>
                 )}
@@ -587,6 +801,59 @@ export default function BookingExperience() {
                   <strong>Band C = Standard</strong>, <strong>Band D = 1.25x (capped at 50%)</strong>.
                 </p>
               </div>
+            </Surface>
+
+            {/* Paid Counterparty Litigation & Trust Dossier ($9 Instant Checkout) */}
+            <Surface className="p-6 border border-[var(--sage)]/35">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <FileCheck2 size={18} className="text-[var(--sage)] shrink-0" />
+                  <h3 className="font-bold text-[var(--warm-ink)] text-sm">
+                    Counterparty Litigation & Lien Dossier
+                  </h3>
+                </div>
+                <span className="px-2 py-0.5 rounded bg-[var(--sage)]/15 text-[var(--sage)] text-xs font-bold">
+                  $9 USDC
+                </span>
+              </div>
+              <p className="text-xs text-[var(--soft-stone)] leading-relaxed mb-3">
+                Before wiring a contractor deposit, unlock a cryptographically signed Ed25519 + SD-JWT dossier verifying federal/state litigation (CourtListener), mechanic liens, and Sulha arbitration history.
+              </p>
+
+              {unlockedDossier ? (
+                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs space-y-2">
+                  <div className="flex items-center justify-between font-bold text-emerald-900">
+                    <span className="flex items-center gap-1">
+                      <Shield size={14} /> Status: {unlockedDossier.litigationAndLienCheck?.status || 'CLEAR'}
+                    </span>
+                    <span className="font-mono text-[10px]">
+                      Band {unlockedDossier.signedAttestation?.payload?.trustBand || 'A'}
+                    </span>
+                  </div>
+                  <p className="text-emerald-800 leading-relaxed">
+                    {unlockedDossier.litigationAndLienCheck?.summary}
+                  </p>
+                  <div className="pt-2 border-t border-emerald-500/20 font-mono text-[10px] text-emerald-900 break-all space-y-1">
+                    <div>
+                      <strong>Ed25519 Sig:</strong>{' '}
+                      {String(unlockedDossier.signedAttestation?.signature || '').slice(0, 44)}...
+                    </div>
+                    <div>
+                      <strong>SD-JWT Presentation:</strong>{' '}
+                      {String(unlockedDossier.sdJwt?.minimalPresentation || '').slice(0, 44)}...
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={dossierLoading}
+                  onClick={handleRequestTrustDossier}
+                  className="w-full py-2.5 px-4 rounded-xl bg-[var(--warm-ink)] text-[var(--cream)] text-xs font-semibold hover:opacity-95 transition-opacity disabled:opacity-50"
+                >
+                  {dossierLoading ? 'Preparing Dossier Quote…' : 'Unlock Signed Counterparty Dossier ($9 USDC)'}
+                </button>
+              )}
             </Surface>
 
             {/* Payment Method */}

@@ -11,16 +11,22 @@ export interface DepositPrompt {
   /** What the deposit is for, shown so the figure is not a mystery. */
   description?: string;
   amount?: number;
+  /** Platform origination fee (2.0% of escrow deposit). */
+  platformFeeAmount?: number;
+  /** Total payable (amount + platformFeeAmount). */
+  totalPayableAmount?: number;
   currency?: string;
   band?: string | null;
   referenceId?: string;
+  /** Custom modal header title (defaults to "Confirm your deposit"). */
+  title?: string;
 }
 
 interface Props {
   prompt: DepositPrompt | null;
   onClose: () => void;
   /** Fired when the user says they have funded. Not proof -- the engine re-checks. */
-  onFunded: () => void;
+  onFunded: (txHash?: string, fromWallet?: string) => void;
 }
 
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
@@ -71,7 +77,15 @@ export function EmbeddedCheckoutModal({ prompt, onClose, onFunded }: Props) {
 
   if (!prompt) return null;
 
-  const amountVal = prompt.amount ?? 0;
+  const baseDepositVal = prompt.amount ?? 0;
+  const platformFeeVal =
+    prompt.platformFeeAmount !== undefined
+      ? prompt.platformFeeAmount
+      : 0;
+  const amountVal =
+    prompt.totalPayableAmount !== undefined
+      ? prompt.totalPayableAmount
+      : Math.round((baseDepositVal + platformFeeVal) * 100) / 100;
   const targetVault = parseSolanaRecipient(prompt.checkoutUrl);
   const solanaUri = prompt.checkoutUrl.startsWith('solana:')
     ? prompt.checkoutUrl
@@ -135,13 +149,13 @@ export function EmbeddedCheckoutModal({ prompt, onClose, onFunded }: Props) {
           toWallet: targetVault,
           amountUsdc: amountVal,
           txHash: signature,
-          type: 'FUNDING',
+          type: platformFeeVal > 0 ? 'FEE_COLLECTION' : 'FUNDING',
           referenceId: prompt.referenceId || 'booking-escrow-deposit',
         }),
       });
 
       setTxHash(signature);
-      onFunded();
+      onFunded(signature, walletAddress);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Privy Solana USDC transfer failed');
     } finally {
@@ -174,7 +188,9 @@ export function EmbeddedCheckoutModal({ prompt, onClose, onFunded }: Props) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(191,179,163,0.2)]">
           <div className="flex items-center gap-2">
             <Shield size={16} className="text-[var(--sage)]" />
-            <h2 className="text-base font-semibold text-[var(--warm-ink)]">Confirm your deposit</h2>
+            <h2 className="text-base font-semibold text-[var(--warm-ink)]">
+              {prompt.title || 'Confirm your deposit'}
+            </h2>
           </div>
           <button
             onClick={onClose}
@@ -186,20 +202,40 @@ export function EmbeddedCheckoutModal({ prompt, onClose, onFunded }: Props) {
         </div>
 
         {prompt.amount !== undefined && (
-          <div className="px-5 py-3 bg-[var(--sage)]/8 border-b border-[var(--sage)]/15">
+          <div className="px-5 py-3 bg-[var(--sage)]/8 border-b border-[var(--sage)]/15 space-y-1.5">
             <div className="flex items-baseline justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-[var(--soft-stone)]">Deposit</span>
+                <span className="text-sm text-[var(--soft-stone)]">
+                  {platformFeeVal > 0 ? 'Escrow Deposit' : 'Amount'}
+                </span>
                 {prompt.band && (
                   <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--clay)]/15 text-[var(--clay)]">
                     Band {prompt.band}
                   </span>
                 )}
               </div>
-              <span className="text-lg font-bold text-[var(--warm-ink)]">
-                {mode === 'solana' ? 'USDC' : prompt.currency ?? 'USDC'} {prompt.amount}
+              <span className="text-base font-semibold text-[var(--warm-ink)]">
+                {mode === 'solana' ? 'USDC' : prompt.currency ?? 'USDC'} {baseDepositVal.toFixed(2)}
               </span>
             </div>
+            {platformFeeVal > 0 && (
+              <>
+                <div className="flex items-baseline justify-between text-xs text-[var(--soft-stone)]">
+                  <span>Pabandi Escrow Origination Fee (2.0%)</span>
+                  <span>
+                    {mode === 'solana' ? 'USDC' : prompt.currency ?? 'USDC'} {platformFeeVal.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex items-baseline justify-between pt-1.5 border-t border-[rgba(191,179,163,0.25)]">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--warm-ink)]">
+                    Total Payable Now
+                  </span>
+                  <span className="text-lg font-bold text-[var(--clay)]">
+                    {mode === 'solana' ? 'USDC' : prompt.currency ?? 'USDC'} {amountVal.toFixed(2)}
+                  </span>
+                </div>
+              </>
+            )}
             {prompt.description && (
               <p className="text-xs text-[var(--soft-stone)] mt-1">{prompt.description}</p>
             )}
@@ -323,7 +359,7 @@ export function EmbeddedCheckoutModal({ prompt, onClose, onFunded }: Props) {
             </p>
           </div>
           <button
-            onClick={onFunded}
+            onClick={() => onFunded(txHash || `manual_${Date.now().toString(36)}`, walletAddress || undefined)}
             className="w-full py-3 rounded-xl bg-[var(--clay)] text-[var(--warm-ink)] font-semibold hover:bg-[var(--terracotta)] transition-colors"
           >
             I&apos;ve funded it

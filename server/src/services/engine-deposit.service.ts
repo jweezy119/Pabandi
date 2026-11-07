@@ -29,6 +29,8 @@ import {
 } from './deposit-policy.rules';
 import { paymentRails } from '../payments/rails';
 
+export const PLATFORM_ESCROW_ORIGINATION_FEE_RATE = 0.02;
+
 export interface DepositRequirement {
   /** What the customer is asked to fund, in `currency`. */
   amount: number;
@@ -47,6 +49,12 @@ export interface DepositRequirement {
    * rather than silently booking past it.
    */
   checkoutUrl: string | null;
+  /** Platform escrow origination fee rate (2.0%). */
+  platformFeeRate?: number;
+  /** Platform escrow origination fee in `currency`. */
+  platformFeeAmount?: number;
+  /** Deposit + platform origination fee in `currency`. */
+  totalPayableAmount?: number;
 }
 
 export type DepositOutcome =
@@ -135,6 +143,9 @@ export async function evaluateBookingDeposit(params: {
     reference: `engine-deposit-${params.businessId}-${trust.score > 0 ? trust.score : 'unknown'}`,
   });
 
+  const platformFeeAmount = Math.round(quote.amount * PLATFORM_ESCROW_ORIGINATION_FEE_RATE * 100) / 100;
+  const totalPayableAmount = Math.round((quote.amount + platformFeeAmount) * 100) / 100;
+
   return {
     required: true,
     deposit: {
@@ -144,6 +155,9 @@ export async function evaluateBookingDeposit(params: {
       score: trust.score,
       explanation: quote.explanation,
       checkoutUrl,
+      platformFeeRate: PLATFORM_ESCROW_ORIGINATION_FEE_RATE,
+      platformFeeAmount,
+      totalPayableAmount,
     },
     waived: null,
   };

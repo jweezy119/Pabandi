@@ -257,6 +257,12 @@ export interface DepositRequirement {
    * collects it directly and the UI must say so rather than link anywhere.
    */
   checkoutUrl: string | null;
+  /** Platform escrow origination fee rate (2.0%). */
+  platformFeeRate?: number;
+  /** Platform escrow origination fee in currency. */
+  platformFeeAmount?: number;
+  /** Deposit + platform origination fee in currency. */
+  totalPayableAmount?: number;
 }
 
 export interface EngineActionResult {
@@ -1502,6 +1508,23 @@ export const privyTrustService = {
     expiresInHours: number;
   }) => apiClient.post('/privy/agent-wallets/provision', data),
   generateMcpAgentKey: () => apiClient.post('/agents/generate-key', {}),
+  quoteMcpTopup: (amountUsdc: number, apiKey?: string) =>
+    apiClient.post('/billing/mcp-topup/quote', { amountUsdc, apiKey }),
+  confirmMcpTopup: (data: {
+    amountUsdc: number;
+    txHash: string;
+    apiKey?: string;
+    fromWallet?: string;
+    referenceId?: string;
+  }) => apiClient.post('/billing/mcp-topup/confirm', data),
+  quoteTrustDossier: (businessId: string) =>
+    apiClient.post('/billing/trust-dossier/quote', { businessId }),
+  unlockTrustDossier: (data: {
+    businessId: string;
+    txHash?: string;
+    fromWallet?: string;
+    referenceId?: string;
+  }) => apiClient.post('/billing/trust-dossier/unlock', data),
   testMcpToolCall: (toolName: string, args: Record<string, unknown>, apiKey?: string) => {
     const mcpUrl = `${API_BASE_URL.replace(/\/api\/v1\/?$/, '')}/mcp`;
     return axios.post(
