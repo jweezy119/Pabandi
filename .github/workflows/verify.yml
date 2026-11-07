@@ -79,7 +79,7 @@ jobs:
 
       - name: Install server dependencies
         working-directory: server
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Generate Prisma client
         working-directory: server
@@ -159,7 +159,7 @@ jobs:
 
       - name: Install server dependencies
         working-directory: server
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Install client dependencies
         working-directory: client
