@@ -1111,10 +1111,20 @@ export async function seedChicagoHighTicketContractors(): Promise<{
   businessesUpserted: number;
   servicesUpserted: number;
   paymentMethodsUpserted: number;
+  errors: string[];
 }> {
   let businessesUpserted = 0;
   let servicesUpserted = 0;
   let paymentMethodsUpserted = 0;
+  const errors: string[] = [];
+
+  for (const val of ['ROOFING', 'HVAC', 'SECURITY', 'CONTRACTOR']) {
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TYPE "BusinessCategory" ADD VALUE IF NOT EXISTS '${val}'`);
+    } catch {
+      // ignore if enum value already exists
+    }
+  }
 
   for (const c of CHICAGO_HIGH_TICKET_CONTRACTORS) {
     try {
@@ -1194,13 +1204,13 @@ export async function seedChicagoHighTicketContractors(): Promise<{
         }
       }
     } catch (err: unknown) {
-      logger.warn(
-        `[Seed] Chicago contractor seed failed for ${c.slug}: ${err instanceof Error ? err.message : String(err)}`
-      );
+      const msg = `${c.slug}: ${err instanceof Error ? err.message : String(err)}`;
+      errors.push(msg);
+      logger.warn(`[Seed] Chicago contractor seed failed for ${msg}`);
     }
   }
 
-  return { businessesUpserted, servicesUpserted, paymentMethodsUpserted };
+  return { businessesUpserted, servicesUpserted, paymentMethodsUpserted, errors };
 }
 
 router.post('/chicago-high-ticket', async (_req: Request, res: Response) => {

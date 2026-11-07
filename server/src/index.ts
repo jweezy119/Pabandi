@@ -1119,15 +1119,15 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
         logger.info(`Geo businesses already present (${geoCount}); skipping auto-seed`);
       }
 
-      const chicagoHighTicketCount = await prisma.business.count({
-        where: { city: 'Chicago', category: { in: ['ROOFING', 'HVAC', 'SECURITY'] } },
-      });
-      if (chicagoHighTicketCount < 9) {
-        logger.info('Seeding Chicago high-ticket contractors (Roofing, HVAC, Security)...');
+      try {
         const { seedChicagoHighTicketContractors } = await import('./routes/seed.routes');
         const contractorResult = await seedChicagoHighTicketContractors();
         logger.info(
-          `✅ Auto-seeded ${contractorResult.contractorsUpserted} Chicago high-ticket contractors (${contractorResult.servicesSeeded} services)`
+          `✅ Auto-seeded ${contractorResult.businessesUpserted} Chicago high-ticket contractors (${contractorResult.servicesUpserted} services)`
+        );
+      } catch (contractorErr: unknown) {
+        logger.warn(
+          `[Auto-seed] Chicago high-ticket contractors skipped: ${contractorErr instanceof Error ? contractorErr.message : String(contractorErr)}`
         );
       }
     } catch (e: any) {
