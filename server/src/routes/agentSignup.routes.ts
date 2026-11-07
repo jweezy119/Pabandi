@@ -7,6 +7,8 @@ import { validateBody } from '../middleware/validateZod';
 import { agentRegistrationSchema } from '../schemas/agentic.schemas';
 import type { AgentRegistration } from '../schemas/agentic.schemas';
 import { authenticate } from '../middleware/auth.middleware';
+import { grantStarterMcpCredit } from '../services/mcpMeter.service';
+import { AGENT_API_BASE, AGENT_MCP_URL } from '../mcp/agentEndpoint';
 
 const router = Router();
 
@@ -90,6 +92,7 @@ router.post('/register', writeLimiter, validateBody(agentRegistrationSchema), as
     // trust score and no wallet, so every gated call (passport issue, escrow,
     // metered MCP tools) would fail with "not found" on a fresh signup.
     const owner = await provisionAgentPrincipal(ownerEmail, name, agentHandle);
+    const starterCreditUsdc = await grantStarterMcpCredit(apiKeyHash, 0.25);
 
     // Register onchain identity (optional, gasless for agent)
     try {
@@ -104,53 +107,54 @@ router.post('/register', writeLimiter, validateBody(agentRegistrationSchema), as
       logger.warn('[AgentSignup] Onchain registration skipped:', e);
     }
 
+    const mcpConfig = {
+      mcpServers: {
+        pabandi: {
+          url: AGENT_MCP_URL,
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+        },
+      },
+    };
+
     const setupChecklist = [
       {
         step: 1,
         title: 'Verify your identity (PTP)',
         note: 'Metered: debits $PAB from your agent wallet (fail-closed if unfunded). Idempotent via idempotencyKey.',
-        curl: `curl -X POST https://pabandi.com/api/v1/agent-passport/issue \\
+        curl: `curl -X POST ${AGENT_API_BASE}/api/v1/agent-passport/issue \\
   -H "Authorization: Bearer ${apiKey}" \\
   -H "Content-Type: application/json" \\
   -d '{"agentId": "${agent.id}", "capabilities": ${JSON.stringify(capabilities || [])}, "idempotencyKey": "${agentHandle}-first-passport"}'`,
       },
       {
         step: 2,
-        title: 'Set your webhook URL',
-        note: 'businessId is required unless your API key is already bound to a business.',
-        curl: `curl -X POST https://pabandi.com/api/v1/webhooks \\
+        title: 'Search Chicago High-Ticket Contractors via MCP',
+        note: 'Free discovery call over Streamable HTTP MCP.',
+        curl: `curl -X POST ${AGENT_MCP_URL} \\
   -H "Authorization: Bearer ${apiKey}" \\
   -H "Content-Type: application/json" \\
-  -d '{"businessId": "YOUR_BUSINESS_ID", "url": "https://your-agent.com/webhook", "events": ["booking.created", "booking.confirmed"]}'`,
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"pabandi_search_services","arguments":{"city":"Chicago","category":"ROOFING"}}}'`,
       },
       {
         step: 3,
         title: 'Test a trust lookup',
-        curl: `curl https://pabandi.com/api/v1/trust/resolve/user@example.com \\
+        curl: `curl ${AGENT_API_BASE}/api/v1/trust/resolve/user@example.com \\
   -H "Authorization: Bearer ${apiKey}"`,
       },
       {
         step: 4,
         title: 'Create your first booking',
-        curl: `curl -X POST https://pabandi.com/api/v1/fluid-booking/book \\
+        curl: `curl -X POST ${AGENT_API_BASE}/api/v1/fluid-booking/book \\
   -H "Authorization: Bearer ${apiKey}" \\
   -H "Content-Type: application/json" \\
-  -d '{"businessId": "YOUR_BUSINESS_ID", "date": "2026-10-15", "time": "10:00", "customerName": "Test User", "customerEmail": "test@example.com"}'`,
+  -d '{"businessId": "matthews-roofing-chicago", "date": "2026-11-15", "time": "10:00", "customerName": "Test User", "customerEmail": "test@example.com"}'`,
       },
       {
         step: 5,
-        title: 'Connect via MCP',
-        code: `// Add to your MCP client config
-{
-  "mcpServers": {
-    "pabandi": {
-      "url": "https://pabandi.com/mcp",
-      "headers": {
-        "Authorization": "Bearer ${apiKey}"
-      }
-    }
-  }
-}`,
+        title: 'Connect via MCP (Claude Desktop / Cursor / Windsurf)',
+        code: JSON.stringify(mcpConfig, null, 2),
       },
     ];
 
@@ -164,9 +168,11 @@ router.post('/register', writeLimiter, validateBody(agentRegistrationSchema), as
         ownerUserId: owner.userId,
         ownerAccountCreated: owner.created,
         pabGranted: AGENT_SIGNUP_PAB_GRANT,
+        starterCreditUsdc,
+        mcpConfig,
         setupChecklist,
-        mcpEndpoint: 'https://pabandi.com/mcp',
-        trustApiEndpoint: 'https://pabandi.com/api/v1/trust/resolve/{identifier}',
+        mcpEndpoint: AGENT_MCP_URL,
+        trustApiEndpoint: `${AGENT_API_BASE}/api/v1/trust/resolve/{identifier}`,
         documentation: 'https://pabandi.com/llms.txt',
       },
     });
@@ -194,11 +200,24 @@ router.post('/generate-key', authenticate, async (req: Request, res: Response) =
         name: `M2M Agent Key - ${(req as any).user?.email || userId}`,
         email: (req as any).user?.email || `agent-${userId}@pabandi.local`,
         apiKey: apiKey,
+        apiKeyHash,
         tier: 'STARTER',
         callsLimit: 10000,
         isActive: true,
       },
     });
+
+    const starterCreditUsdc = await grantStarterMcpCredit(apiKeyHash, 0.25);
+    const mcpConfig = {
+      mcpServers: {
+        pabandi: {
+          url: AGENT_MCP_URL,
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+        },
+      },
+    };
 
     return res.json({
       success: true,
@@ -207,6 +226,9 @@ router.post('/generate-key', authenticate, async (req: Request, res: Response) =
         id: client.id,
         name: client.name,
         createdAt: client.createdAt,
+        starterCreditUsdc,
+        mcpEndpoint: AGENT_MCP_URL,
+        mcpConfig,
       },
     });
   } catch (error: unknown) {

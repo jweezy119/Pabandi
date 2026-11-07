@@ -191,6 +191,21 @@ function TrustVerificationActive() {
   const [sdJwtVerifiedClaims, setSdJwtVerifiedClaims] = useState<Record<string, unknown> | null>(null);
   const [copiedReceipt, setCopiedReceipt] = useState(false);
   const [copiedSdJwt, setCopiedSdJwt] = useState(false);
+  const [mcpAgentKey, setMcpAgentKey] = useState<{
+    apiKey: string;
+    starterCreditUsdc: number;
+    mcpEndpoint: string;
+    mcpConfig: Record<string, unknown>;
+  } | null>(null);
+  const [generatingMcpKey, setGeneratingMcpKey] = useState(false);
+  const [copiedMcpConfig, setCopiedMcpConfig] = useState(false);
+  const [mcpTestLoading, setMcpTestLoading] = useState(false);
+  const [mcpTestOutput, setMcpTestOutput] = useState<string | null>(null);
+  const [agentWalletName, setAgentWalletName] = useState('Pabandi Concierge Agent');
+  const [maxPerTxUsdc, setMaxPerTxUsdc] = useState<number>(250);
+  const [expiresInHours, setExpiresInHours] = useState<number>(24);
+  const [provisioningWallet, setProvisioningWallet] = useState(false);
+  const [provisionedWallet, setProvisionedWallet] = useState<Record<string, unknown> | null>(null);
   const autoSyncStarted = useRef(false);
 
   const runSync = useCallback(
@@ -778,6 +793,251 @@ function TrustVerificationActive() {
           )}
         </div>
       )}
+
+      {/* Phase 3 — Connect Your AI Agent (MCP) & Privy TEE Policy-Enforced Agent Wallet */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Panel 1: 1-Click MCP Agent Connect */}
+        <div className="p-6 rounded-2xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.4)] shadow-sm flex flex-col justify-between space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Globe className="w-5 h-5 text-[var(--clay)]" />
+                <h3 className="text-sm font-bold text-[var(--warm-ink)]">
+                  Connect AI Agent (Claude / Cursor / MCP)
+                </h3>
+              </div>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-800 font-semibold">
+                Streamable HTTP MCP
+              </span>
+            </div>
+
+            <p className="text-xs text-[var(--soft-stone)] leading-relaxed">
+              Give Claude Desktop, Cursor, Windsurf, or LangChain direct access to Pabandi discovery, SD-JWT verification,
+              and Chicago contractor escrow booking. Discovery & verification calls are free; minting an agent key grants{' '}
+              <strong>$0.25 USDC (250 paid calls)</strong> starter x402 credit.
+            </p>
+
+            <div className="p-3 rounded-xl bg-[var(--cream)] border border-[rgba(191,179,163,0.3)] font-mono text-[11px] space-y-1 overflow-x-auto">
+              <div className="text-[var(--soft-stone)]">// Add to claude_desktop_config.json or .cursor/mcp.json</div>
+              <pre className="text-[var(--warm-ink)] whitespace-pre-wrap break-all">
+                {JSON.stringify(
+                  mcpAgentKey?.mcpConfig || {
+                    mcpServers: {
+                      pabandi: {
+                        url: 'https://pabandi.onrender.com/mcp',
+                        headers: {
+                          Authorization: `Bearer ${mcpAgentKey?.apiKey || 'YOUR_AGENT_API_KEY'}`,
+                        },
+                      },
+                    },
+                  },
+                  null,
+                  2
+                )}
+              </pre>
+            </div>
+
+            {mcpTestOutput && (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-[11px] font-mono text-emerald-900 max-h-40 overflow-y-auto whitespace-pre-wrap">
+                {mcpTestOutput}
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <button
+              type="button"
+              disabled={generatingMcpKey}
+              onClick={async () => {
+                setGeneratingMcpKey(true);
+                try {
+                  const res = await privyTrustService.generateMcpAgentKey();
+                  const data = (res.data as { data?: Record<string, unknown> })?.data;
+                  if (data?.apiKey) {
+                    setMcpAgentKey({
+                      apiKey: String(data.apiKey),
+                      starterCreditUsdc: Number(data.starterCreditUsdc ?? 0.25),
+                      mcpEndpoint: String(data.mcpEndpoint || 'https://pabandi.onrender.com/mcp'),
+                      mcpConfig: (data.mcpConfig as Record<string, unknown>) || {},
+                    });
+                    toast.success('Minted MCP Agent Key + $0.25 starter x402 credit!');
+                  }
+                } catch {
+                  toast.error('Sign in to Pabandi account to mint a dedicated M2M key, or use the public MCP endpoint.');
+                } finally {
+                  setGeneratingMcpKey(false);
+                }
+              }}
+              className="py-2 px-3 rounded-xl text-xs font-semibold bg-[var(--clay)] text-white hover:opacity-90 transition-opacity disabled:opacity-60"
+            >
+              {generatingMcpKey ? 'Minting Key…' : 'Mint Agent Key (+$0.25 Credit)'}
+            </button>
+
+            <button
+              type="button"
+              disabled={mcpTestLoading}
+              onClick={async () => {
+                setMcpTestLoading(true);
+                try {
+                  const res = await privyTrustService.testMcpToolCall(
+                    'pabandi_search_services',
+                    { city: 'Chicago', category: 'ROOFING' },
+                    mcpAgentKey?.apiKey
+                  );
+                  const text =
+                    res.data?.result?.content?.[0]?.text || JSON.stringify(res.data, null, 2);
+                  setMcpTestOutput(text);
+                  toast.success('Live MCP tool call succeeded!');
+                } catch (err: unknown) {
+                  toast.error(err instanceof Error ? err.message : 'MCP test call failed');
+                } finally {
+                  setMcpTestLoading(false);
+                }
+              }}
+              className="py-2 px-3 rounded-xl text-xs font-semibold border border-[rgba(191,179,163,0.4)] bg-[var(--cream)] text-[var(--warm-ink)] hover:border-[var(--clay)] transition-colors"
+            >
+              {mcpTestLoading ? 'Calling /mcp…' : 'Test Live MCP Call (Chicago Roofers)'}
+            </button>
+
+            <button
+              type="button"
+              onClick={async () => {
+                const cfg = JSON.stringify(
+                  mcpAgentKey?.mcpConfig || {
+                    mcpServers: {
+                      pabandi: {
+                        url: 'https://pabandi.onrender.com/mcp',
+                        headers: {
+                          Authorization: `Bearer ${mcpAgentKey?.apiKey || 'YOUR_AGENT_API_KEY'}`,
+                        },
+                      },
+                    },
+                  },
+                  null,
+                  2
+                );
+                await navigator.clipboard.writeText(cfg);
+                setCopiedMcpConfig(true);
+                setTimeout(() => setCopiedMcpConfig(false), 2000);
+              }}
+              className="py-2 px-3 rounded-xl text-xs font-semibold border border-[rgba(191,179,163,0.4)] bg-[var(--cream)] text-[var(--warm-ink)] flex items-center gap-1"
+            >
+              {copiedMcpConfig ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              {copiedMcpConfig ? 'Copied' : 'Copy Config'}
+            </button>
+          </div>
+        </div>
+
+        {/* Panel 2: Phase 3 Privy TEE Policy-Enforced Agent Wallet */}
+        <div className="p-6 rounded-2xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.4)] shadow-sm flex flex-col justify-between space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Key className="w-5 h-5 text-[var(--clay)]" />
+                <h3 className="text-sm font-bold text-[var(--warm-ink)]">
+                  Phase 3: Privy TEE Policy Agent Wallet
+                </h3>
+              </div>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-blue-500/15 text-blue-800 font-semibold">
+                TEE policy_ids
+              </span>
+            </div>
+
+            <p className="text-xs text-[var(--soft-stone)] leading-relaxed">
+              Delegate an autonomous Solana USDC escrow budget to your AI agent. Spending caps, SPL token mint restrictions,
+              and expiry timestamps are attached via Privy <code>policy_ids</code> and evaluated inside Privy&apos;s TEE
+              programmatic key-management infrastructure—never enforced in application code alone.
+            </p>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-[var(--soft-stone)] mb-1">
+                  Agent Name
+                </label>
+                <input
+                  type="text"
+                  value={agentWalletName}
+                  onChange={(e) => setAgentWalletName(e.target.value)}
+                  className="w-full px-2.5 py-1.5 rounded-lg text-xs bg-[var(--cream)] border border-[rgba(191,179,163,0.4)] text-[var(--warm-ink)]"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-[var(--soft-stone)] mb-1">
+                  Max / Tx (USDC)
+                </label>
+                <select
+                  value={maxPerTxUsdc}
+                  onChange={(e) => setMaxPerTxUsdc(Number(e.target.value))}
+                  className="w-full px-2.5 py-1.5 rounded-lg text-xs bg-[var(--cream)] border border-[rgba(191,179,163,0.4)] text-[var(--warm-ink)]"
+                >
+                  <option value={100}>$100 USDC</option>
+                  <option value={250}>$250 USDC</option>
+                  <option value={500}>$500 USDC</option>
+                  <option value={1000}>$1,000 USDC</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-[var(--soft-stone)] mb-1">
+                  Time Window
+                </label>
+                <select
+                  value={expiresInHours}
+                  onChange={(e) => setExpiresInHours(Number(e.target.value))}
+                  className="w-full px-2.5 py-1.5 rounded-lg text-xs bg-[var(--cream)] border border-[rgba(191,179,163,0.4)] text-[var(--warm-ink)]"
+                >
+                  <option value={24}>24 Hours</option>
+                  <option value={72}>72 Hours</option>
+                  <option value={168}>7 Days</option>
+                </select>
+              </div>
+            </div>
+
+            {provisionedWallet && (
+              <div className="p-3 rounded-xl bg-[var(--cream)] border border-[rgba(191,179,163,0.3)] font-mono text-[11px] space-y-1 overflow-x-auto max-h-44">
+                <div className="text-emerald-800 font-semibold">
+                  ✓ Policy ID: {String(provisionedWallet.policyId)} · Wallet ID: {String(provisionedWallet.agentWalletId)}
+                </div>
+                <div className="text-[var(--soft-stone)]">
+                  Vault Allowlist: {String(provisionedWallet.allowlistedEscrowVault)}
+                </div>
+                <pre className="text-[10px] text-[var(--warm-ink)] whitespace-pre-wrap">
+                  {JSON.stringify(provisionedWallet.policyPayload, null, 2)}
+                </pre>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              type="button"
+              disabled={provisioningWallet}
+              onClick={async () => {
+                setProvisioningWallet(true);
+                try {
+                  const res = await privyTrustService.provisionAgentWallet({
+                    agentName: agentWalletName,
+                    maxPerTransactionUsdc: maxPerTxUsdc,
+                    dailyBudgetUsdc: maxPerTxUsdc * 2,
+                    expiresInHours,
+                  });
+                  const wallet = (res.data as { wallet?: Record<string, unknown> })?.wallet;
+                  if (wallet) {
+                    setProvisionedWallet(wallet);
+                    toast.success(`Provisioned Privy TEE Policy (${String(wallet.policyId)})!`);
+                  }
+                } catch {
+                  toast.error('Sign in to your Pabandi account first to provision a Privy TEE Policy Agent Wallet.');
+                } finally {
+                  setProvisioningWallet(false);
+                }
+              }}
+              className="flex-1 py-2 px-3 rounded-xl text-xs font-semibold bg-[var(--clay)] text-white hover:opacity-90 transition-opacity disabled:opacity-60"
+            >
+              {provisioningWallet ? 'Provisioning TEE Policy…' : 'Provision Privy TEE Policy Wallet'}
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Linked Accounts List */}
       <div className="rounded-2xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.4)] p-6 shadow-sm">

@@ -492,6 +492,81 @@ const ENGINE_TOOLS = [
       required: [],
     },
   },
+  {
+    name: 'pabandi_verify_sd_jwt',
+    description: 'Verify a W3C VC / IETF SD-JWT selective-disclosure trust presentation (<issuer-jwt>~<disclosure_1>~<disclosure_2>~). Returns verified disclosed claims (trust_band, deposit_basis_points, zero_deposit_eligible) without exposing raw PII or exact score. Free public verification tool.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        presentation: {
+          type: 'string',
+          description: 'Tilde-separated SD-JWT presentation string (<issuer-jwt>~<disclosure_1>~...~)',
+        },
+      },
+      required: ['presentation'],
+    },
+  },
+  {
+    name: 'pabandi_verify_ed25519_receipt',
+    description: 'Verify a Year-0 Ed25519 SignedTrustAttestation score receipt (modelHash, inputFeatureHash, predictedScore, trustBand, shapVectorHash, nonce, timestamp, signature). Confirms score and SHAP attribution integrity in under 1 ms.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        attestation: {
+          type: 'object',
+          description: 'SignedTrustAttestation JSON object returned by Pabandi Privy sync',
+          additionalProperties: true,
+        },
+      },
+      required: ['attestation'],
+    },
+  },
+  {
+    name: 'pabandi_book_contractor_escrow',
+    description: 'Book a high-ticket contractor milestone (e.g., Chicago Roofing, HVAC, or Commercial Security) with dynamic Trust-Band escrow pricing (Band A = $0 waived, Band B = 50% off, Band C = Standard, Band D = 1.25x capped at 50%). Returns reservationId, computed deposit, and Solana USDC escrow URI.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        businessId: {
+          type: 'string',
+          description: 'Business ID or slug (e.g. "matthews-roofing-chicago", "deljo-heating-cooling-chicago", "alert-protective-security-chicago")',
+        },
+        serviceName: {
+          type: 'string',
+          description: 'Selected service or escrow milestone package name',
+        },
+        serviceValue: {
+          type: 'number',
+          description: 'Full contract or milestone price in USD/USDC (e.g. 9500)',
+        },
+        date: {
+          type: 'string',
+          description: 'Requested date in YYYY-MM-DD format',
+        },
+        time: {
+          type: 'string',
+          description: 'Requested time in HH:mm format (e.g. "10:00")',
+        },
+        customerName: {
+          type: 'string',
+          description: 'Customer or principal full name',
+        },
+        customerEmail: {
+          type: 'string',
+          description: 'Customer email address',
+        },
+        customerPhone: {
+          type: 'string',
+          description: 'Customer phone number',
+        },
+        sdJwtPresentation: {
+          type: 'string',
+          description: 'Optional SD-JWT presentation proving the principal trust_band for zero/reduced deposit pricing',
+        },
+      },
+      required: ['businessId', 'serviceValue', 'date', 'time', 'customerName'],
+    },
+  },
 ];
 
 // ── Platform tools (real HTTP proxy) ─────────────────────────────────────────
@@ -540,9 +615,18 @@ async function callPlatformHttp(def: any, args: any, req?: Request): Promise<any
   const needsAuth = def.access !== 'public';
   let url = `${BACKEND}${ep.path}`;
 
-  // Replace path params like :id or :businessId
-  for (const [k, v] of Object.entries(args)) {
-    url = url.replace(`:${k}`, String(v));
+  // Replace path params like :id or :businessId, and collect remaining args for GET query strings
+  const queryParams = new URLSearchParams();
+  for (const [k, v] of Object.entries(args || {})) {
+    if (url.includes(`:${k}`)) {
+      url = url.replace(`:${k}`, encodeURIComponent(String(v)));
+    } else if (['GET', 'HEAD'].includes(method) && v !== undefined && v !== null && String(v).trim() !== '') {
+      queryParams.set(k, String(v));
+    }
+  }
+  const qs = queryParams.toString();
+  if (qs) {
+    url += (url.includes('?') ? '&' : '?') + qs;
   }
 
   const headers: Record<string, string> = {
@@ -1718,6 +1802,100 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
         const proposal = triDirectionalConciergeService.getProposal(String(args.proposalId));
         if (!proposal) throw new Error(`Proposal ${args.proposalId} not found`);
         return proposal;
+      }
+      case 'pabandi_verify_sd_jwt': {
+        const { verifySdJwtPresentation } = await import('../services/sdJwtCredential.service');
+        const presentation = typeof args.presentation === 'string' ? args.presentation.trim() : '';
+        if (!presentation) throw new Error('presentation string is required');
+        return verifySdJwtPresentation(presentation);
+      }
+      case 'pabandi_verify_ed25519_receipt': {
+        const { verifySignedTrustAttestation } = await import('../services/signedAttestation.service');
+        if (!args.attestation || typeof args.attestation !== 'object') {
+          throw new Error('attestation object is required');
+        }
+        return verifySignedTrustAttestation(args.attestation);
+      }
+      case 'pabandi_book_contractor_escrow': {
+        const { evaluateBookingDeposit } = await import('../services/engine-deposit.service');
+        const { verifySdJwtPresentation } = await import('../services/sdJwtCredential.service');
+
+        const businessId = String(args.businessId || '').trim();
+        const serviceValue = Number(args.serviceValue || 0);
+        const date = String(args.date || '').trim();
+        const time = String(args.time || '10:00').trim();
+        const customerName = String(args.customerName || 'Agent Client').trim();
+
+        if (!businessId) throw new Error('businessId is required');
+        if (serviceValue <= 0) throw new Error('serviceValue must be greater than zero');
+        if (!date) throw new Error('date is required');
+
+        const business = await prisma.business.findFirst({
+          where: { OR: [{ id: businessId }, { slug: businessId }] },
+        });
+        if (!business) throw new Error(`Business not found: ${businessId}`);
+
+        let effectiveScore = 500;
+        let verifiedBand = 'C';
+
+        if (typeof args.sdJwtPresentation === 'string' && args.sdJwtPresentation.trim()) {
+          const sdRes = verifySdJwtPresentation(args.sdJwtPresentation.trim());
+          if (sdRes.valid && sdRes.disclosedClaims.trust_band) {
+            const band = String(sdRes.disclosedClaims.trust_band).toUpperCase();
+            verifiedBand = band;
+            effectiveScore = band === 'A' ? 920 : band === 'B' ? 760 : band === 'C' ? 560 : 320;
+          }
+        }
+
+        const receiptId = `mcp_esc_${Date.now().toString(36)}`;
+        const depositEval = await evaluateBookingDeposit(
+          business.id,
+          serviceValue,
+          receiptId,
+          effectiveScore
+        );
+
+        const defaultVault =
+          process.env.PLATFORM_WALLET_ADDRESS || 'GsbwXfJraMomNxBcjYLcG3mxkBUiyWXAB32fGbSQQRre';
+        const depositAmount = depositEval.deposit?.amount ?? 0;
+        const checkoutUrl =
+          depositEval.deposit?.checkoutUrl ??
+          (depositAmount > 0
+            ? `solana:${defaultVault}?amount=${depositAmount.toFixed(2)}&spl-token=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&reference=${encodeURIComponent(
+                receiptId
+              )}&label=${encodeURIComponent(business.name)}`
+            : null);
+
+        return {
+          success: true,
+          receiptId,
+          business: {
+            id: business.id,
+            name: business.name,
+            category: business.category,
+            city: business.city,
+            address: business.address,
+          },
+          booking: {
+            serviceName: args.serviceName || 'Contractor Escrow Milestone',
+            serviceValueUsdc: serviceValue,
+            date,
+            time,
+            customerName,
+          },
+          trustEvaluation: {
+            trustBand: depositEval.deposit?.trustBand || verifiedBand,
+            effectiveScore,
+            actionRequired: depositEval.actionRequired,
+          },
+          escrowDeposit: depositEval.deposit
+            ? {
+                ...depositEval.deposit,
+                checkoutUrl,
+                webBookingUrl: `https://pabandi.com/book/${business.id}`,
+              }
+            : null,
+        };
       }
     }
   }

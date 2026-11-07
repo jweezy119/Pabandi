@@ -18,6 +18,11 @@ import {
   verifySignedTrustAttestation,
 } from '../services/signedAttestation.service';
 import { verifySdJwtPresentation } from '../services/sdJwtCredential.service';
+import {
+  executePrivyAgentEscrowSpend,
+  listPrivyPolicyAgentWallets,
+  provisionPrivyPolicyAgentWallet,
+} from '../services/privyAgentPolicyWallet.service';
 
 const router = Router();
 
@@ -233,7 +238,8 @@ router.post('/verify-attestation', rateLimiter, (req: Request, res: Response) =>
  * Verifies a W3C VC + SD-JWT presentation (`<jwt>~<d1>~<d2>~`) and returns the verified disclosed claims.
  */
 router.post('/verify-sd-jwt', rateLimiter, (req: Request, res: Response) => {
-  const presentation = typeof req.body?.presentation === 'string' ? req.body.presentation.trim() : '';
+  const rawPresentation = req.body?.presentation ?? req.body?.sdJwtPresentation;
+  const presentation = typeof rawPresentation === 'string' ? rawPresentation.trim() : '';
   if (!presentation) {
     return res.status(400).json({ error: 'presentation string is required' });
   }
@@ -242,6 +248,91 @@ router.post('/verify-sd-jwt', rateLimiter, (req: Request, res: Response) => {
     success: verification.valid,
     ...verification,
   });
+});
+
+/**
+ * GET /api/v1/privy/agent-wallets
+ * Lists Privy TEE Policy-Enforced Agent Wallets delegated by the authenticated user.
+ */
+router.get('/agent-wallets', authenticate, async (req: AuthRequest, res: Response) => {
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  const wallets = await listPrivyPolicyAgentWallets(userId);
+  return res.json({
+    success: true,
+    wallets,
+  });
+});
+
+/**
+ * POST /api/v1/privy/agent-wallets/provision
+ * Phase 3: Creates a Privy Policy (`POST /v1/policies`) and attaches it via `policy_ids`
+ * to a newly provisioned Privy Solana server wallet (`POST /v1/wallets`).
+ */
+router.post('/agent-wallets/provision', rateLimiter, authenticate, async (req: AuthRequest, res: Response) => {
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  const agentName = typeof req.body?.agentName === 'string' ? req.body.agentName.trim() : 'Pabandi Concierge Agent';
+  const maxPerTransactionUsdc = Number(req.body?.maxPerTransactionUsdc) || 250;
+  const dailyBudgetUsdc = Number(req.body?.dailyBudgetUsdc) || 500;
+  const expiresInHours = Number(req.body?.expiresInHours) || 24;
+
+  try {
+    const provisioned = await provisionPrivyPolicyAgentWallet({
+      ownerUserId: userId,
+      agentName,
+      maxPerTransactionUsdc,
+      dailyBudgetUsdc,
+      expiresInHours,
+    });
+    return res.json({
+      success: true,
+      wallet: provisioned,
+    });
+  } catch (err: unknown) {
+    return res.status(500).json({
+      error: err instanceof Error ? err.message : 'Failed to provision Privy policy agent wallet',
+    });
+  }
+});
+
+/**
+ * POST /api/v1/privy/agent-wallets/spend
+ * Executes an autonomous escrow deposit transfer via Privy TEE policy evaluation (`policy_ids`).
+ */
+router.post('/agent-wallets/spend', rateLimiter, authenticate, async (req: AuthRequest, res: Response) => {
+  const { agentWalletId, policyId, amountUsdc, maxPerTransactionUsdc, expiresAt, unsignedTransactionBase64 } =
+    req.body || {};
+
+  if (!agentWalletId || !policyId || !unsignedTransactionBase64) {
+    return res.status(400).json({
+      error: 'agentWalletId, policyId, and unsignedTransactionBase64 are required',
+    });
+  }
+
+  try {
+    const result = await executePrivyAgentEscrowSpend({
+      agentWalletId: String(agentWalletId),
+      policyId: String(policyId),
+      amountUsdc: Number(amountUsdc || 0),
+      maxPerTransactionUsdc: maxPerTransactionUsdc !== undefined ? Number(maxPerTransactionUsdc) : undefined,
+      expiresAt: typeof expiresAt === 'string' ? expiresAt : undefined,
+      unsignedTransactionBase64: String(unsignedTransactionBase64),
+    });
+    return res.status(result.settled ? 200 : 400).json({
+      success: result.settled,
+      ...result,
+    });
+  } catch (err: unknown) {
+    return res.status(400).json({
+      error: err instanceof Error ? err.message : 'Agent wallet spend rejected',
+    });
+  }
 });
 
 export default router;

@@ -1493,5 +1493,31 @@ export const privyTrustService = {
   verifyAttestation: (attestation: Record<string, unknown>) =>
     apiClient.post('/privy/verify-attestation', { attestation }),
   verifySdJwt: (sdJwtPresentation: string) =>
-    apiClient.post('/privy/verify-sd-jwt', { sdJwtPresentation }),
+    apiClient.post('/privy/verify-sd-jwt', { presentation: sdJwtPresentation, sdJwtPresentation }),
+  listAgentWallets: () => apiClient.get('/privy/agent-wallets'),
+  provisionAgentWallet: (data: {
+    agentName: string;
+    maxPerTransactionUsdc: number;
+    dailyBudgetUsdc: number;
+    expiresInHours: number;
+  }) => apiClient.post('/privy/agent-wallets/provision', data),
+  generateMcpAgentKey: () => apiClient.post('/agents/generate-key', {}),
+  testMcpToolCall: (toolName: string, args: Record<string, unknown>, apiKey?: string) => {
+    const mcpUrl = `${API_BASE_URL.replace(/\/api\/v1\/?$/, '')}/mcp`;
+    return axios.post(
+      mcpUrl,
+      {
+        jsonrpc: '2.0',
+        id: Date.now(),
+        method: 'tools/call',
+        params: { name: toolName, arguments: args },
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+        },
+      }
+    );
+  },
 };

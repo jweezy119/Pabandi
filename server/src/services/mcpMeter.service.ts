@@ -39,12 +39,47 @@ const MCP_TOOL_CALL_USDC = Number(X402_PRICING.MCP_TOOL_CALL ?? 0.001);
 /** Metering window: 60 seconds. */
 const METER_WINDOW_MS = 60 * 1000;
 
-/** Tools that are free to call (no x402, no metering). */
+/** Tools that are free to call (no x402, no metering) — discovery, directory search, and cryptographic verification. */
 const FREE_TOOLS = new Set([
   'pabandi_verify_passport',
   'pabandi_discover',
   'pabandi_get_ledger',
+  'pabandi_discover_platform',
+  'pabandi_platform_discovery',
+  'pabandi_platform_access',
+  'pabandi_search_services',
+  'pabandi_get_business',
+  'pabandi_get_services',
+  'pabandi_check_availability',
+  'pabandi_list_properties',
+  'pabandi_verify_trust_attestation',
+  'pabandi_trust_resolve',
+  'pabandi_check_counterparty',
+  'pabandi_discover_agents',
+  'pabandi_agent_card',
+  'pabandi_agent_registry',
+  'pabandi_verify_sd_jwt',
+  'pabandi_verify_ed25519_receipt',
 ]);
+
+/**
+ * Grant starter x402 prepaid credit to a newly registered agent or M2M API key
+ * so its initial paid tool calls (sessions, bookings, escrow) succeed without
+ * hitting an immediate cold-start 402 wall.
+ */
+export async function grantStarterMcpCredit(apiKeyHash: string, amountUsdc: number = 0.25): Promise<number> {
+  try {
+    const row = await prisma.mcpPrepaidBalance.upsert({
+      where: { apiKeyHash },
+      update: {},
+      create: { apiKeyHash, balanceUsdc: amountUsdc },
+    });
+    return row.balanceUsdc;
+  } catch (err: unknown) {
+    logger.warn(`[McpMeter] Failed to grant starter credit: ${err instanceof Error ? err.message : String(err)}`);
+    return 0;
+  }
+}
 
 /** Paid tiers that receive a monthly MCP quota. */
 const PAID_TIERS_WITH_QUOTA = new Set(['starter', 'pro', 'business']);

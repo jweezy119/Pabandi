@@ -5,7 +5,7 @@
   "remotes": [
     {
       "type": "streamable-http",
-      "url": "https://api.pabandi.com/mcp"
+      "url": "https://pabandi.onrender.com/mcp"
     }
   ],
   "capabilities": {

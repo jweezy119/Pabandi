@@ -15,6 +15,12 @@ import {
   selectSdJwtClaims,
   verifySdJwtPresentation,
 } from '../services/sdJwtCredential.service';
+import {
+  buildPrivySolanaEscrowPolicyPayload,
+  executePrivyAgentEscrowSpend,
+  SOLANA_USDC_MINT,
+} from '../services/privyAgentPolicyWallet.service';
+import { TOOLS } from '../mcp/pabandiMcpServer';
 
 describe('Year-0 Trust Stack — 1. ML Governance & Counterfactual Recourse', () => {
   it('computes a Bayesian cold-start score and attribution vector for a new user', () => {
@@ -229,5 +235,57 @@ describe('Year-0 Trust Stack — 3. Selective Disclosure Credentials (SD-JWT)', 
     const verified = verifySdJwtPresentation(forgedPresentation);
     expect(verified.valid).toBe(false);
     expect(verified.reason).toMatch(/does not match any signed _sd commitment/i);
+  });
+});
+
+describe('Phase 3 — Privy TEE Policy-Enforced Agent Wallets & MCP Tools', () => {
+  it('builds a DENY-by-default Privy TEE Solana policy restricting USDC mint, max per-tx base units, and expiry', () => {
+    const { policyPayload, maxPerTransactionBaseUnits } = buildPrivySolanaEscrowPolicyPayload({
+      ownerUserId: 'user-tee-1',
+      agentName: 'Roofing Concierge Agent',
+      maxPerTransactionUsdc: 250,
+      dailyBudgetUsdc: 500,
+      expiresInHours: 24,
+    });
+
+    expect(policyPayload.version).toBe('1.0');
+    expect(policyPayload.chain_type).toBe('solana');
+    expect(policyPayload.default_action).toBe('DENY');
+    expect(maxPerTransactionBaseUnits).toBe('250000000');
+    expect(policyPayload.rules.length).toBe(2);
+    expect(policyPayload.rules[0].conditions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field_source: 'solana_token_transfer_instruction',
+          field: 'mint',
+          operator: 'eq',
+          value: SOLANA_USDC_MINT,
+        }),
+        expect.objectContaining({
+          field_source: 'solana_token_transfer_instruction',
+          field: 'amount',
+          operator: 'lte',
+          value: '250000000',
+        }),
+      ])
+    );
+  });
+
+  it('enforces Guardrail #3: refuses agent wallet spend without a bound Privy policy_id', async () => {
+    await expect(
+      executePrivyAgentEscrowSpend({
+        agentWalletId: 'wal_123',
+        policyId: '',
+        amountUsdc: 50,
+        unsignedTransactionBase64: 'AAAA',
+      })
+    ).rejects.toThrow(/Guardrail #3/i);
+  });
+
+  it('publishes Year-0 trust and contractor escrow tools on the MCP server', () => {
+    const names = (TOOLS as Array<{ name: string }>).map((t) => t.name);
+    expect(names).toContain('pabandi_verify_sd_jwt');
+    expect(names).toContain('pabandi_verify_ed25519_receipt');
+    expect(names).toContain('pabandi_book_contractor_escrow');
   });
 });
