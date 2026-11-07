@@ -1817,60 +1817,67 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
         return verifySignedTrustAttestation(args.attestation);
       }
       case 'pabandi_book_contractor_escrow': {
-        const { evaluateBookingDeposit } = await import('../services/engine-deposit.service');
+        const { applyBand, bandForScore } = await import('../services/deposit-policy.rules');
         const { verifySdJwtPresentation } = await import('../services/sdJwtCredential.service');
 
         const businessId = String(args.businessId || '').trim();
-        const serviceValue = Number(args.serviceValue || 0);
-        const date = String(args.date || '').trim();
+        const serviceValue = Number(args.serviceValue ?? args.projectAmountUsd ?? 0);
+        const defaultDate = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+        const date = String(args.date || defaultDate).trim();
         const time = String(args.time || '10:00').trim();
         const customerName = String(args.customerName || 'Agent Client').trim();
 
         if (!businessId) throw new Error('businessId is required');
         if (serviceValue <= 0) throw new Error('serviceValue must be greater than zero');
-        if (!date) throw new Error('date is required');
 
         const business = await prisma.business.findFirst({
           where: { OR: [{ id: businessId }, { slug: businessId }] },
         });
         if (!business) throw new Error(`Business not found: ${businessId}`);
 
-        let effectiveScore = 500;
-        let verifiedBand = 'C';
+        let effectiveScore = Number(args.trustScore || 560);
+        let verifiedBand = bandForScore(effectiveScore);
 
         if (typeof args.sdJwtPresentation === 'string' && args.sdJwtPresentation.trim()) {
           const sdRes = verifySdJwtPresentation(args.sdJwtPresentation.trim());
           if (sdRes.valid && sdRes.disclosedClaims.trust_band) {
             const band = String(sdRes.disclosedClaims.trust_band).toUpperCase();
-            verifiedBand = band;
             effectiveScore = band === 'A' ? 920 : band === 'B' ? 760 : band === 'C' ? 560 : 320;
+            verifiedBand = bandForScore(effectiveScore);
           }
         }
 
         const receiptId = `mcp_esc_${Date.now().toString(36)}`;
-        const depositEval = await evaluateBookingDeposit(
-          business.id,
-          serviceValue,
-          receiptId,
-          effectiveScore
+        const basePct = business.depositPercentage && business.depositPercentage > 0 ? business.depositPercentage : 20;
+        const baseDeposit =
+          business.depositAmount && business.depositAmount > 0 && (!business.depositPercentage || business.depositPercentage <= 0)
+            ? business.depositAmount
+            : (serviceValue * basePct) / 100;
+
+        const quote = applyBand(
+          baseDeposit,
+          verifiedBand,
+          effectiveScore,
+          business.currency || 'USD',
+          serviceValue
         );
 
         const defaultVault =
           process.env.PLATFORM_WALLET_ADDRESS || 'GsbwXfJraMomNxBcjYLcG3mxkBUiyWXAB32fGbSQQRre';
-        const depositAmount = depositEval.deposit?.amount ?? 0;
+        const depositAmount = quote.amount ?? 0;
         const checkoutUrl =
-          depositEval.deposit?.checkoutUrl ??
-          (depositAmount > 0
+          depositAmount > 0
             ? `solana:${defaultVault}?amount=${depositAmount.toFixed(2)}&spl-token=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&reference=${encodeURIComponent(
                 receiptId
               )}&label=${encodeURIComponent(business.name)}`
-            : null);
+            : null;
 
         return {
           success: true,
           receiptId,
           business: {
             id: business.id,
+            slug: business.slug,
             name: business.name,
             category: business.category,
             city: business.city,
@@ -1884,17 +1891,20 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
             customerName,
           },
           trustEvaluation: {
-            trustBand: depositEval.deposit?.trustBand || verifiedBand,
+            trustBand: verifiedBand,
             effectiveScore,
-            actionRequired: depositEval.actionRequired,
+            actionRequired: depositAmount > 0 ? 'FUND_ESCROW_DEPOSIT' : 'NONE',
           },
-          escrowDeposit: depositEval.deposit
-            ? {
-                ...depositEval.deposit,
-                checkoutUrl,
-                webBookingUrl: `https://pabandi.com/book/${business.id}`,
-              }
-            : null,
+          escrowDeposit: {
+            required: depositAmount > 0,
+            amountUsdc: depositAmount,
+            baseDepositUsdc: Number(baseDeposit.toFixed(2)),
+            currency: 'USDC',
+            trustBand: verifiedBand,
+            explanation: quote.explanation,
+            checkoutUrl,
+            webBookingUrl: `https://pabandi.com/book/${business.id}`,
+          },
         };
       }
     }
