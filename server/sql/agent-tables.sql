@@ -239,3 +239,25 @@ CREATE TABLE IF NOT EXISTS "Booking" (
   "depositPaid" BOOLEAN DEFAULT FALSE
 );
 CREATE INDEX IF NOT EXISTS "Booking_businessId_slotStart_idx" ON "Booking" ("businessId", "slotStart");
+
+-- Ensure McpPrepaidBalance and McpMeter tables exist for x402 MCP metering
+CREATE TABLE IF NOT EXISTS "McpPrepaidBalance" (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  "apiKeyHash" TEXT NOT NULL UNIQUE,
+  "balanceUsdc" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "McpPrepaidBalance_apiKeyHash_key" ON "McpPrepaidBalance" ("apiKeyHash");
+CREATE INDEX IF NOT EXISTS "McpPrepaidBalance_apiKeyHash_idx" ON "McpPrepaidBalance" ("apiKeyHash");
+
+CREATE TABLE IF NOT EXISTS "McpMeter" (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  "apiKeyHash" TEXT NOT NULL,
+  "toolName" TEXT NOT NULL,
+  "windowStart" TIMESTAMPTZ NOT NULL,
+  "callsCount" INTEGER NOT NULL DEFAULT 0,
+  "chargedUsdc" DOUBLE PRECISION NOT NULL DEFAULT 0
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "McpMeter_apiKeyHash_toolName_windowStart_key" ON "McpMeter" ("apiKeyHash", "toolName", "windowStart");
+CREATE INDEX IF NOT EXISTS "McpMeter_apiKeyHash_toolName_windowStart_idx" ON "McpMeter" ("apiKeyHash", "toolName", "windowStart");
+

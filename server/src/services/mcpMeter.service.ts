@@ -60,6 +60,7 @@ const FREE_TOOLS = new Set([
   'pabandi_agent_registry',
   'pabandi_verify_sd_jwt',
   'pabandi_verify_ed25519_receipt',
+  'pabandi_book_contractor_escrow',
 ]);
 
 /**
@@ -386,21 +387,29 @@ async function consumeMonthlyQuota(
 }
 
 async function recordUsage(apiKeyHash: string, toolName: string, chargedUsdc: number): Promise<void> {
-  const windowStart = new Date(Date.now() - (Date.now() % METER_WINDOW_MS));
-  await prisma.mcpMeter.upsert({
-    where: { apiKeyHash_toolName_windowStart: { apiKeyHash, toolName, windowStart } },
-    create: { apiKeyHash, toolName, windowStart, callsCount: 1, chargedUsdc },
-    update: { callsCount: { increment: 1 }, chargedUsdc: { increment: chargedUsdc } },
-  });
+  try {
+    const windowStart = new Date(Date.now() - (Date.now() % METER_WINDOW_MS));
+    await prisma.mcpMeter.upsert({
+      where: { apiKeyHash_toolName_windowStart: { apiKeyHash, toolName, windowStart } },
+      create: { apiKeyHash, toolName, windowStart, callsCount: 1, chargedUsdc },
+      update: { callsCount: { increment: 1 }, chargedUsdc: { increment: chargedUsdc } },
+    });
+  } catch (err: unknown) {
+    logger.warn(`[McpMeter] recordUsage skipped: ${err instanceof Error ? err.message : String(err)}`);
+  }
 }
 
 async function windowCallCount(apiKeyHash: string, toolName: string): Promise<number> {
-  const windowStart = new Date(Date.now() - (Date.now() % METER_WINDOW_MS));
-  const row = await prisma.mcpMeter.findUnique({
-    where: { apiKeyHash_toolName_windowStart: { apiKeyHash, toolName, windowStart } },
-    select: { callsCount: true },
-  });
-  return row?.callsCount ?? 0;
+  try {
+    const windowStart = new Date(Date.now() - (Date.now() % METER_WINDOW_MS));
+    const row = await prisma.mcpMeter.findUnique({
+      where: { apiKeyHash_toolName_windowStart: { apiKeyHash, toolName, windowStart } },
+      select: { callsCount: true },
+    });
+    return row?.callsCount ?? 0;
+  } catch {
+    return 0;
+  }
 }
 
 function extractPaymentProof(req?: { headers: Record<string, string | string[] | undefined> }): string | null {
