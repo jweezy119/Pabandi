@@ -147,6 +147,10 @@ export const getBusiness = async (
         tables: {
           where: { isActive: true },
         },
+        services: {
+          where: { isActive: true },
+          orderBy: { price: 'asc' },
+        },
         settings: true,
         googleReviews: {
           orderBy: { time: 'desc' }

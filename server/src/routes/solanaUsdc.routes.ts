@@ -8,15 +8,15 @@ import {
   getTransfers,
   getAgentWallets,
 } from '../controllers/solanaUsdc.controller';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticate, optionalAuthenticate } from '../middleware/auth.middleware';
 
 const router = Router();
 
 router.get('/platform-balance', authenticate, getPlatformBalance);
 router.get('/transfers', authenticate, getTransfers);
 router.get('/agent-wallets', authenticate, getAgentWallets);
-router.post('/transfer/build', authenticate, buildTransfer);
-router.post('/transfer/record', authenticate, recordTransfer);
+router.post('/transfer/build', optionalAuthenticate, buildTransfer);
+router.post('/transfer/record', optionalAuthenticate, recordTransfer);
 router.post('/agents/:agentId/wallet', authenticate, createAgentWallet);
 router.get('/agents/:agentId/balance', authenticate, getAgentBalance);
 

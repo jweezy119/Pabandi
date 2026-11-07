@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { X, Shield, CreditCard, Zap, ExternalLink, Copy, Check } from 'lucide-react';
+import { X, Shield, CreditCard, Zap, ExternalLink, Copy, Check, Wallet } from 'lucide-react';
+import { Connection, Transaction } from '@solana/web3.js';
 import { API_HOST } from '../utils/apiHost';
 import { getAuthToken } from '../utils/authToken';
+import { useEmbeddedSolanaWallet } from '../hooks/useEmbeddedSolanaWallet';
 
 export interface PabandiCheckoutModalProps {
   open: boolean;
@@ -15,13 +17,21 @@ export interface PabandiCheckoutModalProps {
   squareNote: string;
   /** Optional pre-existing Square/merchant payment link */
   existingPaymentLink?: string | null;
+  /** Optional merchant Solana recipient wallet */
+  recipientWallet?: string | null;
   customerEmail?: string;
   redirectUrl?: string;
-  onSuccess?: (rail: 'square' | 'solana', paymentUrl?: string) => void;
+  onSuccess?: (rail: 'square' | 'solana', paymentUrlOrTxHash?: string) => void;
 }
 
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
-const DEFAULT_ESCROW_VAULT = 'PabandiEscrowVault1111111111111111111111111';
+const DEFAULT_ESCROW_VAULT =
+  import.meta.env.VITE_ESCROW_VAULT_ADDRESS || 'GsbwXfJraMomNxBcjYLcG3mxkBUiyWXAB32fGbSQQRre';
+
+interface SignableSolanaWallet {
+  address?: string;
+  signTransaction?: (tx: Transaction) => Promise<Transaction>;
+}
 
 export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
   open,
@@ -33,19 +43,27 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
   referenceId,
   squareNote,
   existingPaymentLink,
+  recipientWallet,
   customerEmail,
   redirectUrl,
   onSuccess,
 }) => {
-  const [selectedRail, setSelectedRail] = useState<'square' | 'solana'>('square');
+  const [selectedRail, setSelectedRail] = useState<'square' | 'solana'>('solana');
   const [loading, setLoading] = useState(false);
+  const [signingPrivy, setSigningPrivy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  const [txSignature, setTxSignature] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const { wallet } = useEmbeddedSolanaWallet();
+  const solanaWallet = wallet as SignableSolanaWallet | null;
+  const walletAddress = solanaWallet?.address ?? '';
+  const targetVault = recipientWallet && recipientWallet.length >= 32 ? recipientWallet : DEFAULT_ESCROW_VAULT;
 
   if (!open) return null;
 
-  const solanaPayUri = `solana:${DEFAULT_ESCROW_VAULT}?amount=${amount.toFixed(2)}&spl-token=${USDC_MINT}&label=${encodeURIComponent(
+  const solanaPayUri = `solana:${targetVault}?amount=${amount.toFixed(2)}&spl-token=${USDC_MINT}&label=${encodeURIComponent(
     title
   )}&message=${encodeURIComponent(squareNote || referenceId)}`;
 
@@ -79,7 +97,12 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
         }),
       });
 
-      const data = await res.json();
+      const data = (await res.json()) as {
+        checkout?: { url?: string; paymentLink?: { url?: string } };
+        data?: { url?: string };
+        error?: string;
+        message?: string;
+      };
       const url = data?.checkout?.url || data?.checkout?.paymentLink?.url || data?.data?.url;
       if (!res.ok || !url) {
         throw new Error(data?.error || data?.message || 'Could not create Square checkout session');
@@ -88,10 +111,84 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
       setCheckoutUrl(url);
       window.open(url, '_blank', 'noopener,noreferrer');
       onSuccess?.('square', url);
-    } catch (err: any) {
-      setError(err?.message || 'Square checkout failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Square checkout failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePrivySolanaPay = async () => {
+    if (!walletAddress) {
+      setError('Connect your Privy Solana wallet in Trust & Verification settings first, or use the Solana Pay URI below.');
+      return;
+    }
+
+    setSigningPrivy(true);
+    setError(null);
+    try {
+      const token = getAuthToken();
+      const buildRes = await fetch(`${API_HOST}/api/v1/solana-usdc/transfer/build`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          fromWallet: walletAddress,
+          toWallet: targetVault,
+          amountUsdc: amount,
+        }),
+      });
+
+      const buildData = (await buildRes.json()) as {
+        success?: boolean;
+        transaction?: string;
+        error?: string;
+      };
+
+      if (!buildRes.ok || !buildData.transaction) {
+        throw new Error(buildData.error || 'Could not build Solana USDC transfer transaction');
+      }
+
+      const txBytes = Uint8Array.from(atob(buildData.transaction), (c) => c.charCodeAt(0));
+      const tx = Transaction.from(txBytes);
+
+      let signature = '';
+      if (typeof solanaWallet?.signTransaction === 'function') {
+        const signedTx = await solanaWallet.signTransaction(tx);
+        const rpcUrl = import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+        const connection = new Connection(rpcUrl, 'confirmed');
+        signature = await connection.sendRawTransaction(signedTx.serialize(), {
+          skipPreflight: false,
+          maxRetries: 3,
+        });
+      } else {
+        throw new Error('Connected wallet does not support direct transaction signing; use Open in Solana Wallet below.');
+      }
+
+      await fetch(`${API_HOST}/api/v1/solana-usdc/transfer/record`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          fromWallet: walletAddress,
+          toWallet: targetVault,
+          amountUsdc: amount,
+          txHash: signature,
+          type: 'FUNDING',
+          referenceId: squareNote || referenceId,
+        }),
+      });
+
+      setTxSignature(signature);
+      onSuccess?.('solana', signature);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Solana USDC payment failed');
+    } finally {
+      setSigningPrivy(false);
     }
   };
 
@@ -142,13 +239,37 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
             Escrow Protected Total
           </span>
           <span className="text-2xl font-bold text-[var(--clay,#C97B5A)]">
-            ${amount.toFixed(2)} <span className="text-xs font-normal text-[var(--soft-stone,#8C8275)]">{selectedRail === 'solana' ? 'USDC' : 'USD'}</span>
+            ${amount.toFixed(2)}{' '}
+            <span className="text-xs font-normal text-[var(--soft-stone,#8C8275)]">
+              {selectedRail === 'solana' ? 'USDC' : 'USD'}
+            </span>
           </span>
         </div>
 
         {/* Rail Selector */}
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-2 gap-2.5">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedRail('solana');
+                setError(null);
+              }}
+              className={`flex flex-col items-start p-3 rounded-xl border-2 text-left transition-all ${
+                selectedRail === 'solana'
+                  ? 'border-[var(--clay,#C97B5A)] bg-[var(--clay,#C97B5A)]/10'
+                  : 'border-[rgba(191,179,163,0.3)] bg-white/60 hover:border-[var(--clay,#C97B5A)]/40'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 font-bold text-sm">
+                <Zap size={15} className="text-[var(--sage,#8A9A7B)]" />
+                <span>Solana USDC</span>
+              </div>
+              <span className="text-[11px] text-[var(--soft-stone,#8C8275)] mt-0.5">
+                Privy Wallet / Solana Pay (0% FX)
+              </span>
+            </button>
+
             <button
               type="button"
               onClick={() => {
@@ -169,27 +290,6 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
                 Card, Apple Pay, Cash App
               </span>
             </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedRail('solana');
-                setError(null);
-              }}
-              className={`flex flex-col items-start p-3 rounded-xl border-2 text-left transition-all ${
-                selectedRail === 'solana'
-                  ? 'border-[var(--clay,#C97B5A)] bg-[var(--clay,#C97B5A)]/10'
-                  : 'border-[rgba(191,179,163,0.3)] bg-white/60 hover:border-[var(--clay,#C97B5A)]/40'
-              }`}
-            >
-              <div className="flex items-center gap-1.5 font-bold text-sm">
-                <Zap size={15} className="text-[var(--sage,#8A9A7B)]" />
-                <span>Solana Pay</span>
-              </div>
-              <span className="text-[11px] text-[var(--soft-stone,#8C8275)] mt-0.5">
-                Instant USDC (0% FX fee)
-              </span>
-            </button>
           </div>
 
           {error && (
@@ -201,7 +301,8 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
           {selectedRail === 'square' ? (
             <div className="space-y-3">
               <p className="text-xs text-[var(--soft-stone,#8C8275)] leading-relaxed">
-                Pay securely with any major debit/credit card, Apple Pay, Google Pay, or Cash App via Square Checkout. Webhook verification automatically updates your Pabandi escrow status.
+                Pay securely with any major debit/credit card, Apple Pay, Google Pay, or Cash App via Square Checkout.
+                Webhook verification automatically updates your Pabandi escrow status.
               </p>
               <button
                 type="button"
@@ -229,18 +330,55 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-xs text-[var(--soft-stone,#8C8275)] leading-relaxed">
-                Send <strong>{amount.toFixed(2)} USDC</strong> on Solana. Your wallet attaches reference <code className="px-1 py-0.5 bg-black/5 rounded">{referenceId}</code> for instant on-chain escrow verification.
-              </p>
+              <div className="p-3 rounded-xl bg-[var(--warm-sand,#E8D9C5)]/60 border border-[rgba(191,179,163,0.35)] text-xs space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-[var(--warm-ink,#2A2520)] flex items-center gap-1.5">
+                    <Wallet size={13} className="text-[var(--clay,#C97B5A)]" />
+                    Privy Embedded Solana Wallet
+                  </span>
+                  <span className="font-mono text-[11px] text-[var(--soft-stone,#8C8275)]">
+                    {walletAddress
+                      ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
+                      : 'External / Solana Pay URI'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-[var(--soft-stone,#8C8275)]">
+                  Escrow Target: <code className="font-mono">{targetVault.slice(0, 8)}...{targetVault.slice(-6)}</code> · Ref:{' '}
+                  <code className="font-mono">{referenceId}</code>
+                </p>
+              </div>
+
+              {txSignature && (
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs space-y-1">
+                  <div className="font-semibold text-emerald-800">✓ On-Chain USDC Escrow Funded</div>
+                  <div className="font-mono text-[11px] text-emerald-700 break-all">Tx: {txSignature}</div>
+                </div>
+              )}
+
               <div className="flex flex-col gap-2">
+                {walletAddress && (
+                  <button
+                    type="button"
+                    disabled={signingPrivy}
+                    onClick={handlePrivySolanaPay}
+                    className="w-full py-3.5 px-4 rounded-xl bg-[var(--clay,#C97B5A)] text-white font-semibold text-sm hover:opacity-95 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 shadow-md"
+                  >
+                    <Wallet size={16} />
+                    {signingPrivy
+                      ? 'Signing & Broadcasting USDC…'
+                      : `Sign & Pay ${amount.toFixed(2)} USDC with Privy Wallet`}
+                  </button>
+                )}
+
                 <a
                   href={solanaPayUri}
                   onClick={() => onSuccess?.('solana', solanaPayUri)}
-                  className="w-full py-3.5 px-4 rounded-xl bg-[var(--warm-ink,#2A2520)] text-[var(--cream,#F5EFE6)] font-semibold text-sm hover:opacity-95 transition-opacity flex items-center justify-center gap-2 shadow-md"
+                  className="w-full py-3 px-4 rounded-xl bg-[var(--warm-ink,#2A2520)] text-[var(--cream,#F5EFE6)] font-semibold text-xs hover:opacity-95 transition-opacity flex items-center justify-center gap-2 shadow-sm"
                 >
-                  <Zap size={16} />
-                  Open in Solana Wallet ({amount.toFixed(2)} USDC)
+                  <Zap size={15} />
+                  Open in Phantom / Solflare ({amount.toFixed(2)} USDC)
                 </a>
+
                 <button
                   type="button"
                   onClick={handleCopySolana}

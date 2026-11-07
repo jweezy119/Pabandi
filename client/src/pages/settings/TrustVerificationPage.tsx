@@ -12,6 +12,11 @@ import {
   Info,
   Wallet,
   RefreshCw,
+  Copy,
+  Check,
+  Sparkles,
+  FileCheck2,
+  EyeOff,
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import DashboardLayout from '../../components/DashboardLayout';
@@ -115,6 +120,46 @@ export default function TrustVerificationPage() {
   );
 }
 
+interface CounterfactualAction {
+  actionId: string;
+  title: string;
+  description: string;
+  providerToLink: string;
+  estimatedScoreDelta: number;
+  unlocksBand: 'A' | 'B' | 'C' | null;
+  depositReductionSummary: string;
+}
+
+interface CounterfactualResult {
+  currentBand: 'A' | 'B' | 'C' | 'D';
+  currentScore: number;
+  nextTargetBand: 'A' | 'B' | 'C' | null;
+  pointsToNextBand: number;
+  recommendedActions: CounterfactualAction[];
+  summary: string;
+}
+
+interface SignedAttestationReceipt {
+  version: string;
+  modelId: string;
+  modelHash: string;
+  subjectDid: string;
+  inputFeatureHash: string;
+  predictedScore: number;
+  trustBand: 'A' | 'B' | 'C' | 'D';
+  shapVectorHash: string;
+  nonce: string;
+  timestamp: string;
+  publicKeyHex: string;
+  signature: string;
+}
+
+interface SdJwtBundle {
+  minimalPresentation: string;
+  sdJwtFull: string;
+  expiresAt: string;
+}
+
 function TrustVerificationActive() {
   const privyState = usePrivy();
   const { user, authenticated, login, getAccessToken } = privyState;
@@ -133,12 +178,26 @@ function TrustVerificationActive() {
     score?: number;
     reason?: string;
     message?: string;
+    bayesianScore?: {
+      blendedScore: number;
+      coldStartPriorWeight: number;
+      featureAttributions: Record<string, number>;
+    };
+    counterfactual?: CounterfactualResult;
+    attestation?: SignedAttestationReceipt;
+    sdJwt?: SdJwtBundle;
   }>({ status: 'idle' });
+  const [attestationVerified, setAttestationVerified] = useState<boolean | null>(null);
+  const [sdJwtVerifiedClaims, setSdJwtVerifiedClaims] = useState<Record<string, unknown> | null>(null);
+  const [copiedReceipt, setCopiedReceipt] = useState(false);
+  const [copiedSdJwt, setCopiedSdJwt] = useState(false);
   const autoSyncStarted = useRef(false);
 
   const runSync = useCallback(
     async ({ silent = false }: { silent?: boolean } = {}) => {
       setSync((prev) => ({ ...prev, status: 'syncing', message: undefined }));
+      setAttestationVerified(null);
+      setSdJwtVerifiedClaims(null);
 
       try {
         if (!getAuthToken()) {
@@ -162,9 +221,26 @@ function TrustVerificationActive() {
           band: 'A' | 'B' | 'C' | 'D';
           score: number;
           reason: string;
+          bayesianScore?: {
+            blendedScore: number;
+            coldStartPriorWeight: number;
+            featureAttributions: Record<string, number>;
+          };
+          counterfactual?: CounterfactualResult;
+          attestation?: SignedAttestationReceipt;
+          sdJwt?: SdJwtBundle;
         };
 
-        setSync({ status: 'synced', band: data.band, score: data.score, reason: data.reason });
+        setSync({
+          status: 'synced',
+          band: data.band,
+          score: data.score,
+          reason: data.reason,
+          bayesianScore: data.bayesianScore,
+          counterfactual: data.counterfactual,
+          attestation: data.attestation,
+          sdJwt: data.sdJwt,
+        });
         if (!silent) toast.success(`Trust Band ${data.band} recorded (score ${data.score})`);
       } catch (err: unknown) {
         const e = err as { response?: { data?: { error?: string } }; message?: string };
@@ -482,6 +558,226 @@ function TrustVerificationActive() {
           </div>
         )}
       </div>
+
+      {/* Year-0 Piece 1: Counterfactual Recourse & Bayesian Cold-Start Breakdown */}
+      {sync.status === 'synced' && sync.counterfactual && (
+        <div className="p-6 rounded-2xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.4)] shadow-sm space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-[var(--clay)]" />
+              <h2 className="text-base font-bold text-[var(--warm-ink)]">
+                Counterfactual Recourse &amp; Next Best Actions
+              </h2>
+            </div>
+            {sync.bayesianScore && (
+              <span className="text-xs font-mono px-2.5 py-1 rounded-lg bg-[var(--cream)] border border-[rgba(191,179,163,0.3)] text-[var(--soft-stone)]">
+                Bayesian Prior α={(sync.bayesianScore.coldStartPriorWeight * 100).toFixed(0)}% · Blended:{' '}
+                <strong className="text-[var(--warm-ink)]">{sync.bayesianScore.blendedScore}</strong>
+              </span>
+            )}
+          </div>
+
+          <p className="text-xs text-[var(--warm-ink)] leading-relaxed">{sync.counterfactual.summary}</p>
+
+          {sync.counterfactual.recommendedActions.length > 0 && (
+            <div className="space-y-2.5">
+              {sync.counterfactual.recommendedActions.map((rec) => {
+                const matchingProvider = providers.find((p) =>
+                  rec.providerToLink.toLowerCase().includes(p.id.toLowerCase())
+                );
+                return (
+                  <div
+                    key={rec.actionId}
+                    className="p-3.5 rounded-xl bg-[var(--cream)] border border-[rgba(191,179,163,0.35)] flex flex-wrap items-center justify-between gap-3"
+                  >
+                    <div className="space-y-1 max-w-xl">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-[var(--warm-ink)]">{rec.title}</span>
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-700">
+                          +{rec.estimatedScoreDelta} pts
+                        </span>
+                        {rec.unlocksBand && (
+                          <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-[var(--clay)]/15 text-[var(--clay)]">
+                            Unlocks Band {rec.unlocksBand}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-[var(--soft-stone)]">{rec.description}</p>
+                      <p className="text-[11px] font-medium text-[var(--clay)]">{rec.depositReductionSummary}</p>
+                    </div>
+
+                    {matchingProvider && (
+                      <button
+                        type="button"
+                        onClick={() => handleLink(matchingProvider.name, matchingProvider.linkFn)}
+                        className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-[var(--clay)] text-white hover:opacity-90 transition-opacity shrink-0"
+                      >
+                        Connect {matchingProvider.name.split(' ')[0]}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Year-0 Piece 2 & 3: Ed25519 Signed Attestation Receipt + W3C SD-JWT Selective Disclosure */}
+      {sync.status === 'synced' && (sync.attestation || sync.sdJwt) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {sync.attestation && (
+            <div className="p-5 rounded-2xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.4)] shadow-sm flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileCheck2 className="w-5 h-5 text-emerald-700" />
+                    <h3 className="text-sm font-bold text-[var(--warm-ink)]">
+                      Ed25519 Signed Score Receipt
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-800">
+                    Tier 2 Attested
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--soft-stone)] leading-relaxed">
+                  Cryptographically binds your score ({sync.attestation.predictedScore}), Trust Band (
+                  {sync.attestation.trustBand}), and SHAP attribution vector hash to model{' '}
+                  <code className="font-mono">{sync.attestation.modelId}</code>.
+                </p>
+
+                <div className="p-3 rounded-xl bg-[var(--cream)] border border-[rgba(191,179,163,0.3)] font-mono text-[11px] text-[var(--warm-ink)] space-y-1">
+                  <div className="truncate">Model Hash: {sync.attestation.modelHash}</div>
+                  <div className="truncate">SHAP Hash: {sync.attestation.shapVectorHash}</div>
+                  <div className="truncate">PubKey: {sync.attestation.publicKeyHex}</div>
+                  <div className="truncate">Sig: {sync.attestation.signature}</div>
+                </div>
+
+                {attestationVerified === true && (
+                  <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 text-xs font-medium flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Ed25519 signature &amp; model digest verified server-side.</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!sync.attestation) return;
+                    try {
+                      const res = await privyTrustService.verifyAttestation(
+                        sync.attestation as unknown as Record<string, unknown>
+                      );
+                      const valid = Boolean((res.data as { valid?: boolean })?.valid);
+                      setAttestationVerified(valid);
+                      if (valid) toast.success('Ed25519 attestation verified!');
+                      else toast.error('Attestation verification failed');
+                    } catch {
+                      toast.error('Failed to verify attestation');
+                    }
+                  }}
+                  className="flex-1 py-2 px-3 rounded-xl text-xs font-semibold bg-[var(--clay)] text-white hover:opacity-90 transition-opacity"
+                >
+                  Verify Signature
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!sync.attestation) return;
+                    await navigator.clipboard.writeText(JSON.stringify(sync.attestation, null, 2));
+                    setCopiedReceipt(true);
+                    setTimeout(() => setCopiedReceipt(false), 2000);
+                  }}
+                  className="py-2 px-3 rounded-xl text-xs font-semibold border border-[rgba(191,179,163,0.4)] bg-[var(--cream)] text-[var(--warm-ink)] flex items-center gap-1"
+                >
+                  {copiedReceipt ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedReceipt ? 'Copied' : 'Copy JSON'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {sync.sdJwt && (
+            <div className="p-5 rounded-2xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.4)] shadow-sm flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <EyeOff className="w-5 h-5 text-[var(--clay)]" />
+                    <h3 className="text-sm font-bold text-[var(--warm-ink)]">
+                      Selective Disclosure (W3C VC / SD-JWT)
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-[var(--clay)]/15 text-[var(--clay)]">
+                    Tier 1 Privacy
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--soft-stone)] leading-relaxed">
+                  Prove your Trust Band and deposit eligibility to merchants or AI agents using salted SHA-256
+                  disclosures without revealing your email, phone, wallet address, or exact score.
+                </p>
+
+                <div className="p-3 rounded-xl bg-[var(--cream)] border border-[rgba(191,179,163,0.3)] text-[11px] space-y-1">
+                  <div className="text-emerald-800 font-medium">
+                    ✓ Disclosed: <code>trust_band</code>, <code>deposit_basis_points</code>,{' '}
+                    <code>zero_deposit_eligible</code>
+                  </div>
+                  <div className="text-[var(--soft-stone)]">
+                    🔒 Blinded (Salted SHA-256): <code>exact_score</code>, <code>total_linked_accounts</code>, raw PII
+                  </div>
+                </div>
+
+                {sdJwtVerifiedClaims && (
+                  <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 text-xs font-mono">
+                    ✓ Verified Claims: {JSON.stringify(sdJwtVerifiedClaims)}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!sync.sdJwt) return;
+                    try {
+                      const res = await privyTrustService.verifySdJwt(sync.sdJwt.minimalPresentation);
+                      const payload = res.data as {
+                        valid?: boolean;
+                        disclosedClaims?: Record<string, unknown>;
+                      };
+                      if (payload.valid && payload.disclosedClaims) {
+                        setSdJwtVerifiedClaims(payload.disclosedClaims);
+                        toast.success('SD-JWT selective disclosure verified!');
+                      } else {
+                        toast.error('SD-JWT verification failed');
+                      }
+                    } catch {
+                      toast.error('Failed to verify SD-JWT');
+                    }
+                  }}
+                  className="flex-1 py-2 px-3 rounded-xl text-xs font-semibold bg-[var(--clay)] text-white hover:opacity-90 transition-opacity"
+                >
+                  Verify SD-JWT
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!sync.sdJwt) return;
+                    await navigator.clipboard.writeText(sync.sdJwt.minimalPresentation);
+                    setCopiedSdJwt(true);
+                    setTimeout(() => setCopiedSdJwt(false), 2000);
+                  }}
+                  className="py-2 px-3 rounded-xl text-xs font-semibold border border-[rgba(191,179,163,0.4)] bg-[var(--cream)] text-[var(--warm-ink)] flex items-center gap-1"
+                >
+                  {copiedSdJwt ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedSdJwt ? 'Copied' : 'Copy SD-JWT'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Linked Accounts List */}
       <div className="rounded-2xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.4)] p-6 shadow-sm">

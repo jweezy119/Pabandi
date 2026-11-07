@@ -1489,4 +1489,9 @@ export const userProfileService = {
 export const privyTrustService = {
   sync: (privyAccessToken: string) => apiClient.post('/privy/sync', { privyAccessToken }),
   rules: () => apiClient.get('/privy/trust-band-rules'),
+  attestationKey: () => apiClient.get('/privy/attestation-key'),
+  verifyAttestation: (attestation: Record<string, unknown>) =>
+    apiClient.post('/privy/verify-attestation', { attestation }),
+  verifySdJwt: (sdJwtPresentation: string) =>
+    apiClient.post('/privy/verify-sd-jwt', { sdJwtPresentation }),
 };

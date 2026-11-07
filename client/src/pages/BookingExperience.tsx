@@ -11,12 +11,22 @@ import { EmbeddedCheckoutModal, type DepositPrompt } from '../components/Embedde
 import { VaultLocked } from '../components/GuaranteeVisuals';
 
 // ── Types ──────────────────────────────────────────────────────────────────
+interface BusinessServiceItem {
+  id: string;
+  name: string;
+  description?: string | null;
+  price: number;
+  duration?: number;
+  category?: string | null;
+}
+
 interface Business {
   id: string;
   name: string;
   address: string;
   city?: string;
   state?: string;
+  category?: string;
   rating?: number;
   coverImageUrl?: string;
   logoUrl?: string;
@@ -27,12 +37,20 @@ interface Business {
   priceLevel?: number;
   latitude?: number;
   longitude?: number;
+  requireDeposit?: boolean;
+  depositAmount?: number | null;
+  depositPercentage?: number | null;
+  services?: BusinessServiceItem[];
 }
 
 interface TimeSlot {
   time: string;
   available: boolean;
 }
+
+const DEFAULT_SOLANA_VAULT =
+  import.meta.env.VITE_ESCROW_VAULT_ADDRESS || 'GsbwXfJraMomNxBcjYLcG3mxkBUiyWXAB32fGbSQQRre';
+const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 
 // ── Main Booking Page ──────────────────────────────────────────────────────
 export default function BookingExperience() {
@@ -41,6 +59,7 @@ export default function BookingExperience() {
   const { isAuthenticated, user } = useAuthStore();
   const [step, setStep] = useState<'search' | 'detail' | 'confirm'>(id ? 'detail' : 'search');
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
+  const [selectedService, setSelectedService] = useState<BusinessServiceItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Business[]>([]);
   const [loading, setLoading] = useState(false);
@@ -50,7 +69,7 @@ export default function BookingExperience() {
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [guests, setGuests] = useState(2);
   const [specialRequests, setSpecialRequests] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'square' | 'solana' | 'safepay' | 'bsc'>('square');
+  const [paymentMethod, setPaymentMethod] = useState<'square' | 'solana' | 'safepay' | 'bsc'>('solana');
   const [bookingComplete, setBookingComplete] = useState(false);
   /**
    * The deposit the engine charged for this reservation, for the confirmation
@@ -77,7 +96,18 @@ export default function BookingExperience() {
   const { data: businessData } = useQuery(
     ['business', id],
     () => businessService.getBusiness(id!),
-    { enabled: !!id, onSuccess: (data) => setSelectedBusiness(data.data?.business) }
+    {
+      enabled: !!id,
+      onSuccess: (data) => {
+        const biz = data.data?.business as Business | undefined;
+        if (biz) {
+          setSelectedBusiness(biz);
+          if (biz.services && biz.services.length > 0 && !selectedService) {
+            setSelectedService(biz.services[0]);
+          }
+        }
+      },
+    }
   );
 
   // Fetch wallet balance
@@ -134,8 +164,13 @@ export default function BookingExperience() {
       return;
     }
 
+    const serviceValue = selectedService?.price ?? selectedBusiness.depositAmount ?? 0;
+
     const reservationPayload = {
       businessId: selectedBusiness.id,
+      serviceId: selectedService?.id,
+      serviceName: selectedService?.name,
+      serviceValue,
       reservationDate: format(selectedDate, 'yyyy-MM-dd'),
       reservationTime: selectedTime,
       numberOfGuests: guests,
@@ -153,25 +188,19 @@ export default function BookingExperience() {
 
     if (!outcome) return;
 
-    if (outcome.actionRequired === 'deposit_required') {
-      // Funded in place. The figure and URL are the engine's — it read the
-      // business's rail and the customer's band; this page neither computes
-      // nor redirects.
+    if (outcome.actionRequired === 'deposit_required' && outcome.deposit) {
       const deposit = outcome.deposit;
-      if (!deposit?.checkoutUrl) {
-        toast.error(
-          `${selectedBusiness.name} requires a deposit, collected directly by the business. The reservation cannot complete here yet.`
-        );
-        return;
-      }
-      // The figure feeds the confirmation breakdown; the URL opens the
-      // embedded modal below.
+      const fallbackSolanaUri = `solana:${DEFAULT_SOLANA_VAULT}?amount=${deposit.amount}&spl-token=${USDC_MINT}`;
+      const effectiveCheckoutUrl = deposit.checkoutUrl || fallbackSolanaUri;
+
       setPaidDeposit(deposit.amount);
       setDepositPrompt({
-        checkoutUrl: deposit.checkoutUrl,
+        checkoutUrl: effectiveCheckoutUrl,
         description: deposit.explanation,
         amount: deposit.amount,
         currency: deposit.currency,
+        band: deposit.band,
+        referenceId: `booking-${selectedBusiness.id}-${format(selectedDate, 'yyyyMMdd')}`,
       });
       return;
     }
@@ -186,11 +215,16 @@ export default function BookingExperience() {
 
     if (!selectedBusiness || !user?.id) return;
 
+    const serviceValue = selectedService?.price ?? selectedBusiness.depositAmount ?? 0;
+
     const outcome = await runAction({
       actionType: 'booking',
       amount: 0,
       payload: {
         businessId: selectedBusiness.id,
+        serviceId: selectedService?.id,
+        serviceName: selectedService?.name,
+        serviceValue,
         reservationDate: format(selectedDate, 'yyyy-MM-dd'),
         reservationTime: selectedTime,
         numberOfGuests: guests,
@@ -206,6 +240,8 @@ export default function BookingExperience() {
     toast.success('Deposit received. Your reservation is confirmed.');
     bookingMutation.mutate({
       businessId: selectedBusiness.id,
+      serviceId: selectedService?.id,
+      serviceName: selectedService?.name,
       reservationDate: format(selectedDate, 'yyyy-MM-dd'),
       reservationTime: selectedTime,
       numberOfGuests: guests,
@@ -375,8 +411,49 @@ export default function BookingExperience() {
 
         {/* Booking Form */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left: Date/Time/Guests */}
+          {/* Left: Service/Date/Time/Guests */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Service / Milestone Package Selection */}
+            {business?.services && business.services.length > 0 && (
+              <Surface className="p-6">
+                <h3 className="font-bold text-[var(--warm-ink)] mb-4">Select Service / Escrow Milestone</h3>
+                <div className="space-y-3">
+                  {business.services.map((svc) => {
+                    const isSelected = selectedService?.id === svc.id;
+                    return (
+                      <button
+                        key={svc.id}
+                        type="button"
+                        onClick={() => setSelectedService(svc)}
+                        className={`w-full p-4 rounded-xl text-left transition-all border ${
+                          isSelected
+                            ? 'bg-[var(--clay)]/15 border-[var(--clay)]'
+                            : 'bg-[var(--warm-sand)] border-[rgba(191,179,163,0.3)] hover:border-[var(--clay)]/40'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="font-bold text-[var(--warm-ink)]">{svc.name}</div>
+                            {svc.description && (
+                              <p className="text-xs text-[var(--soft-stone)] mt-1">{svc.description}</p>
+                            )}
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="text-lg font-bold text-[var(--clay)]">
+                              ${svc.price.toLocaleString()}
+                            </div>
+                            {svc.duration && (
+                              <div className="text-[11px] text-[var(--soft-stone)]">{svc.duration} min</div>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </Surface>
+            )}
+
             {/* Date Selection */}
             <Surface className="p-6">
               <h3 className="font-bold text-[var(--warm-ink)] mb-4">Select Date</h3>
@@ -458,12 +535,24 @@ export default function BookingExperience() {
           <div className="space-y-6">
             {/* Summary */}
             <Surface className="p-6">
-              <h3 className="font-bold text-[var(--warm-ink)] mb-4">Reservation Summary</h3>
+              <h3 className="font-bold text-[var(--warm-ink)] mb-4">Booking Summary</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-[var(--soft-stone)]">Restaurant</span>
-                  <span className="text-[var(--warm-ink)]">{business?.name}</span>
+                  <span className="text-[var(--soft-stone)]">Provider</span>
+                  <span className="text-[var(--warm-ink)] font-medium">{business?.name}</span>
                 </div>
+                {selectedService && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-[var(--soft-stone)]">Service</span>
+                      <span className="text-[var(--warm-ink)] font-medium">{selectedService.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[var(--soft-stone)]">Service Value</span>
+                      <span className="text-[var(--clay)] font-bold">${selectedService.price.toLocaleString()}</span>
+                    </div>
+                  </>
+                )}
                 <div className="flex justify-between">
                   <span className="text-[var(--soft-stone)]">Date</span>
                   <span className="text-[var(--warm-ink)]">{format(selectedDate, 'MMM d, yyyy')}</span>
@@ -473,9 +562,30 @@ export default function BookingExperience() {
                   <span className="text-[var(--warm-ink)]">{selectedTime || 'Select time'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[var(--soft-stone)]">Guests</span>
+                  <span className="text-[var(--soft-stone)]">Party / Crew Size</span>
                   <span className="text-[var(--warm-ink)]">{guests}</span>
                 </div>
+              </div>
+
+              {/* Server-Side Trust Band Deposit Tiers */}
+              <div className="mt-4 pt-4 border-t border-[rgba(191,179,163,0.3)] space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--soft-stone)]">
+                    Privy Trust-Band Deposit Policy
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/settings/trust')}
+                    className="text-xs font-semibold text-[var(--clay)] hover:underline"
+                  >
+                    Upgrade Band →
+                  </button>
+                </div>
+                <p className="text-xs text-[var(--soft-stone)] leading-relaxed">
+                  Deposits are evaluated strictly on our server against your verified Privy identity:
+                  <strong> Band A = $0 (Waived)</strong>, <strong>Band B = 50% off</strong>,{' '}
+                  <strong>Band C = Standard</strong>, <strong>Band D = 1.25x (capped at 50%)</strong>.
+                </p>
               </div>
             </Surface>
 

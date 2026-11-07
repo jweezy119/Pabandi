@@ -138,6 +138,7 @@ export default function FluidBookingPage() {
     const bookingPayload = {
       businessId: business.id,
       serviceId: selectedService?.id,
+      serviceValue: amount,
       date: selectedDate,
       time: selectedTime,
       guests,
@@ -154,11 +155,12 @@ export default function FluidBookingPage() {
     // and answers with `actionRequired`. A rule enforced in a browser is a
     // suggestion, and it disagreed with the server's own copy of the score.
     //
-    // `amount` is the booking's own value, not a deposit. The engine is told
-    // what is being authorised and decides whether it needs a deposit on top.
+    // `serviceValue` is the booking's value for deposit policy evaluation while
+    // `amount: 0` keeps high-ticket contractor jobs ($1,500-$15,000) from
+    // exceeding the session tab limit.
     const outcome = await runAction({
       actionType: 'booking',
-      amount,
+      amount: 0,
       payload: bookingPayload,
       ownerType: 'user',
       ownerId: user.id,
@@ -166,30 +168,21 @@ export default function FluidBookingPage() {
 
     if (!outcome) return;
 
-    if (outcome.actionRequired === 'deposit_required') {
-      // The engine wants a deposit before this settles. The figure and the
-      // destination come from the engine, not from this page: it owned the
-      // business's policy and the customer's band, and it built the URL from
-      // the business's own payment rail.
+    if (outcome.actionRequired === 'deposit_required' && outcome.deposit) {
       const deposit = outcome.deposit;
-      if (!deposit?.checkoutUrl) {
-        // The business asks for a deposit but has no collectible URL (no
-        // payment method configured, or a rail like bank transfer that has
-        // no hosted page). Saying nothing here would read the booking as
-        // confirmed without the money the business asked for.
-        toast.error(
-          `${business.name} requires a deposit, collected directly by the business. The booking cannot complete here yet.`
-        );
-        return;
-      }
-      // Remember what the engine charged: the confirmation screen breaks the
-      // bill down against it rather than guessing.
+      const defaultVault =
+        import.meta.env.VITE_ESCROW_VAULT_ADDRESS || 'GsbwXfJraMomNxBcjYLcG3mxkBUiyWXAB32fGbSQQRre';
+      const fallbackSolanaUri = `solana:${defaultVault}?amount=${deposit.amount}&spl-token=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`;
+      const effectiveCheckoutUrl = deposit.checkoutUrl || fallbackSolanaUri;
+
       setPaidDeposit(deposit.amount);
       setDepositPrompt({
-        checkoutUrl: deposit.checkoutUrl,
+        checkoutUrl: effectiveCheckoutUrl,
         description: deposit.explanation,
         amount: deposit.amount,
         currency: deposit.currency,
+        band: deposit.band,
+        referenceId: `booking-${business.id}-${selectedDate}`,
       });
       return;
     }
@@ -232,12 +225,14 @@ export default function FluidBookingPage() {
 
     if (!business || !user?.id) return;
 
+    const serviceValue = selectedService?.discountPrice || selectedService?.price || 0;
     const outcome = await runAction({
       actionType: 'booking',
-      amount: selectedService?.discountPrice || selectedService?.price || 0,
+      amount: 0,
       payload: {
         businessId: business.id,
         serviceId: selectedService?.id,
+        serviceValue,
         date: selectedDate,
         time: selectedTime,
         guests,

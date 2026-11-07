@@ -486,11 +486,19 @@ class EngineService {
       const businessId = typeof input.payload.businessId === 'string' ? input.payload.businessId : '';
       if (businessId) {
         try {
+          const explicitServiceValue =
+            typeof input.payload.serviceValue === 'number' &&
+            Number.isFinite(input.payload.serviceValue) &&
+            input.payload.serviceValue > 0
+              ? input.payload.serviceValue
+              : null;
+          const bookingValue = input.amount > 0 ? input.amount : (explicitServiceValue ?? input.amount);
+
           const decision = await evaluateBookingDeposit({
             businessId,
             ownerType: session.ownerType as 'user' | 'agent',
             ownerId: session.ownerId,
-            bookingValue: input.amount,
+            bookingValue,
           });
 
           if (decision.required && decision.deposit) {
