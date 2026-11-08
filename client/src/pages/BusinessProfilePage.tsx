@@ -118,6 +118,9 @@ export default function BusinessProfilePage() {
   const reviews = reviewsData?.data?.data?.reviews || [];
 
   const [isSuccess, setIsSuccess] = useState(false);
+  const [createdBookingData, setCreatedBookingData] = useState<any>(null);
+  const [solanaPayVerified, setSolanaPayVerified] = useState(false);
+  const [verifyingSolanaPay, setVerifyingSolanaPay] = useState(false);
   const [showClaimOverlay, setShowClaimOverlay] = useState(false);
 
   // Create Reservation Mutation
@@ -125,8 +128,10 @@ export default function BusinessProfilePage() {
     (data: any) => reservationService.createReservation(data),
     {
       onSuccess: (res) => {
-        const checkoutUrl = res?.data?.data?.checkoutUrl;
-        if (checkoutUrl) {
+        const payload = res?.data?.data;
+        setCreatedBookingData(payload || null);
+        const checkoutUrl = payload?.checkoutUrl;
+        if (checkoutUrl && !checkoutUrl.startsWith('solana:')) {
           window.location.href = checkoutUrl;
         } else {
           setIsSuccess(true);
@@ -241,6 +246,80 @@ export default function BusinessProfilePage() {
           <p className="text-sm mb-6 text-on-surface-variant">
             {formData.reservationDate} at {formData.reservationTime} · {formData.numberOfGuests} guests
           </p>
+
+          {/* Compressed NFT (cNFT) Booking Credential */}
+          {createdBookingData?.cnftCredential && (
+            <div className="mb-4 p-4 rounded-xl bg-primary/5 border border-primary/20 text-left space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-primary">
+                  Solana cNFT Booking Credential
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-700 font-bold">
+                  {solanaPayVerified ? 'COMPLETED' : createdBookingData.cnftCredential.metadata?.status || 'CONFIRMED'}
+                </span>
+              </div>
+              <p className="text-xs font-mono text-on-surface break-all">
+                Asset ID: {createdBookingData.cnftCredential.assetId}
+              </p>
+              <p className="text-[10px] font-mono text-on-surface-variant">
+                Leaf #{createdBookingData.cnftCredential.leafIndex} · Root {createdBookingData.cnftCredential.rootHash?.slice(0, 16)}...
+              </p>
+            </div>
+          )}
+
+          {/* Solana Pay Automatic Settlement (findReference) */}
+          {createdBookingData?.solanaPay && (
+            <div className="mb-5 p-4 rounded-xl bg-[var(--warm-sand)]/40 border border-outline-variant/30 text-left space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-headline font-bold text-on-surface">
+                  Solana Pay Instant Settlement
+                </span>
+                <span className="text-xs font-mono font-bold text-primary">
+                  {createdBookingData.solanaPay.amount} {createdBookingData.solanaPay.currency}
+                </span>
+              </div>
+              <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                Scan or open in a Solana Pay wallet. Settlement is detected automatically on-chain via <code className="font-mono">findReference</code> (~400ms finality, no screenshots required).
+              </p>
+              <div className="flex flex-col gap-2">
+                <a
+                  href={createdBookingData.solanaPay.solanaPayUrl}
+                  className="w-full bg-primary text-on-primary font-headline text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all text-center"
+                >
+                  ⚡ Open Solana Pay ({createdBookingData.solanaPay.amount} {createdBookingData.solanaPay.currency})
+                </a>
+                <button
+                  type="button"
+                  disabled={verifyingSolanaPay || solanaPayVerified}
+                  onClick={async () => {
+                    setVerifyingSolanaPay(true);
+                    try {
+                      const bookingId = createdBookingData.reservation?.id || createdBookingData.solanaPay.bookingId;
+                      const res = await fetch(`/api/v1/reservations/${bookingId}/solana-pay/verify`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                      });
+                      const json = await res.json();
+                      if (json?.data?.verified) {
+                        setSolanaPayVerified(true);
+                      }
+                    } catch {
+                      // ignore
+                    } finally {
+                      setVerifyingSolanaPay(false);
+                    }
+                  }}
+                  className="w-full border border-primary/30 text-primary font-headline text-xs font-bold py-2 rounded-lg hover:bg-primary/5 transition-all"
+                >
+                  {solanaPayVerified
+                    ? '✓ Verified On-Chain & $PAB Rewarded'
+                    : verifyingSolanaPay
+                    ? 'Checking Solana RPC (findReference)...'
+                    : 'Verify On-Chain Settlement (findReference)'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {business.phone && (
             <div className="mb-4">

@@ -376,23 +376,71 @@ const TEMPLATES: Record<string, PabandiTemplate> = {
 
   post_service_review: {
     name: 'post_service_review',
-    category: 'marketing',
+    category: 'support',
     body: [
-      '✨ *How was your experience today at {{businessName}}?*',
+      '📋 *Service Completion Summary — {{businessName}}*',
       '',
-      'Hi {{customerName}}, thank you for visiting us for your appointment!',
+      'Hi {{customerName}}, your appointment at *{{businessName}}* has been marked completed.',
       '',
-      'We hope you enjoyed our service. Would you take 10 seconds to share your feedback or leave us a 5-star Google review?',
-      '⭐ Review us: {{googleReviewUrl}}',
+      'Please share your service rating or feedback:',
+      '{{googleReviewUrl}}',
       '',
-      'Have any suggestions for our manager? Reply to this message anytime.',
+      'To schedule your next appointment, reply *book* or visit the link above.',
     ].join('\n'),
     variables: [
       { key: 'businessName', label: 'Business Name', required: true },
       { key: 'customerName', label: 'Customer Name', required: true },
       { key: 'googleReviewUrl', label: 'Review URL', required: true },
     ],
-    footer: 'Pabandi Reputation Builder',
+    footer: 'Pabandi Service Records',
+  },
+
+  waitlist_slot_available: {
+    name: 'waitlist_slot_available',
+    category: 'notification',
+    body: [
+      '🕐 *Appointment Slot Update — {{businessName}}*',
+      '',
+      'Hi {{customerName}}, a previously reserved time slot on *{{reservationDate}}* at *{{reservationTime}}* is now open.',
+      '',
+      'Slot Reference: #{{slotRef}}',
+      'View slot details: {{bookingUrl}}',
+    ].join('\n'),
+    variables: [
+      { key: 'customerName', label: 'Customer Name', required: true },
+      { key: 'businessName', label: 'Business Name', required: true },
+      { key: 'reservationDate', label: 'Reservation Date', required: true },
+      { key: 'reservationTime', label: 'Reservation Time', required: true },
+      { key: 'slotRef', label: 'Slot Reference', required: true },
+      { key: 'bookingUrl', label: 'Booking URL', required: true },
+    ],
+    footer: 'Pabandi Waitlist Notification',
+  },
+
+  solana_pay_receipt: {
+    name: 'solana_pay_receipt',
+    category: 'booking',
+    body: [
+      '🧾 *Payment Receipt — {{businessName}}*',
+      '',
+      'Hi {{customerName}}, your payment has been confirmed on-chain.',
+      '',
+      'Order Number: #{{bookingId}}',
+      'Service: {{serviceName}}',
+      'Amount Paid: *{{amount}}*',
+      'Transaction Ref: `{{txSignature}}`',
+      'Booking Credential (cNFT): `{{cnftAssetId}}`',
+    ].join('\n'),
+    variables: [
+      { key: 'customerName', label: 'Customer Name', required: true },
+      { key: 'businessName', label: 'Business Name', required: true },
+      { key: 'bookingId', label: 'Booking ID', required: true },
+      { key: 'serviceName', label: 'Service Name', required: true },
+      { key: 'amount', label: 'Amount', required: true },
+      { key: 'txSignature', label: 'Transaction Signature', required: true },
+      { key: 'cnftAssetId', label: 'cNFT Asset ID', required: false },
+    ],
+    footer: 'Pabandi Settlement Receipt',
   },
 };
 

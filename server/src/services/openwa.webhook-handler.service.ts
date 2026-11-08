@@ -207,9 +207,224 @@ async function handleIncomingMessage(payload: OpenWAWebhookPayload): Promise<voi
   }
 
   // -------------------------------------------------------------------
-  // 1. Handle Opt-outs for CRM campaigns
+  // 0.8. Two-Way Booking State Machine (Confirm / Reschedule / Cancel / Rate)
+  // Handles interactive button payloads from reminderCron.service.ts & post-visit loop:
+  //   confirm_<id> | reschedule_<id> | cancel_<id> | rate_<id>_<1..5>
   // -------------------------------------------------------------------
-  if (['stop', 'unsubscribe', 'opt-out', 'opt out', 'cancel'].includes(messageBody.toLowerCase().trim())) {
+  try {
+    const trimmedCmd = messageBody.trim();
+    const buttonMatch = trimmedCmd.match(/^(confirm|reschedule|cancel)_([a-zA-Z0-9_-]+)$/i);
+    const rateMatch = trimmedCmd.match(/^rate_([a-zA-Z0-9_-]+)_([1-5])$/i);
+
+    if (rateMatch) {
+      const targetId = rateMatch[1];
+      const stars = parseInt(rateMatch[2], 10);
+      const reservation = await prisma.reservation.findUnique({
+        where: { id: targetId },
+        include: { business: true },
+      });
+
+      if (reservation) {
+        const bizName = reservation.business?.name || 'our venue';
+        const slugOrId = reservation.business?.slug || reservation.businessId;
+        const rebookUrl = `https://pabandi.com/business/${slugOrId}/book?rebook=${reservation.id}`;
+
+        if (stars >= 4) {
+          const googleReviewUrl = reservation.business?.googlePlaceId
+            ? `https://search.google.com/local/writereview?placeid=${reservation.business.googlePlaceId}`
+            : `https://pabandi.com/business/${slugOrId}?tab=reviews`;
+
+          await openwaService.sendText(
+            senderPhone,
+            `Thank you for rating your visit at *${bizName}* (${stars}/5).\n\n` +
+              `Public review link: ${googleReviewUrl}\n\n` +
+              `To schedule your next appointment slot: ${rebookUrl}`,
+            { sessionId }
+          );
+        } else {
+          await openwaService.sendText(
+            senderPhone,
+            `Thank you for your feedback (${stars}/5) regarding *${bizName}*. Your note has been logged with the management team. Reply directly to this message with any details you would like us to address.`,
+            { sessionId }
+          );
+        }
+        logger.info(`[WebhookHandler] Processed post-visit rating ${stars}/5 for reservation ${targetId}`);
+        return;
+      }
+    }
+
+    if (buttonMatch) {
+      const action = buttonMatch[1].toLowerCase() as 'confirm' | 'reschedule' | 'cancel';
+      const recordId = buttonMatch[2];
+
+      // 1. Check Consumer Reservation first
+      const reservation = await prisma.reservation.findUnique({
+        where: { id: recordId },
+        include: { business: true },
+      });
+
+      if (reservation) {
+        const bizName = reservation.business?.name || 'Pabandi Partner';
+        const slugOrId = reservation.business?.slug || reservation.businessId;
+        const dateStr = new Date(reservation.reservationDate).toLocaleDateString();
+        const timeStr = reservation.reservationTime;
+
+        if (action === 'confirm') {
+          await prisma.reservation.update({
+            where: { id: reservation.id },
+            data: { status: 'CONFIRMED' },
+          });
+          const { cnftService } = await import('./cnft.service');
+          const cnft = await cnftService.verifyCredential(reservation.id);
+
+          await openwaService.sendText(
+            senderPhone,
+            `✅ *Attendance Confirmed — ${bizName}*\n\n` +
+              `Reservation Reference: #${reservation.id.slice(-6).toUpperCase()}\n` +
+              `Date & Time: ${dateStr} at ${timeStr}\n` +
+              (cnft.credential ? `Booking Credential (cNFT): ${cnft.credential.assetId}\n` : '') +
+              `\nYour status has been updated to Confirmed.`,
+            { sessionId }
+          );
+          logger.info(`[WebhookHandler] Reservation ${reservation.id} confirmed via WhatsApp button`);
+          return;
+        }
+
+        if (action === 'reschedule') {
+          const rescheduleUrl = `https://pabandi.com/business/${slugOrId}/book?reschedule=${reservation.id}`;
+          await openwaService.sendText(
+            senderPhone,
+            `🔄 *Reschedule Appointment — ${bizName}*\n\n` +
+              `Current Slot: ${dateStr} at ${timeStr}\n` +
+              `Select a new time slot here: ${rescheduleUrl}`,
+            { sessionId }
+          );
+          logger.info(`[WebhookHandler] Sent reschedule link for reservation ${reservation.id}`);
+          return;
+        }
+
+        if (action === 'cancel') {
+          await prisma.reservation.update({
+            where: { id: reservation.id },
+            data: { status: 'CANCELLED' },
+          });
+          const { cnftService } = await import('./cnft.service');
+          await cnftService.updateCredentialStatus(reservation.id, 'CANCELLED');
+
+          await openwaService.sendText(
+            senderPhone,
+            `❌ *Reservation Cancelled — ${bizName}*\n\n` +
+              `Reference: #${reservation.id.slice(-6).toUpperCase()}\n` +
+              `Slot: ${dateStr} at ${timeStr}\n\n` +
+              `Your reservation has been cancelled.`,
+            { sessionId }
+          );
+
+          // Notify up to 3 waitlisted/previous patrons with strictly utility slot availability message (no promotional copy)
+          try {
+            const waitlistPatrons = await prisma.reservation.findMany({
+              where: {
+                businessId: reservation.businessId,
+                status: 'CANCELLED',
+                customerPhone: { not: senderPhone },
+              },
+              orderBy: { createdAt: 'desc' },
+              take: 3,
+            });
+            const { openwaTemplateService } = await import('./openwa.template.service');
+            for (const patron of waitlistPatrons) {
+              if (!patron.customerPhone) continue;
+              const waitlistMsg = openwaTemplateService.render('waitlist_slot_available', {
+                customerName: patron.customerName || 'Guest',
+                businessName: bizName,
+                reservationDate: dateStr,
+                reservationTime: timeStr,
+                slotRef: reservation.id.slice(-6).toUpperCase(),
+                bookingUrl: `https://pabandi.com/business/${slugOrId}/book`,
+              });
+              await openwaService.sendText(patron.customerPhone, waitlistMsg, { sessionId }).catch(() => {});
+            }
+          } catch (wlErr: any) {
+            logger.warn(`[WebhookHandler] Waitlist utility alert warning: ${wlErr?.message}`);
+          }
+
+          logger.info(`[WebhookHandler] Reservation ${reservation.id} cancelled via WhatsApp button`);
+          return;
+        }
+      }
+
+      // 2. Check CRM Job if not a Consumer Reservation
+      const crmJob = await prisma.crmJob.findUnique({
+        where: { id: recordId },
+        include: {
+          client: true,
+          serviceBusiness: { include: { business: true } },
+        },
+      });
+
+      if (crmJob) {
+        const bizName = crmJob.serviceBusiness?.business?.name || 'Pabandi Partner';
+        const slugOrId = crmJob.serviceBusiness?.business?.slug || crmJob.serviceBusiness?.businessId || '';
+        const dateStr = new Date(crmJob.scheduledDate).toLocaleDateString();
+        const timeStr = crmJob.scheduledTime || '';
+
+        if (action === 'confirm') {
+          await prisma.crmJob.update({
+            where: { id: crmJob.id },
+            data: { status: 'IN_PROGRESS' },
+          });
+          await openwaService.sendText(
+            senderPhone,
+            `✅ *Appointment Confirmed — ${bizName}*\n\n` +
+              `Reference: #${crmJob.id.slice(-6).toUpperCase()}\n` +
+              `Scheduled: ${dateStr} ${timeStr}\n\n` +
+              `Your confirmation has been recorded.`,
+            { sessionId }
+          );
+          logger.info(`[WebhookHandler] CRM Job ${crmJob.id} confirmed via WhatsApp button`);
+          return;
+        }
+
+        if (action === 'reschedule') {
+          const rescheduleUrl = slugOrId
+            ? `https://pabandi.com/business/${slugOrId}/book?reschedule=${crmJob.id}`
+            : `https://pabandi.com/booking`;
+          await openwaService.sendText(
+            senderPhone,
+            `🔄 *Reschedule Appointment — ${bizName}*\n\n` +
+              `Current Schedule: ${dateStr} ${timeStr}\n` +
+              `Update your appointment time here: ${rescheduleUrl}`,
+            { sessionId }
+          );
+          return;
+        }
+
+        if (action === 'cancel') {
+          await prisma.crmJob.update({
+            where: { id: crmJob.id },
+            data: { status: 'CANCELLED' },
+          });
+          await openwaService.sendText(
+            senderPhone,
+            `❌ *Appointment Cancelled — ${bizName}*\n\n` +
+              `Reference: #${crmJob.id.slice(-6).toUpperCase()}\n` +
+              `Scheduled: ${dateStr} ${timeStr}\n\n` +
+              `Your appointment has been cancelled.`,
+            { sessionId }
+          );
+          logger.info(`[WebhookHandler] CRM Job ${crmJob.id} cancelled via WhatsApp button`);
+          return;
+        }
+      }
+    }
+  } catch (btnErr: any) {
+    logger.warn(`[WebhookHandler] Button state machine error: ${btnErr?.message}`);
+  }
+
+  // -------------------------------------------------------------------
+  // 1. Handle Opt-outs for CRM campaigns (only explicit stop/unsubscribe keywords)
+  // -------------------------------------------------------------------
+  if (['stop', 'unsubscribe', 'opt-out', 'opt out'].includes(messageBody.toLowerCase().trim())) {
     try {
       if (!admin.apps.length) admin.initializeApp();
       const db = admin.firestore();

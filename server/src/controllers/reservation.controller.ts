@@ -30,6 +30,9 @@ import { ReferralService } from '../services/referral.service';
 import { defaultDepositModeWeb3 } from '../utils/env';
 import { backgroundCheckService } from '../services/backgroundCheck.service';
 import { predictiveTrustService } from '../services/predictiveTrust.service';
+import { cnftService } from '../services/cnft.service';
+import { solanaPayService } from '../services/solanaPay.service';
+import { openwaService } from '../services/openwa.service';
 
 const referralService = new ReferralService();
 
@@ -423,20 +426,64 @@ export const createReservation = async (
       },
     }).catch((err: unknown) => logger.error('Failed to queue reservation.created webhook:', err));
 
+    // ── Mint Compressed NFT (cNFT) Booking Credential & Solana Pay Transfer Request ──
+    let cnftCredential: any = null;
+    let solanaPayRequest: any = null;
+    try {
+      const customerUser = req.user?.id
+        ? await prisma.user.findUnique({ where: { id: req.user.id }, select: { walletAddress: true } })
+        : null;
+      cnftCredential = await cnftService.mintBookingCredential({
+        bookingId: reservation.id,
+        businessId: business.id,
+        businessName: business.name,
+        serviceName: Array.isArray(customServiceNames) && customServiceNames.length > 0
+          ? customServiceNames.join(', ')
+          : 'Venue Reservation',
+        reservationDate: dateTime.format('YYYY-MM-DD'),
+        reservationTime,
+        customerName,
+        customerWallet: customerUser?.walletAddress || null,
+        depositAmount: Number(depositAmount || 0),
+        currency: (business as any).currency || 'PKR',
+      });
+      solanaPayRequest = await solanaPayService.createTransferRequest({
+        bookingId: reservation.id,
+      });
+    } catch (cnftErr: any) {
+      logger.warn(`[cNFT/SolanaPay] Credential generation warning: ${cnftErr?.message}`);
+    }
+
     // Send confirmation notification if not concierge (concierge sends its own once confirmed)
     if (!isConcierge) {
       await notificationService.sendConfirmation(reservation.id);
       await notificationService.sendBusinessNotification(reservation.id);
       
-      // WhatsApp Integration: Send Booking Confirmation
+      // WhatsApp Integration: Pure Utility Booking Confirmation + Interactive State Machine Buttons
       if (customerPhone) {
         const depositText = depositAmount || req.body.transactionHash 
-          ? "✅ Deposit secured safely via Pabandi Escrow." 
-          : "🌟 Booked with Zero Deposit! Your high Pabandi Trust Score waived the fee.";
+          ? "Deposit Status: Recorded via Pabandi Escrow." 
+          : "Deposit Status: Waived based on Pabandi Trust Score.";
           
-        const body = `Hi ${customerName}! 👋\n\nYour reservation at *${business.name}* is confirmed for *${dateTime.format('MMMM Do YYYY')} at ${reservationTime}*.\n\n${depositText}\n\nNeed to cancel? Just reply to this message with *"Cancel"* to automatically cancel and refund your deposit.`;
+        const body =
+          `✅ *Reservation Confirmed — ${business.name}*\n\n` +
+          `Reference: #${reservation.id.slice(-6).toUpperCase()}\n` +
+          `Guest: ${customerName}\n` +
+          `Date & Time: ${dateTime.format('MMMM Do YYYY')} at ${reservationTime}\n` +
+          `${depositText}\n` +
+          (cnftCredential?.assetId ? `Booking Credential (cNFT): ${cnftCredential.assetId}\n` : '') +
+          `\nUse the buttons below to confirm attendance, reschedule, or cancel.`;
         
-        await sendWhatsAppMessage(customerPhone, body);
+        await openwaService.sendButtons(
+          customerPhone,
+          body,
+          [
+            { id: `confirm_${reservation.id}`, text: "✅ I'll Be There" },
+            { id: `reschedule_${reservation.id}`, text: '🔄 Reschedule' },
+            { id: `cancel_${reservation.id}`, text: '❌ Cancel' },
+          ],
+          { title: `${business.name} Booking` }
+        ).catch(() => sendWhatsAppMessage(customerPhone, body));
       }
     } else {
       if (business.phone) {
@@ -585,6 +632,8 @@ export const createReservation = async (
         },
         pabond: pabondResult,
         insurance: insuranceOffer,
+        cnftCredential,
+        solanaPay: solanaPayRequest,
       },
     });
   } catch (error) {
@@ -1015,8 +1064,33 @@ export const completeReservation = async (
       reservation.depositAmount || 0
     );
 
-    // Ask for feedback via WhatsApp
+    // Upgrade Compressed NFT (cNFT) Booking Credential to COMPLETED
+    const updatedCnft = await cnftService.updateCredentialStatus(
+      reservation.id,
+      'COMPLETED',
+      reservation.cryptoDepositTxHash || undefined
+    );
+
+    // Ask for feedback via WhatsApp + interactive rating buttons for post-visit retention loop
     await notificationService.sendReviewRequest(reservation.id);
+    if (reservation.customerPhone) {
+      const bizName = reservation.business?.name || 'Pabandi Partner';
+      const reviewBody =
+        `📋 *Service Completed — ${bizName}*\n\n` +
+        `Reference: #${reservation.id.slice(-6).toUpperCase()}\n` +
+        (updatedCnft?.assetId ? `Booking Credential (cNFT): ${updatedCnft.assetId} [COMPLETED]\n` : '') +
+        `\nPlease rate your appointment experience below:`;
+      await openwaService.sendButtons(
+        reservation.customerPhone,
+        reviewBody,
+        [
+          { id: `rate_${reservation.id}_5`, text: '⭐⭐⭐⭐⭐ 5/5' },
+          { id: `rate_${reservation.id}_4`, text: '⭐⭐⭐⭐ 4/5' },
+          { id: `rate_${reservation.id}_3`, text: '⭐⭐⭐ 3/5' },
+        ],
+        { title: `${bizName} Feedback` }
+      ).catch(() => {});
+    }
 
     // Trigger Referral Commission & First Booking Bounty
     try {
@@ -1029,7 +1103,7 @@ export const completeReservation = async (
     res.json({
       success: true,
       message: 'Reservation completed and reward issued',
-      data: { reservation: updated },
+      data: { reservation: updated, cnftCredential: updatedCnft },
     });
   } catch (error) {
     next(error);
@@ -1161,5 +1235,85 @@ export const arbitrateFreelanceWork = async (req: any, res: Response): Promise<v
   } catch (error) {
     logger.error('Error requesting arbitration', error);
     res.status(500).json({ error: 'Failed to request arbitration' });
+  }
+};
+
+/**
+ * GET /api/v1/reservations/:id/solana-pay
+ * Generate a Solana Pay Transfer Request QR URI + reference key + cNFT credential.
+ */
+export const getReservationSolanaPay = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const currency = (req.query.currency as 'USDC' | 'PAB' | 'SOL') || 'USDC';
+    const overrideAmount = req.query.amount ? Number(req.query.amount) : undefined;
+
+    const transferRequest = await solanaPayService.createTransferRequest({
+      bookingId: id,
+      currency,
+      overrideAmount,
+    });
+
+    res.json({
+      success: true,
+      data: transferRequest,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/v1/reservations/:id/solana-pay/verify
+ * Automatic on-chain payment verification via Solana Pay `findReference`.
+ */
+export const verifyReservationSolanaPay = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const { txSignature } = req.body || {};
+
+    const result = await solanaPayService.findReferenceAndSettle({
+      bookingId: id,
+      txSignature,
+    });
+
+    res.json({
+      success: result.verified,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/v1/reservations/:id/cnft
+ * Verify or inspect the Compressed NFT (cNFT) Booking Credential for a reservation.
+ */
+export const getReservationCnft = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const verification = await cnftService.verifyCredential(id);
+    if (!verification.valid || !verification.credential) {
+      throw new CustomError('Booking cNFT credential not found', 404);
+    }
+    res.json({
+      success: true,
+      data: verification,
+    });
+  } catch (error) {
+    next(error);
   }
 };

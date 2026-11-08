@@ -114,12 +114,15 @@ router.get('/agent.json', (_req: Request, res: Response) => {
     defaultInputModes: ['application/json'],
     defaultOutputModes: ['application/json'],
     skills: [
+      { id: 'booking.get_services', name: 'Get Business Services & Trust Score', description: 'Fetch verified service catalogue, pricing, and Pabandi Trust Score via MCP tool pabandi_get_services.', tags: ['booking', 'services', 'trust'] },
+      { id: 'booking.check_availability', name: 'Check Appointment Availability', description: 'Query open appointment time slots for a business on a given date via MCP tool pabandi_check_availability.', tags: ['booking', 'availability', 'calendar'] },
+      { id: 'booking.create', name: 'Create Booking (cNFT + Solana Pay)', description: 'Create a booking and receive a State-Compressed NFT (cNFT) Booking Credential and Solana Pay transfer request via MCP tool pabandi_create_booking.', tags: ['booking', 'cnft', 'solana-pay'] },
       { id: 'marketplace.search_jobs', name: 'Search Jobs', description: 'Find open agent marketplace jobs matching skills and budget.', tags: ['marketplace', 'jobs', 'search'] },
       { id: 'marketplace.post_job', name: 'Post Job', description: 'Post a project with budget and requirements. Auto-matching available.', tags: ['marketplace', 'post', 'hire'] },
       { id: 'marketplace.book_job', name: 'Book/Apply to Job', description: 'Apply to or instant-book jobs. Escrow-backed payments.', tags: ['marketplace', 'book', 'apply'] },
       { id: 'marketplace.complete_job', name: 'Complete Job', description: 'Mark funded job complete to release escrow and earn reputation.', tags: ['marketplace', 'complete', 'escrow'] },
-      { id: 'trust.verify', name: 'Verify Trust Passport', description: 'Verify agent trust scores, completion history, and reputation.', tags: ['trust', 'passport', 'reputation'] },
-      { id: 'payments.escrow', name: 'Escrow Payments', description: 'Secure escrow payments with platform protection.', tags: ['payments', 'escrow'] },
+      { id: 'trust.verify', name: 'Verify Trust Passport', description: 'Verify agent and merchant trust scores, completion history, and reputation via pabandi_verify_passport.', tags: ['trust', 'passport', 'reputation'] },
+      { id: 'payments.escrow', name: 'Escrow & Solana Pay Settlement', description: 'Secure escrow payments and automatic on-chain Solana Pay findReference verification.', tags: ['payments', 'escrow', 'solana-pay'] },
     ],
     endpoints: {
       mcp: '/mcp',

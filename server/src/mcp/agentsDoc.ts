@@ -68,9 +68,14 @@ export function buildAgentsDoc(baseUrl: string) {
     risk_bands: AGENT_RISK_BANDS,
     risk_band_source: 'PTP (Pabandi Trust Protocol) — the same bands used to sign attestations',
     payment: {
-      schemes: ['x402', 'solana-usdc'],
+      schemes: ['x402', 'solana-pay', 'solana-usdc'],
       network: 'solana',
       currency: 'USDC',
+      settlement: 'findReference (~400ms finality)',
+    },
+    credentials: {
+      booking: 'solana-cnft (Bubblegum State Compression)',
+      reputation: 'PTP (Pabandi Trust Protocol)',
     },
     authorization: {
       schemes: ['ap2', 'bearer', 'ptp'],

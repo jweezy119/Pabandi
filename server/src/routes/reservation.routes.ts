@@ -9,7 +9,10 @@ import {
   completeReservation,
   markNoShow,
   submitFreelanceWork,
-  arbitrateFreelanceWork
+  arbitrateFreelanceWork,
+  getReservationSolanaPay,
+  verifyReservationSolanaPay,
+  getReservationCnft,
 } from '../controllers/reservation.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { AuthRequest } from '../middleware/auth.middleware';
@@ -20,6 +23,11 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 
 const router = Router();
+
+// Publicly verifiable endpoints for Solana Pay QR scanners and cNFT booking credentials
+router.get('/:id/cnft', getReservationCnft);
+router.get('/:id/solana-pay', getReservationSolanaPay);
+router.post('/:id/solana-pay/verify', verifyReservationSolanaPay);
 
 router.use(authenticate);
 

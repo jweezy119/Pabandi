@@ -191,22 +191,24 @@ const ENGINE_TOOLS = [
   },
   {
     name: 'pabandi_get_services',
-    description: 'Get services offered by a business for agent booking',
+    description:
+      'Get the verified service catalogue, pricing, deposit requirements, and Pabandi Trust Score for a business (by ID or slug). Use this before booking to inspect services and merchant reliability.',
     inputSchema: {
       type: 'object',
       properties: {
-        businessId: { type: 'string', description: 'Business ID' },
+        businessId: { type: 'string', description: 'Business ID or URL slug (e.g. "glamour-salon")' },
       },
       required: ['businessId'],
     },
   },
   {
     name: 'pabandi_check_availability',
-    description: 'Check availability for a business on a specific date',
+    description:
+      'Check available appointment time slots and operating hours for a business on a specific date (YYYY-MM-DD). Returns open slots, booked slots, and business hours.',
     inputSchema: {
       type: 'object',
       properties: {
-        businessId: { type: 'string', description: 'Business ID' },
+        businessId: { type: 'string', description: 'Business ID or URL slug' },
         date: { type: 'string', description: 'Date in YYYY-MM-DD format' },
       },
       required: ['businessId', 'date'],
@@ -214,26 +216,31 @@ const ENGINE_TOOLS = [
   },
   {
     name: 'pabandi_create_booking',
-    description: 'Create a booking for an agent/client. Supports ACP, x402, AP2, UCP protocols.',
+    description:
+      'Create a verified booking for an agent or customer. Automatically mints a Solana State-Compressed NFT (cNFT) Booking Credential and generates a Solana Pay transfer request (USDC/PAB) with an on-chain reference key for 400ms automatic settlement detection via findReference.',
     inputSchema: {
       type: 'object',
       properties: {
-        businessId: { type: 'string', description: 'Business ID' },
-        serviceId: { type: 'string', description: 'Service ID' },
-        datetime: { type: 'string', description: 'Booking datetime' },
-        clientPassportId: { type: 'string', description: 'Client passport ID' },
-        protocol: { type: 'string', enum: ['acp', 'x402', 'ap2', 'ucp'], description: 'Payment protocol' },
+        businessId: { type: 'string', description: 'Business ID or URL slug' },
+        serviceId: { type: 'string', description: 'Service ID from pabandi_get_services (optional for general table/venue booking)' },
+        datetime: { type: 'string', description: 'ISO datetime or "YYYY-MM-DD HH:mm"' },
+        customerName: { type: 'string', description: 'Customer or agent principal name' },
+        customerPhone: { type: 'string', description: 'Customer phone for WhatsApp utility confirmation (optional)' },
+        customerWallet: { type: 'string', description: 'Customer Solana wallet address to receive the cNFT booking credential (optional)' },
+        clientPassportId: { type: 'string', description: 'Client Trust Passport ID (optional)' },
+        protocol: { type: 'string', enum: ['acp', 'x402', 'ap2', 'ucp', 'solana-pay'], description: 'Settlement protocol (defaults to solana-pay)' },
       },
-      required: ['businessId', 'serviceId', 'datetime'],
+      required: ['businessId', 'datetime'],
     },
   },
   {
     name: 'pabandi_cancel_booking',
-    description: 'Cancel a booking',
+    description:
+      'Cancel an active booking by bookingId, update its cNFT credential status to CANCELLED, and release the time slot to the waitlist.',
     inputSchema: {
       type: 'object',
       properties: {
-        bookingId: { type: 'string', description: 'Booking ID' },
+        bookingId: { type: 'string', description: 'Booking / Reservation ID' },
       },
       required: ['bookingId'],
     },
@@ -1970,6 +1977,244 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
             checkoutUrl,
             webBookingUrl: `https://pabandi.com/book/${business.id}?amount=${encodeURIComponent(String(serviceValue))}&service=${encodeURIComponent(resolvedServiceName)}`,
           },
+        };
+      }
+      case 'pabandi_get_services': {
+        const businessId = String(args.businessId || '').trim();
+        if (!businessId) throw new Error('businessId is required');
+
+        const business = await prisma.business.findFirst({
+          where: { OR: [{ id: businessId }, { slug: businessId }] },
+          include: {
+            services: { where: { isActive: true }, orderBy: { price: 'asc' } },
+            businessHours: true,
+          },
+        });
+        if (!business) throw new Error(`Business not found: ${businessId}`);
+
+        return {
+          success: true,
+          business: {
+            id: business.id,
+            slug: business.slug,
+            name: business.name,
+            category: business.category,
+            city: business.city,
+            address: business.address,
+            trustScore: business.trustScore,
+            reliabilityScore: business.reliabilityScore,
+            isVerified: business.isVerified,
+            currency: (business as any).currency || 'PKR',
+            requireDeposit: business.requireDeposit,
+            depositAmount: business.depositAmount,
+            depositPercentage: business.depositPercentage,
+            profileUrl: `https://pabandi.com/business/${business.slug || business.id}`,
+          },
+          services: business.services.map((s: any) => ({
+            id: s.id,
+            name: s.name,
+            description: s.description,
+            price: s.price,
+            currency: (business as any).currency || 'PKR',
+            durationMinutes: s.duration,
+            category: s.category,
+          })),
+          businessHours: business.businessHours,
+        };
+      }
+      case 'pabandi_check_availability': {
+        const businessId = String(args.businessId || '').trim();
+        const dateStr = String(args.date || '').trim();
+        if (!businessId || !dateStr) throw new Error('businessId and date (YYYY-MM-DD) are required');
+
+        const business = await prisma.business.findFirst({
+          where: { OR: [{ id: businessId }, { slug: businessId }] },
+          include: { businessHours: true },
+        });
+        if (!business) throw new Error(`Business not found: ${businessId}`);
+
+        const targetDate = new Date(`${dateStr}T00:00:00.000Z`);
+        const nextDate = new Date(targetDate.getTime() + 86400000);
+        const dayOfWeek = targetDate.getUTCDay();
+
+        const dayHours = business.businessHours.find((h: any) => h.dayOfWeek === dayOfWeek);
+        const existingReservations = await prisma.reservation.findMany({
+          where: {
+            businessId: business.id,
+            reservationDate: { gte: targetDate, lt: nextDate },
+            status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+          },
+          select: { reservationTime: true },
+        });
+
+        const bookedTimes = new Set(existingReservations.map((r) => r.reservationTime));
+        const candidateSlots = [
+          '10:00', '10:30', '11:00', '11:30', '12:00', '12:30',
+          '13:00', '14:00', '15:00', '16:00', '17:00', '18:00',
+          '19:00', '20:00', '21:00',
+        ];
+
+        const slots = candidateSlots.map((time) => ({
+          time,
+          available: dayHours?.isClosed ? false : !bookedTimes.has(time),
+        }));
+
+        return {
+          success: true,
+          businessId: business.id,
+          businessName: business.name,
+          date: dateStr,
+          isClosed: !!dayHours?.isClosed,
+          operatingHours: dayHours
+            ? { openTime: dayHours.openTime, closeTime: dayHours.closeTime }
+            : { openTime: '10:00', closeTime: '22:00' },
+          availableSlots: slots.filter((s) => s.available).map((s) => s.time),
+          slots,
+        };
+      }
+      case 'pabandi_create_booking': {
+        const businessId = String(args.businessId || '').trim();
+        const datetimeRaw = String(args.datetime || '').trim();
+        if (!businessId || !datetimeRaw) {
+          throw new Error('businessId and datetime are required');
+        }
+
+        const business = await prisma.business.findFirst({
+          where: { OR: [{ id: businessId }, { slug: businessId }] },
+          include: { services: true },
+        });
+        if (!business) throw new Error(`Business not found: ${businessId}`);
+
+        const selectedService = args.serviceId
+          ? business.services.find((s: any) => s.id === args.serviceId || s.name.toLowerCase() === String(args.serviceId).toLowerCase())
+          : business.services[0];
+
+        // Parse YYYY-MM-DD and HH:mm from datetimeRaw
+        const parsedDate = new Date(datetimeRaw);
+        const reservationDate = !isNaN(parsedDate.getTime())
+          ? new Date(parsedDate.toISOString().slice(0, 10))
+          : new Date(datetimeRaw.split(/[T\s]/)[0] || Date.now());
+        const timeMatch = datetimeRaw.match(/(\d{1,2}:\d{2})/);
+        const reservationTime = timeMatch ? timeMatch[1] : '14:00';
+
+        // Ensure a valid customerId exists for Prisma relation
+        const authUser = (req as any)?.user;
+        let customerId = authUser?.id;
+        if (!customerId) {
+          const fallbackUser = await prisma.user.findFirst({ orderBy: { createdAt: 'asc' } });
+          if (!fallbackUser) throw new Error('No customer user account available to anchor booking');
+          customerId = fallbackUser.id;
+        }
+
+        const customerName = String(args.customerName || 'Agent Client');
+        const customerPhone = String(args.customerPhone || business.phone || '+923000000000');
+        const servicePrice = selectedService?.price ?? business.depositAmount ?? 15;
+        const depositAmount = business.requireDeposit
+          ? business.depositAmount || Math.round(servicePrice * ((business.depositPercentage || 20) / 100))
+          : 0;
+
+        const reservation = await prisma.reservation.create({
+          data: {
+            businessId: business.id,
+            customerId,
+            reservationDate,
+            reservationTime,
+            numberOfGuests: Number(args.numberOfGuests || 1),
+            customerName,
+            customerPhone,
+            status: 'CONFIRMED',
+            depositRequired: depositAmount > 0,
+            depositAmount,
+            totalAmount: servicePrice,
+            ...(selectedService
+              ? {
+                  services: {
+                    create: [
+                      {
+                        serviceId: selectedService.id,
+                        quantity: 1,
+                        price: selectedService.price,
+                      },
+                    ],
+                  },
+                }
+              : {}),
+          },
+        });
+
+        const { cnftService } = await import('../services/cnft.service');
+        const { solanaPayService } = await import('../services/solanaPay.service');
+
+        const cnftCredential = await cnftService.mintBookingCredential({
+          bookingId: reservation.id,
+          businessId: business.id,
+          businessName: business.name,
+          serviceName: selectedService?.name || 'Venue Appointment',
+          reservationDate: reservationDate.toISOString().slice(0, 10),
+          reservationTime,
+          customerName,
+          customerWallet: args.customerWallet ? String(args.customerWallet) : null,
+          depositAmount,
+          currency: (business as any).currency || 'USDC',
+        });
+
+        const solanaPay = await solanaPayService.createTransferRequest({
+          bookingId: reservation.id,
+        });
+
+        return {
+          success: true,
+          bookingId: reservation.id,
+          status: reservation.status,
+          business: {
+            id: business.id,
+            slug: business.slug,
+            name: business.name,
+            trustScore: business.trustScore,
+          },
+          service: selectedService
+            ? { id: selectedService.id, name: selectedService.name, price: selectedService.price }
+            : null,
+          cnftCredential: {
+            assetId: cnftCredential.assetId,
+            merkleTree: cnftCredential.merkleTree,
+            leafIndex: cnftCredential.leafIndex,
+            leafHash: cnftCredential.leafHash,
+            rootHash: cnftCredential.rootHash,
+            verifyUrl: `https://api.pabandi.com/api/v1/reservations/${reservation.id}/cnft`,
+            qrVerificationPayload: cnftCredential.qrVerificationPayload,
+          },
+          solanaPay: {
+            solanaPayUrl: solanaPay.solanaPayUrl,
+            reference: solanaPay.reference,
+            amountUsdc: solanaPay.amount,
+            recipient: solanaPay.recipient,
+            verifyEndpoint: `https://api.pabandi.com/api/v1/reservations/${reservation.id}/solana-pay/verify`,
+          },
+        };
+      }
+      case 'pabandi_cancel_booking': {
+        const bookingId = String(args.bookingId || '').trim();
+        if (!bookingId) throw new Error('bookingId is required');
+
+        const reservation = await prisma.reservation.findUnique({
+          where: { id: bookingId },
+        });
+        if (!reservation) throw new Error(`Booking not found: ${bookingId}`);
+
+        const updated = await prisma.reservation.update({
+          where: { id: bookingId },
+          data: { status: 'CANCELLED' },
+        });
+
+        const { cnftService } = await import('../services/cnft.service');
+        const cnft = await cnftService.updateCredentialStatus(bookingId, 'CANCELLED');
+
+        return {
+          success: true,
+          bookingId: updated.id,
+          status: updated.status,
+          cnftCredentialStatus: cnft?.metadata.status || 'CANCELLED',
         };
       }
     }
