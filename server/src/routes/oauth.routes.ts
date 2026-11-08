@@ -176,6 +176,19 @@ router.get('/authorize', optionalAuthenticate, async (req: AuthRequest, res: Res
       });
     }
 
+    // If caller is fetching client details via JSON (e.g. React OAuthConsentPage)
+    if (req.headers.accept?.includes('application/json')) {
+      res.json({
+        success: true,
+        client: {
+          name: client.name || client.clientId,
+          logoUrl: (client as any).logoUrl || null,
+        },
+        scopes: scope ? String(scope).split(' ') : ['openid', 'profile', 'trust:passport'],
+      });
+      return;
+    }
+
     if (!userId) {
       // Redirect to login with return parameter
       const loginUrl = new URL('https://pabandi.com/auth');
@@ -206,6 +219,53 @@ router.get('/authorize', optionalAuthenticate, async (req: AuthRequest, res: Res
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Server error';
     logger.error('[OAuth Authorize] Error: ' + msg);
+    res.status(500).json({ error: 'server_error', error_description: msg });
+  }
+});
+
+// ── 3B. POST /api/v1/oauth/authorize (Consent Approval / Denial) ──
+router.post('/authorize', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { client_id, redirect_uri, action, state } = req.body || {};
+    const userId = req.user?.id;
+
+    if (!client_id || !redirect_uri || !userId) {
+      res.status(400).json({ error: 'invalid_request', error_description: 'client_id and redirect_uri required' });
+      return;
+    }
+
+    const redirectUrl = new URL(String(redirect_uri));
+
+    if (action === 'deny') {
+      redirectUrl.searchParams.set('error', 'access_denied');
+      redirectUrl.searchParams.set('error_description', 'The user denied the authorization request');
+      if (state) redirectUrl.searchParams.set('state', String(state));
+      res.json({ success: true, redirect_uri: redirectUrl.toString() });
+      return;
+    }
+
+    // Generate short-lived auth code
+    const code = crypto.randomBytes(32).toString('base64url');
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+
+    await prisma.oAuthAuthCode.create({
+      data: {
+        code,
+        clientId: String(client_id),
+        userId,
+        redirectUri: String(redirect_uri),
+        expiresAt,
+        used: false,
+      },
+    });
+
+    redirectUrl.searchParams.set('code', code);
+    if (state) redirectUrl.searchParams.set('state', String(state));
+
+    res.json({ success: true, redirect_uri: redirectUrl.toString() });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Server error';
+    logger.error('[OAuth Authorize POST] Error: ' + msg);
     res.status(500).json({ error: 'server_error', error_description: msg });
   }
 });
