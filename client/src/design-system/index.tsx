@@ -1,20 +1,20 @@
 export const tokens = {
   color: {
-    background: '#020617',
-    surface: '#0f172a',
-    surfaceContainer: '#1e293b',
-    border: 'rgba(255,255,255,0.08)',
-    borderSubtle: 'rgba(255,255,255,0.05)',
-    primary: '#818cf8',
-    primaryHover: '#6366f1',
-    secondary: '#c084fc',
-    accent: '#38bdf8',
+    background: '#F5EFE6',
+    surface: '#FAF6F0',
+    surfaceContainer: '#E8D9C5',
+    border: 'rgba(191,179,163,0.35)',
+    borderSubtle: 'rgba(191,179,163,0.2)',
+    primary: '#C97B5A',
+    primaryHover: '#A85A3C',
+    secondary: '#8A9A7B',
+    accent: '#D9A854',
     success: '#22c55e',
-    warning: '#fbbf24',
+    warning: '#D9A854',
     danger: '#ef4444',
-    text: '#e2e8f0',
-    textMuted: '#94a3b8',
-    textDim: '#64748b',
+    text: '#2A2520',
+    textMuted: '#5A5348',
+    textDim: '#8C8275',
   },
   radius: {
     sm: '6px',
@@ -200,12 +200,12 @@ type SectionProps = {
 
 export function Section({ title, description, children, className = '' }: SectionProps) {
   return (
-    <section className={`mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8 ${className}`}>
-      <h2 className="text-center text-3xl font-bold tracking-tight text-slate-100">{title}</h2>
+    <section className={`mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 ${className}`}>
+      <h2 className="text-center text-3xl font-bold tracking-tight text-[var(--warm-ink)]">{title}</h2>
       {description ? (
-        <p className="mx-auto mt-3 max-w-2xl text-center text-slate-300">{description}</p>
+        <p className="mx-auto mt-2 max-w-2xl text-center text-[var(--soft-stone)]">{description}</p>
       ) : null}
-      <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
+      {children ? <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{children}</div> : null}
     </section>
   );
 }

@@ -309,22 +309,32 @@ export default function SimulatorPage() {
   const isComplete = simulation?.status === 'completed';
   const hasError = simulation?.status === 'failed';
 
+  const simulatorNavItems = [
+    { path: '/simulator', label: 'Simulator Swarm', icon: 'model_training', end: true },
+    { path: '/contact/jobs', label: 'All Jobs', icon: 'work' },
+    { path: '/contact/invoices', label: 'Escrow & Payments', icon: 'lock' },
+    { path: '/business-os', label: 'Workspace', icon: 'grid_view' },
+  ];
+
   return (
-    <DashboardLayout osName="Project Simulator" osIcon="🏗️" osColor="indigo" navItems={[]}>
-      <div className="min-h-screen bg-[#020617] text-[#e2e8f0]">
-        <div className="max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          <Section title="Project Simulator" description="Forecast Budget, Materials, Staffing, and Time with the multi-agent swarm. Real-time observability and runtime steering included." />
+    <DashboardLayout osName="Project Simulator" osIcon="🏗️" osColor="clay" navItems={simulatorNavItems}>
+      <div className="min-h-screen text-[var(--warm-ink)]" style={{ background: 'var(--atmosphere)' }}>
+        <div className="max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:px-8 space-y-6">
+          <Section
+            title="Project Simulator"
+            description="Forecast Budget, Materials, Staffing, and Time with the multi-agent swarm. Real-time observability and runtime steering included."
+          />
 
           {/* ── Input Section ── */}
           <Surface className="p-6">
-            <h2 className="text-lg font-bold text-[#e2e8f0] mb-4">1. Configure Project</h2>
-            <form onSubmit={handleStart} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <h2 className="text-lg font-bold text-[var(--warm-ink)] mb-4">1. Configure Project</h2>
+            <form onSubmit={handleStart} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               <div className="col-span-1 md:col-span-2">
-                <label className="block text-xs font-semibold text-[#94a3b8] mb-2">Project Type</label>
+                <label className="block text-xs font-semibold text-[var(--soft-stone)] mb-2">Project Type</label>
                 <select
                   value={projectType}
                   onChange={(e) => setProjectType(e.target.value as ProjectType)}
-                  className="w-full px-3 py-2 rounded-lg border border-white/[0.12] bg-[#0f172a] text-[#e2e8f0] focus:border-indigo-400 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[rgba(191,179,163,0.45)] bg-[var(--cream)] text-[var(--warm-ink)] font-medium focus:border-[var(--clay)] focus:outline-none"
                 >
                   {PROJECT_TYPES.map((pt) => (
                     <option key={pt.value} value={pt.value}>
@@ -335,9 +345,9 @@ export default function SimulatorPage() {
               </div>
               {FACTOR_CONFIG.map((fc) => (
                 <div key={fc.key} className="col-span-1 md:col-span-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-semibold text-[#94a3b8]">{fc.label}</label>
-                    <span className="text-[10px] text-[#64748b] flex gap-2">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-[var(--soft-stone)]">{fc.label}</label>
+                    <span className="text-[10px] text-[var(--soft-stone)] flex gap-2 font-medium">
                       <span>{fc.labels[0]}</span>
                       <span>{fc.labels[1]}</span>
                     </span>
@@ -349,21 +359,21 @@ export default function SimulatorPage() {
                     step={fc.step}
                     value={factors[fc.key]}
                     onChange={(e) => setFactors({ ...factors, [fc.key]: parseInt(e.target.value, 10) })}
-                    className="w-full accent-indigo-500 h-2 bg-[#1e293b] rounded-lg appearance-none cursor-pointer"
+                    className="w-full accent-[var(--clay)] h-2 bg-[var(--warm-sand)] rounded-lg appearance-none cursor-pointer"
                   />
-                  <div className="flex justify-between text-[10px] text-[#64748b] mt-1">
+                  <div className="flex justify-between text-[11px] font-bold text-[var(--clay)] mt-1">
                     <span>{factors[fc.key]}</span>
                   </div>
                 </div>
               ))}
-              <div className="col-span-1 md:col-span-2 lg:col-span-3 flex items-end">
+              <div className="col-span-1 md:col-span-2 lg:col-span-3 flex items-end pt-2">
                 <Button type="submit" variant="primary" disabled={isStarting || isSteering} loading={isStarting}>
                   {isStarting ? 'Running Swarm…' : 'Run Simulation'}
                 </Button>
               </div>
             </form>
             {error && (
-              <div className="mt-3 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm">
+              <div className="mt-4 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 text-sm">
                 {error}
               </div>
             )}
@@ -372,8 +382,8 @@ export default function SimulatorPage() {
           {simulation && (
             <>
               {/* ── Observability Trace Section ── */}
-              <Surface className="p-6 mt-6">
-                <h2 className="text-lg font-bold text-[#e2e8f0] mb-4 flex items-center gap-2">
+              <Surface className="p-6">
+                <h2 className="text-lg font-bold text-[var(--warm-ink)] mb-4 flex items-center gap-2">
                   <Chip tone="info">{isRunning ? 'LIVE' : simulation.status.toUpperCase()}</Chip>
                   2. Observability Trace
                 </h2>
@@ -394,38 +404,42 @@ export default function SimulatorPage() {
                       return (
                         <div
                           key={a.role}
-                          className={`flex items-start gap-3 p-3 rounded-lg border transition-colors duration-300 ${
+                          className={`flex items-start gap-3.5 p-3.5 rounded-xl border transition-all duration-300 ${
                             isCompleteAgent
-                              ? 'border-emerald-500/30 bg-emerald-500/5'
+                              ? 'border-emerald-600/30 bg-emerald-500/10'
                               : isFailedAgent
-                              ? 'border-rose-500/30 bg-rose-500/5'
+                              ? 'border-rose-500/30 bg-rose-500/10'
                               : isRunningAgent
-                              ? 'border-indigo-500/30 bg-indigo-500/5 animate-pulse'
-                              : 'border-white/10'
+                              ? 'border-[var(--clay)]/40 bg-[var(--clay)]/10 animate-pulse'
+                              : 'border-[rgba(191,179,163,0.35)] bg-[var(--cream)]/60'
                           }`}
                         >
-                          <div className="flex flex-col items-center min-w-[20px]">
+                          <div className="flex flex-col items-center min-w-[24px]">
                             <div
                               className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                                isCompleteAgent ? 'bg-emerald-500 text-white' : isRunningAgent ? 'bg-indigo-500 text-white animate-pulse' : 'bg-[#1e293b] text-[#64748b] border border-white/10'
+                                isCompleteAgent
+                                  ? 'bg-emerald-600 text-white'
+                                  : isRunningAgent
+                                  ? 'bg-[var(--clay)] text-white animate-pulse'
+                                  : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] border border-[rgba(191,179,163,0.4)]'
                               }`}
                             >
                               {isCompleteAgent ? '✓' : isRunningAgent ? '⟳' : '○'}
                             </div>
-                            <div className="w-px h-4 bg-[#334155] mx-1" />
-                            <span className="text-[10px] text-[#64748b]">{a.role.charAt(0).toUpperCase() + a.role.slice(1)}</span>
+                            <div className="w-px h-4 bg-[rgba(191,179,163,0.4)] mx-1" />
+                            <span className="text-[10px] text-[var(--soft-stone)] font-semibold">{a.role.charAt(0).toUpperCase() + a.role.slice(1)}</span>
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm text-[#e2e8f0]">{msg}</p>
+                            <p className="text-sm font-medium text-[var(--warm-ink)]">{msg}</p>
                             {a.elapsedMs && isCompleteAgent && (
-                              <span className="text-[10px] text-[#94a3b8]">completed in {a.elapsedMs}ms</span>
+                              <span className="text-[10px] text-[var(--soft-stone)]">completed in {a.elapsedMs}ms</span>
                             )}
                           </div>
                         </div>
                       );
                     }))
                   : (
-                    <div className="p-4 text-center text-[#64748b] text-sm">
+                    <div className="p-4 text-center text-[var(--soft-stone)] text-sm">
                       No agent runs yet. Start a simulation to see the trace.
                     </div>
                   )}
@@ -434,30 +448,30 @@ export default function SimulatorPage() {
 
               {/* ── Steering Section ── */}
               {isComplete && simulation.finalEstimate && (
-                <Surface className="p-6 mt-6">
-                  <h2 className="text-lg font-bold text-[#e2e8f0] mb-4">3. Final Estimate</h2>
+                <Surface className="p-6">
+                  <h2 className="text-lg font-bold text-[var(--warm-ink)] mb-4">3. Final Estimate</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-xl border border-white/[0.07] bg-[#0f172a]">
-                      <p className="text-xs font-semibold text-[#94a3b8]">Total Cost</p>
-                      <p className="text-2xl font-bold text-[#e2e8f0]">${simulation.finalEstimate.totalCost.toFixed(2)}</p>
+                    <div className="p-4 rounded-xl border border-[rgba(191,179,163,0.35)] bg-[var(--cream)]">
+                      <p className="text-xs font-semibold text-[var(--soft-stone)]">Total Cost</p>
+                      <p className="text-2xl font-bold text-[var(--clay)]">${simulation.finalEstimate.totalCost.toFixed(2)}</p>
                     </div>
-                    <div className="p-4 rounded-xl border border-white/[0.07] bg-[#0f172a]">
-                      <p className="text-xs font-semibold text-[#94a3b8]">Contingency</p>
-                      <p className="text-2xl font-bold text-[#e2e8f0]">{simulation.finalEstimate.contingencyPercent}%</p>
+                    <div className="p-4 rounded-xl border border-[rgba(191,179,163,0.35)] bg-[var(--cream)]">
+                      <p className="text-xs font-semibold text-[var(--soft-stone)]">Contingency</p>
+                      <p className="text-2xl font-bold text-[var(--warm-ink)]">{simulation.finalEstimate.contingencyPercent}%</p>
                     </div>
                   </div>
-                  <div className="mt-4 space-y-2">
+                  <div className="mt-4 space-y-2 border-t border-[rgba(191,179,163,0.3)] pt-3">
                     <div className="flex justify-between text-sm">
-                      <span className="text-[#94a3b8]">Materials</span>
-                      <span className="text-[#e2e8f0]">${simulation.finalEstimate.breakdown.materials.toFixed(2)}</span>
+                      <span className="text-[var(--soft-stone)]">Materials</span>
+                      <span className="text-[var(--warm-ink)] font-semibold">${simulation.finalEstimate.breakdown.materials.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-[#94a3b8]">Labor</span>
-                      <span className="text-[#e2e8f0]">${simulation.finalEstimate.breakdown.labor.toFixed(2)}</span>
+                      <span className="text-[var(--soft-stone)]">Labor</span>
+                      <span className="text-[var(--warm-ink)] font-semibold">${simulation.finalEstimate.breakdown.labor.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-[#94a3b8]">Contingency</span>
-                      <span className="text-[#e2e8f0]">${simulation.finalEstimate.breakdown.contingency.toFixed(2)}</span>
+                      <span className="text-[var(--soft-stone)]">Contingency</span>
+                      <span className="text-[var(--warm-ink)] font-semibold">${simulation.finalEstimate.breakdown.contingency.toFixed(2)}</span>
                     </div>
                   </div>
                   <div className="mt-4">
@@ -474,14 +488,14 @@ export default function SimulatorPage() {
               )}
 
               {/* ── Shareable Interactive Proposal Link (/p/estimate/:id) ── */}
-              <Surface className="p-6 mt-6">
+              <Surface className="p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                   <div>
-                    <h2 className="text-lg font-bold text-[#e2e8f0] flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-[var(--warm-ink)] flex items-center gap-2">
                       🔗 Share Interactive Client Proposal
                       <Chip tone="info">VIRAL CHECKOUT LINK</Chip>
                     </h2>
-                    <p className="text-xs text-[#94a3b8] mt-1">
+                    <p className="text-xs text-[var(--soft-stone)] mt-1">
                       Send this public link to your client. They can adjust scope sliders, view the live 4-agent breakdown, and lock the Milestone 1 escrow in one click via Square or Solana Pay.
                     </p>
                   </div>
@@ -491,7 +505,7 @@ export default function SimulatorPage() {
                     type="text"
                     readOnly
                     value={`${window.location.origin}/p/estimate/${simulation.id}`}
-                    className="flex-1 px-3.5 py-2.5 rounded-xl border border-white/[0.12] bg-[#0f172a] text-xs font-mono text-indigo-200 focus:outline-none"
+                    className="flex-1 px-3.5 py-2.5 rounded-xl border border-[rgba(191,179,163,0.45)] bg-[var(--cream)] text-xs font-mono text-[var(--warm-ink)] focus:outline-none"
                   />
                   <Button
                     type="button"
@@ -509,7 +523,7 @@ export default function SimulatorPage() {
                     href={`/p/estimate/${simulation.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-200 font-semibold text-xs transition-colors whitespace-nowrap"
+                    className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-[rgba(191,179,163,0.45)] bg-[var(--warm-sand)]/60 hover:bg-[var(--warm-sand)] text-[var(--warm-ink)] font-semibold text-xs transition-colors whitespace-nowrap"
                   >
                     Preview Client Page ↗
                   </a>
@@ -521,7 +535,7 @@ export default function SimulatorPage() {
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-semibold text-xs transition-colors whitespace-nowrap"
+                    className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-emerald-600/30 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 font-semibold text-xs transition-colors whitespace-nowrap"
                   >
                     💬 WhatsApp Client
                   </a>
@@ -529,9 +543,9 @@ export default function SimulatorPage() {
               </Surface>
 
               {/* ── Execution Section ── */}
-              <Surface className="p-6 mt-6">
-                <h2 className="text-lg font-bold text-[#e2e8f0] mb-4">4. Fund Project</h2>
-                <p className="text-sm text-[#94a3b8] mb-4">
+              <Surface className="p-6">
+                <h2 className="text-lg font-bold text-[var(--warm-ink)] mb-3">4. Fund Project</h2>
+                <p className="text-sm text-[var(--soft-stone)] mb-4">
                   Lock the forecasted budget in escrow via Pabandi using Square (Card / Apple Pay / Cash App) or Solana Pay (USDC). Funds are released only after verified delivery (Sulha arbitration).
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -540,7 +554,7 @@ export default function SimulatorPage() {
                     disabled={!isComplete || !simulation.finalEstimate || isStarting}
                     loading={isStarting}
                     onClick={() => handleFundEscrow('square')}
-                    className="w-full py-4 text-base"
+                    className="w-full py-4 text-base font-bold"
                   >
                     💳 Fund via Square — ${simulation.finalEstimate?.totalCost.toFixed(2) ?? '0.00'}
                   </Button>
@@ -549,13 +563,13 @@ export default function SimulatorPage() {
                     disabled={!isComplete || !simulation.finalEstimate || isStarting}
                     loading={isStarting}
                     onClick={() => handleFundEscrow('solana')}
-                    className="w-full py-4 text-base"
+                    className="w-full py-4 text-base font-bold"
                   >
                     ⚡ Fund via Solana Pay — {simulation.finalEstimate?.totalCost.toFixed(2) ?? '0.00'} USDC
                   </Button>
                 </div>
                 {(escrowSuccess || simulation.finalEstimate?.escrowStatus === 'funded') && (
-                  <div className="mt-4 p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-200 text-sm space-y-2">
+                  <div className="mt-4 p-4 rounded-xl border border-emerald-600/30 bg-emerald-500/10 text-emerald-900 text-sm space-y-2">
                     <div className="font-bold flex items-center gap-2">
                       <span>
                         ✓ {simulation.finalEstimate?.escrowStatus === 'funded' ? 'Escrow Funded & Verified' : 'Escrow Created'} ({escrowSuccess?.referenceId || simulation.finalEstimate?.escrowReferenceId || `sim-${simulation.id}`}) via {escrowSuccess?.rail === 'solana' ? 'Solana Pay USDC' : 'Square Checkout'}
@@ -570,17 +584,17 @@ export default function SimulatorPage() {
                           href={escrowSuccess.paymentUrl}
                           target={escrowSuccess.rail === 'square' ? '_blank' : undefined}
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-bold text-xs hover:bg-emerald-400 transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--clay)] text-white font-bold text-xs hover:bg-[var(--terracotta)] transition-colors shadow-sm"
                         >
                           {escrowSuccess.rail === 'square' ? 'Open Square Checkout ↗' : 'Open in Solana Wallet (Phantom / Solflare) ⚡'}
                         </a>
-                        <span className="text-xs text-emerald-300/80 break-all">{escrowSuccess.paymentUrl}</span>
+                        <span className="text-xs text-emerald-800 break-all">{escrowSuccess.paymentUrl}</span>
                       </div>
                     )}
                   </div>
                 )}
                 {!isComplete && (
-                  <p className="mt-3 text-xs text-[#64748b]">
+                  <p className="mt-3 text-xs text-[var(--soft-stone)]">
                     Complete the simulation first to unlock escrow funding.
                   </p>
                 )}

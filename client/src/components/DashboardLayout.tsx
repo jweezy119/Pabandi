@@ -117,6 +117,7 @@ const OS_ROOT: Record<string, string> = {
   'PropertyOS': '/property',
   'BookingOS': '/booking',
   'CapitalOS': '/capital',
+  'Project Simulator': '/simulator',
 };
 
 import { useBusinessSettings } from '../hooks/useBusinessSettings';
