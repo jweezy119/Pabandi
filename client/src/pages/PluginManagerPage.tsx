@@ -361,6 +361,3 @@ export const PluginManagerPage = () => {
     </div>
   );
 };
-    </div>
-  );
-};
