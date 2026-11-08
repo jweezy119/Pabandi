@@ -47,32 +47,29 @@ CREATE UNIQUE INDEX IF NOT EXISTS "CrmAvailability_serviceBusinessId_weekday_sta
 DO $$
 BEGIN
   IF EXISTS (
-    SELECT 1 FROM information_schema.table_constraints
-    WHERE constraint_name = 'CrmAvailability_serviceBusinessId_fkey'
+    SELECT 1 FROM information_schema.tables WHERE table_name = 'crm_service_businesses'
   ) THEN
-    ALTER TABLE "CrmAvailability" DROP CONSTRAINT "CrmAvailability_serviceBusinessId_fkey";
+    IF EXISTS (
+      SELECT 1 FROM information_schema.table_constraints
+      WHERE constraint_name = 'CrmAvailability_serviceBusinessId_fkey'
+    ) THEN
+      ALTER TABLE "CrmAvailability" DROP CONSTRAINT "CrmAvailability_serviceBusinessId_fkey";
+    END IF;
+
+    ALTER TABLE "CrmAvailability"
+      ADD CONSTRAINT "CrmAvailability_serviceBusinessId_fkey"
+      FOREIGN KEY ("serviceBusinessId") REFERENCES "crm_service_businesses"("id")
+      ON DELETE CASCADE ON UPDATE CASCADE;
+
+    ALTER TABLE "crm_service_businesses" ADD COLUMN IF NOT EXISTS "slug" TEXT;
+    ALTER TABLE "crm_service_businesses" ADD COLUMN IF NOT EXISTS "serviceCatalog" JSONB;
+
+    IF EXISTS (
+      SELECT 1 FROM pg_indexes WHERE indexname = 'CrmServiceBusiness_slug_key'
+    ) THEN
+      DROP INDEX "CrmServiceBusiness_slug_key";
+    END IF;
+    CREATE UNIQUE INDEX IF NOT EXISTS "crm_service_businesses_slug_key" ON "crm_service_businesses"("slug");
   END IF;
-
-  ALTER TABLE "CrmAvailability"
-    ADD CONSTRAINT "CrmAvailability_serviceBusinessId_fkey"
-    FOREIGN KEY ("serviceBusinessId") REFERENCES "CrmServiceBusiness"("id")
-    ON DELETE CASCADE ON UPDATE CASCADE;
-END
-$$;
-
--- The onboarding wizard has always shown the user a "slug" and had nowhere to put one. The
--- legacy AbodeManager.slug belongs to the orphaned Abode-era model that nothing writes to, so
--- the handle lives here instead. Nullable, so a business without one still works.
-ALTER TABLE "CrmServiceBusiness" ADD COLUMN IF NOT EXISTS "slug" TEXT;
-ALTER TABLE "CrmServiceBusiness" ADD COLUMN IF NOT EXISTS "serviceCatalog" JSONB;
-
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_indexes WHERE indexname = 'CrmServiceBusiness_slug_key'
-  ) THEN
-    DROP INDEX "CrmServiceBusiness_slug_key";
-  END IF;
-  CREATE UNIQUE INDEX "CrmServiceBusiness_slug_key" ON "CrmServiceBusiness"("slug");
 END
 $$;

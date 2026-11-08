@@ -25,15 +25,19 @@ CREATE INDEX IF NOT EXISTS "CrmFile_serviceBusinessId_idx" ON "CrmFile"("service
 DO $$
 BEGIN
   IF EXISTS (
-    SELECT 1 FROM information_schema.table_constraints
-    WHERE constraint_name = 'CrmFile_serviceBusinessId_fkey'
+    SELECT 1 FROM information_schema.tables WHERE table_name = 'crm_service_businesses'
   ) THEN
-    ALTER TABLE "CrmFile" DROP CONSTRAINT "CrmFile_serviceBusinessId_fkey";
-  END IF;
+    IF EXISTS (
+      SELECT 1 FROM information_schema.table_constraints
+      WHERE constraint_name = 'CrmFile_serviceBusinessId_fkey'
+    ) THEN
+      ALTER TABLE "CrmFile" DROP CONSTRAINT "CrmFile_serviceBusinessId_fkey";
+    END IF;
 
-  ALTER TABLE "CrmFile"
-    ADD CONSTRAINT "CrmFile_serviceBusinessId_fkey"
-    FOREIGN KEY ("serviceBusinessId") REFERENCES "CrmServiceBusiness"("id")
-    ON DELETE CASCADE ON UPDATE CASCADE;
+    ALTER TABLE "CrmFile"
+      ADD CONSTRAINT "CrmFile_serviceBusinessId_fkey"
+      FOREIGN KEY ("serviceBusinessId") REFERENCES "crm_service_businesses"("id")
+      ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
 END
 $$;

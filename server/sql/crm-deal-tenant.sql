@@ -37,16 +37,20 @@ CREATE INDEX IF NOT EXISTS "CrmDeal_serviceBusinessId_idx" ON "CrmDeal"("service
 DO $$
 BEGIN
   IF EXISTS (
-    SELECT 1 FROM information_schema.table_constraints
-    WHERE constraint_name = 'CrmDeal_serviceBusinessId_fkey'
+    SELECT 1 FROM information_schema.tables WHERE table_name = 'crm_service_businesses'
   ) THEN
-    ALTER TABLE "CrmDeal" DROP CONSTRAINT "CrmDeal_serviceBusinessId_fkey";
-  END IF;
+    IF EXISTS (
+      SELECT 1 FROM information_schema.table_constraints
+      WHERE constraint_name = 'CrmDeal_serviceBusinessId_fkey'
+    ) THEN
+      ALTER TABLE "CrmDeal" DROP CONSTRAINT "CrmDeal_serviceBusinessId_fkey";
+    END IF;
 
-  ALTER TABLE "CrmDeal"
-    ADD CONSTRAINT "CrmDeal_serviceBusinessId_fkey"
-    FOREIGN KEY ("serviceBusinessId") REFERENCES "CrmServiceBusiness"("id")
-    ON DELETE CASCADE ON UPDATE CASCADE;
+    ALTER TABLE "CrmDeal"
+      ADD CONSTRAINT "CrmDeal_serviceBusinessId_fkey"
+      FOREIGN KEY ("serviceBusinessId") REFERENCES "crm_service_businesses"("id")
+      ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
 END
 $$;
 
@@ -66,15 +70,19 @@ CREATE INDEX IF NOT EXISTS "CrmActivity_serviceBusinessId_idx" ON "CrmActivity"(
 DO $$
 BEGIN
   IF EXISTS (
-    SELECT 1 FROM information_schema.table_constraints
-    WHERE constraint_name = 'CrmActivity_serviceBusinessId_fkey'
+    SELECT 1 FROM information_schema.tables WHERE table_name = 'crm_service_businesses'
   ) THEN
-    ALTER TABLE "CrmActivity" DROP CONSTRAINT "CrmActivity_serviceBusinessId_fkey";
-  END IF;
+    IF EXISTS (
+      SELECT 1 FROM information_schema.table_constraints
+      WHERE constraint_name = 'CrmActivity_serviceBusinessId_fkey'
+    ) THEN
+      ALTER TABLE "CrmActivity" DROP CONSTRAINT "CrmActivity_serviceBusinessId_fkey";
+    END IF;
 
-  ALTER TABLE "CrmActivity"
-    ADD CONSTRAINT "CrmActivity_serviceBusinessId_fkey"
-    FOREIGN KEY ("serviceBusinessId") REFERENCES "CrmServiceBusiness"("id")
-    ON DELETE CASCADE ON UPDATE CASCADE;
+    ALTER TABLE "CrmActivity"
+      ADD CONSTRAINT "CrmActivity_serviceBusinessId_fkey"
+      FOREIGN KEY ("serviceBusinessId") REFERENCES "crm_service_businesses"("id")
+      ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
 END
 $$;
