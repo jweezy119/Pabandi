@@ -351,6 +351,8 @@ export const getBusiness = async (
         requireDeposit: business.requireDeposit,
         depositPercentage: business.depositPercentage,
         depositAmount: business.depositAmount,
+        currency: (business as any).currency || 'PKR',
+        settings: (business as any).settings ? { raastId: (business as any).settings.raastId } : null,
         services: business.services,
       };
 
@@ -1007,6 +1009,7 @@ export const getBusinessBySlug = async (
       include: {
         settings: true,
         businessHours: true,
+        services: { where: { isActive: true }, orderBy: { price: 'asc' } },
         tables: { where: { isActive: true } },
         googleReviews: { orderBy: { time: 'desc' } },
       },
@@ -1026,6 +1029,10 @@ export const getBusinessBySlug = async (
         category: business.category || null,
         address: business.address || null,
         city: business.city || null,
+        currency: business.currency || 'PKR',
+        requireDeposit: business.requireDeposit,
+        depositAmount: business.depositAmount || null,
+        depositPercentage: business.depositPercentage || null,
         latitude: business.latitude || null,
         longitude: business.longitude || null,
         phone: business.phone || null,
@@ -1039,6 +1046,7 @@ export const getBusinessBySlug = async (
         trustScore: business.trustScore || 50,
         businessTier: business.businessTier || 'STANDARD',
         settings: business.settings || null,
+        services: business.services || [],
         businessHours: business.businessHours || [],
         tables: business.tables || [],
         googleReviews: business.googleReviews || [],

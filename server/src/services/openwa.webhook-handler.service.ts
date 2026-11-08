@@ -166,6 +166,47 @@ async function handleIncomingMessage(payload: OpenWAWebhookPayload): Promise<voi
   }
 
   // -------------------------------------------------------------------
+  // 0.5. Instant WhatsApp Business Onboarding (Inbound & Outbound responses)
+  // -------------------------------------------------------------------
+  try {
+    const { whatsAppOnboardingService } = await import('./whatsapp.onboarding.service');
+    if (whatsAppOnboardingService.isOnboardingIntent(messageBody)) {
+      const parsedData = whatsAppOnboardingService.parseMessageToBusiness(messageBody, senderPhone);
+      const result = await whatsAppOnboardingService.onboardBusiness(parsedData);
+
+      const confirmText =
+        `🎉 *Mubarak! ${result.business.name} is now LIVE on Pabandi!*\n\n` +
+        `✅ *Services Configured (${result.servicesCount}):*\n` +
+        parsedData.services.map((s) => `• ${s.name}: Rs. ${s.price}`).join('\n') +
+        `\n\n📍 *City:* ${parsedData.city}\n` +
+        `⏰ *Hours:* ${parsedData.hours}\n` +
+        `🔒 *Raast ID:* ${parsedData.raastId} (Deposit: Rs. ${parsedData.depositAmount})\n\n` +
+        `🌐 *Your Customer Profile:*\n${result.profileUrl}\n\n` +
+        `📲 *Your Click-to-Chat Booking Link:*\n${result.customerLink}\n\n` +
+        `🔑 *Device Pairing Code (Link Phone):* ${result.pairingCode}\n` +
+        `To turn this WhatsApp into your automated 24/7 assistant:\n` +
+        `Go to *Settings > Linked Devices > Link with phone number* & enter code *${result.pairingCode}*`;
+
+      const buttons = [
+        { id: `view_profile_${result.business.slug}`, text: '🌐 View My Profile' },
+        { id: 'btn_marketing_standee', text: '🪧 Get Standee QR' },
+        { id: 'btn_human', text: '👤 Talk to Team' },
+      ];
+
+      await openwaService.sendButtons(senderPhone, confirmText, buttons, {
+        title: `Welcome to Pabandi • ${result.business.name}`,
+        footer: 'Pabandi SME Trust Engine',
+        sessionId,
+      });
+
+      logger.info(`[WebhookHandler] Business ${result.business.name} onboarded instantly via WhatsApp from ${senderPhone}`);
+      return;
+    }
+  } catch (err: any) {
+    logger.warn(`[WebhookHandler] Onboarding check/execution error: ${err?.message}`);
+  }
+
+  // -------------------------------------------------------------------
   // 1. Handle Opt-outs for CRM campaigns
   // -------------------------------------------------------------------
   if (['stop', 'unsubscribe', 'opt-out', 'opt out', 'cancel'].includes(messageBody.toLowerCase().trim())) {

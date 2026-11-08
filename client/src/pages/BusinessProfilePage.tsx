@@ -66,6 +66,7 @@ export default function BusinessProfilePage() {
   const mode = searchParams.get('mode');
   const itemName = searchParams.get('item');
   const itemPrice = searchParams.get('price');
+  const [selectedServiceId, setSelectedServiceId] = useState<string>(searchParams.get('service') || '');
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [isLiked, setIsLiked] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -176,7 +177,13 @@ export default function BusinessProfilePage() {
       return;
     }
 
-    bookingMutation.mutate({ businessId: business.id, ...formData, transactionHash });
+    const bookingPayload: any = {
+      businessId: business.id,
+      ...formData,
+      serviceIds: selectedServiceId ? [selectedServiceId] : undefined,
+      transactionHash,
+    };
+    bookingMutation.mutate(bookingPayload);
   };
 
   const handleShare = () => {
@@ -561,12 +568,105 @@ export default function BusinessProfilePage() {
                   </p>
                 </div>
 
+                {/* Available Services & Pricing */}
+                {business.services && business.services.length > 0 && (
+                  <div className="border-t border-outline-variant/20 pt-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-headline text-lg font-bold text-on-surface">Available Services & Menu</h4>
+                        <p className="font-body text-xs text-on-surface-variant">Select a service to book directly with guaranteed reservation</p>
+                      </div>
+                      <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary">
+                        {business.services.length} {business.services.length === 1 ? 'Service' : 'Services'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {business.services.map((svc: any) => {
+                        const isSelected = selectedServiceId === svc.id;
+                        const cur = business.currency === 'PKR' ? '₨' : (business.currency || '₨');
+                        return (
+                          <div
+                            key={svc.id}
+                            onClick={() => {
+                              setSelectedServiceId(svc.id);
+                              document.getElementById('booking-card')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className={`cursor-pointer p-4 rounded-xl border transition-all text-left flex flex-col justify-between ${
+                              isSelected
+                                ? 'border-primary bg-primary/5 shadow-md shadow-primary/10 ring-1 ring-primary'
+                                : 'border-outline-variant/20 bg-[var(--warm-sand)]/20 hover:border-primary/40 hover:bg-[var(--warm-sand)]/40'
+                            }`}
+                          >
+                            <div>
+                              <div className="flex items-start justify-between gap-2 mb-1">
+                                <h5 className="font-headline font-bold text-sm text-on-surface">{svc.name}</h5>
+                                {svc.duration && (
+                                  <span className="text-[10px] font-mono text-on-surface-variant bg-[var(--warm-sand)] px-1.5 py-0.5 rounded">
+                                    {svc.duration}m
+                                  </span>
+                                )}
+                              </div>
+                              {svc.description && (
+                                <p className="text-xs text-on-surface-variant line-clamp-2 mb-3">
+                                  {svc.description}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between pt-2 border-t border-outline-variant/10 mt-2">
+                              <span className="font-headline font-black text-sm text-primary">
+                                {cur} {Number(svc.price).toLocaleString()}
+                              </span>
+                              <span
+                                className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${
+                                  isSelected
+                                    ? 'bg-primary text-on-primary'
+                                    : 'bg-primary/10 text-primary hover:bg-primary/20'
+                                }`}
+                              >
+                                {isSelected ? '✓ Selected' : 'Book'}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <div className="border-t border-outline-variant/20 pt-6 space-y-4">
                   <h4 className="font-headline text-lg font-bold text-on-surface">Details & Contact</h4>
+                  
+                  {(business.settings?.raastId || business.raastId) && (
+                    <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+                      <ShieldCheckIcon className="h-4 w-4 shrink-0" />
+                      <span>Verified Raast Merchant ID:</span>
+                      <span className="font-mono">{business.settings?.raastId || business.raastId}</span>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <div className="flex items-center gap-3">
-                      <ClockIcon className="h-5 w-5 text-primary shrink-0" />
-                      <span className="text-sm font-body text-on-surface-variant">Mon - Sun: 12:00 PM - 11:30 PM</span>
+                    <div className="flex items-start gap-3">
+                      <ClockIcon className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                      <div className="text-sm font-body text-on-surface-variant">
+                        {business.businessHours && business.businessHours.length > 0 ? (
+                          <div className="space-y-1">
+                            <span className="font-bold text-on-surface block mb-1">Operating Hours:</span>
+                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((dayAbbr, idx) => {
+                              const hour = business.businessHours.find((h: any) => h.dayOfWeek === idx);
+                              if (!hour) return null;
+                              return (
+                                <div key={dayAbbr} className="flex gap-3 text-xs">
+                                  <span className="w-8 font-medium text-on-surface">{dayAbbr}:</span>
+                                  <span>{hour.isClosed ? 'Closed' : `${hour.openTime} - ${hour.closeTime}`}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <span>Mon - Sun: 12:00 PM - 11:30 PM</span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <PhoneIcon className="h-5 w-5 text-primary shrink-0" />
@@ -892,21 +992,35 @@ export default function BusinessProfilePage() {
 
           {/* Right Column (Booking Widget Box) */}
           <div className="lg:col-span-5">
-            <div className="rounded-2xl p-6 shadow-md border border-outline-variant/20 sticky top-28 glowing-border glass-panel">
-              <div className="flex justify-between items-center mb-6 border-b border-outline-variant/10 pb-4">
-                <div>
-                  <h3 className="font-headline text-xl font-bold text-primary">{mode === 'instant' ? 'Buy Instantly' : 'Book Table'}</h3>
-                  <p className="font-body text-xs text-on-surface-variant mt-0.5">{mode === 'instant' ? (itemName ? `Purchasing ${itemName}` : 'Secure your purchase instantly') : 'Secure your spot instantly'}</p>
-                </div>
-                
-                {/* Reliability SBT check indicators */}
-                <div className="text-right flex flex-col items-end">
-                  <span className={`font-headline text-lg font-black ${businessDeposit === 0 ? 'text-transparent bg-clip-text bg-gradient-to-r from-primary to-[#38bdf8]' : 'text-[var(--muted-ochre)]'}`}>
-                    {businessDeposit === 0 ? 'Zero Deposit' : `$${businessDeposit} Deposit`}
-                  </span>
-                  <p className="font-body text-[9px] text-[var(--sage)] font-bold uppercase tracking-wide">Pabandi AI Risk Score</p>
-                </div>
-              </div>
+            <div id="booking-card" className="rounded-2xl p-6 shadow-md border border-outline-variant/20 sticky top-28 glowing-border glass-panel">
+              {(() => {
+                const activeSelectedService = business?.services?.find((s: any) => s.id === selectedServiceId);
+                const cur = business?.currency === 'PKR' ? '₨' : (business?.currency || '₨');
+                return (
+                  <div className="flex justify-between items-center mb-6 border-b border-outline-variant/10 pb-4">
+                    <div>
+                      <h3 className="font-headline text-xl font-bold text-primary">
+                        {activeSelectedService 
+                          ? `Book ${activeSelectedService.name}` 
+                          : (mode === 'instant' ? 'Buy Instantly' : (business?.category === 'RESTAURANT' ? 'Book Table' : 'Book Reservation'))}
+                      </h3>
+                      <p className="font-body text-xs text-on-surface-variant mt-0.5">
+                        {activeSelectedService 
+                          ? `${cur} ${Number(activeSelectedService.price).toLocaleString()} · ${activeSelectedService.duration || 30} mins` 
+                          : (mode === 'instant' ? (itemName ? `Purchasing ${itemName}` : 'Secure your purchase instantly') : 'Secure your spot instantly')}
+                      </p>
+                    </div>
+                    
+                    {/* Reliability SBT check indicators */}
+                    <div className="text-right flex flex-col items-end">
+                      <span className={`font-headline text-lg font-black ${businessDeposit === 0 ? 'text-transparent bg-clip-text bg-gradient-to-r from-primary to-[#38bdf8]' : 'text-[var(--muted-ochre)]'}`}>
+                        {businessDeposit === 0 ? 'Zero Deposit' : `$${businessDeposit} Deposit`}
+                      </span>
+                      <p className="font-body text-[9px] text-[var(--sage)] font-bold uppercase tracking-wide">Pabandi AI Risk Score</p>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {bookingMutation.isError && (
                 <div className="bg-error-container text-on-error-container p-3 rounded-lg mb-4 text-xs font-semibold border border-error/25 flex items-center gap-2">
@@ -916,6 +1030,23 @@ export default function BusinessProfilePage() {
               )}
 
               <form onSubmit={handleBookingSubmit} className="space-y-4">
+                {business?.services && business.services.length > 0 && mode !== 'instant' && (
+                  <div>
+                    <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Select Service</label>
+                    <select
+                      value={selectedServiceId}
+                      onChange={(e) => setSelectedServiceId(e.target.value)}
+                      className="input-field"
+                    >
+                      <option value="">General Table / Venue Reservation</option>
+                      {business.services.map((svc: any) => (
+                        <option key={svc.id} value={svc.id}>
+                          {svc.name} — {business.currency === 'PKR' ? '₨' : (business.currency || '₨')} {Number(svc.price).toLocaleString()}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 {mode !== 'instant' && (
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -1066,7 +1197,17 @@ export default function BusinessProfilePage() {
                   disabled={bookingMutation.isLoading}
                   className="w-full bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline text-sm font-black tracking-wide py-3.5 rounded-xl hover:shadow-[0_0_20px_rgba(20,241,149,0.3)] transition-all flex items-center justify-center gap-2"
                 >
-                  {bookingMutation.isLoading ? 'Processing...' : (mode === 'instant' ? (itemPrice && parseFloat(itemPrice) > 0 ? `Pay $${itemPrice} to Buy` : 'Confirm Instant Order') : (businessDeposit > 0 ? `Pay $${businessDeposit} Deposit to Confirm` : 'Confirm Reservation Instantly'))}
+                  {bookingMutation.isLoading ? 'Processing...' : (() => {
+                    const activeSvc = business?.services?.find((s: any) => s.id === selectedServiceId);
+                    const cur = business?.currency === 'PKR' ? '₨' : (business?.currency || '₨');
+                    if (mode === 'instant') {
+                      return itemPrice && parseFloat(itemPrice) > 0 ? `Pay $${itemPrice} to Buy` : 'Confirm Instant Order';
+                    }
+                    if (activeSvc) {
+                      return `Book ${activeSvc.name} (${cur} ${Number(activeSvc.price).toLocaleString()})`;
+                    }
+                    return businessDeposit > 0 ? `Pay $${businessDeposit} Deposit to Confirm` : 'Confirm Reservation Instantly';
+                  })()}
                 </button>
               </form>
               

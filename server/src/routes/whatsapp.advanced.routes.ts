@@ -290,6 +290,34 @@ router.post('/send-buttons', async (req: Request, res: Response, next: NextFunct
   }
 });
 
+// ── Outbound Growth: Invite Business to Onboard via WhatsApp ──
+// POST /api/v1/whatsapp/advanced/invite-business
+// Sends an interactive pitch to a prospective business with a 1-tap activation button
+router.post('/invite-business', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { targetPhone, businessName, category, city } = req.body || {};
+    if (!targetPhone || !businessName) {
+      return res.status(400).json({ success: false, error: 'targetPhone and businessName are required' });
+    }
+
+    const { whatsAppOnboardingService } = await import('../services/whatsapp.onboarding.service');
+    const result = await whatsAppOnboardingService.sendOutboundInvite(
+      targetPhone,
+      businessName,
+      category || 'salon',
+      city || 'Karachi'
+    );
+
+    res.json({
+      success: true,
+      message: `Onboarding invite dispatched to ${targetPhone} for ${businessName}`,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Adapter: execute a smart WhatsApp action from external systems/CRM
 router.post('/smart-action', async (req: Request, res: Response, next: NextFunction) => {
   try {

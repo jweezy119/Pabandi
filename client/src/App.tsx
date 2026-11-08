@@ -119,6 +119,9 @@ const SetupWizardPage = lazy(() => import('./pages/contact/SetupWizardPage'));
 const CapitalOSPage = lazy(() => import('./pages/ledger/LedgerOSPage'));
 const LedgerInvoicesPage = lazy(() => import('./pages/ledger/LedgerInvoicesPage'));
 const InvoicesPage = lazy(() => import('./pages/crm/InvoicesPage'));
+const PublicBusinessProfilePage = lazy(() => import('./pages/BusinessProfilePage'));
+const BusinessJoinPage = lazy(() => import('./pages/BusinessJoinPage'));
+const ShortLinkBookingPage = lazy(() => import('./pages/ShortLinkBookingPage'));
 // Jobs, like every other route. These two were the only pages in this file still
 // imported statically, and that was load-breaking rather than merely wasteful:
 // their position in the eager graph produced a cycle in which every lazy route
@@ -541,11 +544,13 @@ function AnimatedAppRoutes() {
             <Route path="hotels" element={<PlaceholderPage />} />
             <Route path="hospitality" element={<PlaceholderPage />} />
             <Route path="real-estate/screening/:reservationId" element={<PlaceholderPage />} />
-            <Route path="business/join" element={<PlaceholderPage />} />
-            <Route path="business/join-claim" element={<PlaceholderPage />} />
-            <Route path="business/register" element={<PlaceholderPage />} />
-            <Route path="business/:id" element={<PlaceholderPage />} />
-            <Route path="business/:id/book" element={<PlaceholderPage />} />
+            <Route path="business/join" element={<BusinessJoinPage />} />
+            <Route path="business/join-claim" element={<BusinessJoinPage />} />
+            <Route path="business/register" element={<BusinessJoinPage />} />
+            <Route path="business/:id" element={<PublicBusinessProfilePage />} />
+            <Route path="business/:id/book" element={<BookingExperience />} />
+            <Route path="b/:id" element={<PublicBusinessProfilePage />} />
+            <Route path="b/slug/:slug" element={<ShortLinkBookingPage />} />
             <Route path="business/activate/:id" element={<PlaceholderPage />} />
             <Route path="business/crm" element={<PlaceholderPage />} />
             <Route path="crm" element={<PlaceholderPage />} />
