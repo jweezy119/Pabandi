@@ -534,6 +534,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/openwa`, './routes/openwa.routes'],
   [`/api/${v}/openwa/webhook`, './routes/openwa.webhook.routes'],
   [`/api/${v}/evolution`, './routes/evolution.webhook.routes'],
+  [`/api/${v}/whatsapp/webhook`, './routes/evolution.webhook.routes'],
   [`/api/${v}/treasury`, './routes/treasury.routes'],
   [`/api/${v}/economy`, './routes/economy.routes'],
   [`/api/${v}/marketing`, './routes/marketing.routes'],

@@ -36,6 +36,27 @@ router.post('/webhook', async (req: Request, res: Response, next: NextFunction) 
       if (!msgData || !msgData.key) return;
 
       const remoteJid = msgData.key.remoteJid || '';
+      const m = msgData.message || {};
+
+      // Robust extraction across plain text, extended text, and interactive buttons/lists
+      let extractedBody =
+        m.conversation ||
+        m.extendedTextMessage?.text ||
+        m.buttonsResponseMessage?.selectedButtonId ||
+        m.templateButtonReplyMessage?.selectedId ||
+        m.listResponseMessage?.singleSelectReply?.selectedRowId ||
+        m.buttonsResponseMessage?.selectedDisplayText ||
+        m.templateButtonReplyMessage?.selectedDisplayText ||
+        '';
+
+      if (!extractedBody && m.interactiveResponseMessage) {
+        try {
+          const params = JSON.parse(m.interactiveResponseMessage.nativeFlowResponseMessage?.paramsJson || '{}');
+          extractedBody = params.id || params.selectedId || m.interactiveResponseMessage.body?.text || '';
+        } catch {
+          extractedBody = m.interactiveResponseMessage.body?.text || '';
+        }
+      }
       
       normalizedData = {
         id: msgData.key.id,
@@ -43,9 +64,9 @@ router.post('/webhook', async (req: Request, res: Response, next: NextFunction) 
         from: remoteJid.replace('@s.whatsapp.net', '@c.us'),
         fromMe: msgData.key.fromMe || false,
         isGroup: remoteJid.includes('@g.us'),
-        body: msgData.message?.conversation || msgData.message?.extendedTextMessage?.text || '',
-        type: msgData.message?.imageMessage ? 'image' : (msgData.message?.videoMessage ? 'video' : 'chat'),
-        hasMedia: !!(msgData.message?.imageMessage || msgData.message?.videoMessage || msgData.message?.documentMessage),
+        body: extractedBody,
+        type: m.imageMessage ? 'image' : (m.videoMessage ? 'video' : 'chat'),
+        hasMedia: !!(m.imageMessage || m.videoMessage || m.documentMessage),
         sender: {
           id: remoteJid.replace('@s.whatsapp.net', '@c.us'),
           name: msgData.pushName || 'Unknown',
