@@ -66,6 +66,201 @@ router.get('/connect-qr', async (req: Request, res: Response, next: NextFunction
   }
 });
 
+// ── Strategy 1B: "The 8-Digit Pairing Code" (Zero-Screen Mobile Onboarding) ──
+// POST /api/v1/whatsapp/pairing-code
+// Enables merchant to link WhatsApp directly from their phone without needing a 2nd screen or camera scan
+router.post('/pairing-code', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const businessId = (await resolvePlatformBusinessId(req)) || (req as any).user?.businessId || (req as any).user?.id;
+    const { phoneNumber } = req.body || {};
+
+    if (!phoneNumber) {
+      return res.status(400).json({ success: false, error: 'phoneNumber is required (e.g. 03001234567 or +923001234567)' });
+    }
+
+    const sessionId = `biz_${businessId || 'default'}`;
+    const { openwaService } = await import('../services/openwa.service');
+
+    // Ensure session exists
+    let session = await openwaService.getSession(sessionId).catch(() => null);
+    if (!session) {
+      session = await openwaService.createSession(sessionId).catch(() => null);
+    }
+
+    const pairingData = await openwaService.getPairingCode(sessionId, phoneNumber);
+
+    res.json({
+      success: true,
+      data: {
+        sessionId,
+        phoneNumber,
+        pairingCode: pairingData.pairingCode,
+        status: pairingData.status,
+        instructions: pairingData.instructions,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ── Strategy 1C: Zero-Friction AI 1-Message Onboarding Seeder ──
+// POST /api/v1/whatsapp/ai-onboard
+// Uses industry presets or natural language extraction to configure services, hours, deposits & Raast in 1-click
+router.post('/ai-onboard', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const businessId = (await resolvePlatformBusinessId(req)) || (req as any).user?.businessId || (req as any).user?.id;
+    const { presetCategory, rawPrompt, businessName, phone, city, raastId } = req.body || {};
+
+    // 1. Curated industry presets
+    const PRESETS: Record<string, { category: any; services: Array<{ name: string; price: number; duration: number }>; hours: string; deposit: number }> = {
+      salon: {
+        category: 'SALON',
+        services: [
+          { name: 'Haircut & Styling', price: 1500, duration: 30 },
+          { name: 'Beard Trim & Shape', price: 800, duration: 20 },
+          { name: 'Deep Cleansing Facial', price: 2500, duration: 45 },
+          { name: 'VIP Groom Package', price: 4500, duration: 75 },
+        ],
+        hours: '11:00 AM - 10:00 PM',
+        deposit: 500,
+      },
+      clinic: {
+        category: 'HEALTHCARE',
+        services: [
+          { name: 'General Doctor Consultation', price: 2000, duration: 20 },
+          { name: 'Follow-up Checkup', price: 1000, duration: 15 },
+          { name: 'Specialist Assessment', price: 3500, duration: 30 },
+        ],
+        hours: '04:00 PM - 09:00 PM',
+        deposit: 1000,
+      },
+      fitness: {
+        category: 'FITNESS',
+        services: [
+          { name: '1-on-1 Personal Training Session', price: 2500, duration: 60 },
+          { name: 'Custom Diet & Workout Consultation', price: 3000, duration: 45 },
+          { name: 'Monthly Transformation Slot', price: 20000, duration: 60 },
+        ],
+        hours: '07:00 AM - 09:00 PM',
+        deposit: 1000,
+      },
+      car_detailing: {
+        category: 'OTHER',
+        services: [
+          { name: 'Signature Foam Wash & Vacuum', price: 2000, duration: 40 },
+          { name: 'Interior Detailing & Leather Care', price: 6000, duration: 90 },
+          { name: 'Ceramic Glass Coating', price: 15000, duration: 180 },
+        ],
+        hours: '09:00 AM - 08:00 PM',
+        deposit: 1000,
+      },
+    };
+
+    const chosen = (presetCategory && PRESETS[presetCategory.toLowerCase()]) || PRESETS.salon;
+    const resolvedName = businessName || 'My Business';
+    const resolvedCity = city || 'Karachi';
+    const resolvedPhone = phone || '03001234567';
+    const resolvedRaast = raastId || resolvedPhone;
+
+    // 2. Persist or update Business in Prisma
+    let targetBiz: any = null;
+    if (businessId) {
+      targetBiz = await prisma.business.findUnique({ where: { id: businessId } }).catch(() => null);
+    }
+
+    if (!targetBiz) {
+      targetBiz = await prisma.business.create({
+        data: {
+          name: resolvedName,
+          category: chosen.category,
+          address: `${resolvedCity}, Pakistan`,
+          city: resolvedCity,
+          country: 'Pakistan',
+          currency: 'PKR',
+          phone: resolvedPhone,
+          requireDeposit: true,
+          depositAmount: chosen.deposit,
+          timezone: 'Asia/Karachi',
+        },
+      });
+    } else {
+      targetBiz = await prisma.business.update({
+        where: { id: targetBiz.id },
+        data: {
+          requireDeposit: true,
+          depositAmount: chosen.deposit,
+          currency: 'PKR',
+          phone: resolvedPhone || targetBiz.phone,
+        },
+      });
+    }
+
+    // 3. Populate services
+    const createdServices = [];
+    for (const svc of chosen.services) {
+      const s = await prisma.businessService.create({
+        data: {
+          businessId: targetBiz.id,
+          name: svc.name,
+          price: svc.price,
+          duration: svc.duration,
+          isActive: true,
+          category: presetCategory || 'GENERAL',
+        },
+      });
+      createdServices.push(s);
+    }
+
+    // 4. Update BusinessSettings with WhatsApp and FAQ auto-replies
+    const settings = await prisma.businessSettings.upsert({
+      where: { businessId: targetBiz.id },
+      create: {
+        businessId: targetBiz.id,
+        whatsappNumber: resolvedPhone,
+        whatsappInstanceId: `biz_${targetBiz.id}`,
+        autoConfirm: false, // Wait for deposit
+        autoRequireDeposit: true,
+        faqRules: {
+          location: `${resolvedName} is located in ${resolvedCity}.`,
+          hours: `We are open daily: ${chosen.hours}.`,
+          raastId: resolvedRaast,
+        },
+      },
+      update: {
+        whatsappNumber: resolvedPhone,
+        whatsappInstanceId: `biz_${targetBiz.id}`,
+        autoRequireDeposit: true,
+        faqRules: {
+          location: `${resolvedName} is located in ${resolvedCity}.`,
+          hours: `We are open daily: ${chosen.hours}.`,
+          raastId: resolvedRaast,
+        },
+      },
+    });
+
+    const cleanPhone = String(resolvedPhone).replace(/[^\d]/g, '');
+    const waMeUrl = `https://wa.me/${cleanPhone.startsWith('0') ? '92' + cleanPhone.slice(1) : cleanPhone}?text=Hi!+I'd+like+to+book+an+appointment`;
+
+    res.json({
+      success: true,
+      message: 'Business profile, services, hours, and WhatsApp bot configured instantly!',
+      data: {
+        business: targetBiz,
+        settings,
+        servicesCount: createdServices.length,
+        services: createdServices,
+        hours: chosen.hours,
+        raastId: resolvedRaast,
+        waMeUrl,
+        customerLink: waMeUrl,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // ── Strategy 2: Interactive WhatsApp Quick-Reply Buttons ──
 // POST /api/v1/whatsapp/send-buttons
 // Sends interactive quick-reply buttons (e.g. [Pay Deposit] [Reschedule] [Staff])

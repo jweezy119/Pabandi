@@ -28,7 +28,7 @@ import { getAuthToken } from '../../utils/authToken';
 
 export default function WhatsAppAdminDashboard() {
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<'overview' | 'pairing' | 'plugins' | 'marketing' | 'sandbox'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'pairing' | 'ai-setup' | 'plugins' | 'marketing' | 'sandbox'>('overview');
 
   // Stats & Health
   const [stats, setStats] = useState<any>(null);
@@ -39,6 +39,21 @@ export default function WhatsAppAdminDashboard() {
   const [qrData, setQrData] = useState<any>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [pairingTimer, setPairingTimer] = useState<number>(30);
+
+  // Phone Pairing Code State (Single-Device Onboarding)
+  const [pairingMethod, setPairingMethod] = useState<'qr' | 'code'>('qr');
+  const [pairingPhone, setPairingPhone] = useState('03001234567');
+  const [pairingCodeResult, setPairingCodeResult] = useState<any>(null);
+  const [pairingCodeLoading, setPairingCodeLoading] = useState(false);
+
+  // AI 1-Click Fast Setup State
+  const [aiPreset, setAiPreset] = useState<'salon' | 'clinic' | 'fitness' | 'car_detailing'>('salon');
+  const [aiBizName, setAiBizName] = useState('Glamour Hair & Beard Lounge');
+  const [aiCity, setAiCity] = useState('Karachi');
+  const [aiPhone, setAiPhone] = useState('03001234567');
+  const [aiRaast, setAiRaast] = useState('03001234567');
+  const [aiOnboarding, setAiOnboarding] = useState(false);
+  const [aiOnboardSuccess, setAiOnboardSuccess] = useState<any>(null);
 
   // Marketing Links
   const [marketingData, setMarketingData] = useState<any>(null);
@@ -96,6 +111,43 @@ export default function WhatsAppAdminDashboard() {
       });
     } finally {
       setQrLoading(false);
+    }
+  };
+
+  const requestPairingCode = async () => {
+    try {
+      setPairingCodeLoading(true);
+      const authHeaders = { Authorization: `Bearer ${getAuthToken()}` };
+      const res = await axios.post('/api/v1/whatsapp/advanced/pairing-code', {
+        phoneNumber: pairingPhone
+      }, { headers: authHeaders });
+      setPairingCodeResult(res.data?.data || null);
+    } catch (err: any) {
+      setPairingCodeResult({
+        error: err.response?.data?.error || err.message || 'Failed to request pairing code'
+      });
+    } finally {
+      setPairingCodeLoading(false);
+    }
+  };
+
+  const handleAiOnboard = async () => {
+    try {
+      setAiOnboarding(true);
+      setAiOnboardSuccess(null);
+      const authHeaders = { Authorization: `Bearer ${getAuthToken()}` };
+      const res = await axios.post('/api/v1/whatsapp/advanced/ai-onboard', {
+        presetCategory: aiPreset,
+        businessName: aiBizName,
+        phone: aiPhone,
+        city: aiCity,
+        raastId: aiRaast,
+      }, { headers: authHeaders });
+      setAiOnboardSuccess(res.data?.data || null);
+    } catch (err: any) {
+      alert(err.response?.data?.error || err.message || 'Setup failed');
+    } finally {
+      setAiOnboarding(false);
     }
   };
 
@@ -270,7 +322,8 @@ export default function WhatsAppAdminDashboard() {
         <div className="flex border-b border-slate-800 gap-2 overflow-x-auto">
           {[
             { id: 'overview', label: 'Overview & Health', icon: Activity },
-            { id: 'pairing', label: '30-Sec QR Pairing', icon: QrCode },
+            { id: 'pairing', label: 'Device Pairing (QR / Code)', icon: QrCode },
+            { id: 'ai-setup', label: '⚡ 1-Click Fast Setup', icon: Sparkles },
             { id: 'plugins', label: 'Bot Capabilities & Plugins', icon: Layers },
             { id: 'marketing', label: 'Click-to-Chat & QR Standees', icon: Share2 },
             { id: 'sandbox', label: 'Interactive Sandbox', icon: Send },
@@ -405,79 +458,155 @@ export default function WhatsAppAdminDashboard() {
           </div>
         )}
 
-        {/* TAB 2: 30-SEC QR PAIRING */}
+        {/* TAB 2: DEVICE PAIRING (QR OR SINGLE-PHONE PAIRING CODE) */}
         {activeTab === 'pairing' && (
           <div className="max-w-2xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 animate-in fade-in duration-200">
             <div className="text-center mb-6">
               <div className="inline-flex p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 mb-3">
-                <QrCode className="w-8 h-8" />
+                <Smartphone className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-bold text-white">Link Your Business Phone</h2>
+              <h2 className="text-2xl font-bold text-white">Link Your WhatsApp Number</h2>
               <p className="text-slate-400 text-xs mt-1">
-                Scan with WhatsApp on your phone to turn it into an automated booking assistant.
+                Choose between QR scan (camera) or an 8-digit pairing code (no second screen needed).
               </p>
             </div>
 
-            <div className="flex flex-col items-center justify-center p-8 bg-slate-950 border border-slate-800 rounded-2xl mb-6 min-h-[300px]">
-              {qrLoading ? (
-                <div className="flex flex-col items-center gap-3">
-                  <RefreshCw className="w-10 h-10 text-emerald-500 animate-spin" />
-                  <p className="text-xs text-slate-400 font-mono">Initializing OpenWA session & QR stream...</p>
-                </div>
-              ) : qrData?.qr || qrData?.qrCodeUrl || qrData?.raw ? (
-                <div className="flex flex-col items-center">
-                  <div className="p-3 bg-white rounded-2xl shadow-xl">
-                    <img
-                      src={
-                        qrData.qrCodeUrl ||
-                        qrData.qr ||
-                        `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(qrData.raw || '')}`
-                      }
-                      alt="OpenWA Pairing QR Code"
-                      className="w-56 h-56 object-contain"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 mt-4 text-xs font-semibold text-emerald-400">
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Session: default &bull; Ready to scan</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center max-w-sm">
-                  <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-3" />
-                  <p className="text-sm font-bold text-white mb-1">Gateway Standby</p>
-                  <p className="text-xs text-slate-400 mb-4">
-                    The local OpenWA gateway at <code className="text-emerald-400">http://localhost:2785</code> is not currently streaming a QR code. Click Refresh to request a fresh session.
-                  </p>
-                  <button
-                    onClick={fetchQrCode}
-                    className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition inline-flex items-center gap-2"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Generate Fresh QR</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Instruction Steps */}
-            <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 mb-6">
-              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">3 Steps to Link:</h4>
-              <ol className="text-xs text-slate-400 space-y-2 list-decimal list-inside">
-                <li>Open WhatsApp on your business phone.</li>
-                <li>Tap <strong>Settings / Menu &rarr; Linked Devices &rarr; Link a Device</strong>.</li>
-                <li>Point your camera at the QR code above. Done in 30 seconds!</li>
-              </ol>
-            </div>
-
-            <div className="flex justify-between items-center">
+            {/* Mode Switcher */}
+            <div className="flex bg-slate-950 p-1 rounded-2xl border border-slate-800 mb-6">
               <button
-                onClick={fetchQrCode}
-                disabled={qrLoading}
+                onClick={() => setPairingMethod('qr')}
+                className={`flex-1 py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 ${
+                  pairingMethod === 'qr'
+                    ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <QrCode className="w-4 h-4" />
+                <span>Camera QR Scan (Laptop / iPad)</span>
+              </button>
+              <button
+                onClick={() => setPairingMethod('code')}
+                className={`flex-1 py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 ${
+                  pairingMethod === 'code'
+                    ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Smartphone className="w-4 h-4" />
+                <span>8-Digit Code (Single Mobile Phone)</span>
+              </button>
+            </div>
+
+            {pairingMethod === 'qr' ? (
+              <>
+                <div className="flex flex-col items-center justify-center p-8 bg-slate-950 border border-slate-800 rounded-2xl mb-6 min-h-[300px]">
+                  {qrLoading ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <RefreshCw className="w-10 h-10 text-emerald-500 animate-spin" />
+                      <p className="text-xs text-slate-400 font-mono">Initializing OpenWA session & QR stream...</p>
+                    </div>
+                  ) : qrData?.qr || qrData?.qrCodeUrl || qrData?.raw ? (
+                    <div className="flex flex-col items-center">
+                      <div className="p-3 bg-white rounded-2xl shadow-xl">
+                        <img
+                          src={
+                            qrData.qrCodeUrl ||
+                            qrData.qr ||
+                            `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(qrData.raw || '')}`
+                          }
+                          alt="OpenWA Pairing QR Code"
+                          className="w-56 h-56 object-contain"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 mt-4 text-xs font-semibold text-emerald-400">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Session: default &bull; Ready to scan</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center max-w-sm">
+                      <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-3" />
+                      <p className="text-sm font-bold text-white mb-1">Gateway Standby</p>
+                      <p className="text-xs text-slate-400 mb-4">
+                        Click Refresh to request an active QR code from the local Evolution gateway.
+                      </p>
+                      <button
+                        onClick={fetchQrCode}
+                        className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition inline-flex items-center gap-2 cursor-pointer"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Generate Fresh QR</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 mb-6">
+                  <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">3 Steps to Link via QR:</h4>
+                  <ol className="text-xs text-slate-400 space-y-2 list-decimal list-inside">
+                    <li>Open WhatsApp on your business phone.</li>
+                    <li>Tap <strong>Settings / Menu &rarr; Linked Devices &rarr; Link a Device</strong>.</li>
+                    <li>Point your camera at the QR code above. Done in 30 seconds!</li>
+                  </ol>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-6">
+                <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 text-center">
+                  <p className="text-xs text-slate-400 mb-4">
+                    Enter your WhatsApp mobile number to receive an 8-character pairing code directly inside WhatsApp on this same phone.
+                  </p>
+                  <div className="max-w-xs mx-auto space-y-3">
+                    <input
+                      type="text"
+                      value={pairingPhone}
+                      onChange={(e) => setPairingPhone(e.target.value)}
+                      placeholder="03001234567 or +923001234567"
+                      className="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm text-center font-mono focus:outline-none focus:border-emerald-500"
+                    />
+                    <button
+                      onClick={requestPairingCode}
+                      disabled={pairingCodeLoading}
+                      className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                    >
+                      {pairingCodeLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Smartphone className="w-4 h-4" />}
+                      <span>Request 8-Digit Pairing Code</span>
+                    </button>
+                  </div>
+
+                  {pairingCodeResult && (
+                    <div className="mt-6 pt-6 border-t border-slate-800 animate-in fade-in">
+                      {pairingCodeResult.error ? (
+                        <p className="text-xs text-rose-400">{pairingCodeResult.error}</p>
+                      ) : (
+                        <div className="space-y-4">
+                          <p className="text-xs text-slate-400">Enter this code in WhatsApp on your phone:</p>
+                          <div className="inline-block text-3xl font-mono font-bold tracking-widest text-emerald-400 bg-slate-900 border border-emerald-500/30 px-6 py-4 rounded-2xl shadow-inner">
+                            {pairingCodeResult.pairingCode}
+                          </div>
+                          <div className="bg-slate-900/60 p-4 rounded-xl text-left border border-slate-800">
+                            <h4 className="text-xs font-bold text-slate-300 uppercase mb-2">Instructions:</h4>
+                            <ul className="text-xs text-slate-400 space-y-1 list-disc list-inside">
+                              <li>Open WhatsApp &rarr; <strong>Settings &rarr; Linked Devices &rarr; Link with phone number instead</strong></li>
+                              <li>Type the code above: <span className="font-mono text-emerald-400 font-bold">{pairingCodeResult.pairingCode}</span></li>
+                              <li>Your bot is linked immediately!</li>
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center mt-6">
+              <button
+                onClick={() => pairingMethod === 'qr' ? fetchQrCode() : requestPairingCode()}
                 className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center gap-2 transition"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${qrLoading ? 'animate-spin' : ''}`} />
-                <span>Refresh QR Code</span>
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Refresh Link</span>
               </button>
               <button
                 onClick={() => setActiveTab('overview')}
@@ -486,6 +615,133 @@ export default function WhatsAppAdminDashboard() {
                 Done / Connected
               </button>
             </div>
+          </div>
+        )}
+
+        {/* TAB 2B: 1-CLICK AI FAST-SETUP */}
+        {activeTab === 'ai-setup' && (
+          <div className="max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 animate-in fade-in duration-200 space-y-6">
+            <div className="text-center mb-4">
+              <div className="inline-flex p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-amber-400 mb-3">
+                <Sparkles className="w-8 h-8" />
+              </div>
+              <h2 className="text-2xl font-bold text-white">1-Click Fast Setup with Industry Presets</h2>
+              <p className="text-slate-400 text-xs mt-1">
+                Zero typing. Choose your industry preset to configure your services, hours, Raast ID, and booking bot in seconds.
+              </p>
+            </div>
+
+            {/* Presets Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { id: 'salon', label: 'Barber & Salon', icon: '✂️', desc: 'Haircut, Beard, Facial, Grooming' },
+                { id: 'clinic', label: 'Doctor / Clinic', icon: '🩺', desc: 'Consultation, Follow-up, Specialists' },
+                { id: 'fitness', label: 'Fitness & Trainer', icon: '💪', desc: '1-on-1 Sessions, Diet Plans' },
+                { id: 'car_detailing', label: 'Auto Detailing', icon: '🚗', desc: 'Wash, Detailing, Ceramic' },
+              ].map((p) => {
+                const isSelected = aiPreset === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => setAiPreset(p.id as any)}
+                    className={`p-4 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${
+                      isSelected
+                        ? 'bg-emerald-500/10 border-emerald-500/50 ring-1 ring-emerald-500'
+                        : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="text-2xl mb-2">{p.icon}</div>
+                    <div>
+                      <p className={`text-xs font-bold ${isSelected ? 'text-emerald-400' : 'text-slate-200'}`}>
+                        {p.label}
+                      </p>
+                      <p className="text-[10px] text-slate-500 mt-0.5 line-clamp-2">{p.desc}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Fast Inputs */}
+            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-4">
+              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Business & Payment Profile</h3>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-400 mb-1 block">Business / Shop Name</label>
+                  <input
+                    type="text"
+                    value={aiBizName}
+                    onChange={(e) => setAiBizName(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-400 mb-1 block">City</label>
+                  <input
+                    type="text"
+                    value={aiCity}
+                    onChange={(e) => setAiCity(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-400 mb-1 block">WhatsApp Phone Number</label>
+                  <input
+                    type="text"
+                    value={aiPhone}
+                    onChange={(e) => setAiPhone(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-400 mb-1 block">Raast ID / SadaPay (for Deposits)</label>
+                  <input
+                    type="text"
+                    value={aiRaast}
+                    onChange={(e) => setAiRaast(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={handleAiOnboard}
+                disabled={aiOnboarding}
+                className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl transition text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg mt-4"
+              >
+                {aiOnboarding ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                <span>Auto-Configure Services, Raast & Deploy Bot</span>
+              </button>
+            </div>
+
+            {aiOnboardSuccess && (
+              <div className="bg-emerald-950/40 border border-emerald-800/60 rounded-2xl p-6 space-y-4 animate-in fade-in">
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Your Business Bot is Fully Configured!</h4>
+                    <p className="text-xs text-slate-300">
+                      Configured {aiOnboardSuccess.servicesCount} services, set hours ({aiOnboardSuccess.hours}), and linked Raast ID {aiOnboardSuccess.raastId}.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="truncate w-full sm:w-auto">
+                    <p className="text-[10px] text-slate-500 uppercase font-bold">Your Customer Click-to-Chat Link</p>
+                    <p className="text-xs font-mono text-emerald-400 truncate">{aiOnboardSuccess.customerLink}</p>
+                  </div>
+                  <button
+                    onClick={() => handleCopy(aiOnboardSuccess.customerLink, 'customer_link')}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg flex items-center gap-1.5 shrink-0"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>{copiedKey === 'customer_link' ? 'Copied!' : 'Copy Link'}</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
