@@ -4,6 +4,7 @@ import {
   X402_PRICING,
   AGENT_ECONOMY_RAKE,
   AGENT_MARKETPLACE_FEE,
+  MCP_ESCROW_SETTLEMENT_RAKE,
   OFFRAMP_FEE_RATE,
   PUBLISHED_RAIL_FEES,
   processingCostCents,
@@ -42,6 +43,7 @@ describe('the seven real takes live in config/fees', () => {
   it('prices the agent layer', () => {
     expect(AGENT_ECONOMY_RAKE).toBe(0.10);
     expect(AGENT_MARKETPLACE_FEE).toBe(0.02);
+    expect(MCP_ESCROW_SETTLEMENT_RAKE).toBe(0.05);
   });
 
   it('prices the offramp', () => {

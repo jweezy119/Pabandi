@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, Shield, AlertTriangle, Wallet, Zap, CreditCard, Copy, Check } from 'lucide-react';
+import { X, Shield, AlertTriangle, Wallet, Zap, CreditCard, Copy, Check, QrCode, ArrowUpRight } from 'lucide-react';
 import { Connection, Transaction } from '@solana/web3.js';
 import { API_HOST } from '../utils/apiHost';
 import { getAuthToken } from '../utils/authToken';
@@ -20,6 +20,8 @@ export interface DepositPrompt {
   referenceId?: string;
   /** Custom modal header title (defaults to "Confirm your deposit"). */
   title?: string;
+  /** Merchant Raast ID / P2P handle for Pakistan instant banking payments */
+  raastId?: string;
 }
 
 interface Props {
@@ -47,12 +49,16 @@ function parseSolanaRecipient(checkoutUrl: string): string {
 
 export function EmbeddedCheckoutModal({ prompt, onClose, onFunded }: Props) {
   const isSolanaNativeUrl = Boolean(prompt?.checkoutUrl?.startsWith('solana:'));
+  const isPkrCurrency = prompt?.currency === 'PKR' || prompt?.description?.includes('PKR') || prompt?.description?.includes('Rs.');
   const [loaded, setLoaded] = useState(false);
-  const [mode, setMode] = useState<'solana' | 'hosted'>(isSolanaNativeUrl ? 'solana' : 'hosted');
+  const [mode, setMode] = useState<'solana' | 'hosted' | 'raast'>(
+    isSolanaNativeUrl ? 'solana' : isPkrCurrency ? 'raast' : 'hosted'
+  );
   const [signing, setSigning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [raastCopied, setRaastCopied] = useState(false);
 
   const { wallet } = useEmbeddedSolanaWallet();
   const solanaWallet = wallet as SignableSolanaWallet | null;
@@ -247,32 +253,95 @@ export function EmbeddedCheckoutModal({ prompt, onClose, onFunded }: Props) {
           <div className="px-5 pt-3 flex gap-2">
             <button
               type="button"
+              onClick={() => setMode('raast')}
+              className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 border transition-colors ${
+                mode === 'raast'
+                  ? 'bg-emerald-600 text-white border-emerald-600'
+                  : 'bg-[var(--warm-sand)]/60 text-[var(--warm-ink)] border-[rgba(191,179,163,0.3)]'
+              }`}
+            >
+              <QrCode size={13} />
+              Raast / PKR
+            </button>
+            <button
+              type="button"
               onClick={() => setMode('hosted')}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 border transition-colors ${
+              className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 border transition-colors ${
                 mode === 'hosted'
                   ? 'bg-[var(--clay)] text-white border-[var(--clay)]'
                   : 'bg-[var(--warm-sand)]/60 text-[var(--warm-ink)] border-[rgba(191,179,163,0.3)]'
               }`}
             >
               <CreditCard size={13} />
-              Hosted Checkout
+              Card / Apple Pay
             </button>
             <button
               type="button"
               onClick={() => setMode('solana')}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 border transition-colors ${
+              className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 border transition-colors ${
                 mode === 'solana'
                   ? 'bg-[var(--clay)] text-white border-[var(--clay)]'
                   : 'bg-[var(--warm-sand)]/60 text-[var(--warm-ink)] border-[rgba(191,179,163,0.3)]'
               }`}
             >
               <Zap size={13} />
-              Privy Solana USDC
+              Solana USDC
             </button>
           </div>
         )}
 
-        {mode === 'hosted' && !isSolanaNativeUrl ? (
+        {mode === 'raast' && !isSolanaNativeUrl ? (
+          <div className="p-5 space-y-3.5">
+            <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-emerald-900 flex items-center gap-1.5 text-sm">
+                  <QrCode size={16} className="text-emerald-700" />
+                  Instant Raast P2P Transfer (0% Fee)
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-800 text-[10px] font-bold uppercase">
+                  State Bank of Pakistan
+                </span>
+              </div>
+              <p className="text-emerald-800 text-xs leading-relaxed">
+                Send deposit from any Pakistani bank app (Nayapay, SadaPay, HBL, Meezan, Easypaisa, JazzCash) directly via Raast ID.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-[var(--warm-sand)]/60 border border-[rgba(191,179,163,0.35)] space-y-2 text-xs">
+              <div className="flex justify-between items-center text-xs text-[var(--soft-stone)]">
+                <span>Merchant Raast ID:</span>
+                <span className="font-mono font-bold text-[var(--warm-ink)] text-sm">
+                  {prompt.raastId || 'pabandi@raast'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-xs text-[var(--soft-stone)]">
+                <span>Exact Amount:</span>
+                <span className="font-bold text-emerald-700 text-sm">
+                  PKR {prompt.currency === 'PKR' ? amountVal.toFixed(0) : (amountVal * 280).toFixed(0)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-xs text-[var(--soft-stone)]">
+                <span>Reference Note:</span>
+                <span className="font-mono text-[11px] text-[var(--warm-ink)]">
+                  {prompt.referenceId || 'BKG-PABANDI'}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(prompt.raastId || 'pabandi@raast');
+                setRaastCopied(true);
+                setTimeout(() => setRaastCopied(false), 2000);
+              }}
+              className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 text-white text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-emerald-700 transition-colors shadow-sm"
+            >
+              {raastCopied ? <Check size={14} /> : <Copy size={14} />}
+              {raastCopied ? 'Copied Raast ID!' : 'Copy Raast ID & Open Bank App'}
+            </button>
+          </div>
+        ) : mode === 'hosted' && !isSolanaNativeUrl ? (
           <div className="relative bg-white/40" style={{ height: 420 }}>
             {!loaded && (
               <div className="absolute inset-0 flex items-center justify-center">

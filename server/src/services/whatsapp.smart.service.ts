@@ -4,6 +4,7 @@ import { hospitalityService } from './hospitalityService';
 import { aiNlpService } from './ai.nlp.service';
 import { openwaTemplateService } from './openwa.template.service';
 import { saveConversationSignal } from './whatsapp.conversation.service';
+import { prisma } from '../utils/database';
 
 export interface SmartReply {
   text: string;
@@ -220,6 +221,167 @@ export class WhatsAppSmartService {
     _lower: string,
     raw: string
   ): Promise<SmartReply> {
+    const lower = _lower.toLowerCase().trim();
+
+    // ── Handle Change Time / Reschedule Button ──
+    if (session.step === 'confirm' && (lower === 'btn_reschedule' || lower.includes('change') || lower.includes('reschedule') || lower.includes('other time'))) {
+      session.step = 'date';
+      session.data.date = undefined;
+      session.data.time = undefined;
+      this.touchSession(customerPhone, session.businessPhone, session);
+      const reply = await this.reply(
+        customerPhone,
+        'No problem! What date and time would work best for you? (e.g., Tomorrow at 4:00 PM)',
+        undefined,
+        session.businessPhone
+      );
+      return { text: reply, matchedIntent: 'book', action: 'reschedule_prompt' };
+    }
+
+    // ── Handle Human Handoff Button ──
+    if (lower === 'btn_human' || lower.includes('talk to staff') || lower.includes('talk to receptionist') || lower.includes('human')) {
+      this.clearSession(customerPhone, session.businessPhone);
+      const reply = await this.reply(
+        customerPhone,
+        '👤 I have notified the receptionist. A team member will step in and message you directly right here shortly.',
+        undefined,
+        session.businessPhone
+      );
+      return { text: reply, matchedIntent: 'support', action: 'human_handoff' };
+    }
+
+    // ── Handle Confirmation Step: Secure booking with dynamic commitment deposit ──
+    if (session.step === 'confirm' && (lower === 'btn_confirm' || lower === 'confirm' || lower.includes('confirm') || lower.includes('yes') || lower.includes('ok') || lower.includes('book') || lower.includes('pay'))) {
+      const businessId = String(session.data.businessId || '');
+      const business = businessId ? await prisma.business.findFirst({
+        where: { OR: [{ id: businessId }, { phone: session.businessPhone }] }
+      }) : await prisma.business.findFirst({ where: { phone: session.businessPhone } });
+
+      const businessName = business?.name || 'the venue';
+      const depositVal = business?.depositAmount || 15;
+      const depositCurrency = business?.currency || 'USD';
+
+      // Resolve a valid customer User record for foreign-key integrity in Prisma
+      let customerUser = await prisma.user.findFirst({ where: { phone: customerPhone } });
+      if (!customerUser) {
+        const guestEmail = `guest_${customerPhone.replace(/[^\d]/g, '') || Date.now()}@pabandi.guest`;
+        customerUser = await prisma.user.create({
+          data: {
+            email: guestEmail,
+            phone: customerPhone,
+            firstName: 'WhatsApp',
+            lastName: 'Guest',
+            passwordHash: 'whatsapp_guest_unauthenticated',
+            role: 'CUSTOMER',
+            isPhoneVerified: true,
+          }
+        }).catch(async () => {
+          return prisma.user.findFirst();
+        });
+      }
+
+      const resDate = session.data.date ? new Date(String(session.data.date)) : new Date();
+      const resTime = String(session.data.time || '12:00');
+      const guests = Number(session.data.partySize || 1);
+
+      if (business?.requireDeposit || depositVal > 0) {
+        // Create PENDING reservation awaiting deposit lock
+        let pendingRes: any = null;
+        if (business && customerUser) {
+          pendingRes = await prisma.reservation.create({
+            data: {
+              businessId: business.id,
+              customerId: customerUser.id,
+              reservationDate: isNaN(resDate.getTime()) ? new Date() : resDate,
+              reservationTime: resTime,
+              numberOfGuests: guests,
+              customerName: customerUser.firstName ? `${customerUser.firstName} ${customerUser.lastName || ''}`.trim() : 'Guest',
+              customerPhone,
+              customerEmail: customerUser.email,
+              status: 'PENDING',
+              depositRequired: true,
+              depositAmount: depositVal,
+              depositPaid: false,
+              depositStatus: 'REQUIRED',
+            }
+          }).catch((err) => {
+            console.warn('[WhatsApp Booking] Reservation create warning:', err.message);
+            return null;
+          });
+        }
+
+        const checkoutUrl = `${process.env.CLIENT_URL || 'https://pabandi.com'}/book/${business?.id || businessId || 'default'}?res=${pendingRes?.id || ''}&ref=wa_${Date.now().toString(36)}`;
+        session.step = 'awaiting_deposit';
+        session.data.checkoutUrl = checkoutUrl;
+        session.data.reservationId = pendingRes?.id;
+        this.touchSession(customerPhone, session.businessPhone, session);
+
+        await openwaTemplateService.sendTemplate(customerPhone, 'deposit_commitment_request', {
+          customerName: customerUser?.firstName || 'Valued Guest',
+          businessName,
+          reservationDate: String(session.data.date || 'Today'),
+          reservationTime: resTime,
+          depositAmount: `${depositCurrency} ${depositVal}`,
+          checkoutUrl,
+        });
+
+        const reply = await this.reply(
+          customerPhone,
+          `To lock in your booking at ${businessName}, please complete your refundable commitment deposit of ${depositCurrency} ${depositVal}: ${checkoutUrl}`,
+          undefined,
+          session.businessPhone
+        );
+        return {
+          text: reply,
+          matchedIntent: 'book',
+          action: 'awaiting_deposit',
+        };
+      } else {
+        // Zero-deposit booking (auto-confirmed)
+        if (business && customerUser) {
+          await prisma.reservation.create({
+            data: {
+              businessId: business.id,
+              customerId: customerUser.id,
+              reservationDate: isNaN(resDate.getTime()) ? new Date() : resDate,
+              reservationTime: resTime,
+              numberOfGuests: guests,
+              customerName: customerUser.firstName ? `${customerUser.firstName} ${customerUser.lastName || ''}`.trim() : 'Guest',
+              customerPhone,
+              customerEmail: customerUser.email,
+              status: 'CONFIRMED',
+              depositRequired: false,
+              depositPaid: true,
+              depositStatus: 'NOT_REQUIRED',
+            }
+          }).catch((err) => {
+            console.warn('[WhatsApp Booking] Reservation create warning:', err.message);
+          });
+        }
+
+        session.step = 'completed';
+        this.clearSession(customerPhone, session.businessPhone);
+        await openwaTemplateService.sendTemplate(customerPhone, 'booking_confirmation', {
+          customerName: customerUser?.firstName || 'Valued Guest',
+          businessName,
+          reservationDate: String(session.data.date || 'Today'),
+          reservationTime: resTime,
+          guestCount: String(guests),
+        });
+        const reply = await this.reply(
+          customerPhone,
+          `✅ Booking confirmed at ${businessName} for ${session.data.date} at ${session.data.time}! We look forward to seeing you.`,
+          undefined,
+          session.businessPhone
+        );
+        return {
+          text: reply,
+          matchedIntent: 'book',
+          action: 'confirmed',
+        };
+      }
+    }
+
     if (!session.data.entities || typeof session.data.entities !== 'object') {
       const entities = await aiNlpService.extractBookingEntities(raw);
       session.data.entities = entities;
@@ -291,15 +453,30 @@ export class WhatsAppSmartService {
     this.touchSession(customerPhone, session.businessPhone, session);
 
     const bookingText = [
+      `📅 *Appointment Summary*`,
       `${timeStr ? 'Time: ' + timeStr : ''}`,
-      `Guests: ${partySize}`,
-      `Table: ${availability.matchedTable?.name || 'Recommended table'}`,
+      `Guests / Party: ${partySize}`,
+      `Service / Spot: ${availability.matchedTable?.name || 'Standard Slot'}`,
       '',
-      'Reply "confirm" to secure with deposit, or send new details.',
+      'Please select an option below:',
     ].filter(Boolean).join('\n');
 
-    const reply = await this.reply(customerPhone, bookingText, undefined, session.businessPhone);
-    return { text: reply, matchedIntent: 'book', action: 'await_confirmation' };
+    // Strategy 2: Dispatch interactive quick-reply buttons
+    try {
+      const { openwaService } = await import('./openwa.service');
+      await openwaService.sendButtons(customerPhone, bookingText, [
+        { id: 'btn_confirm', text: '✅ Confirm & Lock Slot' },
+        { id: 'btn_reschedule', text: '🔄 Change Time' },
+        { id: 'btn_human', text: '👤 Talk to Staff' },
+      ], {
+        title: 'Pabandi Smart Booking',
+        footer: 'Tap a button to proceed',
+      });
+      return { text: bookingText, matchedIntent: 'book', action: 'await_confirmation_buttons' };
+    } catch {
+      const fallbackReply = await this.reply(customerPhone, `${bookingText}\n\nReply "confirm" to secure with deposit, or send new details.`, undefined, session.businessPhone);
+      return { text: fallbackReply, matchedIntent: 'book', action: 'await_confirmation' };
+    }
   }
 
   private async handleCancelFlow(customerPhone: string, session: SmartSession, _lower: string, _raw: string): Promise<SmartReply> {

@@ -334,6 +334,69 @@ describe('POST /api/v1/billing/checkout & self-serve monetization endpoints', ()
     expect(body.data.amount).toBe(49);
   });
 
+  it('generates a real Square payment link when square is requested', async () => {
+    vi.mocked(resolveSquareCredentials).mockResolvedValueOnce({
+      accessToken: 'sq0atp-test-token',
+      locationId: 'LOC123',
+      source: 'platform',
+    } as any);
+
+    vi.mocked(createSquarePaymentLink).mockResolvedValueOnce({
+      url: 'https://square.link/u/test-sub-url',
+      paymentLinkId: 'plink_123',
+      orderId: 'order_123',
+    } as any);
+
+    const { status, body } = await call('post', '/api/v1/billing/checkout', {
+      tier: 'business',
+      paymentMethod: 'square',
+    });
+
+    expect(status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(body.checkoutUrl).toBe('https://square.link/u/test-sub-url');
+    expect(body.data.paymentMethod).toBe('square');
+    expect(body.data.amount).toBe(149);
+  });
+
+  it('automatically resolves to live Square when paymentMethod is omitted and Square is available', async () => {
+    vi.mocked(resolveSquareCredentials).mockResolvedValueOnce({
+      accessToken: 'sq0atp-test-token',
+      locationId: 'LOC123',
+      source: 'platform',
+    } as any);
+
+    vi.mocked(createSquarePaymentLink).mockResolvedValueOnce({
+      url: 'https://square.link/u/test-live-auto',
+      paymentLinkId: 'plink_auto',
+      orderId: 'order_auto',
+    } as any);
+
+    const { status, body } = await call('post', '/api/v1/billing/checkout', {
+      tier: 'starter',
+    });
+
+    expect(status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(body.data.paymentMethod).toBe('square');
+    expect(body.checkoutUrl).toBe('https://square.link/u/test-live-auto');
+    expect(body.data.amount).toBe(19);
+  });
+
+  it('automatically resolves to live Solana USDC when paymentMethod is omitted and Square is unavailable', async () => {
+    vi.mocked(resolveSquareCredentials).mockResolvedValueOnce(null);
+
+    const { status, body } = await call('post', '/api/v1/billing/checkout', {
+      tier: 'pro',
+    });
+
+    expect(status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(body.data.paymentMethod).toBe('solana');
+    expect(body.checkoutUrl).toMatch(/^solana:/);
+    expect(body.data.amount).toBe(49);
+  });
+
   it('quotes a self-serve MCP prepaid USDC top-up', async () => {
     const { status, body } = await call('post', '/api/v1/billing/mcp-topup/quote', {
       amountUsdc: 25,

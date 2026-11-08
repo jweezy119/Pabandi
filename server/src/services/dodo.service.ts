@@ -11,6 +11,11 @@ export class DodoService {
 
   async createCheckoutSession(userId: string, email: string, tier: 'pro' | 'business') {
     try {
+      if (!this.apiKey) {
+        logger.warn('[Dodo] DODO_API_KEY not configured. Refusing mock checkout fallback.');
+        return { success: false, error: 'Dodo Payments not configured' };
+      }
+
       const prices = {
         pro: { amount: 49, name: 'PRO Plan' },
         business: { amount: 149, name: 'Business Plan' },
@@ -41,17 +46,16 @@ export class DodoService {
       });
 
       if (!response.ok) {
-        // Fallback: create a mock checkout URL if API not configured
-        const checkoutUrl = `https://checkout.dodopayments.com/session/${crypto.randomUUID()}?tier=${tier}`;
-        return { success: true, checkoutUrl };
+        const errorText = await response.text().catch(() => '');
+        logger.error(`[Dodo] API rejected checkout session creation (${response.status}): ${errorText}`);
+        return { success: false, error: `Dodo checkout failed (${response.status})` };
       }
 
       const data = await response.json();
       return { success: true, checkoutUrl: data.checkout_url || data.url };
     } catch (error) {
       logger.error('[Dodo] createCheckoutSession error:', error);
-      const checkoutUrl = `https://checkout.dodopayments.com/session/${crypto.randomUUID()}?tier=${tier}`;
-      return { success: true, checkoutUrl };
+      return { success: false, error: error instanceof Error ? error.message : 'Dodo checkout error' };
     }
   }
 

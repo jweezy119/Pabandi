@@ -11,11 +11,9 @@
 #   3. Scan QR code with your WhatsApp number
 #   4. Done — your WhatsApp is now a bot
 
-version: '3.8'
-
 services:
   evolution-api:
-    image: atendossa/evolution-api:latest
+    image: evoapicloud/evolution-api:latest
     container_name: evolution-api
     restart: unless-stopped
     ports:
@@ -25,6 +23,13 @@ services:
       - AUTHENTICATION_TYPE=apikey
       - AUTHENTICATION_API_KEY=pabandi-evolution-key-2026
       - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://evolution-redis:6379/6
+      - CACHE_REDIS_PREFIX_KEY=evolution
+      - CACHE_REDIS_TTL=604800
+      - REDIS_ENABLED=true
+      - REDIS_URI=redis://evolution-redis:6379
+      - REDIS_PREFIX_KEY=evolution
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
       - DATABASE_CONNECTION_URI=postgresql://evolution:evolution@postgres:5432/evolution
@@ -40,10 +45,23 @@ services:
       - WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS=true
     depends_on:
       - postgres
+      - evolution-redis
     networks:
       - evolution-network
     volumes:
       - evolution-data:/evolution/instances
+
+  evolution-redis:
+    image: redis:7-alpine
+    container_name: evolution-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - evolution-network
+    command: redis-server --appendonly yes
 
   postgres:
     image: postgres:15-alpine
@@ -63,6 +81,7 @@ services:
 volumes:
   evolution-data:
   postgres-data:
+  redis-data:
 
 networks:
   evolution-network:

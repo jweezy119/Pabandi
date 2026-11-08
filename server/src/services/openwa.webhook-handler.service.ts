@@ -56,14 +56,53 @@ export function registerWebhookHandlers(): void {
 }
 
 // ---------------------------------------------------------------------------
+// Human Takeover / Manual Chat Pause Store
+// ---------------------------------------------------------------------------
+
+const pausedChats = new Map<string, number>(); // phone -> expiresAt timestamp
+
+export function pauseChat(phone: string, durationMinutes = 45): void {
+  const clean = extractPhone(phone);
+  if (!clean) return;
+  const expiresAt = Date.now() + durationMinutes * 60 * 1000;
+  pausedChats.set(clean, expiresAt);
+  logger.info(`[WebhookHandler] Bot paused for chat ${clean} until ${new Date(expiresAt).toLocaleTimeString()}`);
+}
+
+export function isChatPaused(phone: string): boolean {
+  const clean = extractPhone(phone);
+  if (!clean) return false;
+  const expiresAt = pausedChats.get(clean);
+  if (!expiresAt) return false;
+  if (Date.now() > expiresAt) {
+    pausedChats.delete(clean);
+    return false;
+  }
+  return true;
+}
+
+export function unpauseChat(phone: string): void {
+  const clean = extractPhone(phone);
+  if (clean) pausedChats.delete(clean);
+}
+
+// ---------------------------------------------------------------------------
 // Handler: Incoming messages
 // ---------------------------------------------------------------------------
 
 async function handleIncomingMessage(payload: OpenWAWebhookPayload): Promise<void> {
   const { data, sessionId } = payload;
 
-  // Skip messages sent by us
-  if (data.fromMe) return;
+  // 1. If message was sent by the business owner manually from their phone:
+  // Gracefully step back so there are no embarrassing double/conflicting bot replies.
+  if (data.fromMe) {
+    const recipientPhone = extractPhone(data.to || data.chatId || '');
+    if (recipientPhone) {
+      pauseChat(recipientPhone, 45); // Pause bot for 45 minutes
+      logger.info(`[WebhookHandler] Business owner typed manual message to ${recipientPhone}. Bot paused for 45m.`);
+    }
+    return;
+  }
 
   // Skip group messages (for now — can be enabled per-business)
   if (data.isGroup) return;
@@ -73,6 +112,40 @@ async function handleIncomingMessage(payload: OpenWAWebhookPayload): Promise<voi
   const messageId = data.id || '';
 
   if (!senderPhone || (!messageBody && !data.hasMedia)) return;
+
+  // 2. Check if this customer chat is currently paused (Human Co-Pilot active)
+  if (isChatPaused(senderPhone)) {
+    logger.info(`[WebhookHandler] Chat with ${senderPhone} is paused (human takeover active). Skipping bot.`);
+    return;
+  }
+
+  // 3. Check if customer explicitly requested human handoff or receptionist button
+  const lowerBody = messageBody.toLowerCase().trim();
+  const isHumanHandoffRequest = [
+    'talk to human',
+    'human',
+    'receptionist',
+    'talk to staff',
+    'speak to staff',
+    'call receptionist',
+    'btn_support',
+    'talk_to_staff',
+  ].includes(lowerBody) || lowerBody.startsWith('talk to') || lowerBody.includes('human handoff');
+
+  if (isHumanHandoffRequest) {
+    pauseChat(senderPhone, 60); // Pause bot for 60 minutes
+    try {
+      await openwaService.sendText(
+        senderPhone,
+        '👤 *Team Notified*\n\nAutomated replies have been paused. A staff member has been alerted and will reply to you directly right here on WhatsApp.',
+        { sessionId }
+      );
+    } catch {
+      // Ignore send errors
+    }
+    logger.info(`[WebhookHandler] Customer ${senderPhone} requested human handoff. Bot paused for 60m.`);
+    return;
+  }
 
   logger.info(`[WebhookHandler] Incoming message from ${senderPhone}: "${messageBody.substring(0, 80)}" ${data.hasMedia ? '[MEDIA ATTACHED]' : ''}`);
   

@@ -68,6 +68,8 @@ const PostProjectPage = lazy(() => import('./pages/marketplace/PostProjectPage')
 const AdminRevenuePage = lazy(() => import('./pages/marketplace/AdminRevenuePage'));
 const IngestionPage = lazy(() => import('./pages/admin/IngestionPage'));
 const CompanyIntelPage = lazy(() => import('./pages/admin/CompanyIntelPage'));
+const WhatsAppAdminDashboard = lazy(() => import('./pages/admin/WhatsAppAdminDashboard'));
+const PluginManagerPage = lazy(() => import('./pages/PluginManagerPage').then((m) => ({ default: m.PluginManagerPage })));
 const DemoWalkthroughPage = lazy(() => import('./pages/DemoWalkthroughPage'));
 const AgentOnboardingPage = lazy(() => import('./pages/AgentOnboardingPage'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
@@ -550,7 +552,11 @@ function AnimatedAppRoutes() {
             <Route path="post-business" element={<PlaceholderPage />} />
             <Route path="business/settings" element={<PlaceholderPage />} />
             <Route path="business/analytics" element={<PlaceholderPage />} />
-            <Route path="business/plugins" element={<PlaceholderPage />} />
+            <Route path="whatsapp" element={<WhatsAppAdminDashboard />} />
+            <Route path="business/plugins" element={<WhatsAppAdminDashboard />} />
+            <Route path="business/whatsapp" element={<WhatsAppAdminDashboard />} />
+            <Route path="admin/whatsapp" element={<WhatsAppAdminDashboard />} />
+            <Route path="admin/openwa" element={<WhatsAppAdminDashboard />} />
             <Route path="business-model" element={<PlaceholderPage />} />
             <Route path="join" element={<PlaceholderPage />} />
             <Route path="pricing" element={<MerchantCompliancePage />} />

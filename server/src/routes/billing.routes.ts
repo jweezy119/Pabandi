@@ -32,7 +32,20 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res: Response) =
 
     const definition = tierDefinition(tier);
     const amount = definition.monthlyPrice ?? (tier === 'business' ? 149 : tier === 'pro' ? 49 : 19);
-    const method = paymentMethod || 'dodo';
+
+    // Live checkout resolution:
+    // Determine the active rail. Priority:
+    // 1. Explicitly requested method ('solana', 'square', 'dodo')
+    // 2. If unspecified: live rail priority (Square for card/ApplePay/GooglePay if configured, otherwise Solana USDC)
+    let method = paymentMethod;
+    if (!method || method === ('auto' as any) || method === ('live' as any)) {
+      const squareCreds = await resolveSquareCredentials(businessId || 'platform');
+      if (squareCreds) {
+        method = 'square';
+      } else {
+        method = 'solana';
+      }
+    }
 
     if (method === 'solana') {
       const platformWallet =
@@ -60,21 +73,22 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res: Response) =
       });
     }
 
-    if (method === 'square' && businessId) {
-      const credentials = await resolveSquareCredentials(businessId);
+    if (method === 'square') {
+      const credentials = await resolveSquareCredentials(businessId || 'platform');
       if (credentials) {
-        const refId = `sub-${businessId}-${tier}-${Date.now().toString(36)}`;
+        const refId = `sub-${businessId || userId || 'user'}-${tier}-${Date.now().toString(36)}`;
         const link = await createSquarePaymentLink({
           credentials,
           idempotencyKey: refId,
-          lineItemName: `Pabandi ${tier} subscription (30 days)`,
+          lineItemName: `Pabandi ${tier.toUpperCase()} subscription (30 days)`,
           amount,
           currency: 'USD',
-          note: `pabandi:checkout:${businessId}:${tier}`,
+          note: `pabandi:checkout:${businessId || userId}:${tier}`,
           redirectUrl: `${process.env.CLIENT_URL || 'https://pabandi.com'}/contact/settings/subscription?paid=true&tier=${tier}`,
           cancelUrl: `${process.env.CLIENT_URL || 'https://pabandi.com'}/contact/settings/subscription?paid=cancelled`,
           metadata: {
-            businessId,
+            businessId: businessId || '',
+            userId: userId || '',
             tier,
             orderPurpose: 'subscription_upgrade',
           },
@@ -94,30 +108,72 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res: Response) =
           },
         });
       }
+
+      // If Square explicitly selected but credentials not available, fallback to Solana
+      if (!paymentMethod) {
+        const platformWallet =
+          solanaUsdc.getPlatformWallet() ||
+          process.env.PABANDI_PAYOUT_ADDRESS ||
+          process.env.SOLANA_MERCHANT_WALLET ||
+          'GsbwXfJraMomNxBcjYLcG3mxkBUiyWXAB32fGbSQQRre';
+        const usdcMint = process.env.USDC_MINT_ADDRESS || 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+        const reference = `sub-${businessId || userId || 'user'}-${tier}-${Date.now().toString(36)}`;
+        const checkoutUrl = `solana:${platformWallet}?amount=${amount.toFixed(2)}&spl-token=${usdcMint}&label=${encodeURIComponent(`Pabandi ${tier.toUpperCase()} Subscription`)}&reference=${encodeURIComponent(reference)}`;
+
+        return res.json({
+          success: true,
+          url: checkoutUrl,
+          checkoutUrl,
+          data: {
+            checkoutUrl,
+            paymentMethod: 'solana',
+            platformWallet,
+            usdcMint,
+            reference,
+            amount,
+            tier,
+          },
+        });
+      }
+
+      return res.status(503).json({
+        success: false,
+        error: 'Square payment gateway is not configured for this account. Please select Solana Pay.',
+      });
     }
 
-    if (!userId) {
-      return res.status(400).json({ success: false, error: 'User required' });
-    }
+    if (method === 'dodo') {
+      if (!userId) {
+        return res.status(400).json({ success: false, error: 'User required' });
+      }
 
-    const { dodoService } = await import('../services/dodo.service');
-    const dodoTier = tier === 'business' ? 'business' : 'pro';
-    const result = await dodoService.createCheckoutSession(userId, email, dodoTier);
+      const { dodoService } = await import('../services/dodo.service');
+      const dodoTier = tier === 'business' ? 'business' : 'pro';
+      const result = await dodoService.createCheckoutSession(userId, email, dodoTier);
 
-    if (!result.success || !result.checkoutUrl) {
-      return res.status(500).json({ success: false, error: 'Failed to create checkout session' });
-    }
+      if (!result.success || !result.checkoutUrl) {
+        return res.status(502).json({
+          success: false,
+          error: result.error || 'Failed to create Dodo checkout session',
+        });
+      }
 
-    return res.json({
-      success: true,
-      url: result.checkoutUrl,
-      checkoutUrl: result.checkoutUrl,
-      data: {
+      return res.json({
+        success: true,
+        url: result.checkoutUrl,
         checkoutUrl: result.checkoutUrl,
-        paymentMethod: method,
-        amount,
-        tier,
-      },
+        data: {
+          checkoutUrl: result.checkoutUrl,
+          paymentMethod: 'dodo',
+          amount,
+          tier,
+        },
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid payment method. Choose square, solana, or dodo.',
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';

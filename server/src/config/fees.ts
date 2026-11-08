@@ -554,6 +554,8 @@ export const MCP_QUOTA_BY_TIER: Record<string, number> = {
  */
 export const AGENT_ECONOMY_RAKE = 0.10;
 export const AGENT_MARKETPLACE_FEE = 0.02;
+/** Platform settlement rake on MCP agentic escrow releases (5%). Single source of truth. */
+export const MCP_ESCROW_SETTLEMENT_RAKE = 0.05;
 
 /** Offramp conversion fee, as a fraction. Quoted to the user before they convert. */
 export const OFFRAMP_FEE_RATE = 0.015;

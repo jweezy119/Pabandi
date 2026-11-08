@@ -196,6 +196,81 @@ export class OpenWAService implements WhatsAppProvider {
     return this.request<OpenWASession>(`/sessions/${encodeURIComponent(sessionId)}`);
   }
 
+  /**
+   * Get the QR code for a session (base64 image or raw string)
+   * so merchants can scan and link their existing WhatsApp in 30 seconds.
+   */
+  async getSessionQrCode(sessionId: string): Promise<{ qr?: string; status?: string; raw?: string }> {
+    try {
+      const result = await this.request<{ qr?: string; status?: string; raw?: string }>(
+        `/sessions/${encodeURIComponent(sessionId)}/qr`
+      );
+      return result;
+    } catch {
+      // Fallback: check session object itself
+      const session = await this.getSession(sessionId).catch(() => null);
+      return {
+        status: session?.status || 'qr_ready',
+        qr: (session as any)?.qr || (session as any)?.qrCode || null,
+        raw: (session as any)?.raw || null,
+      };
+    }
+  }
+
+  /**
+   * Send interactive quick-reply buttons to a WhatsApp user.
+   * Eliminates typing friction for dates, confirmations, and payments.
+   */
+  async sendButtons(
+    toPhone: string,
+    bodyText: string,
+    buttons: Array<{ id: string; text: string }>,
+    options?: {
+      title?: string;
+      footer?: string;
+      sessionId?: string;
+    }
+  ): Promise<OpenWAMessageSendResult> {
+    const sessionId = options?.sessionId || (await this.resolveSessionId());
+    const chatId = this.toChatId(toPhone);
+
+    try {
+      const payload: Record<string, unknown> = {
+        chatId,
+        text: bodyText,
+        buttons: buttons.map((b) => ({ id: b.id, text: b.text })),
+        title: options?.title,
+        footer: options?.footer || 'Powered by Pabandi',
+      };
+
+      const result = await this.request<{
+        status?: string;
+        id?: string;
+        engine?: OpenWAEngine;
+      }>(`/sessions/${encodeURIComponent(sessionId)}/messages/send-buttons`, {
+        method: 'POST',
+        body: payload,
+      });
+
+      return {
+        status: (result.status as OpenWAMessageSendResult['status']) || 'sent',
+        messageId: result.id,
+        engine: result.engine,
+      };
+    } catch (err: any) {
+      // Graceful fallback to text with numbered choices if the gateway engine is on legacy baileys
+      const fallbackLines = [
+        options?.title ? `*${options.title}*\n` : '',
+        bodyText,
+        '',
+        ...buttons.map((b, idx) => `${idx + 1}️⃣ ${b.text}`),
+        options?.footer ? `\n_${options.footer}_` : '',
+      ].filter(Boolean).join('\n');
+
+      return this.sendText(toPhone, fallbackLines, { sessionId });
+    }
+  }
+
   async findBestSession(): Promise<OpenWASession | null> {
     try {
       const sessions = await this.listSessions();

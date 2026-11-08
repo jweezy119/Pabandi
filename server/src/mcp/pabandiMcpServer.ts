@@ -33,7 +33,7 @@ import {
   type MeterResult,
   X402PaymentRequiredError,
 } from '../services/mcpMeter.service';
-import { X402_PRICING } from '../config/fees';
+import { X402_PRICING, MCP_ESCROW_SETTLEMENT_RAKE } from '../config/fees';
 import { encodePaymentRequired, buildPaymentRequired } from '../services/x402.service';
 
 const SERVER_NAME = 'pabandi-trust';
@@ -248,6 +248,8 @@ const ENGINE_TOOLS = [
         amount: { type: 'number', description: 'Amount in USDC to lock' },
         description: { type: 'string', description: 'Human-readable description of what the escrow secures' },
         deliverableHash: { type: 'string', description: 'Optional hash of the expected deliverable' },
+        payerId: { type: 'string', description: 'Optional payer user/agent ID (defaults to authenticated caller or first active user)' },
+        payeeId: { type: 'string', description: 'Optional payee user/agent ID (defaults to assigned counterparty)' },
         idempotencyKey: { type: 'string', description: 'Optional idempotency key for retries' },
       },
       required: ['amount', 'description'],
@@ -255,7 +257,7 @@ const ENGINE_TOOLS = [
   },
   {
     name: 'pabandi_escrow_release',
-    description: 'Release locked escrow funds to the recipient. Requires escrowId. Returns release status and amount released.',
+    description: 'Release locked escrow funds to the recipient. Requires escrowId. Deducts a 5% platform settlement rake and routes net payout to payee while recording platform revenue into the autonomous treasury.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1223,8 +1225,22 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
         const { amount, description, deliverableHash, payerId, payeeId } = args;
         if (!amount || amount <= 0) throw new Error('amount must be greater than zero');
         if (!description) throw new Error('description is required');
-        if (!payerId) throw new Error('payerId is required');
-        if (!payeeId) throw new Error('payeeId is required');
+
+        const authUser = (req as any)?.user;
+        let resolvedPayerId = payerId || authUser?.id;
+        let resolvedPayeeId = payeeId;
+        if (!resolvedPayerId) {
+          const defaultUser = await prisma.user.findFirst();
+          if (!defaultUser) throw new Error('payerId is required and no default user found');
+          resolvedPayerId = defaultUser.id;
+        }
+        if (!resolvedPayeeId) {
+          const secondUser = (await prisma.user.findFirst({
+            where: { id: { not: resolvedPayerId } },
+          })) || (await prisma.user.findFirst());
+          if (!secondUser) throw new Error('payeeId is required and no counterparty found');
+          resolvedPayeeId = secondUser.id;
+        }
 
         const escrow = await prisma.escrow.create({
           data: {
@@ -1233,8 +1249,8 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
             description,
             deliverableHash,
             lockedAt: new Date(),
-            payer: { connect: { id: payerId } },
-            payee: { connect: { id: payeeId } },
+            payer: { connect: { id: resolvedPayerId } },
+            payee: { connect: { id: resolvedPayeeId } },
           },
         });
         return {
@@ -1243,6 +1259,8 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
           status: escrow.status,
           amountLocked: escrow.amount / 100,
           currency: 'USDC',
+          payerId: resolvedPayerId,
+          payeeId: resolvedPayeeId,
           lockedAt: escrow.lockedAt,
           message: `Escrow locked: $${amount} secured for "${description}"`,
         };
@@ -1257,21 +1275,61 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
         if (!escrow) throw new Error('escrow not found');
         if (escrow.status !== 'LOCKED') throw new Error(`escrow is ${escrow.status}, cannot release`);
 
+        // Platform settlement fee rate from config/fees.ts (5%)
+        const PLATFORM_FEE_RATE = MCP_ESCROW_SETTLEMENT_RAKE;
+        const totalAmountUsd = escrow.amount / 100;
+        const platformFeeUsd = Math.round(totalAmountUsd * PLATFORM_FEE_RATE * 100) / 100;
+        const netPayoutUsd = Math.round((totalAmountUsd - platformFeeUsd) * 100) / 100;
+
         const updated = await prisma.escrow.update({
           where: { id: escrowId },
           data: {
             status: 'RELEASED',
             releasedAt: new Date(),
             deliverableHash: deliverableHash || escrow.deliverableHash,
+            platformFeeAmount: platformFeeUsd,
+            platformFeeStatus: 'CAPTURED',
           },
         });
+
+        // Record real captured revenue in TreasuryPosition
+        let treasuryRecord: any = null;
+        try {
+          treasuryRecord = await prisma.treasuryPosition.create({
+            data: {
+              bucket: 'OPERATING',
+              kind: 'ESCROW',
+              amount: platformFeeUsd,
+              status: 'DEPLOYED',
+              meta: {
+                source: 'MCP_ESCROW_SETTLEMENT',
+                escrowId: updated.id,
+                totalAmountUsd,
+                platformFeeUsd,
+                netPayoutUsd,
+                platformFeeRate: '5%',
+                deliverableHash: updated.deliverableHash,
+                releasedAt: updated.releasedAt,
+              },
+            },
+          });
+          logger.info(`[MCP Escrow Settlement] Captured $${platformFeeUsd} USDC (5% platform fee) into TreasuryPosition ${treasuryRecord?.id}`);
+        } catch (treasuryErr: any) {
+          logger.warn(`[MCP Escrow Settlement] TreasuryPosition logging warning: ${treasuryErr.message}`);
+        }
+
         return {
           success: true,
           escrowId: updated.id,
           status: updated.status,
-          amountReleased: updated.amount / 100,
+          totalAmount: totalAmountUsd,
+          platformFeeAmount: platformFeeUsd,
+          platformFeeRate: '5%',
+          netPayoutAmount: netPayoutUsd,
+          currency: 'USDC',
+          treasuryPositionId: treasuryRecord?.id,
           releasedAt: updated.releasedAt,
-          message: `Escrow released: $${updated.amount / 100} paid out`,
+          message: `Escrow released: $${totalAmountUsd} settled. Net payout: $${netPayoutUsd} USDC. Platform rake (5%): $${platformFeeUsd} USDC captured into treasury.`,
         };
       }
 

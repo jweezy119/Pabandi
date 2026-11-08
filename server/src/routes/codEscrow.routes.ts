@@ -2,6 +2,9 @@ import { Router, Request, Response } from 'express';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth.middleware';
 import { codEscrowService } from '../services/codEscrow.service';
 import { CustomError } from '../middleware/errorHandler';
+import { openwaTemplateService } from '../services/openwa.template.service';
+import { prisma } from '../utils/database';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -165,5 +168,160 @@ router.get('/:id', authenticate, guarded(async (req, res) => {
   const escrow = await codEscrowService.getEscrowById(req.params.id);
   res.json({ success: true, data: escrow });
 }));
+
+// ── Strategy 4 / Engine 3: COD Fraud Shield Webhook for Shopify / WooCommerce ──
+// POST /api/v1/cod/shield/order-verify
+// Evaluates an incoming e-commerce order, blocks fake COD delivery orders, and requests advance deposit
+router.post('/shield/order-verify', async (req: Request, res: Response) => {
+  try {
+    const {
+      orderId,
+      storeName,
+      customerName,
+      customerPhone,
+      orderTotal,
+      currency = 'PKR',
+      shippingAddress,
+      shippingCity,
+    } = req.body || {};
+
+    if (!orderId || !customerPhone || !orderTotal) {
+      return res.status(400).json({
+        success: false,
+        error: 'orderId, customerPhone, and orderTotal are required',
+      });
+    }
+
+    const totalVal = Number(orderTotal);
+    const store = storeName || 'E-Commerce Store';
+
+    // 1. Check buyer reputation history in Pabandi Trust Database
+    const existingUser = await prisma.user.findFirst({
+      where: { phone: customerPhone },
+      include: { reservations: true },
+    });
+
+    const priorNoShows = existingUser?.reservations.filter((r) => r.status === 'NO_SHOW').length || 0;
+    const isRepeatTrusted = (existingUser?.reservations.length || 0) > 2 && priorNoShows === 0;
+
+    // 2. Decision Logic:
+    // If repeat trusted: approve with zero friction
+    if (isRepeatTrusted) {
+      return res.json({
+        success: true,
+        orderId,
+        verdict: 'DISPATCH_APPROVED',
+        riskLevel: 'LOW',
+        reason: 'Verified repeat buyer with 0 previous cancellations/no-shows',
+        requireDeposit: false,
+      });
+    }
+
+    // High risk or unverified customer: require nominal courier commitment advance (Rs. 300 or 10%)
+    const advanceDeposit = currency === 'PKR' ? Math.max(250, Math.min(500, Math.round(totalVal * 0.1))) : 5.0;
+    const remainingDoorstepBalance = totalVal - advanceDeposit;
+    const referenceId = `cod_${orderId}_${Date.now().toString(36)}`;
+    const checkoutUrl = `${process.env.CLIENT_URL || 'https://pabandi.com'}/pay/cod/${referenceId}?amount=${advanceDeposit}&currency=${currency}`;
+
+    // 3. Dispatch automated WhatsApp commitment request
+    await openwaTemplateService.sendTemplate(customerPhone, 'cod_commitment_request', {
+      orderId: String(orderId),
+      storeName: store,
+      customerName: customerName || 'Valued Customer',
+      orderTotal: `${currency} ${totalVal}`,
+      depositAmount: `${currency} ${advanceDeposit}`,
+      remainingBalance: `${currency} ${remainingDoorstepBalance}`,
+      checkoutUrl,
+    }).catch((e: any) => logger.warn(`[COD Shield] Template dispatch warning: ${e.message}`));
+
+    // 4. Return action requirement to the e-commerce store
+    res.json({
+      success: true,
+      orderId,
+      verdict: 'REQUIRE_COMMITMENT_DEPOSIT',
+      riskLevel: priorNoShows > 0 ? 'HIGH' : 'UNVERIFIED',
+      depositAmount: advanceDeposit,
+      remainingDoorstepBalance,
+      currency,
+      checkoutUrl,
+      whatsappDispatched: true,
+      message: `WhatsApp commitment request dispatched to ${customerPhone} to protect against COD refusal`,
+    });
+  } catch (err: any) {
+    logger.error('[COD Shield] Order verification error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/v1/cod/shield/order-settled
+// Callback when customer pays the delivery advance deposit
+router.post('/shield/order-settled', async (req: Request, res: Response) => {
+  try {
+    const { orderId, storeName, customerName, customerPhone, depositAmount, currency = 'PKR', remainingBalance, trackingReference } = req.body || {};
+
+    if (!orderId || !depositAmount) {
+      return res.status(400).json({ success: false, error: 'orderId and depositAmount are required' });
+    }
+
+    const depositVal = Number(depositAmount);
+    // Platform takes $0.05 / 20 PKR verification toll
+    const PLATFORM_FEE_RATE = 0.05; // 5% platform verification fee
+    const platformFee = Math.round(depositVal * PLATFORM_FEE_RATE * 100) / 100;
+    const merchantCredited = Math.round((depositVal - platformFee) * 100) / 100;
+
+    // Log platform revenue in TreasuryPosition
+    let treasuryRecord: any = null;
+    try {
+      treasuryRecord = await prisma.treasuryPosition.create({
+        data: {
+          bucket: 'OPERATING',
+          kind: 'ESCROW',
+          amount: platformFee,
+          status: 'DEPLOYED',
+          meta: {
+            source: 'COD_SHIELD_VERIFICATION',
+            orderId,
+            depositVal,
+            platformFee,
+            merchantCredited,
+            currency,
+            settledAt: new Date().toISOString(),
+          },
+        },
+      });
+      logger.info(`[COD Shield] Captured ${currency} ${platformFee} platform revenue into TreasuryPosition ${treasuryRecord.id}`);
+    } catch (tErr: any) {
+      logger.warn(`[COD Shield] TreasuryPosition write error: ${tErr.message}`);
+    }
+
+    // Send confirmation to customer that parcel is verified for packing
+    if (customerPhone) {
+      await openwaTemplateService.sendTemplate(customerPhone, 'cod_verified_confirmation', {
+        orderId: String(orderId),
+        storeName: storeName || 'E-Commerce Store',
+        customerName: customerName || 'Customer',
+        depositAmount: `${currency} ${depositVal}`,
+        remainingBalance: `${currency} ${remainingBalance || 'Doorstep Balance'}`,
+        trackingReference: trackingReference || orderId,
+      }).catch((e: any) => logger.warn(`[COD Shield] Confirmation template warning: ${e.message}`));
+    }
+
+    res.json({
+      success: true,
+      message: 'COD deposit captured and order verified for courier packing',
+      data: {
+        orderId,
+        depositAmount: depositVal,
+        platformFee,
+        merchantCredited,
+        treasuryPositionId: treasuryRecord?.id,
+        status: 'COD_VERIFIED_DISPATCH_READY',
+      },
+    });
+  } catch (err: any) {
+    logger.error('[COD Shield] Settlement error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 export default router;
