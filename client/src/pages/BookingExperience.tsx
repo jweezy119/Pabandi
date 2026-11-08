@@ -861,30 +861,39 @@ export default function BookingExperience() {
               <h3 className="font-bold text-[var(--warm-ink)] mb-4">Payment Method</h3>
               <div className="space-y-2">
                 <button
+                  type="button"
                   onClick={() => setPaymentMethod('square')}
-                  className={`w-full p-3 rounded-lg text-left transition-all ${
-                    paymentMethod === 'square' ? 'bg-[rgba(var(--clay),0.15)] border border-[var(--clay)]' : 'bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)]'
+                  className={`w-full p-3.5 rounded-xl text-left transition-all ${
+                    paymentMethod === 'square'
+                      ? 'bg-[var(--clay)]/15 border-2 border-[var(--clay)] shadow-sm'
+                      : 'bg-[var(--warm-sand)]/50 border border-[rgba(191,179,163,0.4)] hover:border-[var(--clay)]/50'
                   }`}
                 >
-                  <div className="font-medium text-[var(--warm-ink)]">💳 Square Checkout</div>
+                  <div className="font-semibold text-[var(--warm-ink)]">💳 Square Checkout</div>
                   <div className="text-xs text-[var(--soft-stone)]">Card, Apple Pay, Google Pay, or Cash App</div>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setPaymentMethod('solana')}
-                  className={`w-full p-3 rounded-lg text-left transition-all ${
-                    paymentMethod === 'solana' ? 'bg-[rgba(var(--clay),0.15)] border border-[var(--clay)]' : 'bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)]'
+                  className={`w-full p-3.5 rounded-xl text-left transition-all ${
+                    paymentMethod === 'solana'
+                      ? 'bg-[var(--clay)]/15 border-2 border-[var(--clay)] shadow-sm'
+                      : 'bg-[var(--warm-sand)]/50 border border-[rgba(191,179,163,0.4)] hover:border-[var(--clay)]/50'
                   }`}
                 >
-                  <div className="font-medium text-[var(--warm-ink)]">⚡ Solana Pay</div>
+                  <div className="font-semibold text-[var(--warm-ink)]">⚡ Solana Pay</div>
                   <div className="text-xs text-[var(--soft-stone)]">Instant USDC, SOL, or $PAB</div>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setPaymentMethod('safepay')}
-                  className={`w-full p-3 rounded-lg text-left transition-all ${
-                    paymentMethod === 'safepay' ? 'bg-[rgba(var(--clay),0.15)] border border-[var(--clay)]' : 'bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)]'
+                  className={`w-full p-3.5 rounded-xl text-left transition-all ${
+                    paymentMethod === 'safepay'
+                      ? 'bg-[var(--clay)]/15 border-2 border-[var(--clay)] shadow-sm'
+                      : 'bg-[var(--warm-sand)]/50 border border-[rgba(191,179,163,0.4)] hover:border-[var(--clay)]/50'
                   }`}
                 >
-                  <div className="font-medium text-[var(--warm-ink)]">🏦 SafePay / Raast</div>
+                  <div className="font-semibold text-[var(--warm-ink)]">🏦 SafePay / Raast</div>
                   <div className="text-xs text-[var(--soft-stone)]">PKR Bank or local card</div>
                 </button>
               </div>
@@ -894,12 +903,12 @@ export default function BookingExperience() {
             <Button
               onClick={handleBookTable}
               disabled={!selectedTime || bookingMutation.isLoading || submitting}
-              className="w-full py-4 text-lg"
+              className="w-full py-4 text-base font-bold tracking-wide"
             >
               {submitting || bookingMutation.isLoading ? 'Securing your reservation…' : 'Secure My Booking'}
             </Button>
 
-            <p className="text-xs text-[var(--soft-stone)] text-center">
+            <p className="text-xs font-medium text-[var(--soft-stone)] text-center">
               Free cancellation up to 2 hours before
             </p>
           </div>

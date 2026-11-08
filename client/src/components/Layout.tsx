@@ -20,12 +20,12 @@ function DesktopNavLink({ to, children, current }: { to: string; children: React
   return (
     <Link
       to={to}
-      className={`font-headline text-sm transition-all duration-200 relative ${
-        current ? 'text-primary font-bold scale-[1.02]' : 'text-on-surface-variant hover:text-primary hover:scale-[1.02]'
+      className={`font-headline text-sm transition-all duration-200 relative px-2 py-1 ${
+        current ? 'text-[var(--terracotta)] font-bold scale-[1.02]' : 'text-[var(--warm-ink)] font-medium hover:text-[var(--terracotta)] hover:scale-[1.02]'
       }`}
     >
       {children}
-      {current && <span className="absolute -bottom-1 left-0 w-full h-[2px] bg-primary rounded-full" />}
+      {current && <span className="absolute -bottom-1 left-0 w-full h-[2px] bg-[var(--clay)] rounded-full" />}
     </Link>
   );
 }
@@ -38,8 +38,8 @@ function Dropdown({ label, children, current }: { label: string; children: React
     <div className="relative" ref={ref} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
       <button
         onClick={() => setOpen(!open)}
-        className={`font-headline text-sm transition-all duration-200 flex items-center gap-1 ${
-          current ? 'text-primary font-bold scale-[1.02]' : 'text-on-surface-variant hover:text-primary hover:scale-[1.02]'
+        className={`font-headline text-sm transition-all duration-200 flex items-center gap-1 px-2 py-1 ${
+          current ? 'text-[var(--terracotta)] font-bold scale-[1.02]' : 'text-[var(--warm-ink)] font-medium hover:text-[var(--terracotta)] hover:scale-[1.02]'
         }`}
       >
         {label}
@@ -51,7 +51,7 @@ function Dropdown({ label, children, current }: { label: string; children: React
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
           <div className="absolute top-full left-0 pt-3 z-40" onClick={() => setOpen(false)}>
-            <div className="bg-surface-bright/90 backdrop-blur-xl border border-outline-variant/20 rounded-2xl shadow-2xl shadow-black/30 py-2 min-w-[180px] transform transition-all duration-200 origin-top">
+            <div className="bg-[#FAF6F0]/95 backdrop-blur-xl border border-[rgba(191,179,163,0.45)] rounded-2xl shadow-[var(--shadow-lift)] py-2 min-w-[190px] transform transition-all duration-200 origin-top">
               {children}
             </div>
           </div>
@@ -65,7 +65,7 @@ function DropdownItem({ to, children }: { to: string; children: React.ReactNode 
   return (
     <Link
       to={to}
-      className="block px-4 py-2.5 text-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-low/70 transition-all duration-150"
+      className="block px-4 py-2.5 text-sm font-medium text-[var(--warm-ink)] hover:text-[var(--terracotta)] hover:bg-[var(--warm-sand)]/60 transition-all duration-150"
     >
       {children}
     </Link>
@@ -412,8 +412,8 @@ export default function Layout() {
                 <Link to="/login" className="md:hidden w-9 h-9 rounded-full bg-[var(--warm-sand)]/10 flex items-center justify-center touch-target">
                   <span className="material-symbols-outlined text-[18px]">person</span>
                 </Link>
-                <Link to="/login" className="hidden sm:inline text-sm font-medium px-3 py-1.5 text-on-surface-variant hover:text-primary transition-all duration-200">Sign In</Link>
-                <Link to="/register" className="px-3 py-1.5 sm:px-4 sm:py-1.5 rounded-xl bg-indigo-500 text-[var(--warm-ink)] text-xs sm:text-sm font-bold shadow-lg shadow-indigo-500/20 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-[1px] transition-all duration-200">Sign Up</Link>
+                <Link to="/login" className="hidden sm:inline text-sm font-semibold px-3 py-1.5 text-[var(--warm-ink)] hover:text-[var(--terracotta)] transition-all duration-200">Sign In</Link>
+                <Link to="/register" className="px-3 py-1.5 sm:px-4 sm:py-1.5 rounded-xl bg-[var(--clay)] text-white text-xs sm:text-sm font-bold shadow-[var(--shadow-btn)] hover:bg-[var(--terracotta)] hover:shadow-[var(--shadow-btn-hover)] hover:-translate-y-[1px] transition-all duration-200">Sign Up</Link>
               </div>
             )}
           </div>
@@ -428,7 +428,7 @@ export default function Layout() {
       </main>
 
       {!isAuthPage && !isStandalone && (
-        <nav className="fixed bottom-0 w-full z-50 bg-surface-bright/80 backdrop-blur-xl border-t border-outline-variant/10 md:hidden safe-area-pb" style={{ height: 'var(--pab-mobile-nav-height)' }}>
+        <nav className="fixed bottom-0 w-full z-50 bg-[#FAF6F0]/90 backdrop-blur-xl border-t border-[rgba(191,179,163,0.4)] md:hidden safe-area-pb" style={{ height: 'var(--pab-mobile-nav-height)' }}>
           <div className="flex justify-around items-center px-1 py-1.5 max-w-md mx-auto">
             <MobileTab to="/" icon="explore" label="Home" current={location.pathname === '/'} />
             <MobileTab to="/contact" icon="trending_up" label="Contact" current={location.pathname.startsWith('/contact')} />
@@ -438,7 +438,7 @@ export default function Layout() {
             <MobileTab to="/capital" icon="account_balance" label="Capital" current={location.pathname.startsWith('/capital')} />
             <button
               onClick={() => setMoreOpen(true)}
-              className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-2xl transition-all touch-target ${moreOpen ? 'text-primary bg-primary-container/30 scale-[1.05]' : 'text-on-surface-variant hover:text-primary active:scale-95'}`}
+              className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-2xl transition-all touch-target ${moreOpen ? 'text-[var(--terracotta)] bg-[var(--clay)]/15 scale-[1.05]' : 'text-[var(--soft-stone)] hover:text-[var(--terracotta)] active:scale-95'}`}
             >
               <span className="material-symbols-outlined text-[24px]">apps</span>
               <span className="font-body text-[10px] font-semibold tracking-wide">More</span>
@@ -447,39 +447,46 @@ export default function Layout() {
         </nav>
       )}
 
-      {/* Desktop Footer — always shown except on auth pages + standalone app shells */}
+      {/* Desktop Footer — Warm Clay editorial palette with high-contrast links */}
       {!isAuthPage && !isStandalone && (
-        <footer className="hidden md:block bg-surface-bright/30 backdrop-blur-xl border-t border-outline-variant/10 mt-auto">
-          <div className="max-w-7xl mx-auto px-6 py-8">
+        <footer className="hidden md:block bg-[var(--warm-sand)] border-t border-[rgba(191,179,163,0.55)] mt-12">
+          <div className="max-w-7xl mx-auto px-6 py-10">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
               <div>
-                <p className="font-headline font-bold text-base text-on-surface mb-3">PabandiOS Suite</p>
-                <Link to="/contact" className="block text-on-surface-variant hover:text-primary py-1">Contact OS</Link>
-                <Link to="/booking" className="block text-on-surface-variant hover:text-primary py-1">BookingOS</Link>
-                <Link to="/property" className="block text-on-surface-variant hover:text-primary py-1">PropertyOS</Link>
-                <Link to="/freight" className="block text-on-surface-variant hover:text-primary py-1">FreightOS</Link>
-                <Link to="/capital" className="block text-on-surface-variant hover:text-primary py-1">CapitalOS</Link>
+                <p className="font-headline font-bold text-base text-[var(--warm-ink)] mb-3">PabandiOS Suite</p>
+                <Link to="/contact" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">Contact OS</Link>
+                <Link to="/booking" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">BookingOS</Link>
+                <Link to="/property" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">PropertyOS</Link>
+                <Link to="/freight" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">FreightOS</Link>
+                <Link to="/capital" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">CapitalOS</Link>
               </div>
               <div>
-                <p className="font-headline font-semibold text-sm text-on-surface mb-3">Marketplace</p>
-                <Link to="/marketplace/live-selling" className="block text-on-surface-variant hover:text-primary py-1">Live Selling</Link>
-                <Link to="/marketplace/freelancers" className="block text-on-surface-variant hover:text-primary py-1">Freelancers</Link>
-                <Link to="/marketplace/gigs" className="block text-on-surface-variant hover:text-primary py-1">Gig Board</Link>
-                <Link to="/marketplace/hospitality" className="block text-on-surface-variant hover:text-primary py-1">Hospitality</Link>
+                <p className="font-headline font-bold text-base text-[var(--warm-ink)] mb-3">Marketplace</p>
+                <Link to="/marketplace/live-selling" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">Live Selling</Link>
+                <Link to="/marketplace/freelancers" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">Freelancers</Link>
+                <Link to="/marketplace/gigs" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">Gig Board</Link>
+                <Link to="/marketplace/hospitality" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">Hospitality</Link>
               </div>
               <div>
-                <p className="font-headline font-semibold text-sm text-on-surface mb-3">Trust &amp; Money</p>
-                <Link to="/trust/passports" className="block text-on-surface-variant hover:text-primary py-1">Trust Passports</Link>
-                <Link to="/trust/deposits" className="block text-on-surface-variant hover:text-primary py-1">Protected Deposit</Link>
-                <Link to="/trust/escrow" className="block text-on-surface-variant hover:text-primary py-1">Escrow</Link>
-                <Link to="/wallet/cashout" className="block text-on-surface-variant hover:text-primary py-1">Cash Out</Link>
+                <p className="font-headline font-bold text-base text-[var(--warm-ink)] mb-3">Trust &amp; Money</p>
+                <Link to="/trust/passports" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">Trust Passports</Link>
+                <Link to="/trust/deposits" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">Protected Deposit</Link>
+                <Link to="/trust/escrow" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">Escrow</Link>
+                <Link to="/wallet/cashout" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">Cash Out</Link>
               </div>
               <div>
-                <p className="font-headline font-semibold text-sm text-on-surface mb-3">Company</p>
-                <Link to="/about" className="block text-on-surface-variant hover:text-primary py-1">About</Link>
-                <Link to="/technology" className="block text-on-surface-variant hover:text-primary py-1">Technology</Link>
-                <Link to="/contact-us" className="block text-on-surface-variant hover:text-primary py-1">Contact</Link>
-                <Link to="/blog" className="block text-on-surface-variant hover:text-primary py-1">Blog</Link>
+                <p className="font-headline font-bold text-base text-[var(--warm-ink)] mb-3">Company</p>
+                <Link to="/about" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">About</Link>
+                <Link to="/technology" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">Technology</Link>
+                <Link to="/contact-us" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">Contact</Link>
+                <Link to="/blog" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">Blog</Link>
+              </div>
+            </div>
+            <div className="mt-8 pt-6 border-t border-[rgba(191,179,163,0.45)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--soft-stone)]">
+              <p>© {new Date().getFullYear()} Pabandi Inc. Verified Trust Passports &amp; Programmable Escrow.</p>
+              <div className="flex items-center gap-4">
+                <Link to="/sharia-compliance" className="hover:text-[var(--terracotta)] transition-colors">Sharia &amp; Sulha Governance</Link>
+                <Link to="/developer" className="hover:text-[var(--terracotta)] transition-colors">Agent MCP &amp; API</Link>
               </div>
             </div>
           </div>

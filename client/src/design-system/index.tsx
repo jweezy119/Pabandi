@@ -86,10 +86,10 @@ export function Button({ children, onClick, variant = 'default', size = 'md', cl
   };
 
   const variants: Record<Variant, string> = {
-    default: 'bg-indigo-500 text-white shadow-[0_0_20px_rgba(99,102,241,0.35)] hover:shadow-[0_0_30px_rgba(99,102,241,0.55)] active:scale-[0.97]',
-    ghost: 'bg-white/5 text-slate-200 border border-white/10 hover:bg-white/10',
-    outline: 'bg-transparent text-slate-200 border border-white/15 hover:border-indigo-400/60 hover:text-indigo-200',
-    primary: 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-[0_0_20px_rgba(99,102,241,0.35)] hover:shadow-[0_0_30px_rgba(99,102,241,0.55)] active:scale-[0.97]',
+    default: 'bg-[var(--clay)] text-white shadow-[var(--shadow-btn)] hover:bg-[var(--terracotta)] hover:shadow-[var(--shadow-btn-hover)] active:scale-[0.98]',
+    ghost: 'bg-transparent text-[var(--warm-ink)] border border-[rgba(191,179,163,0.4)] hover:bg-[var(--warm-sand)]/50',
+    outline: 'bg-transparent text-[var(--warm-ink)] border border-[var(--clay)]/50 hover:border-[var(--clay)] hover:bg-[var(--clay)]/10',
+    primary: 'bg-gradient-to-r from-[var(--clay)] to-[var(--terracotta)] text-white shadow-[var(--shadow-btn)] hover:shadow-[var(--shadow-btn-hover)] active:scale-[0.98]',
   };
 
   return (
@@ -141,7 +141,7 @@ type SurfaceProps = {
 export function Surface({ children, className = '', style, onClick }: SurfaceProps) {
   return (
     <div
-      className={`rounded-xl border border-white/[0.07] bg-white/[0.03] p-5 backdrop-blur-xl transition-all duration-200 hover:-translate-y-[2px] hover:border-white/10 ${onClick ? 'cursor-pointer' : ''} ${className}`}
+      className={`rounded-2xl border border-[rgba(191,179,163,0.35)] bg-white/70 p-5 backdrop-blur-xl shadow-[var(--shadow-soft)] transition-all duration-200 hover:-translate-y-[2px] hover:border-[rgba(191,179,163,0.55)] ${onClick ? 'cursor-pointer' : ''} ${className}`}
       style={style}
       onClick={onClick}
     >

@@ -457,4 +457,3 @@ export default function BookingFlowPage() {
           </ErrorBoundary>
     );
   }
-}
