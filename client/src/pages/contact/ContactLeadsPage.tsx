@@ -21,7 +21,7 @@ export default function ContactLeadsPage() {
 
   async function fetchLeads() {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/clients`, {
         headers: { Authorization: `Bearer ${getAuthToken() ?? ''}` },
       });
       if (res.ok) {
@@ -38,7 +38,7 @@ export default function ContactLeadsPage() {
   async function handleAddLead(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
+      await fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/clients`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

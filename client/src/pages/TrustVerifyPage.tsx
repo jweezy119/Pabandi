@@ -35,7 +35,7 @@ import { getAuthToken } from '../utils/authToken';
  * check, and naming the technology would make it sound like a technical one.
  */
 
-const API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1`;
+const API = `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1`;
 
 /** These are the same tiers the invoice terms engine prices with, deliberately. */
 const BARS = [

@@ -15,7 +15,7 @@ import { getAuthToken } from '../../utils/authToken';
  * classes. No new colours.
  */
 
-const API_BASE = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1`;
+const API_BASE = `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1`;
 
 type RailRow = {
   railId: string;

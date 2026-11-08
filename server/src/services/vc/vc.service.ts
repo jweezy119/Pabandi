@@ -34,7 +34,7 @@ export class VcService {
         trustEvent: 'job.completed',
       },
       credentialStatus: {
-        id: `https://pabandi.onrender.com/api/v1/vc/status/${passportId}`,
+        id: `https://api.pabandi.com/api/v1/vc/status/${passportId}`,
         type: 'CredentialStatusList2017',
       },
     };

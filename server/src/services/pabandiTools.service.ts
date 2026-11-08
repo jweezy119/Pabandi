@@ -272,7 +272,7 @@ export function pabandiPlatformDoc() {
         })),
     },
     sdk: {
-      baseUrl: process.env.BACKEND_URL || `${typeof window !== 'undefined' ? window.location.origin : 'https://pabandi.onrender.com'}`,
+      baseUrl: process.env.BACKEND_URL || `${typeof window !== 'undefined' ? window.location.origin : 'https://api.pabandi.com'}`,
       auth: 'JWT Bearer token for owner/verified/exclusive; public tools need none',
       examples: {
         search: 'GET /api/v1/businesses?search=salon',

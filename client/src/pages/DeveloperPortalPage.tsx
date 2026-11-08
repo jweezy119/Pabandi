@@ -11,7 +11,7 @@ import {
 } from '../design-system';
 
 const SESSION_OPEN_CODE = `// 1. Your agent opens a tab — the Trust Score sets the ceiling, server-side.
-const session = await fetch('https://pabandi.onrender.com/api/v1/engine/session/open', {
+const session = await fetch('https://api.pabandi.com/api/v1/engine/session/open', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -25,7 +25,7 @@ const session = await fetch('https://pabandi.onrender.com/api/v1/engine/session/
 
 // 2. Settle against the tab — bookings cost the service value, deposits are
 //    the engine's decision, not yours to compute.
-const action = await fetch('https://pabandi.onrender.com/api/v1/engine/action', {
+const action = await fetch('https://api.pabandi.com/api/v1/engine/action', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -39,7 +39,7 @@ const action = await fetch('https://pabandi.onrender.com/api/v1/engine/action', 
 //      amount, currency, explanation, checkoutUrl } }
 
 // 3. Settle once on Solana when the tab is done.
-await fetch('https://pabandi.onrender.com/api/v1/engine/session/close', {
+await fetch('https://api.pabandi.com/api/v1/engine/session/close', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ sessionId: session.data.sessionId, settle: true })
@@ -130,7 +130,7 @@ export default function DeveloperPortalPage() {
     const identifier = prompt('Enter email, wallet, or handle:');
     if (!identifier) return;
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+      const baseUrl = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
       const res = await fetch(`${baseUrl}/api/v1/trust/resolve/${encodeURIComponent(identifier)}`);
       const json = await res.json();
       setPlaygroundOutput(JSON.stringify(json, null, 2));

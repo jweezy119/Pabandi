@@ -30,7 +30,7 @@ import { getAuthToken } from '../utils/authToken';
  *                            activities, debounced
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
 
 /**
  * Commands, each pointing at a route verified to exist in App.tsx.

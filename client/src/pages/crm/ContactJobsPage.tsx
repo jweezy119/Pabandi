@@ -5,7 +5,7 @@ import { JobList } from './components/JobList';
 import { JobCalendar } from './components/JobCalendar';
 import { JobFormModal, JobFormData } from './components/JobFormModal';
 import { getAuthToken } from '../../utils/authToken';
-const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
 const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() || ''}` });
 const api = {
   get: async (url: string) => { const r = await fetch(API_BASE + url, { headers: getHeaders() }); return { data: await r.json() }; },

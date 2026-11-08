@@ -23,7 +23,7 @@ import { getAuthToken } from '../../../utils/authToken';
  * invents its own numbers is worse than one that admits it has none.
  */
 
-const API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1`;
+const API = `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1`;
 
 /** Invoice statuses the server actually writes. Anything else counts as unpaid. */
 const INVOICE_STATUSES = { draft: 'draft', sent: 'sent', paid: 'paid', overdue: 'overdue' } as const;

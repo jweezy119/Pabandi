@@ -82,7 +82,7 @@ export default function ContactJobDetailPage() {
     }
     setLoading(true);
     const h = { Authorization: `Bearer ${getAuthToken()}` };
-    const API = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+    const API = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
     Promise.all([
       fetch(`${API}/api/v1/crm/jobs/${id}`, { headers: h }),
       fetch(`${API}/api/v1/crm/clients/${job?.clientId || ''}`, { headers: h }),
@@ -95,7 +95,7 @@ export default function ContactJobDetailPage() {
   const chkIn = async () => {
     setShowCheckIn(false);
     const now = new Date();
-    const API = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+    const API = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
     await fetch(`${API}/api/v1/crm/jobs/${id}/checkin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
@@ -108,7 +108,7 @@ export default function ContactJobDetailPage() {
   const chkOut = async () => {
     setShowCheckOut(false);
     const now = new Date();
-    const API = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+    const API = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
     await fetch(`${API}/api/v1/crm/jobs/${id}/checkout`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
@@ -120,7 +120,7 @@ export default function ContactJobDetailPage() {
 
   const cancelJob = async () => {
     if (!confirm('Cancel this job?')) return;
-    const API = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+    const API = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
     await fetch(`${API}/api/v1/crm/jobs/${id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
@@ -131,7 +131,7 @@ export default function ContactJobDetailPage() {
 
   const delJob = async () => {
     if (!confirm('Delete this job? This cannot be undone.')) return;
-    const API = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+    const API = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
     await fetch(`${API}/api/v1/crm/jobs/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getAuthToken()}` } }).catch(console.error);
     navigate('/contact/jobs');
   };
@@ -161,7 +161,7 @@ export default function ContactJobDetailPage() {
                 onClick={async () => {
                   const svc = (document.getElementById('new-deal-svc') as HTMLInputElement).value;
                   const price = parseFloat((document.getElementById('new-deal-price') as HTMLInputElement).value || '0');
-                  const API = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+                  const API = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
                   await fetch(`${API}/api/v1/crm/jobs`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },

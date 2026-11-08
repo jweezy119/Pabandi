@@ -111,7 +111,7 @@ export default function ContactOSPage() {
 
         // Business profile name (stats API supplies everything else)
         const bizRes = await fetch(
-          `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/businesses/${businessId}`,
+          `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/businesses/${businessId}`,
           { headers }
         );
         if (!cancelled && bizRes.ok) {
@@ -135,7 +135,7 @@ export default function ContactOSPage() {
     let cancelled = false;
     const fetchLeads = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/clients`, {
           headers: { Authorization: `Bearer ${getAuthToken()}` },
         });
         if (cancelled) return;
@@ -178,7 +178,7 @@ export default function ContactOSPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/clients`, {
           headers: { Authorization: `Bearer ${getAuthToken()}` },
         });
         if (!res.ok || cancelled) return;

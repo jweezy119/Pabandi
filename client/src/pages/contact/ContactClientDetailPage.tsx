@@ -49,7 +49,7 @@ export default function ContactClientDetailPage() {
     setLoading(true);
     const token = getAuthToken();
     const headers = { Authorization: `Bearer ${token}` };
-    const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
 
     try {
       const [clientRes, invRes, actRes, dealsRes, jobsRes, filesRes] = await Promise.all([
@@ -100,7 +100,7 @@ export default function ContactClientDetailPage() {
 
   const handleClientUpdate = async (field: string, value: any) => {
     const token = getAuthToken();
-    const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
     const res = await fetch(`${baseUrl}/api/v1/crm/clients/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -113,7 +113,7 @@ export default function ContactClientDetailPage() {
   async function handleCreateActivity(e: React.FormEvent) {
     e.preventDefault();
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+      const baseUrl = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
       const res = await fetch(`${baseUrl}/api/v1/crm/activities`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },

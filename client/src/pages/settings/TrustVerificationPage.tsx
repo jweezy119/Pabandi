@@ -827,7 +827,7 @@ function TrustVerificationActive() {
                   mcpAgentKey?.mcpConfig || {
                     mcpServers: {
                       pabandi: {
-                        url: 'https://pabandi.onrender.com/mcp',
+                        url: 'https://api.pabandi.com/mcp',
                         headers: {
                           Authorization: `Bearer ${mcpAgentKey?.apiKey || 'YOUR_AGENT_API_KEY'}`,
                         },
@@ -860,7 +860,7 @@ function TrustVerificationActive() {
                     setMcpAgentKey({
                       apiKey: String(data.apiKey),
                       starterCreditUsdc: Number(data.starterCreditUsdc ?? 0.25),
-                      mcpEndpoint: String(data.mcpEndpoint || 'https://pabandi.onrender.com/mcp'),
+                      mcpEndpoint: String(data.mcpEndpoint || 'https://api.pabandi.com/mcp'),
                       mcpConfig: (data.mcpConfig as Record<string, unknown>) || {},
                     });
                     toast.success('Minted MCP Agent Key + $0.25 starter x402 credit!');
@@ -909,7 +909,7 @@ function TrustVerificationActive() {
                   mcpAgentKey?.mcpConfig || {
                     mcpServers: {
                       pabandi: {
-                        url: 'https://pabandi.onrender.com/mcp',
+                        url: 'https://api.pabandi.com/mcp',
                         headers: {
                           Authorization: `Bearer ${mcpAgentKey?.apiKey || 'YOUR_AGENT_API_KEY'}`,
                         },

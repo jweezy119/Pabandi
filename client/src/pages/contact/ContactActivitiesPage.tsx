@@ -15,7 +15,7 @@ export default function ContactActivitiesPage() {
   useEffect(() => {
     async function fetchActivities() {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/jobs`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/jobs`, {
           headers: { Authorization: `Bearer ${getAuthToken() ?? ''}` },
         });
         if (res.ok) {

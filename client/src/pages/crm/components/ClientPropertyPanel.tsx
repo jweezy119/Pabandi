@@ -16,7 +16,7 @@ import { getAuthToken } from '../../../utils/authToken';
  * property records the first time a rounding rule differed.
  */
 
-const API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1`;
+const API = `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1`;
 
 function money(n: number | undefined) {
   return `$${Number(n || 0).toLocaleString()}`;

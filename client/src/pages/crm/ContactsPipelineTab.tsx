@@ -5,7 +5,7 @@ interface ImportMeta {
   env: Record<string, string | undefined>;
 }
 
-const API_BASE = `${(import.meta as any).env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
+const API_BASE = `${(import.meta as any).env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm`;
 
 interface Contact {
   id: string;

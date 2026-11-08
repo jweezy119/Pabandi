@@ -50,7 +50,7 @@ export default function AgentsLandingPage() {
               Generate Agent API Key
             </button>
             <a
-              href="https://pabandi.onrender.com/mcp"
+              href="https://api.pabandi.com/mcp"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-[#2a2520] border border-[#4a453f] text-[#F5EFE6] hover:bg-[#3a3530] transition-colors text-lg"

@@ -86,15 +86,15 @@ export async function getAppConfig(appId: string): Promise<any> {
     status: app.status,
     scopes: app.scopes,
     widget: {
-      embedUrl: `${process.env.BACKEND_URL || 'https://pabandi.onrender.com'}/sdk/widget.html`,
+      embedUrl: `${process.env.BACKEND_URL || 'https://api.pabandi.com'}/sdk/widget.html`,
       theme: 'light',
       accent: '#6366F1',
       modes: ['search', 'book', 'predict', 'trust'],
     },
     endpoints: {
-      invoke: `${process.env.BACKEND_URL || 'https://pabandi.onrender.com'}/api/v1/agents/invoke`,
-      tools: `${process.env.BACKEND_URL || 'https://pabandi.onrender.com'}/mcp`,
-      spec: `${process.env.BACKEND_URL || 'https://pabandi.onrender.com'}/api/v1/pabandi/spec`,
+      invoke: `${process.env.BACKEND_URL || 'https://api.pabandi.com'}/api/v1/agents/invoke`,
+      tools: `${process.env.BACKEND_URL || 'https://api.pabandi.com'}/mcp`,
+      spec: `${process.env.BACKEND_URL || 'https://api.pabandi.com'}/api/v1/pabandi/spec`,
     },
   };
 }
@@ -113,7 +113,7 @@ export async function invokeAgent(input: AgentInvokeInput): Promise<any> {
   });
 
   // Route the tool invocation through the canonical MCP / platform layer
-  const base = process.env.BACKEND_URL || 'https://pabandi.onrender.com';
+  const base = process.env.BACKEND_URL || 'https://api.pabandi.com';
   const mcpResp = await fetch(`${base}/mcp`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

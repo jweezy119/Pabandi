@@ -68,7 +68,7 @@ const FieldError = ({ msg }: { msg: string }) => (
 );
 
 const getBackendUrl = () => {
-  const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+  const rawBase = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
   return rawBase.replace(/\/api\/v\d+\/?$/, '');
 };
 

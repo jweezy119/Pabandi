@@ -3,7 +3,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { Button } from '../../components/primitives';
 import { getAuthToken } from '../../utils/authToken';
 
-const LEDGER_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/capital`;
+const LEDGER_API = `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/capital`;
 
 const navItems = [
   { path: '/capital', label: 'Dashboard', icon: 'dashboard', end: true },

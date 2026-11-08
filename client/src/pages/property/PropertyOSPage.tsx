@@ -28,7 +28,7 @@ export default function PropertyOSPage() {
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/clients`, {
           headers: { Authorization: `Bearer ${getAuthToken()}` },
         });
         if (res.ok) {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 
-const PM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/property-manager`;
+const PM_API = `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/property-manager`;
 
 type Listing = {
   id: string;

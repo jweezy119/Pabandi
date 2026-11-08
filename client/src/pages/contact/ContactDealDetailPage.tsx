@@ -70,7 +70,7 @@ export default function ContactDealDetailPage() {
 
   const handleDealUpdate = async (field: string, value: any) => {
     const token = getAuthToken();
-    const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
     const res = await fetch(`${baseUrl}/api/v1/crm/deals/${id}`, {
       // PATCH, not PUT. The server has always exposed PATCH /crm/deals/:id; the
       // PUT here matched nothing, so every inline edit on a deal 404'd and the

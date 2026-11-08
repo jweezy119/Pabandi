@@ -55,7 +55,7 @@ export function TermsRecommendationPanel({
   const [reason, setReason] = useState('');
   const [notice, setNotice] = useState<string | null>(null);
 
-  const base = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
+  const base = `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm`;
 
   useEffect(() => {
     let cancelled = false;

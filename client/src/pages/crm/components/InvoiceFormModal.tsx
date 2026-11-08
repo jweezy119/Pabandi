@@ -4,7 +4,7 @@ import { Button } from '../../../components/primitives';
 import { ClayBadge } from '../../../components/primitives/ClayBadge';
 import { getAuthToken } from '../../../utils/authToken';
 
-const CRM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
+const CRM_API = `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm`;
 
 type Client = {
   id: string;

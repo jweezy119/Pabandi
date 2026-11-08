@@ -183,8 +183,8 @@ export async function createGigFromSme(input: SmeInput): Promise<any> {
   return {
     gigId: project.id, title: project.title, category: project.category, budgetUsd, estimatedHours: project.estimatedHours,
     requiredSkills: project.requiredSkills, demandGrowthPct: project.demandGrowthPct, confidenceNote: spec.confidenceNote,
-    openBoardUrl: `https://pabandi.onrender.com/sdk/board.html#gig=${project.id}`,
-    fundUrl: input.clientWallet ? `https://pabandi.onrender.com/sdk/pay-in-sol.html?agent=${project.id}&ref=${input.referralCode || 'PABANDI'}` : null,
+    openBoardUrl: `https://api.pabandi.com/sdk/board.html#gig=${project.id}`,
+    fundUrl: input.clientWallet ? `https://api.pabandi.com/sdk/pay-in-sol.html?agent=${project.id}&ref=${input.referralCode || 'PABANDI'}` : null,
   };
 }
 

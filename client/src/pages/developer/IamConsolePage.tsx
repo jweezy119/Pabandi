@@ -68,7 +68,7 @@ export default function IamConsolePage() {
     try {
       const token = getAuthToken();
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/oauth/apps`,
+        `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/oauth/apps`,
         { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
       if (res.ok) {
@@ -86,7 +86,7 @@ export default function IamConsolePage() {
     try {
       const token = getAuthToken();
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/oauth/verifications`,
+        `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/oauth/verifications`,
         { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
       if (res.ok) {
@@ -109,7 +109,7 @@ export default function IamConsolePage() {
     try {
       const token = getAuthToken();
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/oauth/apps`,
+        `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/oauth/apps`,
         {
           method: 'POST',
           headers: {
@@ -182,7 +182,7 @@ import base64
 
 # 1. Obtain Ephemeral M2M Capability Lease Token (15-min lease)
 token_res = requests.post(
-    "https://pabandi.onrender.com/api/v1/oauth/token",
+    "https://api.pabandi.com/api/v1/oauth/token",
     json={
         "grant_type": "client_credentials",
         "client_id": "pab_app_YOUR_CLIENT_ID",
@@ -196,7 +196,7 @@ trust_band = token_res.get("trust_band") # e.g. "B"
 
 # 2. Invoke Protected Action with Trust Band Enforcement
 res = requests.post(
-    "https://pabandi.onrender.com/api/v1/engine/action",
+    "https://api.pabandi.com/api/v1/engine/action",
     headers={"Authorization": f"Bearer {access_token}"},
     json={"actionType": "booking", "amountCents": 5000}
 )
@@ -220,7 +220,7 @@ app.post('/api/ai/execute-milestone', requireTrustBand('B'), async (req, res) =>
 
 app.listen(4000);`,
     curl: `# 1. M2M Agent Token Exchange (Client Credentials)
-curl -X POST https://pabandi.onrender.com/api/v1/oauth/token \\
+curl -X POST https://api.pabandi.com/api/v1/oauth/token \\
   -H "Content-Type: application/json" \\
   -d '{
     "grant_type": "client_credentials",
@@ -229,7 +229,7 @@ curl -X POST https://pabandi.onrender.com/api/v1/oauth/token \\
   }'
 
 # 2. Sign-In with Solana (SIWS)
-curl -X POST https://pabandi.onrender.com/api/v1/oauth/token \\
+curl -X POST https://api.pabandi.com/api/v1/oauth/token \\
   -H "Content-Type: application/json" \\
   -d '{
     "grant_type": "siws",
@@ -239,7 +239,7 @@ curl -X POST https://pabandi.onrender.com/api/v1/oauth/token \\
   }'
 
 # 3. Token Introspection (RFC 7662)
-curl -X POST https://pabandi.onrender.com/api/v1/oauth/introspect \\
+curl -X POST https://api.pabandi.com/api/v1/oauth/introspect \\
   -H "Content-Type: application/json" \\
   -d '{"token": "YOUR_ACCESS_TOKEN"}'`,
   };

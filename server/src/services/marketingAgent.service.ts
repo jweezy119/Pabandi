@@ -4,7 +4,7 @@ import { farcasterExec, FarcasterAction } from './farcasterExec.service';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { appendFileSync, mkdirSync } from 'fs';
-const DEMO = 'https://pabandi.onrender.com/sdk/pay-in-sol.html';
+const DEMO = 'https://api.pabandi.com/sdk/pay-in-sol.html';
 const REF = process.env.MARKETING_REF_CODE || 'PABANDI'; // referral code baked into posts
 
 export interface MarketingPost {
@@ -74,7 +74,7 @@ export async function runEngagementSweep(): Promise<{ dryRun: boolean; decisions
       const kind: SocialAction['kind'] = actions[ai % actions.length];
       let action: SocialAction;
       if (kind === 'reply') {
-        action = { kind: 'reply', postId: id, text: 'This is exactly the gap Pabandi fills — agents that actually settle value in SOL, on-chain. Live demo: https://pabandi.onrender.com/sdk/pay-in-sol.html?ref=PABANDI' };
+        action = { kind: 'reply', postId: id, text: 'This is exactly the gap Pabandi fills — agents that actually settle value in SOL, on-chain. Live demo: https://api.pabandi.com/sdk/pay-in-sol.html?ref=PABANDI' };
       } else {
         action = { kind: kind as 'repost' | 'like', postId: id };
       }
@@ -157,7 +157,7 @@ export async function runDemo(): Promise<{ transcript: any[]; leaderboard: any }
     const kind = actions[i % actions.length];
     let d: any = { postId: p.id, kind, matched: p.text.slice(0, 60) + '…' };
     if (kind === 'reply') {
-      const reply = 'This is exactly the gap Pabandi fills — agents that actually settle value in SOL, on-chain. Live demo: https://pabandi.onrender.com/sdk/pay-in-sol.html?ref=PABANDI';
+      const reply = 'This is exactly the gap Pabandi fills — agents that actually settle value in SOL, on-chain. Live demo: https://api.pabandi.com/sdk/pay-in-sol.html?ref=PABANDI';
       d.xCmd = `xurl reply ${p.id} "${reply.replace(/"/g, "'")}"`;
       d.fcCmd = `farcaster cast reply --hash ${p.id} --text "${reply.replace(/"/g, "'")}"`;
     } else {

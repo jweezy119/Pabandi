@@ -74,7 +74,7 @@ export default function BookingMapPage() {
         console.warn('Map businesses fetch failed, trying window.fetch:', err);
         try {
           const res = await fetch(
-            `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/booking/businesses`
+            `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/booking/businesses`
           );
           if (res.ok) {
             const json = await res.json();

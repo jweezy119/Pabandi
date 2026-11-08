@@ -64,7 +64,7 @@ export function TrustProfilePage() {
 
   useEffect(() => {
     if (!passportId) return;
-    const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
     Promise.all([
       fetch(`${baseUrl}/api/v1/trust-profile/${passportId}`).then(res => {
         if (!res.ok) throw new Error('Profile not found');
@@ -196,7 +196,7 @@ export function TrustProfilePage() {
             )}
             <button
               onClick={() => {
-                const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+                const baseUrl = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
                 window.open(`${baseUrl}/api/v1/trust/${passportId}/attestations/export`, '_blank');
               }}
               style={{

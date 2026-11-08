@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
 
 interface ValuesPreferences {
   profitSharing?: boolean;

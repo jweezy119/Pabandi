@@ -41,7 +41,7 @@ export function TrustProofButton({ clientId }: { clientId: string }) {
   /** The raw code is hidden unless it could not be copied, or is asked for. */
   const [showCode, setShowCode] = useState(false);
 
-  const base = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
+  const base = `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm`;
 
   const create = async () => {
     setBusy(true);

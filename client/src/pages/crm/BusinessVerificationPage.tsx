@@ -41,7 +41,7 @@ export default function BusinessVerificationPage() {
   const loadStatus = async () => {
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/business-verification/status?businessId=${businessId}`,
+        `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/business-verification/status?businessId=${businessId}`,
         { headers: { Authorization: `Bearer ${getAuthToken()}` } }
       );
       if (res.ok) {
@@ -60,7 +60,7 @@ export default function BusinessVerificationPage() {
     setSubmitting(true);
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/business-verification/submit`,
+        `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/business-verification/submit`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getAuthToken } from '../utils/authToken';
 
-const PM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/property-manager`;
+const PM_API = `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/property-manager`;
 
 const DOC_CATEGORIES = [
   { value: 'ID', label: 'ID', icon: '🪪' },

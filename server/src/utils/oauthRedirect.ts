@@ -5,7 +5,7 @@ import { normalizeOrigin } from './url';
  *
  * The bug these exist for: the OAuth callback redirected to
  * `process.env.CLIENT_URL`, and on this deployment CLIENT_URL is the API origin
- * (https://pabandi.onrender.com — Render serves the built SPA from it too). The
+ * (https://api.pabandi.com — Render serves the built SPA from it too). The
  * API also serves the app, so the login "worked": the session was written into
  * localStorage on pabandi.onrender.com, the user was happily signed in there,
  * and the moment they went back to pabandi.com they were signed out again,

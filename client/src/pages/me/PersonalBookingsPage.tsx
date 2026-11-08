@@ -36,7 +36,7 @@ export default function PersonalBookingsPage() {
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
         const res = await fetch(
-          `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/bookings/my-bookings`,
+          `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/bookings/my-bookings`,
           { headers }
         );
         if (res.ok) {

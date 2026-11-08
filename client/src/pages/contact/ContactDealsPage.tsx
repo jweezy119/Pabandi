@@ -102,7 +102,7 @@ export default function ContactDealsPage() {
 
   async function handleImportDeals(csvData: string) {
     // Same baseUrl as every other call in this file (see fetchDealsAndClients). This one
-    // used to fall back to 'https://pabandi.onrender.com' — PRODUCTION — while the rest of
+    // used to fall back to 'https://api.pabandi.com' — PRODUCTION — while the rest of
     // the page falls back to localhost. With VITE_API_URL unset, a developer's test import
     // would have written deals into the live database.
     const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';

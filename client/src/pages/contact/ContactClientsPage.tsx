@@ -48,7 +48,7 @@ export default function ContactClientsPage() {
 
   async function fetchBusinessSettings() {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/settings`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/settings`, {
         headers: { Authorization: `Bearer ${getAuthToken()}` },
       });
       if (res.ok) {
@@ -100,7 +100,7 @@ export default function ContactClientsPage() {
       params.set('page', String(q.page));
       params.set('limit', String(q.limit));
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients?${params.toString()}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/clients?${params.toString()}`, {
         headers: { Authorization: `Bearer ${getAuthToken()}` },
       });
       if (res.ok) {
@@ -120,8 +120,8 @@ export default function ContactClientsPage() {
   async function handleSaveClient(form: any) {
     const isEdit = !!form.id;
     const url = isEdit 
-      ? `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients/${form.id}`
-      : `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`;
+      ? `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/clients/${form.id}`
+      : `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/clients`;
     
     const businessId = (user as any)?.business?.id || user?.businessId;
     const payload = {
@@ -169,7 +169,7 @@ export default function ContactClientsPage() {
   }
 
   async function handleImportClients(csvData: string) {
-    const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/import/clients`, {
+    const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/import/clients`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -190,7 +190,7 @@ export default function ContactClientsPage() {
     // used to be swallowed here, the confirm dialog closed, and the client
     // still listed — so the user was told the delete worked when it did not.
     const res = await fetch(
-      `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients/${id}?${withBusinessId()}`,
+      `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/clients/${id}?${withBusinessId()}`,
       {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${getAuthToken()}` },

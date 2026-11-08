@@ -279,7 +279,7 @@ export default function BookingOSPage() {
       })
       .catch((err: unknown) => {
         console.warn('Business count fetch fallback to raw fetch:', err);
-        fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/businesses/count`)
+        fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/businesses/count`)
           .then((res) => (res.ok ? res.json() : null))
           .then((json) => {
             if (isMounted && json && typeof json.count === 'number') {
@@ -313,7 +313,7 @@ export default function BookingOSPage() {
         console.warn('apiClient fetch failed, falling back to window.fetch:', e);
         try {
           const res = await fetch(
-            `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/booking/businesses`
+            `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/booking/businesses`
           );
           if (res.ok) {
             const json = await res.json();
@@ -342,7 +342,7 @@ export default function BookingOSPage() {
 
     let isMounted = true;
     setLoadingClients(true);
-    fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
+    fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/clients`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : null))

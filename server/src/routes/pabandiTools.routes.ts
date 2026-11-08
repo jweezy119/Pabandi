@@ -29,7 +29,7 @@ router.get('/.well-known/pabandi/tools.json', (_req: Request, res: Response) => 
 router.get('/spec', (_req: Request, res: Response) => {
   try {
     const doc = pabandiPlatformDoc();
-    const servers = [process.env.BACKEND_URL || 'https://pabandi.onrender.com'];
+    const servers = [process.env.BACKEND_URL || 'https://api.pabandi.com'];
 
     const paths: Record<string, any> = {};
     for (const t of doc.tools) {

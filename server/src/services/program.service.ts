@@ -94,7 +94,7 @@ export async function createProgram(input: ProgramInput): Promise<any> {
       phase: p,
       tasks: taskRows.filter((t) => t.phase === p).map((t) => ({ skill: t.skill, budgetUsd: t.budgetUsd })),
     })),
-    openBoardUrl: `https://pabandi.onrender.com/sdk/board.html?program=${program.id}`,
+    openBoardUrl: `https://api.pabandi.com/sdk/board.html?program=${program.id}`,
   };
 }
 

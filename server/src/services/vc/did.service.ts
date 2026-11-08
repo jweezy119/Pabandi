@@ -48,12 +48,12 @@ export class DidService {
         {
           id: `${DID_WEB}#vc-issuer`,
           type: 'VerifiableCredentialIssuer',
-          serviceEndpoint: 'https://pabandi.onrender.com/api/v1/vc/issue',
+          serviceEndpoint: 'https://api.pabandi.com/api/v1/vc/issue',
         },
         {
           id: `${DID_WEB}#vc-verifier`,
           type: 'VerifiableCredentialVerifier',
-          serviceEndpoint: 'https://pabandi.onrender.com/api/v1/vc/verify',
+          serviceEndpoint: 'https://api.pabandi.com/api/v1/vc/verify',
         },
       ],
     };

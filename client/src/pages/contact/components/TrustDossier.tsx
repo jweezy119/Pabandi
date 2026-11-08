@@ -58,7 +58,7 @@ export function TrustDossier({
 
   useEffect(() => {
     let cancelled = false;
-    const base = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+    const base = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
     fetch(`${base}/api/v1/crm/clients/${clientId}/explain-score`, {
       headers: { Authorization: `Bearer ${getAuthToken()}` },
     })

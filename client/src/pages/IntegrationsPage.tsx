@@ -7,7 +7,7 @@ export default function IntegrationsPage() {
       name: 'MCP (Model Context Protocol)',
       status: 'live',
       description: 'Connect to Pabandi from Claude, Cursor, Cline, Continue, RooCode, and any MCP client.',
-      url: 'https://pabandi.onrender.com/mcp',
+      url: 'https://api.pabandi.com/mcp',
       docs: '/agents',
     },
     {
@@ -92,7 +92,7 @@ export default function IntegrationsPage() {
 {`{
   "mcpServers": {
     "pabandi": {
-      "url": "https://pabandi.onrender.com/mcp",
+      "url": "https://api.pabandi.com/mcp",
       "headers": {
         "Authorization": "Bearer pab_YOUR_API_KEY"
       }

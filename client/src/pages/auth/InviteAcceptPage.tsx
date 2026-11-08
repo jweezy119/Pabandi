@@ -8,7 +8,7 @@ export function InviteAcceptPage() {
   const [status, setStatus] = useState<'LOADING' | 'SUCCESS' | 'ERROR'>('LOADING');
   const navigate = useNavigate();
 
-  const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+  const API_BASE = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
 
   useEffect(() => {
     if (token) {

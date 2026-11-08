@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { FiArrowLeft, FiSend, FiCheckCircle, FiTrash2, FiClock, FiAlertCircle } from 'react-icons/fi';
 import { getAuthToken } from '../../utils/authToken';
 
-const CRM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
+const CRM_API = `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm`;
 
 async function api(path: string, options: RequestInit = {}) {
   const res = await fetch(`${CRM_API}${path}`, {

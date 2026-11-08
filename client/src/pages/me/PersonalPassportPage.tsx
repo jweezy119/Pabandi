@@ -8,7 +8,7 @@ export default function PersonalPassportPage() {
   useEffect(() => {
     const fetchPassport = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/trust-passport/me`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/trust-passport/me`, {
           headers: { Authorization: `Bearer ${getAuthToken()}` },
         });
         if (res.ok) {

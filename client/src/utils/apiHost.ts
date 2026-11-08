@@ -19,7 +19,7 @@
  * .env.production has the bare host. Callers append the version themselves, so
  * a configured value that already carries it would produce /api/v1/api/v1.
  */
-const RAW_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+const RAW_BASE = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
 
 export const API_HOST = RAW_BASE.replace(/\/api\/v\d+\/?$/, '').replace(/\/+$/, '');
 

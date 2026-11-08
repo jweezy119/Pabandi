@@ -14,7 +14,7 @@ export const TokenFlowPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
     const headers = isAuthenticated ? { Authorization: `Bearer ${getAuthToken()}` } : {};
     Promise.all([
       pabService.getWallet().then((r: any) => r.data?.data).catch(() => null),

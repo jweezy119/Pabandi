@@ -55,7 +55,7 @@ export interface UpworkFreelancerProfile {
  */
 export function getUpworkAuthUrl(state: string): string {
   const clientId = process.env.UPWORK_CLIENT_ID;
-  const redirectUri = process.env.UPWORK_REDIRECT_URI || 'https://pabandi.onrender.com/api/v1/service-providers/upwork/callback';
+  const redirectUri = process.env.UPWORK_REDIRECT_URI || 'https://api.pabandi.com/api/v1/service-providers/upwork/callback';
   const scope = 'profile:read';
 
   if (!clientId) {
@@ -79,7 +79,7 @@ export function getUpworkAuthUrl(state: string): string {
 export async function exchangeUpworkCode(code: string): Promise<UpworkOAuthTokens> {
   const clientId = process.env.UPWORK_CLIENT_ID;
   const clientSecret = process.env.UPWORK_CLIENT_SECRET;
-  const redirectUri = process.env.UPWORK_REDIRECT_URI || 'https://pabandi.onrender.com/api/v1/service-providers/upwork/callback';
+  const redirectUri = process.env.UPWORK_REDIRECT_URI || 'https://api.pabandi.com/api/v1/service-providers/upwork/callback';
 
   if (!clientId || !clientSecret) {
     throw new Error('UPWORK_CLIENT_ID or UPWORK_CLIENT_SECRET not configured');

@@ -1,7 +1,7 @@
 import { useState, useEffect, FormEvent } from "react";
 import { getAuthToken } from '../utils/authToken';
 
-const API_BASE = `${import.meta.env.VITE_API_URL || "https://pabandi.onrender.com"}/api/v1/property-manager`;
+const API_BASE = `${import.meta.env.VITE_API_URL || "https://api.pabandi.com"}/api/v1/property-manager`;
 const STEPS = ["Property & Tenant", "Lease Terms", "Clauses", "Review", "Sign & Send"] as const;
 
 interface Property {

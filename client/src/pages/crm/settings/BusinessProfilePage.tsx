@@ -9,7 +9,7 @@ import { Camera, MapPin, Clock, Shield, Copy, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getAuthToken } from '../../../utils/authToken';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
 const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() || ''}` });
 
 const SERVICE_TYPES = [

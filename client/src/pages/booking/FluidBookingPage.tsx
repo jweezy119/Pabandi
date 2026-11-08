@@ -13,7 +13,7 @@ import { EmbeddedCheckoutModal, type DepositPrompt } from '../../components/Embe
 import { VaultLocked } from '../../components/GuaranteeVisuals';
 import { ClayButton } from '../../components/clay/ClayButton';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
 
 interface Slot {
   startTime: string;

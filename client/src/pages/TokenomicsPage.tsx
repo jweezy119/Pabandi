@@ -26,7 +26,7 @@ export const TokenomicsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const baseUrl = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
     Promise.all([
       fetch(`${baseUrl}/api/v1/pab/treasury`).then(res => res.json()).then(j => j.data).catch(() => null),
       isAuthenticated ? fetch(`${baseUrl}/api/v1/pab-staking/position`, { headers: { Authorization: `Bearer ${getAuthToken()}` } }).then(res => res.json()).then(j => j.data).catch(() => null) : Promise.resolve(null),

@@ -2,7 +2,7 @@ import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.
 import { usePrivy } from '@privy-io/react-auth';
 import { useEmbeddedSolanaWallet } from '../hooks/useEmbeddedSolanaWallet';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com/api/v1';
+const API_URL = import.meta.env.VITE_API_URL || 'https://api.pabandi.com/api/v1';
 
 export interface InvoiceData {
   id: string;

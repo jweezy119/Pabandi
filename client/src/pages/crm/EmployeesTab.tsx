@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiUsers, FiDollarSign, FiCalendar, FiStar, FiBriefcase, FiMail, FiPhone, FiMapPin, FiX } from 'react-icons/fi';
 import { getAuthToken } from '../../utils/authToken';
 
-const CRM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
+const CRM_API = `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm`;
 
 async function crmApi(path: string, options: RequestInit = {}) {
   const res = await fetch(`${CRM_API}${path}`, {

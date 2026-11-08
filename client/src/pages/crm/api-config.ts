@@ -1,1 +1,1 @@
-const API = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+const API = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';

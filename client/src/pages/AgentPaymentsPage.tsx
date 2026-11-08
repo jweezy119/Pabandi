@@ -37,7 +37,7 @@ export default function AgentPaymentsPage() {
               POST /api/v1/agents/register
             </code>
             <button
-              onClick={() => copy('curl -X POST https://pabandi.onrender.com/api/v1/agents/register -H "Content-Type: application/json" -d \'{"agentHandle":"my-agent","ownerEmail":"you@example.com","name":"My Agent"}\'', 'register')}
+              onClick={() => copy('curl -X POST https://api.pabandi.com/api/v1/agents/register -H "Content-Type: application/json" -d \'{"agentHandle":"my-agent","ownerEmail":"you@example.com","name":"My Agent"}\'', 'register')}
               className="text-sm text-[var(--clay)] hover:underline"
             >
               {copied === 'register' ? 'Copied!' : 'Copy example'}
@@ -63,10 +63,10 @@ export default function AgentPaymentsPage() {
             <h3 className="text-xl font-headline text-[var(--warm-ink)] mb-2">Use MCP</h3>
             <p className="text-[var(--soft-stone)] mb-4">Connect to our MCP server for tool access</p>
             <code className="block text-xs bg-[var(--warm-sand)] p-2 rounded mb-3 overflow-x-auto">
-              https://pabandi.onrender.com/mcp
+              https://api.pabandi.com/mcp
             </code>
             <button
-              onClick={() => copy('https://pabandi.onrender.com/mcp', 'mcp')}
+              onClick={() => copy('https://api.pabandi.com/mcp', 'mcp')}
               className="text-sm text-[var(--clay)] hover:underline"
             >
               {copied === 'mcp' ? 'Copied!' : 'Copy URL'}

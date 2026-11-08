@@ -43,7 +43,7 @@ export const CheckInPage: React.FC = () => {
     setError('');
     setSuccess('');
     try {
-      const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+      const rawBase = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
       const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
       const res = await fetch(`${backendUrl}/api/v1/checkin/verify`, {
         method: 'POST',

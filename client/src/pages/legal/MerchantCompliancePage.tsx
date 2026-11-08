@@ -97,7 +97,7 @@ Please find below the complete merchant verification details and live compliance
 4. LIVE INTERACTIVE CHECKOUT DEMO (FOR UNDERWRITING REVIEW)
 - Interactive Proposal & Safepay/Raast Checkout Demo: https://pabandi.com/p/estimate/demo
 - Public Trust Verification Portal: https://pabandi.com/verify-trust
-- Production API Health & Webhook Endpoint: https://pabandi.onrender.com/health
+- Production API Health & Webhook Endpoint: https://api.pabandi.com/health
 
 Please let us know if any additional documents are required to activate our live Safepay production credentials.
 

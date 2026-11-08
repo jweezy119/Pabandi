@@ -9,7 +9,7 @@ import { withBusinessId } from '../../utils/businessContext';
 import DashboardLayout, { type NavItem } from '../../components/DashboardLayout';
 import { Breadcrumbs } from '../../components/Breadcrumbs';
 
-const CRM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
+const CRM_API = `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm`;
 
 async function api(path: string, options: RequestInit = {}) {
   const res = await fetch(`${CRM_API}${path}`, {

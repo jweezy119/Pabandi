@@ -174,7 +174,7 @@ export default function ContactJobsPage() {
     setLoading(true);
     try {
       // Fetch clients for the dropdown
-      const clientsRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
+      const clientsRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/clients`, {
         headers: { Authorization: `Bearer ${getAuthToken()}` },
       });
       if (clientsRes.ok) {
@@ -231,7 +231,7 @@ export default function ContactJobsPage() {
       queryParams.append('sortBy', sortField);
       queryParams.append('sortOrder', sortOrder);
       
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/jobs?${queryParams.toString()}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/jobs?${queryParams.toString()}`, {
         headers: { Authorization: `Bearer ${getAuthToken()}` },
       });
       
@@ -289,7 +289,7 @@ export default function ContactJobsPage() {
         Object.entries(jobData).filter(([_, value]) => value !== undefined && value !== '')
       );
       
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/jobs`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/jobs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

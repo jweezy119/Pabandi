@@ -52,8 +52,8 @@ export default function ContactLeadDetailPage() {
     const headers = { Authorization: `Bearer ${getAuthToken() ?? ''}` };
     setLoading(true);
     Promise.all([
-      fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients/${id}`, { headers }),
-      fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients/${id}/invoices`, { headers }),
+      fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/clients/${id}`, { headers }),
+      fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/clients/${id}/invoices`, { headers }),
     ]).then(async ([leadRes, invRes]) => {
       if (leadRes.ok) setLead((await leadRes.json()).data);
       if (invRes.ok) {
