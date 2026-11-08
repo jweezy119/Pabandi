@@ -1237,14 +1237,15 @@ app.get('/.well-known/did.json', (_req, res) => {
 
 // OIDC discovery at root
 app.get('/.well-known/openid-configuration', (_req, res) => {
+  const apiBase = process.env.PUBLIC_API_URL || 'https://pabandi.com';
   res.json({
     issuer: 'https://pabandi.com',
-    authorization_endpoint: 'https://pabandi.com/api/v1/oauth/authorize',
-    token_endpoint: 'https://pabandi.onrender.com/api/v1/oauth/token',
-    userinfo_endpoint: 'https://pabandi.onrender.com/api/v1/oauth/userinfo',
+    authorization_endpoint: `${apiBase}/api/v1/oauth/authorize`,
+    token_endpoint: `${apiBase}/api/v1/oauth/token`,
+    userinfo_endpoint: `${apiBase}/api/v1/oauth/userinfo`,
     jwks_uri: 'https://pabandi.com/.well-known/jwks.json',
-    introspection_endpoint: 'https://pabandi.onrender.com/api/v1/oauth/introspect',
-    revocation_endpoint: 'https://pabandi.onrender.com/api/v1/oauth/revoke',
+    introspection_endpoint: `${apiBase}/api/v1/oauth/introspect`,
+    revocation_endpoint: `${apiBase}/api/v1/oauth/revoke`,
     response_types_supported: ['code'],
     grant_types_supported: ['authorization_code', 'client_credentials', 'refresh_token', 'siws'],
     subject_types_supported: ['public'],

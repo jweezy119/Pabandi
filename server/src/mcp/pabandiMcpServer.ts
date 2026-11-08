@@ -38,7 +38,7 @@ import { encodePaymentRequired, buildPaymentRequired } from '../services/x402.se
 
 const SERVER_NAME = 'pabandi-trust';
 const SERVER_VERSION = '1.0.0';
-const BACKEND = (process.env.BACKEND_URL || 'https://pabandi.onrender.com').replace(/\/+$/, '');
+const BACKEND = (process.env.BACKEND_URL || 'https://api.pabandi.com').replace(/\/+$/, '');
 const PABANDI_ESCROW_CONTRACT = process.env.PABANDI_ESCROW_CONTRACT || '0xPabandiEscrow';
 
 /** Minimum trust score an agent must hold to bid/spend. */

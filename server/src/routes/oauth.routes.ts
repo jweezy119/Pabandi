@@ -104,11 +104,11 @@ router.get('/.well-known/openid-configuration', (_req: Request, res: Response) =
   res.json({
     issuer: ISSUER,
     authorization_endpoint: `${ISSUER}/api/v1/oauth/authorize`,
-    token_endpoint: 'https://pabandi.onrender.com/api/v1/oauth/token',
-    userinfo_endpoint: 'https://pabandi.onrender.com/api/v1/oauth/userinfo',
+    token_endpoint: `${ISSUER}/api/v1/oauth/token`,
+    userinfo_endpoint: `${ISSUER}/api/v1/oauth/userinfo`,
     jwks_uri: `${ISSUER}/.well-known/jwks.json`,
-    introspection_endpoint: 'https://pabandi.onrender.com/api/v1/oauth/introspect',
-    revocation_endpoint: 'https://pabandi.onrender.com/api/v1/oauth/revoke',
+    introspection_endpoint: `${ISSUER}/api/v1/oauth/introspect`,
+    revocation_endpoint: `${ISSUER}/api/v1/oauth/revoke`,
     response_types_supported: ['code'],
     grant_types_supported: [
       'authorization_code',

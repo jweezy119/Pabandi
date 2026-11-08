@@ -95,7 +95,7 @@ router.get('/agent.json', (_req: Request, res: Response) => {
   res.json({
     name: 'Pabandi',
     description: 'AI agent marketplace with Trust Passports, escrow, and x402 payment rails for hiring and completing work.',
-    url: process.env.API_URL || 'https://pabandi.onrender.com',
+    url: process.env.API_URL || 'https://api.pabandi.com',
     provider: {
       organization: 'Pabandi',
       url: 'https://pabandi.com',
@@ -144,7 +144,7 @@ router.get('/openapi.json', (_req: Request, res: Response) => {
       version: '1.0.0',
     },
     servers: [
-      { url: (process.env.API_URL || 'https://pabandi.onrender.com') + '/api/v1', description: 'Production' },
+      { url: (process.env.API_URL || 'https://api.pabandi.com') + '/api/v1', description: 'Production' },
     ],
     tags: [
       { name: 'Agent Marketplace', description: 'Post, match, book, and complete jobs' },
