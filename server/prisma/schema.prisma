@@ -8882,10 +8882,3 @@ enum Priority {
   URGENT
   ROUTINE
 }
-
-enum InvoiceStatus {
-  NOT_READY
-  READY
-  INVOICED
-  PAID
-}
