@@ -985,6 +985,24 @@ export const crmService = {
     deductions?: number;
   }) => apiClient.post('/crm/payroll', payload),
 
+  // Escrow & Milestone Quotes
+  openJobEscrow: (jobId: string, payload: { amount: number; trustScore?: number; deadline?: string; rail?: 'CARD' | 'BANK' | 'SOLANA' }) =>
+    apiClient.post(`/crm/jobs/${jobId}/escrow`, payload),
+  releaseJobEscrow: (jobId: string) => apiClient.post(`/crm/jobs/${jobId}/escrow/release`),
+  disputeJobEscrow: (jobId: string) => apiClient.post(`/crm/jobs/${jobId}/escrow/dispute`),
+  jobEscrow: (jobId: string) => apiClient.get(`/crm/jobs/${jobId}/escrow`),
+  createQuote: (payload: {
+    clientId: string;
+    title: string;
+    description?: string;
+    totalAmount: number;
+    currency?: string;
+    milestones: Array<{ title: string; amount: number; description?: string; order: number }>;
+    depositPercentage?: number;
+  }) => apiClient.post('/crm/quotes', payload),
+  getQuotes: () => apiClient.get('/crm/quotes'),
+  getQuoteById: (quoteId: string) => apiClient.get(`/crm/quotes/${quoteId}`),
+
   // Invoices
   invoices: (params?: { status?: string }) =>
     apiClient.get(`/crm/invoices${params?.status ? '?status=' + params.status : ''}`),

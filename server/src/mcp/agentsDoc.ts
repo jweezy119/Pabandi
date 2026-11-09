@@ -31,9 +31,12 @@ import { PTP_RISK_BANDS, type PTPRiskBand } from '../protocol/ptp.spec';
 export const AGENT_CAPABILITIES: string[] = [
   'booking.create',
   'booking.status',
-  'freight.quote',
+  'service.quote',
+  'escrow.milestone',
   'property.list',
+  'property.book',
   'property.verify',
+  'freight.quote',
   'crm.lead',
   'crm.contact',
   'ledger.invoice',

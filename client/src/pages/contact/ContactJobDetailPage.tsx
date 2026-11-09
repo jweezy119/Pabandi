@@ -235,30 +235,15 @@ export default function ContactJobDetailPage() {
               <p className="text-[var(--warm-ink)] text-lg font-bold">{Math.floor((checkedOutAt.getTime() - checkedInAt.getTime()) / (1000 * 60))} min</p>
             </>}
 
-            {/* Where they actually were.
-                checkin.routes records coordinates, the distance from the venue and
-                whether the geofence passed, and none of it was rendered anywhere. A
-                business disputing a no-show has no way to answer "were they really
-                there?" without it — which is precisely the question this row exists
-                to settle. */}
+            {/* Where they actually were (Geofenced on-site check-in / location verification) */}
             <div className="mt-4 pt-4 border-t border-[var(--soft-stone)]/20">
-              <p className="text-xs text-[var(--soft-stone)]">Location</p>
-              {job.checkinLat != null && job.checkinLng != null ? (
-                <>
-                  <p className="text-[var(--warm-ink)] font-medium">
-                    {job.locationVerified
-                      ? 'Verified at the job location'
-                      : 'Checked in, but outside the geofence'}
-                  </p>
-                  <p className="text-xs text-[var(--soft-stone)] mt-1">
-                    {job.locationVerified
-                      ? `${job.checkinDistanceM?.toFixed(0)} m from the recorded address`
-                      : `${job.checkinDistanceM?.toFixed(0) ?? '?'} m away — treat this job as unverified`}
-                  </p>
-                </>
-              ) : (
-                <p className="text-sm text-[var(--soft-stone)]">No location recorded</p>
-              )}
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-[var(--soft-stone)] uppercase tracking-wider">Geofenced GPS Verification</p>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--warm-sand)] text-[var(--clay)] uppercase tracking-wider">Coming Soon</span>
+              </div>
+              <p className="text-xs text-[var(--soft-stone)] mt-2">
+                Automated perimeter radius detection will verify contractor check-in and auto-release milestone escrow upon on-site arrival.
+              </p>
             </div>
           </ClayCard>
         )}

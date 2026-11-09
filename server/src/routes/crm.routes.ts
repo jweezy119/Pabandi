@@ -1299,4 +1299,173 @@ router.post('/clients/:id/trust-disclosure', async (req: AuthRequest, res: Respo
 // GET /api/v1/crm/clients/:id/stage — Get client lifecycle stage
 router.get('/clients/:id/stage', getClientStageHandler);
 
+/**
+ * ─── Dynamic Milestone Quotes & Quote-to-Escrow ──────────────────────────────
+ *
+ * Allows service & property businesses to generate structured milestone quotes
+ * (e.g. Deposit 30%, Phase 1 Rough-In 35%, Final Walkthrough 35%) with instant
+ * locked UniversalEscrow creation via Square, Solana Pay (USDC), or Raast.
+ */
+
+// POST /api/v1/crm/quotes — Create a dynamic milestone quote & initialize escrow
+router.post('/quotes', async (req: AuthRequest, res: Response) => {
+  try {
+    const crm = requireCrmContext(req);
+    const { clientId, title, description, totalAmount, currency = 'USD', milestones = [], depositPercentage = 30 } = req.body;
+
+    if (!title || !Number.isFinite(Number(totalAmount)) || Number(totalAmount) <= 0) {
+      return res.status(400).json({ success: false, error: 'title and valid positive totalAmount are required' });
+    }
+
+    const client = clientId ? await prisma.crmClient.findUnique({ where: { id: clientId } }) : null;
+    const clientName = client?.name || req.body?.clientName || 'Valued Client';
+    const clientEmail = client?.email || req.body?.clientEmail || undefined;
+
+    const parsedTotal = Number(totalAmount);
+    const effectiveDepositPct = Math.min(100, Math.max(10, Number(depositPercentage) || 30));
+    const initialDepositAmount = Math.round((parsedTotal * (effectiveDepositPct / 100)) * 100) / 100;
+
+    // Structured milestone breakdown
+    const parsedMilestones = Array.isArray(milestones) && milestones.length > 0
+      ? milestones.map((m: any, idx: number) => ({
+          order: idx + 1,
+          title: m.title || `Milestone ${idx + 1}`,
+          amount: Number(m.amount) || Math.round((parsedTotal / milestones.length) * 100) / 100,
+          description: m.description || '',
+          status: 'pending',
+        }))
+      : [
+          { order: 1, title: `Deposit / Mobilization (${effectiveDepositPct}%)`, amount: initialDepositAmount, description: 'Initial mobilization & materials lock', status: 'pending' },
+          { order: 2, title: 'Project Execution & Midpoint Delivery', amount: Math.round((parsedTotal - initialDepositAmount) * 0.5 * 100) / 100, description: 'Core work completion & verification', status: 'pending' },
+          { order: 3, title: 'Final Inspection & Acceptance', amount: Math.round((parsedTotal - initialDepositAmount) * 0.5 * 100) / 100, description: 'Final walkthrough and Sulha signoff', status: 'pending' },
+        ];
+
+    // Reference identifier for UniversalEscrow
+    const quoteRef = `quote_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+    // Create UniversalEscrow draft
+    const escrow = await prisma.universalEscrow.create({
+      data: {
+        referenceId: quoteRef,
+        template: 'milestone',
+        parties: [
+          { partyId: client?.id || clientEmail || 'client', role: 'buyer', name: clientName },
+          { partyId: crm.serviceBusinessId, role: 'seller', businessId: crm.businessId },
+        ],
+        amount: parsedTotal,
+        currency,
+        conditions: parsedMilestones.map((m: any) => ({
+          type: 'milestone',
+          order: m.order,
+          title: m.title,
+          amount: m.amount,
+          verify: { status: 'pending' },
+        })),
+        metadata: {
+          title,
+          description,
+          serviceBusinessId: crm.serviceBusinessId,
+          clientId: client?.id,
+          clientName,
+          clientEmail,
+          depositPercentage: effectiveDepositPct,
+          initialDepositAmount,
+          milestones: parsedMilestones,
+        },
+      },
+    });
+
+    const shareUrl = `${process.env.APP_URL || 'https://pabandi.com'}/p/estimate/${quoteRef}`;
+
+    res.status(201).json({
+      success: true,
+      data: {
+        quoteId: quoteRef,
+        title,
+        totalAmount: parsedTotal,
+        currency,
+        initialDepositAmount,
+        milestones: parsedMilestones,
+        escrowReferenceId: escrow.referenceId,
+        escrowStatus: escrow.status,
+        shareUrl,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Failed to create milestone quote' });
+  }
+});
+
+// GET /api/v1/crm/quotes — List dynamic quotes for the service business
+router.get('/quotes', async (req: AuthRequest, res: Response) => {
+  try {
+    const crm = requireCrmContext(req);
+    const escrows = await prisma.universalEscrow.findMany({
+      where: {
+        template: 'milestone',
+        referenceId: { startsWith: 'quote_' },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    // Filter to those owned by caller's service business
+    const businessQuotes = escrows.filter((e) => {
+      const meta = e.metadata as any;
+      return meta?.serviceBusinessId === crm.serviceBusinessId;
+    });
+
+    res.json({
+      success: true,
+      data: businessQuotes.map((e) => {
+        const meta = e.metadata as any;
+        return {
+          id: e.referenceId,
+          title: meta?.title || 'Milestone Quote',
+          clientName: meta?.clientName || 'Client',
+          totalAmount: e.amount,
+          currency: e.currency,
+          status: e.status,
+          initialDepositAmount: meta?.initialDepositAmount || 0,
+          milestones: meta?.milestones || [],
+          shareUrl: `${process.env.APP_URL || 'https://pabandi.com'}/p/estimate/${e.referenceId}`,
+          createdAt: e.createdAt,
+        };
+      }),
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Failed to list quotes' });
+  }
+});
+
+// GET /api/v1/crm/quotes/:id — Get details of a specific quote
+router.get('/quotes/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const quote = await prisma.universalEscrow.findUnique({
+      where: { referenceId: req.params.id },
+    });
+    if (!quote) return res.status(404).json({ success: false, error: 'Quote not found' });
+
+    const meta = quote.metadata as any;
+    res.json({
+      success: true,
+      data: {
+        id: quote.referenceId,
+        title: meta?.title || 'Milestone Quote',
+        clientName: meta?.clientName || 'Client',
+        clientEmail: meta?.clientEmail,
+        totalAmount: quote.amount,
+        currency: quote.currency,
+        status: quote.status,
+        initialDepositAmount: meta?.initialDepositAmount || 0,
+        milestones: meta?.milestones || [],
+        shareUrl: `${process.env.APP_URL || 'https://pabandi.com'}/p/estimate/${quote.referenceId}`,
+        createdAt: quote.createdAt,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Failed to get quote' });
+  }
+});
+
 export default router;

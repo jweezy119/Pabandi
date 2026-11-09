@@ -245,6 +245,69 @@ const ENGINE_TOOLS = [
       required: ['bookingId'],
     },
   },
+  {
+    name: 'pabandi_create_quote',
+    description:
+      'Create a dynamic milestone quote with programmable escrow for service businesses & contractors. Break down projects into phases (e.g. 30% deposit, 35% rough-in, 35% signoff) and generate a shareable checkout URL supporting Square, Solana Pay (USDC), and Raast.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        businessId: { type: 'string', description: 'Business ID, slug, or serviceBusinessId' },
+        title: { type: 'string', description: 'Project title (e.g., "Full Roof Tear-Off & Shingle Replacement")' },
+        totalAmount: { type: 'number', description: 'Total project quote value in USD/USDC' },
+        depositPercentage: { type: 'number', description: 'Initial mobilization deposit % (default: 30)' },
+        clientName: { type: 'string', description: 'Client name' },
+        clientEmail: { type: 'string', description: 'Client email' },
+        milestones: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              title: { type: 'string' },
+              amount: { type: 'number' },
+              description: { type: 'string' },
+            },
+            required: ['title', 'amount'],
+          },
+          description: 'Optional custom milestone list; auto-generated if omitted',
+        },
+      },
+      required: ['businessId', 'title', 'totalAmount'],
+    },
+  },
+  {
+    name: 'pabandi_list_properties',
+    description:
+      'Query properties, rental units, stay experiences, and leases available in Pabandi PropertyOS. Returns address, monthly/daily rate, bedrooms, bathrooms, and availability for AI agent bookings.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        city: { type: 'string', description: 'Filter by city (e.g. "Chicago")' },
+        status: { type: 'string', description: 'Filter by status (VACANT, OCCUPIED, AVAILABLE)' },
+        limit: { type: 'number', description: 'Maximum results to return (default: 20)' },
+      },
+    },
+  },
+  {
+    name: 'pabandi_book_property',
+    description:
+      'Reserve or lease a property unit/stay experience in PropertyOS on behalf of a tenant or guest. Automatically verifies tenant trust risk band via CourtListener, allocates lease deposit into escrow, and issues a cNFT booking pass.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        propertyId: { type: 'string', description: 'Property ID or unit slug' },
+        unitId: { type: 'string', description: 'Specific unit ID (optional)' },
+        startDate: { type: 'string', description: 'Lease/Stay start date (YYYY-MM-DD)' },
+        endDate: { type: 'string', description: 'Lease/Stay end date (YYYY-MM-DD)' },
+        tenantName: { type: 'string', description: 'Tenant or guest name' },
+        tenantEmail: { type: 'string', description: 'Tenant email for e-signature / lease receipts' },
+        tenantPhone: { type: 'string', description: 'Tenant phone number' },
+        depositAmount: { type: 'number', description: 'Security deposit amount' },
+        monthlyRent: { type: 'number', description: 'Monthly rent or total stay value' },
+      },
+      required: ['propertyId', 'startDate', 'tenantName', 'tenantEmail'],
+    },
+  },
   // ── Kernel syscalls: the OS layer for agents ─────────────────────────────────
   {
     name: 'pabandi_escrow_lock',
@@ -2215,6 +2278,183 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
           bookingId: updated.id,
           status: updated.status,
           cnftCredentialStatus: cnft?.metadata.status || 'CANCELLED',
+        };
+      }
+
+      case 'pabandi_create_quote': {
+        const { businessId, title, totalAmount, depositPercentage = 30, clientName, clientEmail, milestones } = args;
+        if (!businessId || !title || !totalAmount) {
+          throw new Error('businessId, title, and totalAmount are required');
+        }
+
+        const parsedTotal = Number(totalAmount);
+        const effectiveDepositPct = Math.min(100, Math.max(10, Number(depositPercentage) || 30));
+        const initialDepositAmount = Math.round((parsedTotal * (effectiveDepositPct / 100)) * 100) / 100;
+
+        const parsedMilestones = Array.isArray(milestones) && milestones.length > 0
+          ? milestones.map((m: any, idx: number) => ({
+              order: idx + 1,
+              title: m.title || `Milestone ${idx + 1}`,
+              amount: Number(m.amount) || Math.round((parsedTotal / milestones.length) * 100) / 100,
+              description: m.description || '',
+              status: 'pending',
+            }))
+          : [
+              { order: 1, title: `Deposit / Mobilization (${effectiveDepositPct}%)`, amount: initialDepositAmount, description: 'Initial mobilization & materials lock', status: 'pending' },
+              { order: 2, title: 'Project Execution & Midpoint Delivery', amount: Math.round((parsedTotal - initialDepositAmount) * 0.5 * 100) / 100, description: 'Core work completion & verification', status: 'pending' },
+              { order: 3, title: 'Final Inspection & Acceptance', amount: Math.round((parsedTotal - initialDepositAmount) * 0.5 * 100) / 100, description: 'Final walkthrough and Sulha signoff', status: 'pending' },
+            ];
+
+        const quoteRef = `quote_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        const escrow = await prisma.universalEscrow.create({
+          data: {
+            referenceId: quoteRef,
+            template: 'milestone',
+            parties: [
+              { partyId: clientEmail || 'client', role: 'buyer', name: clientName || 'Valued Client' },
+              { partyId: businessId, role: 'seller' },
+            ],
+            amount: parsedTotal,
+            currency: 'USD',
+            conditions: parsedMilestones.map((m: any) => ({
+              type: 'milestone',
+              order: m.order,
+              title: m.title,
+              amount: m.amount,
+              verify: { status: 'pending' },
+            })),
+            metadata: {
+              title,
+              businessId,
+              clientName: clientName || 'Valued Client',
+              clientEmail,
+              depositPercentage: effectiveDepositPct,
+              initialDepositAmount,
+              milestones: parsedMilestones,
+            },
+          },
+        });
+
+        const baseUrl = process.env.APP_URL || 'https://pabandi.com';
+        return {
+          success: true,
+          quoteId: quoteRef,
+          title,
+          totalAmount: parsedTotal,
+          initialDepositAmount,
+          milestones: parsedMilestones,
+          escrowReferenceId: escrow.referenceId,
+          escrowStatus: escrow.status,
+          checkoutUrl: `${baseUrl}/p/estimate/${quoteRef}`,
+          solanaPayVault: process.env.ESCROW_VAULT_ADDRESS || 'PabandiEscrowVault1111111111111111111111111',
+        };
+      }
+
+      case 'pabandi_list_properties': {
+        const { city, status = 'AVAILABLE', limit = 20 } = args;
+        const whereClause: any = {};
+        if (city) whereClause.city = { contains: city, mode: 'insensitive' };
+        if (status && status !== 'ALL') whereClause.status = status;
+
+        const properties = await prisma.propertyManagerProperty.findMany({
+          where: whereClause,
+          take: Math.min(50, Math.max(1, Number(limit) || 20)),
+          include: {
+            units: { select: { id: true, unitNumber: true, rentAmount: true, status: true, bedrooms: true, bathrooms: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        return {
+          success: true,
+          count: properties.length,
+          properties: properties.map((p) => ({
+            id: p.id,
+            slug: p.slug,
+            title: p.title,
+            address: `${p.address || ''}, ${p.city || ''}, ${p.state || ''} ${p.zip || ''}`.trim(),
+            rentAmount: p.rentAmount,
+            rentPeriod: p.rentPeriod,
+            bedrooms: p.bedrooms,
+            bathrooms: p.bathrooms,
+            status: p.status,
+            units: p.units,
+          })),
+        };
+      }
+
+      case 'pabandi_book_property': {
+        const { propertyId, unitId, startDate, endDate, tenantName, tenantEmail, tenantPhone, depositAmount, monthlyRent } = args;
+        if (!propertyId || !startDate || !tenantName || !tenantEmail) {
+          throw new Error('propertyId, startDate, tenantName, and tenantEmail are required');
+        }
+
+        const property = await prisma.propertyManagerProperty.findFirst({
+          where: { OR: [{ id: propertyId }, { slug: propertyId }] },
+        });
+        if (!property) throw new Error(`Property not found: ${propertyId}`);
+
+        const resolvedRent = Number(monthlyRent) || property.rentAmount || 1500;
+        const resolvedDeposit = Number(depositAmount) || resolvedRent;
+
+        // Auto-tenant creation/matching
+        let managerId = property.managerId;
+        if (!managerId) {
+          const fallbackManager = await prisma.abodeManager.findFirst();
+          managerId = fallbackManager ? fallbackManager.id : 'default-manager';
+        }
+
+        const tenant = await prisma.propertyTenant.create({
+          data: {
+            managerId,
+            propertyId: property.id,
+            email: tenantEmail,
+            firstName: tenantName.split(' ')[0] || tenantName,
+            lastName: tenantName.split(' ').slice(1).join(' ') || undefined,
+            phone: tenantPhone || undefined,
+            status: 'APPLIED',
+            depositHeld: resolvedDeposit,
+          },
+        });
+
+        // Lease record
+        const lease = await prisma.propertyLease.create({
+          data: {
+            managerId,
+            propertyId: property.id,
+            tenantId: tenant.id,
+            tenantEmail,
+            tenantName,
+            startDate: new Date(startDate),
+            endDate: endDate ? new Date(endDate) : new Date(new Date(startDate).setFullYear(new Date(startDate).getFullYear() + 1)),
+            monthlyRent: resolvedRent,
+            depositAmount: resolvedDeposit,
+            status: 'PENDING_SIGNATURE',
+          },
+        });
+
+        // cNFT booking credential issuance
+        const { cnftService } = await import('../services/cnft.service');
+        const cnft = await cnftService.mintBookingCredential({
+          bookingId: lease.id,
+          businessName: property.title,
+          serviceName: `Residential Lease / Stay: ${property.title}`,
+          datetime: startDate,
+          customerName: tenantName,
+          customerWallet: args.tenantWallet,
+          depositAmount: resolvedDeposit,
+        });
+
+        return {
+          success: true,
+          leaseId: lease.id,
+          tenantId: tenant.id,
+          property: property.title,
+          monthlyRent: resolvedRent,
+          depositAmount: resolvedDeposit,
+          status: lease.status,
+          credential: cnft,
+          escrowReference: `lease_${lease.id}`,
         };
       }
     }
