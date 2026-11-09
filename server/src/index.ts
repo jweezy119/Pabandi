@@ -478,6 +478,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/crm/activities`, './routes/activity.routes'],
   [`/api/${v}/crm/tasks`, './routes/task.routes'],
   [`/api/${v}/crm-advanced`, './routes/crmAdvanced.routes'],
+  [`/api/${v}/coordinator`, './routes/serviceCoordinator.routes'],
   [`/api/${v}/business-os`, './routes/businessOS.routes'],
   [`/api/${v}/booking-services`, './routes/bookingService.routes'],
   // Payment-partner webhooks. No user auth by design: the caller is the rail's

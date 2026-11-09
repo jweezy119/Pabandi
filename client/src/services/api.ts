@@ -1023,6 +1023,55 @@ export const crmService = {
 };
 
 /**
+ * Service Coordinator — AI-assisted dispatch & work-order system
+ * Commercial roofing, HVAC, plumbing, electrical.
+ */
+export const coordinatorService = {
+  getWorkOrders: (params?: { status?: string; priority?: string; issueType?: string; search?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.status && params.status !== 'all') q.append('status', params.status);
+    if (params?.priority && params.priority !== 'all') q.append('priority', params.priority);
+    if (params?.issueType && params.issueType !== 'all') q.append('issueType', params.issueType);
+    if (params?.search) q.append('search', params.search);
+    const qs = q.toString();
+    return apiClient.get(`/coordinator/work-orders${qs ? '?' + qs : ''}`);
+  },
+  getWorkOrder: (id: string) => apiClient.get(`/coordinator/work-orders/${id}`),
+  createWorkOrder: (payload: any, idempotencyKey?: string) =>
+    apiClient.post('/coordinator/work-orders', payload, {
+      headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
+    }),
+  updateWorkOrder: (id: string, payload: any, idempotencyKey?: string) =>
+    apiClient.patch(`/coordinator/work-orders/${id}`, payload, {
+      headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
+    }),
+  assignTechnician: (id: string, payload: { technicianId: string; notifyWhatsApp?: boolean }, idempotencyKey?: string) =>
+    apiClient.post(`/coordinator/work-orders/${id}/assign`, payload, {
+      headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
+    }),
+  runAiTriage: (id: string, payload?: { commercialBuildingType?: string; roofSystem?: string }) =>
+    apiClient.post(`/coordinator/work-orders/${id}/triage-ai`, payload || {}),
+  addAttachment: (id: string, payload: { kind: 'photo' | 'report' | 'signature'; url: string }, idempotencyKey?: string) =>
+    apiClient.post(`/coordinator/work-orders/${id}/attachments`, payload, {
+      headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
+    }),
+  completeWorkOrder: (id: string, payload: { completionNotes: string; photoUrls?: string[]; readyForInvoice?: boolean }, idempotencyKey?: string) =>
+    apiClient.post(`/coordinator/work-orders/${id}/complete`, payload, {
+      headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
+    }),
+  getTechnicians: () => apiClient.get('/coordinator/technicians'),
+  createTechnician: (payload: { name: string; phone: string; skills: string[]; active?: boolean }, idempotencyKey?: string) =>
+    apiClient.post('/coordinator/technicians', payload, {
+      headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
+    }),
+  getCustomers: () => apiClient.get('/coordinator/customers'),
+  createCustomer: (payload: { name: string; email?: string; phone?: string; address?: string; notes?: string }, idempotencyKey?: string) =>
+    apiClient.post('/coordinator/customers', payload, {
+      headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
+    }),
+};
+
+/**
  * Contact OS — the sales pipeline.
  *
  * Serves `/contact`, which is where leads, deals and activities actually live.

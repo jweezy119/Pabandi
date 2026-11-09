@@ -116,6 +116,7 @@ const ApiKeysPage = lazy(() => import('./pages/crm/settings/ApiKeysPage').then((
 const ContactSubscriptionPage = lazy(() => import('./pages/crm/settings/ContactSubscriptionPage').then((m) => ({ default: m.default })));
 const WebhooksPage = lazy(() => import('./pages/crm/settings/WebhooksPage').then((m) => ({ default: m.WebhooksPage })));
 const SetupWizardPage = lazy(() => import('./pages/contact/SetupWizardPage'));
+const ServiceCoordinatorPage = lazy(() => import('./pages/coordinator/ServiceCoordinatorPage'));
 const CapitalOSPage = lazy(() => import('./pages/ledger/LedgerOSPage'));
 const LedgerInvoicesPage = lazy(() => import('./pages/ledger/LedgerInvoicesPage'));
 const InvoicesPage = lazy(() => import('./pages/crm/InvoicesPage'));
@@ -306,6 +307,9 @@ function AnimatedAppRoutes() {
           <Route path="booking/flow" element={<BookingFlowPage />} />
           <Route path="simulator" element={<SimulatorPage />} />
           <Route path="pay/:invoiceId" element={<PayInvoicePage />} />
+
+          <Route path="coordinator" element={<BusinessGuard><ServiceCoordinatorPage /></BusinessGuard>} />
+          <Route path="contact/coordinator" element={<BusinessGuard><ServiceCoordinatorPage /></BusinessGuard>} />
 
            {/* Contact OS - CRM & Sales */}
            <Route path="contact" element={<BusinessGuard><ContactOSPage /></BusinessGuard>} />

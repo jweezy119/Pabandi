@@ -35,6 +35,7 @@ const SQL_FILES = [
   'availability-tables.sql',
   'customfields-canonical.sql',
   'crm-file-tenant.sql',
+  'service-coordinator.sql',
 ];
 const SQL_DIR_CANDIDATES = [
   path.join(__dirname, '..', '..', 'sql'),

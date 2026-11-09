@@ -45,6 +45,7 @@ const COMMANDS = [
   { label: 'Verified Clients', category: 'Go to', href: '/contact/clients' },
   { label: 'Guaranteed Bookings', category: 'Go to', href: '/contact/deals' },
   { label: 'Jobs', category: 'Go to', href: '/contact/jobs' },
+  { label: 'Service Coordinator', category: 'Go to', href: '/coordinator' },
   { label: 'Escrow & Payments', category: 'Go to', href: '/contact/invoices' },
   { label: 'Activities', category: 'Go to', href: '/contact/activities' },
   { label: 'Tasks', category: 'Go to', href: '/contact/tasks' },

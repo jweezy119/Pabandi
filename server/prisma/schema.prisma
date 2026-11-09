@@ -358,6 +358,9 @@ model Business {
   serviceEscrows     ServiceEscrow[]
   invoices           Invoice[]
   Connection         Connection[]
+  technicians        Technician[]
+  workOrders         WorkOrder[]
+  customers          Customer[]
 
   @@index([ownerId])
   @@index([city])
@@ -8757,4 +8760,132 @@ model SimulationAgentRun {
   @@index([simulationId])
   @@index([agentRole])
   @@index([status])
+}
+
+// ── Service Coordinator Module (Commercial Dispatch & Work Orders) ──────────
+
+model Technician {
+  id            String   @id @default(cuid())
+  businessId    String
+  name          String
+  phoneEncrypted String
+  skills        String[] // e.g. ["commercial_roofing", "leak_repair", "inspection"]
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  business      Business @relation(fields: [businessId], references: [id])
+  assignments   WorkOrderAssignment[]
+
+  @@index([businessId])
+  @@index([active])
+}
+
+model Customer {
+  id             String      @id @default(cuid())
+  businessId     String
+  name           String
+  email          String?
+  phoneEncrypted String?
+  address        String?
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  business       Business    @relation(fields: [businessId], references: [id])
+  workOrders     WorkOrder[]
+
+  @@index([businessId])
+  @@index([name])
+}
+
+model WorkOrder {
+  id            String   @id @default(cuid())
+  businessId    String
+  customerId    String
+  status        WorkOrderStatus @default(DRAFT)
+  priority      Priority @default(ROUTINE)
+  issueType     String   // "leak", "repair", "inspection", "maintenance"
+  description   String
+  address       String
+  accessNotes   String?
+  scheduledFor  DateTime?
+  completedAt   DateTime?
+  invoiceStatus InvoiceStatus @default(NOT_READY)
+  createdById   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  customer      Customer @relation(fields: [customerId], references: [id])
+  business      Business @relation(fields: [businessId], references: [id])
+  assignments   WorkOrderAssignment[]
+  attachments   WorkOrderAttachment[]
+  auditLog      WorkOrderAudit[]
+
+  @@index([businessId])
+  @@index([customerId])
+  @@index([status])
+  @@index([priority])
+}
+
+model WorkOrderAssignment {
+  id            String   @id @default(cuid())
+  workOrderId   String
+  technicianId  String
+  assignedAt    DateTime @default(now())
+  acceptedAt    DateTime?
+  declinedAt    DateTime?
+  workOrder     WorkOrder @relation(fields: [workOrderId], references: [id])
+  technician    Technician @relation(fields: [technicianId], references: [id])
+
+  @@unique([workOrderId, technicianId])
+  @@index([technicianId])
+}
+
+model WorkOrderAttachment {
+  id          String   @id @default(cuid())
+  workOrderId String
+  kind        String   // "photo", "report", "signature"
+  url         String
+  uploadedById String
+  createdAt   DateTime @default(now())
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
+
+  @@index([workOrderId])
+}
+
+model WorkOrderAudit {
+  id          String   @id @default(cuid())
+  workOrderId String
+  actorId     String
+  action      String
+  before      Json?
+  after       Json?
+  requestId   String
+  createdAt   DateTime @default(now())
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
+
+  @@index([workOrderId])
+  @@index([actorId])
+  @@index([createdAt])
+}
+
+enum WorkOrderStatus {
+  DRAFT
+  PENDING_ASSIGNMENT
+  ASSIGNED
+  EN_ROUTE
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  ESCALATED
+}
+
+enum Priority {
+  EMERGENCY
+  URGENT
+  ROUTINE
+}
+
+enum InvoiceStatus {
+  NOT_READY
+  READY
+  INVOICED
+  PAID
 }

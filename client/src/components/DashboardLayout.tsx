@@ -132,6 +132,7 @@ function buildNavFromSettings(settings: any, osName: string, defaultNav?: NavIte
       { path: '/contact/clients', label: 'Verified Clients', icon: 'verified_user', feature: 'clients' },
       { path: '/contact/deals', label: 'Guaranteed Bookings', icon: 'workspace_premium', feature: 'deals' },
       { path: '/contact/jobs', label: 'Jobs', icon: 'work', feature: 'jobs' },
+      { path: '/coordinator', label: 'Coordinator', icon: 'precision_manufacturing', feature: 'jobs' },
       { path: '/contact/activities', label: 'Activities', icon: 'notifications', feature: 'activities' },
       { path: '/contact/tasks', label: 'Tasks', icon: 'check', feature: 'tasks' },
       { path: '/contact/invoices', label: 'Escrow & Payments', icon: 'lock', feature: 'invoices' },
