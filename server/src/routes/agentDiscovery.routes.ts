@@ -19,8 +19,8 @@ router.get('/.well-known/agent-registry.json', apiLimiter, async (_req: Request,
       registry: {
         name: 'Pabandi Agent Registry',
         description: 'Discover and connect with AI agents on the Pabandi platform',
-        endpoint: 'https://pabandi.com/api/v1/agent-comm',
-        mcpEndpoint: 'https://pabandi.com/mcp',
+        endpoint: process.env.API_URL ? `${process.env.API_URL}/api/v1/agent-comm` : 'https://pabandi.onrender.com/api/v1/agent-comm',
+        mcpEndpoint: process.env.API_URL ? `${process.env.API_URL}/mcp` : 'https://pabandi.onrender.com/mcp',
         agents: agents.map(a => ({
           id: a.id,
           name: a.name,
