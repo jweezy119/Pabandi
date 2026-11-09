@@ -1,111 +1,66 @@
-# Pabandi: The Trust & Settlement Layer for the Agent Economy
+Pabandi (پابندی)
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
-[![Solana](https://img.shields.io/badge/Solana-Mainnet-14F195.svg)](https://solana.com/)
-[![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748.svg)](https://www.prisma.io/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
+The trust and settlement layer for the service economy and autonomous AI agents.
+Portable trust passports, booking/deposit escrow, and a 23-tool Model Context Protocol (MCP) server.
 
-**Pabandi** is an open-source, programmable settlement layer enabling AI Agents to safely hire humans, and humans to hire AI Agents. We provide the missing infrastructure for the machine economy: **non-custodial escrow, Session Abstraction (gasless micro-payments), verifiable data provenance (VCAP), and decentralized dispute resolution (Sulha).**
+License: MIT
+Solana
+MCP
+Status
 
----
+Overview
 
-## 🏛️ Enterprise Security Architecture
+Small service businesses lose revenue every day to no-shows, unverified bookings, and payment disputes. Meanwhile, emerging autonomous AI agents lack neutral identity, reputation, and escrow primitives to transact safely with humans.
 
-Pabandi is built for high-stakes autonomous transactions. Our architecture is designed around three core pillars:
+Pabandi solves both:
 
-1. **Autonomy Boundaries:** Engineers configure capability envelopes and permission tiers. The harness uses "Session Abstraction" to intercept tool calls exceeding pre-allocated quotas, preventing runaway execution loops and unauthorized infrastructure modifications.
-2. **Scoped Identity:** Security teams bind distinct cryptographic identities to agents (Trust Passports). The harness authenticates inter-agent requests and prevents unauthorized privilege escalation across cluster boundaries.
-3. **Intent Contracts:** Developers formalize pre-execution schema contracts (via Zod). Before executing destructive operations or releasing escrow, the harness verifies post-condition invariants and matches payload checksums (VCAP hashes) against approved task specifications.
+Pabandi Trust Protocol (PTP): Cryptographically signed reputation credentials and portable trust passports.
+Non-Custodial Escrow: Programmable deposit and milestone locking on Solana Anchor (releases on verified completion).
+Agent Settlement & MCP: A 23-tool Model Context Protocol server enabling any LLM or autonomous agent to discover businesses, verify counterparty trust, and settle conditional payments via x402 USDC.
+System Architecture
+text
+       [ AI Agents / MCP Clients ]              [ Web Clients (SMEs & Consumers) ]
+                   │                                             │
+                   ▼                                             ▼
+   ┌────────────────────────────────────────────────────────────────────────┐
+   │                  Pabandi Core API (Node / Express / Prisma)            │
+   │  • PTP Cryptographic Attestations      • Booking & Service Management  │
+   │  • x402 USDC Payment Headers           • Sulha Dispute Evidence Engine │
+   └──────────────────┬──────────────────────────────────────────┬──────────┘
+                      ▼                                          ▼
+     ┌───────────────────────────────────┐    ┌──────────────────────────────────┐
+     │    Solana Anchor Escrow Program   │    │      PostgreSQL (Prisma ORM)     │
+     │   Non-custodial milestone release │    │  Business directory & audit log │
+     └───────────────────────────────────┘    └──────────────────────────────────┘
+Quickstart for Agents (One-Curl Onboarding)
 
----
+Register an agent and get an API key instantly:
 
-## 🧠 Core Primitives
+bash
+curl -X POST https://pabandi.onrender.com/api/v1/agents/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agentHandle": "my-service-agent",
+    "ownerEmail": "owner@example.com",
+    "name": "My Service Agent",
+    "capabilities": ["booking", "trust-verification"]
+  }'
 
-*   **Agentic Escrow:** Programmable USDC escrow for A2A and Human-to-Agent deals.
-*   **Yield-Bearing Deposits:** Locked funds earn safe Solana yield (via Kamino), split 50/50 between the client and the business.
-*   **MCP Native:** A full Model Context Protocol server allowing agents to book humans, verify trust, and execute bids.
-*   **Trust Passport:** A portable, non-transferable SBT on Solana that aggregates verified history and on-chain reputation.
+Connect your MCP client to:
 
----
+MCP Streamable HTTP Endpoint: https://pabandi.onrender.com/mcp
+Discovery & Spec: https://pabandi.com/llms.txt
+Protocol Manifest: https://pabandi.onrender.com/.well-known/ptp.json
+Technology Stack
+Client: React 18, Vite, Tailwind CSS (Hosted on Firebase)
+API & Engine: Node.js, Express, TypeScript, Prisma ORM, PostgreSQL (Hosted on Render)
+Smart Contracts: Solana Anchor Escrow program (Devnet / Mainnet)
+Agent Integration: Model Context Protocol (23 tools), x402 HTTP 402 micro-settlement
+Identity & Trust: PTP Ed25519 cryptographic attestations
+Security & Compliance
+Non-Custodial: Pabandi does not hold client funds. Escrows operate on smart contracts where funds are conditionally released upon verified milestone delivery or returned upon dispute resolution.
+Zero Token Risk: Pabandi does not issue a speculative token or investment contract. Blockchain usage is strictly limited to non-custodial escrow settlement and verifiable attestations.
+Auditing & Threat Model: Escrow contracts and verification logic are open source and undergoing independent security verification.
+License
 
-## 🏗️ Tech Stack
-
-*   **Frontend:** React (Vite), TailwindCSS, Framer Motion.
-*   **Backend:** Node.js, Express, Prisma ORM.
-*   **Database:** PostgreSQL.
-*   **Blockchain:** Solana (Web3.js).
-*   **Payments:** x402, Square, Solana Pay.
-
----
-
-## 🚀 Getting Started (Local Development)
-
-```bash
-git clone https://github.com/jweezy119/Pabandi.git
-cd Pabandi
-npm install
-cd client && npm install
-cd ../server && npm install
-```
-
-```bash
-cd server
-cp .env.example .env
-```
-
-Set the required variables:
-
-*   `DATABASE_URL` — PostgreSQL connection string
-*   `JWT_SECRET` — random 64-character hex string
-*   `SOLANA_RPC_URL` — Devnet or Mainnet
-*   `SQUARE_ACCESS_TOKEN` — for fiat payments (optional)
-
-```bash
-cd server
-npx prisma db push
-npx prisma generate
-```
-
-Terminal 1 (Backend):
-
-```bash
-cd server
-npm run dev
-```
-
-Terminal 2 (Frontend):
-
-```bash
-cd client
-npm run dev
-```
-
-The app will be available at http://localhost:5173.
-
----
-
-## 🤝 Contributing
-
-We welcome contributions from AI researchers and Solana developers. Please run `npm run build` and `npx tsc --noEmit` before submitting a PR.
-
-1. Fork the repo.
-2. Create a feature branch (`git checkout -b feature/amazing-feature`).
-3. Commit your changes (`git commit -m 'Add some amazing feature'`).
-4. Push to the branch (`git push origin feature/amazing-feature`).
-5. Open a Pull Request.
-
----
-
-## 👤 About the Founder
-
-Pabandi was founded by [Your Name], an IT specialist with over 8 years of experience solving complex infrastructure and security challenges for lean teams. Frustrated by the broken trust dynamics in the service economy — and the lack of secure infrastructure for autonomous AI agents — he shifted focus to AI/ML and Web3. Pabandi is the result: a platform built with customer obsession at its core, designed to make trust portable, programmable, and profitable for humans and machines alike.
-
----
-
-## 📄 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
-**Built with 🧱 in the USA and Pakistan.**
-*Wada karo, inaam pao.* (Make a promise, earn a reward.)
+This project is licensed under the MIT License - open and self-hostable.
