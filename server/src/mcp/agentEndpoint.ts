@@ -34,9 +34,7 @@ function normalize(base: string): string {
 /** The API host that serves /mcp, /llms.txt, /openapi.yaml and /api/v1/*. */
 export const AGENT_API_BASE = normalize(
   process.env.PUBLIC_API_URL ||
-    (process.env.PUBLIC_API_URL === ''
-      ? `https://${process.env.RENDER_HOST || 'pabandi.onrender.com'}`
-      : 'https://api.pabandi.com'),
+    (process.env.RENDER_HOST ? `https://${process.env.RENDER_HOST}` : 'https://pabandi.onrender.com'),
 );
 
 /** The MCP endpoint to publish. Streamable HTTP JSON-RPC, POST only. */
