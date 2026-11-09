@@ -533,6 +533,110 @@ router.patch('/maintenance/:id', authenticate, async (req: any, res: Response) =
   }
 });
 
+// POST /api/v1/property-manager/maintenance/:id/dispatch-contractor — Bridge ticket to ContactOS Job & Milestone Escrow
+router.post('/maintenance/:id/dispatch-contractor', authenticate, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
+    const maintenance = await prisma.propertyMaintenance.findFirst({
+      where: { id: req.params.id, managerId: profile.id },
+      include: { property: true },
+    });
+    if (!maintenance) return res.status(404).json({ error: 'Maintenance ticket not found' });
+
+    const { contractorName, contractorEmail, estimatedCost, scopeOfWork, requireEscrow } = req.body || {};
+    const cost = Number(estimatedCost) || maintenance.cost || 200;
+    const vendorName = contractorName || 'Verified Local Contractor';
+
+    // 1. Initialize or find contractor as a CRM client/vendor
+    let client = await prisma.crmClient.findFirst({
+      where: { email: contractorEmail || `${vendorName.toLowerCase().replace(/\s+/g, '')}@pabandi.contractor` },
+    });
+    if (!client) {
+      client = await prisma.crmClient.create({
+        data: {
+          name: vendorName,
+          email: contractorEmail || `${vendorName.toLowerCase().replace(/\s+/g, '')}@pabandi.contractor`,
+          serviceType: 'Contractor / Maintenance',
+          status: 'ACTIVE',
+        },
+      });
+    }
+
+    // 2. Create ContactOS CrmJob for this dispatch
+    const crmJob = await prisma.crmJob.create({
+      data: {
+        clientId: client.id,
+        serviceType: 'Property Maintenance Dispatch',
+        scheduledDate: new Date(),
+        price: cost,
+        status: 'IN_PROGRESS',
+        escrowStatus: requireEscrow !== false ? 'FUNDED' : 'NONE',
+        address: maintenance.property ? `${maintenance.property.title}, ${maintenance.property.city || ''}` : 'On-Site',
+        notes: `[PropertyOS Dispatch] Ticket: ${maintenance.title}\nScope: ${scopeOfWork || maintenance.description || 'Standard repairs'}\nManager: ${profile.title}`,
+      },
+    });
+
+    // 3. If escrow enabled, create UniversalEscrow contract
+    let escrow = null;
+    if (requireEscrow !== false) {
+      const escrowRef = `maint_${maintenance.id}_${Date.now()}`;
+      escrow = await prisma.universalEscrow.create({
+        data: {
+          referenceId: escrowRef,
+          template: 'maintenance_repair',
+          parties: [
+            { partyId: profile.id, role: 'landlord', name: profile.title },
+            { partyId: client.id, role: 'contractor', name: vendorName, email: client.email },
+          ],
+          amount: cost,
+          currency: 'USDC',
+          conditions: [
+            { type: 'inspection', title: 'Work Completion & Photo Evidence', status: 'pending' },
+            { type: 'release', title: 'Landlord / Tenant Sign-off', status: 'pending' },
+          ],
+          metadata: {
+            maintenanceId: maintenance.id,
+            propertyId: maintenance.propertyId,
+            crmJobId: crmJob.id,
+            propertyTitle: maintenance.property?.title,
+          },
+          status: 'LOCKED',
+        },
+      });
+    }
+
+    // 4. Update maintenance ticket
+    const updatedMaintenance = await prisma.propertyMaintenance.update({
+      where: { id: maintenance.id },
+      data: {
+        status: 'IN_PROGRESS',
+        vendor: vendorName,
+        vendorNotes: `Dispatched contractor ${vendorName}. CrmJob: ${crmJob.id}. Escrow: ${escrow?.referenceId || 'direct'}`,
+        cost,
+      },
+    });
+
+    logActivity(profile.id, 'maintenance.dispatched', 'maintenance', maintenance.id, `Contractor dispatched: ${vendorName} for $${cost}`);
+    fireWebhooks(profile.id, 'maintenance.dispatched', { maintenanceId: maintenance.id, crmJobId: crmJob.id, vendor: vendorName, cost });
+
+    res.json({
+      success: true,
+      data: {
+        maintenance: updatedMaintenance,
+        job: crmJob,
+        escrow,
+      },
+    });
+  } catch (e: any) {
+    console.error('[pm] contractor dispatch failed:', e.message);
+    res.status(500).json({ error: 'Could not dispatch contractor' });
+  }
+});
+
 // GET /api/v1/property-manager/applications
 router.get('/applications', authenticate, async (req: any, res: Response) => {
   try {
