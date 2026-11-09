@@ -14,6 +14,7 @@
     "worker": "ts-node --transpileOnly src/queues/worker.ts",
     "migrate": "node scripts/assert-local-db.js && prisma migrate dev",
     "db:push": "node scripts/assert-local-db.js && prisma db push",
+    "calibrate:predictive": "tsx scripts/calibrate-predictive-engine.ts",
     "db:reset": "node scripts/assert-local-db.js && prisma migrate reset --force",
     "migrate:deploy": "prisma migrate deploy",
     "seed": "ts-node prisma/seed.ts",

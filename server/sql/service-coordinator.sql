@@ -12,12 +12,18 @@ CREATE TABLE IF NOT EXISTS "Technician" (
   "phoneEncrypted" TEXT NOT NULL,
   "skills"         TEXT[] DEFAULT ARRAY[]::TEXT[],
   "active"         BOOLEAN NOT NULL DEFAULT true,
+  "experienceYears" INTEGER NOT NULL DEFAULT 0,
   "createdAt"      TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "Technician_pkey" PRIMARY KEY ("id")
 );
 
 CREATE INDEX IF NOT EXISTS "Technician_businessId_idx" ON "Technician"("businessId");
 CREATE INDEX IF NOT EXISTS "Technician_active_idx" ON "Technician"("active");
+
+-- Idempotent upgrade for databases created before the predictive engine landed.
+-- 0 means "unknown", which keeps the feature neutral rather than inventing a
+-- number for a technician the business has not described yet.
+ALTER TABLE "Technician" ADD COLUMN IF NOT EXISTS "experienceYears" INTEGER NOT NULL DEFAULT 0;
 
 -- 2. Customer
 CREATE TABLE IF NOT EXISTS "Customer" (

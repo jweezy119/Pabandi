@@ -1049,8 +1049,22 @@ export const coordinatorService = {
     apiClient.post(`/coordinator/work-orders/${id}/assign`, payload, {
       headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
     }),
+  // The real revert behind Undo. Removing an assignment is a server-side
+  // change, not a dismissed toast.
+  unassignTechnician: (id: string, payload: { technicianId?: string }, idempotencyKey?: string) =>
+    apiClient.post(`/coordinator/work-orders/${id}/unassign`, payload, {
+      headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
+    }),
   runAiTriage: (id: string, payload?: { commercialBuildingType?: string; roofSystem?: string }) =>
     apiClient.post(`/coordinator/work-orders/${id}/triage-ai`, payload || {}),
+  // Point risk prediction. The response carries the feature vector the what-if
+  // strip needs to place its sliders.
+  predictWorkOrderRisk: (id: string) =>
+    apiClient.post(`/coordinator/work-orders/${id}/predict`, {}),
+  // Counterfactual range. The body is a per-feature delta in the feature's own
+  // units, so "one more job today" is `{ schedule_density: 1 }`.
+  simulateWorkOrderRisk: (id: string, perturbation: Record<string, number>) =>
+    apiClient.post(`/coordinator/work-orders/${id}/simulate`, perturbation),
   addAttachment: (id: string, payload: { kind: 'photo' | 'report' | 'signature'; url: string }, idempotencyKey?: string) =>
     apiClient.post(`/coordinator/work-orders/${id}/attachments`, payload, {
       headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},

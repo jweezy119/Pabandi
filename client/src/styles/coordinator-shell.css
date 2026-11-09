@@ -1,0 +1,1465 @@
+/* ============================================================================
+   coordinator-shell.css — the three-pane command surface
+   ----------------------------------------------------------------------------
+   Surface rules (from the spec, §2) enforced here rather than in prose:
+
+   • Cards are matte: `border: 1px solid var(--pbn-border)` plus
+     `background: var(--pbn-surface)`. No box-shadow anywhere in this file.
+   • `backdrop-filter` appears on exactly two selectors: `.pbn-topbar` and
+     `.pbn-commandbar`. Adding it anywhere else needs a stated reason.
+   • One accent colour per screen. Risk chips are the only place semantic
+     danger/warn/ok colours appear; everything else is neutral.
+   • Motion is a state transition only. There is no hover animation and no
+     keyframe animation in this file.
+   • Space Grotesk for UI, Space Mono for data. Nothing mixes the two in one
+     line — mono is used for counts, timestamps, IDs and money only.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* ── Shell frame ─────────────────────────────────────────────────────────── */
+
+.pbn-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  /* dvh so the command bar clears the mobile browser chrome instead of
+     sliding under it. vh is the fallback above. */
+  height: 100dvh;
+  background: var(--pbn-bg);
+  color: var(--pbn-text);
+  font: var(--pbn-text-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* The shell owns its box model. Relying on Tailwind's preflight being present
+   makes every width in here wrong in the standalone harness, which
+   deliberately loads no global stylesheet. */
+.pbn-shell *,
+.pbn-shell *::before,
+.pbn-shell *::after,
+.pbn-dialog *,
+.pbn-dialog *::before,
+.pbn-dialog *::after {
+  box-sizing: border-box;
+}
+
+.pbn-body {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+}
+
+/* ── Top bar ─────────────────────────────────────────────────────────────── */
+
+.pbn-topbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--pbn-space-4);
+  height: 56px;
+  padding: 0 var(--pbn-space-4);
+  border-bottom: 1px solid var(--pbn-border);
+  background: var(--pbn-glass);
+  backdrop-filter: var(--pbn-glass-blur);
+  -webkit-backdrop-filter: var(--pbn-glass-blur);
+}
+
+.pbn-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--pbn-space-3);
+  min-width: 0;
+}
+
+.pbn-brand__name {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.pbn-brand__divider {
+  width: 1px;
+  height: 18px;
+  background: var(--pbn-border-strong);
+}
+
+.pbn-brand__module {
+  color: var(--pbn-text-muted);
+  white-space: nowrap;
+}
+
+.pbn-topbar__spacer {
+  flex: 1 1 auto;
+}
+
+.pbn-business {
+  display: flex;
+  align-items: baseline;
+  gap: var(--pbn-space-2);
+  min-width: 0;
+}
+
+.pbn-business__label {
+  font: var(--pbn-text-meta);
+  color: var(--pbn-text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.pbn-business__name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pbn-demo-badge {
+  font: var(--pbn-text-meta);
+  color: var(--pbn-warn);
+  border: 1px solid var(--pbn-warn);
+  border-radius: var(--pbn-radius-sm);
+  padding: 1px var(--pbn-space-2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+
+.pbn-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pbn-space-2);
+  min-height: 40px;
+  padding: 0 var(--pbn-space-4);
+  border: 1px solid transparent;
+  border-radius: var(--pbn-radius-md);
+  background: transparent;
+  color: var(--pbn-text);
+  font: var(--pbn-text-body);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pbn-btn--primary {
+  background: var(--pbn-accent);
+  border-color: var(--pbn-accent);
+  color: var(--pbn-on-accent);
+}
+
+.pbn-btn--primary:hover:not(:disabled) {
+  background: var(--pbn-accent);
+  border-color: var(--pbn-border-strong);
+}
+
+.pbn-btn--ghost {
+  border-color: var(--pbn-border-strong);
+  color: var(--pbn-text);
+  background: var(--pbn-surface);
+}
+
+.pbn-btn--ghost:hover:not(:disabled) {
+  background: var(--pbn-surface-hover);
+}
+
+/* Disabled is a state, not an opacity filter: dropping opacity would push the
+   label below the 4.5:1 contrast minimum. `--pbn-text-muted` measures about
+   6.6:1 on the surface fill, so it clears AA and still reads as unavailable
+   next to the `--pbn-text` label of an enabled button, alongside the
+   not-allowed cursor and the weaker border. */
+.pbn-btn:disabled,
+.pbn-icon-btn:disabled,
+.pbn-pill:disabled {
+  background: var(--pbn-surface);
+  border-color: var(--pbn-border);
+  color: var(--pbn-text-muted);
+  cursor: not-allowed;
+}
+
+.pbn-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  border: 1px solid transparent;
+  border-radius: var(--pbn-radius-sm);
+  background: transparent;
+  color: var(--pbn-text-muted);
+  cursor: pointer;
+}
+
+.pbn-icon-btn:hover:not(:disabled) {
+  background: var(--pbn-surface-hover);
+  color: var(--pbn-text);
+}
+
+.pbn-icon-btn--bordered {
+  border-color: var(--pbn-border-strong);
+}
+
+.pbn-topbar__help {
+  min-height: 34px;
+  padding: 0 var(--pbn-space-3);
+  font-size: 13px;
+}
+
+/* ── Left rail ───────────────────────────────────────────────────────────── */
+
+.pbn-rail {
+  flex: 0 0 auto;
+  width: var(--pbn-rail-width);
+  display: flex;
+  flex-direction: column;
+  gap: var(--pbn-space-2);
+  padding: var(--pbn-space-3);
+  border-right: 1px solid var(--pbn-border);
+  background: var(--pbn-bg-raised);
+  overflow-x: hidden;
+  overflow-y: auto;
+  transition: width var(--pbn-duration) var(--pbn-ease);
+}
+
+.pbn-rail--collapsed {
+  width: var(--pbn-rail-width-collapsed);
+  padding: var(--pbn-space-2);
+  align-items: center;
+}
+
+.pbn-rail__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pbn-space-1);
+}
+
+.pbn-rail__new {
+  width: 100%;
+  margin-bottom: var(--pbn-space-2);
+}
+
+.pbn-rail__heading {
+  font: var(--pbn-text-meta);
+  color: var(--pbn-text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0 var(--pbn-space-2) var(--pbn-space-1);
+}
+
+.pbn-rail--collapsed .pbn-rail__heading {
+  display: none;
+}
+
+/* The row is a flex container so the filter button and its "?" help trigger
+   sit on one line. They are siblings, never nested — a button inside a button
+   is invalid HTML and screen readers announce it as garbage. */
+.pbn-rail__row {
+  display: flex;
+  align-items: center;
+  gap: var(--pbn-space-1);
+  min-width: 0;
+}
+
+.pbn-rail__filter {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--pbn-space-2);
+  min-width: 0;
+  min-height: 38px;
+  padding: 0 var(--pbn-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--pbn-radius-md);
+  background: transparent;
+  color: var(--pbn-text-muted);
+  font: var(--pbn-text-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.pbn-rail__filter:hover:not(:disabled) {
+  background: var(--pbn-surface-hover);
+  color: var(--pbn-text);
+}
+
+.pbn-rail__filter[aria-pressed='true'] {
+  background: var(--pbn-surface-hover);
+  border-color: var(--pbn-border-strong);
+  color: var(--pbn-text);
+}
+
+.pbn-rail__filter-icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+}
+
+/* Labels wrap rather than truncate. "Waiting for your review" is the phrase
+   §4.1 requires, and an ellipsis that cuts it to "Waiting for your ..." hides
+   the whole point of the filter from the person who most needs to read it. */
+.pbn-rail__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: break-word;
+  line-height: 20px;
+}
+
+/* Data, so mono. */
+.pbn-rail__count {
+  flex: 0 0 auto;
+  font: var(--pbn-text-meta);
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--pbn-text-muted);
+  background: var(--pbn-surface-hover);
+  border-radius: var(--pbn-radius-sm);
+  padding: 0 var(--pbn-space-1);
+}
+
+.pbn-rail__count--alert {
+  color: var(--pbn-warn);
+  background: rgba(251, 191, 36, 0.12);
+}
+
+/* Collapsed mode keeps icon-only buttons, which are still real buttons with a
+   full accessible name — the label moves into `aria-label` rather than being
+   dropped. */
+.pbn-rail--collapsed .pbn-rail__label,
+.pbn-rail--collapsed .pbn-rail__count,
+.pbn-rail--collapsed .pbn-rail__new-label,
+.pbn-rail--collapsed .pbn-rail__collapse-label,
+.pbn-rail--collapsed .pbn-rail__row .pbn-tooltip {
+  display: none;
+}
+
+.pbn-rail--collapsed .pbn-rail__filter {
+  justify-content: center;
+  padding: 0;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+}
+
+.pbn-rail--collapsed .pbn-rail__new {
+  min-height: 40px;
+  padding: 0;
+  width: 40px;
+}
+
+.pbn-rail__footer {
+  margin-top: auto;
+  padding-top: var(--pbn-space-2);
+  border-top: 1px solid var(--pbn-border);
+}
+
+.pbn-rail--collapsed .pbn-rail__footer {
+  border-top: none;
+}
+
+.pbn-rail__collapse {
+  width: 100%;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pbn-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--pbn-radius-md);
+  background: transparent;
+  color: var(--pbn-text-muted);
+  font: var(--pbn-text-body);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pbn-rail__collapse:hover {
+  background: var(--pbn-surface-hover);
+  color: var(--pbn-text);
+}
+
+/* ── Center stream ───────────────────────────────────────────────────────── */
+
+.pbn-center {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.pbn-stream {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--pbn-space-5);
+}
+
+.pbn-stream__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--pbn-space-4);
+  margin-bottom: var(--pbn-space-4);
+}
+
+.pbn-stream__title {
+  margin: 0;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.pbn-stream__meta {
+  margin: 2px 0 0;
+  font: var(--pbn-text-meta);
+  color: var(--pbn-text-muted);
+}
+
+.pbn-stream__count {
+  font: var(--pbn-text-meta);
+  color: var(--pbn-text-muted);
+  white-space: nowrap;
+}
+
+/* ── Empty states ────────────────────────────────────────────────────────── */
+
+.pbn-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-top: var(--pbn-space-6);
+  padding: var(--pbn-space-6) var(--pbn-space-5);
+  border: 1px dashed var(--pbn-border);
+  border-radius: var(--pbn-radius-lg);
+  background: var(--pbn-surface);
+}
+
+.pbn-empty__art {
+  color: var(--pbn-text-faint);
+}
+
+.pbn-empty__title {
+  margin: var(--pbn-space-4) 0 var(--pbn-space-2);
+  font-size: 17px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.pbn-empty__text {
+  margin: 0 0 var(--pbn-space-5);
+  max-width: 420px;
+  color: var(--pbn-text-muted);
+}
+
+.pbn-empty__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--pbn-space-3);
+}
+
+/* ── Inspector ───────────────────────────────────────────────────────────── */
+
+.pbn-inspector {
+  flex: 0 0 auto;
+  width: var(--pbn-inspector-width);
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--pbn-border);
+  background: var(--pbn-bg-raised);
+  min-height: 0;
+}
+
+/* Collapsed is a real state, not a hidden attribute, so the transition still
+   reads as the pane closing rather than the layout snapping. */
+.pbn-inspector--collapsed {
+  display: none;
+}
+
+.pbn-inspector--open:not(.pbn-inspector--collapsed) {
+  transform: none;
+}
+
+.pbn-inspector__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pbn-space-3);
+  padding: var(--pbn-space-4);
+  border-bottom: 1px solid var(--pbn-border);
+}
+
+.pbn-inspector__title {
+  margin: 0;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+.pbn-inspector__body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--pbn-space-4);
+}
+
+.pbn-inspector__hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--pbn-space-2);
+  padding: var(--pbn-space-5) var(--pbn-space-4);
+  color: var(--pbn-text-muted);
+}
+
+.pbn-inspector__hint-title {
+  margin: 0;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+  color: var(--pbn-text);
+}
+
+.pbn-inspector__hint-text {
+  margin: 0;
+  max-width: 260px;
+}
+
+/* ── Command bar ─────────────────────────────────────────────────────────── */
+
+.pbn-commandbar {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pbn-space-2);
+  padding: var(--pbn-space-3) var(--pbn-space-4);
+  border-top: 1px solid var(--pbn-border);
+  background: var(--pbn-glass);
+  backdrop-filter: var(--pbn-glass-blur);
+  -webkit-backdrop-filter: var(--pbn-glass-blur);
+}
+
+.pbn-commandbar__field {
+  display: flex;
+  align-items: center;
+  gap: var(--pbn-space-2);
+}
+
+.pbn-commandbar__prompt {
+  flex: 0 0 auto;
+  color: var(--pbn-text-faint);
+  display: inline-flex;
+}
+
+.pbn-commandbar__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 var(--pbn-space-3);
+  border: 1px solid var(--pbn-border-strong);
+  border-radius: var(--pbn-radius-md);
+  background: var(--pbn-surface);
+  color: var(--pbn-text);
+  font: var(--pbn-text-body);
+}
+
+.pbn-commandbar__input::placeholder {
+  color: var(--pbn-text-faint);
+}
+
+.pbn-commandbar__input:focus {
+  border-color: var(--pbn-accent);
+}
+
+.pbn-commandbar__input:disabled {
+  border-color: var(--pbn-border);
+  background: var(--pbn-surface);
+  color: var(--pbn-text-faint);
+  cursor: not-allowed;
+}
+
+.pbn-commandbar__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pbn-space-2);
+}
+
+.pbn-pill {
+  min-height: 30px;
+  padding: 0 var(--pbn-space-3);
+  border: 1px solid var(--pbn-border);
+  border-radius: var(--pbn-radius-sm);
+  background: var(--pbn-surface);
+  color: var(--pbn-text-muted);
+  font: var(--pbn-text-body);
+  font-size: 13px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.pbn-pill:hover:not(:disabled) {
+  background: var(--pbn-surface-hover);
+  color: var(--pbn-text);
+}
+
+/* ── Tooltip ─────────────────────────────────────────────────────────────── */
+
+.pbn-tooltip {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.pbn-tooltip__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--pbn-border-strong);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--pbn-text-muted);
+  font: var(--pbn-text-meta);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pbn-tooltip__trigger:hover {
+  color: var(--pbn-text);
+  border-color: var(--pbn-accent);
+}
+
+.pbn-tooltip__bubble {
+  position: absolute;
+  top: calc(100% + var(--pbn-space-2));
+  right: 0;
+  z-index: var(--pbn-z-tooltip);
+  width: 240px;
+  padding: var(--pbn-space-3);
+  border: 1px solid var(--pbn-border-strong);
+  border-radius: var(--pbn-radius-md);
+  background: var(--pbn-bg-raised);
+  color: var(--pbn-text);
+  font: var(--pbn-text-body);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: left;
+  cursor: default;
+}
+
+/* ── Dialog ──────────────────────────────────────────────────────────────── */
+
+.pbn-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: var(--pbn-z-dialog);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--pbn-space-5);
+  background: rgba(4, 8, 12, 0.6);
+}
+
+.pbn-dialog__panel {
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid var(--pbn-border-strong);
+  border-radius: var(--pbn-radius-lg);
+  background: var(--pbn-bg-raised);
+  padding: var(--pbn-space-5);
+}
+
+.pbn-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--pbn-space-3);
+}
+
+.pbn-dialog__title {
+  margin: 0;
+  font-size: 17px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.pbn-dialog__body {
+  margin-top: var(--pbn-space-3);
+  color: var(--pbn-text-muted);
+}
+
+.pbn-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--pbn-space-3);
+  margin-top: var(--pbn-space-5);
+}
+
+.pbn-shortcuts {
+  display: grid;
+  gap: var(--pbn-space-2);
+  margin-top: var(--pbn-space-4);
+}
+
+.pbn-shortcut {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pbn-space-3);
+}
+
+.pbn-shortcut__label {
+  color: var(--pbn-text);
+}
+
+.pbn-shortcut__keys {
+  font: var(--pbn-text-meta);
+  color: var(--pbn-accent);
+  white-space: nowrap;
+}
+
+/* ── Utilities ───────────────────────────────────────────────────────────── */
+
+.pbn-visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  /* The inspector becomes a full-screen sheet. It is off-canvas until a row
+     is selected so the stream keeps the whole width — a 380px pane on a 390px
+     phone would leave the list unreadable. `visibility: hidden` is what takes
+     the closed sheet out of the tab order; `transform` alone would leave its
+     controls focusable by keyboard. */
+  .pbn-inspector {
+    position: fixed;
+    inset: 0 0 0 auto;
+    width: 100%;
+    max-width: 100%;
+    visibility: hidden;
+    transform: translateX(100%);
+    transition: transform var(--pbn-duration) var(--pbn-ease);
+  }
+
+  .pbn-inspector--open {
+    visibility: visible;
+    transform: none;
+  }
+
+  /* On a phone the rail is always icon-only, so the collapse toggle has no
+     function. Hiding it (rather than leaving a dead control that appears to
+     do nothing) is the honest choice; `display:none` also removes it from the
+     tab order. */
+  .pbn-rail__footer {
+    display: none;
+  }
+
+  .pbn-rail {
+    width: 60px;
+    padding: var(--pbn-space-2);
+    align-items: center;
+  }
+
+  .pbn-rail .pbn-rail__label,
+  .pbn-rail .pbn-rail__count,
+  .pbn-rail .pbn-rail__new-label,
+  .pbn-rail .pbn-rail__collapse-label,
+  .pbn-rail .pbn-rail__heading,
+  .pbn-rail .pbn-rail__row .pbn-tooltip {
+    display: none;
+  }
+
+  .pbn-rail .pbn-rail__filter {
+    justify-content: center;
+    padding: 0;
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+  }
+
+  .pbn-rail .pbn-rail__new {
+    min-height: 40px;
+    padding: 0;
+    width: 40px;
+  }
+
+  .pbn-stream {
+    padding: var(--pbn-space-4);
+  }
+}
+
+/* Larger-text mode scales the inspector's internal padding proportionally, as
+   required by §4.10. Defined here rather than in the token file because it is
+   a component metric, not a colour or type token. */
+html[data-pbn-text-size='large'] .pbn-inspector__body,
+html[data-pbn-text-size='large'] .pbn-inspector__header {
+  padding: var(--pbn-space-5);
+}
+
+html[data-pbn-text-size='large'] .pbn-commandbar__input {
+  min-height: 48px;
+}
+
+/* ── Stream list ────────────────────────────────────────────────────────── */
+
+.pbn-stream__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pbn-space-2);
+}
+
+.pbn-stream__message {
+  margin: var(--pbn-space-5) 0;
+  text-align: center;
+  color: var(--pbn-text-muted);
+}
+
+.pbn-stream__message--error {
+  color: var(--pbn-danger);
+}
+
+.pbn-stream__retry {
+  margin-left: var(--pbn-space-2);
+  border: none;
+  background: none;
+  color: var(--pbn-accent);
+  font: var(--pbn-text-body);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* The <li> is a flex row so the risk chip's "?" help trigger sits beside the
+   card button rather than inside it — a button inside a button is invalid. */
+.pbn-work-card__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--pbn-space-1);
+}
+
+.pbn-work-card {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pbn-space-2);
+  min-width: 0;
+  padding: var(--pbn-space-3) var(--pbn-space-4);
+  border: 1px solid var(--pbn-border);
+  border-radius: var(--pbn-radius-md);
+  background: var(--pbn-surface);
+  color: var(--pbn-text);
+  font: var(--pbn-text-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.pbn-work-card:hover {
+  background: var(--pbn-surface-hover);
+  border-color: var(--pbn-border-strong);
+}
+
+/* Selection is a left rule plus a surface change, not a shadow. */
+.pbn-work-card--selected {
+  background: var(--pbn-surface-hover);
+  border-color: var(--pbn-border-strong);
+  border-left: 3px solid var(--pbn-accent);
+  padding-left: calc(var(--pbn-space-4) - 2px);
+}
+
+.pbn-work-card__top {
+  display: flex;
+  align-items: center;
+  gap: var(--pbn-space-2);
+  flex-wrap: wrap;
+}
+
+.pbn-work-card__id {
+  font: var(--pbn-text-meta);
+  color: var(--pbn-text-muted);
+}
+
+.pbn-work-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pbn-work-card__customer {
+  font-weight: 600;
+}
+
+.pbn-work-card__issue {
+  color: var(--pbn-text-muted);
+}
+
+.pbn-work-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pbn-space-2);
+  color: var(--pbn-text-muted);
+  font-size: 13px;
+}
+
+.pbn-work-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pbn-space-3);
+  flex-wrap: wrap;
+}
+
+.pbn-work-card__tech {
+  color: var(--pbn-text-muted);
+  font-size: 13px;
+}
+
+/* ── Semantic chips ─────────────────────────────────────────────────────── */
+
+.pbn-priority,
+.pbn-status,
+.pbn-risk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pbn-space-1);
+  padding: 1px var(--pbn-space-2);
+  border: 1px solid var(--pbn-border-strong);
+  border-radius: var(--pbn-radius-sm);
+  background: var(--pbn-surface);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.pbn-priority--emergency {
+  color: var(--pbn-danger);
+  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.pbn-priority--urgent {
+  color: var(--pbn-warn);
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.pbn-priority--routine {
+  color: var(--pbn-text-muted);
+}
+
+.pbn-status {
+  color: var(--pbn-text-muted);
+}
+
+/* Risk chips are the one place semantic colour carries meaning, so the band
+   determines the hue. Out-of-range results are greyed rather than hidden, and
+   greyed with muted text rather than opacity so the label stays readable. */
+.pbn-risk-chip--low {
+  color: var(--pbn-ok);
+  border-color: rgba(52, 211, 153, 0.4);
+  background: rgba(52, 211, 153, 0.08);
+}
+
+.pbn-risk-chip--medium {
+  color: var(--pbn-warn);
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.pbn-risk-chip--high {
+  color: var(--pbn-danger);
+  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.pbn-risk-chip--out-of-range,
+.pbn-risk-chip--out-of-range.pbn-risk-chip--low,
+.pbn-risk-chip--out-of-range.pbn-risk-chip--medium,
+.pbn-risk-chip--out-of-range.pbn-risk-chip--high {
+  color: var(--pbn-text-muted);
+  border-color: var(--pbn-border);
+  background: var(--pbn-surface);
+}
+
+.pbn-risk-chip__score {
+  font: var(--pbn-text-meta);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.pbn-risk-chip__flag {
+  font-size: 11px;
+  color: var(--pbn-text-faint);
+}
+
+/* ── Inspector detail ───────────────────────────────────────────────────── */
+
+.pbn-inspector__detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pbn-space-4);
+}
+
+.pbn-inspector__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pbn-space-3);
+  flex-wrap: wrap;
+}
+
+.pbn-inspector__wo-id {
+  font: var(--pbn-text-meta);
+  color: var(--pbn-text-muted);
+}
+
+.pbn-inspector__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pbn-space-2);
+  padding-top: var(--pbn-space-3);
+  border-top: 1px solid var(--pbn-border);
+}
+
+.pbn-inspector__section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--pbn-space-1);
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--pbn-text);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pbn-inspector__range {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--pbn-space-3);
+  margin: 0;
+}
+
+.pbn-inspector__range-label {
+  color: var(--pbn-text-muted);
+  font-size: 13px;
+}
+
+.pbn-inspector__range-value {
+  font: var(--pbn-text-meta);
+}
+
+.pbn-inspector__range-hint,
+.pbn-inspector__hint-text {
+  margin: 0;
+  color: var(--pbn-text-muted);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.pbn-inspector__fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--pbn-space-2);
+  margin: 0;
+}
+
+/* Label above value, both left-aligned. A right-aligned paragraph leaves
+   orphaned words on their own line when the value wraps. */
+.pbn-inspector__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pbn-inspector__field-label {
+  color: var(--pbn-text-muted);
+  font-size: 13px;
+}
+
+.pbn-inspector__field-value {
+  margin: 0;
+  text-align: left;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.pbn-inspector__description {
+  margin: 0;
+  padding: var(--pbn-space-3);
+  border: 1px solid var(--pbn-border);
+  border-radius: var(--pbn-radius-md);
+  background: var(--pbn-surface);
+  color: var(--pbn-text-muted);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+/* Explanation bars: the sentence is the content, the bar is decoration. */
+.pbn-factors {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pbn-space-2);
+}
+
+.pbn-factor {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pbn-factor__bar {
+  height: 4px;
+  border-radius: var(--pbn-radius-sm);
+  background: var(--pbn-text-faint);
+}
+
+.pbn-factor__bar--raises {
+  background: var(--pbn-danger);
+}
+
+.pbn-factor__bar--lowers {
+  background: var(--pbn-ok);
+}
+
+.pbn-factor__text {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--pbn-text);
+}
+
+.pbn-evidence {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pbn-space-1);
+}
+
+.pbn-evidence__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pbn-space-2);
+  padding: var(--pbn-space-2) var(--pbn-space-3);
+  border: 1px solid var(--pbn-border);
+  border-radius: var(--pbn-radius-sm);
+  background: var(--pbn-surface);
+  color: var(--pbn-text);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.pbn-evidence__link:hover {
+  background: var(--pbn-surface-hover);
+  border-color: var(--pbn-border-strong);
+}
+
+.pbn-evidence__date {
+  font: var(--pbn-text-meta);
+  font-size: 11px;
+  color: var(--pbn-text-muted);
+}
+
+.pbn-inspector__audit {
+  margin: 0;
+  color: var(--pbn-text-faint);
+  font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  /* On a phone the card takes the full width, so the risk chip's "?" trigger
+     is pinned to the card's top-right corner and the card reserves the room
+     for it rather than letting it squeeze the card narrow or overlap text. */
+  .pbn-work-card__item {
+    position: relative;
+  }
+
+  .pbn-work-card__item > .pbn-tooltip {
+    position: absolute;
+    top: var(--pbn-space-2);
+    right: var(--pbn-space-2);
+    z-index: 1;
+  }
+
+  .pbn-work-card {
+    padding-right: calc(var(--pbn-space-4) + 28px);
+  }
+}
+
+/* ── Command strips ─────────────────────────────────────────────────────── */
+
+.pbn-btn--danger {
+  background: var(--pbn-danger);
+  border-color: var(--pbn-danger);
+  color: var(--pbn-on-danger);
+}
+
+/* The strip under the command input. Not a toast: it carries the Undo button
+   and stays until the thirty seconds are up or the user dismisses it. */
+.pbn-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--pbn-space-2);
+  padding: var(--pbn-space-2) var(--pbn-space-3);
+  border: 1px solid var(--pbn-border);
+  border-radius: var(--pbn-radius-md);
+  background: var(--pbn-surface);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--pbn-text);
+}
+
+.pbn-strip--question {
+  border-color: var(--pbn-border-strong);
+}
+
+.pbn-strip--done {
+  border-color: rgba(79, 209, 197, 0.4);
+  background: rgba(79, 209, 197, 0.06);
+}
+
+.pbn-strip__text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pbn-strip__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pbn-space-1);
+}
+
+.pbn-strip__option,
+.pbn-strip__action,
+.pbn-strip__dismiss {
+  min-height: 28px;
+  padding: 0 var(--pbn-space-2);
+  border-radius: var(--pbn-radius-sm);
+  font: var(--pbn-text-body);
+  font-size: 13px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.pbn-strip__option {
+  border: 1px solid var(--pbn-border-strong);
+  background: var(--pbn-bg-raised);
+  color: var(--pbn-text);
+}
+
+.pbn-strip__option:hover {
+  background: var(--pbn-surface-hover);
+}
+
+.pbn-strip__action {
+  border: 1px solid var(--pbn-accent);
+  background: transparent;
+  color: var(--pbn-accent);
+  font-weight: 600;
+}
+
+.pbn-strip__action:hover {
+  background: rgba(79, 209, 197, 0.1);
+}
+
+.pbn-strip__dismiss {
+  border: none;
+  background: none;
+  color: var(--pbn-text-muted);
+}
+
+.pbn-strip__dismiss:hover {
+  color: var(--pbn-text);
+}
+
+/* ── What-if strip (§7.2) ──────────────────────────────────────────────── */
+
+.pbn-inspector__policy {
+  margin: var(--pbn-space-3) 0 0;
+  font: var(--pbn-text-body);
+  color: var(--pbn-text);
+}
+
+.pbn-inspector__note {
+  margin: var(--pbn-space-2) 0 0;
+  font: var(--pbn-text-meta);
+  color: var(--pbn-warn);
+}
+
+.pbn-whatif {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pbn-space-4);
+}
+
+/* Label and value share the first row; the slider and its help text span
+   both columns underneath, so the reading order is label → control → hint. */
+.pbn-whatif__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--pbn-space-1) var(--pbn-space-3);
+  align-items: center;
+}
+
+.pbn-whatif__label {
+  font: var(--pbn-text-body);
+  color: var(--pbn-text);
+}
+
+.pbn-whatif__value {
+  font: var(--pbn-text-meta);
+  color: var(--pbn-accent);
+  text-align: right;
+}
+
+.pbn-whatif__slider {
+  grid-column: 1 / -1;
+  width: 100%;
+  accent-color: var(--pbn-accent);
+}
+
+.pbn-whatif__slider:focus-visible {
+  outline: 2px solid var(--pbn-accent);
+  outline-offset: 2px;
+}
+
+.pbn-whatif__help {
+  grid-column: 1 / -1;
+  margin: 0;
+  font: var(--pbn-text-meta);
+  color: var(--pbn-text-muted);
+}
+
+.pbn-whatif__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pbn-whatif__error {
+  margin: 0;
+  font: var(--pbn-text-body);
+  color: var(--pbn-danger);
+}
+
+/* The range bar. The band is the p10–p90 span and the tick is the median;
+   both are aria-hidden because the numbers are read out as text above. */
+.pbn-range {
+  border: 1px solid var(--pbn-border);
+  background: var(--pbn-surface);
+  border-radius: var(--pbn-radius-md);
+  padding: var(--pbn-space-4);
+}
+
+.pbn-range__heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--pbn-space-3);
+  margin: 0 0 var(--pbn-space-3);
+}
+
+.pbn-range__label {
+  font: var(--pbn-text-body);
+  color: var(--pbn-text-muted);
+}
+
+.pbn-range__value {
+  font: var(--pbn-text-meta);
+  color: var(--pbn-text);
+}
+
+.pbn-range__track {
+  position: relative;
+  height: 8px;
+  border-radius: var(--pbn-radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.pbn-range__band {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: var(--pbn-radius-sm);
+  background: var(--pbn-accent);
+}
+
+.pbn-range__median {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 14px;
+  background: var(--pbn-text);
+  transform: translateX(-1px);
+}
+
+.pbn-range__scale {
+  display: flex;
+  justify-content: space-between;
+  margin: var(--pbn-space-2) 0 0;
+  /* Muted rather than faint: the track is aria-hidden, but these labels are
+     real text and the spec's 4.5:1 minimum applies to them. */
+  font: var(--pbn-text-meta);
+  color: var(--pbn-text-muted);
+}
+
+.pbn-range__reading {
+  margin: var(--pbn-space-3) 0 0;
+  font: var(--pbn-text-body);
+  color: var(--pbn-text);
+}
+
+/* Mono for the number, sans for the sentence — never mixed in one line. */
+.pbn-range__reading strong {
+  font: var(--pbn-text-meta);
+  font-weight: 700;
+}
+
+.pbn-range__warning {
+  display: flex;
+  gap: var(--pbn-space-2);
+  align-items: flex-start;
+  margin: var(--pbn-space-3) 0 0;
+  font: var(--pbn-text-body);
+  color: var(--pbn-warn);
+}
+
+.pbn-range__loading {
+  margin: var(--pbn-space-2) 0 0;
+  font: var(--pbn-text-meta);
+  color: var(--pbn-text-muted);
+}
+
+/* Out of range is greyed, not hidden: hiding it would look like the model
+   refused, and showing it in the accent colour would look like a prediction
+   we stand behind. */
+.pbn-range--out-of-range .pbn-range__band {
+  background: var(--pbn-text-faint);
+}
+
+.pbn-range--out-of-range .pbn-range__value,
+.pbn-range--out-of-range .pbn-range__reading {
+  color: var(--pbn-text-muted);
+}

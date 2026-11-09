@@ -14,6 +14,10 @@ import { PrivyProvider } from './components/PrivyProvider';
 import { AppErrorBoundary } from './components/AppErrorBoundary';
 import './index.css';
 import './styles/mode-themes.css';
+// Design tokens for the Service Coordinator command surface. Imported here
+// rather than in the page so every coordinator component shares one palette
+// without each file re-importing it.
+import './styles/pbn-tokens.css';
 import { watchForStaleBuild, buildSha } from './utils/staleTab';
 
 // Notice when this tab is running an older build than the server is serving, and reload.

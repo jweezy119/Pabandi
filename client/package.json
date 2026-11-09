@@ -50,6 +50,7 @@
     "zustand": "^4.4.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
     "@types/google.maps": "^3.64.0",
@@ -78,7 +79,8 @@
     "build": "vite build --mode production",
     "type-check": "tsc --noEmit",
     "preview": "vite preview",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "test:e2e": "playwright test"
   },
   "overrides": {
     "@grpc/grpc-js": "^1.13.7",

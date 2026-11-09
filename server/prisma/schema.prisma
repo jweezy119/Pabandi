@@ -41,7 +41,7 @@ enum AccountType {
 }
 
 enum InvoiceStatus {
- NOT_READY
+  NOT_READY
   draft
   sent
   paid
@@ -8772,6 +8772,10 @@ model Technician {
   phoneEncrypted String
   skills        String[] // e.g. ["commercial_roofing", "leak_repair", "inspection"]
   active        Boolean  @default(true)
+  /// Years of trade experience, used by the predictive engine's
+  /// technician_experience_years feature. 0 = unknown, which leaves the
+  /// feature neutral rather than inventing a number.
+  experienceYears Int    @default(0)
   createdAt     DateTime @default(now())
   business      Business @relation(fields: [businessId], references: [id])
   assignments   WorkOrderAssignment[]

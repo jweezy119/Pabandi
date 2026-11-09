@@ -12,12 +12,20 @@ import {
   createWorkOrderSchema,
   updateWorkOrderSchema,
   assignWorkOrderSchema,
+  unassignWorkOrderSchema,
   completeWorkOrderSchema,
   createAttachmentSchema,
   createTechnicianSchema,
   createCustomerSchema,
   aiTriageSchema,
+  simulateRiskSchema,
 } from '../validators/serviceCoordinator.validator';
+import {
+  predictRiskForWorkOrders,
+  predictWorkOrderRisk,
+  simulateWorkOrderRisk,
+  toWorkOrderLike,
+} from '../services/predictiveEngine.service';
 
 const router = Router();
 
@@ -46,6 +54,36 @@ function aiTriageRateLimit(req: AuthRequest, res: Response, next: () => void) {
 
   entry.count++;
   aiRateLimitMap.set(userId, entry);
+  next();
+}
+
+/**
+ * The what-if simulation runs 200 bootstrap draws per request, so it is the
+ * expensive endpoint and the one that needs a ceiling. Generous relative to
+ * triage: a coordinator dragging a slider should not hit it, but a client
+ * looping on it should.
+ */
+const predictiveRateLimitMap = new Map<string, { count: number; resetAt: number }>();
+function predictiveRateLimit(req: AuthRequest, res: Response, next: () => void) {
+  const userId = req.user?.id || 'anon';
+  const now = Date.now();
+  const entry = predictiveRateLimitMap.get(userId) || { count: 0, resetAt: now + 3600000 };
+
+  if (now > entry.resetAt) {
+    entry.count = 0;
+    entry.resetAt = now + 3600000;
+  }
+
+  if (entry.count >= 60) {
+    const minutesLeft = Math.ceil((entry.resetAt - now) / 60000);
+    return res.status(429).json({
+      success: false,
+      error: `Too many what-if simulations. Try again in ${minutesLeft} minutes.`,
+    });
+  }
+
+  entry.count++;
+  predictiveRateLimitMap.set(userId, entry);
   next();
 }
 
@@ -100,7 +138,15 @@ router.get('/work-orders', requireCoordinatorRole(['OWNER', 'COORDINATOR', 'TECH
         customer: { select: { id: true, name: true, phoneEncrypted: true, address: true } },
         assignments: {
           include: {
-            technician: { select: { id: true, name: true, skills: true, active: true } },
+            technician: {
+              select: {
+                id: true,
+                name: true,
+                skills: true,
+                active: true,
+                experienceYears: true,
+              },
+            },
           },
         },
         attachments: { select: { id: true, kind: true, url: true, createdAt: true } },
@@ -113,9 +159,23 @@ router.get('/work-orders', requireCoordinatorRole(['OWNER', 'COORDINATOR', 'TECH
       take: 100,
     });
 
+    // Risk scores in one pass. The engine loads the business's same-day loads
+    // and per-technician history once for the page rather than once per row.
+    const settings = await prisma.businessSettings.findUnique({
+      where: { businessId },
+      select: { vertical: true },
+    });
+
+    const riskById = await predictRiskForWorkOrders(
+      workOrders.map((wo: any) => toWorkOrderLike(wo, wo.assignments[0]?.technician ?? null)),
+      businessId,
+      settings?.vertical ?? null,
+    );
+
     // Mask phone numbers in response for PII protection
     const sanitized = workOrders.map((wo: any) => ({
       ...wo,
+      risk: riskById.get(wo.id) ?? null,
       customer: wo.customer ? {
         ...wo.customer,
         phoneMasked: maskPhone(decryptPii(wo.customer.phoneEncrypted || '')),
@@ -380,6 +440,80 @@ router.post('/work-orders/:id/assign', idempotency, requireCoordinatorRole(['OWN
   } catch (err: any) {
     logger.error('[ServiceCoordinator] assign technician failed:', err.message);
     res.status(500).json({ success: false, error: 'Could not assign technician' });
+  }
+});
+
+/**
+ * POST /api/v1/coordinator/work-orders/:id/unassign
+ * Remove the technician from a work order.
+ *
+ * This is the real revert behind the command bar's Undo. Dismissing a
+ * confirmation strip in the UI is not an undo — the assignment stays on the
+ * server and the technician stays notified. Undo has to call this.
+ *
+ * Idempotent: replaying the same key returns the same response instead of
+ * removing a second assignment. Append-only audit: an UNASSIGN entry is
+ * recorded, never an edit of the ASSIGN entry.
+ */
+router.post('/work-orders/:id/unassign', idempotency, requireCoordinatorRole(['OWNER', 'COORDINATOR']), async (req: AuthRequest, res: Response) => {
+  try {
+    const businessId = req.user!.businessId!;
+    const validation = unassignWorkOrderSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return res.status(400).json({ success: false, error: 'Validation failed', details: validation.error.format() });
+    }
+
+    const workOrder = await prisma.workOrder.findFirst({
+      where: { id: req.params.id, businessId },
+      include: { assignments: { orderBy: { assignedAt: 'desc' } } },
+    });
+
+    if (!workOrder) return res.status(404).json({ success: false, error: 'Work order not found' });
+    if (workOrder.assignments.length === 0) {
+      return res.status(409).json({ success: false, error: 'This work order has no technician to remove' });
+    }
+
+    // An explicit technicianId is honoured; otherwise the most recent assignment
+    // is the one being undone. Either way we never guess silently.
+    const target = validation.data.technicianId
+      ? workOrder.assignments.find((assignment) => assignment.technicianId === validation.data.technicianId)
+      : workOrder.assignments[0];
+
+    if (!target) {
+      return res.status(404).json({ success: false, error: 'That technician is not assigned to this work order' });
+    }
+
+    await prisma.workOrderAssignment.delete({ where: { id: target.id } });
+
+    // Only fall back to unassigned when nobody is left on the job.
+    const remaining = await prisma.workOrderAssignment.count({ where: { workOrderId: workOrder.id } });
+    const updatedWorkOrder = await prisma.workOrder.update({
+      where: { id: workOrder.id },
+      data: remaining === 0 ? { status: 'PENDING_ASSIGNMENT' } : {},
+    });
+
+    const requestId = (req.headers['x-request-id'] as string) || `req_${Date.now()}`;
+    await recordWorkOrderAudit({
+      workOrderId: workOrder.id,
+      actorId: req.user!.id,
+      action: 'TECHNICIAN_UNASSIGNED',
+      before: { technicianId: target.technicianId, assignmentId: target.id },
+      after: { status: updatedWorkOrder.status, remainingAssignments: remaining },
+      requestId,
+    });
+
+    res.json({
+      success: true,
+      data: {
+        workOrder: updatedWorkOrder,
+        removedAssignmentId: target.id,
+        remainingAssignments: remaining,
+      },
+    });
+  } catch (err: any) {
+    logger.error('[ServiceCoordinator] unassign technician failed:', err.message);
+    res.status(500).json({ success: false, error: 'Could not remove the technician from this work order' });
   }
 });
 
@@ -698,6 +832,73 @@ router.post('/customers', idempotency, requireCoordinatorRole(['OWNER', 'COORDIN
     res.status(500).json({ success: false, error: 'Could not create customer' });
   }
 });
+
+// ── Predictive engine (§7) ────────────────────────────────────────────────
+
+/**
+ * POST /api/v1/coordinator/work-orders/:id/predict
+ * Point risk prediction for one work order.
+ *
+ * The body is empty; the work order is identified by the path and scoped by
+ * the session's businessId, never by anything the client sends.
+ */
+router.post(
+  '/work-orders/:id/predict',
+  requireCoordinatorRole(['OWNER', 'COORDINATOR', 'TECHNICIAN']),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const businessId = req.user!.businessId!;
+      const prediction = await predictWorkOrderRisk(req.params.id, businessId);
+
+      if (!prediction) {
+        return res.status(404).json({ success: false, error: 'Work order not found' });
+      }
+
+      res.json({ success: true, data: prediction });
+    } catch (err: any) {
+      logger.error('[ServiceCoordinator] risk prediction failed:', err.message);
+      res.status(500).json({ success: false, error: 'Could not score this work order' });
+    }
+  },
+);
+
+/**
+ * POST /api/v1/coordinator/work-orders/:id/simulate
+ * Counterfactual range for the what-if strip (§7.2).
+ *
+ * Returns p10/p50/p90 rather than a point estimate, plus `outOfRange` when a
+ * slider pushed a feature more than two standard deviations from the training
+ * mean — the UI greys the result rather than presenting it as a prediction.
+ */
+router.post(
+  '/work-orders/:id/simulate',
+  predictiveRateLimit,
+  requireCoordinatorRole(['OWNER', 'COORDINATOR']),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const parsed = simulateRiskSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          success: false,
+          error: 'That what-if change could not be read. Check the values and try again.',
+          details: parsed.error.issues.map((issue) => issue.message),
+        });
+      }
+
+      const businessId = req.user!.businessId!;
+      const simulation = await simulateWorkOrderRisk(req.params.id, businessId, parsed.data);
+
+      if (!simulation) {
+        return res.status(404).json({ success: false, error: 'Work order not found' });
+      }
+
+      res.json({ success: true, data: simulation });
+    } catch (err: any) {
+      logger.error('[ServiceCoordinator] risk simulation failed:', err.message);
+      res.status(500).json({ success: false, error: 'Could not run that what-if scenario' });
+    }
+  },
+);
 
 export default router;
 

@@ -41,6 +41,13 @@ export const assignWorkOrderSchema = z.object({
   notifyWhatsApp: z.boolean().default(true),
 }).strict();
 
+// 3b. Unassign Technician Schema — the real revert behind the command bar's Undo.
+// An omitted technicianId means "whoever is currently assigned".
+export const unassignWorkOrderSchema = z.object({
+  technicianId: z.string().min(1).optional(),
+  notifyWhatsApp: z.boolean().default(false),
+}).strict();
+
 // 4. Technician Completion Report Schema
 export const completeWorkOrderSchema = z.object({
   completionNotes: z.string().min(5).max(4000),
@@ -90,9 +97,30 @@ export const aiTriageSchema = z.object({
 export type CreateWorkOrderInput = z.infer<typeof createWorkOrderSchema>;
 export type UpdateWorkOrderInput = z.infer<typeof updateWorkOrderSchema>;
 export type AssignWorkOrderInput = z.infer<typeof assignWorkOrderSchema>;
+export type UnassignWorkOrderInput = z.infer<typeof unassignWorkOrderSchema>;
 export type CompleteWorkOrderInput = z.infer<typeof completeWorkOrderSchema>;
 export type CreateAttachmentInput = z.infer<typeof createAttachmentSchema>;
 export type CreateTechnicianInput = z.infer<typeof createTechnicianSchema>;
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
+// 10. Predictive Engine — Counterfactual Simulation Schema
+/**
+ * A perturbation is a per-feature delta in the feature's own units, so the
+ * what-if strip can say "move the start three hours later" as
+ * `{ lead_time_days: 0.125 }` without the client needing to know the model.
+ *
+ * `.strict()` so a typo in a slider name is rejected rather than silently
+ * ignored — a silently ignored slider looks exactly like a prediction that
+ * refused to move.
+ */
+export const simulateRiskSchema = z.object({
+  schedule_density: z.number().min(-50).max(50).optional(),
+  lead_time_days: z.number().min(-365).max(365).optional(),
+  issue_type_complexity: z.number().min(-1).max(1).optional(),
+  technician_skill_match: z.number().min(-1).max(1).optional(),
+  technician_experience_years: z.number().min(-50).max(50).optional(),
+}).strict();
+
+export type SimulateRiskInput = z.infer<typeof simulateRiskSchema>;
+
 export type AiTriageInput = z.infer<typeof aiTriageSchema>;
 

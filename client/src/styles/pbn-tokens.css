@@ -1,0 +1,163 @@
+/* ============================================================================
+   pbn-tokens.css — Pabandi "Service Coordinator" design tokens
+   ----------------------------------------------------------------------------
+   Scope: this file holds CUSTOM PROPERTIES and the two cross-cutting rules the
+   whole command surface depends on (focus rings, reduced motion). It does not
+   style components — that lives in coordinator-shell.css.
+
+   Imported globally from src/main.tsx. Importing it globally is what lets any
+   coordinator component pick up the same values without a CSS-in-JS runtime and
+   without each file redeclaring its own palette.
+
+   Two rules below are deliberately scoped to `.pbn-shell` / `.pbn-dialog`
+   rather than written as bare `button:focus { ... }`. A bare rule here would
+   restyle focus for every other module in the app (the warm-clay CRM, the
+   booking flow) — those modules own their own focus treatment, and silently
+   overriding it from a token file is how a design system becomes a bug source.
+   ========================================================================== */
+
+:root {
+  /* Background — deep ocean navy, not black */
+  --pbn-bg: #0a1118;
+  --pbn-bg-raised: #101a24;
+  --pbn-surface: rgba(255,255,255,0.03);
+  --pbn-surface-hover: rgba(255,255,255,0.06);
+  --pbn-border: rgba(255,255,255,0.08);
+  --pbn-border-strong: rgba(255,255,255,0.16);
+
+  /* Text */
+  --pbn-text: #e8eef4;
+  --pbn-text-muted: #8a9aa8;
+  /* --pbn-text-faint is ~3.4:1 on --pbn-bg: enough for the 3:1 UI-boundary and
+     large-text minimums, NOT enough for body text (4.5:1). Use it for
+     decorative strokes, placeholders and dashed empty-state borders only. All
+     reading text uses --pbn-text or --pbn-text-muted. */
+  --pbn-text-faint: #5a6a78;
+
+  /* Accent — one color for state, not decoration */
+  --pbn-accent: #4fd1c5;
+  --pbn-danger: #f87171;
+  --pbn-warn: #fbbf24;
+  --pbn-ok: #34d399;
+
+  /* Type */
+  --pbn-font-ui: 'Space Grotesk', system-ui, sans-serif;
+  --pbn-font-mono: 'Space Mono', ui-monospace, monospace;
+  --pbn-text-body: 14px/22px var(--pbn-font-ui);
+  --pbn-text-meta: 12px/18px var(--pbn-font-mono);
+
+  /* Spacing scale */
+  --pbn-space-1: 4px;
+  --pbn-space-2: 8px;
+  --pbn-space-3: 12px;
+  --pbn-space-4: 16px;
+  --pbn-space-5: 24px;
+  --pbn-space-6: 32px;
+
+  /* Radius */
+  --pbn-radius-sm: 6px;
+  --pbn-radius-md: 10px;
+  --pbn-radius-lg: 16px;
+
+  /* ── Derived tokens ────────────────────────────────────────────────────────
+     Not in the spec's list, but each one is a value the spec's surface rules
+     need and would otherwise be copy-pasted as a literal in several places.
+     ────────────────────────────────────────────────────────────────------- */
+
+  /* Text sitting ON the accent fill. #06231f on #4fd1c5 is ~10:1 — the same
+     contrast the accent has against the page background, so a filled button
+     does not flip to low contrast. */
+  --pbn-on-accent: #06231f;
+  /* Text sitting ON the danger fill. #2a0a0a on #f87171 is ~6.8:1. */
+  --pbn-on-danger: #2a0a0a;
+
+  /* Focus ring. A single definition so no component can accidentally ship a
+     different colour or, worse, `outline: none`. */
+  --pbn-focus-ring: 2px solid var(--pbn-accent);
+  --pbn-focus-ring-offset: 2px;
+
+  /* Motion is allowed on state transitions only (a chip changing status, the
+     rail collapsing). 150ms is short enough to read as instant but smooth
+     enough to convey causality. Everything is killed under reduced motion. */
+  --pbn-duration: 150ms;
+  --pbn-ease: cubic-bezier(0.25, 0.9, 0.35, 1);
+
+  /* Glass is permitted on the top bar and command bar only (see §2 of the
+     spec). Cards are matte, so no other surface sets a backdrop-filter. */
+  --pbn-glass: rgba(10, 17, 24, 0.72);
+  --pbn-glass-blur: blur(12px);
+
+  /* Pane metrics. The rail collapses to icon-only at this width; the inspector
+     becomes a full-screen sheet below the mobile breakpoint. */
+  --pbn-rail-width: 240px;
+  --pbn-rail-width-collapsed: 60px;
+  --pbn-inspector-width: 380px;
+  --pbn-breakpoint-mobile: 900px;
+
+  /* Z-index ladder. Only three rungs exist: rails/stream (0), tooltip (30),
+     dialog (50). Keeping the ladder this small makes stacking auditable. */
+  --pbn-z-tooltip: 30;
+  --pbn-z-dialog: 50;
+}
+
+/* ── Focus rings ────────────────────────────────────────────────────────────
+   "Focus rings visible at all times, never removed." `:focus-visible` rather
+   than `:focus` so a pointer click does not leave a ring stuck on the last
+   clicked control, while every keyboard focus still gets one. `:where(...)`
+   keeps specificity at zero so a component can override the ring style where
+   it genuinely needs to (e.g. a custom select) without fighting `!important`.
+   ────────────────────────────────────────────────────────────────────────── */
+.pbn-shell :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible,
+.pbn-dialog :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: var(--pbn-focus-ring);
+  outline-offset: var(--pbn-focus-ring-offset);
+}
+
+/* Belt and braces for engines that do not support :focus-visible: if focus
+   arrived by any means, the element must still show a ring rather than the
+   browser default being removed somewhere downstream. */
+.pbn-shell :where(a, button, input, select, textarea, summary, [tabindex]):focus,
+.pbn-dialog :where(a, button, input, select, textarea, summary, [tabindex]):focus {
+  outline: var(--pbn-focus-ring);
+  outline-offset: var(--pbn-focus-ring-offset);
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────────────
+   Every transition in the shell is a state transition, so the honest thing
+   under `prefers-reduced-motion: reduce` is to make them instantaneous rather
+   than deleting the state change. A chip still changes colour, the rail still
+   collapses — neither animates.                                            */
+@media (prefers-reduced-motion: reduce) {
+  .pbn-shell *,
+  .pbn-shell *::before,
+  .pbn-shell *::after,
+  .pbn-dialog *,
+  .pbn-dialog *::before,
+  .pbn-dialog *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Higher contrast ────────────────────────────────────────────────────────
+   `prefers-contrast: more` raises the border and secondary-text contrast
+   rather than switching palette, so the surface rules stay intact.         */
+@media (prefers-contrast: more) {
+  :root {
+    --pbn-border: rgba(255, 255, 255, 0.2);
+    --pbn-border-strong: rgba(255, 255, 255, 0.36);
+    --pbn-text-muted: #a9b9c7;
+    --pbn-text-faint: #7c8c9a;
+  }
+}
+
+/* ── Larger text ────────────────────────────────────────────────────────────
+   Toggled from the Help menu (Phase 5) and persisted in localStorage. Only
+   the body scale moves; the mono meta scale stays put so data columns do not
+   reflow. Padding in the inspector scales proportionally via the same custom
+   property — see `--pbn-inspector-pad` in coordinator-shell.css.           */
+html[data-pbn-text-size='large'] {
+  --pbn-text-body: 16px/26px var(--pbn-font-ui);
+}

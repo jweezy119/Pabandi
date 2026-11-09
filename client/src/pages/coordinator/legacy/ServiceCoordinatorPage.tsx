@@ -1,7 +1,18 @@
+/**
+ * LEGACY — pre-redesign Service Coordinator page.
+ *
+ * This file is kept, not deleted, because Phases 2–5 rebuild its behaviour
+ * (create-work-order form, assign dialog, completion flow, AI triage) inside
+ * the new three-pane command surface. It is no longer routed: `/coordinator`
+ * renders `../CoordinatorCommandSurface`.
+ *
+ * It is frozen reference material. Do not edit it to fix bugs in the new
+ * surface, and delete it once the new surface reaches feature parity.
+ */
 import { useState, useEffect, useCallback } from 'react';
-import DashboardLayout, { type NavItem } from '../../components/DashboardLayout';
-import { Breadcrumbs } from '../../components/Breadcrumbs';
-import { coordinatorService } from '../../services/api';
+import DashboardLayout, { type NavItem } from '../../../components/DashboardLayout';
+import { Breadcrumbs } from '../../../components/Breadcrumbs';
+import { coordinatorService } from '../../../services/api';
 
 const COORDINATOR_NAV: NavItem[] = [
   { path: '/contact', label: 'Dashboard', icon: 'dashboard' },
