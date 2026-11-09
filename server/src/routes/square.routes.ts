@@ -23,7 +23,7 @@ const router = Router();
 const SQUARE_APP_ID = process.env.SQUARE_APP_ID || '';
 const SQUARE_APP_SECRET = process.env.SQUARE_APP_SECRET || '';
 const SQUARE_ENV = (process.env.SQUARE_ENV || 'sandbox').toLowerCase();
-const API_URL = process.env.API_URL || 'https://api.pabandi.com';
+const API_URL = process.env.API_URL || 'https://pabandi.onrender.com';
 const CLIENT_URL = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://pabandi.com';
 const REDIRECT_URI = `${API_URL}/api/v1/square/callback`;
 
