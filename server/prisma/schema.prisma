@@ -41,6 +41,7 @@ enum AccountType {
 }
 
 enum InvoiceStatus {
+ NOT_READY
   draft
   sent
   paid
