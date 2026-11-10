@@ -119,8 +119,17 @@ export default defineConfig(({ mode }) => {
     }),
   ],
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
+    alias: [
+      { find: '@', replacement: path.resolve(__dirname, './src') },
+      { find: 'date-fns', replacement: path.resolve(__dirname, './node_modules/date-fns/index.js') },
+      {
+        find: /^react-aria\/(.*)$/,
+        replacement: `${path.resolve(__dirname, './node_modules/react-aria/dist/exports')}/$1.js`,
+      },
+      {
+        find: /^react-icons\/(.*)$/,
+        replacement: `${path.resolve(__dirname, './node_modules/react-icons')}/$1/index.js`,
+      },
       // The CRM's vocabulary — statuses, stages, priorities — is owned by the server,
       // because the server is what rejects anything outside those sets. The client
       // imports the same module rather than keeping its own copy: there were three
@@ -129,8 +138,8 @@ export default defineConfig(({ mode }) => {
       //
       // The target is a leaf module with no imports of its own, so nothing from the
       // server's dependency graph reaches the bundle.
-      '@shared': path.resolve(__dirname, '../server/src/domain'),
-    },
+      { find: '@shared', replacement: path.resolve(__dirname, '../server/src/domain') },
+    ],
   },
   server: {
     port: 3000,
