@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate, optionalAuthenticate } from '../middleware/auth.middleware';
 import { requireIdempotency } from '../middleware/idempotency.middleware';
 import { paymentRouter } from '../services/payment-router.service';
+import { paymentOrchestrator } from '../services/payment-orchestration/orchestrator.service';
 import { 
   createPaymentRequest, 
   getPaymentById, 
@@ -20,6 +21,57 @@ import {
 const router = Router();
 
 // ── Payment Routes ──────────────────────────────────────────────────────────
+
+// POST /api/v1/payments — Unified Open Payment Orchestration endpoint (Mode A)
+router.post('/', optionalAuthenticate, async (req: Request, res: Response) => {
+  try {
+    const { 
+      amount, 
+      currency = 'USD', 
+      reference = `ref_${Date.now()}`,
+      payer, 
+      payee, 
+      preferredRail = 'auto', 
+      requireSharia = false, 
+      isAgent = false,
+      webhookUrl, 
+      metadata 
+    } = req.body;
+
+    if (!amount || Number(amount) <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid amount. Must be greater than 0.',
+      });
+    }
+
+    const idempotencyKey = (req.headers['idempotency-key'] as string) || req.body.idempotencyKey;
+
+    const payment = await paymentOrchestrator.createPayment({
+      amount: Number(amount),
+      currency: String(currency).toUpperCase(),
+      reference: String(reference),
+      payer,
+      payee,
+      preferredRail,
+      requireSharia: Boolean(requireSharia),
+      isAgent: Boolean(isAgent),
+      webhookUrl,
+      metadata,
+      idempotencyKey,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: payment,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Payment orchestration failed',
+    });
+  }
+});
 
 // GET /api/v1/payments/recommend-rail — intelligent fee/speed comparison
 router.get('/recommend-rail', (req: Request, res: Response) => {

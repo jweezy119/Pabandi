@@ -383,6 +383,10 @@ const routeMap: [string, string][] = [
   [`/api/${v}/crypto`, './routes/crypto.routes'],
   [`/api/${v}/sharia-compliance`, './routes/compliance.routes'],
   [`/api/${v}/compliance`, './routes/compliance.routes'],
+  [`/api/${v}/orchestrator`, './routes/orchestration.routes'],
+  [`/api/${v}/connectors`, './routes/orchestration.routes'],
+  [`/api/${v}/agent`, './routes/orchestration.routes'],
+  [`/api/${v}/ledger`, './routes/orchestration.routes'],
   // REMOVED: `/api/${v}/whatsapp` -> './routes/whatsapp.routes'.
   //
   // That module does not exist. Because routes are mounted with `app.use`, which matches

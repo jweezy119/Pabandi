@@ -75,6 +75,10 @@ const X402_PRICE_USDC: Record<string, number> = {
   pabandi_discover: 0,
   pabandi_get_ledger: 0,
   pabandi_check_sharia_compliance: 0,
+  pabandi_get_payment_status: 0,
+  pabandi_list_payment_rails: 0,
+  pabandi_simulate_rail_routing: 0,
+  pabandi_create_payment_intent: 0.001,
   // Paid tools — priced per call.
   ...X402_PRICING,
 };
@@ -130,6 +134,60 @@ const ENGINE_TOOLS = [
     name: 'pabandi_check_sharia_compliance',
     description: 'Returns the Sharia compliance status, audit certificates, and prohibited feature flags for the Pabandi platform.',
     inputSchema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'pabandi_create_payment_intent',
+    description: 'Create an orchestrated, multi-rail payment request. Automatically selects optimal rail (Solana USDC, SBP Raast, Card, Mobile Money) with automatic failover, double-entry ledgering, and optional AAOIFI Sharia compliance.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        amount: { type: 'number', description: 'Amount to charge' },
+        currency: { type: 'string', description: 'Currency code (USD, PKR, USDC)' },
+        reference: { type: 'string', description: 'Order, booking, or external reference ID' },
+        preferredRail: { type: 'string', enum: ['auto', 'solana', 'raast', 'stripe', 'jazzcash'], description: 'Optional preferred rail' },
+        requireSharia: { type: 'boolean', description: 'Enforce Riba-free, 100% asset-backed Islamic Finance rail' },
+        payerWallet: { type: 'string', description: 'Optional Solana wallet of payer' },
+        payeeWallet: { type: 'string', description: 'Optional recipient wallet address' },
+        payeeRaastId: { type: 'string', description: 'Optional SBP Raast ID / phone of recipient' },
+      },
+      required: ['amount'],
+    },
+  },
+  {
+    name: 'pabandi_get_payment_status',
+    description: 'Query the lifecycle status, rail settlement confirmation, and ledger journal of an orchestrated payment by ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        paymentId: { type: 'string', description: 'The payment ID (e.g. pay_...)' },
+      },
+      required: ['paymentId'],
+    },
+  },
+  {
+    name: 'pabandi_list_payment_rails',
+    description: 'List all active payment rails with live fee comparisons, average settlement speed, supported currencies, and Sharia compliance status.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        currency: { type: 'string', description: 'Optional currency filter (USD, PKR, USDC)' },
+        requireSharia: { type: 'boolean', description: 'Filter only Sharia-compliant rails' },
+      },
+    },
+  },
+  {
+    name: 'pabandi_simulate_rail_routing',
+    description: 'Simulate dynamic routing across the 4-layer payment stack to evaluate cost, speed, failover cascade, and savings against conventional processors.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        amount: { type: 'number', description: 'Amount to evaluate' },
+        currency: { type: 'string', description: 'Currency code (USD, PKR, USDC)' },
+        isAgent: { type: 'boolean', description: 'Whether transaction is initiated by an AI agent' },
+        requireSharia: { type: 'boolean', description: 'Require Islamic Finance principles' },
+      },
+      required: ['amount'],
+    },
   },
   {
     name: 'pabandi_get_ledger',
@@ -1019,6 +1077,51 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
           },
           certificate_url: 'https://pabandi.com/sharia-compliance',
         };
+      case 'pabandi_create_payment_intent': {
+        const { paymentOrchestrator } = await import('../services/payment-orchestration/orchestrator.service');
+        return paymentOrchestrator.createPayment({
+          amount: Number(args.amount),
+          currency: (args.currency || 'USD').toUpperCase(),
+          reference: args.reference || `mcp_${Date.now()}`,
+          preferredRail: args.preferredRail || 'auto',
+          requireSharia: Boolean(args.requireSharia),
+          isAgent: true,
+          payer: args.payerWallet ? { wallet: args.payerWallet } : undefined,
+          payee: {
+            wallet: args.payeeWallet,
+            raastId: args.payeeRaastId,
+          },
+        });
+      }
+      case 'pabandi_get_payment_status': {
+        const { paymentOrchestrator } = await import('../services/payment-orchestration/orchestrator.service');
+        const payment = paymentOrchestrator.getPayment(args.paymentId);
+        if (!payment) {
+          throw new Error(`Payment with ID ${args.paymentId} not found`);
+        }
+        return payment;
+      }
+      case 'pabandi_list_payment_rails': {
+        const { connectorRegistry } = await import('../services/payment-orchestration/connectors');
+        const rails = connectorRegistry.getAll();
+        return rails.map((r) => ({
+          railId: r.railId,
+          name: r.name,
+          supportedCurrencies: r.supportedCurrencies,
+          isShariaCompliant: r.isShariaCompliant,
+          feePercent: r.defaultFeePercent,
+          fixedFeeUsd: r.fixedFeeUsd,
+          averageSpeed: r.averageSpeed,
+        }));
+      }
+      case 'pabandi_simulate_rail_routing': {
+        const { paymentRouter } = await import('../services/payment-router.service');
+        return paymentRouter.recommendRails({
+          amount: Number(args.amount),
+          currency: (args.currency || 'USD').toUpperCase(),
+          isAgent: Boolean(args.isAgent ?? true),
+        });
+      }
       case 'pabandi_open_session': {
         const { engineService } = await import('../services/engine.service');
         const { resolveTrustScore } = await import('../services/trust.service');

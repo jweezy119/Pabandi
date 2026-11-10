@@ -22,7 +22,13 @@
     "passport.issue",
     "passport.verify",
     "compliance.sharia",
-    "pabandi_check_sharia_compliance"
+    "pabandi_check_sharia_compliance",
+    "payment.orchestrate",
+    "payment.connectors",
+    "pabandi_create_payment_intent",
+    "pabandi_get_payment_status",
+    "pabandi_list_payment_rails",
+    "pabandi_simulate_rail_routing"
   ],
   "compliance": {
     "sharia": {
@@ -49,8 +55,13 @@
   "payment": {
     "schemes": [
       "x402",
-      "solana-usdc"
+      "mpp",
+      "openpayments",
+      "solana-usdc",
+      "raast"
     ],
+    "orchestrator_endpoint": "https://pabandi.onrender.com/api/v1/payments",
+    "connectors_endpoint": "https://pabandi.onrender.com/api/v1/connectors",
     "network": "solana",
     "currency": "USDC"
   },

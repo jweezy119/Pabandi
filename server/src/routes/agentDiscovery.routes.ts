@@ -4,6 +4,54 @@ import { apiLimiter } from '../middleware/rateLimit.middleware';
 
 const router = Router();
 
+router.get('/.well-known/agent.json', apiLimiter, (_req: Request, res: Response) => {
+  return res.json({
+    name: 'Pabandi Autonomous Settlement & Payment Network',
+    version: '2.0.0',
+    description: 'Payment Orchestration and Trust Abstraction Layer for AI Agents, domestic Pakistani rails, and Solana USDC',
+    url: 'https://pabandi.com',
+    mcpEndpoint: process.env.API_URL ? `${process.env.API_URL}/mcp` : 'https://pabandi.onrender.com/mcp',
+    protocols: [
+      {
+        name: 'x402',
+        version: '2.0',
+        standard: 'Machine Payments Protocol (MPP)',
+        supportedChains: ['solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'],
+        assets: ['EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'],
+      },
+      {
+        name: 'OpenPayments',
+        version: '1.0',
+        standard: 'Interledger / Account Servicing Entity compatible',
+      },
+      {
+        name: 'SolanaPay',
+        version: '1.0',
+        standard: 'solana: transfer specification',
+      },
+      {
+        name: 'Raast',
+        standard: 'State Bank of Pakistan ISO 20022 / Mojaloop Interoperable Rail',
+      },
+    ],
+    capabilities: [
+      'orchestrated_payments',
+      'sharia_compliance_verification',
+      'sub_second_escrow',
+      'zero_fee_remittance',
+      'http_402_micropayments',
+      'double_entry_ledger',
+    ],
+    endpoints: {
+      orchestrator: 'https://pabandi.onrender.com/api/v1/payments',
+      connectors: 'https://pabandi.onrender.com/api/v1/connectors',
+      recommendRail: 'https://pabandi.onrender.com/api/v1/payments/recommend-rail',
+      shariaCompliance: 'https://pabandi.onrender.com/api/v1/sharia-compliance',
+      agentMicropayments: 'https://pabandi.onrender.com/api/v1/agent/premium-resource',
+    },
+  });
+});
+
 router.get('/.well-known/agent-registry.json', apiLimiter, async (_req: Request, res: Response) => {
   try {
     const agents = await prisma.$queryRaw`

@@ -14,6 +14,7 @@ import {
   verifyPayLioPayment,
 } from '../services/payment.service';
 import { markInvoicePaid } from '../services/invoice.service';
+import { paymentOrchestrator } from '../services/payment-orchestration/orchestrator.service';
 import crypto from 'crypto';
 
 // Create a new crypto payment request
@@ -128,6 +129,13 @@ export const getPaymentById = async (
     });
 
     if (!payment) {
+      const orchestrated = paymentOrchestrator.getPayment(id);
+      if (orchestrated) {
+        return res.json({
+          success: true,
+          data: orchestrated,
+        });
+      }
       throw new CustomError('Payment not found', 404);
     }
 
@@ -164,6 +172,13 @@ export const verifyPayment = async (
     });
 
     if (!payment) {
+      const orchestrated = paymentOrchestrator.getPayment(id);
+      if (orchestrated) {
+        return res.json({
+          success: true,
+          data: orchestrated,
+        });
+      }
       throw new CustomError('Payment not found', 404);
     }
 
@@ -288,6 +303,13 @@ export const createEscrow = async (
 
     const payment = await prisma.cryptoPayment.findUnique({ where: { id: paymentId } });
     if (!payment) {
+      const orchestrated = paymentOrchestrator.getPayment(id);
+      if (orchestrated) {
+        return res.json({
+          success: true,
+          data: orchestrated,
+        });
+      }
       throw new CustomError('Payment not found', 404);
     }
 
@@ -464,6 +486,13 @@ export const getPaymentStatus = async (
     });
 
     if (!payment) {
+      const orchestrated = paymentOrchestrator.getPayment(id);
+      if (orchestrated) {
+        return res.json({
+          success: true,
+          data: orchestrated,
+        });
+      }
       throw new CustomError('Payment not found', 404);
     }
 
