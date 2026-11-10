@@ -323,7 +323,7 @@ export default function BusinessModelPage() {
             </div>
 
             <div className="p-4 bg-[var(--warm-sand)] rounded-xl border border-[rgba(191,179,163,0.3)]">
-              <h4 className="text-xs font-bold text-[var(--warm-ink)] uppercase tracking-wider mb-1">Halal Yield Redistribution</h4>
+              <h4 className="text-xs font-bold text-[var(--warm-ink)] uppercase tracking-wider mb-1">Halal Liquidity Provision & Mudarabah</h4>
               <p className="text-[11px] text-[var(--soft-stone)] leading-relaxed">
                 **20% of all API revenue** is pooled and distributed as Halal Staking rewards to stakers of the PAB utility token, aligning token holders with platform scaling.
               </p>

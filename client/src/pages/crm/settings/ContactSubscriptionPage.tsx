@@ -164,7 +164,7 @@ export default function ContactSubscriptionPage() {
         <div className="clay-heading pb-2">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Subscription & Billing</h1>
           <p className="text-sm text-[var(--soft-stone)] mt-0.5">
-            Your plan, your saas credit, and your next invoice. Credit earned from escrow yield pays here first.
+            Your plan, your saas credit, and your next invoice. Credit earned from escrow Mudarabah profit-share pays here first.
           </p>
         </div>
 
@@ -192,7 +192,7 @@ export default function ContactSubscriptionPage() {
             <h3 className="font-semibold text-[var(--warm-ink)] mb-1">SaaS credit balance</h3>
             <p className="text-2xl font-bold text-[var(--warm-ink)]">${creditBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             <p className="text-xs text-[var(--soft-stone)]">
-              Earned from Solana escrow yield. Applied to your subscription before you pay.
+              Earned from Solana escrow Mudarabah profit-share. Applied to your subscription before you pay.
             </p>
           </Card>
           <Card padding="lg" className="bg-white border border-[var(--soft-stone)]/30 shadow-[var(--shadow-soft)]">

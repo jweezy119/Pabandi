@@ -323,7 +323,7 @@ export default function ContactOSPage() {
                       ${(saasCreditReal ?? 0).toFixed(2)}
                     </p>
                   )}
-                  <p className="text-xs text-[var(--soft-stone)] mt-1">Earned from Solana escrow yield. Applies to your next subscription.</p>
+                  <p className="text-xs text-[var(--soft-stone)] mt-1">Earned from Solana escrow Mudarabah profit-share. Applies to your next subscription.</p>
                 </div>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--sage)] text-[var(--warm-ink)]">
                   <Wallet className="h-6 w-6" />

@@ -71,7 +71,7 @@ export const StakingInterface: React.FC = () => {
             Stake PAB
           </h1>
           <p className="mt-3 text-slate-400 max-w-2xl mx-auto">
-            Stake PAB tokens to earn yield, boost trust score, and unlock protocol benefits.
+            Stake PAB tokens to earn Mudarabah profit share, boost trust score, and unlock protocol benefits.
           </p>
         </div>
 

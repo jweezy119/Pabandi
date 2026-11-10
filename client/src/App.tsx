@@ -15,6 +15,8 @@ import { ClayToastProvider } from './components/primitives';
 // client and the layout shell are needed by almost every route, so splitting them would
 // add a waterfall without saving anything.
 const DeveloperPortalPage = lazy(() => import('./pages/DeveloperPortalPage'));
+const DevelopersPage = lazy(() => import('./pages/DevelopersPage'));
+const ImpactPage = lazy(() => import('./pages/ImpactPage'));
 const ShariaCompliancePage = lazy(() => import('./pages/ShariaCompliancePage'));
 const IamConsolePage = lazy(() => import('./pages/developer/IamConsolePage'));
 const AgentPaymentsPage = lazy(() => import('./pages/AgentPaymentsPage'));
@@ -70,7 +72,6 @@ const AdminRevenuePage = lazy(() => import('./pages/marketplace/AdminRevenuePage
 const IngestionPage = lazy(() => import('./pages/admin/IngestionPage'));
 const CompanyIntelPage = lazy(() => import('./pages/admin/CompanyIntelPage'));
 const WhatsAppAdminDashboard = lazy(() => import('./pages/admin/WhatsAppAdminDashboard'));
-const PluginManagerPage = lazy(() => import('./pages/PluginManagerPage').then((m) => ({ default: m.PluginManagerPage })));
 const DemoWalkthroughPage = lazy(() => import('./pages/DemoWalkthroughPage'));
 const AgentOnboardingPage = lazy(() => import('./pages/AgentOnboardingPage'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
@@ -280,6 +281,8 @@ function AnimatedAppRoutes() {
         <Route path="/compliance" element={<MerchantCompliancePage />} />
         <Route path="/pricing" element={<MerchantCompliancePage />} />
         <Route path="/sharia-compliance" element={<ShariaCompliancePage />} />
+        <Route path="/impact" element={<ImpactPage />} />
+        <Route path="/developers" element={<DevelopersPage />} />
         <Route element={<AppShellLayout />}>
             {/* /dashboard routes to the user's mode-appropriate dashboard
                 (Business → /contact, Personal → /me). It is never a
@@ -309,8 +312,11 @@ function AnimatedAppRoutes() {
           <Route path="booking/flow" element={<BookingFlowPage />} />
           <Route path="simulator" element={<SimulatorPage />} />
           <Route path="pay/:invoiceId" element={<PayInvoicePage />} />
+          <Route path="invoice/:id" element={<PayInvoicePage />} />
+          <Route path="invoice/:invoiceId" element={<PayInvoicePage />} />
 
           <Route path="coordinator" element={<BusinessGuard><CoordinatorCommandSurface /></BusinessGuard>} />
+          <Route path="coordinator/dispatch" element={<CoordinatorCommandSurface />} />
           <Route path="contact/coordinator" element={<BusinessGuard><CoordinatorCommandSurface /></BusinessGuard>} />
 
            {/* Contact OS - CRM & Sales */}
@@ -599,9 +605,8 @@ function AnimatedAppRoutes() {
             <Route path="forgot-password" element={<PlaceholderPage />} />
             <Route path="reset-password/:token" element={<PlaceholderPage />} />
 
-            {/* Developer / agent portal. Inside Layout so the dashboard chrome
-                stays, which is what a portal read after signup needs. */}
-            <Route path="developers" element={<DeveloperPortalPage />} />
+            {/* Developer / agent portal inside Layout */}
+            <Route path="developer-portal" element={<DeveloperPortalPage />} />
             <Route path="developer/iam" element={<IamConsolePage />} />
             <Route path="developers/iam" element={<IamConsolePage />} />
             <Route path="iam" element={<Navigate to="/developer/iam" replace />} />

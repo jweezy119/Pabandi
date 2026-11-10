@@ -17,6 +17,7 @@ import {
   Layers,
   Code2
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 import '../styles/pbn-tokens.css';
 
 // ── JSON-LD Structured Data Schema for AI Agents & Search Engines ─────────────
@@ -68,6 +69,7 @@ const MCP_RESPONSE_SNIPPET = `{
 const CURL_SNIPPET = `curl -s "https://pabandi.onrender.com/api/v1/sharia-compliance"`;
 
 export default function ShariaCompliancePage() {
+  const { language, setLanguage, isRTL, t } = useLanguage();
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [activeSnippetTab, setActiveSnippetTab] = useState<'mcp' | 'curl' | 'schema'>('mcp');
   const [showCertModal, setShowCertModal] = useState(false);
@@ -93,10 +95,13 @@ export default function ShariaCompliancePage() {
 
   return (
     <main 
-      className="min-h-screen text-[#e8eef4] selection:bg-[#4fd1c5] selection:text-[#0a1118]"
+      className={`min-h-screen text-[#e8eef4] selection:bg-[#4fd1c5] selection:text-[#0a1118] ${isRTL ? 'rtl' : 'ltr'}`}
+      dir={isRTL ? 'rtl' : 'ltr'}
       style={{
         backgroundColor: 'var(--pbn-bg, #0a1118)',
-        fontFamily: "var(--pbn-font-ui, 'Space Grotesk', system-ui, sans-serif)",
+        fontFamily: isRTL 
+          ? "'Noto Nastaliq Urdu', 'Space Grotesk', system-ui, sans-serif" 
+          : "var(--pbn-font-ui, 'Space Grotesk', system-ui, sans-serif)",
       }}
     >
       {/* ── Structured Data (JSON-LD) for Autonomous Agents & Web Crawlers ── */}
@@ -114,26 +119,52 @@ export default function ShariaCompliancePage() {
               className="inline-flex items-center gap-2 text-xs font-mono text-[#8a9aa8] hover:text-[#4fd1c5] transition-colors focus-visible:ring-2 focus-visible:ring-[#4fd1c5] focus-visible:outline-none rounded px-2 py-1"
               aria-label="Navigate back to home"
             >
-              <ArrowLeft size={14} />
-              <span>Pabandi Core</span>
+              <ArrowLeft size={14} className={isRTL ? 'rotate-180' : ''} />
+              <span>{t('Pabandi Core', 'پابندی کور')}</span>
             </Link>
             <span className="text-[rgba(255,255,255,0.16)] font-mono">/</span>
             <span className="text-xs font-mono text-[#4fd1c5] font-semibold tracking-wide uppercase">
-              Sharia Compliance
+              {t('Sharia Compliance', 'شرعی اصول و ضوابط')}
             </span>
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Language Switcher Pill */}
+            <div className="inline-flex items-center p-1 rounded-lg bg-white/[0.04] border border-white/10 text-xs font-mono">
+              <button
+                type="button"
+                onClick={() => setLanguage('EN')}
+                className={`px-2.5 py-1 rounded-md transition-all ${
+                  language === 'EN' 
+                    ? 'bg-[#4fd1c5] text-[#0a1118] font-bold' 
+                    : 'text-[#8a9aa8] hover:text-[#e8eef4]'
+                }`}
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage('UR')}
+                className={`px-2.5 py-1 rounded-md transition-all ${
+                  language === 'UR' 
+                    ? 'bg-[#4fd1c5] text-[#0a1118] font-bold font-sans' 
+                    : 'text-[#8a9aa8] hover:text-[#e8eef4]'
+                }`}
+              >
+                اردو
+              </button>
+            </div>
+
             <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono bg-emerald-950/60 text-emerald-400 border border-emerald-500/20">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>AAOIFI Standards Verified</span>
+              <span>{t('AAOIFI Standards Verified', 'آئی او آئی ایف آئی تصدیق شدہ')}</span>
             </div>
             <a
               href="#agent-panel"
               className="inline-flex items-center gap-1.5 text-xs font-mono text-[#8a9aa8] hover:text-[#e8eef4] bg-white/[0.04] border border-white/10 px-3 py-1.5 rounded-lg hover:border-[#4fd1c5]/40 transition-colors"
             >
               <Terminal size={13} className="text-[#4fd1c5]" />
-              <span className="hidden md:inline">Agent Verification</span>
+              <span className="hidden md:inline">{t('Agent Verification', 'ایجنٹ ویری فکیشن')}</span>
             </a>
           </div>
         </div>
@@ -147,18 +178,28 @@ export default function ShariaCompliancePage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center relative z-10 space-y-6">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono text-[#4fd1c5] bg-[#4fd1c5]/10 border border-[#4fd1c5]/30">
             <Scale size={14} />
-            <span>Islamic Finance Verification & Architectural Proof</span>
+            <span>{t('Islamic Finance Verification & Architectural Proof', 'اسلامی فنانس کے اصولوں کی تصدیق اور ثبوت')}</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#e8eef4] leading-[1.15]">
-            Finance without <span className="text-[#4fd1c5]">Riba</span>.<br />
-            Trust without <span className="text-[#4fd1c5]">Gharar</span>.
+            {language === 'UR' ? (
+              <>
+                سود (<span className="text-[#4fd1c5]">ربا</span>) سے پاک مالیات۔<br />
+                دھوکے (<span className="text-[#4fd1c5]">غرر</span>) سے پاک اعتماد۔
+              </>
+            ) : (
+              <>
+                Finance without <span className="text-[#4fd1c5]">Riba</span>.<br />
+                Trust without <span className="text-[#4fd1c5]">Gharar</span>.
+              </>
+            )}
           </h1>
 
           <p className="text-base sm:text-lg text-[#8a9aa8] max-w-2xl mx-auto font-normal leading-relaxed">
-            Pabandi is built from the ground up on ethical, non-custodial, and interest-free infrastructure. 
-            By aligning Solana Anchor smart contracts, deterministic escrow verification, and domestic zero-fee rails (Raast) 
-            with Islamic Finance standards, we eliminate usury, ambiguity, and speculation across every booking.
+            {t(
+              'Pabandi is built from the ground up on ethical, non-custodial, and interest-free infrastructure. By aligning Solana Anchor smart contracts, deterministic escrow verification, and domestic zero-fee rails (Raast) with Islamic Finance standards, we eliminate usury, ambiguity, and speculation across every booking.',
+              'پابندی کو مکمل طور پر غیر سودی، اخلاقی اور خود مختار انفراسٹرکچر پر بنایا گیا ہے۔ سولانا اینکر اسمارٹ معاہدوں، شفاف تصفیہ اور اسٹیٹ بینک کے بلاسود راست نیٹ ورک کے امتزاج سے ہم ربا، غرر اور جوئے کا مکمل خاتمہ کرتے ہیں۔'
+            )}
           </p>
 
           <div className="pt-2 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
@@ -168,38 +209,54 @@ export default function ShariaCompliancePage() {
               className="min-h-[48px] px-6 py-3 rounded-xl bg-[#4fd1c5] hover:bg-[#38b2ac] text-[#0a1118] font-bold text-sm inline-flex items-center gap-2.5 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#4fd1c5] focus-visible:outline-none"
             >
               <Download size={16} />
-              <span>Download Sharia Certificate (PDF)</span>
+              <span>{t('Download Sharia Certificate (PDF)', 'شرعی سرٹیفکیٹ ڈاؤن لوڈ کریں')}</span>
             </button>
 
             <a
               href="#pillars"
               className="min-h-[48px] px-6 py-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-[#e8eef4] border border-white/10 font-semibold text-sm inline-flex items-center gap-2 transition-colors focus-visible:ring-2 focus-visible:ring-[#4fd1c5] focus-visible:outline-none"
             >
-              <span>Explore The 3 Pillars</span>
+              <span>{t('Explore The 3 Pillars', '۳ بنیادی ستون دیکھیں')}</span>
             </a>
           </div>
 
           {/* Quick Metrics Strip */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-10 text-left">
             <div className="p-4 rounded-xl bg-[#101a24] border border-[rgba(255,255,255,0.08)]">
-              <span className="block text-[11px] font-mono text-[#8a9aa8] uppercase tracking-wider">Interest Rate</span>
+              <span className="block text-[11px] font-mono text-[#8a9aa8] uppercase tracking-wider">
+                {t('Interest Rate', 'شرح سود')}
+              </span>
               <span className="text-xl font-bold font-mono text-[#34d399] mt-0.5 block">0.00% Riba</span>
-              <span className="text-[11px] text-[#8a9aa8] mt-1 block">No yield lending or compounding</span>
+              <span className="text-[11px] text-[#8a9aa8] mt-1 block">
+                {t('No yield lending or compounding', 'کوئی سودی کمپاؤنڈنگ نہیں')}
+              </span>
             </div>
             <div className="p-4 rounded-xl bg-[#101a24] border border-[rgba(255,255,255,0.08)]">
-              <span className="block text-[11px] font-mono text-[#8a9aa8] uppercase tracking-wider">Underlying Value</span>
+              <span className="block text-[11px] font-mono text-[#8a9aa8] uppercase tracking-wider">
+                {t('Underlying Value', 'بنیادی اثاثہ')}
+              </span>
               <span className="text-xl font-bold font-mono text-[#e8eef4] mt-0.5 block">100% Asset-Backed</span>
-              <span className="text-[11px] text-[#8a9aa8] mt-1 block">1:1 Cash & USDC Escrow</span>
+              <span className="text-[11px] text-[#8a9aa8] mt-1 block">
+                {t('1:1 Cash & USDC Escrow', '۱:۱ محفوظ کیش اور یو ایس ڈی سی')}
+              </span>
             </div>
             <div className="p-4 rounded-xl bg-[#101a24] border border-[rgba(255,255,255,0.08)]">
-              <span className="block text-[11px] font-mono text-[#8a9aa8] uppercase tracking-wider">Execution Model</span>
+              <span className="block text-[11px] font-mono text-[#8a9aa8] uppercase tracking-wider">
+                {t('Execution Model', 'طریقہ کار')}
+              </span>
               <span className="text-xl font-bold font-mono text-[#4fd1c5] mt-0.5 block">Deterministic</span>
-              <span className="text-[11px] text-[#8a9aa8] mt-1 block">Zero Gharar in contracts</span>
+              <span className="text-[11px] text-[#8a9aa8] mt-1 block">
+                {t('Zero Gharar in contracts', 'معاہدوں میں مکمل شفافیت')}
+              </span>
             </div>
             <div className="p-4 rounded-xl bg-[#101a24] border border-[rgba(255,255,255,0.08)]">
-              <span className="block text-[11px] font-mono text-[#8a9aa8] uppercase tracking-wider">Tokenomics</span>
+              <span className="block text-[11px] font-mono text-[#8a9aa8] uppercase tracking-wider">
+                {t('Tokenomics', 'ٹوکن کا کردار')}
+              </span>
               <span className="text-xl font-bold font-mono text-[#fbbf24] mt-0.5 block">Utility-Only</span>
-              <span className="text-[11px] text-[#8a9aa8] mt-1 block">Earned via labor, not Maisir</span>
+              <span className="text-[11px] text-[#8a9aa8] mt-1 block">
+                {t('Earned via labor, not Maisir', 'محنت سے کمایا گیا، جوئے سے پاک')}
+              </span>
             </div>
           </div>
         </div>

@@ -1,5 +1,4 @@
 import { useAuthStore } from '../store/authStore';
-import { getAuthToken } from './authToken';
 /**
  * The one canonical way to read the session token.
  *

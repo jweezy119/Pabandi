@@ -81,7 +81,7 @@ export default function HomePage() {
             <div className="p-6 rounded-2xl bg-[var(--cream)] border border-[var(--soft-stone)]/30">
               <div className="w-12 h-12 rounded-xl bg-[var(--dusty-rose)]/20 flex items-center justify-center text-2xl mb-4">💰</div>
               <h3 className="text-xl font-bold mb-2">Earn $PAB</h3>
-              <p className="text-[var(--soft-stone)]">Every transaction earns you $PAB tokens. Stake for yield, spend for discounts, hold for governance.</p>
+              <p className="text-[var(--soft-stone)]">Every transaction earns you $PAB tokens. Stake for Mudarabah profit-sharing, spend for discounts, hold for governance.</p>
             </div>
           </div>
         </div>

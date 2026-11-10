@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { GUARANTEE_STEPS } from '../components/GuaranteeVisuals';
 import { useAuthStore } from '../store/authStore';
+import { useLanguage } from '../context/LanguageContext';
 import { LiveEscrowPreview } from '../components/landing/LiveEscrowPreview';
 import { apiClient } from '../services/api';
 
@@ -154,6 +155,7 @@ const JSON_LD_DATA = {
 export default function LandingPage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+  const { language, setLanguage, isRTL, t } = useLanguage();
   const landingRef = useRef<HTMLDivElement>(null);
 
   const [stats, setStats] = useState<PublicStats | null>(null);
@@ -178,12 +180,15 @@ export default function LandingPage() {
   const hasSubstantialStats = (stats?.businesses ?? 0) >= 10 || (stats?.escrowedUsd ?? 0) >= 1000;
 
   return (
-    <div className="landing" ref={landingRef}>
+    <div className={`landing ${isRTL ? 'landing-rtl' : ''}`} ref={landingRef} dir={isRTL ? 'rtl' : 'ltr'}>
       <Helmet>
-        <title>Pabandi — Guarantee Your Next Project. Pay Only When It's Done.</title>
+        <title>{t('Pabandi — Guarantee Your Next Project. Pay Only When It\'s Done.', 'پابندی — اپنے اگلے پروجیکٹ کی ضمانت دیں۔ کام مکمل ہونے پر ہی ادائیگی کریں۔')}</title>
         <meta
           name="description"
-          content="AI-powered trust scores, non-custodial escrow, and a full CRM for humans and AI agents. Stop no-shows, secure revenue, and let autonomous agents handle the rest."
+          content={t(
+            'AI-powered trust scores, non-custodial escrow, and a full CRM for humans and AI agents. Stop no-shows, secure revenue, and let autonomous agents handle the rest.',
+            'غیر سودی اسکرو، تصدیق شدہ ٹرسٹ اسکور، اور انسانوں و اے آئی ایجنٹس کے لیے مکمل سی آر ایم۔'
+          )}
         />
         <meta property="og:title" content="Pabandi — The Settlement & Trust Layer for Hybrid Commerce" />
         <meta
@@ -218,16 +223,56 @@ export default function LandingPage() {
             <span>PabandiOS</span>
           </Link>
           <nav className="nav-list" aria-label="Main">
-            <Link to="/contact">For Businesses</Link>
-            <Link to="/agents">For AI Developers</Link>
-            <Link to="/pricing">Pricing</Link>
-            <Link to="/p/estimate/demo">Live Demo</Link>
+            <Link to="/contact">{t('For Businesses', 'کاروبار کے لیے')}</Link>
+            <Link to="/agents">{t('For AI Developers', 'اے آئی ڈویلپرز')}</Link>
+            <Link to="/impact">{t('Financial Inclusion', 'معاشی شمولیت')}</Link>
+            <Link to="/sharia-compliance">{t('Sharia', 'شرعی اصول')}</Link>
+            <Link to="/pricing">{t('Pricing', 'قیمتیں')}</Link>
           </nav>
-          {isAuthenticated ? (
-            <Link to="/dashboard" className="cta-nav">Dashboard</Link>
-          ) : (
-            <Link to="/signup?module=contact" className="cta-nav">Get Started</Link>
-          )}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {/* Language Switcher Pill */}
+            <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.06)', borderRadius: '8px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <button
+                type="button"
+                onClick={() => setLanguage('EN')}
+                style={{
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: language === 'EN' ? 700 : 400,
+                  background: language === 'EN' ? '#C97B5A' : 'transparent',
+                  color: language === 'EN' ? '#fff' : '#8a9aa8',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage('UR')}
+                style={{
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: language === 'UR' ? 700 : 400,
+                  background: language === 'UR' ? '#C97B5A' : 'transparent',
+                  color: language === 'UR' ? '#fff' : '#8a9aa8',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                اردو
+              </button>
+            </div>
+
+            {isAuthenticated ? (
+              <Link to="/dashboard" className="cta-nav">{t('Dashboard', 'ڈیش بورڈ')}</Link>
+            ) : (
+              <Link to="/signup?module=contact" className="cta-nav">{t('Get Started', 'شروع کریں')}</Link>
+            )}
+          </div>
         </div>
       </header>
 
@@ -238,16 +283,34 @@ export default function LandingPage() {
             <div className="hero-inner">
               {/* Left Side: Pitch */}
               <div className="hero-content">
-                <p className="hero-kicker">THE SETTLEMENT & TRUST LAYER FOR HYBRID COMMERCE</p>
+                <p className="hero-kicker">
+                  {t(
+                    'THE SETTLEMENT & TRUST LAYER FOR HYBRID COMMERCE',
+                    'ہائبرڈ تجارت کے لیے تصفیہ اور اعتماد کا خود مختار نیٹ ورک'
+                  )}
+                </p>
                 <h1 id="hero-title" className="hero-title">
-                  <span className="word">Guarantee Your</span>{' '}
-                  <span className="word">Next Project.</span><br />
-                  <span className="word hero-accent">Pay Only When</span>{' '}
-                  <span className="word hero-accent">It's Done.</span>
+                  {language === 'UR' ? (
+                    <>
+                      <span className="word">اپنے اگلے پروجیکٹ کی</span>{' '}
+                      <span className="word">ضمانت دیں۔</span><br />
+                      <span className="word hero-accent">کام مکمل ہونے پر</span>{' '}
+                      <span className="word hero-accent">ادائیگی کریں۔</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="word">Guarantee Your</span>{' '}
+                      <span className="word">Next Project.</span><br />
+                      <span className="word hero-accent">Pay Only When</span>{' '}
+                      <span className="word hero-accent">It's Done.</span>
+                    </>
+                  )}
                 </h1>
                 <p className="hero-subtitle">
-                  AI-powered trust scores, non-custodial escrow, and a full CRM for humans and AI agents.
-                  Stop no-shows, secure revenue, and let autonomous agents handle the rest.
+                  {t(
+                    'AI-powered trust scores, non-custodial escrow, and a full CRM for humans and AI agents. Stop no-shows, secure revenue, and let autonomous agents handle the rest.',
+                    'اے آئی ٹرسٹ اسکور، غیر سودی اسکرو اور انسانوں و ایجنٹس کے لیے سی آر ایم۔ رقم کے ضیاع کو روکیں اور بغیر کسی خطرے کے سودوں کو محفوظ بنائیں۔'
+                  )}
                 </p>
 
                 <div className="hero-actions">
@@ -256,31 +319,31 @@ export default function LandingPage() {
                     onClick={() => navigate('/signup?module=contact')}
                     style={{ padding: '0.875rem 1.75rem', fontSize: '1rem', fontWeight: 700 }}
                   >
-                    Start Guaranteeing Bookings
+                    {t('Start Guaranteeing Bookings', 'بکنگ کی ضمانت شروع کریں')}
                   </MagneticButton>
                   <MagneticButton
                     className="btn btn-large btn-secondary"
                     onClick={() => navigate('/p/estimate/demo')}
                     style={{ padding: '0.875rem 1.5rem', fontSize: '1rem', fontWeight: 600 }}
                   >
-                    Run a Project Simulation →
+                    {t('Run a Project Simulation →', 'پروجیکٹ سمولیشن چلائیں ←')}
                   </MagneticButton>
                 </div>
 
                 {/* Trust Badges Row */}
                 <div className="hero-trust-row">
-                  <span>Settlement Rails:</span>
+                  <span>{t('Settlement Rails:', 'ادائیگی کے چینلز:')}</span>
                   <div className="hero-trust-badge">
                     <span>💳</span>
-                    <span>Square (USD Cards)</span>
+                    <span>Square (Cards)</span>
                   </div>
                   <div className="hero-trust-badge">
                     <span>🏦</span>
-                    <span>Safepay & Raast (PKR)</span>
+                    <span>Raast (0% Fee SBP)</span>
                   </div>
                   <div className="hero-trust-badge">
                     <span>⚡</span>
-                    <span>Solana Pay (USDC)</span>
+                    <span>Solana USDC Escrow</span>
                   </div>
                 </div>
               </div>
@@ -741,20 +804,46 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="footer">
-        <div className="container">
+        <div className="container" style={{ textAlign: 'center' }}>
           <div className="footer-brand">
             <span className="logo-mark">◈</span>
             <span>PabandiOS</span>
           </div>
           <p className="footer-tagline">The Settlement & Trust Layer for Service Businesses & AI Agents</p>
+          
+          <div style={{ margin: '0.75rem 0' }}>
+            <Link
+              to="/sharia-compliance"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '5px 14px',
+                borderRadius: '999px',
+                background: 'rgba(52, 211, 153, 0.12)',
+                border: '1px solid rgba(52, 211, 153, 0.3)',
+                color: '#34d399',
+                fontSize: '11px',
+                fontWeight: 600,
+                textDecoration: 'none',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <span style={{ fontSize: '9px' }}>●</span>
+              <span>Sharia Compliant · Audited by AAOIFI Standards</span>
+            </Link>
+          </div>
+
           <nav className="footer-nav" aria-label="Footer">
             <Link to="/guarantee">The Guarantee</Link>
+            <Link to="/impact">Financial Inclusion</Link>
+            <Link to="/sharia-compliance">Sharia Compliance</Link>
             <Link to="/pricing">Pricing</Link>
             <Link to="/compliance">Compliance & Refunds</Link>
             <Link to="/p/estimate/demo">Live Proposal Demo</Link>
             <Link to="/sandbox">See How Trust Works</Link>
             <Link to="/verify-trust">Verify Trust Passport</Link>
-            <Link to="/developers">Developers</Link>
+            <Link to="/developers">Developers & MCP</Link>
             <Link to="/agents">For AI Developers</Link>
             <Link to="/about">About</Link>
             <Link to="/privacy">Privacy</Link>

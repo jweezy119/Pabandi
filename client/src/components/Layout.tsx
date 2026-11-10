@@ -400,7 +400,7 @@ export default function Layout() {
                   <DropdownItem to="/wallet">Wallet</DropdownItem>
                   <DropdownItem to="/notifications">🔔 Notifications</DropdownItem>
                   <DropdownItem to="/loans">Halal DeFi</DropdownItem>
-                  <DropdownItem to="/mudarabah">💰 Mudarabah Yield</DropdownItem>
+                  <DropdownItem to="/mudarabah">💰 Mudarabah Profit Share</DropdownItem>
                   <DropdownItem to="/mudarabah/business">📊 Business Mudarabah</DropdownItem>
                   <DropdownItem to="/account-manager">Partner Portal</DropdownItem>
                   <DropdownItem to="/profile">Profile</DropdownItem>
@@ -484,9 +484,16 @@ export default function Layout() {
             </div>
             <div className="mt-8 pt-6 border-t border-[rgba(191,179,163,0.45)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--soft-stone)]">
               <p>© {new Date().getFullYear()} Pabandi Inc. Verified Trust Passports &amp; Programmable Escrow.</p>
-              <div className="flex items-center gap-4">
-                <Link to="/sharia-compliance" className="hover:text-[var(--terracotta)] transition-colors">Sharia &amp; Sulha Governance</Link>
-                <Link to="/developer" className="hover:text-[var(--terracotta)] transition-colors">Agent MCP &amp; API</Link>
+              <div className="flex flex-wrap items-center gap-4">
+                <Link
+                  to="/sharia-compliance"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950/10 text-emerald-700 border border-emerald-500/30 hover:border-emerald-600 transition-colors"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                  <span>Sharia Compliant · Audited by AAOIFI Standards</span>
+                </Link>
+                <Link to="/impact" className="hover:text-[var(--terracotta)] transition-colors">Financial Inclusion</Link>
+                <Link to="/developers" className="hover:text-[var(--terracotta)] transition-colors">Agent MCP &amp; API</Link>
               </div>
             </div>
           </div>
