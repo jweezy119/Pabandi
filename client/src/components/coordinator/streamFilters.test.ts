@@ -71,10 +71,22 @@ describe('filter helpers', () => {
   });
 
   it('compares a date against a day range', () => {
-    expect(isWithinRange(new Date('2026-11-09T09:00:00'), 'today')).toBe(true);
-    expect(isWithinRange(new Date('2026-11-10T09:00:00'), 'today')).toBe(false);
-    expect(isWithinRange(new Date('2026-11-10T09:00:00'), 'tomorrow')).toBe(true);
-    expect(isWithinRange(new Date('2026-11-14T09:00:00'), 'week')).toBe(true);
-    expect(isWithinRange(new Date('2026-11-20T09:00:00'), 'week')).toBe(false);
+    // Relative to "now", never a hardcoded date. An earlier version of this
+    // test used 2026-11-09 as "today", which made it pass on the day it was
+    // written and fail everywhere else — CI caught it the next day.
+    const daysFromNow = (days: number, hour = 9) => {
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      date.setHours(hour, 0, 0, 0);
+      return date;
+    };
+
+    expect(isWithinRange(daysFromNow(0), 'today')).toBe(true);
+    expect(isWithinRange(daysFromNow(1), 'today')).toBe(false);
+    expect(isWithinRange(daysFromNow(0), 'tomorrow')).toBe(false);
+    expect(isWithinRange(daysFromNow(1), 'tomorrow')).toBe(true);
+    expect(isWithinRange(daysFromNow(7), 'week')).toBe(true);
+    expect(isWithinRange(daysFromNow(8), 'week')).toBe(false);
+    expect(isWithinRange(daysFromNow(-1), 'week')).toBe(false);
   });
 });
