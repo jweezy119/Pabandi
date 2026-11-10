@@ -145,7 +145,6 @@
     "vitest": "^4.1.11"
   },
   "overrides": {
-    "uuid": "^8.3.2",
-    "xmldom": "npm:@xmldom/xmldom@0.8.10"
+    "uuid": "^8.3.2"
   }
 }

@@ -1,10 +1,11 @@
+import '@shopify/shopify-api/adapters/node';
 import { PaymentAdapter } from './types';
 import crypto from 'crypto';
 import { shopifyApi, ApiVersion } from '@shopify/shopify-api';
 
 const shopify = shopifyApi({
-  apiKey: process.env.SHOPIFY_API_KEY || '',
-  apiSecretKey: process.env.SHOPIFY_API_SECRET || '',
+  apiKey: process.env.SHOPIFY_API_KEY || 'shpat_placeholder_key',
+  apiSecretKey: process.env.SHOPIFY_API_SECRET || 'shpss_placeholder_secret',
   scopes: ['read_orders', 'write_orders', 'read_checkouts', 'write_checkouts'],
   hostName: process.env.SHOPIFY_HOST_NAME || 'localhost:5000',
   apiVersion: ApiVersion.January25,

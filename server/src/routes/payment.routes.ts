@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate, optionalAuthenticate } from '../middleware/auth.middleware';
 import { requireIdempotency } from '../middleware/idempotency.middleware';
+import { paymentRouter } from '../services/payment-router.service';
 import { 
   createPaymentRequest, 
   getPaymentById, 
@@ -19,6 +20,26 @@ import {
 const router = Router();
 
 // ── Payment Routes ──────────────────────────────────────────────────────────
+
+// GET /api/v1/payments/recommend-rail — intelligent fee/speed comparison
+router.get('/recommend-rail', (req: Request, res: Response) => {
+  const amount = Number(req.query.amount) || 100;
+  const currency = String(req.query.currency || 'USD');
+  const clientCountry = String(req.query.country || '');
+  const isAgent = req.query.isAgent === 'true';
+
+  const recommendations = paymentRouter.recommendRails({
+    amount,
+    currency,
+    clientCountry,
+    isAgent,
+  });
+
+  res.json({
+    success: true,
+    data: recommendations,
+  });
+});
 
 // POST /api/v1/payments/create — create payment request (USDC/BTCPay/Manual)
 router.post('/create', requireIdempotency, optionalAuthenticate, createPaymentRequest);

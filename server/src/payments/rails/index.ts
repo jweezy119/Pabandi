@@ -23,6 +23,7 @@ import { squareRail } from './square.rail';
 import { paypalRail } from './paypal.rail';
 import { safepayRail } from './safepay.rail';
 import { bankRail } from './bank.rail';
+import { raastRail } from './raast.rail';
 
 export const paymentRails: Record<string, PaymentRail> = {
   solana: solanaRail,
@@ -30,4 +31,5 @@ export const paymentRails: Record<string, PaymentRail> = {
   paypal: paypalRail,
   safepay: safepayRail,
   bank: bankRail,
+  raast: raastRail,
 };

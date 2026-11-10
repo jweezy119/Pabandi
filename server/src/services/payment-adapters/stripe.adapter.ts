@@ -2,7 +2,7 @@ import Stripe from 'stripe';
 import { PaymentAdapter } from './types';
 import crypto from 'crypto';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_mock_key');
 
 export class StripeAdapter implements PaymentAdapter {
   id = 'stripe';
