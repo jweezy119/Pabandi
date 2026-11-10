@@ -4,6 +4,7 @@ import { logger } from '../utils/logger';
 import { trustCore } from '../trust/trust-core';
 import { emailService } from '../services/email.service';
 import { apiLimiter, writeLimiter } from '../middleware/rateLimit.middleware';
+import { requireIdempotency } from '../middleware/idempotency.middleware';
 
 const router = Router();
 
@@ -154,7 +155,7 @@ router.post('/:invoiceId/pay', writeLimiter, async (req, res) => {
   }
 });
 
-router.post('/:invoiceId/claim-paid', async (req, res) => {
+router.post('/:invoiceId/claim-paid', requireIdempotency, async (req, res) => {
   try {
     const { invoiceId } = req.params;
     

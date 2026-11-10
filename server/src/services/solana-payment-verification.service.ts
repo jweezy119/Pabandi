@@ -1,44 +1,13 @@
 /**
- * On-chain verification for Solana payment webhooks.
+ * On-chain verification for Solana payment webhooks & escrow funding.
  *
- * ─── WHY THIS FILE EXISTS ───────────────────────────────────────────────────
- * Every other rail's webhook is authenticated by a shared secret: Square and
- * SafePay send an HMAC over the raw body, PayPal a certificate-backed
- * signature checked against PayPal's own endpoint. Solana has no equivalent,
- * because there is no second party — the payment IS a transaction on a public
- * ledger, and anyone can read it.
- *
- * The check that stood in for authentication was:
- *
- *   if (!/^[1-9A-HJ-NP-Za-km-z]{64,90}$/.test(signature)) reject
- *
- * which is a shape test on a string. The comment beside it claimed "the amount
- * must be confirmed against the chain before we trust it". It was not, and
- * nothing else confirmed it either. So the endpoint accepted any POST carrying
- * a 64-to-90-character base58 string and settled the invoice named in the body
- * — for any amount. The regex does not even require the correct length for a
- * real signature; it accepts things that cannot be one.
- *
- * The attack needed no chain access at all: `{"signature": <64 base58 chars>,
- * "amount": 150, "invoiceId": "..."}` was enough.
- *
- * ─── WHAT ACTUAL VERIFICATION MEANS HERE ────────────────────────────────────
- * Not "the signature is well-formed" but the three facts a payment depends on:
- *
- *   1. The transaction exists and is on the ledger.
- *   2. It did not fail. A transaction whose `meta.err` is set moved nothing.
- *   3. It moved the stated amount of an expected token, to an expected place.
- *
- * (3) is the part that matters and the part most often skipped. Existence plus
- * success is not enough: anyone can point us at a real, successful transaction
- * that moved money somewhere unrelated. The transfer has to be the one the
- * invoice is for, or it proves nothing about this payment.
- *
- * ─── FAILING CLOSED ────────────────────────────────────────────────────────
- * Every path here returns `ok: false` rather than throwing, and an unreachable
- * or unconfigured RPC is a rejection — not a skip. The safe reading of "we
- * could not check" is "we did not check", and on an endpoint whose job is to
- * move money that is the only safe default.
+ * Checks and enforces:
+ *  1. Signature length & base58 decoding (64 bytes).
+ *  2. Cluster presence with 'finalized' commitment.
+ *  3. `meta.err === null` (transaction succeeded without on-chain runtime error).
+ *  4. Mint address matches the exact USDC mint (`EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`).
+ *  5. Destination matches the specific Anchor escrow PDA / expected recipient.
+ *  6. Memo or reference instruction matches the expected workOrderId / invoiceId / reference.
  */
 
 import { Connection, type ParsedTransactionWithMeta } from '@solana/web3.js';
@@ -46,25 +15,35 @@ import bs58 from 'bs58';
 import { logger } from '../utils/logger';
 import { USDC_MINT_MAINNET, USDC_MINT_DEVNET } from './solanaEscrow/constants';
 
+export const EXACT_USDC_MAINNET = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+export const EXACT_USDC_DEVNET = USDC_MINT_DEVNET || '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU';
+
 /** A single SPL token movement recovered from a transaction. */
 export interface ObservedTransfer {
   mint: string;
   /** Token amount in the mint's base units (USDC has 6). */
   amount: number;
-  /** Base-unit amount rendered in whole tokens, for comparison and messages. */
+  /** Base-unit amount rendered in whole tokens. */
   amountTokens: number;
   destination: string;
   source: string;
 }
 
-/** Mints we will accept as settlement for an invoice. */
+/** Accepted settlement mints */
 const ACCEPTED_MINTS: Record<string, number> = {
-  [USDC_MINT_MAINNET]: 6,
-  [USDC_MINT_DEVNET]: 6,
+  [EXACT_USDC_MAINNET]: 6,
+  [EXACT_USDC_DEVNET]: 6,
 };
 
 export type SolanaVerification =
-  | { ok: true; signature: string; slot: number; transfers: ObservedTransfer[] }
+  | {
+      ok: true;
+      signature: string;
+      slot: number;
+      transfers: ObservedTransfer[];
+      memos: string[];
+      references: string[];
+    }
   | { ok: false; reason: string };
 
 function rpcUrl(): string {
@@ -72,39 +51,76 @@ function rpcUrl(): string {
 }
 
 let connection: Connection | null = null;
-function getConnection(): Connection | null {
+
+export function getConnection(): Connection | null {
   const url = rpcUrl();
   if (!url) return null;
-  // 'confirmed' is the right floor: 'processed' can still be rolled back by a
-  // failed leader, and 'final' adds latency for no benefit on a ledger that
-  // will not reorg beneath it. Mirrors the rest of the escrow SDK.
-  if (!connection) connection = new Connection(url, 'confirmed');
+  if (!connection) {
+    connection = new Connection(url, 'finalized');
+  }
   return connection;
 }
 
-/**
- * Reset the cached connection.
- *
- * Only needed when SOLANA_RPC_URL changes within a process — tests, mainly.
- * Exported rather than reached for because a module-level cache that cannot be
- * cleared is the kind of thing that makes a test suite lie.
- */
 export function resetVerificationConnection(): void {
   connection = null;
 }
 
-/** Decimal places for a mint's base unit. */
 function decimalsFor(mint: string): number | null {
   return ACCEPTED_MINTS[mint] ?? null;
 }
 
 /**
+ * Extracts memo text and reference keys from outer and inner instructions.
+ */
+export function extractMemosAndReferences(tx: ParsedTransactionWithMeta): {
+  memos: string[];
+  references: string[];
+} {
+  const memos: string[] = [];
+  const references: string[] = [];
+
+  // 1. Account keys in transaction message
+  const accountKeys = tx.transaction.message.accountKeys || [];
+  for (const acc of accountKeys) {
+    const pubkey = typeof acc === 'string' ? acc : acc.pubkey?.toString();
+    if (pubkey) references.push(pubkey);
+  }
+
+  // 2. Helper to extract memos from instructions
+  const checkInstruction = (ix: any) => {
+    if (!ix) return;
+    const program = ix.program || '';
+    const programId = ix.programId?.toString() || '';
+
+    // SPL Memo program
+    if (
+      program === 'spl-memo' ||
+      programId === 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr' ||
+      programId === 'Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo'
+    ) {
+      if (typeof ix.parsed === 'string') {
+        memos.push(ix.parsed);
+      } else if (ix.parsed?.info?.memo) {
+        memos.push(String(ix.parsed.info.memo));
+      }
+    }
+  };
+
+  for (const ix of tx.transaction.message.instructions) {
+    checkInstruction(ix);
+  }
+
+  for (const group of tx.meta?.innerInstructions ?? []) {
+    for (const ix of group.instructions) {
+      checkInstruction(ix);
+    }
+  }
+
+  return { memos, references };
+}
+
+/**
  * Recover every SPL token movement in a parsed transaction.
- *
- * Looks at outer instructions AND inner instructions, because a transfer
- * wrapped in a token program still appears as an inner instruction once
- * executed. Reading only the outer list misses every wrapped transfer, which is
- * a large fraction of real ones.
  */
 export function extractTransfers(tx: ParsedTransactionWithMeta): ObservedTransfer[] {
   const found: ObservedTransfer[] = [];
@@ -115,20 +131,16 @@ export function extractTransfers(tx: ParsedTransactionWithMeta): ObservedTransfe
       program?: string;
       parsed?: { type?: string; info?: Record<string, unknown> };
     };
-    // Only SPL-token instructions carry a transfer we can attribute to an
-    // amount. System-program moves of SOL are not invoice settlement.
+
     if (parsed.program !== 'spl-token' && parsed.program !== 'spl-token-2022') return;
     const type = parsed.parsed?.type;
     if (type !== 'transfer' && type !== 'transferChecked') return;
 
     const info = parsed.parsed?.info ?? {};
-    const mint = typeof info.mint === 'string' ? info.mint : USDC_MINT_MAINNET;
+    const mint = typeof info.mint === 'string' ? info.mint : EXACT_USDC_MAINNET;
     const decimals = decimalsFor(mint);
-    if (decimals === null) return; // Not a settlement mint.
+    if (decimals === null) return; // Reject any mint not strictly in accepted USDC mints
 
-    // `amount` is the base-unit string on both transfer and transferChecked.
-    // `uiAmountString` is only present on the nested tokenAmount form, so it is
-    // read through a narrowed record rather than assumed.
     const tokenAmount = (info.tokenAmount ?? {}) as Record<string, unknown>;
     const raw = Number(info.amount ?? tokenAmount.uiAmountString ?? NaN);
     if (!Number.isFinite(raw) || raw <= 0) return;
@@ -155,55 +167,42 @@ export function extractTransfers(tx: ParsedTransactionWithMeta): ObservedTransfe
 
 export interface VerifyOptions {
   signature: string;
-  /**
-   * Require the transaction to have SUCCEEDED.
-   *
-   * True for a payment claim, and false only for a `payment.failed` report.
-   * That distinction matters: a genuinely failed transaction has `meta.err`
-   * set, so verifying a failure report with the settlement rules would reject
-   * every real decline and the retry would never fire.
-   *
-   * Existence is still checked either way, and that is the part that matters
-   * for failures. A forged failure is not harmless — each one spends one of
-   * the client's retries, so an attacker who can invent them can burn the
-   * budget before the real payment is ever given a second chance.
-   */
   requireSuccess?: boolean;
-  /**
-   * The amount the caller claims. Checked against the chain rather than
-   * trusted — this is the field an attacker controls.
-   */
   claimedAmount?: number | null;
-  /**
-   * Expected recipient. When given, a transfer to anywhere else does not
-   * count as settlement.
-   */
+  /** Expected recipient / Escrow Vault PDA */
   expectedRecipient?: string | null;
+  /** Specific Anchor Escrow PDA */
+  expectedEscrowPda?: string | null;
+  /** Work order ID, invoice ID, or reference note */
+  expectedReference?: string | null;
+  /** Optional override for commitment level (defaults to 'finalized') */
+  commitment?: 'confirmed' | 'finalized';
 }
 
 /**
- * Verify that a signature is a real, successful transfer of an accepted token.
- *
- * Returns the observed transfers on success so the caller can decide whether
- * the destination is acceptable — the webhook knows which business it belongs
- * to, this function does not.
+ * Hardened Solana verification service.
+ * Enforces finality, non-error status, exact USDC mint, Anchor escrow PDA, and memo matching.
  */
 export async function verifySolanaPayment(options: VerifyOptions): Promise<SolanaVerification> {
-  const { signature, claimedAmount, expectedRecipient } = options;
+  const {
+    signature,
+    claimedAmount,
+    expectedRecipient,
+    expectedEscrowPda,
+    expectedReference,
+    commitment = 'finalized',
+  } = options;
   const requireSuccess = options.requireSuccess !== false;
 
   const conn = getConnection();
   if (!conn) {
-    return { ok: false, reason: 'SOLANA_RPC_URL is not configured, so Solana payments cannot be verified' };
+    return {
+      ok: false,
+      reason: 'SOLANA_RPC_URL is not configured, so Solana payments cannot be verified',
+    };
   }
 
-  // Decoded rather than pattern-matched, because the length check is the whole
-  // point. A signature is 64 bytes; a public key is 32. The regex this replaced
-  // accepted anything from 64 to 90 characters, which includes lengths that
-  // cannot be either.
-  //
-  // Nothing is constructed from the value here — a transaction signature is
-  // not an address, and `new PublicKey(signature)` would reject every real one.
+  // 1. Signature structure validation
   try {
     if (bs58.decode(signature).length !== 64) {
       return { ok: false, reason: 'signature is not a valid Solana transaction signature' };
@@ -212,57 +211,80 @@ export async function verifySolanaPayment(options: VerifyOptions): Promise<Solan
     return { ok: false, reason: 'signature is not a valid Solana transaction signature' };
   }
 
+  // 2. Fetch transaction at finalized commitment
   let tx: ParsedTransactionWithMeta | null;
   try {
     tx = await conn.getParsedTransaction(signature, {
       maxSupportedTransactionVersion: 0,
-      commitment: 'confirmed',
+      commitment,
     });
   } catch (err) {
-    // An RPC error is a failure to verify, not a verification.
     logger.warn(`[SolanaVerify] RPC error fetching ${signature}: ${String(err)}`);
     return { ok: false, reason: 'could not fetch the transaction from the cluster' };
   }
 
   if (!tx) {
-    // The important case. A well-formed signature that is not on the ledger is
-    // exactly what the old shape test let through.
-    return { ok: false, reason: 'no such transaction on the cluster' };
+    return { ok: false, reason: 'no such transaction found on the cluster at finalized commitment' };
   }
 
-  if (requireSuccess && tx.meta?.err) {
-    return { ok: false, reason: `transaction failed on chain: ${JSON.stringify(tx.meta.err)}` };
+  // 3. Strict failure check: meta.err must be null
+  if (requireSuccess && tx.meta?.err !== null && tx.meta?.err !== undefined) {
+    return {
+      ok: false,
+      reason: `transaction failed on-chain with error: ${JSON.stringify(tx.meta.err)}`,
+    };
   }
+
+  const { memos, references } = extractMemosAndReferences(tx);
 
   if (!requireSuccess) {
-    // A failure report has no transfer to inspect — that is the whole point —
-    // so existence is the entire check. Returned with an empty transfer list
-    // so callers can tell "verified, nothing moved" from "not verified".
-    return { ok: true, signature, slot: tx.slot, transfers: [] };
+    return {
+      ok: true,
+      signature,
+      slot: tx.slot,
+      transfers: [],
+      memos,
+      references,
+    };
   }
 
+  // 4. Token transfers verification
   const transfers = extractTransfers(tx);
   if (transfers.length === 0) {
-    return { ok: false, reason: 'transaction contains no accepted token transfer' };
+    return { ok: false, reason: 'transaction contains no verified USDC transfer' };
   }
 
-  const matching = expectedRecipient
-    ? transfers.filter((t) => t.destination === expectedRecipient)
+  // 5. Verify mint is strictly accepted USDC mint
+  const hasValidMint = transfers.some(
+    (t) => t.mint === EXACT_USDC_MAINNET || t.mint === EXACT_USDC_DEVNET
+  );
+  if (!hasValidMint) {
+    return {
+      ok: false,
+      reason: `transfer mint does not match exact USDC mint (${EXACT_USDC_MAINNET})`,
+    };
+  }
+
+  // 6. Destination enforcement: Match specific Anchor escrow PDA or expected recipient
+  const targetRecipient = expectedEscrowPda || expectedRecipient;
+  const matchingTransfers = targetRecipient
+    ? transfers.filter((t) => t.destination === targetRecipient)
     : transfers;
 
-  if (matching.length === 0) {
-    return { ok: false, reason: `no transfer to the expected recipient ${expectedRecipient}` };
+  if (matchingTransfers.length === 0) {
+    return {
+      ok: false,
+      reason: `no transfer directed to expected escrow destination ${targetRecipient}`,
+    };
   }
 
+  // 7. Amount verification with 1-cent tolerance
   if (claimedAmount != null && Number.isFinite(claimedAmount) && claimedAmount > 0) {
-    // One-cent tolerance, matching the reconciliation matcher. Stricter here
-    // than at matching time would reject payments that reconciliation would
-    // happily accept, which is the wrong direction for a security check.
-    const matchesAmount = matching.some(
-      (t) => Math.abs(t.amountTokens - claimedAmount) <= Math.max(0.01, claimedAmount * 0.01),
+    const matchesAmount = matchingTransfers.some(
+      (t) => Math.abs(t.amountTokens - claimedAmount) <= Math.max(0.01, claimedAmount * 0.01)
     );
     if (!matchesAmount) {
-      const observed = matching.map((t) => t.amountTokens).join(', ');
+      const observed = matchingTransfers.map((t) => t.amountTokens).join(', ');
       return {
         ok: false,
         reason: `no transfer matches the claimed amount of ${claimedAmount} (observed: ${observed})`,
@@ -270,5 +292,26 @@ export async function verifySolanaPayment(options: VerifyOptions): Promise<Solan
     }
   }
 
-  return { ok: true, signature, slot: tx.slot, transfers: matching };
+  // 8. Memo / Reference match enforcement
+  if (expectedReference) {
+    const refClean = expectedReference.trim().toLowerCase();
+    const memoMatch = memos.some((m) => m.toLowerCase().includes(refClean));
+    const keyMatch = references.some((r) => r.toLowerCase() === refClean);
+
+    if (!memoMatch && !keyMatch) {
+      return {
+        ok: false,
+        reason: `transaction lacks required reference or memo matching '${expectedReference}'`,
+      };
+    }
+  }
+
+  return {
+    ok: true,
+    signature,
+    slot: tx.slot,
+    transfers: matchingTransfers,
+    memos,
+    references,
+  };
 }

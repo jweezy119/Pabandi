@@ -177,11 +177,11 @@ export default function PayInvoicePage() {
           ) : (
             <>
               <Button variant="primary" onClick={handlePayClick} style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}>
-                💳 Pay {invoice?.subtotal} {invoice?.currency || 'USD'} (Square / Solana Pay)
+                💳 Pay {invoice?.subtotal} {invoice?.currency || 'USD'} (Card / Solana / Raast)
               </Button>
               
               <Button variant="outline" onClick={handleClaimPaid} disabled={claiming} style={{ width: '100%', padding: '1rem' }}>
-                {claiming ? '⏳ Updating...' : "I've Paid"}
+                {claiming ? '⏳ Updating...' : "I've Paid Directly"}
               </Button>
             </>
           )}
@@ -198,6 +198,15 @@ export default function PayInvoicePage() {
             referenceId={`inv-${invoice.id}`}
             squareNote={`pabandi:invoice:${invoice.id}:${invoice.number || invoice.id}`}
             existingPaymentLink={invoice.paymentLink}
+            recipientWallet={invoice.business?.solanaWallet || invoice.business?.walletAddress}
+            merchantRaastId={invoice.business?.raastId || invoice.business?.phone}
+            merchantJazzCash={invoice.business?.phone}
+            merchantEasyPaisa={invoice.business?.phone}
+            onSuccess={(rail) => {
+              if (rail === 'raast' || rail === 'wallets') {
+                setInvoice((prev: any) => ({ ...prev, status: 'payment_claimed' }));
+              }
+            }}
           />
         )}
 

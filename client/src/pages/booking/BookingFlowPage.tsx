@@ -124,7 +124,7 @@ export default function BookingFlowPage() {
                 variant="primary"
                 className="w-full py-2.5"
               >
-                💳 Fund ${depositAmount.toFixed(2)} Deposit (Square / Solana Pay)
+                💳 Fund ${depositAmount.toFixed(2)} Deposit (Card / Solana / Raast)
               </ClayButton>
               <PabandiCheckoutModal
                 open={checkoutOpen}
@@ -136,6 +136,10 @@ export default function BookingFlowPage() {
                 referenceId={`booking-${success.bookingId}`}
                 squareNote={`pabandi:booking:${success.bookingId}`}
                 customerEmail={user?.email}
+                merchantRaastId={selectedBusiness?.raastId || selectedBusiness?.phone}
+                merchantJazzCash={selectedBusiness?.phone}
+                merchantEasyPaisa={selectedBusiness?.phone}
+                recipientWallet={selectedBusiness?.solanaWallet || selectedBusiness?.walletAddress}
               />
             </div>
           )}

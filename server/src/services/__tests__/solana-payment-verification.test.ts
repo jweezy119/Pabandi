@@ -361,4 +361,64 @@ describe('verifySolanaPayment', () => {
     const result = await verify({ signature: 'nope', requireSuccess: false });
     expect(result.ok).toBe(false);
   });
+
+  // ── Hardened Verification Checks ──────────────────────────────────────────
+
+  it('enforces memo or reference matching when expectedReference is provided', async () => {
+    const memoInstruction = {
+      program: 'spl-memo',
+      parsed: 'pabandi:invoice:inv_9999',
+    };
+    getParsedTransaction.mockResolvedValue(
+      txWith([
+        transferInstruction({ amount: '150000000', destination: DESTINATION }),
+        memoInstruction,
+      ])
+    );
+    const { verifySolanaPayment: verify } = await service();
+
+    // Matching reference
+    const okResult = await verify({
+      signature: SIGNATURE,
+      claimedAmount: 150,
+      expectedReference: 'inv_9999',
+    });
+    expect(okResult.ok).toBe(true);
+
+    // Mismatched reference
+    const badResult = await verify({
+      signature: SIGNATURE,
+      claimedAmount: 150,
+      expectedReference: 'wrong_ref_123',
+    });
+    expect(badResult.ok).toBe(false);
+    if (!badResult.ok) {
+      expect(badResult.reason).toMatch(/lacks required reference/);
+    }
+  });
+
+  it('enforces specific Anchor escrow PDA destination matching', async () => {
+    const ESCROW_PDA = 'EscrowVaultPDA111111111111111111111111111111';
+    getParsedTransaction.mockResolvedValue(
+      txWith([transferInstruction({ amount: '150000000', destination: ESCROW_PDA })])
+    );
+    const { verifySolanaPayment: verify } = await service();
+
+    const okResult = await verify({
+      signature: SIGNATURE,
+      claimedAmount: 150,
+      expectedEscrowPda: ESCROW_PDA,
+    });
+    expect(okResult.ok).toBe(true);
+
+    const badResult = await verify({
+      signature: SIGNATURE,
+      claimedAmount: 150,
+      expectedEscrowPda: DESTINATION, // expected DESTINATION, but transfer went to ESCROW_PDA
+    });
+    expect(badResult.ok).toBe(false);
+    if (!badResult.ok) {
+      expect(badResult.reason).toMatch(/no transfer directed to expected escrow destination/);
+    }
+  });
 });

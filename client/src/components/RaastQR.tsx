@@ -1,44 +1,53 @@
 import React from 'react';
+import { SecureQRCode } from './SecureQRCode';
 
-interface RaastQRProps {
+export interface RaastQRProps {
   amount: number;
   merchantId: string;
   description?: string;
+  reference?: string;
 }
 
-export const RaastQR: React.FC<RaastQRProps> = ({ amount, merchantId }) => {
+export const RaastQR: React.FC<RaastQRProps> = ({ amount, merchantId, description, reference }) => {
+  const raastPayload = `raast:${merchantId}?amount=${amount}${reference ? `&ref=${encodeURIComponent(reference)}` : ''}`;
+
   return (
-    <div style={{
-      padding: '16px',
-      borderRadius: 8,
-      background: 'rgba(20,241,149,0.05)',
-      border: '1px solid rgba(20,241,149,0.1)',
-      textAlign: 'center',
-    }}>
-      <p style={{ color: '#14f195', fontSize: 12, fontWeight: 600, margin: '0 0 8px' }}>
-        RAAST PAYMENT
-      </p>
-      <div style={{
-        width: 120,
-        height: 120,
-        margin: '0 auto 8px',
-        background: '#fff',
-        borderRadius: 8,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        <span style={{ fontSize: 40, color: '#000' }}>{'\u{1F4F1}'}</span>
+    <div
+      role="region"
+      aria-label="Raast Payment QR Code"
+      className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 text-center space-y-3"
+    >
+      <div className="flex items-center justify-between text-xs font-bold text-emerald-800">
+        <span>RAAST INSTANT PAYMENT</span>
+        <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">0% Fee</span>
       </div>
-      <p style={{ color: '#e2e8f0', fontSize: 13, margin: '0 0 4px' }}>
-        Amount: <span style={{ color: '#14f195', fontWeight: 600 }}>Rs. {amount.toLocaleString()}</span>
-      </p>
-      <p style={{ color: '#64748b', fontSize: 11, margin: '0 auto', maxWidth: 200 }}>
-        Merchant: {merchantId}
-      </p>
-      <p style={{ color: '#64748b', fontSize: 11, margin: '4px 0 0' }}>
-        Scan with any bank app or JazzCash
-      </p>
+
+      <div className="flex justify-center">
+        <SecureQRCode
+          value={raastPayload}
+          size={140}
+          label="Scan with any banking app supporting Raast"
+        />
+      </div>
+
+      <div className="text-xs space-y-1 text-[#2A2520]">
+        <p>
+          Amount: <span className="font-bold text-emerald-700">Rs. {amount.toLocaleString()} PKR</span>
+        </p>
+        <p className="text-[11px] text-[#5C5248] font-mono">
+          Merchant: {merchantId}
+        </p>
+        {reference && (
+          <p className="text-[11px] text-[#C97B5A] font-mono">
+            Ref: {reference}
+          </p>
+        )}
+        {description && (
+          <p className="text-[11px] text-[#5C5248]">
+            {description}
+          </p>
+        )}
+      </div>
     </div>
   );
 };

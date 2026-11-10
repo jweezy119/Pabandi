@@ -6,6 +6,7 @@ import { aiPaymentVerifierService } from '../services/ai.payment.verifier.servic
 import { releaseEscrowToBusiness } from '../services/booking.service';
 import multer from 'multer';
 import { uploadSecurity } from '../middleware/uploadSecurity';
+import { requireIdempotency } from '../middleware/idempotency.middleware';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
@@ -15,7 +16,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 *
  * Upload a Raast payment screenshot for AI verification.
  * Body: multipart/form-data with 'screenshot' file, 'reference', 'amount'
  */
-router.post('/verify', authenticate, upload.single('screenshot'), uploadSecurity, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/verify', requireIdempotency, authenticate, upload.single('screenshot'), uploadSecurity, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { reference, amount } = req.body;
     if (!reference || !amount) {

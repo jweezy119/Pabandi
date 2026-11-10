@@ -8887,3 +8887,18 @@ enum Priority {
   URGENT
   ROUTINE
 }
+
+model PaymentIdempotencyRecord {
+  id           String   @id @default(uuid())
+  key          String   @unique
+  requestHash  String
+  status       String   // 'processing' | 'completed' | 'failed'
+  statusCode   Int?
+  responseBody Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  expiresAt    DateTime
+
+  @@index([key])
+  @@index([expiresAt])
+}

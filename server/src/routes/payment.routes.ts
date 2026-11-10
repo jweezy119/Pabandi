@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate, optionalAuthenticate } from '../middleware/auth.middleware';
+import { requireIdempotency } from '../middleware/idempotency.middleware';
 import { 
   createPaymentRequest, 
   getPaymentById, 
@@ -20,7 +21,7 @@ const router = Router();
 // ── Payment Routes ──────────────────────────────────────────────────────────
 
 // POST /api/v1/payments/create — create payment request (USDC/BTCPay/Manual)
-router.post('/create', optionalAuthenticate, createPaymentRequest);
+router.post('/create', requireIdempotency, optionalAuthenticate, createPaymentRequest);
 
 // GET /api/v1/payments/:id/status — check payment status
 router.get('/:id/status', optionalAuthenticate, getPaymentStatus);
@@ -43,16 +44,16 @@ router.post('/webhook/paylio', processPayLioWebhook);
 // ── Escrow Routes ───────────────────────────────────────────────────────────
 
 // POST /api/v1/payments/escrow/create — create escrow
-router.post('/escrow/create', authenticate, createEscrow);
+router.post('/escrow/create', requireIdempotency, authenticate, createEscrow);
 
 // GET /api/v1/payments/escrow/:id — get escrow details
 router.get('/escrow/:id', authenticate, getEscrowById);
 
 // POST /api/v1/payments/escrow/:id/release — release escrow
-router.post('/escrow/:id/release', authenticate, releaseEscrow);
+router.post('/escrow/:id/release', requireIdempotency, authenticate, releaseEscrow);
 
 // POST /api/v1/payments/escrow/:id/refund — refund escrow
-router.post('/escrow/:id/refund', authenticate, refundEscrow);
+router.post('/escrow/:id/refund', requireIdempotency, authenticate, refundEscrow);
 
 // ── Webhook Routes ──────────────────────────────────────────────────────────
 
