@@ -15,6 +15,7 @@ import { ClayToastProvider } from './components/primitives';
 // client and the layout shell are needed by almost every route, so splitting them would
 // add a waterfall without saving anything.
 const DeveloperPortalPage = lazy(() => import('./pages/DeveloperPortalPage'));
+const ShariaCompliancePage = lazy(() => import('./pages/ShariaCompliancePage'));
 const IamConsolePage = lazy(() => import('./pages/developer/IamConsolePage'));
 const AgentPaymentsPage = lazy(() => import('./pages/AgentPaymentsPage'));
 const AgentsLandingPage = lazy(() => import('./pages/AgentsLandingPage'));
@@ -278,6 +279,7 @@ function AnimatedAppRoutes() {
         <Route path="/p/estimate/:simulationId" element={<PublicProposalPage />} />
         <Route path="/compliance" element={<MerchantCompliancePage />} />
         <Route path="/pricing" element={<MerchantCompliancePage />} />
+        <Route path="/sharia-compliance" element={<ShariaCompliancePage />} />
         <Route element={<AppShellLayout />}>
             {/* /dashboard routes to the user's mode-appropriate dashboard
                 (Business → /contact, Personal → /me). It is never a

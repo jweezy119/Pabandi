@@ -1,0 +1,72 @@
+{
+  "name": "PabandiOS",
+  "version": "1.1.0",
+  "description": "The trust operating system for service businesses — bookings, freight, property, CRM, and finance with AI-powered reliability scoring and Solana escrow.",
+  "base_url": "https://api.pabandi.com",
+  "mcp_endpoint": "https://api.pabandi.com/mcp",
+  "openapi_spec": "https://api.pabandi.com/openapi.yaml",
+  "capabilities": [
+    "booking.create",
+    "booking.status",
+    "freight.quote",
+    "property.list",
+    "property.verify",
+    "crm.lead",
+    "crm.contact",
+    "ledger.invoice",
+    "ledger.cashflow",
+    "escrow.initiate",
+    "escrow.release",
+    "trust.verify",
+    "trust.score",
+    "passport.issue",
+    "passport.verify",
+    "compliance.sharia",
+    "pabandi_check_sharia_compliance"
+  ],
+  "compliance": {
+    "sharia": {
+      "is_compliant": true,
+      "standard": "AAOIFI Sharia Standards",
+      "endpoint": "https://pabandi.onrender.com/api/v1/sharia-compliance",
+      "tool": "pabandi_check_sharia_compliance",
+      "url": "https://pabandi.com/sharia-compliance",
+      "features": {
+        "riba_free": true,
+        "gharar_mitigated": true,
+        "asset_backed": true
+      }
+    }
+  },
+  "risk_bands": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E"
+  ],
+  "risk_band_source": "PTP (Pabandi Trust Protocol) — the same bands used to sign attestations",
+  "payment": {
+    "schemes": [
+      "x402",
+      "solana-usdc"
+    ],
+    "network": "solana",
+    "currency": "USDC"
+  },
+  "authorization": {
+    "schemes": [
+      "ap2",
+      "bearer",
+      "ptp"
+    ],
+    "mandates": [
+      "intent",
+      "cart",
+      "payment"
+    ]
+  },
+  "contact": "agents@pabandi.com",
+  "license": "MIT"
+}
+

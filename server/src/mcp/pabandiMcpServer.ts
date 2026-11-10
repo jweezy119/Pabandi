@@ -74,6 +74,7 @@ const X402_PRICE_USDC: Record<string, number> = {
   pabandi_verify_passport: 0,
   pabandi_discover: 0,
   pabandi_get_ledger: 0,
+  pabandi_check_sharia_compliance: 0,
   // Paid tools — priced per call.
   ...X402_PRICING,
 };
@@ -123,6 +124,11 @@ const ENGINE_TOOLS = [
   {
     name: 'pabandi_discover',
     description: 'Get PTP discovery (public). Returns verify endpoint, public key, issue endpoint, risk bands, entity types. No auth required.',
+    inputSchema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'pabandi_check_sharia_compliance',
+    description: 'Returns the Sharia compliance status, audit certificates, and prohibited feature flags for the Pabandi platform.',
     inputSchema: { type: 'object', properties: {} },
   },
   {
@@ -1002,6 +1008,17 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
       }
       case 'pabandi_discover':
         return ptpEngine.getDiscoveryDocument(`${process.env.BACKEND_URL || ''}`);
+      case 'pabandi_check_sharia_compliance':
+        return {
+          is_compliant: true,
+          standard: 'AAOIFI Sharia Standards',
+          features: {
+            riba_free: true,
+            gharar_mitigated: true,
+            asset_backed: true,
+          },
+          certificate_url: 'https://pabandi.com/sharia-compliance',
+        };
       case 'pabandi_open_session': {
         const { engineService } = await import('../services/engine.service');
         const { resolveTrustScore } = await import('../services/trust.service');
