@@ -23,8 +23,8 @@ export function createTenantClient(base: PrismaClient, getBusinessId: () => stri
   return base.$extends({
     query: {
       $allModels: {
-        async $allOperations({ model, operation, args, query }) {
-          if (!model) return query(args);
+        async $allOperations({ model, operation, args, query }: any) {
+          if (!model) return (query as any)(args);
 
           const isStrict = STRICT_TENANT_MODELS.includes(model);
           const isTenant = TENANT_MODELS.includes(model) || isStrict;

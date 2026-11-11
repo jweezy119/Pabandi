@@ -6,6 +6,7 @@ import { logger } from '../utils/logger';
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
+import { formatBusinessDiscoveryItem } from '../utils/businessDiscovery';
 
 const router = Router();
 
@@ -26,17 +27,20 @@ const OSM_CATEGORY_MAP: Record<string, string> = {
   fitness_centre: 'FITNESS_CENTER',
 };
 
-// GET /api/v1/booking/businesses - List businesses for BookingOS Discovery from Prisma DB
+// GET /api/v1/booking/businesses - List businesses for BookingOS Discovery with cursor pagination
 router.get('/businesses', async (req: Request, res: Response) => {
   try {
-    const { search, category, location } = req.query;
+    const { cursor, limit, city, category, query, search, location } = req.query;
 
-    const where: Record<string, unknown> = {
+    const limitNum = Math.min(Math.max(parseInt(String(limit || '20'), 10) || 20, 1), 100);
+
+    const where: any = {
       isActive: true,
     };
 
-    if (search && typeof search === 'string' && search.trim()) {
-      const q = search.trim();
+    const searchText = (query || search) as string | undefined;
+    if (searchText && typeof searchText === 'string' && searchText.trim()) {
+      const q = searchText.trim();
       where.OR = [
         { name: { contains: q, mode: 'insensitive' } },
         { description: { contains: q, mode: 'insensitive' } },
@@ -45,13 +49,13 @@ router.get('/businesses', async (req: Request, res: Response) => {
       ];
     }
 
-    if (location && typeof location === 'string' && location.trim()) {
-      const loc = location.trim();
+    const cityText = (city || location) as string | undefined;
+    if (cityText && typeof cityText === 'string' && cityText.trim()) {
+      const loc = cityText.trim();
       const locConditions = [
         { city: { contains: loc, mode: 'insensitive' } },
         { state: { contains: loc, mode: 'insensitive' } },
         { address: { contains: loc, mode: 'insensitive' } },
-        { country: { contains: loc, mode: 'insensitive' } },
       ];
       if (Array.isArray(where.OR)) {
         where.AND = [
@@ -68,53 +72,38 @@ router.get('/businesses', async (req: Request, res: Response) => {
       where.category = category.toUpperCase();
     }
 
-    // Fetch genuine businesses from Prisma database
-    const dbBusinesses = await prisma.business.findMany({
+    const findArgs: any = {
       where,
       include: {
         owner: {
           select: { firstName: true, lastName: true, email: true },
         },
       },
-      orderBy: [
-        { rating: 'desc' },
-        { trustScore: 'desc' },
-      ],
-      take: 150,
-    });
+      orderBy: { id: 'asc' },
+      take: limitNum + 1,
+    };
 
-    const results = dbBusinesses.map((b) => ({
-      id: b.id,
-      name: b.name,
-      slug: b.slug || b.id,
-      description: b.description || `Verified ${b.category.toLowerCase()} with smart escrow guarantees.`,
-      category: b.category as string,
-      rating: b.rating ?? 4.8,
-      reviewCount: b.reviewCount ?? 12,
-      trustScore: b.trustScore ?? 85,
-      address: b.address,
-      city: b.city,
-      state: b.state,
-      country: b.country,
-      latitude: b.latitude,
-      longitude: b.longitude,
-      email: b.email,
-      phone: b.phone,
-      website: b.website,
-      logoUrl: b.logoUrl,
-      coverImageUrl: b.coverImageUrl || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200',
-      isVerified: b.isVerified,
-      isClaimed: b.isClaimed,
-      requireDeposit: b.requireDeposit,
-      depositAmount: b.depositAmount,
-      source: b.source || 'pabandi',
-      ownerName: b.owner ? `${b.owner.firstName || ''} ${b.owner.lastName || ''}`.trim() : undefined,
-    }));
+    if (cursor && typeof cursor === 'string' && cursor.trim()) {
+      findArgs.cursor = { id: cursor.trim() };
+      findArgs.skip = 1;
+    }
+
+    const dbBusinesses = await prisma.business.findMany(findArgs);
+
+    let nextCursor: string | null = null;
+    if (dbBusinesses.length > limitNum) {
+      dbBusinesses.pop();
+      nextCursor = dbBusinesses[dbBusinesses.length - 1]?.id || null;
+    }
+
+    const items = dbBusinesses.map(formatBusinessDiscoveryItem);
 
     return res.json({
+      items,
+      nextCursor,
       success: true,
-      count: results.length,
-      data: results,
+      count: items.length,
+      data: items,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';

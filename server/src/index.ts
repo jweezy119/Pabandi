@@ -89,7 +89,61 @@ if (requiredEnvVars.length > 0) {
   // Non-fatal in dev; in production this should be escalated to your deploy monitor
 }
 
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'https://maps.googleapis.com'],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        imgSrc: [
+          "'self'",
+          'data:',
+          'https://images.unsplash.com',
+          'https://maps.gstatic.com',
+          'https://maps.googleapis.com',
+          'https://lh3.googleusercontent.com',
+          'https://cryptologos.cc',
+          'https://*.tile.openstreetmap.org',
+          'https://*.openstreetmap.org',
+          'https://cdnjs.cloudflare.com',
+          'https://pabandi.onrender.com',
+        ],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https:', 'data:'],
+        connectSrc: [
+          "'self'",
+          'https://pabandi-42c5b.web.app',
+          'https://pabandi.onrender.com',
+          'http://localhost:5000',
+          'http://127.0.0.1:5000',
+          'https://maps.googleapis.com',
+          'https://api.devnet.solana.com',
+          'wss://api.devnet.solana.com',
+          'https://nominatim.openstreetmap.org',
+          'https://*.openstreetmap.org',
+          'https://auth.privy.io',
+          'https://*.rpc.privy.systems',
+          'https://explorer-api.walletconnect.com',
+          'wss://relay.walletconnect.com',
+          'wss://relay.walletconnect.org',
+          'wss://www.walletlink.org',
+        ],
+        frameSrc: [
+          "'self'",
+          'https://www.google.com',
+          'https://storage.googleapis.com',
+          'https://pabandi.onrender.com',
+          'https://auth.privy.io',
+          'https://verify.walletconnect.com',
+          'https://verify.walletconnect.org',
+        ],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'self'", 'https://*.myshopify.com', 'https://admin.shopify.com'],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  })
+);
 app.use(compression());
 const corsOrigins = [
   'http://localhost:3000',

@@ -1,12 +1,10 @@
-import DashboardLayout from '../../components/DashboardLayout';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useState, useEffect, useMemo } from 'react';
-import { getAuthToken } from '../../utils/authToken';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import DashboardLayout from '../../components/DashboardLayout';
 import { HalalBanner } from '../../components/halal';
-import { ClayCard } from '../../components/clay/ClayCard';
-import BookingSearchBar from '../../components/BookingSearchBar';
-import { LiveNetworkWidget } from '../../components/live-network/LiveNetworkWidget';
 import { apiClient } from '../../services/api';
+import '../../styles/pbn-tokens.css';
 
 const NAV_ITEMS = [
   { path: '/booking', label: 'Discovery', icon: 'explore', end: true },
@@ -17,38 +15,23 @@ const NAV_ITEMS = [
   { path: '/sandbox', label: 'Trust Sandbox', icon: 'verified_user' },
 ];
 
-interface BusinessListing {
+export interface BusinessItem {
   id: string;
   name: string;
+  category: string;
+  city: string;
+  rating: number;
+  reviewCount: number;
+  avatarUrl: string | null;
+  startingPrice: number;
+  escrowEnabled: boolean;
+  trustBand: string;
   slug?: string;
   description?: string;
-  category: string;
-  rating?: number;
-  reviewCount?: number;
-  trustScore?: number;
-  city?: string;
-  state?: string;
-  country?: string;
   address?: string;
-  latitude?: number | null;
-  longitude?: number | null;
-  email?: string;
-  phone?: string;
   website?: string;
-  logoUrl?: string;
-  coverImageUrl?: string;
+  phone?: string;
   isVerified?: boolean;
-  isClaimed?: boolean;
-  requireDeposit?: boolean;
-  depositAmount?: number;
-  ownerName?: string;
-  source?: 'github' | 'openstreetmap' | 'pabandi' | 'osm' | string;
-}
-
-interface CrmClientItem {
-  id: string;
-  name?: string;
-  email?: string;
 }
 
 const CATEGORIES = [
@@ -65,209 +48,193 @@ const CATEGORIES = [
   { id: 'EVENT_VENUE', label: 'Venues', icon: 'celebration' },
 ];
 
-function ClayStat({
-  icon,
-  value,
-  label,
-  trend,
-  color = 'terracotta',
-}: {
-  icon: string;
-  value: string | number;
-  label: string;
-  trend?: string;
-  color?: string;
-}) {
-  const colorMap: Record<string, string> = {
-    terracotta: 'bg-[var(--clay)]',
-    sage: 'bg-[var(--sage)]',
-    'dusty-rose': 'bg-[var(--dusty-rose)]',
-    ochre: 'bg-[var(--muted-ochre)]',
-    'sky-wash': 'bg-[var(--sky-wash)]',
-  };
+function MonogramAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string | null }) {
+  const [imgError, setImgError] = useState(false);
+
+  if (avatarUrl && !imgError) {
+    return (
+      <img
+        src={avatarUrl}
+        alt={name}
+        onError={() => setImgError(true)}
+        className="w-11 h-11 rounded-lg object-cover border border-[var(--pbn-border)] shrink-0"
+      />
+    );
+  }
+
+  const cleanName = (name || 'Verified Provider').replace(/^[^a-zA-Z0-9]+/, '');
+  const parts = cleanName.split(/\s+/).filter(Boolean);
+  const initials = parts.length >= 2
+    ? (parts[0][0] + parts[1][0]).toUpperCase()
+    : (cleanName.slice(0, 2) || 'PB').toUpperCase();
+
   return (
-    <ClayCard className="p-4" hover={false}>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs mb-1" style={{ color: 'var(--soft-stone)' }}>{label}</p>
-          <p className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>{value}</p>
-          {trend && <p className="text-xs mt-1" style={{ color: 'var(--sage)' }}>{trend}</p>}
-        </div>
-        <div className={`w-11 h-11 rounded-xl ${colorMap[color] || 'bg-[var(--clay)]'} flex items-center justify-center`}>
-          <span className="material-symbols-outlined text-[var(--warm-ink)] text-[20px]">{icon}</span>
-        </div>
-      </div>
-    </ClayCard>
+    <div
+      className="w-11 h-11 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 border border-[var(--pbn-border)] select-none"
+      style={{
+        background: 'var(--pbn-accent, #4fd1c5)',
+        color: 'var(--pbn-on-accent, #0a1118)',
+        fontFamily: 'var(--pbn-font-mono, monospace)',
+      }}
+      aria-hidden="true"
+    >
+      {initials}
+    </div>
   );
 }
 
-function BusinessCard({ business }: { business: BusinessListing }) {
-  const targetUrl = `/book/slug/${business.slug || business.id}`;
-  const displayImage =
-    business.coverImageUrl ||
-    business.logoUrl ||
-    'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=600';
+function CompactBusinessRow({ business }: { business: BusinessItem }) {
+  const targetUrl = `/book/${business.id}`;
 
   return (
-    <Link to={targetUrl} className="block group h-full">
-      <ClayCard className="overflow-hidden h-full flex flex-col justify-between" hover={true}>
-        <div>
-          <div className="relative h-44 overflow-hidden rounded-xl mb-3 bg-[var(--warm-sand)]">
-            <img
-              src={displayImage}
-              alt={business.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              loading="lazy"
-            />
-            {/* Top Right: Rating and Trust Score */}
-            <div className="absolute top-3 right-3 flex items-center gap-1.5">
-              <span
-                className="px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-sm"
-                style={{ background: 'rgba(255,255,255,0.92)', color: 'var(--warm-ink)' }}
+    <div
+      data-testid="business-row"
+      className="pbn-discovery-row flex items-center justify-between gap-3 p-3.5 mx-2 my-1 rounded-xl transition-colors hover:bg-white/[0.04]"
+      style={{
+        border: '1px solid var(--pbn-border)',
+        background: 'var(--pbn-bg-raised, #101a24)',
+      }}
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <MonogramAvatar name={business.name} avatarUrl={business.avatarUrl} />
+
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <Link
+              to={targetUrl}
+              className="font-bold text-sm truncate hover:text-[var(--pbn-accent)] transition-colors"
+              style={{
+                color: 'var(--pbn-text, #e8eef4)',
+                fontFamily: 'var(--pbn-font-ui, sans-serif)',
+              }}
+            >
+              {business.name}
+            </Link>
+            {business.website && (
+              <a
+                href={business.website}
+                target="_blank"
+                rel="noreferrer"
+                title="External Link"
+                aria-label={`Visit ${business.name} website`}
+                className="text-[var(--pbn-text-muted)] hover:text-[var(--pbn-accent)] shrink-0 transition-colors"
+                onClick={(e) => e.stopPropagation()}
               >
-                ⭐ {business.rating ? Number(business.rating).toFixed(1) : '5.0'}
-              </span>
-              {business.trustScore && (
-                <span
-                  className="px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm"
-                  style={{ background: 'var(--sage)', color: 'white' }}
-                >
-                  {Math.round(business.trustScore)} Trust
-                </span>
-              )}
-            </div>
-
-            {/* Top Left: Authentic Open-Source Origin Badge */}
-            <div className="absolute top-3 left-3 flex flex-wrap gap-1">
-              {business.source === 'city_of_chicago' ? (
-                <span
-                  className="px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-sm flex items-center gap-1"
-                  style={{ background: 'rgba(30,58,138,0.92)', color: 'white' }}
-                >
-                  <span className="text-[13px]">🏛️</span> Chicago Licensed
-                </span>
-              ) : business.source === 'github' ? (
-                <span
-                  className="px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-sm flex items-center gap-1"
-                  style={{ background: 'rgba(28,25,23,0.88)', color: 'white' }}
-                >
-                  <span className="text-[13px]">🐙</span> GitHub Dev
-                </span>
-              ) : business.source === 'openstreetmap' || business.source === 'osm' ? (
-                <span
-                  className="px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-sm flex items-center gap-1"
-                  style={{ background: 'rgba(15,118,110,0.92)', color: 'white' }}
-                >
-                  <span className="text-[13px]">🗺️</span> OpenStreetMap
-                </span>
-              ) : (
-                <span
-                  className="px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-sm flex items-center gap-1"
-                  style={{ background: 'rgba(197,110,74,0.92)', color: 'white' }}
-                >
-                  <span>✓</span> Verified Partner
-                </span>
-              )}
-            </div>
-
-            {business.requireDeposit ? (
-              <div className="absolute bottom-3 left-3">
-                <span
-                  className="px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider backdrop-blur-md shadow-sm flex items-center gap-1"
-                  style={{ background: 'rgba(28,25,23,0.88)', color: 'var(--cream)' }}
-                >
-                  <span>🔒</span> Milestone Escrow
-                </span>
-              </div>
-            ) : business.category === 'FREELANCE' ? (
-              <div className="absolute bottom-3 left-3">
-                <span
-                  className="px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider backdrop-blur-md shadow-sm"
-                  style={{ background: 'rgba(28,25,23,0.85)', color: 'var(--cream)' }}
-                >
-                  Freelance Specialist
-                </span>
-              </div>
-            ) : null}
+                <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+              </a>
+            )}
+            <span
+              className="text-[10px] font-mono px-2 py-0.5 rounded uppercase tracking-wider shrink-0"
+              style={{
+                background: 'rgba(79, 209, 197, 0.1)',
+                color: 'var(--pbn-accent, #4fd1c5)',
+                border: '1px solid rgba(79, 209, 197, 0.25)',
+              }}
+            >
+              {business.trustBand}
+            </span>
           </div>
 
-          <div className="px-1">
-            <div className="flex items-start justify-between gap-1 mb-1.5">
-              <h3
-                className="font-bold text-base leading-snug group-hover:text-[var(--clay)] transition-colors line-clamp-1"
-                style={{ color: 'var(--warm-ink)' }}
-              >
-                {business.name}
-              </h3>
-              {business.isVerified && (
-                <span
-                  className="material-symbols-outlined text-sm shrink-0"
-                  style={{ color: 'var(--sage)' }}
-                  title="Verified Profile & Trust Score"
-                >
-                  verified
-                </span>
-              )}
-            </div>
-
-            <p className="text-xs line-clamp-2 mb-2 leading-relaxed" style={{ color: 'var(--soft-stone)' }}>
-              {business.description || `${business.category} services backed by Pabandi smart escrow.`}
-            </p>
-
-            {business.website && (
-              <div className="mb-2">
-                <a
-                  href={business.website}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center gap-1 text-[11px] font-medium hover:underline"
-                  style={{ color: 'var(--clay)' }}
-                >
-                  {business.source === 'github'
-                    ? 'View GitHub Profile ↗'
-                    : business.source === 'openstreetmap'
-                    ? 'View OpenStreetMap POI ↗'
-                    : 'Visit Official Site ↗'}
-                </a>
-              </div>
+          <div className="flex items-center gap-2 text-xs text-[var(--pbn-text-muted)] mt-1 flex-wrap">
+            <span className="px-2 py-0.5 rounded bg-white/[0.04] border border-[var(--pbn-border)] text-[11px]">
+              {business.category}
+            </span>
+            <span className="flex items-center gap-0.5">
+              <span className="material-symbols-outlined text-[13px] text-[var(--pbn-accent)]">location_on</span>
+              {business.city}
+            </span>
+            {business.escrowEnabled && (
+              <span className="text-[11px] text-[var(--pbn-accent)] font-mono">
+                · ${business.startingPrice} Escrow
+              </span>
             )}
           </div>
         </div>
+      </div>
 
-        <div className="pt-3 border-t border-[rgba(191,179,163,0.25)] flex items-center justify-between text-xs mt-2 px-1">
-          <span className="flex items-center gap-1 font-medium" style={{ color: 'var(--warm-ink)' }}>
-            <span className="material-symbols-outlined text-[15px]" style={{ color: 'var(--clay)' }}>
-              location_on
-            </span>
-            {business.city || 'Remote'}
-          </span>
-          <span
-            className="font-semibold px-2.5 py-1 rounded-md text-xs"
-            style={{ background: 'var(--warm-sand)', color: 'var(--clay)' }}
-          >
-            {business.requireDeposit ? `$${business.depositAmount || 50} Escrow` : 'Instant Booking'}
-          </span>
+      <div className="flex items-center gap-3 shrink-0">
+        <div
+          className="text-right hidden sm:block font-mono text-xs"
+          style={{
+            fontFamily: 'var(--pbn-font-mono, monospace)',
+            color: 'var(--pbn-text, #e8eef4)',
+          }}
+        >
+          <div className="text-amber-400 font-bold">★ {business.rating.toFixed(1)}</div>
+          <div className="text-[10px] text-[var(--pbn-text-muted)]">({business.reviewCount})</div>
         </div>
-      </ClayCard>
-    </Link>
+
+        <Link
+          to={targetUrl}
+          className="px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all hover:opacity-90"
+          style={{
+            background: 'var(--pbn-accent, #4fd1c5)',
+            color: 'var(--pbn-on-accent, #0a1118)',
+            fontFamily: 'var(--pbn-font-ui, sans-serif)',
+          }}
+        >
+          Book
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function SkeletonCard() {
+  return (
+    <div
+      data-testid="skeleton-card"
+      className="p-3.5 mx-2 my-1.5 rounded-xl animate-pulse flex items-center justify-between gap-3"
+      style={{
+        border: '1px solid var(--pbn-border)',
+        background: 'var(--pbn-bg-raised, #101a24)',
+      }}
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-11 h-11 rounded-lg bg-white/[0.08]" />
+        <div className="space-y-2">
+          <div className="h-4 w-40 bg-white/[0.08] rounded" />
+          <div className="h-3 w-28 bg-white/[0.05] rounded" />
+        </div>
+      </div>
+      <div className="h-8 w-16 bg-white/[0.08] rounded-lg" />
+    </div>
   );
 }
 
 export default function BookingOSPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [locationInput, setLocationInput] = useState('');
-  const [businesses, setBusinesses] = useState<BusinessListing[]>([]);
-  const [loadingBusinesses, setLoadingBusinesses] = useState(true);
-  const [clients, setClients] = useState<CrmClientItem[]>([]);
-  const [loadingClients, setLoadingClients] = useState(false);
-  const [clientSearch, setClientSearch] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [totalBusinessCount, setTotalBusinessCount] = useState<number | null>(null);
-  const navigate = useNavigate();
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [cityInput, setCityInput] = useState('');
+  const [debouncedCity, setDebouncedCity] = useState('');
 
-  // Load real business count from /api/v1/businesses/count
+  const [items, setItems] = useState<BusinessItem[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
+  const [totalBusinessCount, setTotalBusinessCount] = useState<number | null>(null);
+
+  const parentRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Debounce search input by 300ms (Requirement C2)
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchInput]);
+
+  // Debounce city input by 300ms
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedCity(cityInput);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [cityInput]);
+
+  // Load overall business count from /api/v1/businesses/count
   useEffect(() => {
     let isMounted = true;
     apiClient
@@ -277,207 +244,220 @@ export default function BookingOSPage() {
           setTotalBusinessCount(res.data.count);
         }
       })
-      .catch((err: unknown) => {
-        console.warn('Business count fetch fallback to raw fetch:', err);
-        fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/businesses/count`)
-          .then((res) => (res.ok ? res.json() : null))
-          .then((json) => {
-            if (isMounted && json && typeof json.count === 'number') {
-              setTotalBusinessCount(json.count);
-            }
-          })
-          .catch(() => {});
-      });
-
+      .catch(() => {});
     return () => {
       isMounted = false;
     };
   }, []);
 
-  // Load businesses publicly (accessible without auth)
-  useEffect(() => {
-    let isMounted = true;
-    const fetchBusinesses = async () => {
-      setLoadingBusinesses(true);
+  // Fetch page data with cursor pagination (Requirement B1 & B2)
+  const fetchPage = useCallback(
+    async (cursorParam?: string | null, isNext = false) => {
+      if (isNext) {
+        setIsFetchingNextPage(true);
+      } else {
+        setIsLoading(true);
+      }
+
       try {
-        const token = getAuthToken();
-        if (token) {
-          setIsAuthenticated(true);
-        }
+        const params = new URLSearchParams();
+        params.set('limit', '20');
+        if (cursorParam) params.set('cursor', cursorParam);
+        if (debouncedCity.trim()) params.set('city', debouncedCity.trim());
+        if (selectedCategory !== 'ALL') params.set('category', selectedCategory);
+        if (debouncedSearch.trim()) params.set('query', debouncedSearch.trim());
 
-        const res = await apiClient.get('/booking/businesses');
-        if (isMounted && res.data?.data) {
-          setBusinesses(res.data.data);
-        }
-      } catch (e: unknown) {
-        console.warn('apiClient fetch failed, falling back to window.fetch:', e);
-        try {
-          const res = await fetch(
-            `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/booking/businesses`
-          );
-          if (res.ok) {
-            const json = await res.json();
-            if (isMounted && json.data) {
-              setBusinesses(json.data);
-            }
-          }
-        } catch (fetchErr: unknown) {
-          console.error('Failed to fetch businesses:', fetchErr);
-        }
+        const res = await apiClient.get(`/booking/businesses?${params.toString()}`);
+        const data = res.data;
+        const fetchedItems: BusinessItem[] = data.items || data.data || [];
+        const newCursor: string | null = data.nextCursor ?? null;
+
+        setItems((prev) => (isNext ? [...prev, ...fetchedItems] : fetchedItems));
+        setNextCursor(newCursor);
+      } catch (err) {
+        console.error('Failed to fetch businesses:', err);
       } finally {
-        if (isMounted) setLoadingBusinesses(false);
+        setIsLoading(false);
+        setIsFetchingNextPage(false);
       }
-    };
-
-    fetchBusinesses();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // Fetch ContactOS clients only if authenticated as a business/provider
-  useEffect(() => {
-    const token = getAuthToken();
-    if (!token) return;
-
-    let isMounted = true;
-    setLoadingClients(true);
-    fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/clients`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((json) => {
-        if (isMounted && json?.data) {
-          setClients(json.data);
-        }
-      })
-      .catch((err) => console.warn('Clients optional:', err))
-      .finally(() => {
-        if (isMounted) setLoadingClients(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const filteredBusinesses = useMemo(() => {
-    return businesses.filter((b) => {
-      // Category filter
-      if (selectedCategory !== 'ALL' && b.category !== selectedCategory) {
-        return false;
-      }
-      // Query filter
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        const matchName = b.name.toLowerCase().includes(q);
-        const matchDesc = b.description?.toLowerCase().includes(q);
-        const matchCity = b.city?.toLowerCase().includes(q);
-        const matchCat = b.category.toLowerCase().includes(q);
-        if (!matchName && !matchDesc && !matchCity && !matchCat) return false;
-      }
-      // Location filter
-      if (locationInput.trim()) {
-        const loc = locationInput.toLowerCase().trim();
-        const matchCity = b.city?.toLowerCase().includes(loc);
-        const matchAddress = b.address?.toLowerCase().includes(loc);
-        if (!matchCity && !matchAddress) return false;
-      }
-      return true;
-    });
-  }, [businesses, selectedCategory, searchQuery, locationInput]);
-
-  const filteredClients = useMemo(() => {
-    if (!clientSearch.trim()) return clients;
-    const q = clientSearch.toLowerCase().trim();
-    return clients.filter(
-      (c) => c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q)
-    );
-  }, [clients, clientSearch]);
-
-  const freelanceCount = useMemo(
-    () => businesses.filter((b) => b.category === 'FREELANCE').length,
-    [businesses]
+    },
+    [debouncedCity, selectedCategory, debouncedSearch]
   );
+
+  // Fetch initial page on mount or whenever filters change
+  useEffect(() => {
+    fetchPage(null, false);
+  }, [fetchPage]);
+
+  // IntersectionObserver sentinel at the bottom with 200px rootMargin (Requirement B2)
+  useEffect(() => {
+    if (!nextCursor || isFetchingNextPage || isLoading) return;
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && nextCursor && !isFetchingNextPage) {
+          fetchPage(nextCursor, true);
+        }
+      },
+      {
+        root: parentRef.current,
+        rootMargin: '200px',
+      }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [nextCursor, isFetchingNextPage, isLoading, fetchPage]);
+
+  // Virtualizer for row rendering (Requirement B2)
+  const rowVirtualizer = useVirtualizer({
+    count: items.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 76,
+    overscan: 5,
+  });
+
+  const handleClearFilters = () => {
+    setSelectedCategory('ALL');
+    setSearchInput('');
+    setDebouncedSearch('');
+    setCityInput('');
+    setDebouncedCity('');
+  };
+
+  const hasActiveFilters =
+    selectedCategory !== 'ALL' || Boolean(cityInput.trim()) || Boolean(searchInput.trim());
 
   return (
     <DashboardLayout osName="BookingOS" osIcon="◈" osColor="terracotta" navItems={NAV_ITEMS}>
-      <div className="space-y-7 max-w-6xl mx-auto pb-12">
+      <div className="space-y-6 max-w-6xl mx-auto pb-12">
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight" style={{ color: 'var(--warm-ink)' }}>
-              Discovery & Booking
+            <h1
+              className="text-3xl font-extrabold tracking-tight"
+              style={{
+                color: 'var(--pbn-text, #e8eef4)',
+                fontFamily: 'var(--pbn-font-ui, sans-serif)',
+              }}
+            >
+              Discovery &amp; Booking
             </h1>
-            <p className="text-sm mt-1 leading-relaxed" style={{ color: 'var(--soft-stone)' }}>
-              Explore verified service businesses and elite freelancers. Every appointment and milestone is backed by non-custodial smart escrow.
+            <p className="text-sm mt-1 leading-relaxed" style={{ color: 'var(--pbn-text-muted, #8a9aa8)' }}>
+              Explore verified service businesses and elite providers. Every appointment and milestone is backed by smart escrow.
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Link
               to="/me/bookings"
-              className="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+              className="px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:bg-white/[0.08]"
               style={{
-                background: 'var(--warm-sand)',
-                border: '1px solid rgba(191,179,163,0.35)',
-                color: 'var(--warm-ink)',
+                border: '1px solid var(--pbn-border)',
+                background: 'var(--pbn-bg-raised, #101a24)',
+                color: 'var(--pbn-text, #e8eef4)',
               }}
             >
               My Bookings
             </Link>
             <Link
               to="/simulator"
-              className="px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm"
-              style={{ background: 'var(--clay)', color: 'white' }}
+              className="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+              style={{
+                background: 'var(--pbn-accent, #4fd1c5)',
+                color: 'var(--pbn-on-accent, #0a1118)',
+              }}
             >
               Simulate Deal
             </Link>
           </div>
         </div>
 
-        {/* Location & Quick Search Filter */}
+        {/* Halal Compliance Banner */}
+        <HalalBanner compact />
+
+        {/* Location & Quick Search Controls */}
         <div
           className="rounded-2xl p-4 md:p-5"
-          style={{ background: 'var(--warm-sand)', border: '1px solid rgba(191,179,163,0.35)' }}
+          style={{
+            background: 'var(--pbn-bg-raised, #101a24)',
+            border: '1px solid var(--pbn-border)',
+          }}
         >
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex items-center gap-2 text-sm font-medium" style={{ color: 'var(--clay)' }}>
-              <span className="material-symbols-outlined text-[20px]">location_on</span>
-              <span className="text-xs uppercase tracking-wider text-[var(--soft-stone)]">Location:</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Search Input */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search businesses, skills, keywords..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[var(--pbn-accent)]"
+                style={{
+                  background: 'var(--pbn-bg, #0a1118)',
+                  border: '1px solid var(--pbn-border)',
+                  color: 'var(--pbn-text, #e8eef4)',
+                }}
+              />
+              {searchInput && (
+                <button
+                  type="button"
+                  onClick={() => setSearchInput('')}
+                  aria-label="Clear search"
+                  className="absolute right-3 top-2.5 text-xs text-[var(--pbn-text-muted)] hover:text-white"
+                >
+                  ✕
+                </button>
+              )}
             </div>
-            <input
-              type="text"
-              placeholder="Filter by city (e.g. Lahore, Karachi, Chicago, Remote)..."
-              value={locationInput}
-              onChange={(e) => setLocationInput(e.target.value)}
-              className="flex-1 px-4 py-2.5 rounded-xl text-sm focus:outline-none"
-              style={{
-                background: 'white',
-                border: '1px solid rgba(191,179,163,0.35)',
-                color: 'var(--warm-ink)',
-              }}
-            />
-            {locationInput && (
-              <button
-                onClick={() => setLocationInput('')}
-                className="text-xs font-semibold px-3 py-2 rounded-lg text-[var(--soft-stone)] hover:text-[var(--warm-ink)]"
-              >
-                Clear
-              </button>
-            )}
+
+            {/* City Input */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Filter by city (e.g. Lahore, Karachi, Chicago, Remote)..."
+                value={cityInput}
+                onChange={(e) => setCityInput(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[var(--pbn-accent)]"
+                style={{
+                  background: 'var(--pbn-bg, #0a1118)',
+                  border: '1px solid var(--pbn-border)',
+                  color: 'var(--pbn-text, #e8eef4)',
+                }}
+              />
+              {cityInput && (
+                <button
+                  type="button"
+                  onClick={() => setCityInput('')}
+                  aria-label="Clear city"
+                  className="absolute right-3 top-2.5 text-xs text-[var(--pbn-text-muted)] hover:text-white"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2 pt-2.5 flex-wrap text-xs">
-            <span className="text-[var(--soft-stone)]">Popular hubs:</span>
+
+          {/* Quick Hub Buttons */}
+          <div className="flex items-center gap-2 pt-3 flex-wrap text-xs">
+            <span className="text-[var(--pbn-text-muted)]">Popular hubs:</span>
             {['Chicago', 'Austin', 'Lahore', 'Karachi', 'Remote'].map((city) => (
               <button
                 key={city}
                 type="button"
-                onClick={() => setLocationInput(locationInput === city ? '' : city)}
+                onClick={() => setCityInput(cityInput.toLowerCase() === city.toLowerCase() ? '' : city)}
                 className="px-2.5 py-1 rounded-lg font-medium transition-all"
                 style={{
-                  background: locationInput.toLowerCase() === city.toLowerCase() ? 'var(--clay)' : 'rgba(191,179,163,0.2)',
-                  color: locationInput.toLowerCase() === city.toLowerCase() ? 'white' : 'var(--warm-ink)',
-                  border: '1px solid rgba(191,179,163,0.3)',
+                  background:
+                    cityInput.toLowerCase() === city.toLowerCase()
+                      ? 'var(--pbn-accent, #4fd1c5)'
+                      : 'rgba(255, 255, 255, 0.04)',
+                  color:
+                    cityInput.toLowerCase() === city.toLowerCase()
+                      ? 'var(--pbn-on-accent, #0a1118)'
+                      : 'var(--pbn-text, #e8eef4)',
+                  border: '1px solid var(--pbn-border)',
                 }}
               >
                 📍 {city}
@@ -486,63 +466,20 @@ export default function BookingOSPage() {
           </div>
         </div>
 
-        {/* Halal Compliance Banner */}
-        <HalalBanner compact />
-
-        {/* Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <ClayStat
-            icon="storefront"
-            value={totalBusinessCount ?? businesses.length}
-            label="Active Businesses"
-            trend={totalBusinessCount ? `${totalBusinessCount} Onboarded` : undefined}
-            color="terracotta"
-          />
-          <ClayStat
-            icon="terminal"
-            value={freelanceCount}
-            label="Tech & Freelancers"
-            color="sage"
-          />
-          <ClayStat
-            icon="verified_user"
-            value="100%"
-            label="Escrow Guarantee"
-            trend="Solana / Card"
-            color="ochre"
-          />
-          <ClayStat
-            icon="shield"
-            value="94+"
-            label="Avg Trust Score"
-            trend="Autonomous Scoring"
-            color="sky-wash"
-          />
-        </div>
-
-        {/* Search Bar Component */}
-        <BookingSearchBar
-          results={businesses.map((b) => ({
-            id: b.slug || b.id,
-            name: b.name,
-            category: b.category,
-            rating: b.rating || 5,
-            address: b.address || '',
-            city: b.city || '',
-            image: b.logoUrl,
-            trustScore: b.trustScore ? Math.round(b.trustScore) : undefined,
-          }))}
-          onResultClick={(id) => navigate(`/book/${id}`)}
-        />
-
         {/* Category Pills Bar */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold" style={{ color: 'var(--warm-ink)' }}>
+            <h2
+              className="text-base font-bold"
+              style={{
+                color: 'var(--pbn-text, #e8eef4)',
+                fontFamily: 'var(--pbn-font-ui, sans-serif)',
+              }}
+            >
               Browse by Category
             </h2>
-            <span className="text-xs font-medium" style={{ color: 'var(--soft-stone)' }}>
-              Showing {filteredBusinesses.length} results
+            <span className="text-xs font-mono" style={{ color: 'var(--pbn-text-muted)' }}>
+              {totalBusinessCount ? `${totalBusinessCount} active listings` : `${items.length} loaded`}
             </span>
           </div>
 
@@ -552,19 +489,18 @@ export default function BookingOSPage() {
               return (
                 <button
                   key={cat.id}
+                  type="button"
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
-                    isSelected
-                      ? 'shadow-sm'
-                      : 'hover:bg-[rgba(191,179,163,0.25)]'
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                    isSelected ? 'shadow-none' : 'hover:bg-white/[0.04]'
                   }`}
                   style={{
-                    background: isSelected ? 'var(--clay)' : 'var(--warm-sand)',
-                    color: isSelected ? 'white' : 'var(--warm-ink)',
-                    border: isSelected ? 'none' : '1px solid rgba(191,179,163,0.3)',
+                    background: isSelected ? 'var(--pbn-accent, #4fd1c5)' : 'var(--pbn-bg-raised, #101a24)',
+                    color: isSelected ? 'var(--pbn-on-accent, #0a1118)' : 'var(--pbn-text, #e8eef4)',
+                    border: '1px solid var(--pbn-border)',
                   }}
                 >
-                  <span className="material-symbols-outlined text-[18px]">{cat.icon}</span>
+                  <span className="material-symbols-outlined text-[16px]">{cat.icon}</span>
                   {cat.label}
                 </button>
               );
@@ -572,138 +508,164 @@ export default function BookingOSPage() {
           </div>
         </div>
 
-        {/* Businesses and Freelancers Grid */}
-        <div>
-          {loadingBusinesses ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {[1, 2, 3, 4, 5, 6].map((idx) => (
-                <ClayCard key={idx} className="p-4 animate-pulse h-64" hover={false}>
-                  <div className="h-40 bg-[var(--warm-sand)] rounded-xl mb-3" />
-                  <div className="h-4 bg-[var(--warm-sand)] rounded w-3/4 mb-2" />
-                  <div className="h-3 bg-[var(--warm-sand)] rounded w-1/2" />
-                </ClayCard>
-              ))}
+        {/* Active Filter Chips (Requirement B4) */}
+        {hasActiveFilters && (
+          <div className="flex items-center gap-2 flex-wrap px-1">
+            <span className="text-xs text-[var(--pbn-text-muted)] font-mono">Active filters:</span>
+            {selectedCategory !== 'ALL' && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-white/[0.06] border border-[var(--pbn-border)] text-[var(--pbn-text)]">
+                Category: {selectedCategory}
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory('ALL')}
+                  aria-label="Remove category filter"
+                  className="hover:text-red-400 font-bold ml-0.5"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {cityInput.trim() && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-white/[0.06] border border-[var(--pbn-border)] text-[var(--pbn-text)]">
+                City: {cityInput.trim()}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCityInput('');
+                    setDebouncedCity('');
+                  }}
+                  aria-label="Remove city filter"
+                  className="hover:text-red-400 font-bold ml-0.5"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {searchInput.trim() && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-white/[0.06] border border-[var(--pbn-border)] text-[var(--pbn-text)]">
+                Query: {searchInput.trim()}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchInput('');
+                    setDebouncedSearch('');
+                  }}
+                  aria-label="Remove search filter"
+                  className="hover:text-red-400 font-bold ml-0.5"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className="text-xs text-[var(--pbn-accent)] hover:underline ml-1 font-mono"
+            >
+              Clear filters
+            </button>
+          </div>
+        )}
+
+        {/* Virtualized Discovery List (Requirements B2 & B3) */}
+        <div className="space-y-2">
+          {isLoading ? (
+            <div className="space-y-2">
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
             </div>
-          ) : filteredBusinesses.length === 0 ? (
-            <ClayCard className="p-12 text-center" hover={false}>
+          ) : items.length === 0 ? (
+            <div
+              className="p-12 text-center rounded-xl"
+              style={{
+                border: '1px solid var(--pbn-border)',
+                background: 'var(--pbn-bg-raised, #101a24)',
+              }}
+            >
               <div
-                className="w-14 h-14 mx-auto rounded-full flex items-center justify-center mb-3"
-                style={{ background: 'var(--warm-sand)' }}
+                className="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-3"
+                style={{ background: 'rgba(255, 255, 255, 0.04)' }}
               >
-                <span className="material-symbols-outlined text-2xl" style={{ color: 'var(--clay)' }}>
+                <span className="material-symbols-outlined text-2xl text-[var(--pbn-accent)]">
                   search_off
                 </span>
               </div>
-              <h3 className="font-bold text-base mb-1" style={{ color: 'var(--warm-ink)' }}>
-                No providers match your criteria
+              <h3 className="font-bold text-base mb-1" style={{ color: 'var(--pbn-text)' }}>
+                No businesses match this filter.
               </h3>
-              <p className="text-xs mb-4" style={{ color: 'var(--soft-stone)' }}>
-                Try selecting "All Services" or clearing your search filters.
+              <p className="text-xs mb-4" style={{ color: 'var(--pbn-text-muted)' }}>
+                Try selecting "All Services" or clearing your active search and city filters.
               </p>
               <button
-                onClick={() => {
-                  setSelectedCategory('ALL');
-                  setSearchQuery('');
-                  setLocationInput('');
-                }}
+                type="button"
+                onClick={handleClearFilters}
                 className="px-4 py-2 rounded-xl text-xs font-bold transition-all"
-                style={{ background: 'var(--clay)', color: 'white' }}
+                style={{
+                  background: 'var(--pbn-accent, #4fd1c5)',
+                  color: 'var(--pbn-on-accent, #0a1118)',
+                }}
               >
-                Reset Filters
+                Clear filters
               </button>
-            </ClayCard>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filteredBusinesses.map((b) => (
-                <BusinessCard key={b.id} business={b} />
-              ))}
+            <div
+              ref={parentRef}
+              data-testid="virtual-list-container"
+              className="w-full overflow-y-auto rounded-xl scrollbar-thin"
+              style={{
+                maxHeight: '680px',
+                minHeight: '320px',
+                border: '1px solid var(--pbn-border)',
+                background: 'var(--pbn-bg, #0a1118)',
+              }}
+            >
+              <div
+                style={{
+                  height: `${rowVirtualizer.getTotalSize()}px`,
+                  width: '100%',
+                  position: 'relative',
+                }}
+              >
+                {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                  const b = items[virtualRow.index];
+                  if (!b) return null;
+                  return (
+                    <div
+                      key={b.id}
+                      data-index={virtualRow.index}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: `${virtualRow.size}px`,
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
+                    >
+                      <CompactBusinessRow business={b} />
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Sentinel element for IntersectionObserver */}
+              <div
+                ref={sentinelRef}
+                data-testid="scroll-sentinel"
+                style={{ height: '24px', width: '100%' }}
+              />
+
+              {/* Subsequent page loading state */}
+              {isFetchingNextPage && (
+                <div className="py-3 text-center font-mono text-xs text-[var(--pbn-text-muted)] animate-pulse">
+                  Loading more...
+                </div>
+              )}
             </div>
           )}
         </div>
-
-        {/* Live Network Widget */}
-        <div className="pt-2">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold" style={{ color: 'var(--warm-ink)' }}>
-              Live Trust & Settlement Activity
-            </h2>
-          </div>
-          <LiveNetworkWidget
-            className="rounded-2xl p-4 md:p-6"
-            style={{ background: 'var(--warm-sand)', border: '1px solid rgba(191,179,163,0.35)' }}
-          />
-        </div>
-
-        {/* ContactOS Clients (Only for Business Mode / Authenticated Providers) */}
-        {isAuthenticated && (
-          <div className="pt-2">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-lg font-bold" style={{ color: 'var(--warm-ink)' }}>
-                  Your Client Directory (ContactOS)
-                </h2>
-                <p className="text-xs" style={{ color: 'var(--soft-stone)' }}>
-                  Directly schedule or send escrow proposals to existing clients.
-                </p>
-              </div>
-              <Link to="/contact/clients" className="text-sm font-semibold" style={{ color: 'var(--clay)' }}>
-                View all in ContactOS →
-              </Link>
-            </div>
-
-            <div className="mb-4">
-              <input
-                type="text"
-                placeholder="Search your clients..."
-                value={clientSearch}
-                onChange={(e) => setClientSearch(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none"
-                style={{
-                  background: 'var(--warm-sand)',
-                  border: '1px solid rgba(191,179,163,0.3)',
-                  color: 'var(--warm-ink)',
-                }}
-              />
-            </div>
-
-            {loadingClients ? (
-              <div className="p-8 text-center text-sm" style={{ color: 'var(--soft-stone)' }}>
-                Loading client directory...
-              </div>
-            ) : filteredClients.length === 0 ? (
-              <ClayCard className="p-8 text-center" hover={false}>
-                <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>
-                  {clientSearch ? 'No clients match your search.' : 'No clients found in your CRM yet.'}
-                </p>
-              </ClayCard>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredClients.slice(0, 6).map((client) => (
-                  <Link key={client.id} to={`/contact/clients/${client.id}`} className="block">
-                    <ClayCard className="p-4" hover={true}>
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-sm"
-                          style={{ background: 'var(--clay)', color: 'white' }}
-                        >
-                          {client.name?.charAt(0) || 'C'}
-                        </div>
-                        <div className="overflow-hidden">
-                          <p className="font-semibold text-sm truncate" style={{ color: 'var(--warm-ink)' }}>
-                            {client.name || 'Unnamed Client'}
-                          </p>
-                          <p className="text-xs truncate" style={{ color: 'var(--soft-stone)' }}>
-                            {client.email || 'No email provided'}
-                          </p>
-                        </div>
-                      </div>
-                    </ClayCard>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </DashboardLayout>
   );

@@ -146,7 +146,68 @@ router.post('/geocode-backfill', async (req, res) => {
 router.get('/', rateLimiter, async (req, res, next) => {
   try {
     const { prisma } = await import('../utils/database');
-    const { category, search, latitude, longitude, googlePlaceId } = req.query;
+    const { category, search, query, city, cursor, limit, latitude, longitude, googlePlaceId } = req.query;
+
+    // === Cursor Pagination Discovery Contract (Part B1) ===
+    if (cursor !== undefined || limit !== undefined || query !== undefined || city !== undefined) {
+      const { formatBusinessDiscoveryItem } = await import('../utils/businessDiscovery');
+      const limitNum = Math.min(Math.max(parseInt(String(limit || '20'), 10) || 20, 1), 100);
+
+      const where: any = { isActive: true };
+
+      const q = (query || search) as string | undefined;
+      if (q && typeof q === 'string' && q.trim()) {
+        const clean = q.trim();
+        where.OR = [
+          { name: { contains: clean, mode: 'insensitive' } },
+          { description: { contains: clean, mode: 'insensitive' } },
+          { city: { contains: clean, mode: 'insensitive' } },
+          { address: { contains: clean, mode: 'insensitive' } },
+        ];
+      }
+
+      if (city && typeof city === 'string' && city.trim()) {
+        const cityTrim = city.trim();
+        const cityCond = { city: { contains: cityTrim, mode: 'insensitive' } };
+        if (Array.isArray(where.OR)) {
+          where.AND = [{ OR: where.OR }, cityCond];
+          delete where.OR;
+        } else {
+          where.city = { contains: cityTrim, mode: 'insensitive' };
+        }
+      }
+
+      if (category && typeof category === 'string' && category.toUpperCase() !== 'ALL') {
+        where.category = category.toUpperCase();
+      }
+
+      const findArgs: any = {
+        where,
+        orderBy: { id: 'asc' },
+        take: limitNum + 1,
+      };
+
+      if (cursor && typeof cursor === 'string' && cursor.trim()) {
+        findArgs.cursor = { id: cursor.trim() };
+        findArgs.skip = 1;
+      }
+
+      const dbRecords = await prisma.business.findMany(findArgs);
+      let nextCursor: string | null = null;
+      if (dbRecords.length > limitNum) {
+        dbRecords.pop();
+        nextCursor = dbRecords[dbRecords.length - 1]?.id || null;
+      }
+
+      const items = dbRecords.map(formatBusinessDiscoveryItem);
+
+      return res.json({
+        items,
+        nextCursor,
+        success: true,
+        data: { businesses: items },
+      });
+    }
 
     // HARDENED: Sanitize search string to prevent malformed queries
     const cleanSearch = search ? String(search).replace(/[^\w\s-]/gi, '').trim() : '';

@@ -27,6 +27,27 @@ export function requireCoordinatorRole(allowedRoles: CoordinatorRole[]) {
     }
 
     if (!req.user.businessId) {
+      // Fallback: resolve user's owned business from DB if session token lacked businessId
+      const biz = await prisma.business.findFirst({
+        where: { ownerId: req.user.id },
+        select: { id: true },
+      });
+      if (biz) {
+        req.user.businessId = biz.id;
+      } else {
+        const crmBiz = await prisma.crmServiceBusiness.findFirst({
+          where: { ownerId: req.user.id },
+          select: { businessId: true, id: true },
+        });
+        if (crmBiz?.businessId) {
+          req.user.businessId = crmBiz.businessId;
+        } else if (crmBiz?.id) {
+          req.user.businessId = crmBiz.id;
+        }
+      }
+    }
+
+    if (!req.user.businessId) {
       return res.status(403).json({ success: false, error: 'Tenant isolation error: No active businessId found in session' });
     }
 

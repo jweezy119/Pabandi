@@ -305,19 +305,21 @@ router.get('/expenses', getExpensesHandler);
  */
 router.get('/invoices', async (req: AuthRequest, res: Response) => {
   try {
-    const businessId = requireCrmContext(req).businessId;
-    if (!businessId) return res.status(400).json({ success: false, error: 'Business is not linked to a platform business yet' });
+    const crm = req.crm;
+    const businessId = crm?.businessId || req.user?.businessId;
+    if (!businessId) {
+      return res.json({ success: true, data: [], pagination: null });
+    }
     const { status, search } = req.query;
 
     const term = typeof search === 'string' ? search.trim() : '';
     const where: Prisma.InvoiceWhereInput = { businessId, ...(status && { status: status as string }) };
     if (term) {
-      // `contains` without `mode` is case-sensitive on Postgres, so an exact-case
-      // invoice number would match and a lowercase one would not.
+      // Case-insensitive matching on invoice number, client name, or email
       where.OR = [
         { number: { contains: term, mode: 'insensitive' } },
-        { client: { is: { name: { contains: term, mode: 'insensitive' } } } },
-        { client: { is: { email: { contains: term, mode: 'insensitive' } } } },
+        { client: { name: { contains: term, mode: 'insensitive' } } },
+        { client: { email: { contains: term, mode: 'insensitive' } } },
       ];
     }
 

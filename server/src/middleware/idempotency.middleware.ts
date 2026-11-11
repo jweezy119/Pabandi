@@ -246,3 +246,28 @@ export const requireIdempotency = async (
     return next(error);
   }
 };
+
+/**
+ * Optional idempotency middleware:
+ * If an Idempotency-Key is present, enforces zero double-processing.
+ * If omitted, passes through to the next handler without error.
+ */
+export const optionalIdempotency = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void | Response> => {
+  const idempotencyKey = (
+    req.header('Idempotency-Key') ||
+    req.header('idempotency-key') ||
+    (req.headers['x-idempotency-key'] as string)
+  )?.trim();
+
+  if (!idempotencyKey) {
+    return next();
+  }
+
+  return requireIdempotency(req, res, next);
+};
+
+export const idempotency = optionalIdempotency;
