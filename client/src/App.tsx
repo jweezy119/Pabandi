@@ -19,6 +19,7 @@ const DevelopersPage = lazy(() => import('./pages/DevelopersPage'));
 const ImpactPage = lazy(() => import('./pages/ImpactPage'));
 const ShariaCompliancePage = lazy(() => import('./pages/ShariaCompliancePage'));
 const UniversalPaymentLinkPage = lazy(() => import('./pages/UniversalPaymentLinkPage'));
+const DeveloperDashboardPage = lazy(() => import('./pages/DeveloperDashboardPage'));
 const IamConsolePage = lazy(() => import('./pages/developer/IamConsolePage'));
 const AgentPaymentsPage = lazy(() => import('./pages/AgentPaymentsPage'));
 const AgentsLandingPage = lazy(() => import('./pages/AgentsLandingPage'));
@@ -284,6 +285,8 @@ function AnimatedAppRoutes() {
         <Route path="/sharia-compliance" element={<ShariaCompliancePage />} />
         <Route path="/impact" element={<ImpactPage />} />
         <Route path="/developers" element={<DevelopersPage />} />
+        <Route path="/developers/keys" element={<DeveloperDashboardPage />} />
+        <Route path="/developers/dashboard" element={<DeveloperDashboardPage />} />
         <Route path="/pay/link/:slug" element={<UniversalPaymentLinkPage />} />
         <Route path="/l/:slug" element={<UniversalPaymentLinkPage />} />
         <Route path="/payment-links" element={<UniversalPaymentLinkPage />} />

@@ -281,6 +281,13 @@ export default function DevelopersPage() {
 
           {/* Quick Jump Pills */}
           <div className="pt-3 flex flex-wrap justify-center gap-2 sm:gap-3">
+            <Link
+              to="/developers/keys"
+              className="px-4 py-2 rounded-xl text-xs font-mono transition-all bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-900/60 font-bold flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+            >
+              <Key className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Keys & Merchant Dashboard &rarr;</span>
+            </Link>
             <button
               onClick={() => setActiveTab('orchestrator')}
               className={`px-4 py-2 rounded-xl text-xs font-mono transition-all ${

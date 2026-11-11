@@ -35,7 +35,57 @@ export class DoubleEntryLedgerService {
   private static instance: DoubleEntryLedgerService;
   private transactions: Map<string, JournalTransaction> = new Map();
 
-  private constructor() {}
+  private constructor() {
+    this.seedInitialLedger();
+  }
+
+  private seedInitialLedger() {
+    if (this.transactions.size > 0) return;
+
+    this.recordPaymentSettlement({
+      paymentId: 'pay_init_raast_001',
+      reference: 'inv_lahore_electric_441',
+      rail: 'raast',
+      amount: 45000,
+      currency: 'PKR',
+      fee: 0,
+      payerId: 'buyer_9921',
+      payeeId: 'merchant_lahore_solar',
+    });
+
+    this.recordPaymentSettlement({
+      paymentId: 'pay_init_sol_002',
+      reference: 'escrow_dev_contract_883',
+      rail: 'solana',
+      amount: 350,
+      currency: 'USDC',
+      fee: 1.75,
+      payerId: 'agent_buyer_0x44',
+      payeeId: 'dev_seller_0x8b',
+    });
+
+    this.recordPaymentSettlement({
+      paymentId: 'pay_init_jc_003',
+      reference: 'qr_retail_peshawar_109',
+      rail: 'jazzcash',
+      amount: 14200,
+      currency: 'PKR',
+      fee: 0,
+      payerId: 'consumer_0300123',
+      payeeId: 'merchant_peshawar_crafts',
+    });
+
+    this.recordPaymentSettlement({
+      paymentId: 'pay_init_link_004',
+      reference: 'link_quick_escrow_55',
+      rail: 'solana',
+      amount: 85,
+      currency: 'USDC',
+      fee: 0.425,
+      payerId: 'client_usdc_0x9',
+      payeeId: 'ali_roofing_karachi',
+    });
+  }
 
   static getInstance(): DoubleEntryLedgerService {
     if (!DoubleEntryLedgerService.instance) {
@@ -153,7 +203,7 @@ export class DoubleEntryLedgerService {
     let totalVolume = 0;
     const rails: Record<string, number> = {};
 
-    for (const tx of this.transactions.values()) {
+    for (const tx of Array.from(this.transactions.values())) {
       const vol = tx.currency === 'PKR' ? tx.totalAmount / 280 : tx.totalAmount;
       totalVolume += vol;
       rails[tx.rail] = (rails[tx.rail] || 0) + vol;
@@ -165,6 +215,31 @@ export class DoubleEntryLedgerService {
       balanced: true,
       rails,
     };
+  }
+
+  exportCsv(): string {
+    const headers = ['TransactionID', 'PaymentID', 'Timestamp', 'Rail', 'Currency', 'TotalAmount', 'Status', 'Account', 'AccountType', 'Debit', 'Credit', 'Description'];
+    const rows: string[] = [headers.join(',')];
+
+    for (const tx of Array.from(this.transactions.values())) {
+      for (const entry of tx.entries) {
+        rows.push([
+          `"${tx.id}"`,
+          `"${tx.paymentId}"`,
+          `"${entry.timestamp}"`,
+          `"${tx.rail}"`,
+          `"${entry.currency}"`,
+          tx.totalAmount,
+          `"${tx.status}"`,
+          `"${entry.account}"`,
+          `"${entry.accountType}"`,
+          entry.debit,
+          entry.credit,
+          `"${entry.description.replace(/"/g, '""')}"`,
+        ].join(','));
+      }
+    }
+    return rows.join('\n');
   }
 }
 
