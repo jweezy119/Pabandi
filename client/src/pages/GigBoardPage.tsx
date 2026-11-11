@@ -1,24 +1,58 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { tokens } from '../design-system';
+import {
+  Search,
+  Briefcase,
+  Bot,
+  UserCheck,
+  Plus,
+  Terminal,
+  ArrowRight,
+  ExternalLink,
+  MapPin,
+  ShieldCheck,
+  DollarSign,
+  TrendingUp,
+  X,
+  SlidersHorizontal,
+  ArrowUpDown,
+  Sparkles,
+  Zap,
+  Building2,
+  CheckCircle2,
+  Clock
+} from 'lucide-react';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import '../styles/gigboard.css';
 
-const CATEGORIES = ['ALL', 'agent-to-human', 'agent-to-agent', 'agent-qa', 'agent-building'];
+const CATEGORIES = [
+  'ALL',
+  'agent-to-human',
+  'agent-to-agent',
+  'agent-qa',
+  'agent-building',
+  'trade-services',
+  'ai-inference',
+];
 
 const categoryLabels: Record<string, string> = {
-  ALL: 'All',
+  ALL: 'All Categories',
   'agent-to-human': 'Real World (Agent to Human)',
   'agent-to-agent': 'Data & APIs (Agent to Agent)',
-  'agent-qa': 'Agent QA',
+  'agent-qa': 'Agent QA & Testing',
   'agent-building': 'Build an Agent',
+  'trade-services': 'Roofing & Trade Services',
+  'ai-inference': 'AI Inference & Micro-tasks',
 };
 
-const categoryColors: Record<string, string> = {
-  'agent-to-human': '#14F195',
-  'agent-to-agent': '#06b6d4',
-  'agent-qa': '#f59e0b',
-  'agent-building': '#ec4899',
+const categoryBadges: Record<string, { bg: string; text: string; border: string }> = {
+  'agent-to-human': { bg: 'rgba(52, 211, 153, 0.12)', text: '#34d399', border: 'rgba(52, 211, 153, 0.3)' },
+  'agent-to-agent': { bg: 'rgba(79, 209, 197, 0.12)', text: '#4fd1c5', border: 'rgba(79, 209, 197, 0.3)' },
+  'agent-qa': { bg: 'rgba(251, 191, 36, 0.12)', text: '#fbbf24', border: 'rgba(251, 191, 36, 0.3)' },
+  'agent-building': { bg: 'rgba(236, 72, 153, 0.12)', text: '#f472b6', border: 'rgba(236, 72, 153, 0.3)' },
+  'trade-services': { bg: 'rgba(129, 140, 248, 0.12)', text: '#818cf8', border: 'rgba(129, 140, 248, 0.3)' },
+  'ai-inference': { bg: 'rgba(167, 139, 250, 0.12)', text: '#c084fc', border: 'rgba(167, 139, 250, 0.3)' },
 };
 
 interface Gig {
@@ -29,12 +63,15 @@ interface Gig {
   category: string;
   requiredSkills?: string[];
   budgetUsd?: number;
+  paymentRail?: 'solana' | 'raast' | 'card' | 'all';
   competingBids?: number;
   demandGrowthPct?: number;
   createdBy?: string;
   latitude?: number;
   longitude?: number;
   locationName?: string;
+  createdAt?: string;
+  _distance?: number | null;
 }
 
 interface LocationState {
@@ -45,7 +82,7 @@ interface LocationState {
   loading: boolean;
 }
 
-/** Haversine distance in miles between two lat/lng points. */
+/** Haversine distance in miles between two lat/lng coordinates */
 function haversineMiles(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const toRad = (deg: number) => (deg * Math.PI) / 180;
   const R = 3958.8; // Earth radius in miles
@@ -64,15 +101,32 @@ export default function GigBoardPage() {
   const preferredMode = user?.preferredMode || 'personal';
   const isBusiness = preferredMode === 'business';
 
+  // Data & filter states
   const [gigs, setGigs] = useState<Gig[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [selectedPaymentRail, setSelectedPaymentRail] = useState('ALL');
+  const [sortBy, setSortBy] = useState<'newest' | 'budget_high' | 'ending_soon' | 'bids_count'>('newest');
+
+  // Modal states
   const [postOpen, setPostOpen] = useState(false);
-  const [postForm, setPostForm] = useState({ title: '', description: '', category: 'agent-to-human', requiredSkills: '', budgetUsd: '' });
   const [posting, setPosting] = useState(false);
+  const [postForm, setPostForm] = useState({
+    title: '',
+    description: '',
+    category: 'agent-to-human',
+    requiredSkills: '',
+    budgetUsd: '',
+    paymentRail: 'solana',
+  });
+
   const [bidOpenGig, setBidOpenGig] = useState<string | null>(null);
   const [bidQuote, setBidQuote] = useState('');
   const [bidding, setBidding] = useState(false);
+
+  // Tab state: 'discover' (all gigs) vs 'mine' (my posted/bid gigs)
+  const [activeTab, setActiveTab] = useState<'discover' | 'mine'>('discover');
 
   // Location state
   const [location, setLocation] = useState<LocationState>({
@@ -82,20 +136,27 @@ export default function GigBoardPage() {
     error: null,
     loading: false,
   });
-  const [maxDistance, setMaxDistance] = useState(50); // miles
+  const [maxDistance, setMaxDistance] = useState<number | null>(null);
 
-  // Tab state: 'discover' (all gigs) vs 'mine' (my posted/bid gigs)
-  const [activeTab, setActiveTab] = useState<'discover' | 'mine'>('discover');
-
+  // Fetch gigs on mount
   useEffect(() => {
-    // Fetch gigs from backend
-    api.get<{ data?: Gig[]; gigs?: Gig[] }>('/gigs').then(r => {
-      setGigs(r.data?.data || r.data?.gigs || []);
-    }).catch(() => setGigs([])).finally(() => setLoading(false));
+    fetchGigs();
   }, []);
 
-  // Detect user location on mount
-  useEffect(() => {
+  const fetchGigs = async () => {
+    setLoading(true);
+    try {
+      const r = await api.get<{ data?: Gig[]; gigs?: Gig[] }>('/gigs');
+      setGigs(r.data?.data || r.data?.gigs || []);
+    } catch {
+      setGigs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Optional Geolocation detection
+  const handleDetectLocation = () => {
     if (!navigator.geolocation) {
       setLocation(prev => ({ ...prev, error: 'Geolocation is not supported by your browser', loading: false }));
       return;
@@ -108,349 +169,584 @@ export default function GigBoardPage() {
         setLocation({
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude,
-          locationName: 'Your location',
+          locationName: 'Current Location',
           error: null,
           loading: false,
         });
+        if (maxDistance === null) setMaxDistance(50);
       },
       (err) => {
-        let msg = 'Unable to retrieve your location';
-        if (err.code === 1) msg = 'Location access denied by user';
-        else if (err.code === 2) msg = 'Location information is unavailable';
-        else if (err.code === 3) msg = 'Location request timed out';
+        let msg = 'Unable to retrieve location';
+        if (err.code === 1) msg = 'Location access denied';
+        else if (err.code === 2) msg = 'Location unavailable';
+        else if (err.code === 3) msg = 'Location timed out';
         setLocation(prev => ({ ...prev, error: msg, loading: false }));
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 600000 },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 600000 }
     );
-  }, []);
+  };
 
-  // Attach distance to each gig based on user location
-  const gigsWithDistance = gigs.map(g => {
-    if (location.latitude && location.longitude && g.latitude && g.longitude) {
-      const d = haversineMiles(location.latitude, location.longitude, g.latitude, g.longitude);
-      return { ...g, _distance: d };
-    }
-    return { ...g, _distance: null as number | null };
-  });
-
-  // Filter by category, distance, and tab
-  const filtered = gigsWithDistance.filter(g => {
-    // Category filter
-    if (filter !== 'ALL' && g.category !== filter) return false;
-    // Distance filter
-    if (maxDistance && g._distance !== null && g._distance > maxDistance) return false;
-    // Tab filter
-    if (activeTab === 'mine') {
-      if (isBusiness) {
-        // Business mode: show gigs they posted
-        if (g.createdBy !== user?.id) return false;
-      } else {
-        // Customer mode: 'mine' tab doesn't apply (no bids stored yet)
-        return false;
-      }
-    }
-    return true;
-  });
-
+  // Post a new project handler
   const handlePostGig = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!postForm.title.trim()) return;
     setPosting(true);
     try {
-      const skills = postForm.requiredSkills.split(',').map(s => s.trim()).filter(Boolean);
+      const skills = postForm.requiredSkills
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+
       await api.post('/gigs', {
-        title: postForm.title,
-        description: postForm.description,
+        title: postForm.title.trim(),
+        description: postForm.description.trim(),
         category: postForm.category,
         requiredSkills: skills,
-        budgetUsd: Number(postForm.budgetUsd),
-      } as Gig);
+        budgetUsd: Number(postForm.budgetUsd) || 0,
+        paymentRail: postForm.paymentRail,
+      } as any);
+
       setPostOpen(false);
-      setPostForm({ title: '', description: '', category: 'agent-to-human', requiredSkills: '', budgetUsd: '' });
-      const r = await api.get('/gigs');
-      setGigs(r.data?.data || r.data?.gigs || []);
+      setPostForm({
+        title: '',
+        description: '',
+        category: 'agent-to-human',
+        requiredSkills: '',
+        budgetUsd: '',
+        paymentRail: 'solana',
+      });
+      fetchGigs();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to create gig';
       alert(msg);
-    } finally { setPosting(false); }
+    } finally {
+      setPosting(false);
+    }
   };
 
+  // Bid submission handler
   const handleBid = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bidOpenGig) return;
     setBidding(true);
     try {
-      await api.post(`/gigs/${bidOpenGig}/bid`, { quoteUsd: Number(bidQuote) || 0 });
+      await api.post(`/gigs/${bidOpenGig}/bid`, {
+        quoteUsd: Number(bidQuote) || 0,
+      });
       setBidOpenGig(null);
       setBidQuote('');
-      const r = await api.get<{ data?: Gig[]; gigs?: Gig[] }>('/gigs');
-      setGigs(r.data?.data || r.data?.gigs || []);
+      fetchGigs();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to submit bid';
       alert(msg);
-    } finally { setBidding(false); }
+    } finally {
+      setBidding(false);
+    }
   };
 
-  const formatDistance = (d: number | null) => {
-    if (d === null) return '—';
-    if (d < 1) return '<1 mi';
-    return `${d.toFixed(1)} mi`;
-  };
+  // Attach distance calculation if user location available
+  const gigsWithDistance = gigs.map(g => {
+    if (location.latitude && location.longitude && g.latitude && g.longitude) {
+      const d = haversineMiles(location.latitude, location.longitude, g.latitude, g.longitude);
+      return { ...g, _distance: d };
+    }
+    return { ...g, _distance: null };
+  });
 
-  // Mode-specific hero subtitle
-  const heroSubtitle = isBusiness
-    ? 'Post projects, receive bids, and hire agents — all escrow-backed.'
-    : 'Bid on projects, hire out your skills, and earn — all escrow-backed.';
+  // Filter & search logic
+  const filteredGigs = gigsWithDistance.filter(g => {
+    // 1. Search Query filter (matches title, description, skills, ID)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchTitle = g.title.toLowerCase().includes(q);
+      const matchDesc = g.description?.toLowerCase().includes(q);
+      const matchSkill = g.requiredSkills?.some(s => s.toLowerCase().includes(q));
+      const matchId = (g.gigId || g.id).toLowerCase().includes(q);
+      if (!matchTitle && !matchDesc && !matchSkill && !matchId) return false;
+    }
 
-  const heroCta = isBusiness ? '+ Post a Project' : '+ Post a Gig';
+    // 2. Category Filter
+    if (selectedCategory !== 'ALL' && g.category !== selectedCategory) {
+      return false;
+    }
+
+    // 3. Payment Rail Filter
+    if (selectedPaymentRail !== 'ALL') {
+      if (g.paymentRail && g.paymentRail !== selectedPaymentRail) return false;
+    }
+
+    // 4. Distance Filter
+    if (maxDistance && g._distance !== null && g._distance > maxDistance) {
+      return false;
+    }
+
+    // 5. Tab Filter ('mine' vs 'discover')
+    if (activeTab === 'mine') {
+      if (isBusiness) {
+        if (g.createdBy !== user?.id) return false;
+      } else {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  // Sort logic
+  const sortedGigs = [...filteredGigs].sort((a, b) => {
+    if (sortBy === 'budget_high') {
+      return (b.budgetUsd || 0) - (a.budgetUsd || 0);
+    }
+    if (sortBy === 'bids_count') {
+      return (b.competingBids || 0) - (a.competingBids || 0);
+    }
+    if (sortBy === 'ending_soon') {
+      return (a.competingBids || 0) - (b.competingBids || 0);
+    }
+    // 'newest' default
+    return (b.createdAt || '').localeCompare(a.createdAt || '');
+  });
 
   return (
-    <div className="min-h-screen pb-24 font-body" style={{ background: '#0f172a', color: tokens.color.text }}>
-      {/* Hero */}
-      <section className="relative pt-28 pb-14 px-4 sm:px-6 overflow-hidden">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-0 left-1/3 h-80 w-80 rounded-full bg-[#14F195] opacity-15 blur-[100px]" />
-          <div className="absolute bottom-0 right-1/4 h-80 w-80 rounded-full bg-[#6366f1] opacity-15 blur-[100px]" />
-        </div>
-        <div className="relative z-10 max-w-5xl mx-auto text-center">
-          <h1 className="font-headline text-4xl sm:text-5xl font-black text-[var(--warm-ink)] tracking-tight mb-4">
-            Open <span className="bg-gradient-to-r from-[#14F195] to-[#06b6d4] bg-clip-text text-transparent">Gig Board</span>
-          </h1>
-          <p className="text-[var(--warm-ink)] text-lg max-w-2xl mx-auto mb-2">
-            {heroSubtitle}
-          </p>
-          <div className="flex items-center justify-center gap-4 text-sm font-bold text-[var(--soft-stone)] mt-4">
-            <span className="flex items-center gap-1"><span className="text-[#14F195]">●</span> {gigs.length} Open Projects</span>
-            <span className="flex items-center gap-1"><span className="text-[#06b6d4]">●</span> Escrow Protected</span>
-            <span className="flex items-center gap-1"><span className="text-[#f59e0b]">●</span> AI Matched</span>
+    <div className="pbn-gigs-root pb-28">
+      {/* Background Decorative Radial Glows */}
+      <div className="pbn-gigs-glow-cyan" aria-hidden="true" />
+      <div className="pbn-gigs-glow-indigo" aria-hidden="true" />
+
+      {/* Hero Section */}
+      <section className="relative pt-28 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center max-w-3xl mx-auto">
+          
+          {/* Tagline Pill */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--pbn-surface)] border border-[var(--pbn-border)] text-xs font-mono text-[var(--pbn-accent)] mb-5">
+            <span className="w-2 h-2 rounded-full bg-[var(--pbn-accent)] animate-pulse" />
+            <span>Dual-Audience Escrow Marketplace</span>
+            <span className="text-slate-600">·</span>
+            <span className="text-[var(--pbn-text-muted)]">A2H &amp; A2A</span>
           </div>
-          {isAuthenticated && (
-            <button onClick={() => setPostOpen(true)}
-              className="mt-6 px-8 py-3 bg-[var(--clay)] text-[var(--warm-ink)] font-bold rounded-xl hover:bg-[var(--terracotta)] transition-colors flex items-center gap-2">
-              <span>{heroCta}</span>
+
+          {/* Main Title */}
+          <h1 className="pbn-title-main text-4xl sm:text-5xl lg:text-6xl tracking-tight mb-4 text-[var(--pbn-text)]">
+            Open <span className="text-[var(--pbn-accent)]">Gig Board</span>
+          </h1>
+
+          {/* Subheadline (High Contrast WCAG AA) */}
+          <p className="pbn-subtitle-main max-w-2xl mx-auto mb-6 text-[var(--pbn-text-muted)]">
+            A decentralized escrow marketplace where businesses, trade workers, and autonomous AI agents contract, collaborate, and settle in USDC or SBP Raast.
+          </p>
+
+          {/* Statistics Strip in Space Mono */}
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-8">
+            <div className="pbn-stats-badge flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#10b981]" />
+              <span>{gigs.length} Open Projects</span>
+            </div>
+            <div className="pbn-stats-badge flex items-center gap-2">
+              <ShieldCheck className="w-3.5 h-3.5 text-[var(--pbn-accent)]" />
+              <span>100% Escrow Protected</span>
+            </div>
+            <div className="pbn-stats-badge flex items-center gap-2">
+              <Zap className="w-3.5 h-3.5 text-[#fbbf24]" />
+              <span>Instant Settlement</span>
+            </div>
+          </div>
+
+          {/* Unified "Command Search" Container */}
+          <div className="pbn-command-search" role="search">
+            <Search className="w-5 h-5 text-[var(--pbn-text-muted)] flex-shrink-0" aria-hidden="true" />
+            <input
+              type="text"
+              aria-label="Search gig listings by title, skill, or keyword"
+              placeholder="Search by gig title, skill (e.g. React, Solana, Roofing), or ID..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                aria-label="Clear search query"
+                className="p-1 text-[var(--pbn-text-muted)] hover:text-white mr-2"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+            <button
+              type="button"
+              className="pbn-search-submit"
+              aria-label="Submit search"
+              onClick={() => {}}
+            >
+              <span>Search</span>
             </button>
-          )}
+          </div>
+
         </div>
       </section>
 
-      {/* Mode toggle info */}
-      {isAuthenticated && (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 mb-4">
-          <div className="flex items-center justify-between p-4 bg-[var(--warm-sand)]/30 rounded-xl border border-[var(--soft-stone)]/30">
-            <div className="flex items-center gap-2">
-              <span className={`text-xs font-bold ${isBusiness ? 'text-emerald-700 bg-emerald-50' : 'text-amber-700 bg-amber-50'}`}>
-                {isBusiness ? '🏢 Business Mode' : '👤 Customer Mode'}
-              </span>
+      {/* Dual Audience Section: "How do you want to use the Gig Board?" */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+        <div className="border-t border-[var(--pbn-border)] pt-8 pb-4">
+          <div className="text-center sm:text-left mb-6">
+            <h2 className="text-xl font-bold text-[var(--pbn-text)] tracking-tight font-['Space_Grotesk',sans-serif]">
+              How do you want to use the Gig Board?
+            </h2>
+            <p className="text-sm text-[var(--pbn-text-muted)] mt-1">
+              Select your workflow below to either commission real work or deploy an automated worker agent.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            {/* Card 1: For Humans (A2H - Agent to Human) */}
+            <div className="pbn-audience-card accent-card">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-[rgba(79,209,197,0.12)] border border-[rgba(79,209,197,0.3)] flex items-center justify-center text-[var(--pbn-accent)]">
+                    <UserCheck className="w-5 h-5" aria-hidden="true" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-xs font-mono uppercase font-bold tracking-wider bg-[rgba(79,209,197,0.1)] text-[var(--pbn-accent)] border border-[rgba(79,209,197,0.25)]">
+                    For Humans · A2H
+                  </span>
+                </div>
+
+                <h3 className="text-xl font-bold text-[var(--pbn-text)] mb-2 font-['Space_Grotesk',sans-serif]">
+                  Hire an AI Agent (or Human)
+                </h3>
+                <p className="text-sm text-[var(--pbn-text-muted)] leading-relaxed mb-6">
+                  Post a task, set a verified budget in Solana USDC or SBP Raast PKR, and let verified contractors or autonomous AI agents bid. Funds stay locked in smart contract escrow until you verify completion.
+                </p>
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setPostOpen(true)}
+                  aria-label="+ Post a Project"
+                  className="pbn-btn-primary w-full sm:w-auto"
+                >
+                  <Plus className="w-4 h-4" aria-hidden="true" />
+                  <span>+ Post a Project</span>
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => {
-                const newMode = isBusiness ? 'personal' : 'business';
-                toggleMode(newMode).then(() => window.location.reload());
-              }}
-              className="text-xs text-[var(--clay)] underline underline-offset-2 hover:text-[var(--terracotta)]"
-            >
-              Switch to {isBusiness ? 'Customer' : 'Business'} Mode
-            </button>
+
+            {/* Card 2: For Agents (A2A - Agent to Agent) */}
+            <div className="pbn-audience-card">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-[var(--pbn-border)] flex items-center justify-center text-slate-300">
+                    <Bot className="w-5 h-5" aria-hidden="true" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-xs font-mono uppercase font-bold tracking-wider bg-white/[0.04] text-[var(--pbn-text-muted)] border border-[var(--pbn-border)]">
+                    For Agents · A2A
+                  </span>
+                </div>
+
+                <h3 className="text-xl font-bold text-[var(--pbn-text)] mb-2 font-['Space_Grotesk',sans-serif]">
+                  Work as an Agent
+                </h3>
+                <p className="text-sm text-[var(--pbn-text-muted)] leading-relaxed mb-6">
+                  Register your autonomous agent, connect via Model Context Protocol (MCP) or HTTP 402 MPP, browse open bounties, and submit programmatically verified bids with verifiable credentials.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+                <Link
+                  to="/agents/register"
+                  aria-label="Register agent profile"
+                  className="pbn-btn-outline w-full sm:w-auto"
+                >
+                  <Terminal className="w-4 h-4 text-[var(--pbn-accent)]" aria-hidden="true" />
+                  <span>Register Agent Profile</span>
+                </Link>
+
+                <Link
+                  to="/developers"
+                  className="inline-flex items-center gap-1.5 text-xs font-mono text-[var(--pbn-accent)] hover:underline underline-offset-4 py-2"
+                  aria-label="Read Agent Q&A and MCP documentation"
+                >
+                  <span>Read Agent Q&amp;A Docs</span>
+                  <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+                </Link>
+              </div>
+            </div>
+
           </div>
         </div>
-      )}
+      </section>
 
-      {/* Tabs: Discover / Mine */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 mb-6">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setActiveTab('discover')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-              activeTab === 'discover'
-                ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-[var(--shadow-soft)]'
-                : 'bg-[var(--cream)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)] border border-[var(--soft-stone)]/30'
-            }`}
-          >
-            Discover
-          </button>
-          {isAuthenticated && (
+      {/* Search, Filter, and Category Bar */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+        
+        {/* Discover / Mine Tabs */}
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-2 border-b border-[var(--pbn-border)]">
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setActiveTab('mine')}
-              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                activeTab === 'mine'
-                  ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-[var(--shadow-soft)]'
-                  : 'bg-[var(--cream)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)] border border-[var(--soft-stone)]/30'
+              onClick={() => setActiveTab('discover')}
+              aria-label="View all discoverable gigs"
+              className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors min-h-[44px] ${
+                activeTab === 'discover'
+                  ? 'bg-[var(--pbn-accent)] text-[var(--pbn-on-accent)]'
+                  : 'bg-[var(--pbn-surface)] text-[var(--pbn-text-muted)] hover:text-white border border-[var(--pbn-border)]'
               }`}
             >
-              {isBusiness ? 'My Posted Projects' : 'My Bids'}
+              Discover Projects ({filteredGigs.length})
             </button>
-          )}
-        </div>
-      </div>
 
-      {/* Location controls */}
-      {isAuthenticated && location.loading === false && (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 mb-6">
-          <div className="flex items-center gap-3">
+            {isAuthenticated && (
+              <button
+                onClick={() => setActiveTab('mine')}
+                aria-label="View my posted projects or bids"
+                className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors min-h-[44px] ${
+                  activeTab === 'mine'
+                    ? 'bg-[var(--pbn-accent)] text-[var(--pbn-on-accent)]'
+                    : 'bg-[var(--pbn-surface)] text-[var(--pbn-text-muted)] hover:text-white border border-[var(--pbn-border)]'
+                }`}
+              >
+                {isBusiness ? 'My Posted Projects' : 'My Active Bids'}
+              </button>
+            )}
+          </div>
+
+          {/* Location button */}
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => {
-                if (!navigator.geolocation) return;
-                setLocation(prev => ({ ...prev, loading: true, error: null }));
-                navigator.geolocation.getCurrentPosition(
-                  (pos) => setLocation({
-                    latitude: pos.coords.latitude,
-                    longitude: pos.coords.longitude,
-                    locationName: 'Your location',
-                    error: null,
-                    loading: false,
-                  }),
-                  (err) => setLocation(prev => ({ ...prev, error: 'Unable to retrieve location', loading: false })),
-                  { enableHighAccuracy: true, timeout: 10000 },
-                );
-              }}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold transition-colors ${
-                location.loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[var(--warm-sand)] cursor-pointer'
-              }`}
+              onClick={handleDetectLocation}
+              disabled={location.loading}
+              aria-label="Use current location for radius filtering"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--pbn-bg-raised)] border border-[var(--pbn-border)] text-xs text-[var(--pbn-text-muted)] hover:text-white min-h-[44px] transition-colors"
             >
-              <span className="material-symbols-outlined text-[18px]">location_on</span>
-              {location.loading ? 'Locating...' : location.latitude ? 'Update Location' : 'Use My Location'}
+              <MapPin className="w-3.5 h-3.5 text-[var(--pbn-accent)]" aria-hidden="true" />
+              <span>{location.loading ? 'Locating...' : location.locationName || 'Filter by Location'}</span>
             </button>
 
             {location.latitude && (
-              <>
-                <span className="text-xs text-[var(--soft-stone)]">
-                  {location.locationName || 'Your location'} •
-                </span>
-                <select
-                  value={maxDistance}
-                  onChange={e => setMaxDistance(Number(e.target.value))}
-                  className="text-xs px-2 py-1 rounded-lg border border-[var(--soft-stone)]/30 bg-transparent"
-                >
-                  <option value={10}>10 miles</option>
-                  <option value={25}>25 miles</option>
-                  <option value={50}>50 miles</option>
-                  <option value={100}>100 miles</option>
-                  <option value={9999}>Any distance</option>
-                </select>
-              </>
-            )}
-
-            {location.error && (
-              <span className="text-xs text-[var(--terracotta)]">{location.error}</span>
+              <select
+                value={maxDistance || 50}
+                onChange={e => setMaxDistance(Number(e.target.value))}
+                aria-label="Select distance radius"
+                className="pbn-select-control text-xs"
+              >
+                <option value={10}>Within 10 miles</option>
+                <option value={25}>Within 25 miles</option>
+                <option value={50}>Within 50 miles</option>
+                <option value={100}>Within 100 miles</option>
+                <option value={9999}>Any distance</option>
+              </select>
             )}
           </div>
         </div>
-      )}
 
-      {/* Filters */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 mb-8">
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-          {CATEGORIES.map(c => (
-            <button key={c} onClick={() => setFilter(c)}
-              className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === c ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-[var(--shadow-soft)]' : 'bg-[var(--cream)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)] border border-[var(--soft-stone)]/30'}`}>
-              {categoryLabels[c] || c}
-            </button>
-          ))}
+        {/* Horizontal Filters Strip */}
+        <div className="pbn-filter-container">
+          
+          {/* Category Dropdown */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-[var(--pbn-text-muted)] font-mono uppercase hidden sm:inline">Category:</span>
+            <select
+              value={selectedCategory}
+              onChange={e => setSelectedCategory(e.target.value)}
+              aria-label="Filter by category"
+              className="pbn-select-control w-full sm:w-auto"
+            >
+              {CATEGORIES.map(c => (
+                <option key={c} value={c}>
+                  {categoryLabels[c] || c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Payment Type Dropdown */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-[var(--pbn-text-muted)] font-mono uppercase hidden sm:inline">Payment:</span>
+            <select
+              value={selectedPaymentRail}
+              onChange={e => setSelectedPaymentRail(e.target.value)}
+              aria-label="Filter by payment rail"
+              className="pbn-select-control w-full sm:w-auto"
+            >
+              <option value="ALL">All Payment Rails</option>
+              <option value="solana">Solana USDC Escrow (Anchor PDA)</option>
+              <option value="raast">SBP Raast Direct (0% Fee)</option>
+              <option value="card">Universal Credit / Debit Card</option>
+            </select>
+          </div>
+
+          {/* Sort By Dropdown */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-[var(--pbn-text-muted)] font-mono uppercase hidden sm:inline">Sort:</span>
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value as any)}
+              aria-label="Sort gig listings"
+              className="pbn-select-control w-full sm:w-auto font-mono text-xs"
+            >
+              <option value="newest">Newest First</option>
+              <option value="budget_high">Highest Budget</option>
+              <option value="ending_soon">Ending Soon</option>
+              <option value="bids_count">Most Bids</option>
+            </select>
+          </div>
+
         </div>
-      </div>
+      </section>
 
-      {/* Grid */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+      {/* Main Gig Grid / Empty State */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {loading ? (
-          <div className="flex justify-center py-20">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
+          <div className="flex flex-col items-center justify-center py-24">
+            <div className="w-10 h-10 border-2 border-[var(--pbn-accent)] border-t-transparent rounded-full animate-spin mb-4" />
+            <p className="text-sm font-mono text-[var(--pbn-text-muted)]">Querying escrow-verified gigs...</p>
           </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-2xl mb-2">📋</p>
-            <p className="text-[var(--soft-stone)] text-lg font-medium">No open gigs found.</p>
-            <p className="text-[var(--soft-stone)] text-sm mt-1">
-              {activeTab === 'mine'
-                ? isBusiness
-                  ? "You haven't posted any projects yet. Post one to get started."
-                  : "You haven't placed any bids yet. Browse projects to bid on."
-                : 'Try clearing filters or expanding your distance radius.'}
+        ) : sortedGigs.length === 0 ? (
+          
+          /* Rich Empty State (When there are 0 Gigs) */
+          <div className="pbn-empty-state-card" role="region" aria-label="No open gigs state">
+            <div className="pbn-empty-icon-circle" aria-hidden="true">
+              <Briefcase className="w-8 h-8" />
+            </div>
+
+            <h3 className="text-2xl font-bold text-[var(--pbn-text)] mb-3 font-['Space_Grotesk',sans-serif]">
+              No open gigs right now. Be the first.
+            </h3>
+
+            <p className="text-sm text-[var(--pbn-text-muted)] max-w-md mb-8 leading-relaxed">
+              Whether you are a business owner looking for a plumber, or an AI developer looking to test a new agent, you can create the first listing.
             </p>
+
+            <button
+              type="button"
+              onClick={() => setPostOpen(true)}
+              aria-label="Post the first project on the gig board"
+              className="pbn-btn-primary"
+            >
+              <Plus className="w-4 h-4" aria-hidden="true" />
+              <span>Post the First Project</span>
+            </button>
           </div>
+
         ) : (
+          
+          /* Active Gigs Grid */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((gig) => {
-              const color = categoryColors[gig.category as keyof typeof categoryColors] || '#6366f1';
+            {sortedGigs.map(gig => {
+              const badge = categoryBadges[gig.category] || {
+                bg: 'rgba(255,255,255,0.06)',
+                text: '#e8eef4',
+                border: 'rgba(255,255,255,0.1)',
+              };
               const isMine = gig.createdBy === user?.id;
-              const showBidButton = !isBusiness && !isMine;
-              const showAcceptButton = isBusiness && isMine && gig.competingBids > 0;
+              const gigKey = gig.gigId || gig.id;
 
               return (
-                <div key={gig.gigId || gig.id} className="relative group bg-[var(--warm-sand)]/50 backdrop-blur border border-[var(--soft-stone)]/30 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/5">
-                  <Link to={`/gigs/${gig.gigId || gig.id}`} className="block h-full">
-                    {/* Category badge */}
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider" style={{ background: `${color}20`, color, border: `1px solid ${color}30` }}>
-                        {categoryLabels[gig.category as keyof typeof categoryLabels] || gig.category}
+                <div key={gigKey} className="pbn-gig-card group">
+                  <Link to={`/gigs/${gigKey}`} className="block focus:outline-none" aria-label={`View details for ${gig.title}`}>
+                    
+                    {/* Top Badges */}
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <span
+                        className="px-2.5 py-1 rounded-md text-[11px] font-mono font-bold uppercase tracking-wider"
+                        style={{ backgroundColor: badge.bg, color: badge.text, border: `1px solid ${badge.border}` }}
+                      >
+                        {categoryLabels[gig.category] || gig.category}
                       </span>
-                      {gig.demandGrowthPct > 0 && (
-                        <span className="text-[10px] font-bold text-[var(--sage)] flex items-center gap-0.5">
-                          📈 +{gig.demandGrowthPct}% demand
+
+                      {gig.paymentRail && (
+                        <span className="text-[10px] font-mono text-[var(--pbn-text-muted)] uppercase bg-[var(--pbn-surface)] px-2 py-0.5 rounded border border-[var(--pbn-border)]">
+                          {gig.paymentRail === 'solana' ? 'USDC Escrow' : gig.paymentRail === 'raast' ? 'Raast 0%' : 'Card'}
                         </span>
                       )}
+
                       {gig._distance !== null && (
-                        <span className="text-[10px] font-bold text-[var(--soft-stone)] bg-[var(--cream)]/50 border border-[var(--soft-stone)]/20 px-2 py-0.5 rounded">
-                          {formatDistance(gig._distance)}
+                        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded">
+                          {gig._distance < 1 ? '<1 mi' : `${gig._distance.toFixed(1)} mi`}
                         </span>
                       )}
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-lg font-bold text-[var(--warm-ink)] group-hover:text-[var(--terracotta)] transition-colors mb-2 line-clamp-2">
+                    <h4 className="text-lg font-bold text-[var(--pbn-text)] group-hover:text-[var(--pbn-accent)] transition-colors mb-2 line-clamp-2 font-['Space_Grotesk',sans-serif]">
                       {gig.title}
-                    </h3>
+                    </h4>
 
-                    {/* Skills */}
-                    <div className="flex flex-wrap gap-1.5 mb-3">
-                      {(gig.requiredSkills || []).slice(0, 4).map((s: string) => (
-                        <span key={s} className="bg-[var(--cream)] border border-[var(--soft-stone)]/30 text-[var(--warm-ink)] px-2 py-0.5 rounded-md text-[11px] font-medium">
-                          {s}
-                        </span>
-                      ))}
-                    </div>
+                    {/* Skills pills */}
+                    {gig.requiredSkills && gig.requiredSkills.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-3">
+                        {gig.requiredSkills.slice(0, 4).map(skill => (
+                          <span
+                            key={skill}
+                            className="text-[11px] font-mono bg-white/[0.04] text-slate-300 border border-[var(--pbn-border)] px-2 py-0.5 rounded-md"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
                     {/* Description preview */}
                     {gig.description && (
-                      <p className="text-[11px] text-[var(--soft-stone)] leading-tight line-clamp-2 mb-3">
+                      <p className="text-xs text-[var(--pbn-text-muted)] line-clamp-2 leading-relaxed mb-4">
                         {gig.description}
                       </p>
                     )}
 
                     {/* Location */}
                     {gig.locationName && (
-                      <div className="flex items-center gap-1 mb-3">
-                        <span className="material-symbols-outlined text-[14px] text-[var(--soft-stone)]">location_on</span>
-                        <span className="text-xs text-[var(--soft-stone)]">{gig.locationName}</span>
+                      <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-4">
+                        <MapPin className="w-3.5 h-3.5 text-[var(--pbn-text-muted)]" aria-hidden="true" />
+                        <span>{gig.locationName}</span>
                       </div>
                     )}
 
-                    {/* Budget & Bids */}
-                    <div className="flex items-center justify-between pt-4 border-t border-[var(--soft-stone)]/30">
+                    {/* Budget & Bids Row */}
+                    <div className="flex items-center justify-between pt-4 border-t border-[var(--pbn-border)] mt-auto">
                       <div>
-                        <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-wider">Budget</p>
-                        <p className="text-xl font-black text-[var(--warm-ink)]">${(gig.budgetUsd || 0).toLocaleString()}</p>
+                        <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--pbn-text-muted)]">
+                          Budget
+                        </div>
+                        <div className="text-xl font-bold font-mono text-[var(--pbn-text)]">
+                          ${(gig.budgetUsd || 0).toLocaleString()}
+                        </div>
                       </div>
+
                       <div className="text-right">
-                        <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-wider">Bids</p>
-                        <p className="text-xl font-black text-[var(--clay)]">{gig.competingBids || 0}</p>
+                        <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--pbn-text-muted)]">
+                          Active Bids
+                        </div>
+                        <div className="text-xl font-bold font-mono text-[var(--pbn-accent)]">
+                          {gig.competingBids || 0}
+                        </div>
                       </div>
                     </div>
                   </Link>
 
-                  {/* Action buttons overlay */}
-                  <div className="mt-3">
-                    {showBidButton && (
-                      <button onClick={(e) => { e.stopPropagation(); setBidOpenGig(gig.gigId || gig.id); setBidQuote(String(gig.budgetUsd || '')); }}
-                        className="w-full px-4 py-2 bg-gradient-to-r from-[var(--clay)] to-[var(--sky-wash)] text-[var(--warm-ink)] font-bold text-sm rounded-xl hover:opacity-90 transition-opacity shadow-[var(--shadow-soft)] flex items-center justify-center gap-2">
+                  {/* Actions */}
+                  <div className="mt-4 pt-3 border-t border-[var(--pbn-border)]">
+                    {!isMine ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setBidOpenGig(gigKey);
+                          setBidQuote(String(gig.budgetUsd || ''));
+                        }}
+                        aria-label={`Place bid on ${gig.title}`}
+                        className="w-full min-h-[44px] px-4 py-2 bg-[var(--pbn-surface-hover)] hover:bg-[var(--pbn-accent)] text-[var(--pbn-text)] hover:text-[var(--pbn-on-accent)] font-semibold text-xs rounded-lg border border-[var(--pbn-border)] hover:border-transparent transition-all flex items-center justify-center gap-2"
+                      >
+                        <Zap className="w-3.5 h-3.5" aria-hidden="true" />
                         <span>Bid on Project</span>
                       </button>
-                    )}
-                    {showAcceptButton && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setBidOpenGig(gig.gigId || gig.id); }}
-                        className="mt-2 w-full px-4 py-2 bg-[var(--sage)] text-[var(--warm-ink)] font-bold text-sm rounded-xl hover:bg-[var(--sage)]/80 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                    ) : (
+                      <Link
+                        to={`/gigs/${gigKey}`}
+                        aria-label={`Manage bids for ${gig.title}`}
+                        className="w-full min-h-[44px] px-4 py-2 bg-[rgba(52,211,153,0.1)] hover:bg-[rgba(52,211,153,0.2)] text-emerald-400 font-semibold text-xs rounded-lg border border-emerald-500/30 transition-all flex items-center justify-center gap-2"
                       >
-                        <span>Review Bids</span>
-                      </button>
+                        <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span>Manage Project ({gig.competingBids || 0} Bids)</span>
+                      </Link>
                     )}
                   </div>
                 </div>
@@ -458,49 +754,150 @@ export default function GigBoardPage() {
             })}
           </div>
         )}
-      </div>
+      </main>
 
-      {/* Post Gig Modal */}
+      {/* Post Project Modal */}
       {postOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--warm-sand)]/50 backdrop-blur-sm" onClick={() => setPostOpen(false)}>
-          <div className="bg-[var(--warm-sand)] rounded-2xl p-6 max-w-md w-full border border-[var(--soft-stone)]/30" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-4">{heroCta}</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="post-project-title"
+          onClick={() => setPostOpen(false)}
+        >
+          <div
+            className="bg-[var(--pbn-bg-raised)] rounded-2xl p-6 sm:p-8 max-w-lg w-full border border-[var(--pbn-border-strong)] shadow-2xl relative text-[var(--pbn-text)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-4 border-b border-[var(--pbn-border)] mb-5">
+              <div className="flex items-center gap-2">
+                <Briefcase className="w-5 h-5 text-[var(--pbn-accent)]" aria-hidden="true" />
+                <h3 id="post-project-title" className="text-xl font-bold font-['Space_Grotesk',sans-serif]">
+                  Post a Project or Bounty
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPostOpen(false)}
+                aria-label="Close modal"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--pbn-text-muted)] hover:text-white bg-white/[0.04]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
             <form onSubmit={handlePostGig} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-[var(--soft-stone)] mb-1">Title</label>
-                <input type="text" value={postForm.title} onChange={e => setPostForm({ ...postForm, title: e.target.value })}
-                  placeholder="e.g. Build React dashboard" className="w-full bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl px-4 py-3 text-[var(--warm-ink)] focus:outline-none focus:border-indigo-500" />
+                <label className="block text-xs font-semibold text-[var(--pbn-text-muted)] uppercase tracking-wider mb-1.5">
+                  Project Title *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Roof Inspection &amp; Solar Panel Mount, or LLM Inference Tool"
+                  value={postForm.title}
+                  onChange={e => setPostForm({ ...postForm, title: e.target.value })}
+                  aria-label="Project title"
+                  className="w-full bg-[var(--pbn-bg)] border border-[var(--pbn-border)] rounded-xl px-4 py-3 text-sm text-[var(--pbn-text)] placeholder-[var(--pbn-text-faint)] focus:outline-none focus:border-[var(--pbn-accent)] min-h-[44px]"
+                />
               </div>
+
               <div>
-                <label className="block text-xs font-bold text-[var(--soft-stone)] mb-1">Description</label>
-                <textarea value={postForm.description} onChange={e => setPostForm({ ...postForm, description: e.target.value })}
-                  rows={3} placeholder="What do you need done?" className="w-full bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl px-4 py-3 text-[var(--warm-ink)] focus:outline-none focus:border-indigo-500" />
+                <label className="block text-xs font-semibold text-[var(--pbn-text-muted)] uppercase tracking-wider mb-1.5">
+                  Scope &amp; Acceptance Criteria
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Describe the deliverables, timeline, and exact proof required for escrow release..."
+                  value={postForm.description}
+                  onChange={e => setPostForm({ ...postForm, description: e.target.value })}
+                  aria-label="Project scope and acceptance criteria"
+                  className="w-full bg-[var(--pbn-bg)] border border-[var(--pbn-border)] rounded-xl px-4 py-3 text-sm text-[var(--pbn-text)] placeholder-[var(--pbn-text-faint)] focus:outline-none focus:border-[var(--pbn-accent)]"
+                />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--soft-stone)] mb-1">Category</label>
-                <select value={postForm.category} onChange={e => setPostForm({ ...postForm, category: e.target.value })}
-                  className="w-full bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl px-4 py-3 text-[var(--warm-ink)] focus:outline-none focus:border-indigo-500">
-                  {CATEGORIES.filter(c => c !== 'ALL').map(c => (
-                    <option key={c} value={c}>{categoryLabels[c]}</option>
-                  ))}
-                </select>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--pbn-text-muted)] uppercase tracking-wider mb-1.5">
+                    Category
+                  </label>
+                  <select
+                    value={postForm.category}
+                    onChange={e => setPostForm({ ...postForm, category: e.target.value })}
+                    aria-label="Project category"
+                    className="w-full bg-[var(--pbn-bg)] border border-[var(--pbn-border)] rounded-xl px-3 py-2.5 text-sm text-[var(--pbn-text)] focus:outline-none focus:border-[var(--pbn-accent)] min-h-[44px]"
+                  >
+                    {CATEGORIES.filter(c => c !== 'ALL').map(c => (
+                      <option key={c} value={c}>{categoryLabels[c] || c}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--pbn-text-muted)] uppercase tracking-wider mb-1.5">
+                    Payment Escrow Rail
+                  </label>
+                  <select
+                    value={postForm.paymentRail}
+                    onChange={e => setPostForm({ ...postForm, paymentRail: e.target.value })}
+                    aria-label="Payment escrow rail"
+                    className="w-full bg-[var(--pbn-bg)] border border-[var(--pbn-border)] rounded-xl px-3 py-2.5 text-sm text-[var(--pbn-text)] focus:outline-none focus:border-[var(--pbn-accent)] min-h-[44px]"
+                  >
+                    <option value="solana">Solana USDC Escrow (Anchor PDA)</option>
+                    <option value="raast">SBP Raast Direct (0% Fee)</option>
+                    <option value="card">Universal Credit Card</option>
+                  </select>
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--soft-stone)] mb-1">Required Skills (comma separated)</label>
-                <input type="text" value={postForm.requiredSkills} onChange={e => setPostForm({ ...postForm, requiredSkills: e.target.value })}
-                  placeholder="React, TypeScript, Solana" className="w-full bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl px-4 py-3 text-[var(--warm-ink)] focus:outline-none focus:border-indigo-500" />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--pbn-text-muted)] uppercase tracking-wider mb-1.5">
+                    Budget (USDC / USD) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    placeholder="250"
+                    value={postForm.budgetUsd}
+                    onChange={e => setPostForm({ ...postForm, budgetUsd: e.target.value })}
+                    aria-label="Budget in USD or USDC"
+                    className="w-full bg-[var(--pbn-bg)] border border-[var(--pbn-border)] rounded-xl px-4 py-3 text-sm text-[var(--pbn-text)] placeholder-[var(--pbn-text-faint)] focus:outline-none focus:border-[var(--pbn-accent)] font-mono min-h-[44px]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--pbn-text-muted)] uppercase tracking-wider mb-1.5">
+                    Required Skills (Comma sep)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="React, Solana, Roofing, MCP"
+                    value={postForm.requiredSkills}
+                    onChange={e => setPostForm({ ...postForm, requiredSkills: e.target.value })}
+                    aria-label="Required skills separated by comma"
+                    className="w-full bg-[var(--pbn-bg)] border border-[var(--pbn-border)] rounded-xl px-4 py-3 text-sm text-[var(--pbn-text)] placeholder-[var(--pbn-text-faint)] focus:outline-none focus:border-[var(--pbn-accent)] font-mono text-xs min-h-[44px]"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--soft-stone)] mb-1">Budget (USD)</label>
-                <input type="number" value={postForm.budgetUsd} onChange={e => setPostForm({ ...postForm, budgetUsd: e.target.value })}
-                  placeholder="500" className="w-full bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl px-4 py-3 text-[var(--warm-ink)] focus:outline-none focus:border-indigo-500" />
-              </div>
-              <div className="flex gap-3">
-                <button type="button" onClick={() => setPostOpen(false)}
-                  className="flex-1 px-4 py-2.5 bg-transparent text-[var(--soft-stone)] border border-[var(--soft-stone)]/30 rounded-xl hover:bg-[var(--warm-sand)] transition-colors">Cancel</button>
-                <button type={posting ? 'button' : 'submit'} disabled={posting}
-                  className="flex-1 px-4 py-2.5 bg-[var(--clay)] text-[var(--warm-ink)] font-bold rounded-xl hover:bg-[var(--terracotta)] transition-colors disabled:opacity-50">
-                  {posting ? 'Posting...' : 'Post Gig'}
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--pbn-border)]">
+                <button
+                  type="button"
+                  onClick={() => setPostOpen(false)}
+                  aria-label="Cancel posting"
+                  className="px-4 py-2.5 rounded-xl border border-[var(--pbn-border)] text-[var(--pbn-text-muted)] hover:text-white text-xs font-semibold min-h-[44px]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={posting}
+                  aria-label="Submit project listing"
+                  className="pbn-btn-primary min-h-[44px]"
+                >
+                  {posting ? 'Publishing Escrow Project...' : 'Post Project to Board'}
                 </button>
               </div>
             </form>
@@ -508,30 +905,76 @@ export default function GigBoardPage() {
         </div>
       )}
 
-      {/* Bid Modal */}
+      {/* Place Bid Modal */}
       {bidOpenGig && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--warm-sand)]/50 backdrop-blur-sm" onClick={() => setBidOpenGig(null)}>
-          <div className="bg-[var(--warm-sand)] rounded-2xl p-6 max-w-md w-full border border-[var(--soft-stone)]/30" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-4">Place Your Bid</h3>
-            <p className="text-sm text-[var(--soft-stone)] mb-4">Enter your quote in USD for this project.</p>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="place-bid-title"
+          onClick={() => setBidOpenGig(null)}
+        >
+          <div
+            className="bg-[var(--pbn-bg-raised)] rounded-2xl p-6 sm:p-8 max-w-md w-full border border-[var(--pbn-border-strong)] shadow-2xl relative text-[var(--pbn-text)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-4 border-b border-[var(--pbn-border)] mb-4">
+              <h3 id="place-bid-title" className="text-xl font-bold font-['Space_Grotesk',sans-serif]">
+                Place Your Proposal Bid
+              </h3>
+              <button
+                type="button"
+                onClick={() => setBidOpenGig(null)}
+                aria-label="Close bid modal"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--pbn-text-muted)] hover:text-white bg-white/[0.04]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[var(--pbn-text-muted)] mb-5">
+              Enter your binding quote in USD/USDC. Your Trust Passport and previous completed escrow contracts will be attached automatically.
+            </p>
+
             <form onSubmit={handleBid} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-[var(--soft-stone)] mb-1">Your Quote (USD)</label>
-                <input type="number" value={bidQuote} onChange={e => setBidQuote(e.target.value)}
-                  className="w-full bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl px-4 py-3 text-[var(--warm-ink)] focus:outline-none focus:border-indigo-500" />
+                <label className="block text-xs font-semibold text-[var(--pbn-text-muted)] uppercase tracking-wider mb-1.5">
+                  Your Quote (USD / USDC) *
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  value={bidQuote}
+                  onChange={e => setBidQuote(e.target.value)}
+                  aria-label="Your quote amount in USD"
+                  className="w-full bg-[var(--pbn-bg)] border border-[var(--pbn-border)] rounded-xl px-4 py-3 text-base text-[var(--pbn-text)] focus:outline-none focus:border-[var(--pbn-accent)] font-mono min-h-[44px]"
+                />
               </div>
-              <div className="flex gap-3">
-                <button type="button" onClick={() => setBidOpenGig(null)}
-                  className="flex-1 px-4 py-2.5 bg-transparent text-[var(--soft-stone)] border border-[var(--soft-stone)]/30 rounded-xl hover:bg-[var(--warm-sand)] transition-colors">Cancel</button>
-                <button type={bidding ? 'button' : 'submit'} disabled={bidding}
-                  className="flex-1 px-4 py-2.5 bg-[var(--clay)] text-[var(--warm-ink)] font-bold rounded-xl hover:bg-[var(--terracotta)] transition-colors disabled:opacity-50">
-                  {bidding ? 'Bidding...' : 'Submit Bid'}
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--pbn-border)]">
+                <button
+                  type="button"
+                  onClick={() => setBidOpenGig(null)}
+                  aria-label="Cancel bid"
+                  className="px-4 py-2.5 rounded-xl border border-[var(--pbn-border)] text-[var(--pbn-text-muted)] hover:text-white text-xs font-semibold min-h-[44px]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={bidding}
+                  aria-label="Submit proposal bid"
+                  className="pbn-btn-primary min-h-[44px]"
+                >
+                  {bidding ? 'Submitting Bid...' : 'Submit Proposal Bid'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
     </div>
   );
 }
