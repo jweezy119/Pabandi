@@ -18,6 +18,7 @@ const DeveloperPortalPage = lazy(() => import('./pages/DeveloperPortalPage'));
 const DevelopersPage = lazy(() => import('./pages/DevelopersPage'));
 const ImpactPage = lazy(() => import('./pages/ImpactPage'));
 const ShariaCompliancePage = lazy(() => import('./pages/ShariaCompliancePage'));
+const UniversalPaymentLinkPage = lazy(() => import('./pages/UniversalPaymentLinkPage'));
 const IamConsolePage = lazy(() => import('./pages/developer/IamConsolePage'));
 const AgentPaymentsPage = lazy(() => import('./pages/AgentPaymentsPage'));
 const AgentsLandingPage = lazy(() => import('./pages/AgentsLandingPage'));
@@ -283,6 +284,9 @@ function AnimatedAppRoutes() {
         <Route path="/sharia-compliance" element={<ShariaCompliancePage />} />
         <Route path="/impact" element={<ImpactPage />} />
         <Route path="/developers" element={<DevelopersPage />} />
+        <Route path="/pay/link/:slug" element={<UniversalPaymentLinkPage />} />
+        <Route path="/l/:slug" element={<UniversalPaymentLinkPage />} />
+        <Route path="/payment-links" element={<UniversalPaymentLinkPage />} />
         <Route element={<AppShellLayout />}>
             {/* /dashboard routes to the user's mode-appropriate dashboard
                 (Business → /contact, Personal → /me). It is never a

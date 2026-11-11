@@ -20,8 +20,11 @@ import {
   Sparkles,
   Server,
   BookOpen,
-  ArrowRight
+  ArrowRight,
+  Share2,
+  Package
 } from 'lucide-react';
+import { PabandiPaymentElement } from '../components/sdk/PabandiPaymentElement';
 import '../styles/pbn-tokens.css';
 
 const ORCHESTRATION_POST_CURL = `curl -X POST "https://pabandi.onrender.com/api/v1/payments" \\
@@ -122,9 +125,58 @@ async function createPabandiEscrow({
   return { escrowPda: escrowPda.toBase58(), tx };
 }`;
 
+const PAYMENT_LINKS_POST_CURL = `curl -X POST "https://pabandi.onrender.com/api/v1/payment-links" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "slug": "ali-roofing",
+    "title": "Roof Inspection & Repair",
+    "amount": 75,
+    "currency": "USD",
+    "merchantName": "Ali Roofing Services",
+    "merchantRaastId": "03001234567"
+  }'`;
+
+const SDK_HTML_SNIPPET = `<!-- 1. Load Pabandi Universal Checkout SDK -->
+<script src="https://pabandi.com/sdk/v1/pabandi.js"></script>
+
+<!-- 2. Mount Container -->
+<div id="pabandi-checkout"></div>
+
+<script>
+  const checkout = new PabandiCheckout({
+    elementId: 'pabandi-checkout',
+    amount: 100,
+    currency: 'USD',
+    reference: 'order_12345',
+    requireSharia: true,
+    onSuccess: (details) => {
+      console.log('Payment settled in escrow:', details);
+    }
+  });
+  checkout.mount();
+</script>`;
+
+const SDK_REACT_SNIPPET = `import { PabandiPaymentElement } from '@pabandi/react';
+
+export function CheckoutPage() {
+  return (
+    <PabandiPaymentElement
+      amount={100}
+      currency="USD"
+      referenceId="inv_88192"
+      merchantName="Karachi Tech Hub"
+      merchantRaastId="03001234567"
+      requireSharia={true}
+      onSuccess={(rail, details) => {
+        alert('Settled via ' + rail);
+      }}
+    />
+  );
+}`;
+
 export default function DevelopersPage() {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'orchestrator' | 'connectors' | 'agent402' | 'mcp' | 'anchor'>('orchestrator');
+  const [activeTab, setActiveTab] = useState<'orchestrator' | 'links' | 'sdk' | 'connectors' | 'agent402' | 'mcp'>('orchestrator');
 
   // Mode A Interactive Sandbox State
   const [orchestratorAmount, setOrchestratorAmount] = useState('100');
@@ -240,6 +292,26 @@ export default function DevelopersPage() {
               Mode A: Orchestrator API
             </button>
             <button
+              onClick={() => setActiveTab('links')}
+              className={`px-4 py-2 rounded-xl text-xs font-mono transition-all ${
+                activeTab === 'links'
+                  ? 'bg-[#4fd1c5] text-[#0a1118] font-bold shadow-[0_0_15px_rgba(79,209,197,0.3)]'
+                  : 'bg-white/[0.04] text-[#8a9aa8] hover:text-[#e8eef4] border border-white/10'
+              }`}
+            >
+              Universal Payment Links
+            </button>
+            <button
+              onClick={() => setActiveTab('sdk')}
+              className={`px-4 py-2 rounded-xl text-xs font-mono transition-all ${
+                activeTab === 'sdk'
+                  ? 'bg-[#4fd1c5] text-[#0a1118] font-bold shadow-[0_0_15px_rgba(79,209,197,0.3)]'
+                  : 'bg-white/[0.04] text-[#8a9aa8] hover:text-[#e8eef4] border border-white/10'
+              }`}
+            >
+              Drop-in Checkout SDK
+            </button>
+            <button
               onClick={() => setActiveTab('connectors')}
               className={`px-4 py-2 rounded-xl text-xs font-mono transition-all ${
                 activeTab === 'connectors'
@@ -257,7 +329,7 @@ export default function DevelopersPage() {
                   : 'bg-white/[0.04] text-[#8a9aa8] hover:text-[#e8eef4] border border-white/10'
               }`}
             >
-              HTTP 402 / MPP for Agents
+              HTTP 402 / MPP
             </button>
             <button
               onClick={() => setActiveTab('mcp')}
@@ -422,6 +494,162 @@ export default function DevelopersPage() {
                   </pre>
                 </div>
               )}
+            </div>
+          </section>
+        )}
+
+        {/* TAB: UNIVERSAL PAYMENT LINKS */}
+        {activeTab === 'links' && (
+          <section className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#4fd1c5]/10 border border-[#4fd1c5]/20 flex items-center justify-center text-[#4fd1c5]">
+                <Share2 size={20} />
+              </div>
+              <div>
+                <span className="text-xs font-mono text-[#4fd1c5] uppercase tracking-wider">No-Code Commerce</span>
+                <h2 className="text-xl sm:text-2xl font-bold text-[#e8eef4]">Shareable Universal Payment Links</h2>
+              </div>
+            </div>
+
+            <p className="text-sm text-[#8a9aa8] leading-relaxed">
+              Generate instant, shareable escrow payment links that work seamlessly over WhatsApp, SMS, and invoices.
+              Overseas clients pay in USD with cards or Solana USDC; workers receive 0%-fee PKR via SBP Raast.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Card 1: API Endpoint */}
+              <div className="p-5 rounded-2xl bg-[#101a24] border border-white/10 space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                  <span className="text-xs font-mono font-bold text-[#4fd1c5]">POST /api/v1/payment-links</span>
+                  <button
+                    onClick={() => handleCopy('curl-links', PAYMENT_LINKS_POST_CURL)}
+                    className="p-1 text-[#8a9aa8] hover:text-[#4fd1c5]"
+                  >
+                    {copiedKey === 'curl-links' ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                  </button>
+                </div>
+                <p className="text-xs text-[#8a9aa8]">
+                  Creates a persistent link with merchant trust score, customized title, optional fixed or flexible amounts, and pre-formatted WhatsApp share URLs.
+                </p>
+                <pre className="p-3.5 rounded-xl bg-[#0a1118] border border-white/5 font-mono text-xs text-[#34d399] overflow-x-auto">
+                  {PAYMENT_LINKS_POST_CURL}
+                </pre>
+              </div>
+
+              {/* Card 2: Live Link Showcase */}
+              <div className="p-5 rounded-2xl bg-[#101a24] border border-white/10 space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <span className="text-xs font-mono text-[#8a9aa8] uppercase tracking-wider font-bold">Zero-Config Instant Handles</span>
+                  <h3 className="text-base font-bold text-[#e8eef4]">Dynamic URL Pattern</h3>
+                  <div className="p-3 rounded-xl bg-[#0a1118] border border-white/5 font-mono text-xs text-emerald-400 break-all">
+                    https://pabandi.com/pay/link/<span className="text-white font-bold">:slug</span>?amount=100&currency=USD
+                  </div>
+                  <p className="text-xs text-[#8a9aa8] leading-relaxed">
+                    Any freelancer or contractor can immediately start accepting escrow payments by sharing their customized handle over WhatsApp.
+                  </p>
+                </div>
+
+                <div className="pt-4 border-t border-white/5 flex gap-3">
+                  <Link
+                    to="/pay/link/quick-escrow"
+                    className="px-4 py-2.5 rounded-xl bg-[#4fd1c5] hover:bg-[#38b2ac] text-[#0a1118] font-bold text-xs font-mono inline-flex items-center gap-2 transition-colors"
+                  >
+                    <span>Open Live Payment Link Demo</span>
+                    <ExternalLink size={14} />
+                  </Link>
+                  <Link
+                    to="/payment-links"
+                    className="px-4 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-[#e8eef4] border border-white/10 text-xs font-mono inline-flex items-center gap-2 transition-colors"
+                  >
+                    <span>Launch Link Creator</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* TAB: EMBEDDABLE DROP-IN CHECKOUT SDK */}
+        {activeTab === 'sdk' && (
+          <section className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-950/60 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                <Package size={20} />
+              </div>
+              <div>
+                <span className="text-xs font-mono text-purple-300 uppercase tracking-wider">Embeddable UI</span>
+                <h2 className="text-xl sm:text-2xl font-bold text-[#e8eef4]">Drop-in Universal Checkout SDK</h2>
+              </div>
+            </div>
+
+            <p className="text-sm text-[#8a9aa8] leading-relaxed">
+              Embed Pabandi into any React application, Shopify storefront, Webflow site, or custom HTML page.
+              Supports both script-tag embeds and direct React component exports.
+            </p>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+              {/* Left Column: Documentation & Code Snippets */}
+              <div className="space-y-5">
+                {/* Script Tag Embed */}
+                <div className="p-5 rounded-2xl bg-[#101a24] border border-white/10 space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                    <span className="text-xs font-mono font-bold text-[#e8eef4]">HTML / Vanilla JS Drop-in</span>
+                    <button
+                      onClick={() => handleCopy('sdk-html', SDK_HTML_SNIPPET)}
+                      className="p-1 text-[#8a9aa8] hover:text-[#4fd1c5]"
+                    >
+                      {copiedKey === 'sdk-html' ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                    </button>
+                  </div>
+                  <pre className="p-3.5 rounded-xl bg-[#0a1118] border border-white/5 font-mono text-xs text-[#34d399] overflow-x-auto">
+                    {SDK_HTML_SNIPPET}
+                  </pre>
+                </div>
+
+                {/* React Component Embed */}
+                <div className="p-5 rounded-2xl bg-[#101a24] border border-white/10 space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                    <span className="text-xs font-mono font-bold text-[#e8eef4]">React Component Integration</span>
+                    <button
+                      onClick={() => handleCopy('sdk-react', SDK_REACT_SNIPPET)}
+                      className="p-1 text-[#8a9aa8] hover:text-[#4fd1c5]"
+                    >
+                      {copiedKey === 'sdk-react' ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                    </button>
+                  </div>
+                  <pre className="p-3.5 rounded-xl bg-[#0a1118] border border-white/5 font-mono text-xs text-purple-300 overflow-x-auto">
+                    {SDK_REACT_SNIPPET}
+                  </pre>
+                </div>
+              </div>
+
+              {/* Right Column: Live Working Drop-in Preview */}
+              <div className="p-6 rounded-2xl bg-[#0d1620] border border-[#4fd1c5]/30 space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                  <span className="text-xs font-mono text-[#4fd1c5] font-bold uppercase tracking-wider">
+                    Interactive Live SDK Component
+                  </span>
+                  <span className="text-[11px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/20">
+                    Live Demo
+                  </span>
+                </div>
+                <p className="text-xs text-[#8a9aa8]">
+                  This is the exact element your users will see when you mount the Pabandi SDK:
+                </p>
+
+                {/* Render the actual React Component live */}
+                <div className="flex justify-center pt-2">
+                  <PabandiPaymentElement
+                    amount={100}
+                    currency="USD"
+                    referenceId="demo_live_widget"
+                    merchantName="Karachi Engineering Works"
+                    merchantRaastId="03001234567"
+                    requireSharia={true}
+                    onSuccess={(rail) => alert(`Interactive component demo succeeded on rail: ${rail}`)}
+                  />
+                </div>
+              </div>
             </div>
           </section>
         )}
