@@ -42,6 +42,8 @@ const METER_WINDOW_MS = 60 * 1000;
 /** Tools that are free to call (no x402, no metering) — discovery, directory search, and cryptographic verification. */
 const FREE_TOOLS = new Set([
   'pabandi_verify_passport',
+  'pabandi_verify_zk_trust_proof',
+  'pabandi_submit_dispute_evidence',
   'pabandi_discover',
   'pabandi_get_ledger',
   'pabandi_discover_platform',

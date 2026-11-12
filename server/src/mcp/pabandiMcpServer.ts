@@ -73,6 +73,7 @@ const X402_PRICE_USDC: Record<string, number> = {
   // Public on-ramp — always free.
   pabandi_verify_passport: 0,
   pabandi_verify_zk_trust_proof: 0,
+  pabandi_submit_dispute_evidence: 0,
   pabandi_discover: 0,
   pabandi_get_ledger: 0,
   pabandi_check_sharia_compliance: 0,
@@ -138,6 +139,36 @@ const ENGINE_TOOLS = [
         },
       },
       required: ['proof_payload'],
+    },
+  },
+  {
+    name: 'pabandi_submit_dispute_evidence',
+    description: 'Uploads a photo or PDF as evidence for a disputed work order.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workOrderId: { type: 'string' },
+        evidence: {
+          type: 'object',
+          'x-mcp-file': {
+            accept: ['image/jpeg', 'image/png', 'application/pdf'],
+            maxSize: 52428800,
+          },
+          properties: {
+            id: { type: 'string', minLength: 1, maxLength: 128 },
+            name: { type: 'string' },
+            mimeType: { type: 'string' },
+            size: { type: 'integer', minimum: 0 },
+            data: { type: 'string', description: 'Base64 encoded file, if inline' },
+          },
+          required: ['id', 'name', 'mimeType', 'size'],
+        },
+        requestState: {
+          type: 'string',
+          description: 'Token returned from the first call to complete the upload',
+        },
+      },
+      required: ['workOrderId', 'evidence'],
     },
   },
   {
@@ -618,7 +649,7 @@ const ENGINE_TOOLS = [
     },
   },
   {
-    name: 'pabandi_submit_dispute_evidence',
+    name: 'pabandi_submit_court_bundle',
     description: 'Submit an EvidenceBundle to open an Internet Court adjudication case. Requires jobId, buyerClaim, sellerProof (IPFS/content hash), and optional oracleData. Returns the case id and status.',
     inputSchema: {
       type: 'object',
@@ -1026,36 +1057,61 @@ export const TOOLS = (() => {
 })();
 
 // ── Dispatch ──────────────────────────────────────────────────────────────────
-async function dispatch(method: string, params: any, id: any, req?: Request): Promise<any> {
+export async function dispatch(method: string, params: any, id: any, req?: Request): Promise<any> {
   switch (method) {
     case 'initialize':
       return jsonRpc(id, {
         protocolVersion: '2024-11-05',
-        capabilities: { tools: {} },
+        capabilities: {
+          tools: {},
+          extensions: {
+            'io.modelcontextprotocol/files': {
+              upload: {},
+              maxInlineBytes: 1048576,
+            },
+          },
+        },
         serverInfo: { name: SERVER_NAME, version: SERVER_VERSION },
+      });
+
+    case 'server/discover':
+    case 'discovery':
+      return jsonRpc(id, {
+        capabilities: {
+          tools: {},
+          extensions: {
+            'io.modelcontextprotocol/files': {
+              upload: {},
+              maxInlineBytes: 1048576,
+            },
+          },
+        },
       });
 
     case 'tools/list':
       return jsonRpc(id, { tools: TOOLS });
 
-      case 'tools/call': {
+    case 'tools/call': {
       const name = params?.name;
       const args = params?.arguments || {};
       try {
         const out = await callTool(name, args, req);
+        if (out && (out.resultType === 'upload_required' || out._meta)) {
+          return jsonRpc(id, out);
+        }
         return jsonRpc(id, { content: [{ type: 'text', text: JSON.stringify(out, null, 2) }], isError: false });
-    } catch (e: any) {
-      // Re-throw x402 payment errors so mcpHandler can set the Payment-Required
-      // HTTP header. Other errors are handled below as JSON-RPC errors.
-      if (e instanceof X402PaymentRequiredError) throw e;
+      } catch (e: any) {
+        // Re-throw x402 payment errors so mcpHandler can set the Payment-Required
+        // HTTP header. Other errors are handled below as JSON-RPC errors.
+        if (e instanceof X402PaymentRequiredError) throw e;
 
-      let x402Error: any = null;
-      try { x402Error = JSON.parse(e.message); } catch { /* not x402 */ }
-      if (x402Error?.x402) {
-        return jsonRpc(id, undefined, { code: 402, message: 'Payment required', data: x402Error });
+        let x402Error: any = null;
+        try { x402Error = JSON.parse(e.message); } catch { /* not x402 */ }
+        if (x402Error?.x402) {
+          return jsonRpc(id, undefined, { code: 402, message: 'Payment required', data: x402Error });
+        }
+        return jsonRpc(id, { content: [{ type: 'text', text: `Error: ${e.message}` }], isError: true });
       }
-      return jsonRpc(id, { content: [{ type: 'text', text: `Error: ${e.message}` }], isError: true });
-    }
     }
 
     default:
@@ -1063,7 +1119,180 @@ async function dispatch(method: string, params: any, id: any, req?: Request): Pr
   }
 }
 
-async function callTool(toolName: string, args: any, req?: Request): Promise<any> {
+export async function handleSubmitDisputeEvidence(args: any, req?: Request): Promise<any> {
+  const { workOrderId, evidence, requestState } = args || {};
+
+  if (!workOrderId) {
+    throw new Error('workOrderId is required');
+  }
+  if (!evidence || typeof evidence !== 'object') {
+    throw new Error('evidence object is required');
+  }
+  if (!evidence.id || !evidence.name || !evidence.mimeType || evidence.size === undefined) {
+    throw new Error('evidence must contain id, name, mimeType, and size');
+  }
+
+  const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
+  if (!ALLOWED_MIME_TYPES.includes(evidence.mimeType)) {
+    throw new Error(`Invalid mimeType: ${evidence.mimeType}. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`);
+  }
+
+  const MAX_SIZE = 52428800; // 50MB
+  if (evidence.size > MAX_SIZE) {
+    throw new Error(`File size ${evidence.size} exceeds maximum allowed size (52428800 bytes).`);
+  }
+
+  const { storageService } = await import('../services/storage.service');
+  const jwt = await import('jsonwebtoken');
+  const crypto = await import('crypto');
+  const JWT_SECRET = process.env.JWT_SECRET || 'pabandi-mcp-files-secret-2026';
+
+  // Case C: Upload Retry / Second Call (requestState provided)
+  if (requestState) {
+    let decoded: any;
+    try {
+      decoded = jwt.verify(requestState, JWT_SECRET);
+    } catch (err: any) {
+      throw new Error(`Invalid or expired requestState token: ${err?.message}`);
+    }
+
+    const storageKey = decoded.storageKey || `disputes/${workOrderId}/${evidence.id}-${evidence.name}`;
+    const check = await storageService.checkObjectExists(storageKey, evidence.size);
+    if (!check.exists) {
+      throw new Error(`Uploaded file not found in storage at ${storageKey} or size mismatch.`);
+    }
+
+    const fileBuffer = await storageService.getObjectBytes(storageKey);
+    const vcapHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+
+    // Save DisputeEvidence record to Prisma
+    await prisma.disputeEvidence.upsert({
+      where: { fileId: evidence.id },
+      create: {
+        workOrderId: decoded.workOrderId || workOrderId,
+        fileId: evidence.id,
+        fileName: evidence.name,
+        mimeType: evidence.mimeType,
+        sizeBytes: evidence.size,
+        storageKey,
+        vcapHash,
+      },
+      update: {
+        fileName: evidence.name,
+        mimeType: evidence.mimeType,
+        sizeBytes: evidence.size,
+        storageKey,
+        vcapHash,
+      },
+    });
+
+    const presignedDownloadUrl = await storageService.getPresignedDownloadUrl(storageKey);
+
+    return {
+      content: [{ type: 'text', text: `Evidence attached. VCAP hash: ${vcapHash}` }],
+      _meta: {
+        downloadTargets: [
+          { fileId: evidence.id, url: presignedDownloadUrl }
+        ]
+      }
+    };
+  }
+
+  // Case A: Inline Upload (Small files with evidence.data)
+  if (evidence.data) {
+    const buffer = Buffer.from(evidence.data, 'base64');
+    const MAX_INLINE_BYTES = 1048576; // 1MB
+
+    if (buffer.length > MAX_INLINE_BYTES) {
+      throw new Error(`Inline file data size (${buffer.length} bytes) exceeds maxInlineBytes (1048576 bytes). Use upload flow.`);
+    }
+
+    const vcapHash = crypto.createHash('sha256').update(buffer).digest('hex');
+    const storageKey = `disputes/${workOrderId}/${evidence.id}-${evidence.name}`;
+
+    await storageService.uploadBuffer(storageKey, buffer, evidence.mimeType);
+
+    const saved = await prisma.disputeEvidence.upsert({
+      where: { fileId: evidence.id },
+      create: {
+        workOrderId,
+        fileId: evidence.id,
+        fileName: evidence.name,
+        mimeType: evidence.mimeType,
+        sizeBytes: buffer.length,
+        storageKey,
+        vcapHash,
+      },
+      update: {
+        fileName: evidence.name,
+        mimeType: evidence.mimeType,
+        sizeBytes: buffer.length,
+        storageKey,
+        vcapHash,
+      },
+    });
+
+    const presignedDownloadUrl = await storageService.getPresignedDownloadUrl(storageKey);
+
+    return {
+      content: [{ type: 'text', text: `Evidence attached inline. VCAP hash: ${vcapHash}` }],
+      _meta: {
+        downloadTargets: [
+          { fileId: evidence.id, url: presignedDownloadUrl }
+        ]
+      },
+      success: true,
+      evidenceId: saved.id,
+      vcapHash,
+    };
+  }
+
+  // Case B: Metadata-Only (First Call — returns upload_required)
+  try {
+    const existingOrder = await prisma.workOrder.findUnique({
+      where: { id: workOrderId },
+    });
+    const authUser = (req as any)?.user;
+    if (existingOrder && authUser?.businessId && existingOrder.businessId && existingOrder.businessId !== authUser.businessId) {
+      throw new Error(`WorkOrder ${workOrderId} does not belong to authenticated tenant.`);
+    }
+  } catch (err: any) {
+    if (err?.message?.includes('tenant') || err?.message?.includes('belong')) {
+      throw err;
+    }
+  }
+
+  const storageKey = `disputes/${workOrderId}/${evidence.id}-${evidence.name}`;
+  const presignedUploadUrl = await storageService.getPresignedUploadUrl(storageKey, evidence.mimeType);
+
+  const token = jwt.sign(
+    {
+      workOrderId,
+      storageKey,
+      fileId: evidence.id,
+      fileName: evidence.name,
+      mimeType: evidence.mimeType,
+      size: evidence.size,
+    },
+    JWT_SECRET,
+    { expiresIn: '15m' }
+  );
+
+  return {
+    resultType: 'upload_required',
+    uploads: [
+      {
+        fileId: evidence.id,
+        url: presignedUploadUrl,
+        headers: { 'Content-Type': evidence.mimeType },
+        credentials: 'omit',
+      },
+    ],
+    requestState: token,
+  };
+}
+
+export async function callTool(toolName: string, args: any, req?: Request): Promise<any> {
   // Back-compat: tool names were once derived from marketing `short` labels.
   const legacy = TOOLS.find((t: any) => t.legacyName === toolName) as any;
   const name = legacy ? legacy.name : toolName;
@@ -1094,8 +1323,21 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
           verifiedPredicates: result.verifiedPredicates,
         };
       }
+      case 'pabandi_submit_dispute_evidence':
+        return handleSubmitDisputeEvidence(args, req);
       case 'pabandi_discover':
-        return ptpEngine.getDiscoveryDocument(`${process.env.BACKEND_URL || ''}`);
+        return {
+          ...ptpEngine.getDiscoveryDocument(`${process.env.BACKEND_URL || ''}`),
+          capabilities: {
+            tools: {},
+            extensions: {
+              'io.modelcontextprotocol/files': {
+                upload: {},
+                maxInlineBytes: 1048576,
+              },
+            },
+          },
+        };
       case 'pabandi_check_sharia_compliance':
         return {
           is_compliant: true,
@@ -2010,7 +2252,7 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
       }
 
       // ── Internet Court: submit dispute evidence ──
-      case 'pabandi_submit_dispute_evidence': {
+      case 'pabandi_submit_court_bundle': {
         const { jobId, buyerClaim, sellerProof, oracleData } = args;
         if (!jobId) throw new Error('jobId is required');
         if (!buyerClaim) throw new Error('buyerClaim is required');
