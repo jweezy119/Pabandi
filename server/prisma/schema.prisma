@@ -8825,6 +8825,7 @@ model WorkOrder {
   assignments   WorkOrderAssignment[]
   attachments   WorkOrderAttachment[]
   auditLog      WorkOrderAudit[]
+  evidence      DisputeEvidence[]
 
   @@index([businessId])
   @@index([customerId])
@@ -8853,6 +8854,21 @@ model WorkOrderAttachment {
   url         String
   uploadedById String
   createdAt   DateTime @default(now())
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
+
+  @@index([workOrderId])
+}
+
+model DisputeEvidence {
+  id          String   @id @default(cuid())
+  workOrderId String
+  fileId      String   @unique // The MCP client-generated ID
+  fileName    String
+  mimeType    String
+  sizeBytes   Int
+  storageKey  String   // The S3/R2 object key
+  vcapHash    String   // SHA-256 hash of the file content
+  uploadedAt  DateTime @default(now())
   workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
 
   @@index([workOrderId])
