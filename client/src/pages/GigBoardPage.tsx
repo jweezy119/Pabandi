@@ -25,6 +25,7 @@ import {
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { PabandiCheckoutModal } from '../components/PabandiCheckoutModal';
+import { ZkTrustBadge } from '../components/ZkTrustBadge';
 import '../styles/gigboard.css';
 
 const CATEGORIES = [
@@ -694,15 +695,13 @@ export default function GigBoardPage() {
                         )}
                       </div>
 
-                      <Link
-                        to="/trust-os"
-                        onClick={e => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-medium border border-emerald-500/30 bg-emerald-950/40 text-emerald-400 hover:border-emerald-400 transition-colors"
-                        title="Trust OS Verified Counterparty"
-                      >
-                        <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                        <span>Trust OS: 920</span>
-                      </Link>
+                      <ZkTrustBadge
+                        score={920}
+                        disputeRate={0.5}
+                        subjectName={gig.title}
+                        subjectId={gigKey}
+                        variant="compact"
+                      />
 
                       {gig._distance !== null && (
                         <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded">

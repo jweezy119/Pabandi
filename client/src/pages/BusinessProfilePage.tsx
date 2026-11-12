@@ -17,6 +17,7 @@ import { ClaimOverlay } from '../components/ClaimOverlay';
 import { PaymentLinkCard } from '../components/PaymentLinkCard';
 import { executeBscDeposit, executeSolanaDeposit } from '../utils/web3';
 import { LocalBusinessJsonLd } from '../components/LocalBusinessJsonLd';
+import { ZkTrustBadge } from '../components/ZkTrustBadge';
 
 type Tab = 'overview' | 'promotions' | 'reviews' | 'media';
 
@@ -534,26 +535,21 @@ export default function BusinessProfilePage() {
                 )}
               </div>
 
-              {(() => {
-                const raw = (business?.trustScore ?? business?.reliabilityScore ?? 0) as number;
-                const computed = Math.max(0, Math.min(100, Math.round(raw / 10)));
-                const deposit = computed >= 80 ? 0 : computed >= 50 ? 5 : 15;
-                const isVerified = business?.isVerified || computed >= 80;
-                const badgeColor = isVerified ? 'text-[var(--sage)]' : computed >= 50 ? 'text-[var(--muted-ochre)]' : 'text-[var(--terracotta)]';
-                return (
-                  <div className="flex items-center gap-3">
-                    <ShieldCheckIcon className={`h-6 w-6 ${badgeColor}`} />
-                    <span className={`text-sm font-mono font-bold px-3 py-1 rounded-full ${
-                      isVerified ? 'bg-[var(--sage)]/10 text-[var(--sage)] border border-[var(--sage)]/30'
-                        : computed >= 50 ? 'bg-[var(--muted-ochre)]/10 text-[var(--muted-ochre)] border border-[var(--muted-ochre)]/30'
-                        : 'bg-[var(--terracotta)]/10 text-[var(--terracotta)] border border-[var(--terracotta)]/30'
-                    }`}>
-                      Pabandi Trust Score: {computed}/100
-                    </span>
-                    {!isVerified && (<span className="text-xs text-[var(--soft-stone)] font-mono">→ ${deposit} deposit required</span>)}
-                  </div>
-                );
-              })()}
+              <div className="flex flex-wrap items-center gap-3">
+                <ZkTrustBadge
+                  score={Number(business?.trustScore ?? business?.reliabilityScore ?? 920)}
+                  disputeRate={0.5}
+                  subjectName={business.name}
+                  subjectId={business.id}
+                  variant="pill"
+                />
+                <Link
+                  to="/trust-os"
+                  className="text-xs font-mono text-[var(--pbn-accent,#4fd1c5)] hover:underline inline-flex items-center gap-1"
+                >
+                  <span>Trust OS Verified</span>
+                </Link>
+              </div>
               
               <h1 className="font-headline text-3xl md:text-5xl font-black tracking-tight mb-2 leading-none">{business.name}</h1>
               

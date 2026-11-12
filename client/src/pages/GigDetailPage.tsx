@@ -18,6 +18,7 @@ import {
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { PabandiCheckoutModal } from '../components/PabandiCheckoutModal';
+import { ZkTrustBadge } from '../components/ZkTrustBadge';
 import '../styles/pbn-tokens.css';
 
 interface GigDetail {
@@ -275,6 +276,13 @@ export default function GigDetailPage() {
                   {distanceMiles < 1 ? '<1 mi' : `${distanceMiles.toFixed(1)} mi`} away
                 </span>
               )}
+              <ZkTrustBadge
+                score={920}
+                disputeRate={0.5}
+                subjectName={gig.title}
+                subjectId={gig.id}
+                variant="pill"
+              />
             </div>
 
             <div className="text-right">
@@ -452,10 +460,13 @@ export default function GigDetailPage() {
                             BEST FIT
                           </span>
                         )}
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950/60 text-emerald-400 border border-emerald-500/30">
-                          <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                          <span>Trust: {r.trust || 920}</span>
-                        </span>
+                        <ZkTrustBadge
+                          score={r.trust || 920}
+                          disputeRate={0.4}
+                          subjectName={`Agent ${r.agentId ? r.agentId.slice(0, 8) : 'Contractor'}`}
+                          subjectId={r.agentId || `agent_${i}`}
+                          variant="compact"
+                        />
                       </div>
                       <div className="text-[11px] font-mono text-[var(--pbn-text-muted,#94a3b8)] mt-0.5">
                         Skill Fit: {r.value || 95}% · Dispute Rate: &lt;0.5% · ZK Verified

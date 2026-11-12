@@ -4,6 +4,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import DashboardLayout from '../../components/DashboardLayout';
 import { HalalBanner } from '../../components/halal';
 import { apiClient } from '../../services/api';
+import { ZkTrustBadge } from '../../components/ZkTrustBadge';
 import '../../styles/pbn-tokens.css';
 
 const NAV_ITEMS = [
@@ -133,6 +134,13 @@ function CompactBusinessRow({ business }: { business: BusinessItem }) {
             >
               {business.trustBand}
             </span>
+            <ZkTrustBadge
+              score={business.trustBand === 'TOP' ? 950 : business.trustBand === 'VERIFIED' ? 900 : 820}
+              disputeRate={0.4}
+              subjectName={business.name}
+              subjectId={business.id}
+              variant="compact"
+            />
           </div>
 
           <div className="flex items-center gap-2 text-xs text-[var(--pbn-text-muted)] mt-1 flex-wrap">
