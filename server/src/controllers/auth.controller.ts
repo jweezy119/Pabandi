@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient, UserRole } from '@prisma/client';
+import { PrismaClient, UserRole, BusinessCategory } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
 import crypto from 'crypto';
@@ -120,8 +120,43 @@ interface RegisterBody {
   code?: string;
   businessName?: string;
   googlePlaceId?: string;
+  vertical?: string;
   fiverrUrl?: string;
   upworkUrl?: string;
+}
+
+export function resolveCategoryFromVertical(vertical?: string): BusinessCategory {
+  if (!vertical) return BusinessCategory.CONTRACTOR;
+  const v = vertical.toLowerCase();
+  if (v.includes('commercial') || v.includes('roofing') || v.includes('hvac') || v.includes('plumbing')) {
+    return BusinessCategory.CONTRACTOR;
+  }
+  if (v.includes('health') || v.includes('beauty') || v.includes('salon') || v.includes('spa') || v.includes('clinic')) {
+    return BusinessCategory.SALON;
+  }
+  if (v.includes('home') || v.includes('repair') || v.includes('electrician') || v.includes('handyman')) {
+    return BusinessCategory.CONTRACTOR;
+  }
+  if (v.includes('professional') || v.includes('consulting') || v.includes('agency')) {
+    return BusinessCategory.OTHER;
+  }
+  return BusinessCategory.CONTRACTOR;
+}
+
+export function normalizeVerticalKey(vertical?: string): string {
+  if (!vertical) return 'commercial';
+  const v = vertical.toLowerCase();
+  if (v.includes('commercial') || v.includes('roofing') || v.includes('hvac') || v.includes('plumbing')) return 'commercial';
+  if (v.includes('health') || v.includes('beauty') || v.includes('salon') || v.includes('spa') || v.includes('clinic')) return 'salon';
+  if (v.includes('home') || v.includes('repair') || v.includes('handyman')) return 'trades';
+  if (v.includes('professional') || v.includes('consulting') || v.includes('agency')) return 'consulting';
+  return 'commercial';
+}
+
+export function isCommercialVertical(vertical?: string): boolean {
+  if (!vertical) return true;
+  const v = vertical.toLowerCase();
+  return v.includes('commercial') || v.includes('roofing') || v.includes('hvac') || v.includes('plumbing');
 }
 
 interface AuthRequest extends Request {
@@ -129,6 +164,9 @@ interface AuthRequest extends Request {
     id: string;
     email: string;
     role: string;
+    firstName?: string;
+    lastName?: string;
+    businessId?: string;
   };
 }
 
@@ -225,11 +263,30 @@ export const register = async (
             business: {
               create: {
                 name: req.body.businessName,
-                category: 'RESTAURANT',
+                category: resolveCategoryFromVertical(req.body.vertical),
                 address: 'Global',
                 phone: phone || '',
                 email: email,
                 googlePlaceId: req.body.googlePlaceId,
+                settings: {
+                  create: {
+                    vertical: normalizeVerticalKey(req.body.vertical),
+                    enabledModules: isCommercialVertical(req.body.vertical)
+                      ? ['coordinator', 'contact', 'booking']
+                      : ['contact', 'booking'],
+                  },
+                },
+                ...(isCommercialVertical(req.body.vertical) && {
+                  technicians: {
+                    create: {
+                      name: `${firstName || ''} ${lastName || ''}`.trim() || 'Lead Technician',
+                      phoneEncrypted: encrypt(phone || '+10000000000'),
+                      skills: ['commercial_service', 'dispatch'],
+                      active: true,
+                      experienceYears: 5,
+                    },
+                  },
+                }),
               }
             }
           }),
@@ -258,6 +315,25 @@ export const register = async (
     // the client sees preferredMode === undefined and BusinessGuard bounces
     // them off the CRM they have just signed up for.
     const codeBusinessId = (updatedUser.business as { id?: string } | null)?.id ?? null;
+    if (codeBusinessId) {
+      try {
+        await prisma.crmServiceBusiness.upsert({
+          where: { businessId: codeBusinessId },
+          update: {
+            serviceType: normalizeVerticalKey(req.body.vertical).toUpperCase(),
+          },
+          create: {
+            businessId: codeBusinessId,
+            ownerId: updatedUser.id,
+            serviceType: normalizeVerticalKey(req.body.vertical).toUpperCase(),
+            teamSize: 1,
+            subscriptionTier: 'FREE',
+          },
+        });
+      } catch (crmErr: any) {
+        logger.warn('[auth.register] CRM service business provisioning skipped', crmErr?.message);
+      }
+    }
     const codeMode: 'business' | 'personal' =
       updatedUser.role === UserRole.BUSINESS_OWNER ? 'business' : 'personal';
 
@@ -389,12 +465,31 @@ export const register = async (
           business: {
             create: {
               name: req.body.businessName,
-              category: 'RESTAURANT', // Default category
+              category: resolveCategoryFromVertical(req.body.vertical),
               address: 'Global',
               phone: phone || '',
               email: email,
               googlePlaceId: req.body.googlePlaceId,
-              ...(accountManagerProfileId ? { referredById: accountManagerProfileId } : {})
+              ...(accountManagerProfileId ? { referredById: accountManagerProfileId } : {}),
+              settings: {
+                create: {
+                  vertical: normalizeVerticalKey(req.body.vertical),
+                  enabledModules: isCommercialVertical(req.body.vertical)
+                    ? ['coordinator', 'contact', 'booking']
+                    : ['contact', 'booking'],
+                },
+              },
+              ...(isCommercialVertical(req.body.vertical) && {
+                technicians: {
+                  create: {
+                    name: `${firstName || ''} ${lastName || ''}`.trim() || 'Lead Technician',
+                    phoneEncrypted: encrypt(phone || '+10000000000'),
+                    skills: ['commercial_service', 'dispatch'],
+                    active: true,
+                    experienceYears: 5,
+                  },
+                },
+              }),
             }
           }
         }),
@@ -435,9 +530,30 @@ export const register = async (
         currency: 'USD',
         status: 'PENDING_PAYMENT',
         bookedAt: new Date(),
-        releaseAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+        releaseAt: new Date(Date.now() + 30 * 24 * 60 * 1000), // 30 days
       }
     });
+
+    // Provision CRM service business record if business was created
+    if (user.business?.id) {
+      try {
+        await prisma.crmServiceBusiness.upsert({
+          where: { businessId: user.business.id },
+          update: {
+            serviceType: normalizeVerticalKey(req.body.vertical).toUpperCase(),
+          },
+          create: {
+            businessId: user.business.id,
+            ownerId: user.id,
+            serviceType: normalizeVerticalKey(req.body.vertical).toUpperCase(),
+            teamSize: 1,
+            subscriptionTier: 'FREE',
+          },
+        });
+      } catch (crmErr: any) {
+        logger.warn('[auth.register] CRM service business provisioning skipped', crmErr?.message);
+      }
+    }
 
     // PAB referral fuel: a human signing up through a helper's code earns that helper $PAB.
     // Completes the human<->agent PAB loop (agents already earn PAB on referred gig completion).

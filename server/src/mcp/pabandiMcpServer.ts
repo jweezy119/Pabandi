@@ -72,6 +72,7 @@ export class McpError extends Error {
 const X402_PRICE_USDC: Record<string, number> = {
   // Public on-ramp — always free.
   pabandi_verify_passport: 0,
+  pabandi_verify_zk_trust_proof: 0,
   pabandi_discover: 0,
   pabandi_get_ledger: 0,
   pabandi_check_sharia_compliance: 0,
@@ -123,6 +124,20 @@ const ENGINE_TOOLS = [
         need: { type: 'string', description: 'Optional capability the subject must hold, e.g. "act:book"' },
       },
       required: ['token'],
+    },
+  },
+  {
+    name: 'pabandi_verify_zk_trust_proof',
+    description: 'Verifies a Pabandi Zero-Knowledge Trust Passport to ensure a counterparty meets trust thresholds without revealing raw data.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        proof_payload: {
+          type: 'object',
+          description: 'The TrustPassportPayload object containing issuer, subjectId, issuedAt, predicates, and signature.',
+        },
+      },
+      required: ['proof_payload'],
     },
   },
   {
@@ -1063,6 +1078,21 @@ async function callTool(toolName: string, args: any, req?: Request): Promise<any
         let att: any;
         try { att = JSON.parse(Buffer.from(args.token, 'base64').toString('utf-8')); } catch { throw new Error('token is not valid base64 JSON'); }
         return ptpEngine.verifyAgentPassport(att, args.need);
+      }
+      case 'pabandi_verify_zk_trust_proof': {
+        const { verifyZkTrustProof } = await import('../services/zkTrustProof.service');
+        const proofPayload = args.proof_payload || args.payload || args;
+        const result = verifyZkTrustProof(proofPayload);
+        if (!result.isValid) {
+          return {
+            isValid: false,
+            error: result.error || 'Verification failed',
+          };
+        }
+        return {
+          isValid: true,
+          verifiedPredicates: result.verifiedPredicates,
+        };
       }
       case 'pabandi_discover':
         return ptpEngine.getDiscoveryDocument(`${process.env.BACKEND_URL || ''}`);

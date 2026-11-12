@@ -227,14 +227,20 @@ export default function BusinessJoinPage() {
             </div>
 
             <div className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-2xl p-5 mb-10 inline-block w-full">
-              <p className="text-sm text-[var(--soft-stone)] font-medium mb-3">Looking for specific solutions?</p>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Link to="/live-selling" className="flex items-center gap-2 text-sm font-bold text-[var(--muted-ochre)] hover:text-[var(--muted-ochre)] bg-[rgba(var(--muted-ochre),0.1)] px-4 py-2.5 rounded-xl border border-[rgba(var(--muted-ochre),0.2)] transition-colors w-full justify-center sm:justify-start">
-                  <span>🎥</span> Live Sellers & Drops
-                </Link>
-                <Link to="/freelance" className="flex items-center gap-2 text-sm font-bold text-[var(--sky-wash)] hover:text-[var(--sky-wash)] bg-[rgba(var(--sky-wash),0.1)] px-4 py-2.5 rounded-xl border border-[rgba(var(--sky-wash),0.2)] transition-colors w-full justify-center sm:justify-start">
-                  <span>💻</span> Freelancers & Gig Work
-                </Link>
+              <p className="text-sm text-[var(--soft-stone)] font-medium mb-3">Supported CRM Verticals:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-semibold">
+                <span className="flex items-center gap-2 text-[var(--warm-ink)] bg-[rgba(var(--clay),0.1)] px-3 py-2 rounded-lg border border-[rgba(var(--clay),0.2)]">
+                  <span>🏗️</span> Commercial Services
+                </span>
+                <span className="flex items-center gap-2 text-[var(--warm-ink)] bg-[rgba(var(--clay),0.1)] px-3 py-2 rounded-lg border border-[rgba(var(--clay),0.2)]">
+                  <span>💅</span> Health & Beauty
+                </span>
+                <span className="flex items-center gap-2 text-[var(--warm-ink)] bg-[rgba(var(--clay),0.1)] px-3 py-2 rounded-lg border border-[rgba(var(--clay),0.2)]">
+                  <span>🔧</span> Home & Repair
+                </span>
+                <span className="flex items-center gap-2 text-[var(--warm-ink)] bg-[rgba(var(--clay),0.1)] px-3 py-2 rounded-lg border border-[rgba(var(--clay),0.2)]">
+                  <span>💼</span> Professional Services
+                </span>
               </div>
             </div>
 

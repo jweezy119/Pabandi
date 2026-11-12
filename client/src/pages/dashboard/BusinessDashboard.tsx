@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAuthToken } from '../../utils/authToken';
 import { API_HOST } from '../../utils/apiHost';
+import TrustPassportTab from './TrustPassportTab';
 
-const TABS = ['Today', 'Calendar', 'Customers', 'Employees', 'Money', 'Services'] as const;
+const TABS = ['Today', 'Calendar', 'Customers', 'Employees', 'Money', 'Services', 'Trust Passport'] as const;
 type Tab = typeof TABS[number];
 
 interface Booking {
@@ -112,6 +113,7 @@ export default function BusinessDashboard() {
         {activeTab === 'Employees' && <EmployeesTab businessId={businessId} />}
         {activeTab === 'Money' && <MoneyTab businessId={businessId} />}
         {activeTab === 'Services' && <ServicesTab />}
+        {activeTab === 'Trust Passport' && <TrustPassportTab embedded />}
       </div>
     </div>
   );

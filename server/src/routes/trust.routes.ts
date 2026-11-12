@@ -1,13 +1,164 @@
 import { Router, Request, Response } from 'express';
+import { rateLimit } from 'express-rate-limit';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { apiLimiter, writeLimiter } from '../middleware/rateLimit.middleware';
+import { authenticate } from '../middleware/auth.middleware';
 import { getAttestationsForPassport } from '../services/onchain-attestation.service';
 import { signVerifiableCredential } from '../trust/vcKeys';
 import { verifyTrustDisclosure } from '../trust/disclosure.service';
+import {
+  getBusinessTrustMetrics,
+  generateMockZkSignature,
+  verifyZkTrustProof,
+} from '../services/zkTrustProof.service';
+import { TrustPassportPayload } from '../types/trustPassport.types';
 
 const router = Router();
 const VC_EXPIRY_HOURS = 24;
+
+// Strict rate limiter for the public verification endpoint (max 30 requests per minute per IP)
+const verifyRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    isValid: false,
+    error: 'Too many verification requests. Rate limit exceeded (30 req/min).',
+  },
+});
+
+/**
+ * ====================================================================
+ * ZK TRUST PASSPORT ENDPOINTS
+ * ====================================================================
+ */
+
+/**
+ * Endpoint 1: GET /api/v1/trust/passport/me
+ * Requires standard authentication.
+ * Returns the current logged-in business's Trust Score and Dispute Rate.
+ */
+router.get('/passport/me', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+
+    const metrics = await getBusinessTrustMetrics(userId);
+
+    return res.json({
+      success: true,
+      data: {
+        subjectId: metrics.subjectId,
+        businessName: metrics.businessName,
+        trustScore: metrics.trustScore,
+        disputeRate: metrics.disputeRate,
+      },
+      trustScore: metrics.trustScore,
+      disputeRate: metrics.disputeRate,
+    });
+  } catch (error: any) {
+    logger.error(`[Trust] passport me error: ${error.message}`);
+    return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+  }
+});
+
+/**
+ * Endpoint 2: POST /api/v1/trust/passport/generate
+ * Requires standard authentication.
+ * Accepts { minScore: number, maxDisputeRate: number }.
+ * Verifies the business actually meets these criteria.
+ * Generates TrustPassportPayload or returns 400 Bad Request.
+ */
+router.post('/passport/generate', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+
+    const { minScore, maxDisputeRate } = req.body ?? {};
+
+    if (typeof minScore !== 'number' || typeof maxDisputeRate !== 'number') {
+      return res.status(400).json({
+        error: 'minScore and maxDisputeRate must be valid numbers',
+      });
+    }
+
+    const metrics = await getBusinessTrustMetrics(userId);
+
+    // Verify the business actually meets these criteria
+    if (metrics.trustScore < minScore || metrics.disputeRate > maxDisputeRate) {
+      return res.status(400).json({
+        error: 'Your current trust score does not meet the requested predicate.',
+      });
+    }
+
+    const issuedAt = Date.now();
+    const predicates = {
+      trustScore: `>${minScore}`,
+      disputeRate: `<${maxDisputeRate}%`,
+    };
+
+    const signature = generateMockZkSignature('Pabandi', metrics.subjectId, predicates, issuedAt);
+
+    const proofPayload: TrustPassportPayload = {
+      issuer: 'Pabandi',
+      subjectId: metrics.subjectId,
+      issuedAt,
+      predicates,
+      signature,
+    };
+
+    return res.json({
+      success: true,
+      data: proofPayload,
+      ...proofPayload,
+    });
+  } catch (error: any) {
+    logger.error(`[Trust] passport generate error: ${error.message}`);
+    return res.status(500).json({
+      error: error.message || 'Failed to generate trust passport proof',
+    });
+  }
+});
+
+/**
+ * Endpoint 3: POST /api/v1/trust/passport/verify
+ * Public route (no auth required).
+ * Requires strict rate limit (30 requests per minute per IP).
+ * Accepts { proof_payload: TrustPassportPayload }.
+ * Returns { isValid: true, verifiedPredicates: ["trust_score > 800", "dispute_rate < 2%"] }.
+ */
+router.post('/passport/verify', verifyRateLimiter, async (req: Request, res: Response) => {
+  try {
+    const proofPayload = req.body?.proof_payload || req.body?.payload || req.body;
+
+    const result = verifyZkTrustProof(proofPayload);
+
+    if (!result.isValid) {
+      return res.status(400).json({
+        isValid: false,
+        error: result.error || 'Verification failed',
+      });
+    }
+
+    return res.json({
+      isValid: true,
+      verifiedPredicates: result.verifiedPredicates,
+    });
+  } catch (error: any) {
+    logger.error(`[Trust] passport verify error: ${error.message}`);
+    return res.status(500).json({
+      isValid: false,
+      error: error.message || 'Verification processing error',
+    });
+  }
+});
+
 
 function publicScores(passport: any) {
   return {

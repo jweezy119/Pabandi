@@ -80,3 +80,30 @@ export interface PassportExportResult {
   passport: MyPassportResult;
   schemaVersion: string;
 }
+
+export interface TrustPassportPredicates {
+  trustScore: string; // e.g., ">800"
+  disputeRate: string; // e.g., "<2%"
+  [key: string]: string;
+}
+
+export interface TrustPassportPayload {
+  issuer: "Pabandi";
+  subjectId: string; // The business/user ID
+  issuedAt: number; // Timestamp
+  predicates: {
+    trustScore: string; // e.g., ">800"
+    disputeRate: string; // e.g., "<2%"
+  };
+  signature: string; // Mocked ZK signature (e.g., "zkp_abc123...")
+}
+
+export interface VerifyProofResult {
+  valid: boolean;
+  issuer: string;
+  subjectId: string;
+  issuedAt: number;
+  satisfiedPredicates: Record<string, boolean>;
+  reason?: string;
+}
+

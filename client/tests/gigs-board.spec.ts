@@ -124,4 +124,10 @@ test.describe('Open Gig Board Page (/gigs)', () => {
 
     await page.screenshot({ path: 'test-results/gigs-post-modal.png' });
   });
+
+  test('displays Trust OS status badge linking directly to Trust OS Reliability Engine', async ({ page }) => {
+    const trustOsLink = page.getByRole('link', { name: /Trust OS: Active/i });
+    await expect(trustOsLink).toBeVisible();
+    await expect(trustOsLink).toHaveAttribute('href', '/trust-os');
+  });
 });

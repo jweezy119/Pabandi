@@ -161,3 +161,102 @@
 html[data-pbn-text-size='large'] {
   --pbn-text-body: 16px/26px var(--pbn-font-ui);
 }
+
+/* ── Vertical Selection Cards (List Your Business / CRM Onboarding) ───────── */
+.pbn-vertical-selection-container {
+  width: 100%;
+  margin-bottom: var(--pbn-space-4, 16px);
+}
+
+.pbn-vertical-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--pbn-space-3, 12px);
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .pbn-vertical-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.pbn-vertical-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: left;
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--pbn-surface, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--pbn-border, rgba(255, 255, 255, 0.08));
+  border-radius: var(--pbn-radius-lg, 16px);
+  cursor: pointer;
+  transition: all var(--pbn-duration, 150ms) var(--pbn-ease, cubic-bezier(0.25, 0.9, 0.35, 1));
+  outline: none;
+}
+
+.pbn-vertical-card:hover {
+  background: var(--pbn-surface-hover, rgba(255, 255, 255, 0.06));
+  border-color: var(--pbn-border-strong, rgba(255, 255, 255, 0.16));
+}
+
+.pbn-vertical-card:focus-visible {
+  outline: var(--pbn-focus-ring, 2px solid var(--pbn-accent));
+  outline-offset: var(--pbn-focus-ring-offset, 2px);
+}
+
+.pbn-vertical-card.is-selected {
+  border-color: var(--pbn-accent, #4fd1c5);
+  background: rgba(79, 209, 197, 0.08);
+  box-shadow: 0 0 0 1px var(--pbn-accent, #4fd1c5);
+}
+
+.pbn-vertical-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.pbn-vertical-card-title {
+  font-family: var(--pbn-font-ui, 'Space Grotesk', sans-serif);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+  color: var(--pbn-text, #e8eef4);
+}
+
+.pbn-vertical-card-radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--pbn-border-strong, rgba(255, 255, 255, 0.2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: all var(--pbn-duration, 150ms) ease;
+}
+
+.pbn-vertical-card.is-selected .pbn-vertical-card-radio {
+  border-color: var(--pbn-accent, #4fd1c5);
+  background: var(--pbn-accent, #4fd1c5);
+}
+
+.pbn-vertical-card-radio-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pbn-on-accent, #06231f);
+}
+
+.pbn-vertical-card-subtitle {
+  font-family: var(--pbn-font-ui, 'Space Grotesk', sans-serif);
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--pbn-text-muted, #8a9aa8);
+}

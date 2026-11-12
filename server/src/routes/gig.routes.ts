@@ -4,6 +4,8 @@ import { PublicKey, LAMPORTS_PER_SOL, Connection } from '@solana/web3.js';
 import { authenticate } from '../middleware/auth.middleware';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { ledgerService } from '../services/payment-orchestration/ledger.service';
+import { paymentOrchestrator } from '../services/payment-orchestration/orchestrator.service';
 import {
   validate, createGigSchema, autogenGigSchema, agentRegisterSchema,
   bidSchema, claimSchema, completeGigSchema, faucetSchema, acceptBidSchema,
@@ -173,6 +175,104 @@ router.post('/:id/accept/:bidId', authenticate, async (req: Request, res: Respon
     });
 
     res.json({ success: true, data: { gigId, acceptedBidId: bidId, agentId: bid.agentId, quoteUsd: bid.quoteUsd } });
+  } catch (e: any) { next(e); }
+});
+
+/**
+ * POST /api/v1/gigs/:id/fund-escrow
+ * Locks funds in universal escrow across Solana USDC, SBP Raast, Card, or JazzCash.
+ * Writes double-entry balanced journal entries in the ledger and updates gig status.
+ */
+router.post('/:id/fund-escrow', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: gigId } = req.params;
+    const { rail = 'solana', amountUsd, txHash, paymentId, currency = 'USD' } = req.body;
+
+    const gig = await prisma.project.findUnique({ where: { id: gigId } });
+    if (!gig) return res.status(404).json({ success: false, error: 'Gig not found' });
+
+    const finalAmount = Number(amountUsd) || gig.budgetUsd;
+    const pId = paymentId || `pay_escrow_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+    // Double-entry ledger recording
+    const journal = ledgerService.recordEscrowFunding({
+      paymentId: pId,
+      reference: `gig_${gigId}`,
+      rail,
+      amount: finalAmount,
+      currency,
+      fee: finalAmount * 0.02, // 2% Wakala facilitation fee
+      payerId: req.user?.id || 'client',
+      payeeId: gig.bestAgentId || 'assigned_contractor',
+      gigId,
+    });
+
+    // Update gig status & locked vault
+    const updated = await prisma.project.update({
+      where: { id: gigId },
+      data: {
+        status: 'IN_PROGRESS',
+        vaultUsdc: finalAmount,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        gigId,
+        status: updated.status,
+        escrow: {
+          funded: true,
+          rail,
+          amountUsd: finalAmount,
+          txHash: txHash || null,
+          ledgerTxId: journal.id,
+          trustBonus: journal.trustScoreImpact.payerScoreDelta,
+        },
+      },
+    });
+  } catch (e: any) { next(e); }
+});
+
+/**
+ * POST /api/v1/gigs/:id/release-escrow
+ * Creator verifies delivery and releases the escrow to the contractor/agent.
+ * Journals payout settlement and boosts contractor Trust Score by +25 points.
+ */
+router.post('/:id/release-escrow', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: gigId } = req.params;
+    const gig = await prisma.project.findUnique({ where: { id: gigId } });
+    if (!gig) return res.status(404).json({ success: false, error: 'Gig not found' });
+    if (gig.createdBy && gig.createdBy !== req.user?.id) {
+      return res.status(403).json({ success: false, error: 'Only the gig poster may release escrow' });
+    }
+
+    const payeeId = gig.bestAgentId || 'payee_contractor';
+    const journal = ledgerService.recordEscrowRelease({
+      reference: `gig_${gigId}`,
+      rail: 'solana',
+      amount: gig.vaultUsdc || gig.budgetUsd,
+      currency: 'USD',
+      payeeId,
+      gigId,
+    });
+
+    const updated = await prisma.project.update({
+      where: { id: gigId },
+      data: { status: 'DELIVERED' },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        gigId,
+        status: updated.status,
+        released: true,
+        ledgerTxId: journal.id,
+        payeeTrustScoreDelta: journal.trustScoreImpact.payeeScoreDelta,
+      },
+    });
   } catch (e: any) { next(e); }
 });
 

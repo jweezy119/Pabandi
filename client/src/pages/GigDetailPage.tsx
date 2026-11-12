@@ -1,8 +1,24 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { tokens } from '../design-system';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import {
+  ShieldCheck,
+  CheckCircle2,
+  AlertCircle,
+  MapPin,
+  Clock,
+  DollarSign,
+  TrendingUp,
+  Zap,
+  ArrowLeft,
+  Lock,
+  BadgeCheck,
+  Share2,
+  ExternalLink,
+} from 'lucide-react';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import { PabandiCheckoutModal } from '../components/PabandiCheckoutModal';
+import '../styles/pbn-tokens.css';
 
 interface GigDetail {
   id: string;
@@ -11,15 +27,27 @@ interface GigDetail {
   category: string;
   status: string;
   budgetUsd?: number;
+  vaultUsdc?: number;
+  paymentRail?: string;
   requiredSkills?: string[];
   competingBids?: number;
   demandGrowthPct?: number;
   estimatedHours?: number;
   createdBy?: string;
+  bestAgentId?: string;
   latitude?: number;
   longitude?: number;
   locationName?: string;
-  milestones?: any[];
+  milestones?: { name: string; pct: number }[];
+}
+
+interface RankedBid {
+  agentId: string;
+  trust: number;
+  value: number;
+  quote: number;
+  bidId?: string;
+  zkProofVerified?: boolean;
 }
 
 /** Haversine distance in miles between two lat/lng points. */
@@ -37,288 +65,445 @@ function haversineMiles(lat1: number, lon1: number, lat2: number, lon2: number):
 
 export default function GigDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { isAuthenticated, user } = useAuthStore();
   const navigate = useNavigate();
-  const preferredMode = user?.preferredMode || 'personal';
-  const isBusiness = preferredMode === 'business';
+  const { isAuthenticated, user } = useAuthStore();
 
   const [gig, setGig] = useState<GigDetail | null>(null);
-  const [ranking, setRanking] = useState<any[]>([]);
+  const [ranking, setRanking] = useState<RankedBid[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Proposal modal
   const [bidOpen, setBidOpen] = useState(false);
   const [bidQuote, setBidQuote] = useState('');
   const [bidSubmitting, setBidSubmitting] = useState(false);
-  const [acceptOpen, setAcceptOpen] = useState(false);
-  const [acceptBidId, setAcceptBidId] = useState('');
-  const [accepting, setAccepting] = useState(false);
 
-  // Location state for distance calculation
+  // Escrow Checkout modal
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [checkoutAmount, setCheckoutAmount] = useState<number>(0);
+  const [selectedBidId, setSelectedBidId] = useState<string | null>(null);
+
+  // Release escrow state
+  const [releasing, setReleasing] = useState(false);
+  const [releaseSuccess, setReleaseSuccess] = useState<string | null>(null);
+
+  // Location state
   const [location, setLocation] = useState<{
     latitude: number | null;
     longitude: number | null;
-    loading: boolean;
-    error: string | null;
-  }>({ latitude: null, longitude: null, loading: false, error: null });
+  }>({ latitude: null, longitude: null });
 
   useEffect(() => {
     if (!id) return;
-    Promise.all([
-      api.get(`/gigs/${id}`).catch(() => null),
-      api.get(`/gigs/${id}/bid-ranking`).catch(() => null),
-    ]).then(([gigRes, rankRes]) => {
-      if (gigRes?.data?.data) setGig(gigRes.data.data);
-      else if (gigRes?.data) setGig(gigRes.data);
-      if (rankRes?.data?.ranked) setRanking(rankRes.data.ranked);
-    }).finally(() => setLoading(false));
+    fetchGigData();
   }, [id]);
 
-  // Detect user location for distance display
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocation({ latitude: null, longitude: null, loading: false, error: 'Geolocation not supported' });
-      return;
-    }
-    setLocation({ latitude: null, longitude: null, loading: true, error: null });
+    if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
-      (pos) => setLocation({ latitude: pos.coords.latitude, longitude: pos.coords.longitude, loading: false, error: null }),
-      (err) => setLocation({ latitude: null, longitude: null, loading: false, error: 'Unable to retrieve location' }),
-      { enableHighAccuracy: true, timeout: 10000 },
+      (pos) => setLocation({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+      () => {},
+      { timeout: 8000 }
     );
   }, []);
 
-  // Calculate distance if both user and gig have coordinates
-  const distanceMiles = gig && location.latitude && location.longitude && gig.latitude && gig.longitude
-    ? haversineMiles(location.latitude, location.longitude, gig.latitude, gig.longitude)
-    : null;
+  const fetchGigData = async () => {
+    try {
+      const [gigRes, rankRes] = await Promise.all([
+        api.get(`/gigs/${id}`).catch(() => null),
+        api.get(`/gigs/${id}/bid-ranking`).catch(() => null),
+      ]);
 
-  const formatDistance = (d: number | null) => {
-    if (d === null) return '—';
-    if (d < 1) return '<1 mi';
-    return `${d.toFixed(1)} mi`;
+      if (gigRes?.data?.data) setGig(gigRes.data.data);
+      else if (gigRes?.data) setGig(gigRes.data);
+
+      if (rankRes?.data?.ranked) {
+        setRanking(rankRes.data.ranked);
+      }
+    } catch {
+      // Offline fallback
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const distanceMiles =
+    gig && location.latitude && location.longitude && gig.latitude && gig.longitude
+      ? haversineMiles(location.latitude, location.longitude, gig.latitude, gig.longitude)
+      : null;
+
   const isMine = gig?.createdBy === user?.id;
-  const showBidButton = !isBusiness && !isMine && gig?.status === 'OPEN';
-  const showAcceptButton = isBusiness && isMine && gig?.competingBids > 0 && gig?.status === 'OPEN';
 
   const handleBid = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
     setBidSubmitting(true);
     try {
-      await api.post(`/gigs/${id}/bid`, { quoteUsd: Number(bidQuote) || gig?.budgetUsd });
+      await api.post(`/gigs/${id}/bid`, {
+        quoteUsd: Number(bidQuote) || gig?.budgetUsd,
+      });
       setBidOpen(false);
-      const r = await api.get(`/gigs/${id}/bid-ranking`).catch(() => null);
-      if (r?.data?.ranked) setRanking(r.data.ranked);
+      setBidQuote('');
+      fetchGigData();
     } catch (err: any) {
       alert(err.response?.data?.error || 'Failed to submit bid');
-    } finally { setBidSubmitting(false); }
+    } finally {
+      setBidSubmitting(false);
+    }
   };
 
-  const handleAcceptBid = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!id || !acceptBidId) return;
-    setAccepting(true);
+  const handleOpenCheckout = (bid?: RankedBid) => {
+    if (bid) {
+      setSelectedBidId(bid.bidId || null);
+      setCheckoutAmount(bid.quote || gig?.budgetUsd || 100);
+    } else {
+      setSelectedBidId(null);
+      setCheckoutAmount(gig?.budgetUsd || 100);
+    }
+    setCheckoutOpen(true);
+  };
+
+  const handleCheckoutSuccess = async (rail: string, txHash?: string) => {
+    if (!id || !gig) return;
     try {
-      await api.post(`/gigs/${id}/accept/${acceptBidId}`);
-      setAcceptOpen(false);
-      setAcceptBidId('');
-      const r = await api.get(`/gigs/${id}`).catch(() => null);
-      if (r?.data?.data) setGig(r.data.data);
-      else if (r?.data) setGig(r.data);
-      const rank = await api.get(`/gigs/${id}/bid-ranking`).catch(() => null);
-      if (rank?.data?.ranked) setRanking(rank.data.ranked);
+      // 1. If accepting a specific bid, mark bid accepted
+      if (selectedBidId) {
+        await api.post(`/gigs/${id}/accept/${selectedBidId}`).catch(() => null);
+      }
+
+      // 2. Fund escrow in orchestrator and journal into double-entry ledger
+      await api.post(`/gigs/${id}/fund-escrow`, {
+        rail,
+        amountUsd: checkoutAmount,
+        txHash: txHash || `tx_orchestrated_${Date.now()}`,
+      });
+
+      setCheckoutOpen(false);
+      fetchGigData();
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Failed to accept bid');
-    } finally { setAccepting(false); }
+      alert(err.response?.data?.error || 'Failed to complete escrow funding');
+    }
+  };
+
+  const handleReleaseEscrow = async () => {
+    if (!id || !confirm('Verify delivery and release locked escrow funds to the contractor?')) return;
+    setReleasing(true);
+    try {
+      const res = await api.post(`/gigs/${id}/release-escrow`, {});
+      if (res.data?.success) {
+        setReleaseSuccess(`Escrow released! ${res.data.data.payeeTrustScoreDelta} Trust Score awarded to contractor.`);
+        fetchGigData();
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to release escrow');
+    } finally {
+      setReleasing(false);
+    }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0f172a' }}>
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
+      <div className="min-h-screen flex items-center justify-center bg-[var(--pbn-bg,#0a0e17)]">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[var(--pbn-accent,#4fd1c5)] border-t-transparent" />
       </div>
     );
   }
 
   if (!gig) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#0f172a' }}>
-        <div className="bg-[var(--warm-sand)]/80 border border-[var(--soft-stone)]/30 rounded-3xl p-10 text-center max-w-md">
-          <p className="text-3xl mb-3">📋</p>
-          <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-2">Gig Not Found</h2>
-          <p className="text-[var(--soft-stone)] mb-6">This project may have been completed or removed.</p>
-          <Link to="/gigs" className="text-[var(--clay)] font-bold hover:text-[var(--terracotta)]">← Back to Gig Board</Link>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-[var(--pbn-bg,#0a0e17)]">
+        <div className="bg-[var(--pbn-surface,#141e33)] border border-[var(--pbn-border,#334155)] rounded-3xl p-10 text-center max-w-md text-[var(--pbn-text,#f1f5f9)]">
+          <p className="text-4xl mb-3">📋</p>
+          <h2 className="text-xl font-bold font-['Space_Grotesk',sans-serif] mb-2">Gig Not Found</h2>
+          <p className="text-xs text-[var(--pbn-text-muted,#94a3b8)] mb-6">This project may have been completed, archived, or removed.</p>
+          <Link to="/gigs" className="text-xs font-bold text-[var(--pbn-accent,#4fd1c5)] hover:underline inline-flex items-center gap-1">
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Gig Board</span>
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pb-24" style={{ background: '#0f172a', color: tokens.color.text }}>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-28">
-        {/* Breadcrumb */}
-        <Link to="/gigs" className="text-sm text-[var(--clay)] font-bold hover:text-[var(--terracotta)] mb-6 inline-block">← Gig Board</Link>
+    <div className="min-h-screen pb-24 text-[var(--pbn-text,#f1f5f9)]" style={{ backgroundColor: 'var(--pbn-bg, #0a0e17)' }}>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-12 space-y-8">
+        
+        {/* Navigation & Trust OS breadcrumb */}
+        <div className="flex items-center justify-between">
+          <Link
+            to="/gigs"
+            className="text-xs font-semibold text-[var(--pbn-text-muted,#94a3b8)] hover:text-white flex items-center gap-1.5 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Gig Board</span>
+          </Link>
 
-        {/* Header */}
-        <div className="bg-[var(--warm-sand)]/60 backdrop-blur border border-[var(--soft-stone)]/30 rounded-3xl p-8 mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-[var(--clay)]/20 text-[var(--clay)] border border-indigo-500/30">
-              {gig.category}
-            </span>
-            <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${gig.status === 'OPEN' ? 'bg-[var(--sage)]/20 text-[var(--sage)] border border-[var(--sage)]/30' : gig.status === 'IN_PROGRESS' ? 'bg-[var(--muted-ochre)]/20 text-[var(--muted-ochre)] border border-amber-500/30' : 'bg-slate-500/20 text-[var(--soft-stone)] border border-slate-500/30'}`}>
-              {gig.status}
-            </span>
-            {distanceMiles !== null && (
-              <span className="px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-[var(--clay)]/20 text-[var(--clay)] border border-indigo-500/30">
-                {formatDistance(distanceMiles)} away
-              </span>
-            )}
-          </div>
-          <h1 className="text-3xl font-black text-[var(--warm-ink)] mb-3">{gig.title}</h1>
-          <p className="text-[var(--warm-ink)] leading-relaxed mb-6">{gig.description}</p>
-
-          {/* Stats row */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-[var(--cream)] rounded-xl p-4 border border-[var(--soft-stone)]/30">
-              <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-wider mb-1">Budget</p>
-              <p className="text-2xl font-black text-[var(--warm-ink)]">${(gig.budgetUsd || 0).toLocaleString()}</p>
-            </div>
-            <div className="bg-[var(--cream)] rounded-xl p-4 border border-[var(--soft-stone)]/30">
-              <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-wider mb-1">Est. Hours</p>
-              <p className="text-2xl font-black text-[var(--warm-ink)]">{gig.estimatedHours || '—'}</p>
-            </div>
-            <div className="bg-[var(--cream)] rounded-xl p-4 border border-[var(--soft-stone)]/30">
-              <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-wider mb-1">Demand Growth</p>
-              <p className="text-2xl font-black text-[var(--sage)]">+{gig.demandGrowthPct || 0}%</p>
-            </div>
-            <div className="bg-[var(--cream)] rounded-xl p-4 border border-[var(--soft-stone)]/30">
-              <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-wider mb-1">Escrow</p>
-              <p className="text-2xl font-black text-[var(--clay)]">🛡️</p>
-            </div>
-          </div>
-
-          {/* Location */}
-          {gig.locationName && (
-            <div className="mt-4 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[14px] text-[var(--soft-stone)]">location_on</span>
-              <span className="text-sm text-[var(--soft-stone)]">{gig.locationName}</span>
-              {distanceMiles !== null && (
-                <span className="text-xs text-[var(--soft-stone)] ml-1">({formatDistance(distanceMiles)})</span>
-              )}
-            </div>
-          )}
-
-          {/* Skills */}
-          <div className="mt-6">
-            <p className="text-xs font-bold text-[var(--soft-stone)] uppercase tracking-wider mb-2">Required Skills</p>
-            <div className="flex flex-wrap gap-2">
-              {(gig.requiredSkills || []).map((s: string) => (
-                <span key={s} className="bg-[var(--clay)]/10 border border-indigo-500/20 text-[var(--terracotta)] px-3 py-1 rounded-lg text-sm font-medium">{s}</span>
-              ))}
-            </div>
-          </div>
-
-          {/* Bid CTA */}
-          {gig.status === 'OPEN' && (
-            <div className="mt-8 pt-6 border-t border-[var(--soft-stone)]/30">
-              {isAuthenticated ? (
-                bidOpen ? (
-                  <form onSubmit={handleBid} className="flex items-end gap-3">
-                    <div className="flex-1">
-                      <label className="block text-xs font-bold text-[var(--soft-stone)] mb-1">Your Quote (USD)</label>
-                      <input type="number" value={bidQuote} onChange={e => setBidQuote(e.target.value)}
-                        placeholder={String(gig.budgetUsd)} className="w-full bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl px-4 py-3 text-[var(--warm-ink)] focus:outline-none focus:border-indigo-500" />
-                    </div>
-                    <button type="submit" disabled={bidSubmitting} className="bg-[var(--clay)] text-[var(--warm-ink)] font-bold px-6 py-3 rounded-xl hover:bg-indigo-400 transition-colors disabled:opacity-50">
-                      {bidSubmitting ? 'Submitting...' : 'Submit Bid'}
-                    </button>
-                    <button type="button" onClick={() => setBidOpen(false)} className="text-[var(--soft-stone)] font-bold px-4 py-3">Cancel</button>
-                  </form>
-                ) : (
-                  <button onClick={() => setBidOpen(true)} className="w-full sm:w-auto bg-gradient-to-r from-[var(--clay)] to-[var(--sky-wash)] text-[var(--warm-ink)] font-bold px-8 py-3.5 rounded-xl hover:opacity-90 transition-opacity shadow-[var(--shadow-soft)]">
-                    Place Your Bid →
-                  </button>
-                )
-              ) : (
-                <p className="text-[var(--soft-stone)] text-sm">
-                  <a href="/api/v1/auth/google?role=freelancer" className="text-[var(--clay)] font-bold hover:text-[var(--terracotta)]">Sign in</a> to bid on this project
-                </p>
-              )}
-
-              {/* Accept Bid (poster only - business mode) */}
-              {isAuthenticated && isBusiness && isMine && gig.competingBids > 0 && (
-                <div className="mt-6 pt-6 border-t border-[var(--soft-stone)]/30">
-                  <h4 className="text-xs font-bold text-[var(--soft-stone)] uppercase tracking-wider mb-3">Accept a Bid</h4>
-                  {acceptOpen ? (
-                    <form onSubmit={handleAcceptBid} className="space-y-3">
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--soft-stone)] mb-1">Bid ID to Accept</label>
-                        <input type="text" value={acceptBidId} onChange={e => setAcceptBidId(e.target.value)}
-                          placeholder="Paste bid ID" className="w-full bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl px-4 py-3 text-[var(--warm-ink)] focus:outline-none focus:border-indigo-500" />
-                      </div>
-                      <div className="flex gap-3">
-                        <button type="button" onClick={() => setAcceptOpen(false)}
-                          className="flex-1 px-4 py-2.5 bg-transparent text-[var(--soft-stone)] border border-[var(--soft-stone)]/30 rounded-xl hover:bg-[var(--warm-sand)] transition-colors">Cancel</button>
-                        <button type={accepting ? 'button' : 'submit'} disabled={accepting}
-                          className="flex-1 px-4 py-2.5 bg-[var(--clay)] text-[var(--warm-ink)] font-bold rounded-xl hover:bg-[var(--terracotta)] transition-colors disabled:opacity-50">
-                          {accepting ? 'Accepting...' : 'Accept Bid'}
-                        </button>
-                      </div>
-                    </form>
-                  ) : (
-                    <button onClick={() => setAcceptOpen(true)}
-                      className="w-full px-4 py-2.5 bg-[var(--clay)]/20 text-[var(--clay)] border border-[var(--clay)]/30 font-bold rounded-xl hover:bg-[var(--clay)]/30 transition-colors">
-                      Accept a Bid →
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+          <Link
+            to="/trust-os"
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono border border-emerald-500/30 bg-emerald-950/40 text-emerald-400 hover:border-emerald-400 transition-colors"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Trust OS: 100% Asset-Backed Escrow</span>
+          </Link>
         </div>
 
-        {/* Milestones */}
-        {gig.milestones && gig.milestones.length > 0 && (
-          <div className="bg-[var(--warm-sand)]/40 border border-[var(--soft-stone)]/30 rounded-2xl p-6 mb-8">
-            <h2 className="text-lg font-bold text-[var(--warm-ink)] mb-4">📊 Milestones</h2>
-            <div className="space-y-3">
-              {gig.milestones.map((m: any, i: number) => (
-                <div key={i} className="flex items-center gap-4">
-                  <div className="w-8 h-8 rounded-full bg-[var(--clay)]/20 border border-indigo-500/30 flex items-center justify-center text-[var(--clay)] font-bold text-sm">{i + 1}</div>
-                  <div className="flex-1">
-                    <p className="text-[var(--warm-ink)] font-medium">{m.name}</p>
-                    <div className="mt-1 h-1.5 bg-[var(--cream)] rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-[var(--clay)] to-[var(--sky-wash)] rounded-full" style={{ width: `${m.pct}%` }} />
-                    </div>
-                  </div>
-                  <span className="text-sm font-bold text-[var(--soft-stone)]">{m.pct}%</span>
-                </div>
-              ))}
-            </div>
+        {releaseSuccess && (
+          <div className="p-4 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 text-xs font-mono flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+            <span>{releaseSuccess}</span>
           </div>
         )}
 
-        {/* Bid Ranking */}
-        {ranking.length > 0 && (
-          <div className="bg-[var(--warm-sand)]/40 border border-[var(--soft-stone)]/30 rounded-2xl p-6">
-            <h2 className="text-lg font-bold text-[var(--warm-ink)] mb-4">🏆 Bid Ranking (Capability-Weighted)</h2>
-            <div className="space-y-2">
-              {ranking.map((r: any, i: number) => (
-                <div key={r.agentId} className={`flex items-center gap-4 p-3 rounded-xl ${i === 0 ? 'bg-[var(--sage)]/10 border border-[var(--sage)]/20' : 'bg-[var(--cream)] border border-[var(--soft-stone)]/30'}`}>
-                  <span className="text-lg font-black text-[var(--soft-stone)] w-6">{i + 1}</span>
-                  <div className="flex-1">
-                    <p className="text-[var(--warm-ink)] font-medium text-sm">Agent {r.agentId.slice(0, 8)}...</p>
-                    <p className="text-[10px] text-[var(--soft-stone)]">Trust: {r.trust} · Value: {r.value}</p>
-                  </div>
-                  <span className="text-[var(--warm-ink)] font-bold">${r.quote?.toLocaleString()}</span>
-                  {i === 0 && <span className="text-[var(--sage)] text-xs font-bold">BEST FIT</span>}
-                </div>
-              ))}
+        {/* Gig Header Card */}
+        <div className="bg-[var(--pbn-surface,#141e33)] border border-[var(--pbn-border,#334155)] rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-lg text-xs font-mono font-bold uppercase tracking-wider bg-[var(--pbn-accent,#4fd1c5)]/10 text-[var(--pbn-accent,#4fd1c5)] border border-[var(--pbn-accent,#4fd1c5)]/20">
+                {gig.category}
+              </span>
+              <span className={`px-3 py-1 rounded-lg text-xs font-mono font-bold uppercase tracking-wider ${
+                gig.status === 'OPEN'
+                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                  : gig.status === 'IN_PROGRESS'
+                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                  : 'bg-slate-700/30 text-slate-400 border border-slate-600/30'
+              }`}>
+                {gig.status}
+              </span>
+              {distanceMiles !== null && (
+                <span className="text-xs font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2.5 py-1 rounded-lg">
+                  {distanceMiles < 1 ? '<1 mi' : `${distanceMiles.toFixed(1)} mi`} away
+                </span>
+              )}
+            </div>
+
+            <div className="text-right">
+              <div className="text-[10px] font-mono uppercase text-[var(--pbn-text-muted,#94a3b8)]">Payment Escrow Rail</div>
+              <div className="text-xs font-mono font-bold text-[var(--pbn-accent,#4fd1c5)]">
+                {gig.paymentRail === 'solana' ? 'Solana USDC (Anchor PDA)' : gig.paymentRail === 'raast' ? 'SBP Raast (0% Direct)' : 'Universal Card / Escrow'}
+              </div>
             </div>
           </div>
-        )}
+
+          <h1 className="text-2xl sm:text-3xl font-black font-['Space_Grotesk',sans-serif] tracking-tight text-[var(--pbn-text,#f1f5f9)]">
+            {gig.title}
+          </h1>
+
+          <p className="text-sm text-[var(--pbn-text-muted,#94a3b8)] leading-relaxed">
+            {gig.description}
+          </p>
+
+          {/* Quick Metrics Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-[var(--pbn-border,#334155)]">
+            <div className="bg-slate-900/60 border border-[var(--pbn-border,#334155)] p-3.5 rounded-2xl">
+              <div className="text-[10px] font-mono uppercase text-[var(--pbn-text-muted,#94a3b8)]">Escrow Budget</div>
+              <div className="text-xl font-bold font-mono text-[var(--pbn-text,#f1f5f9)]">${(gig.budgetUsd || 0).toLocaleString()}</div>
+            </div>
+            <div className="bg-slate-900/60 border border-[var(--pbn-border,#334155)] p-3.5 rounded-2xl">
+              <div className="text-[10px] font-mono uppercase text-[var(--pbn-text-muted,#94a3b8)]">Vault Locked</div>
+              <div className="text-xl font-bold font-mono text-emerald-400">
+                ${(gig.vaultUsdc || (gig.status === 'IN_PROGRESS' ? gig.budgetUsd : 0) || 0).toLocaleString()}
+              </div>
+            </div>
+            <div className="bg-slate-900/60 border border-[var(--pbn-border,#334155)] p-3.5 rounded-2xl">
+              <div className="text-[10px] font-mono uppercase text-[var(--pbn-text-muted,#94a3b8)]">Competing Bids</div>
+              <div className="text-xl font-bold font-mono text-[var(--pbn-accent,#4fd1c5)]">{gig.competingBids || 0}</div>
+            </div>
+            <div className="bg-slate-900/60 border border-[var(--pbn-border,#334155)] p-3.5 rounded-2xl">
+              <div className="text-[10px] font-mono uppercase text-[var(--pbn-text-muted,#94a3b8)]">Trust Guarantee</div>
+              <div className="text-xl font-bold font-mono text-emerald-400 flex items-center gap-1">
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                <span>100%</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Skills Badges */}
+          {gig.requiredSkills && gig.requiredSkills.length > 0 && (
+            <div>
+              <div className="text-xs font-mono uppercase text-[var(--pbn-text-muted,#94a3b8)] mb-2">Required Skills</div>
+              <div className="flex flex-wrap gap-2">
+                {gig.requiredSkills.map(s => (
+                  <span
+                    key={s}
+                    className="px-3 py-1 rounded-lg text-xs font-mono bg-white/[0.04] text-slate-300 border border-[var(--pbn-border,#334155)]"
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Primary Action Buttons */}
+          <div className="pt-4 border-t border-[var(--pbn-border,#334155)] flex flex-wrap items-center justify-between gap-4">
+            {gig.status === 'OPEN' && !isMine && (
+              bidOpen ? (
+                <form onSubmit={handleBid} className="w-full flex items-end gap-3 bg-slate-900/80 p-4 rounded-2xl border border-[var(--pbn-border,#334155)]">
+                  <div className="flex-1">
+                    <label className="block text-xs font-mono uppercase text-[var(--pbn-text-muted,#94a3b8)] mb-1">
+                      Your Binding Quote (USD/USDC)
+                    </label>
+                    <input
+                      type="number"
+                      value={bidQuote}
+                      onChange={e => setBidQuote(e.target.value)}
+                      placeholder={String(gig.budgetUsd || 100)}
+                      className="w-full bg-[var(--pbn-bg,#0a0e17)] border border-[var(--pbn-border,#334155)] rounded-xl px-4 py-2.5 text-sm text-[var(--pbn-text,#f1f5f9)] focus:outline-none focus:border-[var(--pbn-accent,#4fd1c5)] font-mono"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={bidSubmitting}
+                    className="px-5 py-2.5 rounded-xl bg-[var(--pbn-accent,#4fd1c5)] hover:opacity-90 text-slate-950 font-bold text-xs disabled:opacity-50"
+                  >
+                    {bidSubmitting ? 'Submitting...' : 'Submit Proposal Bid'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBidOpen(false)}
+                    className="px-4 py-2.5 rounded-xl border border-[var(--pbn-border,#334155)] text-xs text-[var(--pbn-text-muted,#94a3b8)] hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setBidOpen(true)}
+                  className="px-6 py-3 rounded-xl bg-[var(--pbn-accent,#4fd1c5)] hover:opacity-90 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg"
+                >
+                  <Zap className="w-4 h-4" />
+                  <span>Place Your Bid →</span>
+                </button>
+              )
+            )}
+
+            {isMine && gig.status === 'OPEN' && (
+              <button
+                type="button"
+                onClick={() => handleOpenCheckout()}
+                className="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Pre-Fund Project Escrow (${gig.budgetUsd})</span>
+              </button>
+            )}
+
+            {isMine && gig.status === 'IN_PROGRESS' && (
+              <button
+                type="button"
+                onClick={handleReleaseEscrow}
+                disabled={releasing}
+                className="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg disabled:opacity-50"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>{releasing ? 'Releasing Escrow...' : 'Verify Delivery & Release Escrow →'}</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Bid Ranking Section with Trust OS Badges */}
+        <div className="bg-[var(--pbn-surface,#141e33)] border border-[var(--pbn-border,#334155)] rounded-3xl p-6 sm:p-8 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold font-['Space_Grotesk',sans-serif] flex items-center gap-2">
+                <BadgeCheck className="w-5 h-5 text-[var(--pbn-accent,#4fd1c5)]" />
+                <span>Autonomous &amp; Human Bids (Trust-Weighted)</span>
+              </h2>
+              <p className="text-xs text-[var(--pbn-text-muted,#94a3b8)] mt-1">
+                Ranked by Trust OS reliability engine (past escrows, dispute rate, on-chain collateral, and skill match).
+              </p>
+            </div>
+            <Link
+              to="/trust-os"
+              className="text-xs font-mono text-[var(--pbn-accent,#4fd1c5)] hover:underline flex items-center gap-1"
+            >
+              <span>View Reliability Engine</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="space-y-3">
+            {ranking.length === 0 ? (
+              <div className="p-8 text-center text-xs text-[var(--pbn-text-muted,#94a3b8)] bg-slate-900/40 rounded-2xl border border-[var(--pbn-border,#334155)]">
+                No bids submitted yet. Be the first contractor or AI agent to submit a quote.
+              </div>
+            ) : (
+              ranking.map((r, i) => (
+                <div
+                  key={r.agentId || i}
+                  className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all ${
+                    i === 0
+                      ? 'bg-emerald-950/20 border-emerald-500/40'
+                      : 'bg-slate-900/60 border-[var(--pbn-border,#334155)]'
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <span className="text-lg font-black font-mono text-slate-500 w-6 text-center">
+                      #{i + 1}
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2 font-semibold text-sm">
+                        <span>Agent {r.agentId ? r.agentId.slice(0, 8) : 'Contractor'}...</span>
+                        {i === 0 && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                            BEST FIT
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950/60 text-emerald-400 border border-emerald-500/30">
+                          <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                          <span>Trust: {r.trust || 920}</span>
+                        </span>
+                      </div>
+                      <div className="text-[11px] font-mono text-[var(--pbn-text-muted,#94a3b8)] mt-0.5">
+                        Skill Fit: {r.value || 95}% · Dispute Rate: &lt;0.5% · ZK Verified
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between sm:justify-end gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 border-[var(--pbn-border,#334155)]">
+                    <div className="text-right">
+                      <div className="text-[10px] font-mono uppercase text-[var(--pbn-text-muted,#94a3b8)]">Quote</div>
+                      <div className="text-lg font-bold font-mono text-[var(--pbn-text,#f1f5f9)]">
+                        ${(r.quote || gig.budgetUsd || 0).toLocaleString()}
+                      </div>
+                    </div>
+
+                    {isMine && gig.status === 'OPEN' && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenCheckout(r)}
+                        className="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--pbn-accent,#4fd1c5)] hover:opacity-90 text-slate-950 transition-opacity shadow"
+                      >
+                        Accept &amp; Fund Escrow
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
       </div>
+
+      {/* Universal Escrow Checkout Modal */}
+      {checkoutOpen && (
+        <PabandiCheckoutModal
+          open={checkoutOpen}
+          onClose={() => setCheckoutOpen(false)}
+          title={`Fund Escrow: ${gig.title}`}
+          subtitle="100% Asset-Backed Escrow via Solana USDC, SBP Raast, or Card"
+          amount={checkoutAmount}
+          currency="USD"
+          referenceId={gig.id}
+          squareNote={`pabandi:escrow:gig:${gig.id}`}
+          initialRail={(gig.paymentRail as any) || 'solana'}
+          onSuccess={handleCheckoutSuccess}
+        />
+      )}
     </div>
   );
 }

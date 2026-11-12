@@ -124,6 +124,8 @@ const CoordinatorCommandSurface = lazy(() => import('./pages/coordinator/Coordin
 const CapitalOSPage = lazy(() => import('./pages/ledger/LedgerOSPage'));
 const LedgerInvoicesPage = lazy(() => import('./pages/ledger/LedgerInvoicesPage'));
 const InvoicesPage = lazy(() => import('./pages/crm/InvoicesPage'));
+const TrustPassportTab = lazy(() => import('./pages/dashboard/TrustPassportTab'));
+const TrustOSPage = lazy(() => import('./pages/trust/TrustOSPage'));
 const PublicBusinessProfilePage = lazy(() => import('./pages/BusinessProfilePage'));
 const BusinessJoinPage = lazy(() => import('./pages/BusinessJoinPage'));
 const ShortLinkBookingPage = lazy(() => import('./pages/ShortLinkBookingPage'));
@@ -344,6 +346,8 @@ function AnimatedAppRoutes() {
            <Route path="contact/invoices" element={<BusinessGuard><FeatureGate feature="invoices"><InvoicesPage /></FeatureGate></BusinessGuard>} />
            <Route path="contact/invoices/:id" element={<BusinessGuard><FeatureGate feature="invoices"><ContactInvoiceDetailPage /></FeatureGate></BusinessGuard>} />
           <Route path="contact/money-flow" element={<BusinessGuard><FeatureGate feature="invoices"><ContactMoneyFlowPage /></FeatureGate></BusinessGuard>} />
+          <Route path="contact/trust-passport" element={<BusinessGuard><TrustPassportTab /></BusinessGuard>} />
+          <Route path="dashboard/trust-passport" element={<BusinessGuard><TrustPassportTab /></BusinessGuard>} />
            <Route path="contact/settings" element={<BusinessGuard><SettingsHubPage /></BusinessGuard>} />
            <Route path="contact/settings/profile" element={<BusinessGuard><BusinessProfilePage /></BusinessGuard>} />
            <Route path="contact/settings/modules" element={<BusinessGuard><ModulesSettingsPage /></BusinessGuard>} />
@@ -378,6 +382,10 @@ function AnimatedAppRoutes() {
           <Route path="capital/expenses" element={<LedgerExpensesPage />} />
           <Route path="capital/accounts" element={<LedgerAccountsPage />} />
           <Route path="capital/reports" element={<LedgerReportsPage />} />
+
+          {/* Trust OS - Reliability & ZK Reputation Engine */}
+          <Route path="trust-os" element={<TrustOSPage />} />
+          <Route path="trust-os/*" element={<TrustOSPage />} />
 
           {/* Personal Mode (/me) — inside AppShellLayout so ModeToggle, ModuleSwitcher,
               Universal Balance, and UserMenu remain accessible in Personal Mode */}
@@ -450,9 +458,9 @@ function AnimatedAppRoutes() {
             <Route path="marketplace/freelancers" element={<PlaceholderPage />} />
             <Route path="marketplace/gigs" element={<Navigate to="/gigs" replace />} />
             <Route path="marketplace/hospitality" element={<PlaceholderPage />} />
-            <Route path="trust/passports" element={<PlaceholderPage />} />
-            <Route path="trust/deposits" element={<PlaceholderPage />} />
-            <Route path="trust/escrow" element={<PlaceholderPage />} />
+            <Route path="trust/passports" element={<TrustOSPage />} />
+            <Route path="trust/deposits" element={<TrustOSPage />} />
+            <Route path="trust/escrow" element={<TrustOSPage />} />
 
             <Route path="blog" element={<PlaceholderPage />} />
             <Route path="terms" element={<TermsPage />} />
@@ -498,7 +506,7 @@ function AnimatedAppRoutes() {
             <Route path="passport/:sellerId" element={<PlaceholderPage />} />
             <Route path="trust/:passportId" element={<TrustPassportPublicPage />} />
             <Route path="trust/:handle" element={<PlaceholderPage />} />
-            <Route path="trust" element={<PlaceholderPage />} />
+            <Route path="trust" element={<TrustOSPage />} />
             <Route path="trust/pulse" element={<PlaceholderPage />} />
             <Route path="trust/jury" element={<PlaceholderPage />} />
             <Route path="agent-passport" element={<PlaceholderPage />} />

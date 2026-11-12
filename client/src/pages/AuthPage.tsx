@@ -4,6 +4,41 @@ import { useAuthStore } from '../store/authStore';
 import { effectiveMode, safeInternalPath } from '../utils/accountMode';
 import { authService } from '../services/api';
 import { signMessageWithPhantom } from '../utils/web3';
+import '../styles/pbn-tokens.css';
+
+export interface CrmVerticalOption {
+  id: string;
+  label: string;
+  subtitle: string;
+  icon: string;
+}
+
+export const CRM_VERTICAL_OPTIONS: CrmVerticalOption[] = [
+  {
+    id: 'commercial',
+    label: 'Commercial Services (Roofing, HVAC, Plumbing)',
+    subtitle: 'For B2B field service & dispatch',
+    icon: 'construction',
+  },
+  {
+    id: 'health_beauty',
+    label: 'Health & Beauty (Salons, Spas, Clinics)',
+    subtitle: 'For appointments, treatments & clients',
+    icon: 'spa',
+  },
+  {
+    id: 'home_repair',
+    label: 'Home & Repair (Electricians, Handymen)',
+    subtitle: 'For residential repairs & job tracking',
+    icon: 'home_repair_service',
+  },
+  {
+    id: 'professional',
+    label: 'Professional Services (Consulting, Agencies)',
+    subtitle: 'For proposals, contracts & advisory',
+    icon: 'business_center',
+  },
+];
 
 type Mode = 'login' | 'signup';
 type Role = 'customer' | 'business';
@@ -201,6 +236,7 @@ export default function AuthPage() {
     lastName: '',
     phone: '',
     businessName: '',
+    vertical: 'Commercial Services (Roofing, HVAC, Plumbing)',
     googlePlaceId: '',
     fiverrUrl: '',
     upworkUrl: '',
@@ -349,6 +385,7 @@ export default function AuthPage() {
           ...(role === 'business' && {
             businessName: formData.businessName,
             googlePlaceId: formData.googlePlaceId || undefined,
+            vertical: formData.vertical || 'Commercial Services (Roofing, HVAC, Plumbing)',
           }),
           fiverrUrl: formData.fiverrUrl || undefined,
           upworkUrl: formData.upworkUrl || undefined,
@@ -383,7 +420,7 @@ export default function AuthPage() {
       <div className="pointer-events-none absolute -bottom-[10%] -right-[5%] h-[400px] w-[400px] rounded-full bg-[rgba(var(--clay),0.1)] blur-3xl mix-blend-multiply" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(0,0,0,0.25)_1px,transparent_1px)] [background-size:40px_40px]" />
 
-      <div className="relative z-10 w-full max-w-md reveal">
+      <div className={`relative z-10 w-full ${isBusiness && isSignup ? 'max-w-xl' : 'max-w-md'} transition-all duration-200 reveal`}>
         {/* Logo */}
         <div className="mb-8 text-center">
           <Link to="/" className="inline-flex items-center gap-2 group">
@@ -531,15 +568,45 @@ export default function AuthPage() {
 
                 {isBusiness && (
                   <>
-                    <div className="mb-4 rounded-xl border border-[var(--clay)]/30 bg-[rgba(var(--clay),0.1)] p-4">
-                      <p className="mb-2 text-sm font-bold text-[var(--warm-ink)]">Specialized Solutions:</p>
-                      <div className="flex flex-col gap-2 sm:flex-row">
-                        <Link to="/live-selling" className="flex items-center justify-between rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-xs font-semibold text-[var(--warm-ink)] transition-colors hover:text-[var(--warm-ink)]">
-                          🎥 Live Sellers & Drops <span>→</span>
-                        </Link>
-                        <Link to="/freelance" className="flex items-center justify-between rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-xs font-semibold text-[var(--warm-ink)] transition-colors hover:text-[var(--warm-ink)]">
-                          💻 Freelancers & Gig Work <span>→</span>
-                        </Link>
+                    <div className="pbn-vertical-selection-container">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-[11px] font-bold uppercase tracking-wider font-mono text-[var(--pbn-text-muted,#8a9aa8)]">
+                          Service Vertical *
+                        </label>
+                        <span className="text-[10px] font-mono text-[var(--pbn-accent,#4fd1c5)]">
+                          Pabandi CRM Architecture
+                        </span>
+                      </div>
+                      <div className="pbn-vertical-grid" role="radiogroup" aria-label="Service Vertical Options">
+                        {CRM_VERTICAL_OPTIONS.map((v) => {
+                          const isSelected = formData.vertical === v.label || formData.vertical === v.id;
+                          return (
+                            <button
+                              key={v.id}
+                              type="button"
+                              role="radio"
+                              aria-checked={isSelected}
+                              data-testid={`vertical-option-${v.id}`}
+                              onClick={() => {
+                                setFormData((prev) => ({ ...prev, vertical: v.label }));
+                              }}
+                              className={`pbn-vertical-card ${isSelected ? 'is-selected' : ''}`}
+                            >
+                              <div className="pbn-vertical-card-header">
+                                <div className="flex items-center gap-2">
+                                  <span className="material-symbols-outlined text-base text-[var(--pbn-accent,#4fd1c5)]">
+                                    {v.icon}
+                                  </span>
+                                  <span className="pbn-vertical-card-title">{v.label}</span>
+                                </div>
+                                <div className="pbn-vertical-card-radio">
+                                  {isSelected && <div className="pbn-vertical-card-radio-dot" />}
+                                </div>
+                              </div>
+                              <p className="pbn-vertical-card-subtitle">{v.subtitle}</p>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                     <div>

@@ -201,6 +201,17 @@ router.post('/connectors/:rail/webhook', async (req: Request, res: Response) => 
 // SETTLEMENT & DOUBLE-ENTRY LEDGER RECONCILIATION
 // ══════════════════════════════════════════════════════════════════════════════
 
+router.get('/ledger/transactions', (_req: Request, res: Response) => {
+  res.json({ success: true, transactions: ledgerService.getAllTransactions() });
+});
+
+router.get('/ledger/export.csv', (_req: Request, res: Response) => {
+  const csv = ledgerService.exportCsv();
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="pabandi_ledger_export.csv"');
+  res.send(csv);
+});
+
 router.get('/ledger/transactions/:paymentId', (req: Request, res: Response) => {
   const tx = ledgerService.getTransaction(req.params.paymentId);
   if (!tx) {

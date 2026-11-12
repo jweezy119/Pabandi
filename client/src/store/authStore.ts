@@ -91,6 +91,7 @@ interface RegisterData {
   role?: string;
   businessName?: string;
   googlePlaceId?: string;
+  vertical?: string;
   fiverrUrl?: string;
   upworkUrl?: string;
   refCode?: string;

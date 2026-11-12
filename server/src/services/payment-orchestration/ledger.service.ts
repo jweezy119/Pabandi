@@ -186,6 +186,151 @@ export class DoubleEntryLedgerService {
     return journal;
   }
 
+  /**
+   * Records initial escrow lock for a gig or milestone.
+   * Debits rail clearing asset and credits escrow liability account.
+   */
+  recordEscrowFunding(params: {
+    paymentId: string;
+    reference: string;
+    rail: string;
+    amount: number;
+    currency: string;
+    fee?: number;
+    payerId?: string;
+    payeeId?: string;
+    gigId?: string;
+  }): JournalTransaction {
+    const { paymentId, reference, rail, amount, currency, fee = 0, payerId, payeeId, gigId } = params;
+    const txId = `escrow_lock_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const now = new Date().toISOString();
+    const netAmount = Math.max(0, amount - fee);
+
+    const entries: LedgerEntry[] = [
+      {
+        id: `entry_${Date.now()}_1`,
+        transactionId: txId,
+        account: `clearing:${rail}:${currency.toLowerCase()}`,
+        accountType: 'ASSET',
+        debit: amount,
+        credit: 0,
+        currency,
+        timestamp: now,
+        description: `Escrow deposit for gig ${gigId || reference} via ${rail}`,
+      },
+      {
+        id: `entry_${Date.now()}_2`,
+        transactionId: txId,
+        account: `escrow:gig:${gigId || reference}`,
+        accountType: 'LIABILITY',
+        debit: 0,
+        credit: netAmount,
+        currency,
+        timestamp: now,
+        description: `Funds locked in escrow for beneficiary ${payeeId || 'assigned_agent'}`,
+      },
+    ];
+
+    if (fee > 0) {
+      entries.push({
+        id: `entry_${Date.now()}_3`,
+        transactionId: txId,
+        account: 'revenue:platform:wakala_fee',
+        accountType: 'REVENUE',
+        debit: 0,
+        credit: fee,
+        currency,
+        timestamp: now,
+        description: `Platform escrow facilitation fee`,
+      });
+    }
+
+    const journal: JournalTransaction = {
+      id: txId,
+      paymentId,
+      reference: reference || `gig_${gigId}`,
+      rail,
+      totalAmount: amount,
+      currency,
+      status: 'POSTED',
+      entries,
+      createdAt: now,
+      trustScoreImpact: {
+        payerScoreDelta: +15,
+        payeeScoreDelta: 0,
+        reason: `Funded 100% asset-backed escrow on ${rail}`,
+      },
+    };
+
+    this.transactions.set(paymentId, journal);
+    logger.info(`[Ledger] Escrow funded for gig ${gigId}: ${amount} ${currency} on rail ${rail}`);
+    return journal;
+  }
+
+  /**
+   * Records escrow release upon milestone or gig completion.
+   * Debits escrow liability and credits cleared settlement for payee.
+   */
+  recordEscrowRelease(params: {
+    paymentId?: string;
+    reference: string;
+    rail: string;
+    amount: number;
+    currency: string;
+    payeeId: string;
+    gigId?: string;
+  }): JournalTransaction {
+    const { paymentId = `rel_${Date.now()}`, reference, rail, amount, currency, payeeId, gigId } = params;
+    const txId = `escrow_rel_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const now = new Date().toISOString();
+
+    const entries: LedgerEntry[] = [
+      {
+        id: `entry_${Date.now()}_1`,
+        transactionId: txId,
+        account: `escrow:gig:${gigId || reference}`,
+        accountType: 'LIABILITY',
+        debit: amount,
+        credit: 0,
+        currency,
+        timestamp: now,
+        description: `Release escrow liability for completed gig ${gigId || reference}`,
+      },
+      {
+        id: `entry_${Date.now()}_2`,
+        transactionId: txId,
+        account: `settlement:cleared:${payeeId}`,
+        accountType: 'ASSET',
+        debit: 0,
+        credit: amount,
+        currency,
+        timestamp: now,
+        description: `Cleared payout to ${payeeId} for verified delivery`,
+      },
+    ];
+
+    const journal: JournalTransaction = {
+      id: txId,
+      paymentId,
+      reference: reference || `gig_${gigId}`,
+      rail,
+      totalAmount: amount,
+      currency,
+      status: 'POSTED',
+      entries,
+      createdAt: now,
+      trustScoreImpact: {
+        payerScoreDelta: +5,
+        payeeScoreDelta: +25,
+        reason: `Successfully delivered contract with zero disputes. Escrow released.`,
+      },
+    };
+
+    this.transactions.set(txId, journal);
+    logger.info(`[Ledger] Escrow released for gig ${gigId}: ${amount} ${currency} to ${payeeId}`);
+    return journal;
+  }
+
   getTransaction(paymentId: string): JournalTransaction | undefined {
     return this.transactions.get(paymentId);
   }

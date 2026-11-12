@@ -78,6 +78,7 @@ const OS_DESCRIPTIONS: Record<string, string> = {
   'BookingOS': 'Booking & discovery platform',
   'Contact OS': 'CRM & sales pipeline',
   'CapitalOS': 'Finance & accounting',
+  'Trust OS': 'Reliability & ZK Reputation Engine',
 };
 
 const colorKeys: Record<string, string> = {
@@ -117,6 +118,7 @@ const OS_ROOT: Record<string, string> = {
   'PropertyOS': '/property',
   'BookingOS': '/booking',
   'CapitalOS': '/capital',
+  'Trust OS': '/trust-os',
   'Project Simulator': '/simulator',
 };
 
@@ -137,6 +139,7 @@ function buildNavFromSettings(settings: any, osName: string, defaultNav?: NavIte
       { path: '/contact/tasks', label: 'Tasks', icon: 'check', feature: 'tasks' },
       { path: '/contact/invoices', label: 'Escrow & Payments', icon: 'lock', feature: 'invoices' },
       { path: '/contact/money-flow', label: 'Money Flow', icon: 'account_balance_wallet', feature: 'invoices' },
+      { path: '/contact/trust-passport', label: 'Trust Passport', icon: 'shield_check', feature: null },
       { path: '/contact/team', label: 'Team', icon: 'users', feature: 'team' },
       // NOTE: 'Companies' / B2B accounts used to sit here. It was removed
       // rather than pointed somewhere: there is no Company model, and CrmClient
@@ -149,6 +152,13 @@ function buildNavFromSettings(settings: any, osName: string, defaultNav?: NavIte
       // their properties from inside the CRM rather than by typing a URL.
       { path: '/business-os', label: 'Workspace', icon: 'grid_view', feature: null },
       { path: '/contact/settings/modules', label: 'Settings', icon: 'settings', feature: null },
+    ],
+    'Trust OS': [
+      { path: '/trust-os', label: 'Reliability Engine', icon: 'shield', feature: null, end: true },
+      { path: '/trust-os/passport', label: 'ZK Trust Passport', icon: 'badge', feature: null },
+      { path: '/trust-os/ledger', label: 'Escrow & Ledger', icon: 'account_balance', feature: null },
+      { path: '/trust-os/verify', label: 'Counterparty Verifier', icon: 'verified', feature: null },
+      { path: '/gigs', label: 'Escrow Gig Board', icon: 'handshake', feature: null },
     ],
   };
 
