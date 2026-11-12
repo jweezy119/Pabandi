@@ -18,6 +18,7 @@ import {
   requestLoginCode,
   verifyLoginCode,
   toggleUserMode,
+  completeOnboarding,
 } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { authRateLimiter, emailCodeRateLimiter, registrationRateLimiter } from '../middleware/rateLimiter';
@@ -54,5 +55,6 @@ router.put('/profile', authenticate, updateProfile);
 router.post('/request-change', authenticate, requestProfileChange);
 router.get('/change-status', authenticate, getProfileChangeStatus);
 router.post('/mode', authenticate, toggleUserMode);
+router.post('/onboarding', authenticate, completeOnboarding);
 
 export default router;

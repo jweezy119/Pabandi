@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient, UserRole, BusinessCategory } from '@prisma/client';
+import { PrismaClient, UserRole, BusinessCategory, ProfileType } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
 import crypto from 'crypto';
@@ -447,7 +447,8 @@ export const register = async (
         // hardcoded literal in a controller — and `seedColdStartScore` below
         // writes the audit row that makes it explainable. There is no path to
         // 750 left in this handler.
-        trustScore: 50.0,
+        trustScore: 700.0,
+        disputeRate: 0.0,
         verificationTier: 'BASIC',
         gracePeriodUntil,
         ...(referredByUserId ? { referredById: referredByUserId } : {}),
@@ -763,6 +764,9 @@ export const login = async (
           appointmentScore: user.appointmentScore,
           business: user.business,
           preferredMode,
+          profileType: user.profileType,
+          username: user.username,
+          disputeRate: user.disputeRate ?? 0.0,
           // The tenant every ContactOS query is scoped by. The client keeps a
           // copy in localStorage for the pages that read it directly.
           businessId: activeBusinessId,
@@ -902,7 +906,8 @@ export const requestLoginCode = async (
           role: UserRole.CUSTOMER,
           // No reliabilityScore: the column default is COLD_START_SCORE. See the
           // note on the password-registration path.
-          trustScore: 50.0,
+          trustScore: 700.0,
+          disputeRate: 0.0,
           verificationTier: 'BASIC',
           gracePeriodUntil: new Date(Date.now() + 48 * 60 * 60 * 1000),
         },
@@ -1017,6 +1022,9 @@ export const verifyLoginCode = async (
           appointmentScore: user.appointmentScore,
           business: user.business,
           preferredMode: codeMode,
+          profileType: user.profileType,
+          username: user.username,
+          disputeRate: user.disputeRate ?? 0.0,
           businessId: codeBusinessId,
         },
         token,
@@ -1285,7 +1293,8 @@ export const getNonce = async (req: AuthRequest, res: Response, next: NextFuncti
           walletAddress,
           role: UserRole.CUSTOMER,
           // Wallet sign-up: no explicit score either, for the same reason.
-          trustScore: 50.0,
+          trustScore: 700.0,
+          disputeRate: 0.0,
           verificationTier: 'BASIC',
           gracePeriodUntil: new Date(Date.now() + 48 * 60 * 60 * 1000),
           wallet: {
@@ -1357,9 +1366,15 @@ export const verifyWallet = async (req: AuthRequest, res: Response, next: NextFu
       throw new CustomError('Signature verification failed. Please try again.', 401);
     }
 
+    const currentScore = user.trustScore || 700;
+    const boostedScore = Math.min(800, currentScore + 25);
     await prisma.user.update({
       where: { id: user.id },
-      data: { nonce: null },
+      data: {
+        nonce: null,
+        trustScore: boostedScore,
+        disputeRate: 0.0,
+      },
     });
 
     const token = jwt.sign(
@@ -1400,6 +1415,9 @@ export const verifyWallet = async (req: AuthRequest, res: Response, next: NextFu
           freelanceScore: user.freelanceScore,
           appointmentScore: user.appointmentScore,
           walletAddress: user.walletAddress || walletAddress,
+          profileType: user.profileType,
+          username: user.username,
+          disputeRate: user.disputeRate ?? 0.0,
           business: user.business,
         },
         token,
@@ -1526,6 +1544,122 @@ export const toggleUserMode = async (req: AuthRequest, res: Response, next: Next
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[Auth] toggleUserMode error:', message);
+    next(error);
+  }
+};
+
+/**
+ * POST /api/v1/auth/onboarding — Progressive onboarding router for newly authenticated accounts.
+ */
+export const completeOnboarding = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+
+    const { profileType, username, businessName, industry } = req.body;
+
+    if (!profileType || !['SOLO_BUILDER', 'CLIENT', 'SERVICE_BUSINESS'].includes(profileType)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid profileType. Must be SOLO_BUILDER, CLIENT, or SERVICE_BUSINESS.',
+      });
+    }
+
+    const cleanUsername = username ? String(username).replace(/^@/, '').toLowerCase().trim() : undefined;
+
+    // Fetch existing user to preserve any attestations/boosts
+    const existingUser = await prisma.user.findUnique({ where: { id: userId } });
+    const currentScore = existingUser?.trustScore && existingUser.trustScore >= 700 ? existingUser.trustScore : 700;
+
+    let updateData: any = {
+      profileType: profileType as ProfileType,
+      trustScore: currentScore,
+      disputeRate: 0.0,
+      ...(cleanUsername && { username: cleanUsername }),
+    };
+
+    if (profileType === 'SOLO_BUILDER') {
+      updateData.role = UserRole.FREELANCER;
+      updateData.preferredMode = 'personal';
+      updateData.activeMode = UserRole.CUSTOMER;
+    } else if (profileType === 'CLIENT') {
+      updateData.role = UserRole.CUSTOMER;
+      updateData.preferredMode = 'personal';
+      updateData.activeMode = UserRole.CUSTOMER;
+    } else if (profileType === 'SERVICE_BUSINESS') {
+      updateData.role = UserRole.BUSINESS_OWNER;
+      updateData.preferredMode = 'business';
+      updateData.activeMode = UserRole.BUSINESS_OWNER;
+
+      if (businessName) {
+        const category = resolveCategoryFromVertical(industry || 'commercial');
+        const existingBiz = await prisma.business.findFirst({ where: { ownerId: userId } });
+        if (!existingBiz) {
+          await prisma.business.create({
+            data: {
+              name: businessName,
+              ownerId: userId,
+              category,
+              address: 'Global / Remote',
+              profileType: ProfileType.SERVICE_BUSINESS,
+              settings: {
+                create: {
+                  vertical: normalizeVerticalKey(industry || 'commercial'),
+                  enabledModules: ['coordinator', 'contact', 'booking'],
+                },
+              },
+            },
+          });
+        } else {
+          await prisma.business.update({
+            where: { id: existingBiz.id },
+            data: {
+              name: businessName,
+              category,
+              profileType: ProfileType.SERVICE_BUSINESS,
+            },
+          });
+        }
+      }
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        username: true,
+        role: true,
+        profileType: true,
+        trustScore: true,
+        disputeRate: true,
+        preferredMode: true,
+        business: {
+          select: {
+            id: true,
+            name: true,
+            category: true,
+          },
+        },
+      },
+    });
+
+    return res.json({
+      success: true,
+      message: 'Onboarding completed successfully',
+      data: { user: updatedUser },
+    });
+  } catch (error) {
+    logger.error('[Auth] completeOnboarding error:', error);
     next(error);
   }
 };

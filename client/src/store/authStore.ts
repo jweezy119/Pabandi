@@ -3,14 +3,18 @@ import { persist } from 'zustand/middleware';
 import { authService, cryptoService, crmService } from '../services/api';
 import { syncBusinessId } from '../utils/businessContext';
 
-interface User {
+export type ProfileType = 'SOLO_BUILDER' | 'CLIENT' | 'SERVICE_BUSINESS';
+
+export interface User {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
   name?: string;
+  username?: string | null;
   phone?: string;
   role: string;
+  profileType?: ProfileType | null;
   /**
    * The tenant every ContactOS query is scoped by. ContactOS pages read this
    * directly, and it is mirrored into localStorage by syncBusinessId() — see
@@ -21,6 +25,7 @@ interface User {
   profilePictureUrl?: string;
   reliabilityScore?: number;
   trustScore?: number;
+  disputeRate?: number;
   verificationTier?: string;
   isEmailVerified?: boolean;
   commerceScore?: number;

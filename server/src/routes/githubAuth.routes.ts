@@ -207,6 +207,8 @@ router.get('/github/callback', async (req: Request, res: Response) => {
       firstName: user.firstName || '', lastName: user.lastName || '',
       activeBusinessId: getActiveBusinessId(user),
       mode: user.preferredMode || 'personal',
+      profileType: user.profileType || null,
+      username: user.username || null,
     };
     const token = jwt.sign(claims, JWT_SECRET!, { expiresIn: JWT_EXPIRES_IN as any });
     const refreshToken = jwt.sign({ id: user.id }, JWT_REFRESH_SECRET!, { expiresIn: JWT_REFRESH_EXPIRES_IN as any });

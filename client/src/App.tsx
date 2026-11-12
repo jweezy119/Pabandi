@@ -35,6 +35,8 @@ const GuaranteePage = lazy(() => import('./pages/GuaranteePage'));
 const TrustVerifyPage = lazy(() => import('./pages/TrustVerifyPage'));
 const TrustVerificationPage = lazy(() => import('./pages/settings/TrustVerificationPage'));
 const AuthPage = lazy(() => import('./pages/AuthPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
 const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'));
 const OAuthConsentPage = lazy(() => import('./pages/OAuthConsentPage'));
@@ -201,8 +203,9 @@ import { useEffect } from 'react';
 // Support
 
 function AppShellLayout() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user && !user.profileType) return <Navigate to="/onboarding" replace />;
   return (
     <AppShell>
       <Outlet />
@@ -468,10 +471,10 @@ function AnimatedAppRoutes() {
             <Route path="risk" element={<RiskPage />} />
 
             <Route path="auth/callback" element={<AuthCallbackPage />} />
-            <Route path="login" element={<AuthPage />} />
-            <Route path="register" element={<RegisterPage />} />
-            <Route path="signup" element={<RegisterPage />} />
-            <Route path="onboarding" element={<PlaceholderPage />} />
+            <Route path="login" element={<LoginPage />} />
+            <Route path="register" element={<LoginPage />} />
+            <Route path="signup" element={<LoginPage />} />
+            <Route path="onboarding" element={<OnboardingPage />} />
             <Route path="property-manager" element={<PlaceholderPage />} />
             <Route path="sales-crm" element={<PlaceholderPage />} />
             <Route path="properties" element={<PlaceholderPage />} />

@@ -130,6 +130,14 @@ export const authService = {
   }) => apiClient.post('/auth/register', data),
   requestVerificationCode: (email: string) =>
     apiClient.post('/auth/request-code', { email }),
+  verifyLoginCode: (email: string, code: string) =>
+    apiClient.post('/auth/verify-code', { email, code }),
+  completeOnboarding: (data: {
+    profileType: 'SOLO_BUILDER' | 'CLIENT' | 'SERVICE_BUSINESS';
+    username?: string;
+    businessName?: string;
+    industry?: string;
+  }) => apiClient.post('/auth/onboarding', data),
   refreshToken: (refreshToken: string) =>
     apiClient.post('/auth/refresh', { refreshToken }),
   updateProfile: (data: { firstName: string; lastName: string }) =>

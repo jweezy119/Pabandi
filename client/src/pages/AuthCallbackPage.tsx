@@ -62,8 +62,11 @@ export default function AuthCallbackPage() {
       lastName: claims?.lastName || '',
       role: resolvedRole,
       preferredMode,
+      profileType: claims?.profileType || null,
+      username: claims?.username || null,
       reliabilityScore: 750,
-      trustScore: 73.8,
+      trustScore: 725,
+      disputeRate: 0.0,
       verificationTier: 'BASIC',
       commerceScore: 73.75,
       hospitalityScore: 73.75,
@@ -76,7 +79,12 @@ export default function AuthCallbackPage() {
     // token only, so they could never be renewed and every one of them died
     // with its 7-day token.
     setAuth(user as any, token, refreshToken || undefined);
-    navigate(returnTo || '/dashboard', { replace: true });
+
+    if (!user.profileType) {
+      navigate('/onboarding', { replace: true });
+    } else {
+      navigate(returnTo || '/dashboard', { replace: true });
+    }
   }, [params, navigate, setAuth]);
 
   return (
