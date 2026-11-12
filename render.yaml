@@ -53,6 +53,10 @@ services:
         value: https://pabandi.com
       - key: API_URL
         value: https://pabandi.onrender.com
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_BOT_USERNAME
+        value: PabanBot
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET

@@ -261,3 +261,32 @@ CREATE TABLE IF NOT EXISTS "McpMeter" (
 CREATE UNIQUE INDEX IF NOT EXISTS "McpMeter_apiKeyHash_toolName_windowStart_key" ON "McpMeter" ("apiKeyHash", "toolName", "windowStart");
 CREATE INDEX IF NOT EXISTS "McpMeter_apiKeyHash_toolName_windowStart_idx" ON "McpMeter" ("apiKeyHash", "toolName", "windowStart");
 
+-- Ensure ProfileType enum and User/Business columns exist
+DO $$ BEGIN
+  CREATE TYPE "ProfileType" AS ENUM ('SOLO_BUILDER', 'CLIENT', 'SERVICE_BUSINESS');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "profileType" "ProfileType";
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "telegramId" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "disputeRate" DOUBLE PRECISION NOT NULL DEFAULT 0.0;
+CREATE UNIQUE INDEX IF NOT EXISTS "User_telegramId_key" ON "User" ("telegramId") WHERE "telegramId" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "User_telegramId_idx" ON "User" ("telegramId");
+
+ALTER TABLE "Business" ADD COLUMN IF NOT EXISTS "profileType" "ProfileType";
+
+-- Ensure DisputeEvidence table exists for MCP file uploads
+CREATE TABLE IF NOT EXISTS "DisputeEvidence" (
+  id TEXT PRIMARY KEY,
+  "workOrderId" TEXT NOT NULL REFERENCES "WorkOrder"(id) ON DELETE CASCADE,
+  "fileId" TEXT NOT NULL UNIQUE,
+  "fileName" TEXT NOT NULL,
+  "mimeType" TEXT NOT NULL,
+  "sizeBytes" INTEGER NOT NULL,
+  "storageKey" TEXT NOT NULL,
+  "vcapHash" TEXT NOT NULL,
+  "uploadedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS "DisputeEvidence_workOrderId_idx" ON "DisputeEvidence" ("workOrderId");
+
