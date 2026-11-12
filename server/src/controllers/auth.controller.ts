@@ -1802,3 +1802,75 @@ export const telegramAuth = async (
     next(error);
   }
 };
+
+/**
+ * GET /api/v1/auth/phone/status — Check user's phone verification and double-verification standing.
+ */
+export const getPhoneVerificationStatus = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        phone: true,
+        isPhoneVerified: true,
+        trustScore: true,
+        telegramId: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        isPhoneVerified: !!user.isPhoneVerified,
+        phone: user.phone || null,
+        trustScore: user.trustScore || 700,
+        hasTelegramLinked: !!user.telegramId,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/v1/auth/phone/telegram-link — Generate Telegram bot deep link for zero-cost phone verification.
+ */
+export const getPhoneTelegramLink = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const botUsername = process.env.TELEGRAM_BOT_USERNAME || 'PabanBot';
+    const telegramLink = `https://t.me/${botUsername}?start=phone_${userId}`;
+
+    return res.json({
+      success: true,
+      data: {
+        telegramLink,
+        botUsername,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};

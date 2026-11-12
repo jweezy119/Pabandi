@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { telegramService } from '../services/telegram.service';
+import { telegramBot, telegramWebhookHandler } from '../services/telegram-bot.service';
 
 const router = Router();
 
@@ -91,6 +92,29 @@ router.post('/:businessId/broadcast', async (req: Request, res: Response, next: 
     res.json({ success: true, data: { total: chatIds.length, sent: successCount, results } });
   } catch (error) {
     next(error);
+  }
+});
+
+// POST /api/v1/telegram/webhook - Main bot webhook (handles verification, commands, LP alerts)
+router.post('/webhook', (req: Request, res: Response, next: NextFunction) => {
+  if (telegramWebhookHandler) {
+    return telegramWebhookHandler(req, res, next);
+  }
+  return res.status(503).json({ success: false, message: 'Telegram bot not initialized' });
+});
+
+// GET /api/v1/telegram/set-webhook - Register webhook with Telegram
+router.get('/set-webhook', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!telegramBot) {
+      return res.status(503).json({ success: false, message: 'Telegram bot not initialized' });
+    }
+    const apiUrl = process.env.API_URL || 'https://pabandi.onrender.com';
+    const webhookUrl = `${apiUrl}/api/v1/telegram/webhook`;
+    await telegramBot.api.setWebhook(webhookUrl);
+    return res.json({ success: true, message: `Webhook registered to ${webhookUrl}` });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message || 'Failed to set webhook' });
   }
 });
 

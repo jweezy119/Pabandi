@@ -11,6 +11,8 @@ import {
   AlertCircle,
   Loader2,
   Sparkles,
+  Phone,
+  ExternalLink,
 } from 'lucide-react';
 import { useAuthStore, type ProfileType } from '../store/authStore';
 import { authService } from '../services/api';
@@ -37,6 +39,68 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
+
+  // Phone Double Verification state
+  const [isPhoneVerified, setIsPhoneVerified] = useState(Boolean(user?.phone && (user as any)?.isPhoneVerified));
+  const [verifiedPhone, setVerifiedPhone] = useState(user?.phone || '');
+  const [verifyingPhone, setVerifyingPhone] = useState(false);
+  const [pollingActive, setPollingActive] = useState(false);
+
+  // Check initial phone verification status on mount
+  React.useEffect(() => {
+    if (!isAuthenticated) return;
+    authService.getPhoneVerificationStatus().then((res) => {
+      const data = res.data?.data;
+      if (data?.isPhoneVerified) {
+        setIsPhoneVerified(true);
+        setVerifiedPhone(data.phone || '');
+      }
+    }).catch(() => {});
+  }, [isAuthenticated]);
+
+  const handleVerifyPhoneTelegram = async () => {
+    try {
+      setVerifyingPhone(true);
+      const res = await authService.getPhoneTelegramLink();
+      const link = res.data?.data?.telegramLink || `https://t.me/PabanBot?start=phone_${user?.id}`;
+      window.open(link, '_blank');
+      setPollingActive(true);
+      setStatusMessage('Waiting for verified phone from @PabanBot in Telegram...');
+    } catch (err: any) {
+      setErrorMessage(err?.response?.data?.message || err?.message || 'Failed to generate Telegram verification link');
+    } finally {
+      setVerifyingPhone(false);
+    }
+  };
+
+  // Poll for phone verification
+  React.useEffect(() => {
+    if (!pollingActive || isPhoneVerified) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await authService.getPhoneVerificationStatus();
+        const data = res.data?.data;
+        if (data?.isPhoneVerified) {
+          setIsPhoneVerified(true);
+          setVerifiedPhone(data.phone || '');
+          setPollingActive(false);
+          setStatusMessage('Phone verified successfully via Telegram! +50 Trust Boost applied.');
+          if (user) {
+            setUser({
+              ...user,
+              phone: data.phone,
+              trustScore: data.trustScore,
+            });
+          }
+        }
+      } catch {
+        // Continue polling
+      }
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [pollingActive, isPhoneVerified, user, setUser]);
 
   // Protect route
   React.useEffect(() => {
@@ -274,6 +338,58 @@ export default function OnboardingPage() {
               )}
             </div>
           </button>
+        </div>
+
+        {/* Double Verification (2FA / Phone Boost) */}
+        <div className="mt-6 rounded-2xl border border-[var(--pbn-border)] bg-[#101a24]/90 p-5 shadow-lg backdrop-blur-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--pbn-accent)]/20 bg-[var(--pbn-accent)]/10 text-[var(--pbn-accent)]">
+                <Phone className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-[#e8eef4]">Double Verification (2FA)</h3>
+                  <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-mono font-medium text-emerald-400 border border-emerald-500/20">
+                    +50 Trust Boost
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-[#8a9aa8]">
+                  {isPhoneVerified
+                    ? `Verified mobile: ${verifiedPhone || 'Linked'} (Phishing-resistant standing active)`
+                    : 'Verify your mobile number via @PabanBot with $0 SMS fees to claim an instant +50 Trust Boost.'}
+                </p>
+              </div>
+            </div>
+
+            <div>
+              {isPhoneVerified ? (
+                <div className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2 text-xs font-semibold text-emerald-400">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>Phone Verified</span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleVerifyPhoneTelegram}
+                  disabled={verifyingPhone || pollingActive}
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[var(--pbn-accent)]/40 bg-[var(--pbn-accent)]/10 px-4 py-2.5 text-xs font-semibold text-[var(--pbn-accent)] transition-all hover:bg-[var(--pbn-accent)] hover:text-[#0a1118] active:scale-[0.99] disabled:opacity-50"
+                >
+                  {pollingActive ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Waiting for @PabanBot...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Verify via Telegram</span>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Dynamic Action Forms based on Selection */}
