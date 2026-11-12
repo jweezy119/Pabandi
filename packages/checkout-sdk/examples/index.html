@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pabandi Embeddable Checkout Demo</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 3rem 1.5rem;
+      background: #0a1118;
+      color: #e8eef4;
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+    }
+    .demo-card {
+      background: #101a24;
+      border: 1px solid #1e3247;
+      border-radius: 1rem;
+      padding: 2rem;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(79, 209, 197, 0.15);
+      color: #4fd1c5;
+      border: 1px solid rgba(79, 209, 197, 0.3);
+      margin-bottom: 1rem;
+    }
+    .price {
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: #4fd1c5;
+      margin: 0.5rem 0 1.5rem;
+      font-family: ui-monospace, monospace;
+    }
+    .btn-checkout {
+      width: 100%;
+      background: #4fd1c5;
+      color: #0a1118;
+      border: none;
+      padding: 0.875rem 1.25rem;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-checkout:hover {
+      background: #38b2ac;
+      transform: translateY(-1px);
+    }
+  </style>
+  <!-- Load the Pabandi Checkout SDK via UMD bundle -->
+  <script src="../dist/index.global.js"></script>
+</head>
+<body>
+  <div class="demo-card">
+    <div class="badge">🛡️ Pabandi Escrow Protected</div>
+    <h2 style="margin: 0;">Commercial Solar Inverter Repair</h2>
+    <p style="color: #8ca0b4; font-size: 0.875rem; margin: 0.5rem 0 1rem;">
+      Contractor: Apex Commercial Services (Verified BBS+ ZK Trust Passport)
+    </p>
+    <div class="price">$150.00 <span style="font-size: 1rem; color: #8ca0b4;">USDC</span></div>
+
+    <button id="checkout-btn" class="btn-checkout">
+      Deposit Escrow ($150 USDC)
+    </button>
+  </div>
+
+  <script>
+    document.getElementById('checkout-btn').addEventListener('click', function () {
+      const checkout = Pabandi.initCheckout({
+        publishableKey: 'pk_live_sample_key_99',
+        amount: 150.00,
+        currency: 'USDC',
+        referenceId: 'order_solar_inv_001',
+        title: 'Commercial Solar Inverter Repair',
+        subtitle: 'Contractor: Apex Commercial Services',
+        counterparty: {
+          id: 'biz_apex_roofing',
+          name: 'Apex Commercial Services',
+          trustScore: 940,
+          disputeRate: 0.3,
+        },
+        verifyCounterpartyZK: true,
+        onSuccess: function (event) {
+          alert('Escrow funded successfully via ' + event.rail.toUpperCase() + '! Reference: ' + event.txHashOrRef);
+        },
+        onCancel: function () {
+          console.log('Checkout dismissed');
+        }
+      });
+
+      checkout.open();
+    });
+  </script>
+</body>
+</html>
+
