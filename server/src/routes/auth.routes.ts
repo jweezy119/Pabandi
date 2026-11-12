@@ -19,6 +19,7 @@ import {
   verifyLoginCode,
   toggleUserMode,
   completeOnboarding,
+  telegramAuth,
 } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { authRateLimiter, emailCodeRateLimiter, registrationRateLimiter } from '../middleware/rateLimiter';
@@ -44,6 +45,9 @@ router.post('/verify-code', emailCodeRateLimiter, verifyLoginCode);
 // Wallet auth routes
 router.post('/wallet/nonce', getNonce);
 router.post('/wallet/verify', verifyWallet);
+
+// Telegram auth route (widget / Mini App)
+router.post('/telegram', authRateLimiter, telegramAuth);
 
 // Protected routes (require authentication) - apply authenticate middleware individually
 router.post('/verify/email', authenticate, verifyEmail);

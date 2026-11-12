@@ -36,6 +36,15 @@ const GitHubIcon = () => (
   </svg>
 );
 
+const TelegramIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path
+      fill="#2AABEE"
+      d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .37z"
+    />
+  </svg>
+);
+
 const WalletIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
@@ -117,6 +126,61 @@ export default function LoginPage() {
     const origin = encodeURIComponent(window.location.origin);
     const returnTo = encodeURIComponent('/onboarding');
     window.location.href = `${API_HOST}/api/v1/auth/social/github?origin=${origin}&return_to=${returnTo}`;
+  };
+
+  // 3. Telegram Authentication (Widget & WebApp / Mini App)
+  const botUsername = (import.meta.env.VITE_TELEGRAM_BOT_USERNAME as string) || 'PabanBot';
+
+  const handleTelegramAuth = async (payload: { authData?: any; initData?: string }) => {
+    try {
+      setLoading(true);
+      setErrorMessage('');
+      setStatusMessage('Authenticating via Telegram...');
+      const res = await authService.telegramAuth(payload);
+      const { user: authedUser, token, refreshToken } = res.data.data;
+      setAuth(authedUser, token, refreshToken);
+      setStatusMessage('Telegram authenticated! Routing...');
+      if (!authedUser.profileType) {
+        navigate('/onboarding', { replace: true });
+      } else {
+        const returnTo = searchParams.get('return_to');
+        navigate(returnTo || '/dashboard', { replace: true });
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Telegram authentication failed';
+      setErrorMessage(msg);
+      setStatusMessage('');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    // Check if opened inside a Telegram WebApp
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg?.initData) {
+      handleTelegramAuth({ initData: tg.initData });
+    }
+  }, []);
+
+  const handleTelegramLoginClick = () => {
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg?.initData) {
+      handleTelegramAuth({ initData: tg.initData });
+      return;
+    }
+
+    // Set global callback for Telegram Widget
+    (window as any).onTelegramAuth = (tgUser: any) => {
+      handleTelegramAuth({ authData: tgUser });
+    };
+
+    // Open Telegram OAuth authorization window or fallback to bot
+    const authUrl = `https://oauth.telegram.org/auth?bot_id=9037959556&origin=${encodeURIComponent(window.location.origin)}&return_to=${encodeURIComponent(window.location.origin + '/onboarding')}&request_access=write`;
+    const popup = window.open(authUrl, 'telegram_login', 'width=550,height=470,scrollbars=yes');
+    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+      window.location.href = `https://t.me/${botUsername}?start=auth`;
+    }
   };
 
   // 3. Fallback Phantom Wallet Connection (if Privy not configured)
@@ -269,6 +333,17 @@ export default function LoginPage() {
           >
             <GitHubIcon />
             <span>Continue with GitHub</span>
+          </button>
+
+          {/* 3. Continue with Telegram (Native for AI agents & bots) */}
+          <button
+            type="button"
+            onClick={handleTelegramLoginClick}
+            disabled={loading}
+            className="flex min-h-[48px] w-full items-center justify-center gap-3 rounded-xl border border-[var(--pbn-border)] bg-[var(--pbn-surface)] px-4 py-3 text-sm font-semibold text-[var(--pbn-text)] transition-all hover:bg-[var(--pbn-surface-hover)] hover:border-[var(--pbn-border-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--pbn-accent)]/50 active:scale-[0.99] disabled:opacity-50"
+          >
+            <TelegramIcon />
+            <span>Continue with Telegram</span>
           </button>
 
           {/* 3. Connect Wallet */}

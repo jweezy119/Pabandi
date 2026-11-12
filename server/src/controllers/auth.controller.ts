@@ -1663,3 +1663,142 @@ export const completeOnboarding = async (
     next(error);
   }
 };
+
+/**
+ * POST /api/v1/auth/telegram — Verify Telegram Widget auth data or WebApp initData.
+ */
+export const telegramAuth = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    if (!botToken) {
+      return res.status(503).json({
+        success: false,
+        message: 'Telegram authentication not configured. Set TELEGRAM_BOT_TOKEN in .env.',
+      });
+    }
+
+    const { authData, initData } = req.body;
+    let tgUser: any = null;
+
+    if (initData && typeof initData === 'string') {
+      // Telegram WebApp / Mini App flow
+      const params = new URLSearchParams(initData);
+      const hash = params.get('hash');
+      if (!hash) {
+        return res.status(400).json({ success: false, message: 'Invalid Telegram WebApp data' });
+      }
+      params.delete('hash');
+      const checkArr: string[] = [];
+      Array.from(params.keys())
+        .sort()
+        .forEach((key) => {
+          checkArr.push(`${key}=${params.get(key)}`);
+        });
+      const checkString = checkArr.join('\n');
+      const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
+      const computedHash = crypto.createHmac('sha256', secretKey).update(checkString).digest('hex');
+
+      if (computedHash !== hash) {
+        return res.status(401).json({ success: false, message: 'Telegram signature validation failed' });
+      }
+      const userRaw = params.get('user');
+      tgUser = userRaw ? JSON.parse(userRaw) : null;
+    } else if (authData && typeof authData === 'object' && authData.hash) {
+      // Standard Telegram Login Widget flow
+      const { hash, ...rest } = authData;
+      const checkArr: string[] = [];
+      Object.keys(rest)
+        .sort()
+        .forEach((key) => {
+          if (rest[key] !== undefined && rest[key] !== null) {
+            checkArr.push(`${key}=${rest[key]}`);
+          }
+        });
+      const checkString = checkArr.join('\n');
+      const secretKey = crypto.createHash('sha256').update(botToken).digest();
+      const computedHash = crypto.createHmac('sha256', secretKey).update(checkString).digest('hex');
+
+      if (computedHash !== hash) {
+        return res.status(401).json({ success: false, message: 'Telegram signature validation failed' });
+      }
+      tgUser = authData;
+    } else {
+      return res.status(400).json({ success: false, message: 'Missing Telegram authentication payload' });
+    }
+
+    if (!tgUser || !tgUser.id) {
+      return res.status(400).json({ success: false, message: 'Missing Telegram user data' });
+    }
+
+    const user = await findOrCreateUser({
+      provider: 'telegram',
+      providerId: String(tgUser.id),
+      metadata: tgUser,
+    });
+
+    if (!user.telegramId) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          telegramId: String(tgUser.id),
+          ...(tgUser.username && !user.username && { username: tgUser.username.toLowerCase() }),
+        },
+      });
+    }
+
+    const businessId = (user as any).business?.id ?? null;
+    const mode = user.preferredMode || 'personal';
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        businessId,
+        activeBusinessId: businessId,
+        mode,
+        profileType: user.profileType || null,
+        username: user.username || null,
+      } as JwtPayload,
+      JWT_SECRET as Secret,
+      { expiresIn: JWT_EXPIRES_IN as any }
+    );
+
+    const refreshToken = jwt.sign(
+      { id: user.id } as JwtPayload,
+      JWT_REFRESH_SECRET as Secret,
+      { expiresIn: JWT_REFRESH_EXPIRES_IN as any }
+    );
+
+    logger.info(`User authenticated via Telegram: ${user.id} (@${tgUser.username || tgUser.id})`);
+
+    return res.json({
+      success: true,
+      message: 'Telegram authentication successful',
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          username: user.username,
+          profileType: user.profileType,
+          trustScore: user.trustScore,
+          disputeRate: user.disputeRate ?? 0.0,
+          telegramId: String(tgUser.id),
+          preferredMode: mode,
+          businessId,
+        },
+        token,
+        refreshToken,
+      },
+    });
+  } catch (error) {
+    logger.error('[Auth] telegramAuth error:', error);
+    next(error);
+  }
+};

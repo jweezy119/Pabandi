@@ -138,6 +138,8 @@ export const authService = {
     businessName?: string;
     industry?: string;
   }) => apiClient.post('/auth/onboarding', data),
+  telegramAuth: (payload: { authData?: any; initData?: string }) =>
+    apiClient.post('/auth/telegram', payload),
   refreshToken: (refreshToken: string) =>
     apiClient.post('/auth/refresh', { refreshToken }),
   updateProfile: (data: { firstName: string; lastName: string }) =>

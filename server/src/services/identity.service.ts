@@ -36,13 +36,14 @@ export async function findOrCreateUser({
       await prisma.userAuthMethod.create({
         data: { userId: existingUser.id, provider, providerId, metadata },
       });
-      // GitHub boost: add +25 up to 800 cold-start max
-      if (provider === 'github' && (existingUser.trustScore || 0) < 800) {
+      // Attestation boosts: GitHub (+25) or Telegram (+25) up to 800 cold-start max
+      if ((provider === 'github' || provider === 'telegram') && (existingUser.trustScore || 0) < 800) {
         await prisma.user.update({
           where: { id: existingUser.id },
           data: {
             trustScore: Math.min(800, (existingUser.trustScore || 700) + 25),
-            githubId: providerId,
+            ...(provider === 'github' && { githubId: providerId }),
+            ...(provider === 'telegram' && { telegramId: providerId }),
           },
         });
       }
@@ -54,11 +55,13 @@ export async function findOrCreateUser({
   const displayName: string =
     (metadata?.name as string) ||
     (metadata?.displayName as string) ||
+    (metadata?.first_name ? `${metadata.first_name}${metadata.last_name ? ' ' + metadata.last_name : ''}` : '') ||
     (email ? email.split('@')[0] : `${provider}_${providerId}`);
   const [givenName, ...rest] = displayName.trim().split(/\s+/);
 
   const isGithub = provider === 'github';
-  const initialTrustScore = isGithub ? 725.0 : 700.0;
+  const isTelegram = provider === 'telegram';
+  const initialTrustScore = (isGithub || isTelegram) ? 725.0 : 700.0;
 
   const newUser = await prisma.user.create({
     data: {
@@ -68,7 +71,12 @@ export async function findOrCreateUser({
       lastName: rest.length ? rest.join(' ') : 'Member',
       trustScore: initialTrustScore,
       disputeRate: 0.0,
+      profilePictureUrl: metadata?.photo_url || metadata?.avatarUrl || null,
       ...(isGithub && { githubId: providerId }),
+      ...(isTelegram && {
+        telegramId: providerId,
+        ...(metadata?.username && { username: metadata.username.toLowerCase() }),
+      }),
     },
   });
   await prisma.userAuthMethod.create({
