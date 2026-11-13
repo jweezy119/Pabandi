@@ -239,8 +239,8 @@ export default function GigBoardPage() {
         paymentRail: 'solana',
       });
       fetchGigs();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to create gig';
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Failed to create gig';
       alert(msg);
     } finally {
       setPosting(false);

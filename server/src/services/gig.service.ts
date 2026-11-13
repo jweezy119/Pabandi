@@ -421,7 +421,80 @@ export async function agentFaucet(agentId: string, amountPab: number): Promise<a
   return { agentId, addedPab: amountPab, balancePab: updated.balancePab };
 }
 
+let schemaEnsured = false;
+export async function ensureProjectSchema(): Promise<void> {
+  if (schemaEnsured) return;
+  try {
+    await prisma.$executeRawUnsafe(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'Project') THEN
+          CREATE TABLE "Project" (
+            id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            category TEXT NOT NULL,
+            "requiredSkills" TEXT[] DEFAULT ARRAY[]::TEXT[],
+            "budgetUsd" DOUBLE PRECISION NOT NULL DEFAULT 0,
+            "estimatedHours" INTEGER NOT NULL DEFAULT 0,
+            "demandGrowthPct" DOUBLE PRECISION NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'OPEN',
+            "vaultUsdc" DOUBLE PRECISION NOT NULL DEFAULT 0,
+            "yieldEarnedUsdc" DOUBLE PRECISION NOT NULL DEFAULT 0,
+            "bestAgentId" TEXT,
+            "bestConfidence" DOUBLE PRECISION,
+            "createdBy" TEXT,
+            latitude DOUBLE PRECISION,
+            longitude DOUBLE PRECISION,
+            "locationLabel" TEXT,
+            source TEXT,
+            "sourceRef" TEXT,
+            "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          );
+        END IF;
+
+        ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "latitude" DOUBLE PRECISION;
+        ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "longitude" DOUBLE PRECISION;
+        ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "locationLabel" TEXT;
+        ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "source" TEXT;
+        ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "sourceRef" TEXT;
+        ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "demandGrowthPct" DOUBLE PRECISION NOT NULL DEFAULT 0;
+        ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "estimatedHours" INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "vaultUsdc" DOUBLE PRECISION NOT NULL DEFAULT 0;
+        ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "yieldEarnedUsdc" DOUBLE PRECISION NOT NULL DEFAULT 0;
+        ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "bestAgentId" TEXT;
+        ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "bestConfidence" DOUBLE PRECISION;
+        ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "createdBy" TEXT;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'ProjectBid') THEN
+          CREATE TABLE "ProjectBid" (
+            id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+            "projectId" TEXT NOT NULL,
+            "agentId" TEXT NOT NULL,
+            "confidencePct" DOUBLE PRECISION NOT NULL DEFAULT 80,
+            "quoteUsd" DOUBLE PRECISION NOT NULL,
+            status TEXT NOT NULL DEFAULT 'PENDING',
+            "stakePab" DOUBLE PRECISION NOT NULL DEFAULT 0,
+            breakdown JSONB,
+            "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          );
+        END IF;
+
+        ALTER TABLE "ProjectBid" ADD COLUMN IF NOT EXISTS "stakePab" DOUBLE PRECISION NOT NULL DEFAULT 0;
+        ALTER TABLE "ProjectBid" ADD COLUMN IF NOT EXISTS "breakdown" JSONB;
+        ALTER TABLE "ProjectBid" ADD COLUMN IF NOT EXISTS "confidencePct" DOUBLE PRECISION NOT NULL DEFAULT 80;
+      END $$;
+    `);
+    schemaEnsured = true;
+  } catch (err: any) {
+    logger.warn('[gig.service] ensureProjectSchema non-fatal error:', err?.message || err);
+  }
+}
+
 export async function openBoard(limit = 100): Promise<any[]> {
+  await ensureProjectSchema();
   const rows = await prisma.project.findMany({ where: { status: 'OPEN' }, orderBy: { createdAt: 'desc' }, take: limit });
   const ids = rows.map((r: any) => r.id);
   const bids = ids.length ? await prisma.projectBid.groupBy({ by: ['projectId'], where: { projectId: { in: ids }, status: 'PENDING' }, _count: { _all: true }, _min: { quoteUsd: true } }) : [];
@@ -501,4 +574,4 @@ export async function bidRanking(gigId: string): Promise<any> {
   return { gigId, ranked: scored };
 }
 
-export const gigService = { createGigFromSme, registerAgent, bidOnGig, acceptBestBid, agentBalance, agentFaucet, pabStats, openBoard, claimGig, completeGig, bidRanking, ensureBusinessWallet };
+export const gigService = { createGigFromSme, registerAgent, bidOnGig, acceptBestBid, agentBalance, agentFaucet, pabStats, openBoard, claimGig, completeGig, bidRanking, ensureBusinessWallet, ensureProjectSchema };

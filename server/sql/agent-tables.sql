@@ -329,4 +329,67 @@ CREATE INDEX IF NOT EXISTS "PaymentReceipt_status_idx" ON "PaymentReceipt" ("sta
 CREATE INDEX IF NOT EXISTS "PaymentReceipt_intentId_idx" ON "PaymentReceipt" ("intentId");
 CREATE INDEX IF NOT EXISTS "PaymentReceipt_paymentId_idx" ON "PaymentReceipt" ("paymentId");
 
+-- Ensure Project table & all columns exist (prevents 500 column Project.latitude does not exist)
+CREATE TABLE IF NOT EXISTS "Project" (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  category TEXT NOT NULL,
+  "requiredSkills" TEXT[] DEFAULT ARRAY[]::TEXT[],
+  "budgetUsd" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "estimatedHours" INTEGER NOT NULL DEFAULT 0,
+  "demandGrowthPct" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'OPEN',
+  "vaultUsdc" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "yieldEarnedUsdc" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "bestAgentId" TEXT,
+  "bestConfidence" DOUBLE PRECISION,
+  "createdBy" TEXT,
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
+  "locationLabel" TEXT,
+  source TEXT,
+  "sourceRef" TEXT,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "latitude" DOUBLE PRECISION;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "longitude" DOUBLE PRECISION;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "locationLabel" TEXT;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "source" TEXT;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "sourceRef" TEXT;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "demandGrowthPct" DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "estimatedHours" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "vaultUsdc" DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "yieldEarnedUsdc" DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "bestAgentId" TEXT;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "bestConfidence" DOUBLE PRECISION;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "createdBy" TEXT;
+
+CREATE INDEX IF NOT EXISTS "Project_status_idx" ON "Project" (status);
+CREATE INDEX IF NOT EXISTS "Project_category_idx" ON "Project" (category);
+
+-- Ensure ProjectBid table & columns exist
+CREATE TABLE IF NOT EXISTS "ProjectBid" (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  "projectId" TEXT NOT NULL,
+  "agentId" TEXT NOT NULL,
+  "confidencePct" DOUBLE PRECISION NOT NULL DEFAULT 80,
+  "quoteUsd" DOUBLE PRECISION NOT NULL,
+  status TEXT NOT NULL DEFAULT 'PENDING',
+  "stakePab" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  breakdown JSONB,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE "ProjectBid" ADD COLUMN IF NOT EXISTS "stakePab" DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE "ProjectBid" ADD COLUMN IF NOT EXISTS "breakdown" JSONB;
+ALTER TABLE "ProjectBid" ADD COLUMN IF NOT EXISTS "confidencePct" DOUBLE PRECISION NOT NULL DEFAULT 80;
+
+CREATE INDEX IF NOT EXISTS "ProjectBid_projectId_idx" ON "ProjectBid" ("projectId");
+CREATE INDEX IF NOT EXISTS "ProjectBid_agentId_idx" ON "ProjectBid" ("agentId");
+
+
 

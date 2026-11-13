@@ -116,6 +116,7 @@ router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
  */
 router.post('/', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
+    await gigService.ensureProjectSchema();
     const { title, description, category, requiredSkills, budgetUsd, estimatedHours, demandGrowthPct } = req.body || {};
 
     if (!title || !description || !category || budgetUsd == null) {
