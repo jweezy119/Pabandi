@@ -16,6 +16,7 @@ import { format, addDays, isSameDay } from 'date-fns';
 import { useEngineCheckout } from '../hooks/useEngineCheckout';
 import { EmbeddedCheckoutModal, type DepositPrompt } from '../components/EmbeddedCheckoutModal';
 import { VaultLocked } from '../components/GuaranteeVisuals';
+import { getBookingSchema } from '../config/bookingSchemas';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface BusinessServiceItem {
@@ -34,6 +35,7 @@ interface Business {
   city?: string;
   state?: string;
   category?: string;
+  vertical?: string;
   rating?: number;
   coverImageUrl?: string;
   logoUrl?: string;
@@ -91,6 +93,7 @@ export default function BookingExperience() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>('11:00');
   const [guests, setGuests] = useState(2);
+  const [serviceAddress, setServiceAddress] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'square' | 'solana' | 'safepay' | 'bsc'>('solana');
   const [bookingComplete, setBookingComplete] = useState(false);
@@ -238,6 +241,11 @@ export default function BookingExperience() {
     }
   );
 
+  const business = selectedBusiness || businessData?.data?.business;
+  const schema = useMemo(() => {
+    return getBookingSchema(business?.vertical || business?.category);
+  }, [business]);
+
   const handleBookTable = async () => {
     if (!selectedBusiness || !selectedTime) return;
     const effectiveOwnerId = user?.id || guestPrincipalId;
@@ -254,11 +262,14 @@ export default function BookingExperience() {
       serviceValue,
       reservationDate: format(selectedDate, 'yyyy-MM-dd'),
       reservationTime: selectedTime,
-      numberOfGuests: guests,
+      numberOfGuests: schema.showPartySize ? guests : 1,
       customerName: resolvedName,
       customerEmail: customerEmail.trim() || undefined,
       customerPhone: customerPhone.trim() || undefined,
-      specialRequests,
+      clientAddress: schema.showServiceAddress ? serviceAddress.trim() : undefined,
+      serviceAddress: schema.showServiceAddress ? serviceAddress.trim() : undefined,
+      specialRequests: schema.showSpecialRequests ? specialRequests : undefined,
+      projectDescription: schema.showProjectDescription ? customServiceLabel : undefined,
       paymentMethod,
     };
 
@@ -382,8 +393,6 @@ export default function BookingExperience() {
     }
   };
 
-  const business = selectedBusiness || businessData?.data?.business;
-
   // ── Search View ──────────────────────────────────────────────────────────
   if (step === 'search') {
     return (
@@ -474,7 +483,8 @@ export default function BookingExperience() {
             {paidDeposit != null && paidDeposit > 0 ? 'Vault Locked' : 'Reservation Confirmed!'}
           </h2>
           <p className="text-[var(--soft-stone)] mb-4">
-            {business?.name} · {format(selectedDate, 'MMM d')} at {selectedTime} · {guests} guests
+            {business?.name} · {format(selectedDate, 'MMM d')} at {selectedTime}
+            {schema.showPartySize && ` · ${guests} guests`}
           </p>
           {paidDeposit != null && paidDeposit > 0 && (
             <p className="text-xs text-[var(--soft-stone)] mb-4 max-w-xs mx-auto">
@@ -526,7 +536,7 @@ export default function BookingExperience() {
               <img src={business.coverImageUrl} alt={business.name} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center">
-                <span className="text-6xl">🍽️</span>
+                <span className="text-6xl">{schema.heroEmoji || '🍽️'}</span>
               </div>
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
@@ -586,56 +596,77 @@ export default function BookingExperience() {
               </Surface>
             )}
 
-            {/* Instant Custom Quote / Shareable Escrow Link Builder */}
-            <Surface className="p-6">
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                <div>
-                  <h3 className="font-bold text-[var(--warm-ink)] flex items-center gap-2">
-                    <Link2 size={16} className="text-[var(--clay)]" />
-                    Instant Escrow Quote & Shareable Link
-                  </h3>
-                  <p className="text-xs text-[var(--soft-stone)]">
-                    Enter a custom invoice/contract quote or select a package above, then copy a direct payment link for your client.
-                  </p>
+            {/* Dynamic Scope / Custom Quote / Instant Escrow Link (Only for Service Businesses & Solo Builders) */}
+            {(schema.showProjectDescription || schema.showContractAmount) && (
+              <Surface className="p-6">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <div>
+                    <h3 className="font-bold text-[var(--warm-ink)] flex items-center gap-2">
+                      <Link2 size={16} className="text-[var(--clay)]" />
+                      Instant Escrow Quote & Shareable Link
+                    </h3>
+                    <p className="text-xs text-[var(--soft-stone)]">
+                      Enter a custom invoice/contract quote or select a package above, then copy a direct payment link for your client.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyEscrowLink}
+                    className="px-3 py-2 rounded-lg bg-[var(--warm-ink)] text-[var(--cream)] text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition-opacity"
+                  >
+                    {copiedEscrowLink ? <Check size={13} /> : <Copy size={13} />}
+                    {copiedEscrowLink ? 'Copied Escrow Link!' : 'Copy Instant Escrow Link'}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleCopyEscrowLink}
-                  className="px-3 py-2 rounded-lg bg-[var(--warm-ink)] text-[var(--cream)] text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition-opacity"
-                >
-                  {copiedEscrowLink ? <Check size={13} /> : <Copy size={13} />}
-                  {copiedEscrowLink ? 'Copied Escrow Link!' : 'Copy Instant Escrow Link'}
-                </button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-[var(--soft-stone)] mb-1">
-                    Custom Milestone / Invoice Description
-                  </label>
-                  <input
-                    type="text"
-                    value={customServiceLabel}
-                    onChange={(e) => setCustomServiceLabel(e.target.value)}
-                    placeholder={selectedService?.name || 'e.g. Phase 1 Roof Tear-Off & Underlayment'}
-                    className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.35)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] placeholder-[var(--soft-stone)] outline-none focus:border-[var(--clay)]"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {schema.showProjectDescription && (
+                    <div>
+                      <label className="block text-xs font-medium text-[var(--soft-stone)] mb-1">
+                        {schema.projectDescriptionLabel || 'Custom Milestone / Scope Description'}
+                      </label>
+                      <input
+                        type="text"
+                        value={customServiceLabel}
+                        onChange={(e) => setCustomServiceLabel(e.target.value)}
+                        placeholder={selectedService?.name || schema.projectDescriptionPlaceholder || 'e.g. Scope of work'}
+                        className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.35)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] placeholder-[var(--soft-stone)] outline-none focus:border-[var(--clay)]"
+                      />
+                    </div>
+                  )}
+                  {schema.showContractAmount && (
+                    <div>
+                      <label className="block text-xs font-medium text-[var(--soft-stone)] mb-1">
+                        {schema.contractAmountLabel || 'Custom Contract Amount (USD / USDC)'}
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="50"
+                        value={customAmountUsd}
+                        onChange={(e) => setCustomAmountUsd(e.target.value)}
+                        placeholder={selectedService ? String(selectedService.price) : schema.contractAmountPlaceholder || 'e.g. 1500'}
+                        className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.35)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] placeholder-[var(--soft-stone)] outline-none focus:border-[var(--clay)]"
+                      />
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-[var(--soft-stone)] mb-1">
-                    Custom Contract Amount (USD / USDC)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="50"
-                    value={customAmountUsd}
-                    onChange={(e) => setCustomAmountUsd(e.target.value)}
-                    placeholder={selectedService ? String(selectedService.price) : 'e.g. 4500'}
-                    className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.35)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] placeholder-[var(--soft-stone)] outline-none focus:border-[var(--clay)]"
-                  />
-                </div>
-              </div>
-            </Surface>
+              </Surface>
+            )}
+
+            {/* Service Address (Only for Service Businesses like Roofing, HVAC, Plumbing) */}
+            {schema.showServiceAddress && (
+              <Surface className="p-6">
+                <h3 className="font-bold text-[var(--warm-ink)] mb-1">{schema.serviceAddressLabel || 'Service / Job Site Address'}</h3>
+                <p className="text-xs text-[var(--soft-stone)] mb-3">Where should the team arrive to complete this work?</p>
+                <input
+                  type="text"
+                  value={serviceAddress}
+                  onChange={(e) => setServiceAddress(e.target.value)}
+                  placeholder={schema.serviceAddressPlaceholder || 'e.g. 123 Main St or job site location'}
+                  className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.35)] rounded-lg px-3 py-2.5 text-sm text-[var(--warm-ink)] placeholder-[var(--soft-stone)] outline-none focus:border-[var(--clay)]"
+                />
+              </Surface>
+            )}
 
             {/* Client Contact Details (Frictionless Guest & Authenticated Checkout) */}
             <Surface className="p-6">
@@ -709,37 +740,43 @@ export default function BookingExperience() {
               </div>
             </Surface>
 
-            {/* Guests */}
-            <Surface className="p-6">
-              <h3 className="font-bold text-[var(--warm-ink)] mb-4">Number of Guests</h3>
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => setGuests(Math.max(1, guests - 1))}
-                  className="w-10 h-10 rounded-full bg-[var(--warm-sand)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]"
-                >
-                  -
-                </button>
-                <span className="text-2xl font-bold text-[var(--warm-ink)]">{guests}</span>
-                <button
-                  onClick={() => setGuests(Math.min(10, guests + 1))}
-                  className="w-10 h-10 rounded-full bg-[var(--warm-sand)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]"
-                >
-                  +
-                </button>
-              </div>
-            </Surface>
+            {/* Guests (Only for Verticals with Party/Guest Size) */}
+            {schema.showPartySize && (
+              <Surface className="p-6">
+                <h3 className="font-bold text-[var(--warm-ink)] mb-4">{schema.partySizeLabel || 'Number of Guests'}</h3>
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => setGuests(Math.max(1, guests - 1))}
+                    className="w-10 h-10 rounded-full bg-[var(--warm-sand)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]"
+                  >
+                    -
+                  </button>
+                  <span className="text-2xl font-bold text-[var(--warm-ink)]">{guests}</span>
+                  <button
+                    onClick={() => setGuests(Math.min(10, guests + 1))}
+                    className="w-10 h-10 rounded-full bg-[var(--warm-sand)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]"
+                  >
+                    +
+                  </button>
+                </div>
+              </Surface>
+            )}
 
-            {/* Special Requests */}
-            <Surface className="p-6">
-              <h3 className="font-bold text-[var(--warm-ink)] mb-4">Special Requests</h3>
-              <textarea
-                value={specialRequests}
-                onChange={(e) => setSpecialRequests(e.target.value)}
-                placeholder="Allergies, celebrations, seating preferences..."
-                rows={3}
-                className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-lg px-4 py-3 text-[var(--warm-ink)] placeholder-[var(--soft-stone)] outline-none focus:border-[var(--clay)]"
-              />
-            </Surface>
+            {/* Special Requests / Access Notes */}
+            {schema.showSpecialRequests && (
+              <Surface className="p-6">
+                <h3 className="font-bold text-[var(--warm-ink)] mb-4">
+                  {schema.specialRequestsLabel || 'Special Requests'}
+                </h3>
+                <textarea
+                  value={specialRequests}
+                  onChange={(e) => setSpecialRequests(e.target.value)}
+                  placeholder={schema.specialRequestsPlaceholder || 'Allergies, celebrations, seating preferences...'}
+                  rows={3}
+                  className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-lg px-4 py-3 text-[var(--warm-ink)] placeholder-[var(--soft-stone)] outline-none focus:border-[var(--clay)]"
+                />
+              </Surface>
+            )}
           </div>
 
           {/* Right: Summary & Payment */}
@@ -776,10 +813,18 @@ export default function BookingExperience() {
                   <span className="text-[var(--soft-stone)]">Time</span>
                   <span className="text-[var(--warm-ink)]">{selectedTime || 'Select time'}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-[var(--soft-stone)]">Party / Crew Size</span>
-                  <span className="text-[var(--warm-ink)]">{guests}</span>
-                </div>
+                {schema.showPartySize && (
+                  <div className="flex justify-between">
+                    <span className="text-[var(--soft-stone)]">{schema.partySizeLabel || 'Party / Crew Size'}</span>
+                    <span className="text-[var(--warm-ink)]">{guests}</span>
+                  </div>
+                )}
+                {schema.showServiceAddress && serviceAddress && (
+                  <div className="flex justify-between">
+                    <span className="text-[var(--soft-stone)]">Job Location</span>
+                    <span className="text-[var(--warm-ink)] truncate max-w-[150px]">{serviceAddress}</span>
+                  </div>
+                )}
               </div>
 
               {/* Server-Side Trust Band Deposit Tiers */}
@@ -804,58 +849,60 @@ export default function BookingExperience() {
               </div>
             </Surface>
 
-            {/* Paid Counterparty Litigation & Trust Dossier ($9 Instant Checkout) */}
-            <Surface className="p-6 border border-[var(--sage)]/35">
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2">
-                  <FileCheck2 size={18} className="text-[var(--sage)] shrink-0" />
-                  <h3 className="font-bold text-[var(--warm-ink)] text-sm">
-                    Counterparty Litigation & Lien Dossier
-                  </h3>
+            {/* Paid Counterparty Litigation & Trust Dossier ($9 Instant Checkout - Only for Service Businesses) */}
+            {schema.showLienDossier && (
+              <Surface className="p-6 border border-[var(--sage)]/35">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <FileCheck2 size={18} className="text-[var(--sage)] shrink-0" />
+                    <h3 className="font-bold text-[var(--warm-ink)] text-sm">
+                      Counterparty Litigation & Lien Dossier
+                    </h3>
+                  </div>
+                  <span className="px-2 py-0.5 rounded bg-[var(--sage)]/15 text-[var(--sage)] text-xs font-bold">
+                    $9 USDC
+                  </span>
                 </div>
-                <span className="px-2 py-0.5 rounded bg-[var(--sage)]/15 text-[var(--sage)] text-xs font-bold">
-                  $9 USDC
-                </span>
-              </div>
-              <p className="text-xs text-[var(--soft-stone)] leading-relaxed mb-3">
-                Before wiring a contractor deposit, unlock a cryptographically signed Ed25519 + SD-JWT dossier verifying federal/state litigation (CourtListener), mechanic liens, and Sulha arbitration history.
-              </p>
+                <p className="text-xs text-[var(--soft-stone)] leading-relaxed mb-3">
+                  Before wiring a contractor deposit, unlock a cryptographically signed Ed25519 + SD-JWT dossier verifying federal/state litigation (CourtListener), mechanic liens, and Sulha arbitration history.
+                </p>
 
-              {unlockedDossier ? (
-                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs space-y-2">
-                  <div className="flex items-center justify-between font-bold text-emerald-900">
-                    <span className="flex items-center gap-1">
-                      <Shield size={14} /> Status: {unlockedDossier.litigationAndLienCheck?.status || 'CLEAR'}
-                    </span>
-                    <span className="font-mono text-[10px]">
-                      Band {unlockedDossier.signedAttestation?.payload?.trustBand || 'A'}
-                    </span>
-                  </div>
-                  <p className="text-emerald-800 leading-relaxed">
-                    {unlockedDossier.litigationAndLienCheck?.summary}
-                  </p>
-                  <div className="pt-2 border-t border-emerald-500/20 font-mono text-[10px] text-emerald-900 break-all space-y-1">
-                    <div>
-                      <strong>Ed25519 Sig:</strong>{' '}
-                      {String(unlockedDossier.signedAttestation?.signature || '').slice(0, 44)}...
+                {unlockedDossier ? (
+                  <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs space-y-2">
+                    <div className="flex items-center justify-between font-bold text-emerald-900">
+                      <span className="flex items-center gap-1">
+                        <Shield size={14} /> Status: {unlockedDossier.litigationAndLienCheck?.status || 'CLEAR'}
+                      </span>
+                      <span className="font-mono text-[10px]">
+                        Band {unlockedDossier.signedAttestation?.payload?.trustBand || 'A'}
+                      </span>
                     </div>
-                    <div>
-                      <strong>SD-JWT Presentation:</strong>{' '}
-                      {String(unlockedDossier.sdJwt?.minimalPresentation || '').slice(0, 44)}...
+                    <p className="text-emerald-800 leading-relaxed">
+                      {unlockedDossier.litigationAndLienCheck?.summary}
+                    </p>
+                    <div className="pt-2 border-t border-emerald-500/20 font-mono text-[10px] text-emerald-900 break-all space-y-1">
+                      <div>
+                        <strong>Ed25519 Sig:</strong>{' '}
+                        {String(unlockedDossier.signedAttestation?.signature || '').slice(0, 44)}...
+                      </div>
+                      <div>
+                        <strong>SD-JWT Presentation:</strong>{' '}
+                        {String(unlockedDossier.sdJwt?.minimalPresentation || '').slice(0, 44)}...
+                      </div>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  disabled={dossierLoading}
-                  onClick={handleRequestTrustDossier}
-                  className="w-full py-2.5 px-4 rounded-xl bg-[var(--warm-ink)] text-[var(--cream)] text-xs font-semibold hover:opacity-95 transition-opacity disabled:opacity-50"
-                >
-                  {dossierLoading ? 'Preparing Dossier Quote…' : 'Unlock Signed Counterparty Dossier ($9 USDC)'}
-                </button>
-              )}
-            </Surface>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={dossierLoading}
+                    onClick={handleRequestTrustDossier}
+                    className="w-full py-2.5 px-4 rounded-xl bg-[var(--warm-ink)] text-[var(--cream)] text-xs font-semibold hover:opacity-95 transition-opacity disabled:opacity-50"
+                  >
+                    {dossierLoading ? 'Preparing Dossier Quote…' : 'Unlock Signed Counterparty Dossier ($9 USDC)'}
+                  </button>
+                )}
+              </Surface>
+            )}
 
             {/* Payment Method */}
             <Surface className="p-6">
@@ -906,7 +953,11 @@ export default function BookingExperience() {
               disabled={!selectedTime || bookingMutation.isLoading || submitting}
               className="w-full py-4 text-base font-bold tracking-wide"
             >
-              {submitting || bookingMutation.isLoading ? 'Securing your reservation…' : 'Secure My Booking'}
+              {submitting || bookingMutation.isLoading
+                ? 'Securing escrow deposit…'
+                : schema.showPartySize
+                ? 'Reserve Table'
+                : 'Secure Booking & Escrow'}
             </Button>
 
             <p className="text-xs font-medium text-[var(--soft-stone)] text-center">
