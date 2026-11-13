@@ -292,11 +292,45 @@ if (telegramBot) {
     }
   });
 
-  // Callback Query Handler for inline buttons (ACCEPT, SKIP, PAUSE)
+  // Callback Query Handler for inline buttons (ACCEPT, SKIP, PAUSE, RELEASE, DISPUTE)
   telegramBot.on('callback_query:data', async (ctx) => {
     const data = ctx.callbackQuery.data;
     const channelAddress = String(ctx.from?.id);
 
+    // 1. Contractor Push Confirmation Actions: RELEASE and DISPUTE
+    if (data.startsWith('RELEASE_')) {
+      const intentId = data.replace('RELEASE_', '');
+      try {
+        const { offrampService } = await import('./offramp.service');
+        await offrampService.acceptProof(intentId, 'CONTRACTOR_CONFIRMATION');
+        await ctx.editMessageText(
+          `✅ *Payment Confirmed & Funds Released!*\n\n` +
+          `You confirmed receiving the payment in your bank. Escrowed USDC has been released to the provider.`,
+          { parse_mode: 'Markdown' }
+        );
+        return ctx.answerCallbackQuery({ text: 'Escrow released successfully!' });
+      } catch (e: any) {
+        return ctx.answerCallbackQuery({ text: `❌ ${e.message}`, show_alert: true });
+      }
+    }
+
+    if (data.startsWith('DISPUTE_')) {
+      const intentId = data.replace('DISPUTE_', '');
+      try {
+        const { offrampService } = await import('./offramp.service');
+        await offrampService.disputeIntent(intentId, 'Contractor reported payment not received');
+        await ctx.editMessageText(
+          `🚨 *Dispute Opened*\n\n` +
+          `Escrow funds have been frozen. A Pabandi Coordinator will manually inspect the bank transfer receipt and reach out to you.`,
+          { parse_mode: 'Markdown' }
+        );
+        return ctx.answerCallbackQuery({ text: 'Dispute recorded. Escrow frozen.', show_alert: true });
+      } catch (e: any) {
+        return ctx.answerCallbackQuery({ text: `❌ ${e.message}`, show_alert: true });
+      }
+    }
+
+    // 2. Liquidity Provider Actions: ACCEPT, SKIP, PAUSE
     const channel = await prisma.lpChannel.findFirst({
       where: { address: channelAddress, type: 'TELEGRAM', verified: true },
     });
@@ -311,7 +345,7 @@ if (telegramBot) {
     if (data.startsWith('ACCEPT_')) {
       const intentId = data.split('_')[1];
       try {
-        const offrampService = new OfframpService();
+        const { offrampService } = await import('./offramp.service');
         await offrampService.matchLp(intentId, lp.walletAddress);
         await ctx.editMessageText(`✅ You claimed intent ${intentId}!\n\nPlease complete the transfer within the SLA time limit.`);
       } catch (e: any) {

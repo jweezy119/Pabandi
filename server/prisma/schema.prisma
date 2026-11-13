@@ -1113,6 +1113,7 @@ enum UserRole {
   CUSTOMER
   ADMIN
   FREELANCER
+  COORDINATOR
 }
 
 enum ProfileType {
@@ -3635,6 +3636,34 @@ model OfframpProof {
   verifiedAt       DateTime?
 
   @@index([intentId])
+}
+
+model PaymentReceipt {
+  id             String    @id @default(cuid())
+  transactionRef String    @unique // RRN / STAN - unique constraint prevents receipt re-use
+  amount         Float
+  currency       String    @default("PKR")
+  receiverId     String    // Pabandi merchant/vault ID or contractor destination account
+  senderId       String?
+  bank           String?
+  timestamp      DateTime?
+  screenshotUrl  String?
+  imageBase64    String?   @db.Text
+  rawJson        Json?
+  confidence     Float     @default(0)
+  status         String    @default("VERIFIED") // VERIFIED | PENDING_MANUAL_REVIEW | REJECTED
+  intentId       String?
+  paymentId      String?
+  verifiedBy     String?   // AI_OCR | MANUAL_ADMIN
+  reviewNotes    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([transactionRef])
+  @@index([receiverId])
+  @@index([status])
+  @@index([intentId])
+  @@index([paymentId])
 }
 
 model LiquidityProvider {

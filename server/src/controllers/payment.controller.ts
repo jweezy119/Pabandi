@@ -303,7 +303,7 @@ export const createEscrow = async (
 
     const payment = await prisma.cryptoPayment.findUnique({ where: { id: paymentId } });
     if (!payment) {
-      const orchestrated = paymentOrchestrator.getPayment(id);
+      const orchestrated = paymentOrchestrator.getPayment(paymentId);
       if (orchestrated) {
         return res.json({
           success: true,
@@ -606,6 +606,110 @@ export const processPayLioWebhook = async (
       }
     }
     res.json({ received: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Section 3: Manual Review Approval Queue
+ * POST /api/v1/payments/manual-approve
+ * Protected by Coordinator/Admin role.
+ * Allows a human to review the uploaded receipt and approve it,
+ * triggering the on-chain / ledger release.
+ */
+export const manualApprovePayment = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { receiptId, intentId, paymentId, notes } = req.body;
+
+    if (!receiptId && !intentId && !paymentId) {
+      throw new CustomError('At least one of receiptId, intentId, or paymentId is required', 400);
+    }
+
+    let receipt: any = null;
+    if (receiptId) {
+      receipt = await prisma.paymentReceipt.findUnique({ where: { id: receiptId } });
+    } else if (intentId) {
+      receipt = await prisma.paymentReceipt.findFirst({ where: { intentId }, orderBy: { createdAt: 'desc' } });
+    } else if (paymentId) {
+      receipt = await prisma.paymentReceipt.findFirst({ where: { paymentId }, orderBy: { createdAt: 'desc' } });
+    }
+
+    const reviewerTag = req.user?.email || req.user?.id || 'COORDINATOR_ADMIN';
+
+    // 1. Update PaymentReceipt record if found
+    if (receipt) {
+      receipt = await prisma.paymentReceipt.update({
+        where: { id: receipt.id },
+        data: {
+          status: 'VERIFIED',
+          verifiedBy: reviewerTag,
+          reviewNotes: notes || `Manually approved by ${req.user?.role || 'COORDINATOR'}`,
+        },
+      });
+      logger.info(`[ManualReview] PaymentReceipt ${receipt.id} approved by ${reviewerTag}`);
+    }
+
+    // 2. If associated with an OfframpIntent, trigger ledger release & smart contract settlement
+    const targetIntentId = intentId || receipt?.intentId;
+    let updatedIntent: any = null;
+    if (targetIntentId) {
+      const { offrampService } = await import('../services/offramp.service');
+      updatedIntent = await offrampService.acceptProof(targetIntentId, 'MANUAL_ADMIN');
+      logger.info(`[ManualReview] Offramp intent ${targetIntentId} settled via manual approval`);
+    }
+
+    // 3. If associated with a standard Payment, mark as completed
+    const targetPaymentId = paymentId || receipt?.paymentId;
+    let updatedPayment: any = null;
+    if (targetPaymentId) {
+      updatedPayment = await prisma.payment.update({
+        where: { id: targetPaymentId },
+        data: { status: 'COMPLETED' },
+      }).catch(() => null);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Payment manually approved and ledger release executed successfully.',
+      data: {
+        receipt,
+        intent: updatedIntent,
+        payment: updatedPayment,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/v1/payments/manual-review-queue
+ * Fetches receipts waiting for coordinator/admin human review.
+ */
+export const getManualReviewQueue = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const queue = await prisma.paymentReceipt.findMany({
+      where: { status: 'PENDING_MANUAL_REVIEW' },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        queue,
+        count: queue.length,
+      },
+    });
   } catch (error) {
     next(error);
   }

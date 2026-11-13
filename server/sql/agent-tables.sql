@@ -290,3 +290,32 @@ CREATE TABLE IF NOT EXISTS "DisputeEvidence" (
 );
 CREATE INDEX IF NOT EXISTS "DisputeEvidence_workOrderId_idx" ON "DisputeEvidence" ("workOrderId");
 
+-- Ensure PaymentReceipt table exists for deduplication & verified settlement audit trail
+CREATE TABLE IF NOT EXISTS "PaymentReceipt" (
+  id TEXT PRIMARY KEY,
+  "transactionRef" TEXT NOT NULL UNIQUE,
+  amount DOUBLE PRECISION NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'PKR',
+  "receiverId" TEXT NOT NULL,
+  "senderId" TEXT,
+  bank TEXT,
+  timestamp TIMESTAMPTZ,
+  "screenshotUrl" TEXT,
+  "imageBase64" TEXT,
+  "rawJson" JSONB,
+  confidence DOUBLE PRECISION NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'VERIFIED',
+  "intentId" TEXT,
+  "paymentId" TEXT,
+  "verifiedBy" TEXT,
+  "reviewNotes" TEXT,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "PaymentReceipt_transactionRef_key" ON "PaymentReceipt" ("transactionRef");
+CREATE INDEX IF NOT EXISTS "PaymentReceipt_receiverId_idx" ON "PaymentReceipt" ("receiverId");
+CREATE INDEX IF NOT EXISTS "PaymentReceipt_status_idx" ON "PaymentReceipt" ("status");
+CREATE INDEX IF NOT EXISTS "PaymentReceipt_intentId_idx" ON "PaymentReceipt" ("intentId");
+CREATE INDEX IF NOT EXISTS "PaymentReceipt_paymentId_idx" ON "PaymentReceipt" ("paymentId");
+
+

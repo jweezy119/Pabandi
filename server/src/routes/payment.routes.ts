@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticate, optionalAuthenticate } from '../middleware/auth.middleware';
+import { authenticate, optionalAuthenticate, authorize } from '../middleware/auth.middleware';
 import { requireIdempotency } from '../middleware/idempotency.middleware';
 import { paymentRouter } from '../services/payment-router.service';
 import { paymentOrchestrator } from '../services/payment-orchestration/orchestrator.service';
@@ -16,6 +16,8 @@ import {
   createPayLio,
   getPayLioPaymentStatus,
   processPayLioWebhook,
+  manualApprovePayment,
+  getManualReviewQueue,
 } from '../controllers/payment.controller';
 
 const router = Router();
@@ -101,6 +103,12 @@ router.get('/:id/status', optionalAuthenticate, getPaymentStatus);
 
 // POST /api/v1/payments/:id/verify — verify payment on-chain
 router.post('/:id/verify', optionalAuthenticate, verifyPayment);
+
+// POST /api/v1/payments/manual-approve — Coordinator/Admin manual receipt approval & ledger release
+router.post('/manual-approve', authenticate, authorize('ADMIN', 'COORDINATOR', 'BUSINESS_OWNER'), manualApprovePayment);
+
+// GET /api/v1/payments/manual-review-queue — Coordinator/Admin review queue for low-confidence receipts
+router.get('/manual-review-queue', authenticate, authorize('ADMIN', 'COORDINATOR', 'BUSINESS_OWNER'), getManualReviewQueue);
 
 // GET /api/v1/payments/:id — get payment details
 router.get('/:id', optionalAuthenticate, getPaymentById);

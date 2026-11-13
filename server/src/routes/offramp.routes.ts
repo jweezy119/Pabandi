@@ -14,6 +14,7 @@ import {
   createSettlementReceipt,
   streamLpIntents,
   getOfframpQuote,
+  confirmEscrowLock,
 } from '../controllers/offramp.controller';
 import { logger } from '../utils/logger';
 import { lpAuthRateLimiter } from '../middleware/rateLimiter';
@@ -42,6 +43,7 @@ function lpAuthMiddleware(req: Request, res: Response, next: NextFunction) {
 
 // Admin / Internal Routes
 router.post('/intent', authenticate, createIntent);
+router.post('/intent/:intentId/lock-confirmed', authenticate, confirmEscrowLock);
 router.post('/lp/match/:intentId', authenticate, authorize('BUSINESS_OWNER', 'ADMIN'), matchLp);
 router.post('/lp/accept-proof', authenticate, authorize('BUSINESS_OWNER', 'ADMIN'), acceptProof);
 router.post('/admin/expire-stale', authenticate, authorize('ADMIN'), expireStaleIntents);

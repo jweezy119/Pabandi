@@ -17,6 +17,7 @@ export interface VerificationResult {
     bankName: string | null;
     currency: string | null;
     transactionDate: string | null;
+    transactionRef?: string | null;
   };
   rawJson?: any;
 }

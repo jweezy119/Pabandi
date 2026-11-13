@@ -1,6 +1,13 @@
 import { defineConfig } from 'vitest/config';
+import path from 'path';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@solana/spl-token': path.resolve(__dirname, 'node_modules/@solana/spl-token/lib/cjs/index.js'),
+      '@solana/buffer-layout-utils': path.resolve(__dirname, 'node_modules/@solana/buffer-layout-utils/lib/cjs/index.js'),
+    },
+  },
   test: {
     globals: true,
     environment: 'node',

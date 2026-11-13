@@ -40,9 +40,24 @@ export const createIntent = async (req: Request, res: Response, next: NextFuncti
       String(destinationType),
       String(destinationRef),
       businessId ? String(businessId) : undefined,
-      idempotencyKey ? String(idempotencyKey) : undefined
+      idempotencyKey ? String(idempotencyKey) : undefined,
+      lockedTxHash ? String(lockedTxHash) : undefined
     );
 
+    return ok(res, { intent });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const confirmEscrowLock = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { intentId } = req.params;
+    const { lockedTxHash } = req.body;
+    if (!lockedTxHash) {
+      return fail(res, 'lockedTxHash is required to confirm Anchor escrow lock', 400);
+    }
+    const intent = await offrampService.confirmEscrowLock(intentId, String(lockedTxHash));
     return ok(res, { intent });
   } catch (error) {
     next(error);
