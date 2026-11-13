@@ -19,7 +19,21 @@ interface CreateNotificationParams {
 }
 
 export async function createNotification(params: CreateNotificationParams) {
-  return prisma.notification.create({ data: params });
+  const notification = await prisma.notification.create({ data: params });
+
+  // Real-time Push via @PabanBot (Telegram) if user has linked Telegram
+  try {
+    const { telegramNotificationService } = await import('./telegram-notification.service');
+    await telegramNotificationService.sendToUser(params.userId, {
+      title: `🔔 *${params.title}*`,
+      body: params.body || '',
+      actionUrl: params.actionUrl,
+    });
+  } catch (err) {
+    // Non-blocking: fail-open so database notifications are never disrupted
+  }
+
+  return notification;
 }
 
 export async function notifyInvoicePaid(businessOwnerId: string, invoiceId: string, invoiceNumber: string, amount: number) {

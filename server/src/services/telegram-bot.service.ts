@@ -186,12 +186,61 @@ if (telegramBot) {
     );
   });
 
+  // Command: /notifications — Check and manage push alert status
+  telegramBot.command('notifications', async (ctx) => {
+    const telegramUserId = String(ctx.from?.id);
+    const user = await prisma.user.findFirst({ where: { telegramId: telegramUserId } });
+
+    const webAppUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'https://pabandi.com';
+    const inlineKeyboard = new InlineKeyboard()
+      .webApp('🚀 Launch Pabandi App', webAppUrl)
+      .row()
+      .webApp('💼 Browse Gig Board', `${webAppUrl}/gigs`);
+
+    if (!user) {
+      return ctx.reply(
+        `🔔 *Real-Time Push Alerts: Not Linked*\n\n` +
+        `Your Telegram account is not yet linked to a Pabandi profile.\n` +
+        `To start receiving instant phone alerts for escrows, gigs, and dispute evidence:\n\n` +
+        `1. Sign in to Pabandi (or tap *Launch Pabandi App* below)\n` +
+        `2. Go to Onboarding or Profile and tap *Verify Telegram*\n` +
+        `3. Claim your +50 Trust Score Boost!`,
+        {
+          parse_mode: 'Markdown',
+          reply_markup: inlineKeyboard,
+        }
+      );
+    }
+
+    const doubleVerified = user.isPhoneVerified ? '✅ Active (2FA)' : '⚠️ Pending contact share';
+
+    return ctx.reply(
+      `🔔 *Pabandi Real-Time Alerts: ACTIVE*\n\n` +
+      `👤 *Account:* ${user.firstName} ${user.lastName}\n` +
+      `🛡️ *Role:* ${user.profileType || user.role}\n` +
+      `📱 *Double Verification:* ${doubleVerified}\n\n` +
+      `*Live Alert Subscriptions:*\n` +
+      `• 💰 *Escrow Funded:* Instant notification when client deposits funds\n` +
+      `• 💵 *Escrow Released:* Payout settlement & Trust Score boosts (+25 pts)\n` +
+      `• 💼 *Gig Opportunities:* Matching agent/builder opportunities\n` +
+      `• 🤝 *Bid Status:* Instant notice when your bids are accepted\n` +
+      `• ⚖️ *Sulha Disputes:* Immediate alerts on tamper-proof evidence submissions\n\n` +
+      `All alerts deliver 1-tap interactive Mini App buttons directly to your device.`,
+      {
+        parse_mode: 'Markdown',
+        reply_markup: inlineKeyboard,
+      }
+    );
+  });
+
   // Command: /help
   telegramBot.command('help', async (ctx) => {
     return ctx.reply(
       `🤖 *PabAgent Commands:*\n\n` +
       `/start — Welcome menu & phone verification\n` +
+      `/app — Launch full-screen Telegram Mini App\n` +
       `/trust — View your Trust Passport standing\n` +
+      `/notifications — Real-time push alert settings\n` +
       `/link <wallet> — Link a Liquidity Provider wallet\n` +
       `\nPabandi Trust OS: https://pabandi.com`,
       { parse_mode: 'Markdown' }

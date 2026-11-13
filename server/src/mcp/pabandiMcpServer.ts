@@ -1188,6 +1188,18 @@ export async function handleSubmitDisputeEvidence(args: any, req?: Request): Pro
 
     const presignedDownloadUrl = await storageService.getPresignedDownloadUrl(storageKey);
 
+    // Push notification to Telegram via @PabanBot
+    try {
+      const { telegramNotificationService } = await import('../services/telegram-notification.service');
+      telegramNotificationService.notifyDisputeEvidenceSubmitted({
+        workOrderId: decoded.workOrderId || workOrderId,
+        fileName: evidence.name,
+        mimeType: evidence.mimeType,
+        sizeBytes: evidence.size,
+        vcapHash,
+      }).catch(() => {});
+    } catch {}
+
     return {
       content: [{ type: 'text', text: `Evidence attached. VCAP hash: ${vcapHash}` }],
       _meta: {
@@ -1233,6 +1245,18 @@ export async function handleSubmitDisputeEvidence(args: any, req?: Request): Pro
     });
 
     const presignedDownloadUrl = await storageService.getPresignedDownloadUrl(storageKey);
+
+    // Push notification to Telegram via @PabanBot
+    try {
+      const { telegramNotificationService } = await import('../services/telegram-notification.service');
+      telegramNotificationService.notifyDisputeEvidenceSubmitted({
+        workOrderId,
+        fileName: evidence.name,
+        mimeType: evidence.mimeType,
+        sizeBytes: buffer.length,
+        vcapHash,
+      }).catch(() => {});
+    } catch {}
 
     return {
       content: [{ type: 'text', text: `Evidence attached inline. VCAP hash: ${vcapHash}` }],

@@ -6,6 +6,7 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { ledgerService } from '../services/payment-orchestration/ledger.service';
 import { paymentOrchestrator } from '../services/payment-orchestration/orchestrator.service';
+import { telegramNotificationService } from '../services/telegram-notification.service';
 import {
   validate, createGigSchema, autogenGigSchema, agentRegisterSchema,
   bidSchema, claimSchema, completeGigSchema, faucetSchema, acceptBidSchema,
@@ -134,6 +135,16 @@ router.post('/', authenticate, async (req: Request, res: Response, next: NextFun
       },
     });
 
+    // Real-time Push Alert: Broadcast new gig opportunity to Telegram agents/builders
+    telegramNotificationService.notifyNewGig({
+      gigId: gig.id,
+      title: gig.title,
+      description: gig.description,
+      category: gig.category,
+      requiredSkills: (gig.requiredSkills as string[]) || [],
+      budgetUsd: gig.budgetUsd,
+    }).catch(err => logger.warn('[TelegramPush] Failed to broadcast new gig:', err));
+
     res.status(201).json({ success: true, data: { gigId: gig.id, ...gig } });
   } catch (e: any) { next(e); }
 });
@@ -173,6 +184,15 @@ router.post('/:id/accept/:bidId', authenticate, async (req: Request, res: Respon
       where: { id: gigId },
       data: { status: 'IN_PROGRESS', bestAgentId: bid.agentId, bestConfidence: bid.confidencePct },
     });
+
+    // Real-time Push Alert: Notify accepted bidder
+    telegramNotificationService.notifyBidAccepted({
+      gigId,
+      gigTitle: gig.title,
+      agentId: bid.agentId,
+      quoteUsd: bid.quoteUsd,
+      clientId: req.user?.id,
+    }).catch(err => logger.warn('[TelegramPush] Failed to notify accepted bidder:', err));
 
     res.json({ success: true, data: { gigId, acceptedBidId: bidId, agentId: bid.agentId, quoteUsd: bid.quoteUsd } });
   } catch (e: any) { next(e); }
@@ -215,6 +235,17 @@ router.post('/:id/fund-escrow', authenticate, async (req: Request, res: Response
         vaultUsdc: finalAmount,
       },
     });
+
+    // Real-time Push Alert: Notify contractor/agent that escrow is funded
+    telegramNotificationService.notifyEscrowFunded({
+      gigId,
+      gigTitle: gig.title,
+      amountUsd: finalAmount,
+      rail,
+      payerId: req.user?.id,
+      payeeId: gig.bestAgentId || undefined,
+      txHash: txHash || null,
+    }).catch(err => logger.warn('[TelegramPush] Failed to notify funded escrow:', err));
 
     res.json({
       success: true,
@@ -262,6 +293,15 @@ router.post('/:id/release-escrow', authenticate, async (req: Request, res: Respo
       where: { id: gigId },
       data: { status: 'DELIVERED' },
     });
+
+    // Real-time Push Alert: Notify contractor that escrow is released
+    telegramNotificationService.notifyEscrowReleased({
+      gigId,
+      gigTitle: gig.title,
+      amountUsd: gig.vaultUsdc || gig.budgetUsd,
+      payeeId: gig.bestAgentId || undefined,
+      payeeTrustScoreDelta: journal.trustScoreImpact.payeeScoreDelta,
+    }).catch(err => logger.warn('[TelegramPush] Failed to notify released escrow:', err));
 
     res.json({
       success: true,
