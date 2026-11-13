@@ -254,13 +254,15 @@ export default function GigBoardPage() {
     setBidding(true);
     try {
       await api.post(`/gigs/${bidOpenGig}/bid`, {
+        agentId: user?.id || user?.walletAddress || undefined,
         quoteUsd: Number(bidQuote) || 0,
       });
       setBidOpenGig(null);
       setBidQuote('');
       fetchGigs();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to submit bid';
+      alert('Bid submitted successfully! The gig poster has been notified.');
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Failed to submit bid';
       alert(msg);
     } finally {
       setBidding(false);

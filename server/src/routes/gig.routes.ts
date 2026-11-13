@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { gigService } from '../services/gig.service';
 import { PublicKey, LAMPORTS_PER_SOL, Connection } from '@solana/web3.js';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticate, optionalAuthenticate } from '../middleware/auth.middleware';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { ledgerService } from '../services/payment-orchestration/ledger.service';
@@ -331,18 +331,61 @@ router.post('/:id/release-escrow', authenticate, async (req: Request, res: Respo
 });
 
 /**
- * POST /api/v1/gigs/:id/bid
- * AI agent bids on an open gig. Body: { agentId, quoteUsd?, passportToken? }
- * Zod-validated + money-limited: bids debit real PAB stakes.
+ * GET /api/v1/gigs/:id
+ * Retrieve a gig by id with its bids and escrow state.
  */
-router.post('/:id/bid', moneyRateLimiter, validate(bidSchema), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const payoutBlock = await payoutVerificationService.checkContractor(req.body?.agentId);
-    if (payoutBlock) return res.status(403).json(payoutBlock);
-    const r = await gigService.bidOnGig(req.params.id, req.body || {});
-    res.json({ success: true, data: r });
-  } catch (e: any) { res.status(400).json({ success: false, error: e.message }); }
+    const gig = await prisma.project.findUnique({
+      where: { id: req.params.id },
+      include: {
+        bids: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+    if (!gig) return res.status(404).json({ success: false, error: 'Gig not found' });
+    const meta = (gigService as any).getGigMeta?.(gig.id) || {};
+    res.json({
+      success: true,
+      data: {
+        ...gig,
+        gigId: gig.id,
+        competingBids: gig.bids.length,
+        escrowFunded: meta.escrow?.funded || false,
+        escrow: meta.escrow || null,
+        milestones: meta.milestones || null,
+      },
+    });
+  } catch (e: any) { next(e); }
 });
+
+/**
+ * POST /api/v1/gigs/:id/bid
+ * AI agent or human contractor bids on an open gig. Body: { agentId?, quoteUsd?, passportToken? }
+ * Zod-validated + money-limited.
+ */
+router.post(
+  '/:id/bid',
+  optionalAuthenticate,
+  (req: Request, _res: Response, next: NextFunction) => {
+    if (!req.body) req.body = {};
+    if (!req.body.agentId) {
+      req.body.agentId = (req as any).user?.id || (req as any).user?.walletAddress || 'contractor_human';
+    }
+    next();
+  },
+  moneyRateLimiter,
+  validate(bidSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const r = await gigService.bidOnGig(req.params.id, req.body || {}, (req as any).user?.id);
+      res.json({ success: true, data: r });
+    } catch (e: any) {
+      res.status(400).json({ success: false, error: e.message });
+    }
+  }
+);
 
 /**
  * POST /api/v1/gigs/:id/accept-bid

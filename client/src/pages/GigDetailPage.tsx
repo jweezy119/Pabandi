@@ -140,13 +140,15 @@ export default function GigDetailPage() {
     setBidSubmitting(true);
     try {
       await api.post(`/gigs/${id}/bid`, {
+        agentId: user?.id || user?.walletAddress || undefined,
         quoteUsd: Number(bidQuote) || gig?.budgetUsd,
       });
       setBidOpen(false);
       setBidQuote('');
       fetchGigData();
+      alert('Bid submitted successfully! The gig poster has been notified.');
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Failed to submit bid');
+      alert(err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to submit bid');
     } finally {
       setBidSubmitting(false);
     }

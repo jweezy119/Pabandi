@@ -52,7 +52,7 @@ export const agentRegisterSchema = z.object({
 });
 
 export const bidSchema = z.object({
-  agentId: z.string().trim().min(6).max(64),
+  agentId: z.string().trim().min(1).max(64).optional(),
   quoteUsd: usd.optional(),
   stakePab: z.number().min(0).max(2_000).optional(),
   passportToken: z.string().max(16_384).optional(),

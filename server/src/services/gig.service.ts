@@ -219,29 +219,56 @@ export async function registerAgent(input: AgentSignup): Promise<any> {
   return { agentId: agent.id, walletAddress: agent.walletAddress, passport: Buffer.from(JSON.stringify(passport)).toString('base64'), category: agent.category };
 }
 
-// ── 3. AI AGENT BIDS on an open gig (with PAB trust stake) ──────────────────
-export async function bidOnGig(gigId: string, opts: { agentId: string; quoteUsd?: number; passportToken?: string; stakePab?: number }): Promise<any> {
+// ── 3. AI AGENT & HUMAN BIDS on an open gig ──────────────────
+export async function bidOnGig(
+  gigId: string,
+  opts: { agentId?: string; quoteUsd?: number; passportToken?: string; stakePab?: number },
+  callerUserId?: string
+): Promise<any> {
   const gig = await prisma.project.findUnique({ where: { id: gigId } });
   if (!gig) throw new Error('Gig not found');
   if (gig.status !== 'OPEN') throw new Error(`Gig is ${gig.status}, not accepting bids`);
-  const stakePab = Math.max(0, opts.stakePab ?? 10); // default 10 PAB skin-in-the-game
+
+  const bidderId = opts.agentId || callerUserId || 'contractor_human';
+
   if (opts.passportToken) {
     let att: any;
-    try { att = JSON.parse(Buffer.from(opts.passportToken, 'base64').toString('utf-8')); } catch { throw new Error('Passport token invalid'); }
+    try {
+      att = JSON.parse(Buffer.from(opts.passportToken, 'base64').toString('utf-8'));
+    } catch {
+      throw new Error('Passport token invalid');
+    }
     const v = ptpEngine.verifyAgentPassport(att, 'act:bid');
     if (!v.valid) throw new Error('Passport invalid or missing act:bid');
   }
-  const agent = await prisma.web3Agent.findUnique({ where: { id: opts.agentId } });
-  if (!agent) throw new Error('Agent not found');
-  if ((agent.balancePab || 0) < stakePab) throw new Error(`Agent needs ${stakePab} PAB to bid (has ${agent.balancePab || 0})`);
-  // Hold the stake (debit now; returned+bonus on delivery, slashed on no-show).
-  await prisma.web3Agent.update({ where: { id: agent.id }, data: { balancePab: { decrement: stakePab } } });
+
+  const agent = await prisma.web3Agent.findUnique({ where: { id: bidderId } }).catch(() => null);
+  let stakePab = 0;
+
+  if (agent) {
+    stakePab = Math.max(0, opts.stakePab ?? 10); // default 10 PAB skin-in-the-game for autonomous agents
+    if ((agent.balancePab || 0) < stakePab) throw new Error(`Agent needs ${stakePab} PAB to bid (has ${agent.balancePab || 0})`);
+    // Hold the stake (debit now; returned+bonus on delivery, slashed on no-show).
+    await prisma.web3Agent.update({ where: { id: agent.id }, data: { balancePab: { decrement: stakePab } } });
+  } else {
+    // Human contractor / freelancer: zero required PAB stake
+    stakePab = Math.max(0, opts.stakePab ?? 0);
+  }
+
   const quoteUsd = opts.quoteUsd ?? gig.budgetUsd;
   const bid = await prisma.projectBid.create({
-    data: { projectId: gigId, agentId: opts.agentId, quoteUsd, confidencePct: 85, status: 'PENDING', stakePab, breakdown: { skillMatch: agent.category === gig.category } as any },
+    data: {
+      projectId: gigId,
+      agentId: bidderId,
+      quoteUsd,
+      confidencePct: agent ? 85 : 95,
+      status: 'PENDING',
+      stakePab,
+      breakdown: { skillMatch: agent ? agent.category === gig.category : true, isHumanContractor: !agent } as any,
+    },
   });
-  logger.info(`[bid] agent ${opts.agentId} bid $${quoteUsd} on ${gigId} (staked ${stakePab} PAB)`);
-  return { bidId: bid.id, gigId, agentId: opts.agentId, quoteUsd, stakePab, status: 'PENDING' };
+  logger.info(`[bid] bidder ${bidderId} bid $${quoteUsd} on ${gigId} (staked ${stakePab} PAB)`);
+  return { bidId: bid.id, gigId, agentId: bidderId, quoteUsd, stakePab, status: 'PENDING' };
 }
 
 // ── 4. ACCEPT BEST BID → deposit budget into escrow ─────────────────────────
@@ -255,9 +282,14 @@ export async function bidOnGig(gigId: string, opts: { agentId: string; quoteUsd?
  * but a trusted veteran beats a no-name undercutter). This is what makes "the right freelancer
  * per task" a real, auditable decision — not a race to the bottom.
  */
-async function scoreBidder(bid: any, gig: any): Promise<{ agentId: string; trust: number; value: number; quote: number }> {
-  const agent = await prisma.web3Agent.findUnique({ where: { id: bid.agentId } });
-  if (!agent) return { agentId: bid.agentId, trust: 0, value: 0, quote: bid.quoteUsd };
+async function scoreBidder(bid: any, gig: any): Promise<{ agentId: string; trust: number; value: number; quote: number; bidId?: string }> {
+  const agent = await prisma.web3Agent.findUnique({ where: { id: bid.agentId } }).catch(() => null);
+  if (!agent) {
+    const user = await prisma.user.findUnique({ where: { id: bid.agentId } }).catch(() => null);
+    const trust = user ? (user.isPayoutVerified ? 95 : 80) : 75;
+    const value = (trust / Math.max(1, bid.quoteUsd)) * 1000;
+    return { bidId: bid.id, agentId: bid.agentId, trust, value: +value.toFixed(2), quote: bid.quoteUsd };
+  }
   const stake = await prisma.agentStake.findUnique({ where: { agentId: bid.agentId } });
   const trust = Math.min(40, ((stake?.amountPab || 0) / 2000) * 40); // 2000 PAB stake = full trust pts
   // first-party completion history (real, free signal)
@@ -268,8 +300,8 @@ async function scoreBidder(bid: any, gig: any): Promise<{ agentId: string; trust
   const skill = agent.category === gig.category ? 25 : 0;
   const totalTrust = Math.min(100, trust + track + skill);
   // value = trust per $1000 of quote (higher = more trust for the money). Floor quote to avoid div0.
-  const value = totalTrust / Math.max(200, bid.quoteUsd) * 1000;
-  return { agentId: bid.agentId, trust: Math.round(totalTrust), value: +value.toFixed(2), quote: bid.quoteUsd };
+  const value = (totalTrust / Math.max(1, bid.quoteUsd)) * 1000;
+  return { bidId: bid.id, agentId: bid.agentId, trust: Math.round(totalTrust), value: +value.toFixed(2), quote: bid.quoteUsd };
 }
 
 export async function acceptBestBid(gigId: string, opts: { payerSecretB64?: string; clientWallet?: string } = {}): Promise<any> {
@@ -284,7 +316,8 @@ export async function acceptBestBid(gigId: string, opts: { payerSecretB64?: stri
   scored.sort((a, b) => b.value - a.value);
   const pick = scored[0];
   const best = bids.find((x) => x.agentId === pick.agentId)!;
-  const agent = await prisma.web3Agent.findUnique({ where: { id: best.agentId } });
+  const agent = await prisma.web3Agent.findUnique({ where: { id: best.agentId } }).catch(() => null);
+  const user = !agent ? await prisma.user.findUnique({ where: { id: best.agentId } }).catch(() => null) : null;
 
   // Deposit the project-owner's FULL payment into escrow (real on-chain when business wallet funded).
   // Demo rate: $800 budget = 1 SOL escrow. Treasury only custodies this; never risks its own SOL.
@@ -296,9 +329,9 @@ export async function acceptBestBid(gigId: string, opts: { payerSecretB64?: stri
   await prisma.projectBid.update({ where: { id: best.id }, data: { status: 'ACCEPTED', confidencePct: pick.trust } });
 
   const ex = extras[gigId] || (extras[gigId] = {} as GigExtra);
-  ex.escrow = { funded: true, amount: escrowSol, payer: opts.clientWallet || agent?.walletAddress || null, rakePct: 1, helperPct: 0.2, simulated: dep.simulated, txHash: dep.txHash };
-  ex.acceptedBidId = best.id; ex.claimedBy = `agent:${best.agentId}`; ex.stakePab = best.stakePab; ex.bidRanking = scored; saveStore();
-  await gigActivity({ kind: 'CLAIM', role: 'freelancer', gigId, claimedBy: `agent:${best.agentId}`, by: 'bid', source: opts.payerSecretB64 ? 'ai-loop' : 'human' });
+  ex.escrow = { funded: true, amount: escrowSol, payer: opts.clientWallet || agent?.walletAddress || user?.walletAddress || null, rakePct: 1, helperPct: 0.2, simulated: dep.simulated, txHash: dep.txHash };
+  ex.acceptedBidId = best.id; ex.claimedBy = agent ? `agent:${best.agentId}` : `user:${best.agentId}`; ex.stakePab = best.stakePab; ex.bidRanking = scored; saveStore();
+  await gigActivity({ kind: 'CLAIM', role: 'freelancer', gigId, claimedBy: ex.claimedBy, by: 'bid', source: opts.payerSecretB64 ? 'ai-loop' : 'human' });
   // Notify external apps that this gig was claimed by an agent
   if (gig.createdBy) {
     try {
@@ -307,7 +340,7 @@ export async function acceptBestBid(gigId: string, opts: { payerSecretB64?: stri
     } catch { /* webhook best-effort */ }
   }
 
-  logger.info(`[gig] bid accepted ${best.id} → agent ${best.agentId} (trust ${pick.trust}, value ${pick.value}); escrow funded (simulated=${dep.simulated})`);
+  logger.info(`[gig] bid accepted ${best.id} → contractor/agent ${best.agentId} (trust ${pick.trust}, value ${pick.value}); escrow funded (simulated=${dep.simulated})`);
   return { gigId, acceptedBidId: best.id, agentId: best.agentId, trustScore: pick.trust, bidRanking: scored, escrowFunded: true, simulated: dep.simulated, txHash: dep.txHash };
 }
 
@@ -574,4 +607,8 @@ export async function bidRanking(gigId: string): Promise<any> {
   return { gigId, ranked: scored };
 }
 
-export const gigService = { createGigFromSme, registerAgent, bidOnGig, acceptBestBid, agentBalance, agentFaucet, pabStats, openBoard, claimGig, completeGig, bidRanking, ensureBusinessWallet, ensureProjectSchema };
+export function getGigMeta(gigId: string): GigExtra | undefined {
+  return extras[gigId];
+}
+
+export const gigService = { createGigFromSme, registerAgent, bidOnGig, acceptBestBid, agentBalance, agentFaucet, pabStats, openBoard, claimGig, completeGig, bidRanking, ensureBusinessWallet, ensureProjectSchema, getGigMeta };
