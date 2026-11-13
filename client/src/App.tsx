@@ -191,6 +191,7 @@ import './pages/LandingPage.css';
 import { LanguageProvider } from './context/LanguageContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { useEffect } from 'react';
+import { useTelegramWebApp } from './hooks/useTelegramWebApp';
 
 
 
@@ -216,6 +217,7 @@ function AppShellLayout() {
 function AnimatedAppRoutes() {
   const { isAuthenticated, fetchWalletData, user } = useAuthStore();
   const location = useLocation();
+  useTelegramWebApp();
 
   // /dashboard is not a destination of its own — it routes every signed-in user
   // into their mode-appropriate dashboard: Business → /contact, Personal → /me.

@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { telegramService } from '../services/telegram.service';
-import { telegramBot, telegramWebhookHandler } from '../services/telegram-bot.service';
+import { telegramBot, telegramWebhookHandler, setupTelegramMenuButton } from '../services/telegram-bot.service';
 
 const router = Router();
 
@@ -115,6 +115,20 @@ router.get('/set-webhook', async (req: Request, res: Response, next: NextFunctio
     return res.json({ success: true, message: `Webhook registered to ${webhookUrl}` });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err?.message || 'Failed to set webhook' });
+  }
+});
+
+// POST /api/v1/telegram/set-menu-button - Configure the persistent Mini App button in chat
+router.post('/set-menu-button', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { url } = req.body;
+    const result = await setupTelegramMenuButton(url);
+    if (!result?.success) {
+      return res.status(500).json(result);
+    }
+    return res.json({ success: true, message: `Menu button configured for ${result.url}` });
+  } catch (error) {
+    next(error);
   }
 });
 

@@ -44,21 +44,51 @@ if (telegramBot) {
       );
     }
 
-    // Default /start greeting
-    const keyboard = new Keyboard()
+    // Default /start greeting with Telegram Mini App Launch Button
+    const webAppUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'https://pabandi.com';
+    const inlineKeyboard = new InlineKeyboard()
+      .webApp('🚀 Launch Pabandi App', webAppUrl)
+      .row()
+      .webApp('💼 Browse Gig Board', `${webAppUrl}/gigs`);
+
+    const phoneKeyboard = new Keyboard()
       .requestContact('📱 Verify Phone (+50 Trust Boost)')
       .resized()
       .oneTime();
 
+    await ctx.reply(
+      `📱 *Double Verification Ready:* Tap below to share your verified phone number:`,
+      { reply_markup: phoneKeyboard }
+    );
+
     return ctx.reply(
       `🤖 *Welcome to PabAgent (@PabanBot)!*\n\n` +
       `The trust and escrow coordinator for the agent economy.\n\n` +
-      `• Tap *📱 Verify Phone* below to complete double verification\n` +
+      `• Tap *🚀 Launch Pabandi App* to open the Mini App with zero-click sign-in\n` +
+      `• Tap *📱 Verify Phone* to complete double verification (+50 Boost)\n` +
       `• Use /trust to check your trust passport\n` +
-      `• Use /help for all commands`,
+      `• Use /app to open the app anytime`,
       {
         parse_mode: 'Markdown',
-        reply_markup: keyboard,
+        reply_markup: inlineKeyboard,
+      }
+    );
+  });
+
+  // Command: /app — Launch Telegram Mini App
+  telegramBot.command('app', async (ctx) => {
+    const webAppUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'https://pabandi.com';
+    const inlineKeyboard = new InlineKeyboard()
+      .webApp('🚀 Launch Pabandi App', webAppUrl)
+      .row()
+      .webApp('💼 Browse Gig Board', `${webAppUrl}/gigs`);
+
+    return ctx.reply(
+      `🚀 *Pabandi Mini App*\n\n` +
+      `Tap below to launch Pabandi full-screen inside Telegram with zero-click authentication:`,
+      {
+        parse_mode: 'Markdown',
+        reply_markup: inlineKeyboard,
       }
     );
   });
@@ -271,3 +301,22 @@ export const startTelegramBot = () => {
 };
 
 export const telegramWebhookHandler = telegramBot ? webhookCallback(telegramBot, 'express') : null;
+
+export const setupTelegramMenuButton = async (url?: string) => {
+  if (!telegramBot) return { success: false, error: 'Telegram bot not initialized' };
+  const webAppUrl = url || process.env.FRONTEND_URL || process.env.CLIENT_URL || 'https://pabandi.com';
+  try {
+    await telegramBot.api.setChatMenuButton({
+      menu_button: {
+        type: 'web_app',
+        text: '🚀 Open Pabandi',
+        web_app: { url: webAppUrl },
+      },
+    });
+    logger.info(`[TelegramBot] Menu button configured with ${webAppUrl}`);
+    return { success: true, url: webAppUrl };
+  } catch (e: any) {
+    logger.warn(`[TelegramBot] Failed to set menu button: ${e.message}`);
+    return { success: false, error: e.message };
+  }
+};
