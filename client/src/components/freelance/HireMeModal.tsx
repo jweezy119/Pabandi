@@ -28,7 +28,7 @@ export const HireMeModal: React.FC<HireMeModalProps> = ({ isOpen, onClose, freel
   const handleProceed = async () => {
     if (!isAuthenticated) {
       // Force login first
-      window.location.href = `/api/v1/auth/google?role=customer&returnTo=${window.location.pathname}`;
+      navigate(`/login?return_to=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
 

@@ -242,6 +242,13 @@ Return ONLY valid JSON. Never enclose with markdown formatting.
       logger.error('[AI PaymentVerifier] Failed to persist PaymentReceipt:', e);
     }
 
+    // Safety net: low-confidence receipts never fail — they raise a Coordinator Dashboard alert.
+    if (finalStatus === 'PENDING_MANUAL_REVIEW') {
+      this.alertCoordinators(createdReceipt?.id, confidence, options).catch((err) =>
+        logger.warn('[AI PaymentVerifier] Coordinator alert failed:', err?.message || err)
+      );
+    }
+
     return {
       isValid: finalStatus === 'VERIFIED',
       isPendingReview: finalStatus === 'PENDING_MANUAL_REVIEW',
@@ -252,6 +259,30 @@ Return ONLY valid JSON. Never enclose with markdown formatting.
       receipt: createdReceipt,
       raw,
     };
+  }
+
+  private async alertCoordinators(receiptId: string | undefined, confidence: number, options?: VerifyReceiptOptions) {
+    const data = {
+      receiptId,
+      intentId: options?.intentId,
+      paymentId: options?.paymentId,
+      confidence: Number(confidence.toFixed(2)),
+      reviewUrl: '/coordinator?tab=manual-review',
+    };
+    const { agentAlertService } = await import('./agentAlert.service');
+    await agentAlertService.dispatchAlert('coordinator.manual_review_required', data);
+
+    // Optional Telegram ping to the coordinator group (free; set COORDINATOR_TELEGRAM_CHAT_ID)
+    const chatId = process.env.COORDINATOR_TELEGRAM_CHAT_ID;
+    if (chatId) {
+      const { telegramNotificationService } = await import('./telegram-notification.service');
+      await telegramNotificationService.sendToTelegramId(chatId, {
+        title: '🧾 *Receipt needs manual review*',
+        body: `Confidence: ${(confidence * 100).toFixed(0)}% (< 85%)\nReceipt: \`${receiptId || 'n/a'}\``,
+        actionUrl: data.reviewUrl,
+        actionText: '🔍 Review & Approve',
+      });
+    }
   }
 
   private parseFallback(

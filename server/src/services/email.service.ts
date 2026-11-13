@@ -31,21 +31,21 @@ export async function sendEmail({ to, subject, html }: SendEmailArgs) {
   }
   try {
     const result = await getClient().emails.send({ from: FROM, to, subject, html });
-    console.log('[email] sent', result.id);
-    return result;
+    if (result && (result as any).error) {
+      const resendErr = (result as any).error;
+      const message = typeof resendErr === 'object' ? (resendErr.message || JSON.stringify(resendErr)) : String(resendErr);
+      console.error(`[email] Resend API error for ${to} from ${FROM}: ${message}`);
+      return { error: message };
+    }
+    const id = (result as any)?.data?.id || (result as any)?.id;
+    console.log('[email] sent successfully to', to, 'id:', id);
+    return { id, success: true };
   } catch (err) {
-    // Log the provider's own message. Resend's most common rejection here is an
-    // unverified `from` domain, and "Failed to send code. Please try again." with
-    // nothing behind it is undiagnosable from the outside — the customer retries,
-    // the operator has no idea why, and the feature stays broken.
     const resendDetail =
       (err as { data?: { message?: string }; message?: string })?.data?.message ??
       (err as { message?: string })?.message ??
       String(err);
     console.error(`[email] failed for ${to} from ${FROM}: ${resendDetail}`);
-    // err is unknown, so it has no `.message`. Reading one off it was the second
-    // error in this function, and it would have thrown inside the catch — turning
-    // a failed send into an unhandled rejection.
     const message = err instanceof Error ? err.message : String(err);
     return { error: message };
   }
@@ -326,7 +326,7 @@ export const emailService = {
       subject: `${code} is your Pabandi code`,
       html,
     });
-    if (result && typeof result === 'object' && ('skipped' in result || 'error' in result)) {
+    if (!result || (result as any).skipped || (result as any).error) {
       return null;
     }
     return result;

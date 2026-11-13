@@ -7,6 +7,7 @@ import { logger } from '../utils/logger';
 import { ledgerService } from '../services/payment-orchestration/ledger.service';
 import { paymentOrchestrator } from '../services/payment-orchestration/orchestrator.service';
 import { telegramNotificationService } from '../services/telegram-notification.service';
+import { payoutVerificationService } from '../services/payout-verification.service';
 import {
   validate, createGigSchema, autogenGigSchema, agentRegisterSchema,
   bidSchema, claimSchema, completeGigSchema, faucetSchema, acceptBidSchema,
@@ -167,6 +168,12 @@ router.post('/:id/accept/:bidId', authenticate, async (req: Request, res: Respon
     if (bid.projectId !== gigId) return res.status(400).json({ success: false, error: 'Bid does not belong to this gig' });
     if (bid.status !== 'PENDING') return res.status(400).json({ success: false, error: 'Bid is not pending' });
 
+    // Compliance gate: contractor must have a verified Wallet / Bank ESFCA payout route
+    const payoutBlock = await payoutVerificationService.checkContractor(bid.agentId);
+    if (payoutBlock) {
+      return res.status(403).json({ ...payoutBlock, error: 'This contractor has not verified a payout method yet.' });
+    }
+
     // Reject all other pending bids
     await prisma.projectBid.updateMany({
       where: { projectId: gigId, status: 'PENDING' },
@@ -323,6 +330,8 @@ router.post('/:id/release-escrow', authenticate, async (req: Request, res: Respo
  */
 router.post('/:id/bid', moneyRateLimiter, validate(bidSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const payoutBlock = await payoutVerificationService.checkContractor(req.body?.agentId);
+    if (payoutBlock) return res.status(403).json(payoutBlock);
     const r = await gigService.bidOnGig(req.params.id, req.body || {});
     res.json({ success: true, data: r });
   } catch (e: any) { res.status(400).json({ success: false, error: e.message }); }
@@ -356,6 +365,8 @@ router.get('/:id/bid-ranking', async (req: Request, res: Response, next: NextFun
  */
 router.post('/:id/claim', moneyRateLimiter, validate(claimSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const payoutBlock = await payoutVerificationService.checkContractor(req.body?.agentId);
+    if (payoutBlock) return res.status(403).json(payoutBlock);
     const r = await gigService.claimGig(req.params.id, req.body || {});
     res.json({ success: true, data: r });
   } catch (e: any) { res.status(400).json({ success: false, error: e.message }); }

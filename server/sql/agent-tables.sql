@@ -290,6 +290,17 @@ CREATE TABLE IF NOT EXISTS "DisputeEvidence" (
 );
 CREATE INDEX IF NOT EXISTS "DisputeEvidence_workOrderId_idx" ON "DisputeEvidence" ("workOrderId");
 
+-- Payout compliance routing (WALLET vs BANK_ESFCA)
+DO $$ BEGIN
+  CREATE TYPE "PayoutMethod" AS ENUM ('WALLET', 'BANK_ESFCA');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "payoutMethod" "PayoutMethod";
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "payoutAccountRef" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "isPayoutVerified" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "payoutVerifiedAt" TIMESTAMPTZ;
+
 -- Ensure PaymentReceipt table exists for deduplication & verified settlement audit trail
 CREATE TABLE IF NOT EXISTS "PaymentReceipt" (
   id TEXT PRIMARY KEY,

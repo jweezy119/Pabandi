@@ -20,7 +20,9 @@ export type AlertEventType =
   | 'escrow.released'
   | 'escrow.disputed'
   | 'agent.proposal_pending'
-  | 'agent.proposal_resolved';
+  | 'agent.proposal_resolved'
+  | 'coordinator.manual_review_required'
+  | 'coordinator.payout_verification_pending';
 
 export interface AgentAlertSubscription {
   id: string;

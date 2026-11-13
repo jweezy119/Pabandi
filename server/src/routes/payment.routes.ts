@@ -105,10 +105,10 @@ router.get('/:id/status', optionalAuthenticate, getPaymentStatus);
 router.post('/:id/verify', optionalAuthenticate, verifyPayment);
 
 // POST /api/v1/payments/manual-approve — Coordinator/Admin manual receipt approval & ledger release
-router.post('/manual-approve', authenticate, authorize('ADMIN', 'COORDINATOR', 'BUSINESS_OWNER'), manualApprovePayment);
+router.post('/manual-approve', authenticate, authorize('ADMIN', 'COORDINATOR'), manualApprovePayment);
 
 // GET /api/v1/payments/manual-review-queue — Coordinator/Admin review queue for low-confidence receipts
-router.get('/manual-review-queue', authenticate, authorize('ADMIN', 'COORDINATOR', 'BUSINESS_OWNER'), getManualReviewQueue);
+router.get('/manual-review-queue', authenticate, authorize('ADMIN', 'COORDINATOR'), getManualReviewQueue);
 
 // GET /api/v1/payments/:id — get payment details
 router.get('/:id', optionalAuthenticate, getPaymentById);

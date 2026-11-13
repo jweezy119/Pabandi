@@ -420,6 +420,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/sulha`, './routes/sulha.routes'],
   [`/api/${v}/loans`, './routes/loan.routes'],
   [`/api/${v}/payouts`, './routes/payout.routes'],
+  [`/api/${v}/payout-verification`, './routes/payout-verification.routes'],
   [`/api/${v}/payments`, './routes/payment.routes'],
   [`/api/${v}/fiat`, './routes/fiatPayment.routes'],
   [`/api/${v}/payments/raast`, './routes/raastPayment.routes'],

@@ -886,10 +886,11 @@ export const requestLoginCode = async (
   next: NextFunction
 ) => {
   try {
-    const { email } = req.body;
-    if (!email) {
+    const rawEmail = req.body.email;
+    if (!rawEmail) {
       return res.status(400).json({ success: false, message: 'Email required' });
     }
+    const email = String(rawEmail).trim().toLowerCase();
 
     let user = await prisma.user.findUnique({ where: { email } });
     const isNewUser = !user;
@@ -952,10 +953,13 @@ export const verifyLoginCode = async (
   next: NextFunction
 ) => {
   try {
-    const { email, code } = req.body;
-    if (!email || !code) {
+    const rawEmail = req.body.email;
+    const rawCode = req.body.code;
+    if (!rawEmail || !rawCode) {
       return res.status(400).json({ success: false, message: 'Email and code required' });
     }
+    const email = String(rawEmail).trim().toLowerCase();
+    const code = String(rawCode).trim();
 
     const user = await prisma.user.findUnique({ 
       where: { email },

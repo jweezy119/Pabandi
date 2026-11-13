@@ -16,6 +16,7 @@ import { useCoordinatorCommands } from '../../components/coordinator/useCoordina
 import WorkOrderStream from '../../components/coordinator/WorkOrderStream';
 import { coordinatorService } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
+import ManualReviewAlerts from './ManualReviewAlerts';
 
 /**
  * The four former tabs, now filters over one stream (§3). Labels are plain
@@ -192,6 +193,7 @@ export default function CoordinatorCommandSurface() {
           onCancel={commands.cancelPlan}
         />
       )}
+      <ManualReviewAlerts />
     </>
   );
 }

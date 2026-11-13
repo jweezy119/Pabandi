@@ -61,6 +61,12 @@ model User {
   companyName             String?
   role                    UserRole                 @default(CUSTOMER)
   profileType             ProfileType?
+  /// Payout compliance routing (Upwork Direct-to-Wallet model):
+  /// WALLET = JazzCash/Easypaisa/Raast wallet, BANK_ESFCA = Exporters' Special Foreign Currency Account.
+  payoutMethod            PayoutMethod?
+  payoutAccountRef        String?
+  isPayoutVerified        Boolean                  @default(false)
+  payoutVerifiedAt        DateTime?
   isEmailVerified         Boolean                  @default(false)
   isPhoneVerified         Boolean                  @default(false)
   verificationCode        String? // 6-digit email verification code
@@ -1114,6 +1120,11 @@ enum UserRole {
   ADMIN
   FREELANCER
   COORDINATOR
+}
+
+enum PayoutMethod {
+  WALLET
+  BANK_ESFCA
 }
 
 enum ProfileType {

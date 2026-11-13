@@ -30,7 +30,7 @@ export default function JobDetailsPage() {
   };
 
   const handleAuthRedirect = () => {
-    window.location.href = `/api/v1/auth/google?role=freelancer&returnTo=/jobs/${id}`;
+    navigate(`/login?return_to=${encodeURIComponent(`/jobs/${id}`)}`);
   };
 
   const submitApplication = async (e: React.FormEvent) => {
@@ -185,11 +185,11 @@ export default function JobDetailsPage() {
 
             <button 
               onClick={handleAuthRedirect}
-              className="w-full font-semibold py-4 rounded-xl flex items-center justify-center gap-3 relative z-10"
+              className="w-full font-semibold py-4 rounded-xl flex items-center justify-center gap-3 relative z-10 hover:opacity-90 transition-opacity"
               style={{ background: 'var(--warm-sand)', color: 'var(--warm-ink)' }}
             >
-              <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
-              Continue with Google
+              <ShieldCheck className="w-5 h-5" style={{ color: 'var(--clay)' }} />
+              Sign in to Apply
             </button>
             
             <button 

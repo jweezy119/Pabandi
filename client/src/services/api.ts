@@ -97,6 +97,14 @@ apiClient.interceptors.response.use(
         return apiClient(original);
       }
     }
+    // Compliance gate: unverified payout route → send contractor to the Verify Payout screen.
+    const data = error.response?.data;
+    if (error.response?.status === 403 && data?.code === 'PAYOUT_NOT_VERIFIED' && typeof window !== 'undefined') {
+      const target = data.redirectTo || '/settings/payout';
+      if (!window.location.pathname.startsWith(target)) {
+        window.location.assign(`${target}?return=${encodeURIComponent(window.location.pathname)}`);
+      }
+    }
     return Promise.reject(error);
   }
 );

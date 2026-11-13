@@ -24,7 +24,7 @@ export default function OAuthConsentPage() {
   useEffect(() => {
     // If not authenticated, redirect to login with returnTo
     if (!isAuthenticated) {
-      window.location.href = `/api/v1/auth/google?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+      navigate(`/login?return_to=${encodeURIComponent(window.location.pathname + window.location.search)}`);
       return;
     }
 
