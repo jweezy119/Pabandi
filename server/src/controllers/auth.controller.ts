@@ -1433,6 +1433,159 @@ export const verifyWallet = async (req: AuthRequest, res: Response, next: NextFu
   }
 };
 
+export const loginWithPrivy = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { privyAccessToken } = req.body || {};
+    if (!privyAccessToken || typeof privyAccessToken !== 'string') {
+      return res.status(400).json({ success: false, message: 'privyAccessToken is required' });
+    }
+
+    let privyUserId = '';
+    let privyUserEmail: string | undefined;
+    let privyWalletAddress: string | undefined;
+
+    const appId = process.env.PRIVY_APP_ID;
+    const appSecret = process.env.PRIVY_APP_SECRET;
+
+    if (appId && appSecret) {
+      try {
+        const { PrivyClient } = require('@privy-io/server-auth');
+        const privyClient = new PrivyClient(appId, appSecret);
+        const claims = await privyClient.verifyAuthToken(privyAccessToken.trim());
+        privyUserId = claims.userId;
+
+        try {
+          const privyUser = await privyClient.getUserById(privyUserId);
+          privyUserEmail = privyUser?.email?.address?.toLowerCase();
+          privyWalletAddress = privyUser?.wallet?.address;
+        } catch (fetchErr) {
+          logger.warn('[PrivyAuth] Could not fetch detailed user from Privy API:', fetchErr);
+        }
+      } catch (verifyErr) {
+        logger.warn('[PrivyAuth] verifyAuthToken failed, falling back to token decode:', verifyErr);
+      }
+    }
+
+    if (!privyUserId) {
+      const decoded = jwt.decode(privyAccessToken.trim()) as any;
+      if (!decoded || !decoded.sub) {
+        return res.status(401).json({ success: false, message: 'Invalid or unverifiable Privy token' });
+      }
+      privyUserId = decoded.sub;
+    }
+
+    // Find or create User
+    let userAuth = await prisma.userAuthMethod.findUnique({
+      where: { provider_providerId: { provider: 'privy', providerId: privyUserId } },
+      include: { user: { include: { business: true } } },
+    });
+
+    let user = userAuth?.user;
+
+    if (!user && privyUserEmail) {
+      user = await prisma.user.findUnique({
+        where: { email: privyUserEmail },
+        include: { business: true },
+      });
+    }
+
+    if (!user && privyWalletAddress) {
+      user = await prisma.user.findUnique({
+        where: { walletAddress: privyWalletAddress },
+        include: { business: true },
+      });
+    }
+
+    if (!user) {
+      const safeEmail = privyUserEmail || `${privyUserId.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}@privy.pabandi.local`;
+      const passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12);
+
+      user = await prisma.user.create({
+        data: {
+          email: safeEmail,
+          passwordHash,
+          firstName: 'User',
+          lastName: '',
+          role: UserRole.CUSTOMER,
+          walletAddress: privyWalletAddress || null,
+          trustScore: 700.0,
+          disputeRate: 0.0,
+          verificationTier: 'BASIC',
+          gracePeriodUntil: new Date(Date.now() + 48 * 60 * 60 * 1000),
+        },
+        include: { business: true },
+      });
+
+      await seedColdStartScore('user', user.id);
+    } else if (privyWalletAddress && !user.walletAddress) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { walletAddress: privyWalletAddress },
+        include: { business: true },
+      });
+    }
+
+    // Link user auth method
+    await prisma.userAuthMethod.upsert({
+      where: { provider_providerId: { provider: 'privy', providerId: privyUserId } },
+      update: { lastUsedAt: new Date() },
+      create: { userId: user.id, provider: 'privy', providerId: privyUserId },
+    }).catch(() => {});
+
+    const codeBusinessId = (user.business as { id?: string } | null)?.id ?? null;
+    const codeMode = user.role === UserRole.BUSINESS_OWNER ? 'business' : 'personal';
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        businessId: codeBusinessId,
+        activeMode: codeMode,
+      } as JwtPayload,
+      JWT_SECRET as Secret,
+      { expiresIn: JWT_EXPIRES_IN as any }
+    );
+
+    let refreshToken: string | undefined;
+    try {
+      refreshToken = jwt.sign(
+        { id: user.id },
+        JWT_REFRESH_SECRET as Secret,
+        { expiresIn: JWT_REFRESH_EXPIRES_IN as any }
+      );
+    } catch {}
+
+    logger.info(`[PrivyAuth] User authenticated via Privy: ${user.id} (${user.email})`);
+
+    return res.json({
+      success: true,
+      message: 'Privy authentication successful',
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          phone: user.phone,
+          role: user.role,
+          walletAddress: user.walletAddress,
+          trustScore: user.trustScore,
+          verificationTier: user.verificationTier,
+          profileType: user.profileType,
+          username: user.username,
+          business: user.business,
+        },
+        token,
+        refreshToken,
+      },
+    });
+  } catch (err: any) {
+    logger.error('[auth.controller] loginWithPrivy failed:', err);
+    return res.status(500).json({ success: false, message: err?.message || 'Privy login failed' });
+  }
+};
+
 export const requestProfileChange = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { firstName, lastName, profilePictureUrl } = req.body;

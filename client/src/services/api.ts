@@ -148,6 +148,8 @@ export const authService = {
   }) => apiClient.post('/auth/onboarding', data),
   telegramAuth: (payload: { authData?: any; initData?: string }) =>
     apiClient.post('/auth/telegram', payload),
+  privyAuth: (privyAccessToken: string) =>
+    apiClient.post('/auth/privy', { privyAccessToken }),
   getPhoneVerificationStatus: () => apiClient.get('/auth/phone/status'),
   getPhoneTelegramLink: () => apiClient.post('/auth/phone/telegram-link'),
   refreshToken: (refreshToken: string) =>

@@ -22,6 +22,7 @@ import {
   telegramAuth,
   getPhoneVerificationStatus,
   getPhoneTelegramLink,
+  loginWithPrivy,
 } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { authRateLimiter, emailCodeRateLimiter, registrationRateLimiter } from '../middleware/rateLimiter';
@@ -47,6 +48,9 @@ router.post('/verify-code', emailCodeRateLimiter, verifyLoginCode);
 // Wallet auth routes
 router.post('/wallet/nonce', getNonce);
 router.post('/wallet/verify', verifyWallet);
+
+// Privy auth route
+router.post('/privy', authRateLimiter, loginWithPrivy);
 
 // Telegram auth route (widget / Mini App)
 router.post('/telegram', authRateLimiter, telegramAuth);

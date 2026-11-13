@@ -38,13 +38,63 @@ function PrivyButtonInner({ onAuthenticated, onError, loading, setLoading }: {
   loading: boolean;
   setLoading: (val: boolean) => void;
 }) {
-  const { login } = usePrivy();
+  const { login, authenticated, user, getAccessToken } = usePrivy();
+  const syncingRef = React.useRef(false);
+
+  // Automatically exchange Privy token with Pabandi backend when Privy completes auth
+  React.useEffect(() => {
+    let mounted = true;
+
+    async function handlePrivySession() {
+      if (!authenticated || !user || syncingRef.current) return;
+      syncingRef.current = true;
+      try {
+        setLoading(true);
+        const privyToken = await getAccessToken();
+        if (!privyToken) {
+          throw new Error('Could not retrieve Privy authentication token');
+        }
+        const res = await authService.privyAuth(privyToken);
+        const { user: authedUser, token, refreshToken } = res.data.data;
+        if (mounted) {
+          onAuthenticated(authedUser, token, refreshToken);
+        }
+      } catch (err: any) {
+        syncingRef.current = false;
+        if (mounted) {
+          onError(err?.response?.data?.message || err?.message || 'Privy wallet authentication failed');
+          setLoading(false);
+        }
+      }
+    }
+
+    if (authenticated && user) {
+      handlePrivySession();
+    }
+
+    return () => { mounted = false; };
+  }, [authenticated, user]);
 
   const handlePrivyClick = async () => {
     try {
       setLoading(true);
+      onError('');
+      if (authenticated && user) {
+        const privyToken = await getAccessToken();
+        if (privyToken) {
+          const res = await authService.privyAuth(privyToken);
+          const { user: authedUser, token, refreshToken } = res.data.data;
+          onAuthenticated(authedUser, token, refreshToken);
+          return;
+        }
+      }
       await login();
-      // Privy auth handled via event/state
+      // If modal was dismissed or closed without completing
+      setTimeout(() => {
+        if (!authenticated) {
+          setLoading(false);
+        }
+      }, 1500);
     } catch (err: any) {
       onError(err?.message || 'Privy wallet connection failed');
       setLoading(false);
@@ -73,7 +123,10 @@ export default function LoginPage() {
   const [code, setCode] = useState('');
   const [showEmailForm, setShowEmailForm] = useState(true);
   const [codeSent, setCodeSent] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [telegramLoading, setTelegramLoading] = useState(false);
+  const isAnyLoading = walletLoading || emailLoading || telegramLoading;
   const [statusMessage, setStatusMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState(searchParams.get('message') || '');
 
@@ -104,7 +157,7 @@ export default function LoginPage() {
 
   const handleTelegramAuth = async (payload: { authData?: any; initData?: string }) => {
     try {
-      setLoading(true);
+      setTelegramLoading(true);
       setErrorMessage('');
       setStatusMessage('Authenticating via Telegram...');
       const res = await authService.telegramAuth(payload);
@@ -122,7 +175,7 @@ export default function LoginPage() {
       setErrorMessage(msg);
       setStatusMessage('');
     } finally {
-      setLoading(false);
+      setTelegramLoading(false);
     }
   };
 
@@ -157,7 +210,7 @@ export default function LoginPage() {
   // 3. Fallback Phantom Wallet Connection (if Privy not configured)
   const handleDirectWalletAuth = async () => {
     try {
-      setLoading(true);
+      setWalletLoading(true);
       setErrorMessage('');
       setStatusMessage('Connecting Solana wallet...');
       const { address, signature } = await signMessageWithPhantom(
@@ -170,7 +223,7 @@ export default function LoginPage() {
     } catch (err: any) {
       setErrorMessage(err?.message || 'Wallet connection cancelled or failed.');
     } finally {
-      setLoading(false);
+      setWalletLoading(false);
     }
   };
 
@@ -184,7 +237,7 @@ export default function LoginPage() {
     }
 
     try {
-      setLoading(true);
+      setEmailLoading(true);
       setErrorMessage('');
       setStatusMessage('Sending magic verification code...');
       await authService.requestVerificationCode(cleanEmail);
@@ -195,7 +248,7 @@ export default function LoginPage() {
       setErrorMessage(msg);
       setStatusMessage('');
     } finally {
-      setLoading(false);
+      setEmailLoading(false);
     }
   };
 
@@ -214,7 +267,7 @@ export default function LoginPage() {
     }
 
     try {
-      setLoading(true);
+      setEmailLoading(true);
       setErrorMessage('');
       setStatusMessage('Verifying magic code...');
       const res = await authService.verifyLoginCode(cleanEmail, cleanCode);
@@ -233,7 +286,7 @@ export default function LoginPage() {
       setErrorMessage(msg);
       setStatusMessage('');
     } finally {
-      setLoading(false);
+      setEmailLoading(false);
     }
   };
 
@@ -295,7 +348,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={handleGitHubAuth}
-            disabled={loading}
+            disabled={isAnyLoading}
             className="flex min-h-[48px] w-full items-center justify-center gap-3 rounded-xl border border-[var(--pbn-border)] bg-[var(--pbn-surface)] px-4 py-3 text-sm font-semibold text-[var(--pbn-text)] transition-all hover:bg-[var(--pbn-surface-hover)] hover:border-[var(--pbn-border-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--pbn-accent)]/50 active:scale-[0.99] disabled:opacity-50"
           >
             <GitHubIcon />
@@ -306,10 +359,10 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={handleTelegramLoginClick}
-            disabled={loading}
+            disabled={isAnyLoading}
             className="flex min-h-[48px] w-full items-center justify-center gap-3 rounded-xl border border-[var(--pbn-border)] bg-[var(--pbn-surface)] px-4 py-3 text-sm font-semibold text-[var(--pbn-text)] transition-all hover:bg-[var(--pbn-surface-hover)] hover:border-[var(--pbn-border-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--pbn-accent)]/50 active:scale-[0.99] disabled:opacity-50"
           >
-            <TelegramIcon />
+            {telegramLoading ? <Loader2 className="h-5 w-5 animate-spin text-[var(--pbn-accent)]" /> : <TelegramIcon />}
             <span>Continue with Telegram</span>
           </button>
 
@@ -321,17 +374,17 @@ export default function LoginPage() {
                 navigate('/onboarding');
               }}
               onError={(msg) => setErrorMessage(msg)}
-              loading={loading}
-              setLoading={setLoading}
+              loading={walletLoading}
+              setLoading={setWalletLoading}
             />
           ) : (
             <button
               type="button"
               onClick={handleDirectWalletAuth}
-              disabled={loading}
+              disabled={isAnyLoading}
               className="flex min-h-[48px] w-full items-center justify-center gap-3 rounded-xl border border-[var(--pbn-border)] bg-[var(--pbn-surface)] px-4 py-3 text-sm font-semibold text-[var(--pbn-text)] transition-all hover:bg-[var(--pbn-surface-hover)] hover:border-[var(--pbn-border-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--pbn-accent)]/50 active:scale-[0.99] disabled:opacity-50"
             >
-              {loading ? <Loader2 className="h-5 w-5 animate-spin text-[var(--pbn-accent)]" /> : <WalletIcon />}
+              {walletLoading ? <Loader2 className="h-5 w-5 animate-spin text-[var(--pbn-accent)]" /> : <WalletIcon />}
               <span>Connect Wallet</span>
             </button>
           )}
@@ -352,16 +405,16 @@ export default function LoginPage() {
                     placeholder="name@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
+                    disabled={emailLoading}
                     className="w-full min-h-[48px] rounded-xl border border-[var(--pbn-border)] bg-[#0a1118] px-4 py-3 text-sm text-[#e8eef4] placeholder-[#5a6a78] focus:border-[var(--pbn-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--pbn-accent)]/30 disabled:opacity-50"
                   />
                 </div>
                 <button
                   type="submit"
-                  disabled={loading || !email}
+                  disabled={emailLoading || !email}
                   className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[var(--pbn-accent)] px-4 py-3 text-sm font-semibold text-[#0a1118] transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--pbn-accent)] active:scale-[0.99] disabled:opacity-50"
                 >
-                  {loading ? (
+                  {emailLoading ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
                     <>
@@ -397,7 +450,7 @@ export default function LoginPage() {
                       placeholder="name@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      disabled={loading}
+                      disabled={emailLoading}
                       className="w-full min-h-[44px] rounded-xl border border-[var(--pbn-border)] bg-[#0a1118] px-4 py-2.5 text-sm text-[#e8eef4] placeholder-[#5a6a78] focus:border-[var(--pbn-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--pbn-accent)]/30 disabled:opacity-50"
                     />
                   </div>
@@ -427,16 +480,16 @@ export default function LoginPage() {
                     placeholder="000000"
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    disabled={loading}
+                    disabled={emailLoading}
                     className="w-full min-h-[48px] rounded-xl border border-[var(--pbn-border)] bg-[#0a1118] px-4 py-3 text-center font-mono text-2xl tracking-[0.35em] font-bold text-[#e8eef4] placeholder-[#3a4a58] focus:border-[var(--pbn-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--pbn-accent)]/30 disabled:opacity-50"
                   />
                 </div>
                 <button
                   type="submit"
-                  disabled={loading || code.trim().length !== 6 || !email}
+                  disabled={emailLoading || code.trim().length !== 6 || !email}
                   className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[var(--pbn-accent)] px-4 py-3 text-sm font-semibold text-[#0a1118] transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--pbn-accent)] active:scale-[0.99] disabled:opacity-50"
                 >
-                  {loading ? (
+                  {emailLoading ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
                     <>
@@ -456,7 +509,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => handleSendCode()}
-                    disabled={loading || !email}
+                    disabled={emailLoading || !email}
                     className="hover:text-[var(--pbn-accent)] underline transition-colors disabled:opacity-40"
                   >
                     Resend code
