@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, ArrowRight, ShieldCheck, Terminal, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, ArrowRight, ShieldCheck, Terminal, AlertCircle, Loader2, KeyRound } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { authService, API_HOST } from '../services/api';
 import { signMessageWithPhantom } from '../utils/web3';
@@ -247,6 +247,8 @@ export default function LoginPage() {
       const msg = err?.response?.data?.message || err?.message || 'Failed to send login code.';
       setErrorMessage(msg);
       setStatusMessage('');
+      // Still show the 6-digit input so if the email arrived, the user can immediately enter it
+      setCodeSent(true);
     } finally {
       setEmailLoading(false);
     }
@@ -391,11 +393,45 @@ export default function LoginPage() {
 
           {/* 4. Continue with Email */}
           <div className="pt-2 border-t border-[var(--pbn-border)]">
+            {/* Step Selector Tabs */}
+            <div className="flex rounded-xl bg-[#0a1118] p-1 border border-[var(--pbn-border)] mb-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setCodeSent(false);
+                  setErrorMessage('');
+                }}
+                className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                  !codeSent
+                    ? 'bg-[var(--pbn-surface)] text-[var(--pbn-accent)] shadow border border-[var(--pbn-border)]'
+                    : 'text-[#8a9aa8] hover:text-white'
+                }`}
+              >
+                <Mail className="h-3.5 w-3.5" />
+                <span>1. Request Code</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCodeSent(true);
+                  setErrorMessage('');
+                }}
+                className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                  codeSent
+                    ? 'bg-[var(--pbn-surface)] text-[var(--pbn-accent)] shadow border border-[var(--pbn-border)]'
+                    : 'text-[#8a9aa8] hover:text-white'
+                }`}
+              >
+                <KeyRound className="h-3.5 w-3.5" />
+                <span>2. Enter 6-Digit Code</span>
+              </button>
+            </div>
+
             {!codeSent ? (
               <form onSubmit={handleSendCode} className="space-y-3">
                 <div>
                   <label htmlFor="login-email" className="block text-xs font-medium text-[#8a9aa8] mb-1.5">
-                    Sign in with Email
+                    Your Email Address
                   </label>
                   <input
                     id="login-email"
@@ -430,45 +466,38 @@ export default function LoginPage() {
                       setCodeSent(true);
                       setErrorMessage('');
                     }}
-                    className="text-xs text-[#8a9aa8] hover:text-[var(--pbn-accent)] underline transition-colors"
+                    className="text-xs text-[var(--pbn-accent)] hover:underline transition-colors font-medium"
                   >
-                    Already have a 6-digit code? Enter it here
+                    Already have a 6-digit code in your email? Click to enter it →
                   </button>
                 </div>
               </form>
             ) : (
               <form onSubmit={handleVerifyCode} className="space-y-3">
-                {!email ? (
-                  <div>
-                    <label htmlFor="login-email-verify" className="block text-xs text-[#8a9aa8] mb-1">
-                      Email address
-                    </label>
-                    <input
-                      id="login-email-verify"
-                      type="email"
-                      required
-                      placeholder="name@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      disabled={emailLoading}
-                      className="w-full min-h-[44px] rounded-xl border border-[var(--pbn-border)] bg-[#0a1118] px-4 py-2.5 text-sm text-[#e8eef4] placeholder-[#5a6a78] focus:border-[var(--pbn-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--pbn-accent)]/30 disabled:opacity-50"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between text-xs text-[#8a9aa8] px-1 pb-1">
-                    <span>Code sent to <strong className="text-[#e8eef4]">{email}</strong></span>
-                    <button
-                      type="button"
-                      onClick={() => setCodeSent(false)}
-                      className="text-[var(--pbn-accent)] hover:underline"
-                    >
-                      Change
-                    </button>
-                  </div>
-                )}
+                <div className="space-y-1">
+                  <label htmlFor="login-email-verify" className="block text-xs text-[#8a9aa8]">
+                    Email address
+                  </label>
+                  <input
+                    id="login-email-verify"
+                    type="email"
+                    required
+                    placeholder="name@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={emailLoading}
+                    className="w-full min-h-[44px] rounded-xl border border-[var(--pbn-border)] bg-[#0a1118] px-4 py-2.5 text-sm text-[#e8eef4] placeholder-[#5a6a78] focus:border-[var(--pbn-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--pbn-accent)]/30 disabled:opacity-50"
+                  />
+                  {email && (
+                    <p className="text-[11px] text-[#8a9aa8]">
+                      Enter the 6-digit code sent to <span className="text-[#e8eef4] font-semibold">{email}</span>
+                    </p>
+                  )}
+                </div>
+
                 <div>
-                  <label htmlFor="login-code" className="block text-xs text-[#8a9aa8] mb-1">
-                    Enter 6-digit code
+                  <label htmlFor="login-code" className="block text-xs font-semibold text-[var(--pbn-accent)] mb-1">
+                    6-Digit Verification Code
                   </label>
                   <input
                     id="login-code"
@@ -477,23 +506,23 @@ export default function LoginPage() {
                     autoFocus
                     required
                     maxLength={6}
-                    placeholder="000000"
+                    placeholder="286715"
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     disabled={emailLoading}
-                    className="w-full min-h-[48px] rounded-xl border border-[var(--pbn-border)] bg-[#0a1118] px-4 py-3 text-center font-mono text-2xl tracking-[0.35em] font-bold text-[#e8eef4] placeholder-[#3a4a58] focus:border-[var(--pbn-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--pbn-accent)]/30 disabled:opacity-50"
+                    className="w-full min-h-[52px] rounded-xl border-2 border-[var(--pbn-accent)] bg-[#0a1118] px-4 py-3 text-center font-mono text-2xl tracking-[0.35em] font-bold text-[#e8eef4] placeholder-[#3a4a58] focus:border-[var(--pbn-accent)] focus:outline-none focus:ring-4 focus:ring-[var(--pbn-accent)]/30 disabled:opacity-50"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={emailLoading || code.trim().length !== 6 || !email}
-                  className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[var(--pbn-accent)] px-4 py-3 text-sm font-semibold text-[#0a1118] transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--pbn-accent)] active:scale-[0.99] disabled:opacity-50"
+                  className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[var(--pbn-accent)] px-4 py-3 text-sm font-bold text-[#0a1118] transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--pbn-accent)] active:scale-[0.99] disabled:opacity-50 shadow-lg shadow-[var(--pbn-accent)]/20"
                 >
                   {emailLoading ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
                     <>
-                      <span>Verify & Sign In</span>
+                      <span>Verify Code & Sign In</span>
                       <ArrowRight className="h-4 w-4" />
                     </>
                   )}
@@ -504,13 +533,13 @@ export default function LoginPage() {
                     onClick={() => setCodeSent(false)}
                     className="hover:text-[var(--pbn-accent)] underline transition-colors"
                   >
-                    Change email
+                    ← Request new code
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSendCode()}
                     disabled={emailLoading || !email}
-                    className="hover:text-[var(--pbn-accent)] underline transition-colors disabled:opacity-40"
+                    className="text-[var(--pbn-accent)] hover:underline transition-colors font-medium disabled:opacity-50"
                   >
                     Resend code
                   </button>

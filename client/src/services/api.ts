@@ -12,6 +12,7 @@ const API_BASE_URL = `${_baseHost}/api/v1`;
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 25000,
   headers: {
     'Content-Type': 'application/json',
   },

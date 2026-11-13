@@ -919,25 +919,36 @@ export const requestLoginCode = async (
     // At this point, user is guaranteed to exist
     const userRecord = user!;
 
-    const verificationCode = generateVerificationCode();
-    const verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    // Check if user already has an active, recently generated code (< 90 seconds old)
+    // to prevent rapid duplicate sends and Resend rate limit (429) errors.
+    const now = Date.now();
+    const existingExpiry = userRecord.verificationCodeExpires ? new Date(userRecord.verificationCodeExpires).getTime() : 0;
+    const remainingMs = existingExpiry - now;
+    const hasRecentCode = userRecord.verificationCode && remainingMs > (13.5 * 60 * 1000);
 
-    await prisma.user.update({
-      where: { id: userRecord.id },
-      data: { verificationCode, verificationCodeExpires },
-    });
+    let verificationCode = userRecord.verificationCode;
+    let verificationCodeExpires = userRecord.verificationCodeExpires;
 
-    const sent = await sendVerificationEmail(email, verificationCode, userRecord.firstName || 'User');
-    if (!sent) {
-      // sendEmail returns LOGGED (not SENT) when no provider is configured —
-      // surface that honestly instead of claiming a code was mailed.
-      const configured = isEmailConfigured();
-      return res.status(configured ? 500 : 503).json({
-        success: false,
-        message: configured
-          ? 'Failed to send code. Please try again.'
-          : 'Email codes are temporarily unavailable. Please sign up or log in with your password instead.',
+    if (!hasRecentCode || !verificationCode) {
+      verificationCode = generateVerificationCode();
+      verificationCodeExpires = new Date(now + 15 * 60 * 1000); // 15 minutes
+
+      await prisma.user.update({
+        where: { id: userRecord.id },
+        data: { verificationCode, verificationCodeExpires },
       });
+
+      const sent = await sendVerificationEmail(email, verificationCode, userRecord.firstName || 'User');
+      if (!sent) {
+        const configured = isEmailConfigured();
+        if (!configured) {
+          return res.status(503).json({
+            success: false,
+            message: 'Email codes are temporarily unavailable. Please sign up or log in with your password instead.',
+          });
+        }
+        logger.warn(`[auth] sendVerificationEmail returned falsy for ${email}, code remains valid in DB`);
+      }
     }
 
     res.json({ success: true, message: 'Code sent', isNewUser });

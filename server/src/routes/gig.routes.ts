@@ -123,17 +123,23 @@ router.post('/', authenticate, async (req: Request, res: Response, next: NextFun
       return res.status(400).json({ success: false, error: 'title, description, category, and budgetUsd are required' });
     }
 
+    const skillsArray = Array.isArray(requiredSkills)
+      ? requiredSkills.map(s => String(s).trim()).filter(Boolean)
+      : typeof requiredSkills === 'string'
+      ? requiredSkills.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+
     const gig = await prisma.project.create({
       data: {
-        title,
-        description,
-        category,
-        requiredSkills: requiredSkills || [],
-        budgetUsd: Number(budgetUsd),
+        title: String(title).trim(),
+        description: String(description).trim(),
+        category: String(category).trim(),
+        requiredSkills: skillsArray,
+        budgetUsd: Number(budgetUsd) || 0,
         estimatedHours: estimatedHours ? Number(estimatedHours) : 0,
         demandGrowthPct: demandGrowthPct ? Number(demandGrowthPct) : 0,
         status: 'OPEN',
-        createdBy: req.user?.id,
+        createdBy: (req as any).user?.id || null,
       },
     });
 
