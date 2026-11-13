@@ -30,6 +30,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isBusiness = activeMode === 'BUSINESS';
   const visibleModules = isBusiness ? BUSINESS_MOBILE_MODULES : PERSONAL_MOBILE_MODULES;
 
+  // OS pages that bring their own DashboardLayout mobile navigation or drawer
+  // (BookingOS, ContactOS, PropertyOS, FreightOS, CapitalOS, TrustOS) manage their
+  // own bottom tab bar. Stacking AppShell's bottom nav on top creates a double-bar collision.
+  const isDashboardLayoutPage = /^\/(booking|contact|property|freight|capital|trust-os)(\/|$)/.test(location.pathname);
+
   return (
     <div className="flex flex-col h-screen bg-[var(--bg-main)] overflow-hidden" data-mode={user?.preferredMode || 'business'}>
       {/* Top Navigation Bar */}
@@ -74,25 +79,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SupportWidget />
       </div>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden flex-none h-16 bg-white border-t border-[rgba(191,179,163,0.2)] flex items-center justify-around z-50 safe-area-bottom">
-        {visibleModules.map(module => {
-          const isActive = module.end
-            ? location.pathname === module.path
-            : location.pathname === module.path || location.pathname.startsWith(module.path + '/');
-          return (
-            <Link
-              key={module.id}
-              to={module.path}
-              className="flex flex-col items-center gap-0.5 py-1 px-2 min-w-[56px]"
-              style={{ color: isActive ? module.color : 'var(--soft-stone)' }}
-            >
-              <span className="material-symbols-outlined text-[22px]">{module.icon}</span>
-              <span className="text-[10px] font-medium">{module.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
+      {/* Mobile Bottom Navigation (only on shell/hub pages; OS dashboards have their own navigation) */}
+      {!isDashboardLayoutPage && (
+        <nav className="md:hidden flex-none h-16 bg-white border-t border-[rgba(191,179,163,0.2)] flex items-center justify-around z-50 safe-area-bottom">
+          {visibleModules.map(module => {
+            const isActive = module.end
+              ? location.pathname === module.path
+              : location.pathname === module.path || location.pathname.startsWith(module.path + '/');
+            return (
+              <Link
+                key={module.id}
+                to={module.path}
+                className="flex flex-col items-center gap-0.5 py-1 px-2 min-w-[56px]"
+                style={{ color: isActive ? module.color : 'var(--soft-stone)' }}
+              >
+                <span className="material-symbols-outlined text-[22px]">{module.icon}</span>
+                <span className="text-[10px] font-medium">{module.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      )}
 
       {/* Global Overlays */}
       <WalletModal />

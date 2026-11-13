@@ -62,7 +62,8 @@ const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 // ── Main Booking Page ──────────────────────────────────────────────────────
 export default function BookingExperience() {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const params = useParams();
+  const id = params.id || params.businessSlug || params.slug;
   const [searchParams] = useSearchParams();
   const { isAuthenticated, user } = useAuthStore();
   const [step, setStep] = useState<'search' | 'detail' | 'confirm'>(id ? 'detail' : 'search');
@@ -517,7 +518,7 @@ export default function BookingExperience() {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-5xl mx-auto px-4 py-6 pb-28 lg:pb-12">
         {/* Business Hero */}
         {business && (
           <div className="relative h-64 md:h-80 rounded-xl overflow-hidden mb-6">

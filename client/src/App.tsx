@@ -325,6 +325,10 @@ function AnimatedAppRoutes() {
           <Route path="booking" element={<BookingOSPage />} />
           <Route path="booking/map" element={<BookingMapPage />} />
           <Route path="booking/flow" element={<BookingFlowPage />} />
+          <Route path="booking/flow/:id" element={<BookingExperience />} />
+          <Route path="booking/flow/:businessSlug" element={<BookingExperience />} />
+          <Route path="booking/:id" element={<BookingExperience />} />
+          <Route path="booking/:businessSlug" element={<BookingExperience />} />
           <Route path="simulator" element={<SimulatorPage />} />
           <Route path="pay/:invoiceId" element={<PayInvoicePage />} />
           <Route path="invoice/:id" element={<PayInvoicePage />} />
