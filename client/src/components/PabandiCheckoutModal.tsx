@@ -171,6 +171,9 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
     try {
       await navigator.clipboard.writeText(text);
       setCopiedKey(key);
+      try {
+        (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success');
+      } catch {}
       setSrAnnouncement(`${label} copied to clipboard`);
       setTimeout(() => setCopiedKey(null), 2500);
     } catch {
@@ -178,9 +181,35 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
     }
   }, []);
 
+  const triggerHaptic = useCallback((type: 'light' | 'medium' | 'success' | 'warning' = 'light') => {
+    try {
+      const tg = (window as any).Telegram?.WebApp;
+      if (!tg?.HapticFeedback) return;
+      if (type === 'success' || type === 'warning') {
+        tg.HapticFeedback.notificationOccurred(type);
+      } else {
+        tg.HapticFeedback.impactOccurred(type);
+      }
+    } catch {}
+  }, []);
+
+  const openExternalOrDeepLink = useCallback((url: string) => {
+    triggerHaptic('medium');
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg?.openLink) {
+      tg.openLink(url);
+    } else {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  }, [triggerHaptic]);
+
+  const phantomDeepLink = `https://phantom.app/ul/browse/${encodeURIComponent(solanaPayUri)}?ref=pabandi`;
+  const solflareDeepLink = `https://solflare.com/ul/v1/browse/${encodeURIComponent(solanaPayUri)}`;
+
   const handleSelectRail = (rail: PaymentRail) => {
     setSelectedRail(rail);
     setError(null);
+    triggerHaptic('light');
     setSrAnnouncement(`Selected ${rail} payment method`);
   };
 
@@ -191,7 +220,7 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
     try {
       if (existingPaymentLink) {
         setCheckoutUrl(existingPaymentLink);
-        window.open(existingPaymentLink, '_blank', 'noopener,noreferrer');
+        openExternalOrDeepLink(existingPaymentLink);
         onSuccess?.('square', existingPaymentLink);
         return;
       }
@@ -228,7 +257,7 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
 
       setCheckoutUrl(url);
       setSrAnnouncement('Square checkout link generated successfully');
-      window.open(url, '_blank', 'noopener,noreferrer');
+      openExternalOrDeepLink(url);
       onSuccess?.('square', url);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Square checkout failed';
@@ -324,6 +353,7 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
 
   const handleClaimPaid = async () => {
     setClaimSent(true);
+    triggerHaptic('success');
     setSrAnnouncement('Payment claim submitted for merchant verification');
     onSuccess?.(selectedRail, squareNote || referenceId);
   };
@@ -614,13 +644,47 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
                   </button>
                 ) : null}
 
+                {/* Mobile Wallet 1-Tap Deep Link Row */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('medium');
+                      openExternalOrDeepLink(phantomDeepLink);
+                    }}
+                    className="min-h-[44px] px-3 py-2.5 rounded-xl bg-[#AB9FF2]/20 hover:bg-[#AB9FF2]/30 text-[#4E44CE] border border-[#AB9FF2]/40 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-[#AB9FF2] focus-visible:outline-none"
+                  >
+                    <Zap size={14} className="text-[#4E44CE]" aria-hidden="true" />
+                    <span>Open in Phantom</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('medium');
+                      openExternalOrDeepLink(solflareDeepLink);
+                    }}
+                    className="min-h-[44px] px-3 py-2.5 rounded-xl bg-[#FC8181]/20 hover:bg-[#FC8181]/30 text-[#C53030] border border-[#FC8181]/40 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-[#FC8181] focus-visible:outline-none"
+                  >
+                    <Zap size={14} className="text-[#C53030]" aria-hidden="true" />
+                    <span>Open in Solflare</span>
+                  </button>
+                </div>
+
                 <a
                   href={solanaPayUri}
-                  onClick={() => onSuccess?.('solana', solanaPayUri)}
+                  onClick={(e) => {
+                    const tg = (window as any).Telegram?.WebApp;
+                    if (tg?.openLink) {
+                      e.preventDefault();
+                      openExternalOrDeepLink(phantomDeepLink);
+                    }
+                    onSuccess?.('solana', solanaPayUri);
+                  }}
                   className="w-full min-h-[48px] py-3 px-4 rounded-xl bg-[#2A2520] text-[#F5EFE6] font-bold text-xs hover:opacity-95 transition-opacity flex items-center justify-center gap-2 shadow-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2A2520] focus-visible:outline-none"
                 >
                   <Zap size={15} aria-hidden="true" />
-                  Open in Phantom / Solflare ({amountInUsd.toFixed(2)} USDC)
+                  Direct Solana Pay ({amountInUsd.toFixed(2)} USDC)
                 </a>
 
                 <button
@@ -699,7 +763,7 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
              ───────────────────────────────────────────────────────────── */}
           {selectedRail === 'raast' && (
             <div id="panel-raast" role="tabpanel" aria-labelledby="tab-raast" className="space-y-3">
-              <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-xs space-y-2">
+              <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-xs text-emerald-950 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-emerald-950 flex items-center gap-1.5">
                     <Building2 size={14} className="text-emerald-700" aria-hidden="true" />
@@ -709,9 +773,8 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
                     State Bank of Pakistan
                   </span>
                 </div>
-                <p className="text-[#4A3E31] leading-relaxed">
-                  Send from any Pakistani bank app (Meezan, HBL, Alfalah, UBL, SadaPay, NayaPay).
-                  Settles instantly with zero transaction fee.
+                <p className="text-[#4A3E31] leading-relaxed text-[11px]">
+                  Send from any Pakistani bank app. <strong>0% FX markup:</strong> You save approx. <strong>Rs. {Math.round(amountInPkr * 0.065).toLocaleString()} PKR</strong> (6.5%) compared to international wire surcharges.
                 </p>
               </div>
 
@@ -725,9 +788,32 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
               </div>
 
               {/* Account Details & 1-Click Copy */}
-              <div className="p-3 rounded-xl bg-white/80 border border-[#BFB3A3]/40 space-y-2 text-xs">
-                <div className="flex items-center justify-between py-1 border-b border-[#BFB3A3]/20">
-                  <span className="text-[#5C5248]">Raast ID (Mobile):</span>
+              <div className="p-3 rounded-xl bg-white/90 border border-[#BFB3A3]/40 space-y-2 text-xs">
+                {/* Exact Amount */}
+                <div className="flex items-center justify-between py-1.5 border-b border-[#BFB3A3]/20">
+                  <span className="text-[#5C5248] font-medium">Exact Amount:</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono font-black text-sm text-[#2A2520]">
+                      Rs. {amountInPkr.toLocaleString()} PKR
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(String(amountInPkr), 'raast_amount', 'Amount')}
+                      aria-label="Copy exact amount"
+                      className="p-1 rounded hover:bg-[#E8D9C5] text-[#5C5248]"
+                    >
+                      {copiedKey === 'raast_amount' ? (
+                        <Check size={12} className="text-emerald-600" />
+                      ) : (
+                        <Copy size={12} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Raast ID */}
+                <div className="flex items-center justify-between py-1.5 border-b border-[#BFB3A3]/20">
+                  <span className="text-[#5C5248] font-medium">Raast ID (Mobile):</span>
                   <div className="flex items-center gap-1.5">
                     <span className="font-mono font-bold text-[#2A2520]">{raastId}</span>
                     <button
@@ -745,8 +831,9 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between py-1 border-b border-[#BFB3A3]/20">
-                  <span className="text-[#5C5248]">Reference / Memo:</span>
+                {/* Reference */}
+                <div className="flex items-center justify-between py-1.5">
+                  <span className="text-[#5C5248] font-medium">Reference / Memo:</span>
                   <div className="flex items-center gap-1.5">
                     <span className="font-mono font-bold text-[#C97B5A]">
                       {squareNote || referenceId}
@@ -771,12 +858,19 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
                     </button>
                   </div>
                 </div>
+              </div>
 
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-[#5C5248]">Exact Amount:</span>
-                  <span className="font-bold text-[#2A2520]">
-                    Rs. {amountInPkr.toLocaleString()} PKR
-                  </span>
+              {/* Bank Apps Chip Strip */}
+              <div className="pt-0.5 text-center">
+                <span className="text-[10px] text-[#6B5E52] uppercase tracking-wide block mb-1">
+                  Supported in all Pakistani mobile apps
+                </span>
+                <div className="flex flex-wrap items-center justify-center gap-1 text-[10px] font-mono text-[#4A3E31]">
+                  <span className="px-2 py-0.5 bg-white rounded border border-[#BFB3A3]/30">Meezan</span>
+                  <span className="px-2 py-0.5 bg-white rounded border border-[#BFB3A3]/30">SadaPay</span>
+                  <span className="px-2 py-0.5 bg-white rounded border border-[#BFB3A3]/30">NayaPay</span>
+                  <span className="px-2 py-0.5 bg-white rounded border border-[#BFB3A3]/30">HBL</span>
+                  <span className="px-2 py-0.5 bg-white rounded border border-[#BFB3A3]/30">Alfalah</span>
                 </div>
               </div>
 
@@ -867,26 +961,50 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
                 </div>
               </div>
 
-              {/* Reference */}
-              <div className="p-3 rounded-xl bg-[#E8D9C5]/30 border border-[#BFB3A3]/30 flex items-center justify-between text-xs">
-                <span className="text-[#5C5248]">Mandatory Reference:</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-mono font-bold text-[#C97B5A]">
-                    {squareNote || referenceId}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      copyToClipboard(squareNote || referenceId, 'wallet_ref', 'Reference code')
-                    }
-                    className="p-1 rounded hover:bg-[#E8D9C5] text-[#5C5248]"
-                  >
-                    {copiedKey === 'wallet_ref' ? (
-                      <Check size={12} className="text-emerald-600" />
-                    ) : (
-                      <Copy size={12} />
-                    )}
-                  </button>
+              {/* Exact Amount & Reference */}
+              <div className="p-3 rounded-xl bg-white border border-[#BFB3A3]/40 space-y-2 text-xs">
+                <div className="flex items-center justify-between py-1 border-b border-[#BFB3A3]/20">
+                  <span className="text-[#5C5248]">Exact Transfer Amount:</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono font-bold text-[#2A2520]">
+                      Rs. {amountInPkr.toLocaleString()} PKR
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(String(amountInPkr), 'wallet_amount', 'Amount')}
+                      aria-label="Copy exact amount"
+                      className="p-1 rounded hover:bg-[#E8D9C5] text-[#5C5248]"
+                    >
+                      {copiedKey === 'wallet_amount' ? (
+                        <Check size={12} className="text-emerald-600" />
+                      ) : (
+                        <Copy size={12} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between py-1">
+                  <span className="text-[#5C5248]">Mandatory Reference / Memo:</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono font-bold text-[#C97B5A]">
+                      {squareNote || referenceId}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        copyToClipboard(squareNote || referenceId, 'wallet_ref', 'Reference code')
+                      }
+                      aria-label="Copy Reference"
+                      className="p-1 rounded hover:bg-[#E8D9C5] text-[#5C5248]"
+                    >
+                      {copiedKey === 'wallet_ref' ? (
+                        <Check size={12} className="text-emerald-600" />
+                      ) : (
+                        <Copy size={12} />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
 
