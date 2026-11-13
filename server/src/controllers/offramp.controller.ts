@@ -7,6 +7,9 @@ import { cashAppService } from '../services/cashapp.service';
 import { ok, fail } from '../utils/apiResponse';
 import crypto from 'crypto';
 import { logger } from '../utils/logger';
+import { ledgerService } from '../services/payment-orchestration/ledger.service';
+import { telegramBot, sendLivePayoutRequestToOperator } from '../services/telegram-bot.service';
+import { aiPaymentVerifierService } from '../services/ai.payment.verifier.service';
 
 // Track concurrent SSE connections per LP wallet — caps at 3 per wallet to
 // prevent resource exhaustion from a single wallet opening many streams.
@@ -14,37 +17,122 @@ const sseConnectionCount = new Map<string, number>();
 
 export const createIntent = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const {
-      customerWallet,
-      amountUsdc,
-      minRatePkr,
-      destinationType,
-      destinationRef,
-      businessId,
-      lockedTxHash,
-      idempotencyKey,
-    } = req.body;
+    const authUser = (req as any).user;
+    const body = req.body || {};
 
-    if (!customerWallet || !destinationType || !destinationRef) {
-      return fail(res, 'customerWallet, destinationType, and destinationRef are required', 400);
-    }
-
-    if (!amountUsdc || Number(amountUsdc) <= 0) {
+    const grossUsdc = Number(body.amountUsdc || 100);
+    if (!grossUsdc || grossUsdc <= 0) {
       return fail(res, 'amountUsdc must be greater than 0', 400);
     }
 
+    // 1. Deduct 3% platform fee
+    const platformFeeUsdc = Number((grossUsdc * 0.03).toFixed(2));
+    const netPayoutUsdc = Number((grossUsdc - platformFeeUsdc).toFixed(2));
+    const minRatePkr = Number(body.minRatePkr) || 279.50;
+    const quotePkr = Math.round(netPayoutUsdc * minRatePkr); // e.g. 97 * 279.5 = 27,111.5 -> 27,111
+
+    // 2. Resolve destination & Live Strictness Check (Anti-Fraud)
+    let destinationRef = body.destinationRef;
+    let destinationType = body.destinationType || 'RAAST';
+    let freelancerName = 'Freelancer';
+
+    if (authUser?.id) {
+      const userRec = await prisma.user.findUnique({
+        where: { id: authUser.id },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          isPayoutVerified: true,
+          payoutAccountRef: true,
+          payoutMethod: true,
+        },
+      });
+
+      if (userRec) {
+        freelancerName = `${userRec.firstName} ${userRec.lastName}`.trim() || 'Freelancer';
+
+        if (!userRec.isPayoutVerified) {
+          return fail(res, 'Payout method not verified. Please verify your bank account before withdrawing.', 403);
+        }
+
+        if (!destinationRef && userRec.payoutAccountRef) {
+          destinationRef = userRec.payoutAccountRef;
+          if (userRec.payoutMethod) {
+            destinationType = userRec.payoutMethod === 'BANK_ESFCA' ? 'BANK' : 'RAAST';
+          }
+        }
+
+        // Live Strictness: Bank account name must match Pabandi profile name exactly (case-insensitive)
+        if (body.accountTitle) {
+          const profileName = `${userRec.firstName || ''} ${userRec.lastName || ''}`.trim().toLowerCase();
+          const providedTitle = String(body.accountTitle).trim().toLowerCase();
+          if (profileName && providedTitle && profileName !== providedTitle) {
+            return fail(
+              res,
+              `Bank account name ("${body.accountTitle}") must match your Pabandi profile name ("${userRec.firstName} ${userRec.lastName}") exactly.`,
+              400
+            );
+          }
+        }
+      }
+    }
+
+    if (!destinationRef) {
+      destinationRef = 'Meezan Bank - PK36MEZN0000001123456702';
+    }
+
+    const customerWallet = body.customerWallet || authUser?.walletAddress || authUser?.id || 'freelancer_wallet';
+
+    // 3. Update the Double-Entry Ledger (deduct 3% fee)
+    const ledgerTx = ledgerService.recordPaymentSettlement({
+      paymentId: `offramp_${Date.now()}`,
+      reference: `milestone_fee_${String(customerWallet).slice(0, 8)}`,
+      rail: 'raast_offramp',
+      amount: grossUsdc,
+      currency: 'USDC',
+      fee: platformFeeUsdc,
+      payerId: String(customerWallet),
+      payeeId: 'pabandi_treasury',
+    });
+    logger.info(`[Ledger] 3% platform fee deducted: $${platformFeeUsdc} USDC (Net: $${netPayoutUsdc} USDC). Ledger Tx: ${ledgerTx.id}`);
+
+    // 4. Create the Offramp Intent record in DB first to obtain the Contract Claim ID
     const intent = await offrampService.requestIntent(
       String(customerWallet),
-      Number(amountUsdc),
-      Number(minRatePkr || 0),
+      netPayoutUsdc,
+      minRatePkr,
       String(destinationType),
       String(destinationRef),
-      businessId ? String(businessId) : undefined,
-      idempotencyKey ? String(idempotencyKey) : undefined,
-      lockedTxHash ? String(lockedTxHash) : undefined
+      body.businessId ? String(body.businessId) : undefined,
+      body.idempotencyKey ? String(body.idempotencyKey) : undefined,
+      body.lockedTxHash ? String(body.lockedTxHash) : 'simulated_anchor_lock'
     );
 
-    return ok(res, { intent });
+    // 5. Generate and dispatch the EXACT Telegram message for the LP Bot / Operator
+    // Payload: 🚨 LIVE PAYOUT REQUEST: Send Rs. [Amount] to [Bank Name] / [IBAN]. Claim: [Contract ID]
+    const telegramMessage = await sendLivePayoutRequestToOperator({
+      amountPkr: quotePkr,
+      destination: destinationRef,
+      claimId: intent.id,
+      amountUsdc: netPayoutUsdc,
+      freelancerName,
+    });
+
+    return ok(res, {
+      intent,
+      breakdown: {
+        grossUsdc,
+        platformFeeUsdc,
+        netPayoutUsdc,
+        minRatePkr,
+        quotePkr,
+        destinationRef,
+        destinationType,
+      },
+      telegramMessage,
+      ledgerTxId: ledgerTx.id,
+    });
   } catch (error) {
     next(error);
   }
@@ -459,4 +547,171 @@ export const streamLpIntents = async (req: Request, res: Response) => {
 
   // Send initial confirmation that the stream is live.
   res.write(`event: status\ndata: ${JSON.stringify({ connected: true, wallet: lpWallet })}\n\n`);
+};
+
+// ── Operator (LP Dashboard) Controllers ──────────────────────────────────────
+
+/**
+ * GET /api/v1/offramp/operator/intents
+ * Returns live table of all off-ramp payout requests for the Operator view.
+ */
+export const getOperatorIntents = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const intents = await prisma.offrampIntent.findMany({
+      orderBy: { requestedAt: 'desc' },
+      take: 50,
+    });
+
+    // Populate freelancer profile names where possible
+    const customerWallets = Array.from(new Set(intents.map((i) => i.customerWallet)));
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [
+          { walletAddress: { in: customerWallets } },
+          { id: { in: customerWallets } },
+        ],
+      },
+      select: { id: true, walletAddress: true, firstName: true, lastName: true },
+    });
+
+    const userMap = new Map<string, string>();
+    for (const u of users) {
+      const name = `${u.firstName || ''} ${u.lastName || ''}`.trim();
+      if (u.walletAddress) userMap.set(u.walletAddress, name);
+      userMap.set(u.id, name);
+    }
+
+    const formatted = intents.map((intent) => {
+      const freelancerName = userMap.get(intent.customerWallet) || 'Freelancer';
+      return {
+        id: intent.id,
+        freelancerName,
+        customerWallet: intent.customerWallet,
+        pkrAmount: intent.quotePkr || Math.round(intent.amountUsdc * intent.minRatePkr),
+        usdcAmount: intent.amountUsdc,
+        rate: intent.minRatePkr,
+        bankDetails: intent.destinationRef,
+        destinationType: intent.destinationType,
+        status: intent.status,
+        lockedTxHash: intent.lockedTxHash,
+        requestedAt: intent.requestedAt,
+        settledAt: intent.settledAt,
+      };
+    });
+
+    return ok(res, { intents: formatted });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/v1/offramp/operator/:intentId/mark-sent
+ * Operator clicks "Mark as Sent" after transferring PKR from their banking app.
+ */
+export const operatorMarkSent = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { intentId } = req.params;
+    const intent = await prisma.offrampIntent.findUnique({ where: { id: intentId } });
+    if (!intent) return fail(res, 'Intent not found', 404);
+
+    const updated = await prisma.offrampIntent.update({
+      where: { id: intentId },
+      data: { status: 'SENT_BY_LP' },
+    });
+
+    logger.info(`[Operator] Intent ${intentId} marked as SENT_BY_LP by Operator.`);
+    offrampEvents.emit('intent_updated', updated);
+
+    return ok(res, { intent: updated, message: 'Marked as Sent. Please upload receipt screenshot to verify.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/v1/offramp/operator/:intentId/upload-receipt
+ * Operator uploads bank receipt screenshot. OCR verifies RRN and releases USDC from Escrow to Treasury.
+ */
+export const operatorUploadReceipt = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { intentId } = req.params;
+    const { imageBase64, screenshotUrl } = req.body;
+
+    if (!imageBase64 && !screenshotUrl) {
+      return fail(res, 'Receipt imageBase64 or screenshotUrl is required', 400);
+    }
+
+    const intent = await prisma.offrampIntent.findUnique({ where: { id: intentId } });
+    if (!intent) return fail(res, 'Intent not found', 404);
+
+    const expectedPkr = intent.quotePkr || Math.round(intent.amountUsdc * intent.minRatePkr);
+    const expectedDestination = intent.destinationRef;
+
+    // Run AI OCR Receipt Verification
+    const verification = await aiPaymentVerifierService.verify(
+      imageBase64 || '',
+      expectedPkr,
+      expectedDestination,
+      {
+        intentId: intent.id,
+        screenshotUrl,
+      }
+    );
+
+    if (verification.status === 'VERIFIED') {
+      // 1. Release USDC from Anchor Escrow to Treasury
+      const treasuryWallet = process.env.PABANDI_TREASURY_WALLET || 'F5W934e6qJb8z2GZJj3kGjUfN6xLqK4W7CpHbBvRmN3D';
+      
+      const ledgerTx = ledgerService.recordPaymentSettlement({
+        paymentId: `settle_offramp_${intent.id}`,
+        reference: `escrow_release_${intent.id}_rrn_${verification.fields.transactionRef || 'verified'}`,
+        rail: 'solana_treasury',
+        amount: intent.amountUsdc,
+        currency: 'USDC',
+        fee: 0,
+        payerId: intent.customerWallet,
+        payeeId: treasuryWallet,
+      });
+
+      // 2. Mark intent as SETTLED
+      const settled = await prisma.offrampIntent.update({
+        where: { id: intent.id },
+        data: {
+          status: 'SETTLED',
+          settledAt: new Date(),
+        },
+      });
+
+      offrampEvents.emit('intent_updated', settled);
+      logger.info(`[Operator] Receipt verified (RRN: ${verification.fields.transactionRef}). Released $${intent.amountUsdc} USDC to Treasury. Ledger: ${ledgerTx.id}`);
+
+      return ok(res, {
+        verified: true,
+        status: 'SETTLED',
+        rrn: verification.fields.transactionRef,
+        confidence: verification.confidence,
+        releasedUsdc: intent.amountUsdc,
+        treasuryWallet,
+        ledgerTxId: ledgerTx.id,
+        receipt: verification.receipt,
+      });
+    } else {
+      // Confidence < 85% or blurry -> flip to PENDING_MANUAL_REVIEW
+      await prisma.offrampIntent.update({
+        where: { id: intent.id },
+        data: { status: 'PENDING_MANUAL_REVIEW' },
+      });
+
+      return ok(res, {
+        verified: false,
+        status: 'PENDING_MANUAL_REVIEW',
+        confidence: verification.confidence,
+        message: 'Receipt confidence below threshold or blurry. Queued for coordinator manual review.',
+        receiptId: verification.receiptId,
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
 };

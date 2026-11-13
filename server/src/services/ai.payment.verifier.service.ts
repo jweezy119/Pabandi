@@ -53,18 +53,11 @@ export class AiPaymentVerifierService {
     let parsed: PaymentProofFields;
     let rawContent = '';
 
-    // Check if imageBase64 contains test payload (e.g. for deterministic unit testing / offline dev)
-    if (imageBase64.startsWith('test:') || imageBase64.startsWith('mock:')) {
-      const payloadStr = imageBase64.replace(/^(test|mock):/, '');
-      try {
-        parsed = JSON.parse(payloadStr);
-        rawContent = payloadStr;
-      } catch {
-        parsed = this.parseFallback(expectedAmountPkr, expectedDestination, imageBase64);
-      }
-    } else if (!DASHSCOPE_API_KEY || DASHSCOPE_API_KEY === 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY') {
+    // Production OCR Mode: Strict AI OCR vision model execution
+    if (!DASHSCOPE_API_KEY || DASHSCOPE_API_KEY === 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY') {
+      logger.warn('[AI PaymentVerifier] DASHSCOPE_API_KEY not configured. Falling back to structured heuristic parser for manual review queue.');
       parsed = this.parseFallback(expectedAmountPkr, expectedDestination, imageBase64);
-      rawContent = 'fallback';
+      rawContent = 'unconfigured_vision_provider';
     } else {
       // Live DashScope Multimodal Vision Call
       const prompt = `
@@ -290,17 +283,15 @@ Return ONLY valid JSON. Never enclose with markdown formatting.
     expectedDestination: string,
     imageBase64: string
   ): PaymentProofFields {
-    // If simulated in tests or key not present, generate predictable fallback fields
-    const isMock = imageBase64.includes('mock') || imageBase64.includes('test');
     return {
       amount: expectedAmountPkr,
       receiverId: expectedDestination,
       recipient: expectedDestination,
       currency: 'PKR',
-      transactionRef: isMock ? `RRN_${Date.now()}_${Math.floor(Math.random() * 10000)}` : undefined,
+      transactionRef: undefined,
       bank: 'Raast',
       timestamp: new Date().toISOString(),
-      isBlurryOrUnreadable: false,
+      isBlurryOrUnreadable: true, // Forces PENDING_MANUAL_REVIEW when OCR provider is offline
     };
   }
 }

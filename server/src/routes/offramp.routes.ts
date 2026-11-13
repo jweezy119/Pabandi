@@ -15,6 +15,9 @@ import {
   streamLpIntents,
   getOfframpQuote,
   confirmEscrowLock,
+  getOperatorIntents,
+  operatorMarkSent,
+  operatorUploadReceipt,
 } from '../controllers/offramp.controller';
 import { logger } from '../utils/logger';
 import { lpAuthRateLimiter } from '../middleware/rateLimiter';
@@ -53,6 +56,11 @@ router.post('/dev/test-webhook', authenticate, authorize('ADMIN'), testWebhookDe
 router.post('/webhook/emi', emiWebhook);
 router.post('/settlement/receipt', authenticate, authorize('BUSINESS_OWNER', 'ADMIN'), createSettlementReceipt);
 router.post('/quote', authenticate, getOfframpQuote);
+
+// Operator Dashboard (LP View) Routes
+router.get('/operator/intents', authenticate, getOperatorIntents);
+router.post('/operator/:intentId/mark-sent', authenticate, operatorMarkSent);
+router.post('/operator/:intentId/upload-receipt', authenticate, operatorUploadReceipt);
 
 // LP Facing Routes — rate-limited at the IP level before LP key check
 router.get('/lp/stream', lpAuthRateLimiter, lpAuthMiddleware, streamLpIntents);

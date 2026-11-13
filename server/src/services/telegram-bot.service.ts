@@ -330,6 +330,26 @@ if (telegramBot) {
       }
     }
 
+    // Operator Action: Mark as Sent (Live Production Loop)
+    if (data.startsWith('SENT_') || data.startsWith('LP_SENT_')) {
+      const intentId = data.replace(/^(SENT_|LP_SENT_)/, '');
+      try {
+        await prisma.offrampIntent.updateMany({
+          where: { id: intentId },
+          data: { status: 'SENT_BY_LP' },
+        });
+        await ctx.editMessageText(
+          `✅ *Payment Marked as Sent by Operator!*\n\n` +
+          `Claim: \`${intentId}\`\n\n` +
+          `Please upload the bank receipt screenshot on the Operator Dashboard to verify RRN and release escrow.`,
+          { parse_mode: 'Markdown' }
+        );
+        return ctx.answerCallbackQuery({ text: '✅ Marked as Sent! Please upload receipt on dashboard.' });
+      } catch (e: any) {
+        return ctx.answerCallbackQuery({ text: `❌ Error: ${e.message}`, show_alert: true });
+      }
+    }
+
     // 2. Liquidity Provider Actions: ACCEPT, SKIP, PAUSE
     const channel = await prisma.lpChannel.findFirst({
       where: { address: channelAddress, type: 'TELEGRAM', verified: true },
@@ -403,3 +423,47 @@ export const setupTelegramMenuButton = async (url?: string) => {
     return { success: false, error: e.message };
   }
 };
+
+/**
+ * Triggers live payout telegram dispatch to Operator with [✅ Mark as Sent] button.
+ * Format: 🚨 LIVE PAYOUT REQUEST: Send Rs. [Amount] to [Bank Name] / [IBAN]. Claim: [Contract ID]
+ */
+export async function sendLivePayoutRequestToOperator(params: {
+  amountPkr: number;
+  destination: string;
+  claimId: string;
+  amountUsdc: number;
+  freelancerName?: string;
+}): Promise<string> {
+  const formattedPkr = params.amountPkr.toLocaleString();
+  const text = `🚨 LIVE PAYOUT REQUEST: Send Rs. ${formattedPkr} to ${params.destination}. Claim: ${params.claimId}`;
+
+  const inlineKeyboard = new InlineKeyboard()
+    .text('✅ Mark as Sent', `SENT_${params.claimId}`)
+    .row()
+    .url('🔍 Open LP Dashboard', `${process.env.FRONTEND_URL || 'https://pabandi.com'}/operator/lp`);
+
+  const targetChatId =
+    process.env.OPERATOR_TELEGRAM_CHAT_ID ||
+    process.env.COORDINATOR_TELEGRAM_CHAT_ID ||
+    process.env.TELEGRAM_LP_CHAT_ID;
+
+  if (telegramBot && targetChatId) {
+    try {
+      await telegramBot.api.sendMessage(targetChatId, text, {
+        reply_markup: inlineKeyboard,
+      });
+      logger.info(`[PabanBot] Sent live payout request to operator (${targetChatId}): ${params.claimId}`);
+    } catch (err: any) {
+      logger.error('[PabanBot] Error sending live payout request:', err);
+    }
+  } else {
+    console.log('\n====================================================================');
+    console.log('[@PabanBot LIVE OPERATOR DISPATCH]');
+    console.log(text);
+    console.log(`[Inline Button]: [✅ Mark as Sent] -> SENT_${params.claimId}`);
+    console.log('====================================================================\n');
+  }
+
+  return text;
+}

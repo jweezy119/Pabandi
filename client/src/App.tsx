@@ -35,6 +35,8 @@ const GuaranteePage = lazy(() => import('./pages/GuaranteePage'));
 const TrustVerifyPage = lazy(() => import('./pages/TrustVerifyPage'));
 const TrustVerificationPage = lazy(() => import('./pages/settings/TrustVerificationPage'));
 const VerifyPayoutPage = lazy(() => import('./pages/VerifyPayoutPage'));
+const MilestoneDetailPage = lazy(() => import('./pages/MilestoneDetailPage'));
+const LPDashboard = lazy(() => import('./pages/Operator/LPDashboard'));
 const AuthPage = lazy(() => import('./pages/AuthPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
@@ -409,6 +411,12 @@ function AnimatedAppRoutes() {
           <Route path="settings/trust" element={<TrustVerificationPage />} />
           <Route path="settings/verification" element={<TrustVerificationPage />} />
           <Route path="settings/payout" element={<VerifyPayoutPage />} />
+          <Route path="verify-payout" element={<VerifyPayoutPage />} />
+          <Route path="milestones" element={<MilestoneDetailPage />} />
+          <Route path="milestones/:id" element={<MilestoneDetailPage />} />
+          <Route path="gigs/:id/milestones" element={<MilestoneDetailPage />} />
+          <Route path="operator/lp" element={<LPDashboard />} />
+          <Route path="lp-dashboard" element={<LPDashboard />} />
           <Route path="me/quick-post" element={<PersonalGuard><QuickPostPage /></PersonalGuard>} />
           <Route path="me/values" element={<PersonalGuard><ValuesPreferencesPage /></PersonalGuard>} />
           <Route path="me/agent" element={<PersonalGuard><AgentDashboardPage /></PersonalGuard>} />

@@ -16,14 +16,15 @@ router.get('/status', authenticate, async (req: AuthRequest, res: Response, next
   } catch (e) { next(e); }
 });
 
-// POST /api/v1/payout-verification — submit { payoutMethod: WALLET|BANK_ESFCA, accountRef }
+// POST /api/v1/payout-verification — submit { payoutMethod: WALLET|BANK_ESFCA, accountRef, bankName }
 router.post('/', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { payoutMethod, accountRef } = req.body || {};
-    const err = payoutVerificationService.validate(payoutMethod, accountRef);
+    const { payoutMethod, accountRef, bankName } = req.body || {};
+    const method = payoutMethod === 'WALLET' ? 'WALLET' : 'BANK_ESFCA';
+    const err = payoutVerificationService.validate(method, accountRef);
     if (err) return res.status(400).json({ success: false, error: err });
-    const user = await payoutVerificationService.submit(req.user!.id, payoutMethod, String(accountRef));
-    res.json({ success: true, data: user, message: 'Submitted. A coordinator will verify your payout route shortly.' });
+    const user = await payoutVerificationService.submit(req.user!.id, method, String(accountRef), bankName ? String(bankName) : undefined);
+    res.json({ success: true, data: user, message: 'Payout method saved and verified for instant Raast off-ramp.' });
   } catch (e) { next(e); }
 });
 

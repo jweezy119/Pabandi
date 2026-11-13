@@ -32,7 +32,7 @@ if (!oracleKeypair) {
 }
 
 const connection = new Connection(
-  process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
+  process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com',
   'confirmed'
 );
 

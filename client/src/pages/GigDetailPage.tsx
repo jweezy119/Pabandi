@@ -409,6 +409,16 @@ export default function GigDetailPage() {
                 <span>{releasing ? 'Releasing Escrow...' : 'Verify Delivery & Release Escrow →'}</span>
               </button>
             )}
+
+            {!isMine && (
+              <Link
+                to={`/gigs/${gig.id}/milestones`}
+                className="px-5 py-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 hover:bg-emerald-500/30 text-emerald-300 font-bold text-xs flex items-center gap-2 shadow-lg transition-all"
+              >
+                <Zap className="w-4 h-4 text-emerald-400" />
+                <span>⚡ Milestone Payout &amp; Raast Off-Ramp</span>
+              </Link>
+            )}
           </div>
         </div>
 
