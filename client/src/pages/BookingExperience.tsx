@@ -783,7 +783,7 @@ export default function BookingExperience() {
           <div className="space-y-6">
             {/* Summary */}
             <Surface className="p-6">
-              <h3 className="font-bold text-[var(--warm-ink)] mb-4">Booking Summary</h3>
+              <h3 className="font-bold text-[var(--warm-ink)] mb-4">{schema.bookingSummaryLabel || 'Booking Summary'}</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-[var(--soft-stone)]">Provider</span>
@@ -955,9 +955,7 @@ export default function BookingExperience() {
             >
               {submitting || bookingMutation.isLoading
                 ? 'Securing escrow deposit…'
-                : schema.showPartySize
-                ? 'Reserve Table'
-                : 'Secure Booking & Escrow'}
+                : schema.buttonText || (schema.showPartySize ? 'Reserve Table' : 'Secure Booking & Escrow')}
             </Button>
 
             <p className="text-xs font-medium text-[var(--soft-stone)] text-center">

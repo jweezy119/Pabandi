@@ -16,9 +16,17 @@ export interface BookingSchema {
   showLienDossier: boolean;
   heroEmoji?: string;
   bookingSummaryLabel?: string;
+  buttonText?: string;
 }
 
-export type VerticalType = 'RESTAURANT' | 'SERVICE_BUSINESS' | 'SOLO_BUILDER';
+export type VerticalType =
+  | 'RESTAURANT'
+  | 'SALON'
+  | 'SPA'
+  | 'CLINIC'
+  | 'FITNESS'
+  | 'SERVICE_BUSINESS'
+  | 'SOLO_BUILDER';
 
 export const BOOKING_SCHEMAS: Record<VerticalType, BookingSchema> = {
   RESTAURANT: {
@@ -26,17 +34,74 @@ export const BOOKING_SCHEMAS: Record<VerticalType, BookingSchema> = {
     partySizeLabel: 'Number of Guests',
     showSpecialRequests: true,
     specialRequestsLabel: 'Special Requests & Seating Preferences',
-    specialRequestsPlaceholder: 'Allergies, celebrations, seating preferences...',
+    specialRequestsPlaceholder: 'Allergies, celebrations, booth vs outdoor seating...',
     showServiceAddress: false,
     showProjectDescription: false,
     showContractAmount: false,
     showLienDossier: false,
     heroEmoji: '🍽️',
     bookingSummaryLabel: 'Dining Reservation',
+    buttonText: 'Reserve Table',
+  },
+  SALON: {
+    showPartySize: false,
+    partySizeLabel: 'Number of Clients',
+    showSpecialRequests: true,
+    specialRequestsLabel: 'Styling & Preference Notes',
+    specialRequestsPlaceholder: 'Stylist preference, hair/skin type, inspiration links...',
+    showServiceAddress: false,
+    showProjectDescription: false,
+    showContractAmount: false,
+    showLienDossier: false,
+    heroEmoji: '✂️',
+    bookingSummaryLabel: 'Salon Appointment',
+    buttonText: 'Book Salon Appointment',
+  },
+  SPA: {
+    showPartySize: false,
+    partySizeLabel: 'Number of Guests',
+    showSpecialRequests: true,
+    specialRequestsLabel: 'Health & Treatment Preferences',
+    specialRequestsPlaceholder: 'Pressure preference, skin sensitivities, injuries, pregnancy...',
+    showServiceAddress: false,
+    showProjectDescription: false,
+    showContractAmount: false,
+    showLienDossier: false,
+    heroEmoji: '💆‍♀️',
+    bookingSummaryLabel: 'Spa & Wellness Treatment',
+    buttonText: 'Reserve Spa Session',
+  },
+  CLINIC: {
+    showPartySize: false,
+    partySizeLabel: 'Number of Patients',
+    showSpecialRequests: true,
+    specialRequestsLabel: 'Reason for Visit / Symptoms',
+    specialRequestsPlaceholder: 'Brief description of symptoms, routine checkup, or consultation goals...',
+    showServiceAddress: false,
+    showProjectDescription: false,
+    showContractAmount: false,
+    showLienDossier: false,
+    heroEmoji: '🩺',
+    bookingSummaryLabel: 'Clinical Consultation',
+    buttonText: 'Book Consultation',
+  },
+  FITNESS: {
+    showPartySize: false,
+    partySizeLabel: 'Participants',
+    showSpecialRequests: true,
+    specialRequestsLabel: 'Fitness Goals & Notes',
+    specialRequestsPlaceholder: 'Strength training, cardio, injuries or physical limitations...',
+    showServiceAddress: false,
+    showProjectDescription: false,
+    showContractAmount: false,
+    showLienDossier: false,
+    heroEmoji: '🏋️',
+    bookingSummaryLabel: 'Training Session',
+    buttonText: 'Book Training Session',
   },
   SERVICE_BUSINESS: {
     showPartySize: false,
-    showSpecialRequests: true, // "Access Notes"
+    showSpecialRequests: true,
     specialRequestsLabel: 'Site Access & Entry Notes',
     specialRequestsPlaceholder: 'Gate code, parking instructions, pet on premises, etc.',
     showServiceAddress: true,
@@ -51,6 +116,7 @@ export const BOOKING_SCHEMAS: Record<VerticalType, BookingSchema> = {
     showLienDossier: true,
     heroEmoji: '🔨',
     bookingSummaryLabel: 'Service Contract',
+    buttonText: 'Secure Booking & Escrow',
   },
   SOLO_BUILDER: {
     showPartySize: false,
@@ -65,6 +131,7 @@ export const BOOKING_SCHEMAS: Record<VerticalType, BookingSchema> = {
     showLienDossier: false,
     heroEmoji: '💻',
     bookingSummaryLabel: 'Freelance Milestone',
+    buttonText: 'Fund Milestone Escrow',
   },
 };
 
@@ -75,6 +142,73 @@ export function getBookingSchema(categoryOrVertical?: string | null): BookingSch
   if (!categoryOrVertical) return BOOKING_SCHEMAS.RESTAURANT;
 
   const normalized = categoryOrVertical.trim().toUpperCase().replace(/[\s-]+/g, '_');
+
+  // Spas, Massages & Wellness
+  if (
+    [
+      'SPA',
+      'MASSAGE',
+      'WELLNESS',
+      'SKINCARE',
+      'FACIAL',
+      'SAUNA',
+      'AROMATHERAPY',
+      'HAMMAM',
+    ].includes(normalized)
+  ) {
+    return BOOKING_SCHEMAS.SPA;
+  }
+
+  // Salons, Barbershops & Beauty
+  if (
+    [
+      'SALON',
+      'HAIR_SALON',
+      'BARBER',
+      'BARBERSHOP',
+      'BEAUTY_SALON',
+      'NAILS',
+      'NAIL_SALON',
+      'MAKEUP',
+      'ESTHETICIAN',
+      'HAIRSTYLIST',
+    ].includes(normalized)
+  ) {
+    return BOOKING_SCHEMAS.SALON;
+  }
+
+  // Healthcare, Clinics & Medical
+  if (
+    [
+      'CLINIC',
+      'HOSPITAL',
+      'DENTAL',
+      'DENTIST',
+      'PHYSIOTHERAPY',
+      'CHIROPRACTIC',
+      'THERAPY',
+      'PSYCHOLOGY',
+      'DOCTOR',
+    ].includes(normalized)
+  ) {
+    return BOOKING_SCHEMAS.CLINIC;
+  }
+
+  // Fitness, Gyms & Studios
+  if (
+    [
+      'FITNESS_CENTER',
+      'FITNESS',
+      'GYM',
+      'YOGA',
+      'PILATES',
+      'PERSONAL_TRAINER',
+      'CROSSFIT',
+      'MARTIAL_ARTS',
+    ].includes(normalized)
+  ) {
+    return BOOKING_SCHEMAS.FITNESS;
+  }
 
   // Service Businesses (Trades, Home Services, Maintenance)
   if (
@@ -121,6 +255,6 @@ export function getBookingSchema(categoryOrVertical?: string | null): BookingSch
     return BOOKING_SCHEMAS.SOLO_BUILDER;
   }
 
-  // Default: Dining, Hospitality & Appointments
+  // Default: Dining, Restaurants & Hospitality
   return BOOKING_SCHEMAS.RESTAURANT;
 }
