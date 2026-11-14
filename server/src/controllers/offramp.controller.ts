@@ -557,7 +557,22 @@ export const streamLpIntents = async (req: Request, res: Response) => {
  */
 export const getOperatorIntents = async (_req: Request, res: Response, next: NextFunction) => {
   try {
+    const showAll = _req.query.all === 'true';
     const intents = await prisma.offrampIntent.findMany({
+      where: showAll
+        ? undefined
+        : {
+            status: {
+              in: [
+                'PENDING_LP',
+                'PENDING_OFFRAMP',
+                'SENT_BY_LP',
+                'PROOF_SUBMITTED',
+                'PENDING_MANUAL_REVIEW',
+                'SETTLED',
+              ],
+            },
+          },
       orderBy: { requestedAt: 'desc' },
       take: 50,
     });

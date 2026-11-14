@@ -19,8 +19,12 @@ import {
   manualApprovePayment,
   getManualReviewQueue,
 } from '../controllers/payment.controller';
+import { handleSquareWebhook } from '../controllers/squareCheckout.controller';
 
 const router = Router();
+
+// Square Webhook for Cross-Border & card payments
+router.post('/square-webhook', handleSquareWebhook);
 
 // ── Payment Routes ──────────────────────────────────────────────────────────
 

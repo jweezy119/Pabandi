@@ -84,12 +84,12 @@ export default function BookingSearchBar({ results = [], onResultClick }: Bookin
       </form>
 
       {/* Category filters */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none flex-nowrap">
         {SERVICE_CATEGORIES.map(cat => (
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+            className={`whitespace-nowrap shrink-0 min-w-max px-4 py-2 rounded-xl text-sm font-bold transition-all ${
               selectedCategory === cat
                 ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-sm shadow-[var(--clay)]/20'
                 : 'bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]/80'

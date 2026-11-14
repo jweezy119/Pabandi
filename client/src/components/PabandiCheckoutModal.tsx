@@ -89,6 +89,9 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
   const [showQr, setShowQr] = useState<boolean>(true);
   const [claimSent, setClaimSent] = useState(false);
   const [srAnnouncement, setSrAnnouncement] = useState<string>('');
+  const [squareCardInstance, setSquareCardInstance] = useState<any>(null);
+  const [squareSdkReady, setSquareSdkReady] = useState(false);
+  const [squareLoadingSdk, setSquareLoadingSdk] = useState(false);
 
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
@@ -211,6 +214,102 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
     setError(null);
     triggerHaptic('light');
     setSrAnnouncement(`Selected ${rail} payment method`);
+  };
+
+  // ── Square Web Payments SDK Initialization (Card, Apple Pay, Google Pay) ──
+  useEffect(() => {
+    if (!open || selectedRail !== 'square') return;
+
+    let mounted = true;
+    const initSquareSdk = async () => {
+      setSquareLoadingSdk(true);
+      try {
+        if (!(window as any).Square) {
+          await new Promise<void>((resolve, reject) => {
+            const existingScript = document.getElementById('square-web-sdk');
+            if (existingScript) {
+              existingScript.addEventListener('load', () => resolve());
+              return;
+            }
+            const script = document.createElement('script');
+            script.id = 'square-web-sdk';
+            script.src = 'https://web.squarecdn.com/v1/square.js';
+            script.async = true;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error('Failed to load Square Web Payments SDK'));
+            document.head.appendChild(script);
+          });
+        }
+
+        if (!mounted || !(window as any).Square) return;
+
+        const appId = import.meta.env.VITE_SQUARE_APP_ID || 'sq0idp-demo';
+        const locationId = import.meta.env.VITE_SQUARE_LOCATION_ID || 'LPABANDI';
+
+        const payments = (window as any).Square.payments(appId, locationId);
+        const card = await payments.card();
+        const container = document.getElementById('pabandi-square-card-container');
+        if (container) {
+          container.innerHTML = '';
+          await card.attach('#pabandi-square-card-container');
+          if (mounted) {
+            setSquareCardInstance(card);
+            setSquareSdkReady(true);
+          }
+        }
+      } catch (e: any) {
+        console.warn('[SquareSDK] Direct card embed fallback to hosted checkout:', e.message);
+      } finally {
+        if (mounted) setSquareLoadingSdk(false);
+      }
+    };
+
+    const timer = setTimeout(initSquareSdk, 200);
+
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
+  }, [open, selectedRail]);
+
+  const handleSquareTokenPayment = async () => {
+    if (!squareCardInstance) {
+      return handleSquareCheckout();
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const tokenResult = await squareCardInstance.tokenize();
+      if (tokenResult.status !== 'OK') {
+        throw new Error(tokenResult.errors?.[0]?.message || 'Card verification failed');
+      }
+
+      const res = await fetch(`${API_HOST}/api/v1/square-checkout/process-payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sourceId: tokenResult.token,
+          amount: amountInUsd,
+          currency: 'USD',
+          referenceId,
+          note: squareNote,
+          customerEmail,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Payment failed');
+      }
+
+      setClaimSent(true);
+      triggerHaptic('success');
+      onSuccess?.('square', tokenResult.token);
+    } catch (err: any) {
+      setError(err.message || 'Payment failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSquareCheckout = async () => {
@@ -704,7 +803,7 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
           )}
 
           {/* ─────────────────────────────────────────────────────────────
-              PANEL 2: SQUARE / CREDIT CARD / APPLE PAY
+              PANEL 2: SQUARE / CREDIT CARD / APPLE PAY / GOOGLE PAY
              ───────────────────────────────────────────────────────────── */}
           {selectedRail === 'square' && (
             <div
@@ -716,25 +815,46 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
               <div className="p-3.5 rounded-xl bg-white/70 border border-[#BFB3A3]/40 text-xs text-[#4A3E31] space-y-1.5">
                 <div className="flex items-center gap-1.5 font-bold text-[#2A2520]">
                   <CreditCard size={15} className="text-[#C97B5A]" aria-hidden="true" />
-                  <span>Zero-Crypto Card Checkout</span>
+                  <span>Square Web Payments (Card, Apple Pay, Google Pay)</span>
                 </div>
                 <p className="leading-relaxed text-[#5C5248]">
-                  Pay securely with Visa, Mastercard, Apple Pay, Google Pay, or Cash App via Square
-                  Checkout. Webhook verification automatically locks and confirms your Pabandi
-                  escrow.
+                  Pay directly via Credit/Debit Card, Apple Pay, Google Pay, or Cash App. Zero crypto required.
                 </p>
               </div>
 
-              <button
-                type="button"
-                disabled={loading}
-                onClick={handleSquareCheckout}
-                className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-[#C97B5A] text-white font-bold text-sm hover:opacity-95 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 shadow-md focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#C97B5A] focus-visible:outline-none"
-              >
-                <CreditCard size={16} aria-hidden="true" />
-                {loading ? 'Creating Secure Checkout...' : `Pay $${amountInUsd.toFixed(2)} via Square`}
-                <ExternalLink size={14} aria-hidden="true" />
-              </button>
+              {/* Square Web Payments SDK Card Input Container */}
+              <div className="p-3 rounded-2xl bg-white border border-[#BFB3A3]/50 shadow-inner">
+                <div id="pabandi-square-card-container" className="min-h-[90px] flex items-center justify-center">
+                  {squareLoadingSdk && (
+                    <span className="text-xs text-[#8a9aa8] font-mono animate-pulse">
+                      Initializing Square Web Payments SDK...
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={handleSquareTokenPayment}
+                  className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-[#C97B5A] text-white font-bold text-sm hover:opacity-95 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 shadow-md focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#C97B5A] focus-visible:outline-none cursor-pointer"
+                >
+                  <CreditCard size={16} aria-hidden="true" />
+                  {loading ? 'Processing via Square...' : `Pay $${amountInUsd.toFixed(2)} with Card / Wallets`}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={handleSquareCheckout}
+                  className="w-full py-2 px-3 rounded-xl bg-black/5 hover:bg-black/10 text-xs font-mono font-semibold text-[#5C5248] flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <span>Launch Square Express Checkout Page</span>
+                  <ExternalLink size={12} />
+                </button>
+              </div>
 
               {checkoutUrl && (
                 <div

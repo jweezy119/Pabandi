@@ -77,6 +77,16 @@ export function InvoiceList({
               </div>
             </Link>
 
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(`Hi ${inv.client?.name || 'there'}, here is your secure invoice link: ${typeof window !== 'undefined' ? window.location.origin : 'https://pabandi.com'}/pay/${inv.id}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Share to WhatsApp"
+              className="p-2.5 rounded-xl border border-emerald-500/30 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 self-center transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">chat</span>
+            </a>
+
             {canDelete && (
               <Button
                 variant="ghost"

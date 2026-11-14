@@ -701,6 +701,14 @@ try {
   logger.info('ℹ️ Invoice public lookup route not available');
 }
 
+try {
+  const magicLinkRouter = require('./routes/magicLink.routes');
+  app.use(`/api/${v}/public/magic`, magicLinkRouter.default || magicLinkRouter);
+  logger.info('✅ Public Magic Link route registered (/public/magic)');
+} catch (e) {
+  logger.error('Failed to register public magic link route', e);
+}
+
 // Dashboard stat aggregates for the dual-mode dashboards. Registered explicitly
 // (not through lazyRoute) because each router mounts at TWO specific prefixes —
 // a lazy default-export mount would collide with the broader /users and

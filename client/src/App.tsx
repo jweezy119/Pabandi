@@ -53,6 +53,7 @@ const SimulatorPage = lazy(() => import('./pages/simulator/SimulatorPage'));
 const PublicProposalPage = lazy(() => import('./pages/simulator/PublicProposalPage'));
 const DealSimulatorPage = lazy(() => import('./pages/sandbox/DealSimulator'));
 const TrustPassportPublicPage = lazy(() => import('./pages/public/TrustPassportPage'));
+const MagicLinkPage = lazy(() => import('./pages/public/MagicLinkPage'));
 const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
 const GigBoardPage = lazy(() => import('./pages/GigBoardPage'));
 const GigDetailPage = lazy(() => import('./pages/GigDetailPage'));
@@ -332,9 +333,11 @@ function AnimatedAppRoutes() {
           <Route path="booking/:id" element={<BookingExperience />} />
           <Route path="booking/:businessSlug" element={<BookingExperience />} />
           <Route path="simulator" element={<SimulatorPage />} />
-          <Route path="pay/:invoiceId" element={<PayInvoicePage />} />
-          <Route path="invoice/:id" element={<PayInvoicePage />} />
-          <Route path="invoice/:invoiceId" element={<PayInvoicePage />} />
+          <Route path="b/:id" element={<MagicLinkPage />} />
+          <Route path="b/:bookingId" element={<MagicLinkPage />} />
+          <Route path="pay/:invoiceId" element={<MagicLinkPage />} />
+          <Route path="invoice/:id" element={<MagicLinkPage />} />
+          <Route path="invoice/:invoiceId" element={<MagicLinkPage />} />
 
           <Route path="coordinator" element={<BusinessGuard><CoordinatorCommandSurface /></BusinessGuard>} />
           <Route path="coordinator/dispatch" element={<CoordinatorCommandSurface />} />
@@ -523,8 +526,8 @@ function AnimatedAppRoutes() {
             <Route path="passport" element={<PlaceholderPage />} />
             <Route path="passport/dashboard" element={<PlaceholderPage />} />
             <Route path="passport/:sellerId" element={<PlaceholderPage />} />
+            <Route path="trust/:handle" element={<TrustPassportPublicPage />} />
             <Route path="trust/:passportId" element={<TrustPassportPublicPage />} />
-            <Route path="trust/:handle" element={<PlaceholderPage />} />
             <Route path="trust" element={<TrustOSPage />} />
             <Route path="trust/pulse" element={<PlaceholderPage />} />
             <Route path="trust/jury" element={<PlaceholderPage />} />

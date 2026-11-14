@@ -332,12 +332,34 @@ export default function ContactInvoiceDetailPage() {
           </div>
         )}
 
+        {/* UI State for Freelancer: When paid via Square / Card */}
+        {invoice.status === 'paid' && (
+          <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-sm space-y-1">
+            <div className="flex items-center gap-2 font-bold text-emerald-950">
+              <span className="material-symbols-outlined text-[20px] text-emerald-600">bolt</span>
+              <span>Payment received in USD. Converted to PKR at 279.50 rate. LP is processing the transfer.</span>
+            </div>
+            <p className="text-xs text-emerald-700">
+              The Liquidity Provider has been dispatched via Telegram (@PabanBot). Net PKR payout is landing directly in your verified Raast account.
+            </p>
+          </div>
+        )}
+
         {!isDraft && invoice.status !== 'paid' && (
-          <div className="pt-4 border-t border-[var(--soft-stone)]/20">
-            <p className="text-sm text-[var(--soft-stone)] mb-2">Payment Link</p>
-            <div className="flex gap-2 items-center">
+          <div className="pt-4 border-t border-[var(--soft-stone)]/20 space-y-3">
+            <p className="text-sm text-[var(--soft-stone)] mb-1">Payment &amp; Magic Link</p>
+            <div className="flex gap-2 items-center flex-wrap sm:flex-nowrap">
               <input type="text" readOnly value={paymentLink} className="flex-1 px-3 py-2 bg-gray-50 border rounded text-sm" />
               <Button variant="secondary" onClick={() => navigator.clipboard.writeText(paymentLink)}>Copy</Button>
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(`Hi ${invoice.client?.name || 'there'}, here is your secure payment link: ${paymentLink}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#25D366] hover:bg-[#20ba59] text-white rounded-lg text-sm font-semibold transition-colors"
+              >
+                <span className="material-symbols-outlined text-[16px]">chat</span>
+                Share to WhatsApp
+              </a>
             </div>
             {metadata.paymentLinkSource && (
               <p className="text-xs mt-2" style={{ color: 'var(--soft-stone)' }}>

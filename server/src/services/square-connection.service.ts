@@ -319,11 +319,20 @@ export function invoiceNote(invoiceId: string, invoiceNumber: string): string {
 
 /** Pull the invoice id back out of a payment note. Null if it is not ours. */
 export function parseInvoiceNote(note: string | null | undefined): { invoiceId: string; invoiceNumber: string } | null {
-  if (!note || !note.startsWith(INVOICE_NOTE_PREFIX)) return null;
-  const rest = note.slice(INVOICE_NOTE_PREFIX.length);
-  const sep = rest.indexOf(':');
-  if (sep <= 0) return null;
-  return { invoiceId: rest.slice(0, sep), invoiceNumber: rest.slice(sep + 1) };
+  if (!note) return null;
+  if (note.startsWith(INVOICE_NOTE_PREFIX)) {
+    const rest = note.slice(INVOICE_NOTE_PREFIX.length);
+    const sep = rest.indexOf(':');
+    if (sep > 0) {
+      return { invoiceId: rest.slice(0, sep), invoiceNumber: rest.slice(sep + 1) };
+    }
+    return { invoiceId: rest, invoiceNumber: '' };
+  }
+  const match = note.match(/(?:inv_|invoice[:#])([a-zA-Z0-9_-]+)/i);
+  if (match) {
+    return { invoiceId: match[1], invoiceNumber: '' };
+  }
+  return null;
 }
 
 /**

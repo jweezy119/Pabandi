@@ -302,6 +302,73 @@ export class TelegramNotificationService {
       }
     }
   }
+
+  /**
+   * Broadcast a live LP off-ramp payout alert to the Operator on Telegram with [Mark as Sent].
+   */
+  async sendLivePayoutRequestToOperator(params: {
+    claimId: string;
+    pkrAmount: number;
+    bankName: string;
+    iban: string;
+    freelancerName?: string;
+    usdcAmount?: number;
+  }): Promise<boolean> {
+    const { claimId, pkrAmount, bankName, iban, freelancerName, usdcAmount } = params;
+    const operatorChatId = process.env.TELEGRAM_OPERATOR_CHAT_ID || process.env.TELEGRAM_ADMIN_CHAT_ID;
+
+    const message = [
+      `🚨 *LIVE PAYOUT REQUEST*`,
+      `━━━━━━━━━━━━━━━━━━━━━━`,
+      `💵 *Send PKR:* \`Rs. ${pkrAmount.toLocaleString()}\``,
+      `🏦 *Bank / Rail:* *${bankName}*`,
+      `💳 *IBAN / Raast ID:* \`${iban}\``,
+      freelancerName ? `👤 *Freelancer:* ${freelancerName}` : '',
+      usdcAmount ? `💎 *Receive Escrow:* $${usdcAmount.toFixed(2)} USDC` : '',
+      `🔖 *Claim ID:* \`${claimId}\``,
+      `━━━━━━━━━━━━━━━━━━━━━━`,
+      `Send funds via Raast / 1LINK from your bank app, then tap below to mark as sent.`,
+    ].filter(Boolean).join('\n');
+
+    logger.info(`[TelegramPush] Operator alert: ${message}`);
+
+    if (!telegramBot) {
+      logger.warn('[TelegramPush] telegramBot not initialized; logged operator payout request to console.');
+      return false;
+    }
+
+    try {
+      const inlineKeyboard = new InlineKeyboard()
+        .text('✅ Mark as Sent', `lp_sent:${claimId}`)
+        .url('📊 LP Desk', `${this.getBaseUrl()}/operator/lp`);
+
+      if (operatorChatId) {
+        await telegramBot.api.sendMessage(operatorChatId, message, {
+          parse_mode: 'Markdown',
+          reply_markup: inlineKeyboard,
+        });
+        return true;
+      } else {
+        const operators = await prisma.user.findMany({
+          where: { role: 'ADMIN', telegramId: { not: null } },
+          select: { telegramId: true },
+        });
+
+        for (const op of operators) {
+          if (op.telegramId) {
+            await telegramBot.api.sendMessage(op.telegramId, message, {
+              parse_mode: 'Markdown',
+              reply_markup: inlineKeyboard,
+            });
+          }
+        }
+        return true;
+      }
+    } catch (err: any) {
+      logger.warn(`[TelegramPush] Failed to send operator payout alert:`, err?.message || err);
+      return false;
+    }
+  }
 }
 
 export const telegramNotificationService = new TelegramNotificationService();

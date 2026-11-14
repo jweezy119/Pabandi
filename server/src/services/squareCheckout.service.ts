@@ -265,6 +265,49 @@ export class SquareService {
     });
     return response.refund;
   }
+
+  /**
+   * Process a payment token from Square Web Payments SDK (Card, Apple Pay, Google Pay, Cash App)
+   */
+  async processPaymentToken(params: {
+    sourceId: string;
+    amountCents: number;
+    currency?: string;
+    referenceId?: string;
+    note?: string;
+    customerEmail?: string;
+  }) {
+    const cents = Math.round(params.amountCents);
+    let locationId = SQUARE_LOCATION_ID || process.env.SQUARE_LOCATION_ID || '';
+    if (!locationId) {
+      const loc = await this.getDefaultLocation();
+      locationId = loc || 'main';
+    }
+
+    const idempotencyKey = `pbn_${params.referenceId || 'tok'}_${Date.now()}`;
+    const resp = await fetch(`${SQUARE_BASE}/v2/payments`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        source_id: params.sourceId,
+        idempotency_key: idempotencyKey,
+        amount_money: {
+          amount: cents,
+          currency: params.currency || 'USD',
+        },
+        location_id: locationId,
+        reference_id: params.referenceId,
+        note: params.note || 'Pabandi Card Escrow Payment',
+        buyer_email_address: params.customerEmail,
+      }),
+    });
+
+    const data: any = await resp.json();
+    if (!resp.ok || !data?.payment) {
+      throw new Error(data?.errors?.[0]?.detail || 'Square card token payment failed');
+    }
+    return data.payment;
+  }
 }
 
 export const squareService = new SquareService();
