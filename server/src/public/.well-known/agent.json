@@ -38,6 +38,9 @@
   "endpoints": {
     "orchestrator": "https://pabandi.onrender.com/api/v1/payments",
     "agentApi": "https://pabandi.onrender.com/api/v1/agents",
+    "agentKeys": "https://pabandi.onrender.com/api/v1/agents/keys",
+    "paidProofs": "https://pabandi.onrender.com/api/v1/agents/paid/:publicId",
+    "workerPaidProofs": "https://pabandi.onrender.com/api/v1/agents/workers/me/paid",
     "mcp": "https://pabandi.onrender.com/mcp",
     "businesses": "https://pabandi.onrender.com/api/v1/agents/businesses",
     "bookings": "https://pabandi.onrender.com/api/v1/agents/bookings",

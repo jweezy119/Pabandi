@@ -1,7 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { authenticate, optionalAuthenticate, AuthRequest } from '../middleware/auth.middleware';
+import { authenticateAgent } from '../middleware/agentAuth.middleware';
 import { TOOLS } from '../mcp/pabandiMcpServer';
 import { agentTools } from '../services/agentTools.service';
+import { createAgentKey, listAgentKeys, revokeAgentKey } from '../services/agentKeys.service';
+import { getPaidProofByPublicId, listPaidProofsForWorker } from '../services/paidProof.service';
 
 const router = Router();
 
@@ -14,6 +17,32 @@ router.get('/tools', (_req: Request, res: Response) => {
       tools: TOOLS,
     },
   });
+});
+
+router.post('/keys', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const key = await createAgentKey(req.user!.id, req.body || {});
+    res.status(201).json({ success: true, data: key });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+router.get('/keys', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    res.json({ success: true, data: await listAgentKeys(req.user!.id) });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+router.delete('/keys/:id', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const key = await revokeAgentKey(req.user!.id, req.params.id);
+    res.json({ success: true, data: { id: key.id, revokedAt: key.revokedAt } });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
 });
 
 router.get('/businesses', async (req: Request, res: Response) => {
@@ -41,7 +70,7 @@ router.get('/businesses/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/bookings', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/bookings', authenticateAgent, async (req: AuthRequest, res: Response) => {
   try {
     const booking = await agentTools.createBookingForAgent(req.user!, req.body || {});
     res.status(201).json({ success: true, data: booking });
@@ -58,7 +87,7 @@ router.get('/bookings/:id', optionalAuthenticate, async (req: Request, res: Resp
   }
 });
 
-router.post('/bookings/:id/checkin', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/bookings/:id/checkin', authenticateAgent, async (req: AuthRequest, res: Response) => {
   try {
     const result = await agentTools.markBookingCheckin(req.user!, req.params.id, req.body || {});
     res.json({ success: true, data: result });
@@ -67,7 +96,7 @@ router.post('/bookings/:id/checkin', authenticate, async (req: AuthRequest, res:
   }
 });
 
-router.post('/bookings/:id/release', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/bookings/:id/release', authenticateAgent, async (req: AuthRequest, res: Response) => {
   try {
     const result = await agentTools.releaseBookingEscrow(req.user!, req.params.id, req.body || {});
     res.json({ success: true, data: result });
@@ -76,7 +105,7 @@ router.post('/bookings/:id/release', authenticate, async (req: AuthRequest, res:
   }
 });
 
-router.post('/bookings/:id/refund', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/bookings/:id/refund', authenticateAgent, async (req: AuthRequest, res: Response) => {
   try {
     const result = await agentTools.refundBookingForAgent(req.user!, req.params.id, String(req.body?.reason || ''));
     res.json({ success: true, data: result });
@@ -94,7 +123,7 @@ router.post('/passport/verify', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/payouts', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/payouts', authenticateAgent, async (req: AuthRequest, res: Response) => {
   try {
     const payout = await agentTools.requestPayoutForAgent(req.user!, req.body || {});
     res.status(201).json({ success: true, data: payout });
@@ -103,7 +132,7 @@ router.post('/payouts', authenticate, async (req: AuthRequest, res: Response) =>
   }
 });
 
-router.get('/payouts/history', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/payouts/history', authenticateAgent, async (req: AuthRequest, res: Response) => {
   try {
     res.json({ success: true, data: await agentTools.getPayoutHistoryForAgent(req.user!) });
   } catch (error: any) {
@@ -111,7 +140,7 @@ router.get('/payouts/history', authenticate, async (req: AuthRequest, res: Respo
   }
 });
 
-router.get('/identity', authenticate, (req: AuthRequest, res: Response) => {
+router.get('/identity', authenticateAgent, (req: AuthRequest, res: Response) => {
   res.json({
     success: true,
     data: {
@@ -124,6 +153,24 @@ router.get('/identity', authenticate, (req: AuthRequest, res: Response) => {
       phone: req.user!.phone ?? null,
     },
   });
+});
+
+router.get('/paid/:publicId', async (req: Request, res: Response) => {
+  try {
+    const proof = await getPaidProofByPublicId(req.params.publicId);
+    if (!proof) return res.status(404).json({ success: false, error: 'Proof not found' });
+    res.json({ success: true, data: proof });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+router.get('/workers/me/paid', authenticateAgent, async (req: AuthRequest, res: Response) => {
+  try {
+    res.json({ success: true, data: await listPaidProofsForWorker(req.user!.id) });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
 });
 
 export default router;

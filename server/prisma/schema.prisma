@@ -670,6 +670,38 @@ model BookingRisk {
   @@index([outcome])
 }
 
+model AgentApiKey {
+  id            String    @id @default(cuid())
+  keyHash       String    @unique
+  name          String
+  ownerUserId   String
+  agentId       String?
+  scopes        String[]  @default([])
+  spendLimitUsd Float?
+  lastUsedAt    DateTime?
+  revokedAt     DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([ownerUserId])
+  @@index([agentId])
+}
+
+model PaidProof {
+  id         String   @id @default(cuid())
+  publicId   String   @unique
+  bookingId  String   @unique
+  workerId   String
+  amount     Float
+  currency   String   @default("USD")
+  rail       String?
+  txHash     String?
+  receiptRef String?
+  status     String   @default("PAID")
+  createdAt  DateTime @default(now())
+
+  @@index([workerId])
+}
+
 model Invoice {
   id               String    @id @default(cuid())
   number           String    @unique

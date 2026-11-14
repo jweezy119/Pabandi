@@ -144,6 +144,22 @@ export const TOOLS: McpTool[] = [
     inputSchema: { type: 'object', properties: {} },
   },
   {
+    name: 'pabandi_get_paid_proof',
+    description: 'Get a public payment proof by its public ID.',
+    requiresAuth: false,
+    inputSchema: {
+      type: 'object',
+      properties: { publicId: { type: 'string' } },
+      required: ['publicId'],
+    },
+  },
+  {
+    name: 'pabandi_get_my_paid_proofs',
+    description: 'Get the authenticated worker\'s payment proofs.',
+    requiresAuth: true,
+    inputSchema: { type: 'object', properties: {} },
+  },
+  {
     name: 'pabandi_get_identity',
     description: 'Return the authenticated agent or user identity.',
     requiresAuth: true,
@@ -164,6 +180,7 @@ export function initializeResult(clientProtocolVersion?: string) {
     },
     instructions:
       'Pabandi is a booking, escrow, trust passport, and payout platform. ' +
+      'Authenticate with Authorization: Bearer <JWT> or x-api-key: <pab_live_...>. ' +
       'Use pabandi_list_businesses and pabandi_get_business to find supply, ' +
       'pabandi_create_booking to reserve, pabandi_mark_checkin to record verified attendance, ' +
       'pabandi_release_escrow only after completion, and pabandi_verify_passport to check trust. ' +

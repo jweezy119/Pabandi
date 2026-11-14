@@ -11,6 +11,7 @@ import {
 } from './booking-escrow.service';
 import { verifyTrustDisclosure } from '../trust/disclosure.service';
 import { payoutService } from './payout.service';
+import { createPaidProof } from './paidProof.service';
 
 export interface AgentToolUser {
   id: string;
@@ -222,7 +223,22 @@ export async function releaseBookingEscrow(
     txHash: input.txHash,
     receiptRef: input.receiptRef,
   });
-  return { bookingId, released: ok };
+
+  const escrow = await getBookingEscrow(bookingId);
+  const workerId = booking.business?.ownerId || user.id;
+  const amount = escrow?.amount ?? booking.depositAmount ?? 0;
+  const currency = escrow?.currency || 'USD';
+  const proof = await createPaidProof({
+    bookingId,
+    workerId,
+    amount,
+    currency,
+    rail: input.rail,
+    txHash: input.txHash,
+    receiptRef: input.receiptRef,
+  });
+
+  return { bookingId, released: ok, proof };
 }
 
 export async function refundBookingForAgent(user: AgentToolUser, bookingId: string, reason: string) {

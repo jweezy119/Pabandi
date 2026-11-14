@@ -11,6 +11,7 @@ import { rateLimiter } from './middleware/rateLimiter';
 import { requestIdMiddleware } from './middleware/requestId.middleware';
 import { apiRouter } from './routes/index';
 import mcpRouter from './routes/mcp.routes';
+import { getPaidProofByPublicId } from './services/paidProof.service';
 
 // Load environment variables FIRST
 dotenv.config();
@@ -261,6 +262,40 @@ app.get('/support-admin.js', (_req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
   res.sendFile(path.join(PUBLIC_DIR, 'support-admin.js'));
+});
+
+app.get('/paid/:publicId', async (req, res) => {
+  try {
+    const proof = await getPaidProofByPublicId(req.params.publicId);
+    if (!proof) {
+      res.status(404).type('text/plain').send('Payment proof not found');
+      return;
+    }
+    const esc = (value: unknown) => {
+      const entities: Record<string, string> = {
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+      };
+      return String(value ?? '').replace(/[&<>"']/g, (ch) => entities[ch] || '');
+    };
+    res.setHeader('Cache-Control', 'no-store');
+    res.type('html').send(`<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pabandi Payment Proof</title>
+<style>body{margin:0;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#0b0f14;color:#e6edf3}.card{max-width:640px;margin:40px auto;padding:24px;background:#111827;border:1px solid #1f2937;border-radius:14px}h1{font-size:22px;margin:0 0 8px}.amount{font-size:34px;font-weight:700;color:#3fb950}.row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #1f2937}.label{color:#9da7b3}.muted{color:#9da7b3}.badge{display:inline-block;padding:4px 10px;border-radius:999px;background:#052e16;color:#3fb950;border:1px solid #144d2a;font-weight:700}</style>
+</head><body><div class="card">
+<h1>Payment Proof</h1><p class="muted">This is a public proof that a Pabandi booking was paid.</p>
+<div class="amount">${esc(proof.amount)} ${esc(proof.currency)}</div>
+<span class="badge">${esc(proof.status)}</span>
+<div class="row"><span class="label">Worker</span><span>${esc(proof.workerId)}</span></div>
+<div class="row"><span class="label">Rail</span><span>${esc(proof.rail || 'escrow release')}</span></div>
+<div class="row"><span class="label">Transaction</span><span>${esc(proof.txHash || 'not on-chain')}</span></div>
+<div class="row"><span class="label">Receipt ref</span><span>${esc(proof.receiptRef || 'n/a')}</span></div>
+<div class="row"><span class="label">Paid at</span><span>${esc(proof.createdAt)}</span></div>
+<p class="muted">Verify the escrow state through the Pabandi API. This page does not expose banking details.</p>
+</div></body></html>`);
+  } catch {
+    res.status(500).type('text/plain').send('Could not load payment proof');
+  }
 });
 
 // LLMs.txt & Agent discovery

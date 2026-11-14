@@ -1,10 +1,11 @@
 import { Router, Response } from 'express';
-import { optionalAuthenticate, AuthRequest } from '../middleware/auth.middleware';
+import { AuthRequest } from '../middleware/auth.middleware';
+import { optionalAgentAuth } from '../middleware/agentAuth.middleware';
 import { handleRpc } from '../mcp/pabandiMcpServer';
 
 const router = Router();
 
-router.post('/', optionalAuthenticate, async (req: AuthRequest, res: Response) => {
+router.post('/', optionalAgentAuth, async (req: AuthRequest, res: Response) => {
   const result = await handleRpc(req.body, req.user);
   if (result === null) {
     res.status(202).end();

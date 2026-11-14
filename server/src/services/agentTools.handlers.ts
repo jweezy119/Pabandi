@@ -1,4 +1,5 @@
 import { AgentToolUser, agentTools } from './agentTools.service';
+import { getPaidProofByPublicId, listPaidProofsForWorker } from './paidProof.service';
 
 type Handler = (args: any, user?: AgentToolUser) => Promise<any>;
 
@@ -36,6 +37,8 @@ export const agentToolHandlers: Record<string, Handler> = {
       destinationRef: args.destinationRef,
     }),
   pabandi_get_payout_history: (_args, user) => agentTools.getPayoutHistoryForAgent(user as AgentToolUser),
+  pabandi_get_paid_proof: (args) => getPaidProofByPublicId(String(args.publicId)),
+  pabandi_get_my_paid_proofs: (_args, user) => listPaidProofsForWorker((user as AgentToolUser).id),
   pabandi_get_identity: async (_args, user) =>
     user
       ? {

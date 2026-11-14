@@ -11,13 +11,19 @@ Pabandi is the trust and settlement layer for local services. Agents can find bu
 
 Agent signup is `POST /api/v1/gigs/agents/register`. That registers an agent passport.
 
-For booking, escrow, payout, and identity tools, authenticate with a user JWT:
+For booking, escrow, payout, and identity tools, authenticate with either:
 
 ```
 Authorization: Bearer <JWT>
 ```
 
-Obtain the JWT from `POST /api/v1/auth/login`. Money-moving tools require an authenticated user with the right role or ownership.
+or an agent API key:
+
+```
+x-api-key: <pab_live_...>
+```
+
+Obtain a JWT from `POST /api/v1/auth/login`. Create an agent API key from `POST /api/v1/agents/keys`. Money-moving tools require an authenticated user with the right role or ownership.
 
 ## MCP Endpoint
 
@@ -49,6 +55,8 @@ curl -X POST https://pabandi.onrender.com/mcp \
 | `pabandi_verify_passport` | Verify a Pabandi trust disclosure or passport signature | public |
 | `pabandi_request_payout` | Request a USDC payout to a local rail, bank, or connected account | user |
 | `pabandi_get_payout_history` | Get the authenticated user's payout history | user |
+| `pabandi_get_paid_proof` | Get a public payment proof by its public ID | public |
+| `pabandi_get_my_paid_proofs` | Get the authenticated worker's payment proofs | user |
 | `pabandi_get_identity` | Return the authenticated identity | user |
 
 ## Agent REST API
@@ -57,6 +65,9 @@ Base: `https://pabandi.onrender.com/api/v1/agents`
 
 ```
 GET  /api/v1/agents/tools
+POST /api/v1/agents/keys
+GET  /api/v1/agents/keys
+DELETE /api/v1/agents/keys/:id
 GET  /api/v1/agents/businesses
 GET  /api/v1/agents/businesses/:id
 POST /api/v1/agents/bookings
@@ -67,10 +78,39 @@ POST /api/v1/agents/bookings/:id/refund
 POST /api/v1/agents/passport/verify
 POST /api/v1/agents/payouts
 GET  /api/v1/agents/payouts/history
+GET  /api/v1/agents/paid/:publicId
+GET  /api/v1/agents/workers/me/paid
 GET  /api/v1/agents/identity
 ```
 
 The same tool manifest is available at `GET /api/v1/pabandi/tools`.
+
+## Agent API Keys
+
+Create a key for an agent or external service. The raw key is shown once; only its SHA-256 hash is stored.
+
+```
+POST /api/v1/agents/keys
+{ "name": "My Agent", "scopes": ["booking", "trust-verification"], "spendLimitUsd": 100 }
+```
+
+Then call the agent API with:
+
+```
+x-api-key: <pab_live_...>
+```
+
+## Paid Proofs
+
+When escrow is released, Pabandi creates a public proof. The worker receives a link:
+
+```
+GET /paid/:publicId
+GET /api/v1/agents/paid/:publicId
+GET /api/v1/agents/workers/me/paid
+```
+
+The proof shows amount, currency, rail, transaction hash, and receipt reference. It does not expose banking details.
 
 ## Booking and Escrow Rules
 
