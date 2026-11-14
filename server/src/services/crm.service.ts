@@ -1,4 +1,5 @@
 import { prisma } from '../utils/database';
+const db: any = prisma;
 import { invoiceGenerationService } from './invoiceGeneration.service';
 import { CustomError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
@@ -201,7 +202,7 @@ export function crmScope(
  */
 export async function recomputeClientTotals(clientId: string): Promise<void> {
   const [jobs, paidInvoices] = await Promise.all([
-    prisma.crmJob.findMany({
+    db.crmJob.findMany({
       where: { clientId, status: 'COMPLETED' },
       select: { completedAt: true },
     }),
@@ -211,7 +212,7 @@ export async function recomputeClientTotals(clientId: string): Promise<void> {
     }),
   ]);
 
-  const lastJobAt = jobs.reduce<Date | null>((latest, job) => {
+  const lastJobAt = (jobs as any[]).reduce<Date | null>((latest: any, job: any) => {
     if (!job.completedAt) return latest;
     return latest === null || job.completedAt > latest ? job.completedAt : latest;
   }, null);
@@ -220,7 +221,7 @@ export async function recomputeClientTotals(clientId: string): Promise<void> {
     where: { id: clientId },
     data: {
       totalJobs: jobs.length,
-      totalSpent: paidInvoices.reduce((sum, inv) => sum + (inv.subtotal || 0), 0),
+      totalSpent: paidInvoices.reduce((sum: number, inv: any) => sum + (inv.subtotal || 0), 0),
       lastJobAt,
     },
   });
@@ -280,7 +281,7 @@ export async function enrollBusiness(data: {
 
   // Idempotent: re-enrolling returns the existing pairing rather than forking a
   // second Business, which would split the cross-layer join.
-  const existingCrm = await prisma.crmServiceBusiness.findFirst({
+  const existingCrm = await db.crmServiceBusiness.findFirst({
     where: { ownerId: user.id },
     orderBy: { createdAt: 'asc' },
     include: { business: true },
@@ -306,7 +307,7 @@ export async function enrollBusiness(data: {
     });
   }
 
-  const crmBusiness = await prisma.crmServiceBusiness.create({
+  const crmBusiness = await db.crmServiceBusiness.create({
     data: {
       businessId: business.id,
       ownerId: user.id,
@@ -336,7 +337,7 @@ export async function addEmployee(
     throw new CustomError('name and role are required', 400);
   }
 
-  const employee = await prisma.crmEmployee.create({
+  const employee = await db.crmEmployee.create({
     data: {
       serviceBusinessId,
       name,
@@ -352,7 +353,7 @@ export async function addEmployee(
 }
 
 export async function getEmployees(serviceBusinessId: string, businessId?: string | null) {
-  return prisma.crmEmployee.findMany({
+  return db.crmEmployee.findMany({
     where: crmScope(serviceBusinessId, businessId),
     orderBy: { createdAt: 'desc' },
   });
@@ -463,9 +464,9 @@ export async function updateClient(
  * of thing a person reads as a broken button.
  */
 export async function deleteClient(serviceBusinessId: string, clientId: string) {
-  const client = await prisma.crmClient.findFirst({
+  const client: any = await prisma.crmClient.findFirst({
     where: { id: clientId, serviceBusinessId },
-    select: { id: true, _count: { select: { invoices: true, jobs: true, deals: true } } },
+    select: { id: true, _count: { select: { invoices: true, bookings: true } } },
   });
   if (!client) {
     throw new CustomError('Client not found', 404);
@@ -555,7 +556,7 @@ export async function getClients(
   /**
    * Lifecycle stage, computed from ONE job query instead of one per client.
    *
-   * This was an N+1: `clients.map(async c => prisma.crmJob.findMany({ clientId: c.id }))`,
+   * This was an N+1: `clients.map(async c => db.crmJob.findMany({ clientId: c.id }))`,
    * pulling every job row of every one of them. A 500-client tenant meant 501 queries
    * on every dashboard load, and it grew with the tenant — the sort of cost that makes
    * a page feel broken long before it is.
@@ -568,7 +569,7 @@ export async function getClients(
   const jobsByClient = new Map<string, Array<{ status: string; escrowStatus: string | null }>>();
 
   if (clientIds.length > 0) {
-    const jobs = await prisma.crmJob.findMany({
+    const jobs = await db.crmJob.findMany({
       where: { clientId: { in: clientIds } },
       select: { clientId: true, status: true, escrowStatus: true },
     });
@@ -630,7 +631,7 @@ export async function createJob(
   }
 
   if (employeeId) {
-    const employee = await prisma.crmEmployee.findFirst({
+    const employee = await db.crmEmployee.findFirst({
       where: { AND: [{ id: employeeId }, crmScope(serviceBusinessId, businessId)] },
       select: { id: true },
     });
@@ -671,7 +672,7 @@ export async function createJob(
     }
   }
 
-  const job = await prisma.crmJob.create({
+  const job = await db.crmJob.create({
     data: {
       serviceBusinessId,
       clientId: client.id,
@@ -692,7 +693,7 @@ export async function createJob(
   });
 
   if (employeeId) {
-    await prisma.crmJobAssignment.create({
+    await db.crmJobAssignment.create({
       data: { jobId: job.id, employeeId },
     });
   }
@@ -709,13 +710,13 @@ export async function assignEmployee(
 ) {
   // Both sides must belong to the same business as the job, otherwise an
   // assignment could bridge two businesses' workforces.
-  const job = await prisma.crmJob.findFirst({
+  const job = await db.crmJob.findFirst({
     where: { AND: [{ id: jobId }, crmScope(serviceBusinessId, businessId)] },
     select: { id: true },
   });
   if (!job) throw new CustomError('Job not found', 404);
 
-  const employee = await prisma.crmEmployee.findFirst({
+  const employee = await db.crmEmployee.findFirst({
     where: { AND: [{ id: employeeId }, crmScope(serviceBusinessId, businessId)] },
     select: { id: true },
   });
@@ -725,7 +726,7 @@ export async function assignEmployee(
   // employee is checked against the job's own window. The job itself is excluded, otherwise
   // re-assigning the job to the employee it is already assigned to would always "conflict"
   // with itself.
-  const full = await prisma.crmJob.findUnique({
+  const full = await db.crmJob.findUnique({
     where: { id: jobId },
     select: {
       scheduledDate: true,
@@ -745,15 +746,15 @@ export async function assignEmployee(
     );
   }
 
-  await prisma.crmJobAssignment.deleteMany({ where: { jobId } });
-  const assignment = await prisma.crmJobAssignment.create({
+  await db.crmJobAssignment.deleteMany({ where: { jobId } });
+  const assignment = await db.crmJobAssignment.create({
     data: { jobId, employeeId },
   });
   // CrmJob.employeeId is never written by crm.service, but job.service READS it as
   // `include: { employee: true }`. Leaving it null made every job look unassigned on the
   // /api/v1/jobs read path while looking assigned on /api/v1/crm/jobs. Kept in step here so
   // both surfaces agree.
-  await prisma.crmJob.update({ where: { id: jobId }, data: { employeeId } });
+  await db.crmJob.update({ where: { id: jobId }, data: { employeeId } });
   return assignment;
 }
 
@@ -764,7 +765,7 @@ export async function updateJobStatus(jobId: string, status: string, serviceBusi
 
   // Scoped update: an unscoped `update` by id would let any authenticated caller
   // rewrite the status of any job on the platform.
-  const existing = await prisma.crmJob.findFirst({
+  const existing = await db.crmJob.findFirst({
     where: { AND: [{ id: jobId }, crmScope(serviceBusinessId, businessId)] },
     select: { id: true },
   });
@@ -777,7 +778,7 @@ export async function updateJobStatus(jobId: string, status: string, serviceBusi
     data.completedAt = new Date();
   }
 
-  const job = await prisma.crmJob.update({
+  const job = await db.crmJob.update({
     where: { id: jobId },
     data,
     include: { client: true },
@@ -886,7 +887,7 @@ export async function getJobs(
   const paginated = take !== undefined;
 
   const [jobs, total] = await Promise.all([
-    prisma.crmJob.findMany({
+    db.crmJob.findMany({
       where,
       include: {
         client: true,
@@ -895,7 +896,7 @@ export async function getJobs(
       orderBy,
       ...(paginated ? { skip: skip ?? 0, take } : {}),
     }),
-    paginated ? prisma.crmJob.count({ where }) : 0,
+    paginated ? db.crmJob.count({ where }) : 0,
   ]);
 
   return { jobs, total, paginated };
@@ -951,7 +952,7 @@ export async function recordPayroll(
     throw new CustomError('periodEnd cannot be before periodStart', 400);
   }
 
-  const employee = await prisma.crmEmployee.findFirst({
+  const employee = await db.crmEmployee.findFirst({
     where: { AND: [{ id: employeeId }, crmScope(serviceBusinessId, businessId)] },
     select: { id: true },
   });
@@ -959,7 +960,7 @@ export async function recordPayroll(
     throw new CustomError('Employee not found for this business', 404);
   }
 
-  return prisma.crmPayroll.create({
+  return db.crmPayroll.create({
     data: {
       serviceBusinessId,
       employeeId,
@@ -980,7 +981,7 @@ export async function getPayrollHistory(serviceBusinessId: string, employeeId?: 
   const where: any = { ...crmScope(serviceBusinessId, businessId) };
   if (employeeId) where.employeeId = employeeId;
 
-  return prisma.crmPayroll.findMany({
+  return db.crmPayroll.findMany({
     where,
     include: { employee: true },
     orderBy: { createdAt: 'desc' },
@@ -1050,13 +1051,13 @@ export async function getDashboardStats(serviceBusinessId: string, businessId?: 
   const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-  const totalJobs = await prisma.crmJob.count({ where: scope });
-  const completedJobs = await prisma.crmJob.count({
+  const totalJobs = await db.crmJob.count({ where: scope });
+  const completedJobs = await db.crmJob.count({
     where: { AND: [scope, { status: 'COMPLETED' }] },
   });
   const activeClients = await prisma.crmClient.count({ where: scope });
 
-  const completedJobsThisMonth = await prisma.crmJob.findMany({
+  const completedJobsThisMonth = await db.crmJob.findMany({
     where: {
       AND: [
         scope,
@@ -1065,7 +1066,7 @@ export async function getDashboardStats(serviceBusinessId: string, businessId?: 
     },
     select: { price: true },
   });
-  const monthlyRevenue = completedJobsThisMonth.reduce((sum, job) => sum + job.price, 0);
+  const monthlyRevenue = completedJobsThisMonth.reduce((sum: number, job: any) => sum + job.price, 0);
 
   const monthlyExpensesData = await prisma.crmExpense.findMany({
     where: {
@@ -1075,7 +1076,7 @@ export async function getDashboardStats(serviceBusinessId: string, businessId?: 
   });
   const monthlyExpenses = monthlyExpensesData.reduce((sum, exp) => sum + exp.amount, 0);
 
-  const payrollCostsData = await prisma.crmPayroll.findMany({
+  const payrollCostsData = await db.crmPayroll.findMany({
     where: {
       AND: [
         scope,
@@ -1084,9 +1085,9 @@ export async function getDashboardStats(serviceBusinessId: string, businessId?: 
     },
     select: { netPay: true },
   });
-  const payrollCosts = payrollCostsData.reduce((sum, p) => sum + p.netPay, 0);
+  const payrollCosts = payrollCostsData.reduce((sum: number, p: any) => sum + p.netPay, 0);
 
-  const employees = await prisma.crmEmployee.findMany({
+  const employees = await db.crmEmployee.findMany({
     where: { AND: [scope, { isActive: true }] },
     orderBy: { jobsCompleted: 'desc' },
     take: 5,
@@ -1116,7 +1117,7 @@ export async function checkInJob(
 ) {
   // Scoped lookup: without serviceBusinessId a caller could check in any job on
   // the platform just by guessing an id.
-  const job = await prisma.crmJob.findFirst({
+  const job = await db.crmJob.findFirst({
     where: { AND: [{ id: jobId }, crmScope(serviceBusinessId, businessId)] },
     include: { client: true },
   });
@@ -1130,7 +1131,7 @@ export async function checkInJob(
   }
 
   // Update job with check-in timestamp and status
-  const updatedJob = await prisma.crmJob.update({
+  const updatedJob = await db.crmJob.update({
     where: { id: jobId },
     data: {
       status: 'IN_PROGRESS',
@@ -1165,7 +1166,7 @@ export async function checkOutJob(
   serviceBusinessId?: string,
   businessId?: string | null,
 ) {
-  const job = await prisma.crmJob.findFirst({
+  const job = await db.crmJob.findFirst({
     where: { AND: [{ id: jobId }, crmScope(serviceBusinessId, businessId)] },
     include: { client: true }
   });
@@ -1185,7 +1186,7 @@ export async function checkOutJob(
   const isLate = actualDurationMinutes > scheduledDurationMinutes + 15; // More than 15 min over scheduled time
 
   // Update job with check-out timestamp, status, and actual duration
-  const updatedJob = await prisma.crmJob.update({
+  const updatedJob = await db.crmJob.update({
     where: { id: jobId },
     data: {
       status: 'COMPLETED',
@@ -1228,7 +1229,7 @@ export async function handleNoShow(jobId: string, serviceBusinessId?: string | n
   // Was findUnique by id alone — no tenant check at all. Routed at
   // POST /crm/jobs/:id/noshow, so any caller could mark ANY job on the platform as
   // a no-show and trigger its score penalty. Now scoped like every other read.
-  const job = await prisma.crmJob.findFirst({
+  const job = await db.crmJob.findFirst({
     where: { AND: [{ id: jobId }, crmScope(serviceBusinessId, businessId)] },
     include: { client: true }
   });
@@ -1262,7 +1263,7 @@ export async function handleNoShow(jobId: string, serviceBusinessId?: string | n
   const minutesLate = (now.getTime() - scheduledTime.getTime()) / (1000 * 60);
   if (minutesLate > NO_SHOW_GRACE_MINUTES) {
     // Update job status to missed
-    await prisma.crmJob.update({
+    await db.crmJob.update({
       where: { id: jobId },
       data: {
         status: 'MISSED'
@@ -1464,13 +1465,13 @@ export async function getDeals(
 
   const paginated = options.take !== undefined;
   const [deals, total] = await Promise.all([
-    prisma.crmDeal.findMany({
+    db.crmDeal.findMany({
       where,
       orderBy,
       select: DEAL_SELECT,
       ...(paginated ? { skip: options.skip ?? 0, take: options.take } : {}),
     }),
-    paginated ? prisma.crmDeal.count({ where }) : 0,
+    paginated ? db.crmDeal.count({ where }) : 0,
   ]);
 
   return { deals, total, paginated };
@@ -1504,7 +1505,7 @@ export async function createDeal(
     if (!client) throw new CustomError('client not found', 404);
   }
 
-  return prisma.crmDeal.create({
+  return db.crmDeal.create({
     data: {
       title,
       value: parseValue(data.value),
@@ -1534,7 +1535,7 @@ export async function createDeal(
  * to probe which deal ids are real.
  */
 async function ownDeal(serviceBusinessId: string, businessId: string | undefined | null, dealId: string) {
-  return prisma.crmDeal.findFirst({
+  return db.crmDeal.findFirst({
     where: { id: dealId, ...dealScope(serviceBusinessId) },
     select: DEAL_SELECT,
   });
@@ -1558,7 +1559,7 @@ export async function updateDeal(
       ? existing.closedAt ?? new Date()
       : null;
 
-  return prisma.crmDeal.update({
+  return db.crmDeal.update({
     where: { id: dealId },
     data: {
       ...(data.title !== undefined && { title: String(data.title).trim() || existing.title }),
@@ -1593,7 +1594,7 @@ export async function deleteDeal(
 ) {
   const existing = await ownDeal(serviceBusinessId, businessId, dealId);
   if (!existing) throw new CustomError('Deal not found', 404);
-  await prisma.crmDeal.delete({ where: { id: dealId } });
+  await db.crmDeal.delete({ where: { id: dealId } });
   return { id: dealId };
 }
 
@@ -1858,7 +1859,7 @@ export async function importDeals(
 
   // businessId is null for the same reason as createDeal: it is the legacy CrmBusiness
   // anchor with no tenant mapping. serviceBusinessId is the anchor every read uses.
-  await prisma.crmDeal.createMany({
+  await db.crmDeal.createMany({
     data: prepared.map((d) => ({
       ...d,
       businessId: null,
@@ -1942,7 +1943,7 @@ export async function findJobConflicts(
   const windowStart = new Date(start.getTime() - 864e5);
   const windowEnd = new Date(end.getTime() + 864e5);
 
-  const candidates = await prisma.crmJob.findMany({
+  const candidates = await db.crmJob.findMany({
     where: {
       serviceBusinessId,
       status: { not: 'CANCELLED' },
@@ -2082,9 +2083,9 @@ export async function setAvailability(
   const uniqueDays = [...new Set(parsed)].sort((a, b) => a - b);
 
   await prisma.$transaction([
-    prisma.crmAvailability.deleteMany({ where: { serviceBusinessId } }),
+    db.crmAvailability.deleteMany({ where: { serviceBusinessId } }),
     ...uniqueDays.map((weekday) =>
-      prisma.crmAvailability.create({
+      db.crmAvailability.create({
         data: {
           serviceBusinessId,
           weekday,
@@ -2097,14 +2098,14 @@ export async function setAvailability(
     ),
   ]);
 
-  return prisma.crmAvailability.findMany({
+  return db.crmAvailability.findMany({
     where: { serviceBusinessId },
     orderBy: { weekday: 'asc' },
   });
 }
 
 export async function getAvailability(serviceBusinessId: string) {
-  return prisma.crmAvailability.findMany({
+  return db.crmAvailability.findMany({
     where: { serviceBusinessId },
     orderBy: { weekday: 'asc' },
   });
@@ -2132,7 +2133,7 @@ export async function checkAvailabilityWindow(
   const start = composeJobStart(scheduledDate, scheduledTime);
   if (!start) return { ok: true }; // unparseable start: not this check's business to judge
 
-  const hours = await prisma.crmAvailability.findMany({
+  const hours = await db.crmAvailability.findMany({
     where: { serviceBusinessId },
     orderBy: { weekday: 'asc' },
   });
@@ -2145,7 +2146,7 @@ export async function checkAvailabilityWindow(
   // checked against the closing time, not against its start.
   const dayEnd = dayStart + span;
 
-  const todays = hours.filter((h) => h.weekday === weekday);
+  const todays = hours.filter((h: any) => h.weekday === weekday);
   if (!todays.length) {
     return { ok: false, reason: `The business is not open on this day (weekday ${weekday})` };
   }
@@ -2167,7 +2168,7 @@ export async function checkAvailabilityWindow(
   return {
     ok: false,
     reason: `Outside opening hours (${todays[0].startTime}-${todays[0].endTime})`,
-    windows: todays.map((w) => ({ weekday: w.weekday, startTime: w.startTime, endTime: w.endTime })),
+    windows: todays.map((w: any) => ({ weekday: w.weekday, startTime: w.startTime, endTime: w.endTime })),
   };
 }
 
@@ -2192,12 +2193,12 @@ export async function claimSlug(serviceBusinessId: string, preferred: string): P
   const base = slugify(preferred);
   for (let attempt = 0; attempt < 25; attempt += 1) {
     const candidate = attempt === 0 ? base : `${base}-${attempt + 1}`;
-    const clash = await prisma.crmServiceBusiness.findUnique({
+    const clash = await db.crmServiceBusiness.findUnique({
       where: { slug: candidate },
       select: { id: true },
     });
     if (!clash) {
-      await prisma.crmServiceBusiness.update({
+      await db.crmServiceBusiness.update({
         where: { id: serviceBusinessId },
         data: { slug: candidate },
       });
@@ -2208,7 +2209,7 @@ export async function claimSlug(serviceBusinessId: string, preferred: string): P
   // 25 collisions on one stem means the stem is heavily taken; a random suffix is better than
   // failing the customer's onboarding.
   const candidate = `${base}-${Math.floor(Math.random() * 100000).toString(36)}`;
-  await prisma.crmServiceBusiness.update({
+  await db.crmServiceBusiness.update({
     where: { id: serviceBusinessId },
     data: { slug: candidate },
   });

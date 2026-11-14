@@ -24,12 +24,11 @@ function lazyRoute(router: Router, routePath: string, importPath: string) {
         loadedRouter(req, res, next);
       })
       .catch((err) => {
-        const loadError = err?.message ?? String(err);
-        logger.error(`Failed to lazy-load route ${routePath} from ${importPath}:`, err);
-        res.status(500).json({
+        logger.error(`[RouteBoundary] Failed to load route ${routePath} from ${importPath}:`, err);
+        res.status(503).json({
           success: false,
-          error: 'Route module failed to load',
-          cause: loadError,
+          error: 'Service temporarily unavailable',
+          message: 'This feature is currently undergoing maintenance or degraded. Please retry shortly.',
         });
       });
   });
@@ -64,26 +63,18 @@ const domainRoutes: [string, string][] = [
   ['/businesses', './business.routes'],
   ['/dashboard', './dashboard.routes'],
   ['/onboarding', './onboarding.routes'],
-  ['/business-os', './businessOS.routes'],
   ['/booking', './booking.routes'],
-  ['/reservations', './reservation.routes'],
 
   // 2. User & Profile Domain
   ['/users', './user.routes'],
-  ['/user', './userProfile.routes'],
   ['/profile', './profile.routes'],
-  ['/auth/wallet', './walletAuth.routes'],
 
   // 3. Freelance Gigs Domain
   ['/gigs', './gig.routes'],
-  ['/sourcing', './sourcing.routes'],
 
   // 4. Escrow & Disputes Domain
   ['/escrow', './escrow.routes'],
-  ['/solana-escrow', './solanaEscrow.routes'],
-  ['/sulha', './sulha.routes'],
   ['/disputes', './dispute.routes'],
-  ['/cod', './codEscrow.routes'],
 
   // 5. Payments & Invoicing Domain
   ['/payments', './payment.routes'],
@@ -101,30 +92,18 @@ const domainRoutes: [string, string][] = [
 
   // 6. Coordinator & Dispatch Domain
   ['/coordinator', './serviceCoordinator.routes'],
-  ['/orchestrator', './orchestration.routes'],
-  ['/jobs', './job.routes'],
 
   // 7. Trust & Verification Domain
   ['/trust', './trust.routes'],
   ['/trust-passport', './trustPassport.routes'],
   ['/trust-profile', './trustProfile.routes'],
-  ['/trust/v1', './trustApi.v1.routes'],
   ['/passport', './passport.routes'],
-  ['/passport/public', './publicPassport.routes'],
-  ['/passport/vc', './vc.routes'],
 
   // 8. Integrations & Platform
   ['/telegram', './telegram.routes'],
   ['/webhooks', './webhook.routes'],
-  ['/analytics', './analytics.routes'],
-  ['/admin', './admin.routes'],
-  ['/developer', './developer-portal.routes'],
-  ['/api-keys', './apiKey.routes'],
   ['/notifications', './notifications.routes'],
   ['/settings', './settings.routes'],
-  ['/shopify', './shopify.routes'],
-  ['/shopify-integration', './shopify-integration.routes'],
-  ['/whatsapp/advanced', './whatsapp.advanced.routes'],
 ];
 
 for (const [subPath, target] of domainRoutes) {

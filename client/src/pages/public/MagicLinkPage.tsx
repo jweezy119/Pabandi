@@ -112,10 +112,10 @@ export default function MagicLinkPage() {
           paidAt: inv.paidAt,
           business: {
             id: inv.business?.id || 'biz_direct',
-            name: inv.business?.name || 'Verified Pabandi Merchant',
+            name: inv.business?.name || 'Pabandi Merchant',
             logoUrl: inv.business?.logoUrl,
-            trustScore: 96,
-            isVerified: true,
+            trustScore: inv.business?.trustScore ?? 70,
+            isVerified: Boolean(inv.business?.isVerified),
           },
           client: {
             name: inv.clientName || 'Client',

@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { ClayToastProvider } from './components/primitives';
+import { AppErrorBoundary } from './components/AppErrorBoundary';
 // ─── Route-level code splitting ─────────────────────────────────────────────
 //
 // Every page used to be imported eagerly: 221 static imports meant the whole product
@@ -275,13 +276,14 @@ function AnimatedAppRoutes() {
     // centred box on a white page reads as a broken app on mobile, where the visible
     // area is small and the content below it would otherwise jump when it arrives.
     <AnimatePresence mode="wait">
-      <Suspense
-        fallback={
-          <div className="min-h-screen bg-[var(--cream)] flex items-center justify-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--clay)]" />
-          </div>
-        }
-      >
+      <AppErrorBoundary>
+        <Suspense
+          fallback={
+            <div className="min-h-screen bg-[var(--cream)] flex items-center justify-center">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--clay)]" />
+            </div>
+          }
+        >
       <ClayToastProvider>
         <Routes location={location} key={location.pathname}>
         {/* Public sandbox demo, shareable interactive simulator proposal, and merchant compliance/pricing — no authentication required */}
@@ -331,10 +333,8 @@ function AnimatedAppRoutes() {
           <Route path="booking/:businessSlug" element={<BookingExperience />} />
           <Route path="simulator" element={<SimulatorPage />} />
           <Route path="b/:id" element={<MagicLinkPage />} />
-          <Route path="b/:bookingId" element={<MagicLinkPage />} />
           <Route path="pay/:invoiceId" element={<MagicLinkPage />} />
           <Route path="invoice/:id" element={<MagicLinkPage />} />
-          <Route path="invoice/:invoiceId" element={<MagicLinkPage />} />
 
           <Route path="coordinator" element={<BusinessGuard><CoordinatorCommandSurface /></BusinessGuard>} />
           <Route path="coordinator/dispatch" element={<CoordinatorCommandSurface />} />
@@ -595,7 +595,6 @@ function AnimatedAppRoutes() {
             <Route path="business/register" element={<BusinessJoinPage />} />
             <Route path="business/:id" element={<PublicBusinessProfilePage />} />
             <Route path="business/:id/book" element={<BookingExperience />} />
-            <Route path="b/:id" element={<PublicBusinessProfilePage />} />
             <Route path="b/slug/:slug" element={<ShortLinkBookingPage />} />
             <Route path="business/activate/:id" element={<PlaceholderPage />} />
             <Route path="business/crm" element={<PlaceholderPage />} />
@@ -618,7 +617,6 @@ function AnimatedAppRoutes() {
             <Route path="demo-checkout" element={<PlaceholderPage />} />
             <Route path="s/:sellerId" element={<PlaceholderPage />} />
             <Route path="t/pay/:sellerId" element={<PlaceholderPage />} />
-            <Route path="b/:slug" element={<PlaceholderPage />} />
             <Route path="web3" element={<PlaceholderPage />} />
             <Route path="lp-terminal" element={<PlaceholderPage />} />
             <Route path="solana-escrow" element={<PlaceholderPage />} />
@@ -699,7 +697,8 @@ function AnimatedAppRoutes() {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       </ClayToastProvider>
-      </Suspense>
+        </Suspense>
+      </AppErrorBoundary>
     </AnimatePresence>
   );
 }

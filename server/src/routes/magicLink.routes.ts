@@ -3,7 +3,7 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 
 const router = Router();
-const GUARANTEED_RATE = 279.50;
+const GUARANTEED_RATE = Number(process.env.PLATFORM_FX_RATE_USD_PKR) || 280.00;
 
 /**
  * GET /api/v1/public/magic/:id
@@ -76,8 +76,8 @@ router.get('/:id', async (req: Request, res: Response) => {
             id: business?.id ?? null,
             name: bizName,
             logoUrl: business?.logoUrl ?? null,
-            trustScore: business?.trustScore || 96,
-            isVerified: business?.isVerified ?? true,
+            trustScore: business?.trustScore ?? 70,
+            isVerified: Boolean(business?.isVerified),
           },
           client: {
             id: invoice.client?.id ?? null,
@@ -134,8 +134,8 @@ router.get('/:id', async (req: Request, res: Response) => {
             name: bizName,
             logoUrl: booking.business?.logoUrl,
             slug: booking.business?.slug,
-            trustScore: booking.business?.trustScore || 98,
-            isVerified: booking.business?.isVerified ?? true,
+            trustScore: booking.business?.trustScore ?? 70,
+            isVerified: Boolean(booking.business?.isVerified),
           },
           client: {
             id: booking.client?.id,
@@ -181,8 +181,8 @@ router.get('/:id', async (req: Request, res: Response) => {
             name: biz.name,
             logoUrl: biz.logoUrl,
             slug: biz.slug,
-            trustScore: biz.trustScore || 95,
-            isVerified: biz.isVerified ?? true,
+            trustScore: biz.trustScore ?? 70,
+            isVerified: Boolean(biz.isVerified),
           },
           client: null,
           whatsappShareText: shareText,

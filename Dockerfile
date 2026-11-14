@@ -29,7 +29,7 @@ COPY server/ .
 #      tables; without them it logs a warning and starts with no DDL.
 # The `test -f` makes a build that silently produced no entrypoint fail loudly
 # instead of deploying a container that cannot start.
-RUN npm run compile && (test -f dist/src/server.js || test -f dist/src/index.js)
+RUN npm run compile && test -f dist/src/server.js
 # Fails the build if src imports a package that package.json does not declare.
 RUN npm run check:runtime-deps
 RUN npm prune --omit=dev

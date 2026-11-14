@@ -126,49 +126,49 @@ export const notificationService = {
   },
 
   async sendConfirmation(reservationId: string) {
-    const reservation = await prisma.reservation.findUnique({
+    const booking = await prisma.booking.findUnique({
       where: { id: reservationId },
-      include: { customer: true, business: true },
+      include: { business: true },
     });
-    if (reservation?.customer) {
+    if (booking?.business?.ownerId) {
       await createNotification({
-        userId: reservation.customer.id,
+        userId: booking.business.ownerId,
         type: 'job_completed',
         title: 'Booking Confirmed',
-        body: `Your booking at ${reservation.business?.name} has been confirmed`,
+        body: `Booking for ${booking.serviceType} at ${booking.business?.name} has been confirmed`,
         actionUrl: `/bookings/${reservationId}`,
       });
     }
   },
 
   async sendBusinessNotification(reservationId: string) {
-    const reservation = await prisma.reservation.findUnique({
+    const booking = await prisma.booking.findUnique({
       where: { id: reservationId },
-      include: { business: true, customer: true },
+      include: { business: true },
     });
-    if (reservation?.business?.ownerId) {
+    if (booking?.business?.ownerId) {
       await createNotification({
-        userId: reservation.business.ownerId,
+        userId: booking.business.ownerId,
         type: 'job_completed',
         title: 'New Booking Received',
-        body: `${reservation.customer?.firstName} ${reservation.customer?.lastName} booked a reservation`,
-        actionUrl: `/reservations/${reservationId}`,
+        body: `New booking received for ${booking.serviceType || 'service'}`,
+        actionUrl: `/bookings/${reservationId}`,
       });
     }
   },
 
   async sendReviewRequest(reservationId: string) {
-    const reservation = await prisma.reservation.findUnique({
+    const booking = await prisma.booking.findUnique({
       where: { id: reservationId },
-      include: { customer: true, business: true },
+      include: { business: true },
     });
-    if (reservation?.customer) {
+    if (booking?.business?.ownerId) {
       await createNotification({
-        userId: reservation.customer.id,
+        userId: booking.business.ownerId,
         type: 'support_reply',
-        title: 'Review Your Experience',
-        body: `How was your visit to ${reservation.business?.name}?`,
-        actionUrl: `/review/${reservationId}`,
+        title: 'Review Experience',
+        body: `Review your booking at ${booking.business?.name}`,
+        actionUrl: `/bookings/${reservationId}`,
       });
     }
   },

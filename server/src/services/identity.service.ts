@@ -1,5 +1,4 @@
 import { prisma } from '../utils/database';
-import { logger } from '../utils/logger';
 import crypto from 'crypto';
 
 export async function findOrCreateUser({
@@ -13,45 +12,40 @@ export async function findOrCreateUser({
   email?: string;
   metadata?: any;
 }) {
-  // 1. Try exact auth method match
-  const existingMethod = await prisma.userAuthMethod.findUnique({
-    where: { provider_providerId: { provider, providerId } },
-    include: { user: { include: { memberships: { where: { role: 'owner' } } } } },
-  });
-  if (existingMethod) {
-    await prisma.userAuthMethod.update({
-      where: { id: existingMethod.id },
-      data: { lastUsedAt: new Date() },
-    });
-    return existingMethod.user;
+  // 1. Try provider column match
+  let existingUser = null;
+  if (provider === 'github') {
+    existingUser = await prisma.user.findFirst({ where: { githubId: providerId }, include: { business: true } });
+  } else if (provider === 'telegram') {
+    existingUser = await prisma.user.findFirst({ where: { telegramId: providerId }, include: { business: true } });
+  } else if (provider === 'google') {
+    existingUser = await prisma.user.findFirst({ where: { googleId: providerId }, include: { business: true } });
   }
 
-  // 2. Try email match — links new provider to existing user
+  if (existingUser) return existingUser;
+
+  // 2. Try email match
   if (email) {
-    const existingUser = await prisma.user.findUnique({ 
+    existingUser = await prisma.user.findUnique({
       where: { email },
-      include: { memberships: { where: { role: 'owner' } } },
+      include: { business: true },
     });
     if (existingUser) {
-      await prisma.userAuthMethod.create({
-        data: { userId: existingUser.id, provider, providerId, metadata },
-      });
-      // Attestation boosts: GitHub (+25) or Telegram (+25) up to 800 cold-start max
-      if ((provider === 'github' || provider === 'telegram') && (existingUser.trustScore || 0) < 800) {
-        await prisma.user.update({
+      if (provider === 'github' || provider === 'telegram') {
+        existingUser = await prisma.user.update({
           where: { id: existingUser.id },
           data: {
-            trustScore: Math.min(800, (existingUser.trustScore || 700) + 25),
             ...(provider === 'github' && { githubId: providerId }),
             ...(provider === 'telegram' && { telegramId: providerId }),
           },
+          include: { business: true },
         });
       }
       return existingUser;
     }
   }
 
-  // 3. Create new user + first auth method
+  // 3. Create new user
   const displayName: string =
     (metadata?.name as string) ||
     (metadata?.displayName as string) ||
@@ -61,7 +55,6 @@ export async function findOrCreateUser({
 
   const isGithub = provider === 'github';
   const isTelegram = provider === 'telegram';
-  const initialTrustScore = (isGithub || isTelegram) ? 725.0 : 700.0;
 
   const newUser = await prisma.user.create({
     data: {
@@ -69,7 +62,7 @@ export async function findOrCreateUser({
       passwordHash: crypto.randomBytes(32).toString('hex'),
       firstName: givenName || displayName || 'Member',
       lastName: rest.length ? rest.join(' ') : 'Member',
-      trustScore: initialTrustScore,
+      trustScore: 70.0,
       disputeRate: 0.0,
       profilePictureUrl: metadata?.photo_url || metadata?.avatarUrl || null,
       ...(isGithub && { githubId: providerId }),
@@ -78,17 +71,14 @@ export async function findOrCreateUser({
         ...(metadata?.username && { username: metadata.username.toLowerCase() }),
       }),
     },
+    include: { business: true },
   });
-  await prisma.userAuthMethod.create({
-    data: { userId: newUser.id, provider, providerId, metadata },
-  });
+
   return newUser;
 }
 
 export function getActiveBusinessId(user: any): string | null {
-  const ownerMemberships = (user.memberships || []).filter((m: any) => m.role === 'owner');
-  if (ownerMemberships.length > 0) {
-    return ownerMemberships[0].businessId;
-  }
-  return user.business?.id || null;
+  if (user?.business?.id) return user.business.id;
+  if (user?.businessId) return user.businessId;
+  return null;
 }

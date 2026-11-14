@@ -212,62 +212,26 @@ export interface CategoryPricing {
 }
 
 export const CATEGORY_PRICING: Record<BusinessCategory, CategoryPricing> = {
-  // High-frequency, low-ticket, and the customer is comparing three salons in a
-  // browser. A fee the merchant cannot pass on comes straight out of a thin
-  // margin, so these are priced to be easy to say yes to.
-  SALON: {
-    multiplier: 0.75,
-    rationale: 'High-frequency, low-ticket, price-competitive. Prioritise adoption.',
-  },
-  SPA: { multiplier: 0.75, rationale: 'Same economics as salon: frequent and price-visible.' },
-  RESTAURANT: { multiplier: 0.75, rationale: 'Frequent repeat visits; discount drives loyalty.' },
-  FITNESS_CENTER: {
-    multiplier: 0.75,
-    rationale: 'Membership economics reward a low headline fee.',
-  },
-
-  // Genuine services businesses, mid-ticket, moderate frequency.
-  CLEANING: {
-    multiplier: 1.0,
-    rationale: 'Reference category. Recurring work with room to absorb a standard rate.',
-  },
-  CLINIC: {
-    multiplier: 1.0,
-    rationale: 'Reference category.',
-  },
-
-  // Larger, rarer, higher-value engagements where a percentage is a rounding
-  // error against the work. These can carry more.
-  FREELANCE: {
-    multiplier: 1.25,
-    rationale: 'High-ticket, infrequent. A percentage is immaterial to contract value.',
-  },
-  PROPERTY_RENTAL: {
-    multiplier: 1.25,
-    rationale: 'High-value transactions, low volume.',
-  },
-  ECOMMERCE: {
-    multiplier: 1.25,
-    rationale: 'High transaction value; fee is small relative to GMV.',
-  },
-
-  // High-ticket service businesses
-  ROOFING: { multiplier: 1.0, rationale: 'High-ticket residential / commercial contracting.' },
-  HVAC: { multiplier: 1.0, rationale: 'Emergency and scheduled service work.' },
-  SECURITY: { multiplier: 1.0, rationale: 'Guards, equipment, and facility monitoring.' },
-  CONTRACTOR: { multiplier: 1.0, rationale: 'General and specialty contracting work.' },
-
-  // Not really local services — priced neutrally rather than tuned, since we
-  // have no evidence about how these behave on Pabandi.
-  EVENT_VENUE: { multiplier: 1.0, rationale: 'Neutral pending data.' },
-  HOTEL: { multiplier: 1.0, rationale: 'Neutral pending data.' },
-  HOSPITAL: { multiplier: 1.0, rationale: 'Neutral pending data.' },
-  LIVE_SELLER: { multiplier: 1.0, rationale: 'Neutral pending data.' },
-  MARKETPLACE: {
-    multiplier: 1.0,
-    rationale: 'Neutral pending data. Deliberately not tuned — a marketplace on a marketplace is unmodelled.',
-  },
-  OTHER: { multiplier: 1.0, rationale: 'Default. No category-specific assumption made.' },
+  SALON: { multiplier: 0.75, rationale: 'High-frequency, low-ticket, price-competitive.' },
+  BARBERSHOP: { multiplier: 0.75, rationale: 'High-frequency, low-ticket.' },
+  SPA: { multiplier: 0.75, rationale: 'Frequent and price-visible.' },
+  RESTAURANT: { multiplier: 0.75, rationale: 'Frequent repeat visits.' },
+  CAFE: { multiplier: 0.75, rationale: 'Frequent repeat visits.' },
+  FITNESS: { multiplier: 0.75, rationale: 'Membership economics.' },
+  FITNESS_CENTER: { multiplier: 0.75, rationale: 'Membership and gym economics.' },
+  HOTEL: { multiplier: 1.0, rationale: 'Hospitality accommodation.' },
+  PROPERTY_RENTAL: { multiplier: 1.0, rationale: 'Short and long term rentals.' },
+  HEALTHCARE: { multiplier: 1.0, rationale: 'Professional health service.' },
+  PROFESSIONAL: { multiplier: 1.0, rationale: 'Professional advisory and consulting.' },
+  RETAIL: { multiplier: 1.0, rationale: 'Direct-to-consumer sales.' },
+  FREELANCE: { multiplier: 1.25, rationale: 'High-ticket contract value.' },
+  CLEANING: { multiplier: 1.0, rationale: 'Recurring residential and commercial services.' },
+  CLINIC: { multiplier: 1.0, rationale: 'Medical, dental, and health clinics.' },
+  ROOFING: { multiplier: 1.0, rationale: 'Contracting and emergency repair.' },
+  HVAC: { multiplier: 1.0, rationale: 'Heating, ventilation, and air conditioning.' },
+  SECURITY: { multiplier: 1.0, rationale: 'Guard patrol and facility protection.' },
+  CONTRACTOR: { multiplier: 1.0, rationale: 'General and specialty contracting.' },
+  OTHER: { multiplier: 1.0, rationale: 'Default tier.' },
 };
 
 /** Absolute multiplier bounds. Category tuning may not exceed these. */

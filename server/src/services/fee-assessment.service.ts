@@ -251,7 +251,7 @@ export async function feeHistory(businessId: string, limit = 50) {
     },
   });
 
-  return rows.map((r) => ({
+  return rows.map((r: any) => ({
     ...r,
     rate: r.rateBps / 10_000,
     ratePercent: (r.rateBps / 100).toFixed(2),

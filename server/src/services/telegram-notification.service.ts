@@ -291,11 +291,11 @@ export class TelegramNotificationService {
     } else {
       // Find parties related to this work order/dispute if possible
       try {
-        const dispute = await prisma.escrowDispute.findFirst({
-          where: { escrowId: workOrderId },
+        const dispute = await prisma.dispute.findFirst({
+          where: { contextId: workOrderId },
         });
-        if (dispute?.raisedByPassport) {
-          await this.sendToUser(dispute.raisedByPassport, payload);
+        if (dispute?.reportedById) {
+          await this.sendToUser(dispute.reportedById, payload);
         }
       } catch (err) {
         // Non-blocking

@@ -179,7 +179,7 @@ router.get('/pending', authenticate, async (req: AuthRequest, res: Response, nex
       payments.map(async (p) => {
         const meta = p.metadata as any;
         const reservation = meta?.reservationId
-          ? await prisma.reservation.findUnique({ where: { id: meta.reservationId } })
+          ? await prisma.booking.findUnique({ where: { id: meta.reservationId } })
           : null;
         const customer = p.payerId
           ? await prisma.user.findUnique({ where: { id: p.payerId }, select: { firstName: true, lastName: true, email: true, phone: true } })
@@ -193,7 +193,7 @@ router.get('/pending', authenticate, async (req: AuthRequest, res: Response, nex
           screenshotUrl: meta?.screenshotUrl || null,
           verificationResult: meta?.verificationResult || null,
           reservation: reservation
-            ? { date: reservation.reservationDate, time: reservation.reservationTime, guests: reservation.numberOfGuests, name: reservation.customerName }
+            ? { date: reservation.slotStart, time: reservation.slotStart, guests: 1, name: reservation.serviceType }
             : null,
           customer: customer ? { name: `${customer.firstName} ${customer.lastName}`, email: customer.email, phone: customer.phone } : null,
         };
@@ -237,11 +237,11 @@ router.post('/:reference/confirm', authenticate, async (req: AuthRequest, res: R
       data: { status: 'COMPLETED' },
     });
 
-    // Update reservation
+    // Update booking
     if (meta?.reservationId) {
-      await prisma.reservation.update({
+      await prisma.booking.update({
         where: { id: meta.reservationId },
-        data: { depositStatus: 'PAID', status: 'CONFIRMED', depositPaid: true },
+        data: { depositStatus: 'PAID', status: 'confirmed', depositPaid: true },
       });
     }
 
@@ -309,11 +309,11 @@ router.post('/:reference/reject', authenticate, async (req: AuthRequest, res: Re
       },
     });
 
-    // Update reservation
+    // Update booking
     if (meta?.reservationId) {
-      await prisma.reservation.update({
+      await prisma.booking.update({
         where: { id: meta.reservationId },
-        data: { depositStatus: 'NOT_REQUIRED', status: 'CANCELLED' },
+        data: { depositStatus: 'NOT_REQUIRED', status: 'cancelled' },
       });
     }
 

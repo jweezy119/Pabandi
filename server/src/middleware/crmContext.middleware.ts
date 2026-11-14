@@ -15,6 +15,9 @@ export interface CrmContext {
   userId: string;
   serviceBusinessId: string;
   businessId: string | null;
+  platformBusinessId?: string;
+  isOwner?: boolean;
+  role?: string;
 }
 
 /**
@@ -42,73 +45,30 @@ export const resolveCrmBusiness = async (
 
     const requested = req.body?.businessId || req.query?.businessId;
 
-    let crmBusiness = null as {
-      id: string;
-      businessId: string | null;
-      ownerId: string;
-    } | null;
-
-    if (requested) {
-      // Explicit target. Scoped to the caller's own businesses so a leaked
-      // businessId in a query string cannot be used to read someone else's P&L.
-      crmBusiness = await prisma.crmServiceBusiness.findFirst({
-        where: {
-          OR: [{ businessId: requested }, { id: requested }],
-          ownerId: userId,
-        },
-        select: { id: true, businessId: true, ownerId: true },
-      });
-    } else {
-      crmBusiness = await prisma.crmServiceBusiness.findFirst({
-        where: { ownerId: userId },
-        orderBy: { createdAt: 'asc' },
-        select: { id: true, businessId: true, ownerId: true },
-      });
-    }
-
-    if (!crmBusiness) {
-      // Check if user has an existing platform Business (e.g. from booking, gig, or signup)
-      const platformBiz = await prisma.business.findFirst({
-        where: { ownerId: userId },
-        select: { id: true, name: true, category: true },
-      });
-      if (platformBiz) {
-        crmBusiness = await prisma.crmServiceBusiness.create({
-          data: {
-            ownerId: userId,
-            businessId: platformBiz.id,
-            serviceType: platformBiz.category || 'general_service',
-          },
-          select: { id: true, businessId: true, ownerId: true },
+    const biz = requested
+      ? await prisma.business.findFirst({
+          where: { id: requested, ownerId: userId },
+          select: { id: true, ownerId: true },
+        })
+      : await prisma.business.findFirst({
+          where: { ownerId: userId },
+          orderBy: { createdAt: 'asc' },
+          select: { id: true, ownerId: true },
         });
-      }
-    }
 
-    if (!crmBusiness) {
+    if (!biz) {
       return next(
         new CustomError('No service business enrolled for this account', 403)
       );
     }
 
-    // If crmBusiness has no linked platform businessId, check if a Business exists
-    if (!crmBusiness.businessId) {
-      const platformBiz = await prisma.business.findFirst({
-        where: { ownerId: userId },
-        select: { id: true },
-      });
-      if (platformBiz) {
-        await prisma.crmServiceBusiness.update({
-          where: { id: crmBusiness.id },
-          data: { businessId: platformBiz.id },
-        });
-        crmBusiness.businessId = platformBiz.id;
-      }
-    }
-
     req.crm = {
       userId,
-      serviceBusinessId: crmBusiness.id,
-      businessId: crmBusiness.businessId || crmBusiness.id,
+      serviceBusinessId: biz.id,
+      platformBusinessId: biz.id,
+      isOwner: true,
+      role: 'owner',
+      businessId: biz.id,
     };
     return next();
   } catch (err) {

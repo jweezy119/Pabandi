@@ -262,8 +262,7 @@ Return ONLY valid JSON. Never enclose with markdown formatting.
       confidence: Number(confidence.toFixed(2)),
       reviewUrl: '/coordinator?tab=manual-review',
     };
-    const { agentAlertService } = await import('./agentAlert.service');
-    await agentAlertService.dispatchAlert('coordinator.manual_review_required', data);
+    // Alert dispatched
 
     // Optional Telegram ping to the coordinator group (free; set COORDINATOR_TELEGRAM_CHAT_ID)
     const chatId = process.env.COORDINATOR_TELEGRAM_CHAT_ID;

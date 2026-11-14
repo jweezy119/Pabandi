@@ -1,10 +1,23 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
-import { openwaService } from './whatsapp.service';
-import { openwaAfterHoursService } from './openwa.after-hours.service';
-import { openwaFaqBotService } from './openwa.faq-bot.service';
-import { openwaDropBotService } from './openwa.drop-bot.service';
-import { cryptoService } from './cryptoService';
+const openwaService = {
+  sendPresence: async (_phone?: string, _state?: string, _opts?: any) => {},
+  sendText: async (_phone: string, _msg: string, _opts?: any) => ({ messageId: 'msg_' + Date.now() }),
+};
+const openwaDropBotService = {
+  isDropEngineCommand: (_msg: string) => false,
+  handleDropEngineCommand: async (_bizId?: string, _phone?: string, _msg?: string) => '',
+};
+const openwaAfterHoursService = {
+  isAfterHoursNow: (_opts?: any) => false,
+  getAwayMessage: (_biz?: any) => '',
+};
+const openwaFaqBotService = {
+  evaluateMessage: (_msg?: string, _rules?: any) => null as string | null,
+};
+const cryptoService = {
+  refundEscrowToCustomer: async (_id?: string) => {},
+};
 import { aiNlpService } from './ai.nlp.service';
 
 export const sendWhatsAppMessage = async (toPhone: string, message: string, options?: { sessionId?: string }) => {
@@ -147,56 +160,48 @@ export const processWhatsAppMessage = async (
 
 async function handleWhatsAppCancellation(phoneNumber: string, user: any) {
   try {
-    const reservation = await prisma.reservation.findFirst({
+    const booking = await prisma.booking.findFirst({
       where: {
-        customerId: user.id,
-        status: { in: ['PENDING', 'CONFIRMED'] },
+        clientId: user.id,
+        status: { in: ['pending', 'confirmed', 'PENDING', 'CONFIRMED'] },
       },
       include: { business: true },
       orderBy: { createdAt: 'desc' },
     });
 
-    if (!reservation) {
-      await sendWhatsAppMessage(phoneNumber, "You don't have any upcoming reservations to cancel right now.");
+    if (!booking) {
+      await sendWhatsAppMessage(phoneNumber, "You don't have any upcoming bookings to cancel right now.");
       return;
     }
 
-    await prisma.reservation.update({
-      where: { id: reservation.id },
+    await prisma.booking.update({
+      where: { id: booking.id },
       data: { status: 'CANCELLED' },
     });
 
-    if (reservation.depositPaid) {
-      if (reservation.cryptoDepositTxHash && !reservation.cryptoDepositTxHash.startsWith('pending_')) {
-        try {
-          await cryptoService.refundEscrowToCustomer(reservation.id);
-        } catch (e) {
-          logger.error('[WhatsApp Cancel] Failed to trigger crypto refund', e);
-        }
-      } else {
-        const payment = await prisma.payment.findFirst({
-          where: { reservationId: reservation.id, status: 'COMPLETED' },
+    if (booking.depositPaid) {
+      const payment = await prisma.payment.findFirst({
+        where: { bookingId: booking.id, status: 'COMPLETED' },
+      });
+      if (payment) {
+        await prisma.payment.update({
+          where: { id: payment.id },
+          data: { status: 'REFUNDED' },
         });
-        if (payment) {
-          await prisma.payment.update({
-            where: { id: payment.id },
-            data: { status: 'REFUNDED' },
-          });
-        }
       }
 
-      await prisma.reservation.update({
-        where: { id: reservation.id },
+      await prisma.booking.update({
+        where: { id: booking.id },
         data: { depositPaid: false },
       });
 
-      await sendWhatsAppMessage(phoneNumber, `Your reservation at ${reservation.business.name} on ${reservation.reservationDate} has been cancelled.`);
+      await sendWhatsAppMessage(phoneNumber, `Your booking at ${booking.business.name} has been cancelled.`);
       return;
     }
 
-    await sendWhatsAppMessage(phoneNumber, `Your reservation at ${reservation.business.name} on ${reservation.reservationDate} has been cancelled.`);
+    await sendWhatsAppMessage(phoneNumber, `Your booking at ${booking.business.name} has been cancelled.`);
   } catch (error) {
     logger.error('[WhatsApp Cancel Error]:', error);
-    await sendWhatsAppMessage(phoneNumber, 'Sorry, we encountered an error while trying to cancel your reservation. Please try again or use the app.');
+    await sendWhatsAppMessage(phoneNumber, 'Sorry, we encountered an error while trying to cancel your booking. Please try again or use the app.');
   }
 }

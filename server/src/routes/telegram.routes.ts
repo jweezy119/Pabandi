@@ -114,12 +114,16 @@ function isTelegramIp(clientIp: string): boolean {
 
 // POST /api/v1/telegram/webhook - Main bot webhook (handles verification, commands, LP alerts)
 router.post('/webhook', (req: Request, res: Response, next: NextFunction) => {
-  const secretToken = process.env.TELEGRAM_WEBHOOK_SECRET || 'pbn_bot_secret_2026';
+  const secretToken = process.env.TELEGRAM_BOT_SECRET || process.env.TELEGRAM_WEBHOOK_SECRET;
   const incomingHeader = req.headers['x-telegram-bot-api-secret-token'];
   const clientIp = (req.ip || req.socket.remoteAddress || '').replace(/^::ffff:/, '');
 
   if (process.env.NODE_ENV === 'production') {
-    const isValidToken = Boolean(secretToken && incomingHeader === secretToken);
+    if (!secretToken) {
+      logger.error('[TelegramWebhook] FATAL: TELEGRAM_BOT_SECRET is missing from environment.');
+      return res.status(500).json({ success: false, error: 'Server configuration error' });
+    }
+    const isValidToken = Boolean(incomingHeader && incomingHeader === secretToken);
     const isTelegramSource = isTelegramIp(clientIp);
 
     if (!isValidToken && !isTelegramSource) {
@@ -140,9 +144,12 @@ router.get('/set-webhook', async (req: Request, res: Response, next: NextFunctio
     if (!telegramBot) {
       return res.status(503).json({ success: false, message: 'Telegram bot not initialized' });
     }
+    const secretToken = process.env.TELEGRAM_BOT_SECRET || process.env.TELEGRAM_WEBHOOK_SECRET;
+    if (!secretToken) {
+      return res.status(500).json({ success: false, error: 'TELEGRAM_BOT_SECRET environment variable is missing.' });
+    }
     const apiUrl = process.env.API_URL || 'https://pabandi.onrender.com';
     const webhookUrl = `${apiUrl}/api/v1/telegram/webhook`;
-    const secretToken = process.env.TELEGRAM_WEBHOOK_SECRET || 'pbn_bot_secret_2026';
 
     await telegramBot.api.setWebhook(webhookUrl, { secret_token: secretToken });
     return res.json({ success: true, message: `Webhook registered to ${webhookUrl} with secret token verification` });

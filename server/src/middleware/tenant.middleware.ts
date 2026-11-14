@@ -83,29 +83,25 @@ export async function resolveTenant(
   opts: { serviceBusinessId?: string | null } = {},
 ): Promise<Tenant> {
   const businessId = await resolvePlatformBusinessId(req, opts);
+  const userId = (req as any).user?.id;
 
-  // An explicit service business id short-circuits the lookup below; it was already
-  // ownership-checked on the way in.
   if (opts.serviceBusinessId) {
-    const owned = await prisma.crmServiceBusiness.findFirst({
-      where: { id: opts.serviceBusinessId, ownerId: (req as any).user?.id },
-      select: { id: true, businessId: true },
+    const owned = await prisma.business.findFirst({
+      where: { id: opts.serviceBusinessId, ownerId: userId },
+      select: { id: true },
     });
-    /* resolvePlatformBusinessId already refused it if unowned, so this cannot be null */
     return {
-      businessId: owned?.businessId ?? businessId,
+      businessId: owned?.id ?? businessId,
       serviceBusinessId: opts.serviceBusinessId,
-      ownerUserId: (req as any).user?.id,
+      ownerUserId: userId,
       source: 'service-business-id',
     };
   }
 
-  // The token only carries the platform id, so the service business still has to be
-  // found. CRM context would have short-circuited this already.
-  const row = await prisma.crmServiceBusiness.findFirst({
-    where: { ownerId: (req as any).user?.id },
+  const row = await prisma.business.findFirst({
+    where: { ownerId: userId },
     orderBy: { createdAt: 'asc' },
-    select: { id: true, businessId: true },
+    select: { id: true },
   });
   if (!row) {
     throw new CustomError(
@@ -115,9 +111,9 @@ export async function resolveTenant(
   }
 
   return {
-    businessId: row.businessId ?? businessId,
+    businessId: row.id,
     serviceBusinessId: row.id,
-    ownerUserId: (req as any).user?.id,
+    ownerUserId: userId,
     source: 'token',
   };
 }
@@ -147,30 +143,19 @@ export async function resolvePlatformBusinessId(
   // 1. CRM context — resolveCrmBusiness already verified `ownerId` upstream.
   const crm = (req as any).crm;
   if (crm?.businessId) return crm.businessId as string;
-  if (crm?.serviceBusinessId) {
-    // Enrolled but never linked to a platform Business. Resolve it properly rather than
-    // reporting "no business", which would send the caller to setup they already did.
-    const linked = await prisma.crmServiceBusiness.findUnique({
-      where: { id: crm.serviceBusinessId as string },
-      select: { businessId: true },
-    });
-    return linked?.businessId ?? null;
-  }
+  if (crm?.serviceBusinessId) return crm.serviceBusinessId as string;
 
-  // 2. An explicitly supplied service business id — OWNERSHIP-CHECKED, not trusted.
-  //    This is the only caller-influenced input, and it is checked against ownerId so it
-  //    cannot be used to point at someone else's tenant.
   const explicit = opts.serviceBusinessId;
   if (explicit) {
-    const owned = await prisma.crmServiceBusiness.findFirst({
+    const owned = await prisma.business.findFirst({
       where: { id: explicit, ownerId: userId },
-      select: { id: true, businessId: true },
+      select: { id: true },
     });
     if (!owned) {
       logger.warn(`[Tenant] refused serviceBusinessId ${explicit} for user ${userId}: not owned`);
       throw new CustomError('That business is not associated with your account', 403);
     }
-    return owned.businessId ?? null;
+    return owned.id;
   }
 
   // 3. The verified token. Populated for anyone who completed Contact OS setup, because

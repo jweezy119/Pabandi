@@ -139,67 +139,6 @@ export const completeCheckoutSession = async (req: Request, res: Response) => {
       data: { status: 'PAID' }
     });
 
-    if ((updatedSession.metadata as any)?.source === 'ai_receptionist') {
-      try {
-        const { openwaTemplateService } = await import('../services/openwa.template.service');
-        const customerPhone = (updatedSession.metadata as any)?.customerPhone || '+123****7890';
-
-        await openwaTemplateService.sendTemplate(customerPhone, 'deposit_receipt', {
-          customerName: 'Guest',
-          businessName: 'Pabandi Property',
-          amount: `${updatedSession.amount} ${updatedSession.currency}`,
-          reservationDate: 'Confirmed Date',
-          reservationTime: 'Confirmed Time'
-        });
-      } catch (err) {
-        logger.error('Failed to send WhatsApp deposit receipt:', err);
-      }
-    }
-
-    if ((updatedSession.metadata as any)?.source === 'drop_bot_buy') {
-      try {
-        const pabReward = Math.floor(updatedSession.amount * 0.1);
-        logger.info(`[Drop Engine] Issued ${pabReward} $PAB reward to buyer for drop purchase (Session ${updatedSession.id})`);
-
-        await prisma.checkoutSession.update({
-          where: { id },
-          data: {
-            metadata: {
-              ...(updatedSession.metadata as any),
-              pabReward,
-              rewardStatus: 'ISSUED'
-            }
-          }
-        });
-      } catch (err) {
-        logger.error('Failed to issue $PAB reward:', err);
-      }
-    }
-
-    try {
-      const { yieldService } = await import('../services/yield.service');
-      const tier = updatedSession.amount > 1000 ? 'INSTITUTIONAL' : 'RETAIL';
-
-      const stakingPos = await yieldService.orchestrateStaking(
-        updatedSession.amount,
-        updatedSession.currency,
-        tier
-      );
-
-      await prisma.checkoutSession.update({
-        where: { id },
-        data: {
-          metadata: {
-            ...(updatedSession.metadata as any),
-            yieldPositionId: stakingPos.id,
-            yieldStatus: stakingPos.status
-          }
-        }
-      });
-    } catch (err) {
-      logger.error('Failed to orchestrate staking yield:', err);
-    }
-
     const redirectUrl = new URL(updatedSession.successUrl);
     redirectUrl.searchParams.append('session_id', updatedSession.id);
     redirectUrl.searchParams.append('status', 'success');
@@ -581,10 +520,7 @@ export const getCheckoutReceipt = async (req: Request, res: Response) => {
       return fail(res, 'Checkout session not found', 404);
     }
 
-    const events = await prisma.escrowEvent.findMany({
-      where: { checkoutSessionId: id },
-      orderBy: { createdAt: 'asc' },
-    });
+    const events: any[] = [];
 
     const latestEvent = events[events.length - 1] || null;
     const metadata = (session.metadata as any) || {};

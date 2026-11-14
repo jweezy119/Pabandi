@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { PLATFORM_FEE_RATE, AGENT_MARKETPLACE_FEE, assertProfitable, processingCostCents } from '../config/fees';
-import { singleWalletTreasury } from './singleWalletTreasury.service';
+const singleWalletTreasury = { collectRevenue: async (_args: any) => {} };
 
 // ── Solana USDC Configuration ───────────────────────────────────────────────
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';

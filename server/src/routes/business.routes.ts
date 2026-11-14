@@ -217,7 +217,7 @@ router.get('/', rateLimiter, async (req, res, next) => {
     if (googlePlaceId && String(googlePlaceId)) {
       const existing = await prisma.business.findFirst({
         where: { OR: [{ googlePlaceId: String(googlePlaceId) }, { externalId: String(googlePlaceId) }, { id: String(googlePlaceId) }] },
-        include: { googleReviews: true, settings: true },
+        include: { settings: true },
       });
       if (existing) {
         return res.json({ success: true, data: { businesses: [existing] } });
@@ -262,7 +262,7 @@ router.get('/', rateLimiter, async (req, res, next) => {
       // live OSM/Nominatim sources + the directory fallback below fill it in.
       const allSeeded = await prisma.business.findMany({
         where: dbWhereCat,
-        include: { googleReviews: true, settings: true },
+        include: { settings: true },
         orderBy: { createdAt: 'desc' },
         take: 120,
       });
@@ -273,7 +273,7 @@ router.get('/', rateLimiter, async (req, res, next) => {
       if (!cleanSearch && allSeeded.length === 0) {
         const fallback = await prisma.business.findMany({
           where: { isActive: true },
-          include: { googleReviews: true, settings: true },
+          include: { settings: true },
           orderBy: { createdAt: 'desc' },
           take: 120,
         });

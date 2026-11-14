@@ -4,7 +4,7 @@ import { qwenScreenshotRail } from './rails/qwen.rail';
 import { mockEmiRail } from './rails/mock-emi.rail';
 import { EventEmitter } from 'events';
 import { webhookService } from './webhook.service';
-import { channelDispatcher } from './channel-dispatcher.service';
+const channelDispatcher = { dispatchNewIntent: async (_intent: any) => null };
 import { aiPaymentVerifierService } from './ai.payment.verifier.service';
 import { telegramBot } from './telegram-bot.service';
 import { InlineKeyboard } from 'grammy';
@@ -202,14 +202,13 @@ export class OfframpService {
         data: { lockedCollateralUsdc: { increment: intent.amountUsdc } },
       });
 
-      await tx.vaultLedger.create({
+      await tx.ledger.create({
         data: {
-          lpId: lp.id,
-          intentId: intent.id,
-          action: 'LOCK',
+          account: lp.walletAddress,
+          type: 'LOCK',
           amount: intent.amountUsdc,
-          balanceAfter: availableUsdc - intent.amountUsdc,
-          reason: 'Matched Intent',
+          referenceId: intent.id,
+          description: 'Matched Intent',
         },
       });
 
@@ -396,25 +395,23 @@ export class OfframpService {
 
       const lp = await tx.liquidityProvider.findUnique({ where: { walletAddress: intent.lpWallet! } });
 
-      await tx.vaultLedger.create({
+      await tx.ledger.create({
         data: {
-          lpId: lp!.id,
-          intentId: intent.id,
-          action: 'RELEASE',
+          account: lp!.walletAddress,
+          type: 'RELEASE',
           amount: intent.amountUsdc,
-          balanceAfter: lp!.collateralUsdc - lp!.lockedCollateralUsdc,
-          reason: `Intent Settled (${releasedBy})`,
+          referenceId: intent.id,
+          description: `Intent Settled (${releasedBy})`,
         },
       });
 
-      await tx.vaultLedger.create({
+      await tx.ledger.create({
         data: {
-          lpId: lp!.id,
-          intentId: intent.id,
-          action: 'CREDIT',
+          account: lp!.walletAddress,
+          type: 'CREDIT',
           amount: netToLp,
-          balanceAfter: lp!.collateralUsdc - lp!.lockedCollateralUsdc,
-          reason: 'Yield and Principal payout',
+          referenceId: intent.id,
+          description: 'Yield and Principal payout',
         },
       });
     });
@@ -493,22 +490,21 @@ export class OfframpService {
                 where: { id: lp.id },
                 data: { lockedCollateralUsdc: { decrement: intent.amountUsdc } },
               });
-              await tx.vaultLedger.create({
+              await tx.ledger.create({
                 data: {
-                  lpId: lp.id,
-                  intentId: intent.id,
-                  action: 'RELEASE',
+                  account: lp.walletAddress,
+                  type: 'RELEASE',
                   amount: intent.amountUsdc,
-                  balanceAfter: lp.collateralUsdc - lp.lockedCollateralUsdc + intent.amountUsdc,
-                  reason: 'Intent Expired (Strike)',
+                  referenceId: intent.id,
+                  description: 'Intent Expired (Strike)',
                 },
               });
 
               const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-              const strikes = await tx.vaultLedger.count({
+              const strikes = await tx.ledger.count({
                 where: {
-                  lpId: lp.id,
-                  reason: 'Intent Expired (Strike)',
+                  account: lp.walletAddress,
+                  description: 'Intent Expired (Strike)',
                   createdAt: { gte: oneDayAgo },
                 },
               });

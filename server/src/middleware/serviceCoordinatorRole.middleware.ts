@@ -34,16 +34,6 @@ export function requireCoordinatorRole(allowedRoles: CoordinatorRole[]) {
       });
       if (biz) {
         req.user.businessId = biz.id;
-      } else {
-        const crmBiz = await prisma.crmServiceBusiness.findFirst({
-          where: { ownerId: req.user.id },
-          select: { businessId: true, id: true },
-        });
-        if (crmBiz?.businessId) {
-          req.user.businessId = crmBiz.businessId;
-        } else if (crmBiz?.id) {
-          req.user.businessId = crmBiz.id;
-        }
       }
     }
 

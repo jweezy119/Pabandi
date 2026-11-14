@@ -84,17 +84,25 @@ router.post('/complete', async (req: AuthRequest, res: Response) => {
       : [];
 
     await prisma.$transaction([
-      prisma.crmServiceBusiness.update({
+      prisma.business.update({
         where: { id: crm.serviceBusinessId },
         data: {
-          serviceType: 'SERVICE',
-          serviceCatalog: catalog,
+          name: businessName,
         },
       }),
       // Replace rather than append: re-running onboarding on a business that already has crew
       // would otherwise double the roster every time the wizard is opened.
-      prisma.crmEmployee.deleteMany({ where: { serviceBusinessId: crm.serviceBusinessId } }),
-      ...crewRows.map((row) => prisma.crmEmployee.create({ data: row })),
+      prisma.technician.deleteMany({ where: { businessId: crm.serviceBusinessId } }),
+      ...crewRows.map((row) =>
+        prisma.technician.create({
+          data: {
+            businessId: crm.serviceBusinessId,
+            name: row.name,
+            phoneEncrypted: row.phone || '',
+            skills: [row.role],
+          },
+        })
+      ),
     ]);
 
     const slug = await claimSlug(crm.serviceBusinessId, businessName);

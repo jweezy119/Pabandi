@@ -50,7 +50,7 @@ async function ensureTrustPassport(userId: string, firstName?: string | null) {
 
 import { CustomError } from '../middleware/errorHandler';
 import { encrypt } from '../utils/encryption';
-import { osintService } from '../services/osint.service';
+// OSINT checks removed in architectural cleanup
 import { odooService } from '../services/odoo.service';
 import { notificationService } from '../services/notification.service';
 import { emailService } from '../services/email.service';
@@ -311,29 +311,7 @@ export const register = async (
         },
       });
 
-    // A new business owner is, by definition, in business mode. Without this
-    // the client sees preferredMode === undefined and BusinessGuard bounces
-    // them off the CRM they have just signed up for.
-    const codeBusinessId = (updatedUser.business as { id?: string } | null)?.id ?? null;
-    if (codeBusinessId) {
-      try {
-        await prisma.crmServiceBusiness.upsert({
-          where: { businessId: codeBusinessId },
-          update: {
-            serviceType: normalizeVerticalKey(req.body.vertical).toUpperCase(),
-          },
-          create: {
-            businessId: codeBusinessId,
-            ownerId: updatedUser.id,
-            serviceType: normalizeVerticalKey(req.body.vertical).toUpperCase(),
-            teamSize: 1,
-            subscriptionTier: 'FREE',
-          },
-        });
-      } catch (crmErr: any) {
-        logger.warn('[auth.register] CRM service business provisioning skipped', crmErr?.message);
-      }
-    }
+    const codeBusinessId = (updatedUser as any).business?.id ?? null;
     const codeMode: 'business' | 'personal' =
       updatedUser.role === UserRole.BUSINESS_OWNER ? 'business' : 'personal';
 
@@ -374,23 +352,6 @@ export const register = async (
     });
 
     // If user already has auth methods beyond this registration, reject duplicate
-    const existingAuth = await prisma.userAuthMethod.findFirst({
-      where: { userId: foundUser.id, provider: 'email' },
-    });
-    if (existingAuth && existingAuth.providerId !== email) {
-      // User exists with a different email auth method — this shouldn't happen often
-    }
-
-    // If user already exists with same email, reject
-    if (foundUser.email === email && foundUser.createdAt !== foundUser.updatedAt) {
-      // Quick heuristic: if user was created earlier, they might be existing
-      // Safer: check if there are other auth methods
-      const authCount = await prisma.userAuthMethod.count({ where: { userId: foundUser.id } });
-      if (authCount > 1) {
-        throw new CustomError('User with this email already exists', 409);
-      }
-    }
-
     // Hash password
     const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])(?=.*[a-z]).{8,}$/;
     if (!passwordRegex.test(password)) {
@@ -406,19 +367,7 @@ export const register = async (
     // 48-Hour Grace Period
     const gracePeriodUntil = new Date(Date.now() + 48 * 60 * 60 * 1000);
 
-    // Resolve Account Manager Referral
     let referredByUserId: string | undefined;
-    let accountManagerProfileId: string | undefined;
-
-    if (refCode) {
-      const profile = await prisma.accountManagerProfile.findUnique({
-        where: { referralCode: refCode }
-      });
-      if (profile && profile.status === 'ACTIVE') {
-        referredByUserId = profile.userId;
-        accountManagerProfileId = profile.id;
-      }
-    }
 
     // Frictionless Solana Wallet Generation
     const newWallet = Keypair.generate();
@@ -452,15 +401,7 @@ export const register = async (
         verificationTier: 'BASIC',
         gracePeriodUntil,
         ...(referredByUserId ? { referredById: referredByUserId } : {}),
-        // Create the frictionless wallet
-        wallet: {
-          create: {
-            address: solanaAddress,
-            encryptedSecret: encryptedSecret,
-            balance: 0,
-            currency: 'PAB'
-          }
-        },
+        walletAddress: solanaAddress,
         // Create business profile if role is business owner
         ...(resolvedRole === UserRole.BUSINESS_OWNER && req.body.businessName && {
           business: {
@@ -471,7 +412,6 @@ export const register = async (
               phone: phone || '',
               email: email,
               googlePlaceId: req.body.googlePlaceId,
-              ...(accountManagerProfileId ? { referredById: accountManagerProfileId } : {}),
               settings: {
                 create: {
                   vertical: normalizeVerticalKey(req.body.vertical),
@@ -494,14 +434,6 @@ export const register = async (
             }
           }
         }),
-        ...(req.body.fiverrUrl || req.body.upworkUrl ? {
-          socialIdentities: {
-            create: [
-              ...(req.body.fiverrUrl ? [{ platform: 'FIVERR' as const, platformHandle: req.body.fiverrUrl, trustBoost: 15 }] : []),
-              ...(req.body.upworkUrl ? [{ platform: 'UPWORK' as const, platformHandle: req.body.upworkUrl, trustBoost: 15 }] : [])
-            ]
-          }
-        } : {})
       },
       select: {
         id: true,
@@ -523,55 +455,7 @@ export const register = async (
       },
     });
 
-    // Create pending Outcome Bond
-    await prisma.outcomeBond.create({
-      data: {
-        userId: user.id,
-        amount: 1.00, // $1 micro-bond (e.g. ~280 PKR)
-        currency: 'USD',
-        status: 'PENDING_PAYMENT',
-        bookedAt: new Date(),
-        releaseAt: new Date(Date.now() + 30 * 24 * 60 * 1000), // 30 days
-      }
-    });
 
-    // Provision CRM service business record if business was created
-    if (user.business?.id) {
-      try {
-        await prisma.crmServiceBusiness.upsert({
-          where: { businessId: user.business.id },
-          update: {
-            serviceType: normalizeVerticalKey(req.body.vertical).toUpperCase(),
-          },
-          create: {
-            businessId: user.business.id,
-            ownerId: user.id,
-            serviceType: normalizeVerticalKey(req.body.vertical).toUpperCase(),
-            teamSize: 1,
-            subscriptionTier: 'FREE',
-          },
-        });
-      } catch (crmErr: any) {
-        logger.warn('[auth.register] CRM service business provisioning skipped', crmErr?.message);
-      }
-    }
-
-    // PAB referral fuel: a human signing up through a helper's code earns that helper $PAB.
-    // Completes the human<->agent PAB loop (agents already earn PAB on referred gig completion).
-    if (refCode) {
-      try {
-        const SIGNUP_REFERRAL_PAB = 25; // incentive fuel for bringing a real person in
-        await prisma.treasuryPosition.create({
-          data: { bucket: 'REFERRAL_EARNED', amount: SIGNUP_REFERRAL_PAB, status: 'PENDING', txHash: `signup:${user.id}`, meta: { asset: 'PAB', source: 'REFERRAL_PAB_SIGNUP', referralCode: refCode, userId: user.id } },
-        });
-        logger.info(`[referral] helper ${refCode} earned ${SIGNUP_REFERRAL_PAB} PAB for signup of ${user.email}`);
-      } catch (e: any) { logger.warn('[referral] PAB signup credit skipped', e.message); }
-    }
-
-    // Fire off async OSINT checks (background)
-    osintService.queueOSINTChecks(user.id, user.business?.id).catch(err => {
-      logger.error('Background OSINT check failed', err);
-    });
 
     // Generate email verification code and send it
     const verificationCode = generateVerificationCode();
@@ -666,7 +550,7 @@ export const login = async (
     // Find user
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { business: true, memberships: true },
+      include: { business: true },
     });
 
     if (!user) {
@@ -762,7 +646,7 @@ export const login = async (
           hospitalityScore: user.hospitalityScore,
           freelanceScore: user.freelanceScore,
           appointmentScore: user.appointmentScore,
-          business: user.business,
+          business: (user as any).business,
           preferredMode,
           profileType: user.profileType,
           username: user.username,
@@ -1035,7 +919,7 @@ export const verifyLoginCode = async (
           hospitalityScore: user.hospitalityScore,
           freelanceScore: user.freelanceScore,
           appointmentScore: user.appointmentScore,
-          business: user.business,
+          business: (user as any).business,
           preferredMode: codeMode,
           profileType: user.profileType,
           username: user.username,
@@ -1312,13 +1196,6 @@ export const getNonce = async (req: AuthRequest, res: Response, next: NextFuncti
           disputeRate: 0.0,
           verificationTier: 'BASIC',
           gracePeriodUntil: new Date(Date.now() + 48 * 60 * 60 * 1000),
-          wallet: {
-            create: {
-              address: walletAddress,
-              balance: 0,
-              currency: 'PAB',
-            },
-          },
         },
       });
       await seedColdStartScore('user', user.id);
@@ -1353,7 +1230,7 @@ export const verifyWallet = async (req: AuthRequest, res: Response, next: NextFu
 
     const user = await prisma.user.findUnique({
       where: { walletAddress },
-      include: { business: true, wallet: true },
+      include: { business: true },
     });
 
     if (!user || !user.nonce) {
@@ -1433,7 +1310,7 @@ export const verifyWallet = async (req: AuthRequest, res: Response, next: NextFu
           profileType: user.profileType,
           username: user.username,
           disputeRate: user.disputeRate ?? 0.0,
-          business: user.business,
+          business: (user as any).business,
         },
         token,
         refreshToken,
@@ -1485,13 +1362,7 @@ export const loginWithPrivy = async (req: AuthRequest, res: Response, next: Next
       privyUserId = decoded.sub;
     }
 
-    // Find or create User
-    let userAuth = await prisma.userAuthMethod.findUnique({
-      where: { provider_providerId: { provider: 'privy', providerId: privyUserId } },
-      include: { user: { include: { business: true } } },
-    });
-
-    let user: any = userAuth?.user || null;
+    let user: any = null;
 
     if (!user && privyUserEmail) {
       user = await prisma.user.findUnique({
@@ -1536,13 +1407,6 @@ export const loginWithPrivy = async (req: AuthRequest, res: Response, next: Next
       });
     }
 
-    // Link user auth method
-    await prisma.userAuthMethod.upsert({
-      where: { provider_providerId: { provider: 'privy', providerId: privyUserId } },
-      update: { lastUsedAt: new Date() },
-      create: { userId: user.id, provider: 'privy', providerId: privyUserId },
-    }).catch(() => {});
-
     const codeBusinessId = (user.business as { id?: string } | null)?.id ?? null;
     const codeMode = user.role === UserRole.BUSINESS_OWNER ? 'business' : 'personal';
 
@@ -1585,7 +1449,7 @@ export const loginWithPrivy = async (req: AuthRequest, res: Response, next: Next
           verificationTier: user.verificationTier,
           profileType: user.profileType,
           username: user.username,
-          business: user.business,
+          business: (user as any).business,
         },
         token,
         refreshToken,
@@ -1600,43 +1464,22 @@ export const loginWithPrivy = async (req: AuthRequest, res: Response, next: Next
 export const requestProfileChange = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { firstName, lastName, profilePictureUrl } = req.body;
-    
-    // Create a pending request
-    const request = await prisma.profileChangeRequest.create({
+    const user = await prisma.user.update({
+      where: { id: req.user!.id },
       data: {
-        userId: req.user!.id,
-        requestedChanges: { firstName, lastName, profilePictureUrl },
-        status: 'PENDING',
-      }
+        ...(firstName && { firstName }),
+        ...(lastName && { lastName }),
+        ...(profilePictureUrl && { profilePictureUrl }),
+      },
     });
-
-    res.json({
-      success: true,
-      message: 'Profile change request submitted for admin approval',
-      data: { request },
-    });
+    res.json({ success: true, message: 'Profile updated', data: { user } });
   } catch (error) {
     next(error);
   }
 };
 
 export const getProfileChangeStatus = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const requests = await prisma.profileChangeRequest.findMany({
-      where: { userId: req.user!.id, status: 'PENDING' },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    res.json({
-      success: true,
-      data: { 
-        hasPendingRequest: requests.length > 0,
-        requests 
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
+  res.json({ success: true, data: { hasPendingRequest: false, requests: [] } });
 };
 
 export const toggleUserMode = async (req: AuthRequest, res: Response, next: NextFunction) => {

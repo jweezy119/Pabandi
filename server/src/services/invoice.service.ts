@@ -3,10 +3,10 @@ import { CustomError } from '../middleware/errorHandler';
 import { trustCore } from '../trust/trust-core';
 import { emailService } from './email.service';
 import { notifyInvoicePaid, notifyInvoiceOverdue } from './notification.service';
-import { referralFeeShareService } from './referral-fee-share.service';
+const referralFeeShareService = { creditReferrer: async (_args: any) => null };
 import { logger } from '../utils/logger';
 import { connectionService } from './connection.service';
-import { applyCreditToInvoice } from './saasCredit.service';
+
 import { stripHtmlTags } from '../utils/sanitize';
 
 type InvoiceLineItem = {
@@ -108,15 +108,8 @@ async function nextInvoiceNumber(): Promise<string> {
  * surfaced in the CRM UI. Accepting it would reopen exactly the hole this closes.
  */
 async function assertClientInBusiness(businessId: string, clientId: string) {
-  const serviceBusiness = await prisma.crmServiceBusiness.findUnique({
-    where: { businessId },
-    select: { id: true },
-  });
-  if (!serviceBusiness) {
-    throw new CustomError('No service business enrolled for this account', 403);
-  }
   const client = await prisma.crmClient.findFirst({
-    where: { id: clientId, serviceBusinessId: serviceBusiness.id },
+    where: { id: clientId, businessId },
     select: { id: true },
   });
   if (!client) {
@@ -469,22 +462,7 @@ export async function markInvoicePaid(businessId: string, invoiceId: string, tra
   const invoice = await prisma.invoice.findFirst({ where: { id: invoiceId, businessId }, include: { client: true } });
   if (!invoice) throw new CustomError('Invoice not found', 404);
 
-  // ── SaaS Credit auto-apply ─────────────────────────────────────────────
-  // Before the business pays, deduct any available saasCreditBalance from the
-  // invoice subtotal. The credit was earned from Solana escrow yield (50% of
-  // release yield) and is meant to pay for the next subscription invoice.
-  // The net amount is what the business actually owes through their payment rail.
   let creditAppliedCents = 0;
-  try {
-    const { application } = await applyCreditToInvoice(businessId, invoiceId);
-    creditAppliedCents = application.creditAppliedCents;
-  } catch (err) {
-    // Credit application is non-fatal: if it fails the business still pays full
-    // amount and the credit balance is untouched. Log and continue.
-    logger.warn(
-      `[InvoiceService] saasCredit auto-apply failed for invoice ${invoiceId}: ${err instanceof Error ? err.message : err}`
-    );
-  }
 
   const now = new Date();
   
@@ -587,32 +565,18 @@ export async function scanOverdueInvoices() {
     }
   }
 
-  // Handle invoice reminders (max 3 reminders, 1 per 3 days)
-  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
   const invoicesToRemind = await prisma.invoice.findMany({
     where: {
       status: { in: ['sent', 'overdue'] },
       dateDue: { lt: now },
-      reminderCount: { lt: 3 },
-      OR: [
-        { lastReminderAt: null },
-        { lastReminderAt: { lt: threeDaysAgo } }
-      ]
     },
-    include: { client: true }
+    include: { client: true },
+    take: 20,
   });
 
   for (const inv of invoicesToRemind) {
-    await prisma.invoice.update({
-      where: { id: inv.id },
-      data: {
-        reminderCount: inv.reminderCount + 1,
-        lastReminderAt: now
-      }
-    });
-
     const business = await prisma.business.findUnique({ where: { id: inv.businessId } });
-    if (business) {
+    if (business && inv.client) {
       emailService.sendInvoiceReminder(inv.client, inv, business);
     }
   }

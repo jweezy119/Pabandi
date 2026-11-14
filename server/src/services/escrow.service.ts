@@ -99,9 +99,6 @@ export const escrowService = {
     const adapter = getYieldAdapter();
     try {
       await adapter.deposit(amount, escrowId);
-      await prisma.escrowYield.create({
-        data: { escrowId, principal: amount, yieldAmount: 0, status: 'active' },
-      });
     } catch (error: any) {
       logger.error('[Escrow] yield deposit failed for escrow %s: %s', escrowId, error?.message || error);
     }
@@ -112,70 +109,11 @@ export const escrowService = {
     const adapter = getYieldAdapter();
     try {
       const { principal, yield: yieldAmount } = await adapter.withdraw(amount, escrowId);
-      const clientShare = yieldAmount / 2;
-      const businessShare = yieldAmount / 2;
-
-      await prisma.escrowYield.update({
-        where: { escrowId },
-        data: { yieldAmount, status: 'withdrawn', withdrawnAt: new Date() },
-      });
-
-      const escrow = await prisma.agentEscrow.findUnique({
-        where: { id: escrowId },
-        include: {
-          project: {
-            include: { bids: { where: { isWinning: true } } },
-          },
-        },
-      });
-
-      // 50% of yield to the Client, logged to the Agent Earnings Ledger.
-      if (escrow?.project && clientShare > 0) {
-        const clientWallet = await prisma.agentWallet.findFirst({
-          where: { agentId: escrow.project.posterId },
-        });
-        if (clientWallet) {
-          await prisma.agentEarningsLedger.create({
-            data: {
-              walletId: clientWallet.id,
-              mint: 'USDC',
-              amount: clientShare,
-              type: 'escrow_yield',
-              referenceId: escrowId,
-              txSignature: `yield_${escrowId}`,
-            },
-          });
-        }
-      }
-
-      // 50% of yield to the Business, added to saasCreditBalance.
-      if (escrow?.project && businessShare > 0) {
-        const winningBid = escrow.project.bids[0];
-        if (winningBid) {
-          const bidder = await prisma.agentProfile.findUnique({
-            where: { id: winningBid.bidderId },
-          });
-          if (bidder) {
-            const business = await prisma.business.findFirst({
-              where: { ownerId: bidder.id },
-            });
-            if (business) {
-              await prisma.business.update({
-                where: { id: business.id },
-                data: { saasCreditBalance: { increment: businessShare } },
-              });
-            }
-          }
-        }
-      }
-
       logger.info(
-        '[Escrow] yield split escrow=%s principal=%s yield=%s clientShare=%s businessShare=%s',
+        '[Escrow] yield withdrawn escrow=%s principal=%s yield=%s',
         escrowId,
         principal,
         yieldAmount,
-        clientShare,
-        businessShare,
       );
     } catch (error: any) {
       logger.error('[Escrow] yield withdraw/split failed for escrow %s: %s', escrowId, error?.message || error);
@@ -210,114 +148,70 @@ export const escrowService = {
       throw new Error('deliveredDataHash must be a 64-character hex SHA-256 digest');
     }
 
-    const escrow = await prisma.agentEscrow.findUnique({
+    const escrow = await prisma.escrow.findUnique({
       where: { id: escrowId },
-      include: { project: true },
     });
     if (!escrow) {
       throw new Error(`Escrow ${escrowId} not found`);
     }
-    if (!escrow.project) {
-      throw new Error(`Escrow ${escrowId} has no associated project`);
-    }
 
-    const expected = (escrow.project.deliverableHash ?? '').trim().toLowerCase();
+    const expected = (escrow.deliverableHash ?? '').trim().toLowerCase();
     if (!expected) {
-      // No hash pinned at post time → the handshake has no anchor. Refuse
-      // rather than default to release: an unbounded release is a hole.
       throw new Error(
-        `Project ${escrow.project.id} has no deliverableHash pinned. M2M release requires a hash.`
+        `Escrow ${escrow.id} has no deliverableHash pinned. M2M release requires a hash.`
       );
     }
 
-    const winningBid = await prisma.agentProjectBid.findFirst({
-      where: { projectId: escrow.project.id, isWinning: true },
-      select: { bidderId: true },
-    });
-    const providerId = winningBid?.bidderId ?? null;
+    const providerId = escrow.payeeId;
 
     if (expected !== submitted) {
-      // Provenance failure. Lock the escrow and fire the Sulha trigger. The
-      // dispute layer resolves who is right; this is the event that starts it.
-      await prisma.agentEscrow.update({
+      await prisma.escrow.update({
         where: { id: escrowId },
-        data: { status: 'DISPUTED' },
-      });
-      await prisma.agentProject.update({
-        where: { id: escrow.project.id },
         data: { status: 'DISPUTED' },
       });
 
       await trustCore.emit('m2m.provenance_failed', {
         passportId: undefined,
         metadata: {
-          projectId: escrow.project.id,
           escrowId,
           expectedHash: expected,
           submittedHash: submitted,
           providerId,
-          posterId: escrow.project.posterId,
-          amount: escrow.releaseAmount,
+          posterId: escrow.payerId,
+          amount: escrow.amount,
           source: 'vcap-m2m-handshake',
         },
       });
 
-      logger.warn('[M2M] provenance failed for escrow %s (project %s)', escrowId, escrow.project.id);
+      logger.warn('[M2M] provenance failed for escrow %s', escrowId);
 
       return {
         ok: false,
         released: false,
         status: 'DISPUTED',
         reason: 'deliverableHash mismatch — escrow disputed, Sulha layer triggered',
-        projectId: escrow.project.id,
         escrowId,
       };
     }
 
     // Hashes match. Release funds to the provider.
-    await prisma.agentEscrow.update({
+    await prisma.escrow.update({
       where: { id: escrowId },
       data: { status: 'RELEASED', releasedAt: new Date() },
     });
-    await prisma.agentProject.update({
-      where: { id: escrow.project.id },
-      data: { status: 'COMPLETED' },
-    });
 
     if (providerId) {
-      await prisma.agentProfile.update({
+      await prisma.user.update({
         where: { id: providerId },
         data: {
-          totalEarned: { increment: escrow.releaseAmount },
-          projectsCompleted: { increment: 1 },
-          reputation: { increment: 5 },
-        },
-      });
-      await prisma.agentProfile.update({
-        where: { id: escrow.project.posterId },
-        data: { totalSpent: { increment: escrow.project.budgetUsd } },
-      });
-      await prisma.agentMarketTransaction.create({
-        data: {
-          projectId: escrow.project.id,
-          fromAgentId: escrow.project.posterId,
-          toAgentId: providerId,
-          amount: escrow.releaseAmount,
-          pabReward: 0,
-          platformFeeUsd: escrow.platformFee,
-          platformFeeSol: 0,
-          type: 'PROJECT_PAYMENT',
-          status: 'COMPLETED',
+          usdcBalance: { increment: escrow.amount },
         },
       });
     }
 
-    // Trust events for both agents. `m2m.task_completed` is the score-bearing
-    // event for the provider; the poster gets the same event so their
-    // reliability as a client also moves.
     const emitTargets: Array<{ id: string | null; label: string }> = [
       { id: providerId, label: 'provider' },
-      { id: escrow.project.posterId, label: 'poster' },
+      { id: escrow.payerId, label: 'poster' },
     ];
     for (const target of emitTargets) {
       if (!target.id) continue;
@@ -325,11 +219,10 @@ export const escrowService = {
         await trustCore.emit('m2m.task_completed', {
           passportId: undefined,
           metadata: {
-            projectId: escrow.project.id,
             escrowId,
             agentId: target.id,
             role: target.label,
-            amount: target.label === 'provider' ? escrow.releaseAmount : escrow.project.budgetUsd,
+            amount: escrow.amount,
             source: 'vcap-m2m-handshake',
           },
         });
@@ -338,17 +231,16 @@ export const escrowService = {
       }
     }
 
-    logger.info('[M2M] released escrow %s for project %s', escrowId, escrow.project.id);
+    logger.info('[M2M] released escrow %s', escrowId);
 
     return {
       ok: true,
       released: true,
       status: 'RELEASED',
       reason: 'deliverableHash verified — funds released automatically',
-      projectId: escrow.project.id,
       escrowId,
       providerId,
-      releasedAmount: escrow.releaseAmount,
+      releasedAmount: escrow.amount,
     };
   }
 };

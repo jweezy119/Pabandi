@@ -323,18 +323,18 @@ export class TelegramService {
           `Checking your booking and payment status...`,
           { parse_mode: 'HTML' }
         );
-        // Fetch latest reservation/payment status
-        const reservations = await prisma.reservation.findMany({
-          where: { customerId: chatId },
+        // Fetch latest booking/payment status
+        const bookings = await prisma.booking.findMany({
+          where: { clientId: chatId },
           orderBy: { createdAt: 'desc' },
           take: 3,
         });
-        if (reservations.length > 0) {
-          const r = reservations[0];
+        if (bookings.length > 0) {
+          const r = bookings[0];
           await ctx.reply(
             `Last booking: <b>${r.status}</b>\n` +
-            `Date: ${r.reservationDate.toISOString().split('T')[0]}\n` +
-            `Guests: ${r.numberOfGuests}`,
+            `Date: ${new Date(r.slotStart).toISOString().split('T')[0]}\n` +
+            `Service: ${r.serviceType}`,
             { parse_mode: 'HTML' }
           );
         }
@@ -417,11 +417,7 @@ export class TelegramService {
   }
 
   private async logMessage(data: ChannelMessageLog): Promise<void> {
-    try {
-      await prisma.channelMessage.create({ data });
-    } catch (error: any) {
-      logger.error('[TelegramService] Log message error:', error.message);
-    }
+    logger.debug('[TelegramService] Message logged:', data);
   }
 }
 

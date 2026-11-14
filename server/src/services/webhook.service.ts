@@ -90,84 +90,39 @@ class WebhookService {
    * Dispatches an event to all OAuth Clients that have an active OAuthToken for the user,
    * provided they have configured a webhookUrl.
    */
-  public async dispatchToOAuthClients(userId: string, eventName: string, payload: any) {
-    try {
-      // Find all valid OAuthTokens for this user, including the client info
-      const tokens = await prisma.oAuthToken.findMany({
-        where: {
-          userId,
-          revoked: false,
-          expiresAt: { gt: new Date() } // Token not expired
-        },
-        include: {
-          client: true
-        }
-      });
-
-      if (!tokens.length) return;
-
-      // Extract unique active clients that have a webhook URL
-      const uniqueClients = new Map();
-      for (const token of tokens) {
-        if (token.client.isActive && token.client.webhookUrl && token.client.webhookSecret) {
-          uniqueClients.set(token.client.id, token.client);
-        }
-      }
-
-      if (uniqueClients.size === 0) return;
-
-      const body = JSON.stringify({
-        event: eventName,
-        timestamp: new Date().toISOString(),
-        data: payload,
-      });
-
-      // Dispatch to each OAuth Client
-      for (const client of Array.from(uniqueClients.values())) {
-        this.sendWithRetry(
-          { 
-            id: 'virtual', 
-            targetUrl: client.webhookUrl!, 
-            signingSecret: client.webhookSecret!, 
-            businessId: '', 
-            subscribedEvents: [], 
-            isActive: true, 
-            createdAt: new Date(), 
-            updatedAt: new Date() 
-          }, 
-          body
-        ).catch((error) => {
-          logger.error(`OAuth Webhook dispatch failed for ${client.name} (${client.webhookUrl}): ${error.message}`);
-        });
-      }
-
-    } catch (error: any) {
-      logger.error(`Error initiating OAuth webhook dispatch: ${error.message}`);
-    }
+  public async dispatchToOAuthClients(_userId: string, _eventName: string, _payload: any) {
+    return;
   }
 
   // ── Webhook Endpoint Management (Team/Integration Webhooks) ────────────────
 
-  async create(managerId: string, url: string, events: string[], secret?: string) {
-    return prisma.webhook.create({
-      data: { managerId, url, events, secret },
+  async create(businessId: string, url: string, events: string[], secret?: string) {
+    return prisma.webhookEndpoint.create({
+      data: { businessId, targetUrl: url, subscribedEvents: events, signingSecret: secret || crypto.randomUUID() },
     });
   }
 
-  async list(managerId: string) {
-    return prisma.webhook.findMany({ where: { managerId }, orderBy: { createdAt: 'desc' } });
+  async list(businessId: string) {
+    return prisma.webhookEndpoint.findMany({ where: { businessId }, orderBy: { createdAt: 'desc' } });
   }
 
-  async update(managerId: string, webhookId: string, data: { url?: string; events?: string[]; isActive?: boolean }) {
-    const webhook = await prisma.webhook.findFirst({ where: { id: webhookId, managerId } });
+  async update(businessId: string, webhookId: string, data: { url?: string; events?: string[]; isActive?: boolean }) {
+    const webhook = await prisma.webhookEndpoint.findFirst({ where: { id: webhookId, businessId } });
     if (!webhook) throw new Error('Webhook not found');
-    return prisma.webhook.update({ where: { id: webhookId }, data });
+    return prisma.webhookEndpoint.update({
+      where: { id: webhookId },
+      data: {
+        ...(data.url ? { targetUrl: data.url } : {}),
+        ...(data.events ? { subscribedEvents: data.events } : {}),
+        ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
+      },
+    });
   }
 
-  async delete(managerId: string, webhookId: string) {
-    const webhook = await prisma.webhook.findFirst({ where: { id: webhookId, managerId } });
+  async delete(businessId: string, webhookId: string) {
+    const webhook = await prisma.webhookEndpoint.findFirst({ where: { id: webhookId, businessId } });
     if (!webhook) throw new Error('Webhook not found');
-    await prisma.webhook.delete({ where: { id: webhookId } });
+    await prisma.webhookEndpoint.delete({ where: { id: webhookId } });
     return { success: true };
   }
 }

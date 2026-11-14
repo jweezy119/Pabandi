@@ -4,12 +4,7 @@ import { logger } from './utils/logger';
 import { logSchemaCheck } from './services/schema-check.service';
 import { initializeTrustCore } from './services/trust-core.service';
 import { eventBus } from './services/event-bus.service';
-import { jobCronService } from './services/jobCronService';
-import { subscriptionReconcileCron } from './services/subscriptionReconcileCron.service';
-import { startAlertSweep } from './services/alertSweep.service';
 import { scanOverdueInvoices } from './services/invoice.service';
-import { scanFailureOwnership } from './services/failure-ownership.service';
-import { startGigRefreshCron } from './scripts/seed-gigs';
 import cron from 'node-cron';
 
 const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 8080 : 5000);
@@ -23,8 +18,10 @@ if (process.env.NODE_ENV === 'production') {
   if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 16) missing.push('JWT_SECRET (min 16 chars)');
   if (!process.env.PTP_SIGNING_SECRET) missing.push('PTP_SIGNING_SECRET');
   if (!process.env.ENCRYPTION_KEY) missing.push('ENCRYPTION_KEY');
+  if (!process.env.TELEGRAM_BOT_SECRET && !process.env.TELEGRAM_WEBHOOK_SECRET) missing.push('TELEGRAM_BOT_SECRET');
   if (missing.length > 0) {
-    logger.error(`🚨 Server starting with missing production env configuration:\n${missing.map(m => ` - ${m}`).join('\n')}`);
+    logger.error(`🚨 FATAL: Server starting with missing production env configuration:\n${missing.map(m => ` - ${m}`).join('\n')}`);
+    throw new Error(`Fatal startup configuration error: missing required environment variables: ${missing.join(', ')}`);
   }
 }
 
@@ -63,26 +60,12 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
 
   // Background Crons
   try {
-    jobCronService.start();
-    subscriptionReconcileCron.start();
-    startAlertSweep();
-    startGigRefreshCron();
-
     // Invoice overdue check
     cron.schedule('0 9 * * *', async () => {
       try {
         await scanOverdueInvoices();
       } catch (e: any) {
         logger.error('[InvoiceCron] Error:', e.message);
-      }
-    });
-
-    // Failure ownership check
-    cron.schedule('0 10 * * *', async () => {
-      try {
-        await scanFailureOwnership();
-      } catch (e: any) {
-        logger.error('[FailureOwnership] Error:', e.message);
       }
     });
   } catch (err: any) {

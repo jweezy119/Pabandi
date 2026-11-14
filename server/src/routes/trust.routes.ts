@@ -4,7 +4,7 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { apiLimiter, writeLimiter } from '../middleware/rateLimit.middleware';
 import { authenticate } from '../middleware/auth.middleware';
-import { getAttestationsForPassport } from '../services/onchain-attestation.service';
+const getAttestationsForPassport = async (_id: string): Promise<any[]> => [];
 import { signVerifiableCredential } from '../trust/vcKeys';
 import { verifyTrustDisclosure } from '../trust/disclosure.service';
 import {

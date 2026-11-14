@@ -14,10 +14,6 @@ export class PayoutService {
   private async resolveBand(userId: string): Promise<string> {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return 'E';
-    if (user.walletAddress) {
-      const profile = await prisma.linkedInProfile.findFirst({ where: { walletAddress: user.walletAddress } });
-      if (profile?.trustBand) return profile.trustBand;
-    }
     const ts = user.trustScore || 50;
     return ts >= 90 ? 'A' : ts >= 70 ? 'B' : ts >= 50 ? 'C' : ts >= 30 ? 'D' : 'E';
   }
@@ -47,9 +43,9 @@ export class PayoutService {
     const band = await this.resolveBand(userId);
     if (band === 'E') throw new Error('Trust band E — build your Trust Passport to unlock cash-outs.');
 
-    const wallet = await prisma.wallet.findUnique({ where: { userId } });
-    if (!wallet || wallet.usdcBalance < amountUsdc) {
-      throw new Error(`Insufficient USDC balance (have $${wallet?.usdcBalance?.toFixed(2) || '0.00'}).`);
+    const userRow = await prisma.user.findUnique({ where: { id: userId } });
+    if (!userRow || userRow.usdcBalance < amountUsdc) {
+      throw new Error(`Insufficient USDC balance (have $${userRow?.usdcBalance?.toFixed(2) || '0.00'}).`);
     }
 
     const fee = +(amountUsdc * (PAYOUT_FEE_PCT / 100)).toFixed(2);
@@ -61,8 +57,7 @@ export class PayoutService {
     let offrampIntentId: string | null = null;
 
     if (method === 'BANK') {
-      const va = await prisma.virtualAccount.findFirst({ where: { userId, status: 'ACTIVE' } });
-      destRef = va?.id || 'SIMULATED';
+      destRef = destinationRef || 'SIMULATED';
     } else if (method === 'CONNECT') {
       const connectId = process.env.STRIPE_CONNECT_ACCOUNT_ID;
       if (connectId && process.env.STRIPE_SECRET_KEY) {
@@ -82,11 +77,11 @@ export class PayoutService {
       // Flows through the existing LiquidityProvider settlement engine.
       try {
         const intent = await offrampService.requestIntent(
-          (wallet.address || userId),
+          (userRow.walletAddress || userId),
           net,
           280, // indicative USDC->PKR rate; LP matches live
           'JazzCash',
-          (destinationRef || wallet.address || userId).slice(0, 64),
+          (destinationRef || userRow.walletAddress || userId).slice(0, 64),
           undefined,
           `pabandi-payout-${userId}-${Date.now()}`,
         );
@@ -124,7 +119,7 @@ export class PayoutService {
     }
 
     const payout = await prisma.$transaction(async (tx) => {
-      await tx.wallet.update({ where: { userId }, data: { usdcBalance: { decrement: amountUsdc } } });
+      await tx.user.update({ where: { id: userId }, data: { usdcBalance: { decrement: amountUsdc } } });
       return tx.payout.create({
         data: { userId, amountUsdc, feeUsdc: fee, netUsdc: net, method, destinationRef: destRef, status, txHash },
       });

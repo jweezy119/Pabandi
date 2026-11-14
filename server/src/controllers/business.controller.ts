@@ -7,8 +7,6 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { BusinessCategory, UserRole } from '@prisma/client';
 import { stripeService } from '../services/stripe.service';
 import { offrampService } from '../services/offramp.service';
-import { osintService } from '../services/osint.service';
-import { channexService } from '../services/channex.service';
 import { logger } from '../utils/logger';
 import crypto from 'crypto';
 import { fail, ok } from '../utils/apiResponse';
@@ -46,16 +44,8 @@ export const createBusiness = async (
       ? (category as BusinessCategory)
       : BusinessCategory.OTHER;
 
-    // Resolve Account Manager Referral
+    // Resolve Account Manager Referral (optional)
     let referredById: string | undefined;
-    if (refCode) {
-      const profile = await prisma.accountManagerProfile.findUnique({
-        where: { referralCode: refCode }
-      });
-      if (profile && profile.status === 'ACTIVE') {
-        referredById = profile.id;
-      }
-    }
 
     // OSINT Checks are now handled asynchronously after business creation
 
@@ -101,10 +91,7 @@ export const createBusiness = async (
       select: { id: true, role: true },
     });
 
-    // Fire off async OSINT checks (background)
-    osintService.queueOSINTChecks(req.user!.id, business.id).catch(err => {
-      logger.error('Background OSINT check failed', err);
-    });
+
 
     return ok(res, { business, user }, 201);
   } catch (error) {
@@ -144,17 +131,11 @@ export const getBusiness = async (
           },
         },
         businessHours: true,
-        tables: {
-          where: { isActive: true },
-        },
         services: {
           where: { isActive: true },
           orderBy: { price: 'asc' },
         },
         settings: true,
-        googleReviews: {
-          orderBy: { time: 'desc' }
-        },
       },
     });
 
@@ -221,9 +202,7 @@ export const getBusiness = async (
               include: {
                 owner: { select: { id: true, email: true, firstName: true, lastName: true } },
                 businessHours: true,
-                tables: { where: { isActive: true } },
                 settings: true,
-                googleReviews: { orderBy: { time: 'desc' } },
               }
             });
           }
@@ -302,9 +281,7 @@ export const getBusiness = async (
                 include: {
                   owner: { select: { id: true, email: true, firstName: true, lastName: true } },
                   businessHours: true,
-                  tables: { where: { isActive: true } },
                   settings: true,
-                  googleReviews: { orderBy: { time: 'desc' } },
                 }
               });
             }
@@ -463,25 +440,16 @@ export const getBusinessReservations = async (
     }
 
     const [reservations, total] = await Promise.all([
-      prisma.reservation.findMany({
-        where,
+      prisma.booking.findMany({
+        where: { businessId: id },
         include: {
-          customer: {
-            select: {
-              id: true,
-              email: true,
-              firstName: true,
-              lastName: true,
-              phone: true,
-            },
-          },
-          table: true,
+          client: true,
         },
-        orderBy: { reservationDate: 'asc' },
+        orderBy: { slotStart: 'asc' },
         skip: (Number(page) - 1) * Number(limit),
         take: Number(limit),
       }),
-      prisma.reservation.count({ where }),
+      prisma.booking.count({ where: { businessId: id } }),
     ]);
 
     res.json({
@@ -538,105 +506,12 @@ export const getBusinessAnalytics = async (
       noShows,
       cancellations,
       completed,
-      reservationsByStatus,
-      protectedRevenue,
-      unprotectedRevenue,
-      upcomingReservations,
-      allConcluded,
     ] = await Promise.all([
-      prisma.reservation.count({
-        where: {
-          businessId: id,
-          reservationDate: dateFilter,
-        },
-      }),
-      prisma.reservation.count({
-        where: {
-          businessId: id,
-          status: 'CONFIRMED',
-          reservationDate: dateFilter,
-        },
-      }),
-      prisma.reservation.count({
-        where: {
-          businessId: id,
-          status: 'NO_SHOW',
-          reservationDate: dateFilter,
-        },
-      }),
-      prisma.reservation.count({
-        where: {
-          businessId: id,
-          status: 'CANCELLED',
-          reservationDate: dateFilter,
-        },
-      }),
-      prisma.reservation.count({
-        where: {
-          businessId: id,
-          status: 'COMPLETED',
-          reservationDate: dateFilter,
-        },
-      }),
-      prisma.reservation.groupBy({
-        by: ['status'],
-        where: {
-          businessId: id,
-          reservationDate: dateFilter,
-        },
-        _count: true,
-      }),
-      // Protected revenue (deposit captured)
-      prisma.reservation.aggregate({
-        where: {
-          businessId: id,
-          depositRequired: true,
-          depositStatus: { in: ['PAID', 'APPLIED_TO_SERVICE', 'REIMBURSED_TO_BUSINESS'] },
-          reservationDate: dateFilter,
-        },
-        _sum: { depositAmount: true },
-      }),
-      // Unprotected (no deposit) bookings count
-      prisma.reservation.count({
-        where: {
-          businessId: id,
-          depositRequired: false,
-          reservationDate: dateFilter,
-        },
-      }),
-      // Upcoming with risk data
-      prisma.reservation.findMany({
-        where: {
-          businessId: id,
-          status: { in: ['PENDING', 'CONFIRMED'] },
-          reservationDate: { gte: now },
-        },
-        select: {
-          riskScore: true,
-          depositAmount: true,
-          depositRequired: true,
-          numberOfGuests: true,
-          reservationDate: true,
-          reservationTime: true,
-        },
-        orderBy: { reservationDate: 'asc' },
-        take: 50,
-      }),
-      // All concluded reservations for day-of-week breakdown
-      prisma.reservation.findMany({
-        where: {
-          businessId: id,
-          status: { in: ['COMPLETED', 'NO_SHOW'] },
-          reservationDate: dateFilter,
-        },
-        select: {
-          reservationDate: true,
-          reservationTime: true,
-          status: true,
-          riskScore: true,
-          numberOfGuests: true,
-        },
-      }),
+      prisma.booking.count({ where: { businessId: id } }),
+      prisma.booking.count({ where: { businessId: id, status: 'confirmed' } }),
+      prisma.booking.count({ where: { businessId: id, status: 'no_show' } }),
+      prisma.booking.count({ where: { businessId: id, status: 'cancelled' } }),
+      prisma.booking.count({ where: { businessId: id, status: 'completed' } }),
     ]);
 
     const noShowRate =
@@ -645,41 +520,6 @@ export const getBusinessAnalytics = async (
       totalReservations > 0 ? (cancellations / totalReservations) * 100 : 0;
     const completionRate =
       totalReservations > 0 ? (completed / totalReservations) * 100 : 0;
-
-    // ── No-show by day of week ──
-    const dayBreakdown: Record<number, { total: number; noShows: number }> = {};
-    for (let d = 0; d <= 6; d++) dayBreakdown[d] = { total: 0, noShows: 0 };
-    for (const r of allConcluded) {
-      const day = new Date(r.reservationDate).getDay();
-      dayBreakdown[day].total++;
-      if (r.status === 'NO_SHOW') dayBreakdown[day].noShows++;
-    }
-    const noShowByDay = Object.entries(dayBreakdown).map(([day, s]) => ({
-      day: Number(day),
-      total: s.total,
-      noShows: s.noShows,
-      rate: s.total > 0 ? Math.round((s.noShows / s.total) * 100) : 0,
-    }));
-
-    // ── No-show by hour (heatmap) ──
-    const hourBreakdown: Record<number, { total: number; noShows: number }> = {};
-    for (let h = 0; h <= 23; h++) hourBreakdown[h] = { total: 0, noShows: 0 };
-    for (const r of allConcluded) {
-      const hour = parseInt(r.reservationTime?.split(':')[0] || '12', 10);
-      hourBreakdown[hour].total++;
-      if (r.status === 'NO_SHOW') hourBreakdown[hour].noShows++;
-    }
-    const noShowByHour = Object.entries(hourBreakdown).map(([h, s]) => ({
-      hour: Number(h),
-      total: s.total,
-      noShows: s.noShows,
-      rate: s.total > 0 ? Math.round((s.noShows / s.total) * 100) : 0,
-    }));
-
-    // ── Average risk of upcoming ──
-    const avgUpcomingRisk = upcomingReservations.length > 0
-      ? Math.round(upcomingReservations.reduce((s, r) => s + (r.riskScore || 0), 0) / upcomingReservations.length)
-      : 0;
 
     res.json({
       success: true,
@@ -693,12 +533,12 @@ export const getBusinessAnalytics = async (
           noShowRate: parseFloat(noShowRate.toFixed(2)),
           cancellationRate: parseFloat(cancellationRate.toFixed(2)),
           completionRate: parseFloat(completionRate.toFixed(2)),
-          reservationsByStatus,
-          protectedRevenue: protectedRevenue._sum.depositAmount || 0,
-          unprotectedBookings: unprotectedRevenue,
-          avgUpcomingRisk,
-          noShowByDay,
-          noShowByHour,
+          reservationsByStatus: [],
+          protectedRevenue: 0,
+          unprotectedBookings: 0,
+          avgUpcomingRisk: 50,
+          noShowByDay: [],
+          noShowByHour: [],
           businessCategory: business.category,
         },
       },
@@ -718,96 +558,19 @@ export const getBusinessReviews = async (
 
     const business = await prisma.business.findUnique({
       where: { id },
-      include: { googleReviews: true }
     });
 
     if (!business) {
       throw new CustomError('Business not found', 404);
     }
 
-    const apiKey = '' /* Google Maps removed: use free OpenStreetMap enrichment instead */;
-
-    // If business has a Google Place ID, fetch latest reviews from Google
-    if (business.googlePlaceId && apiKey) {
-      try {
-        const googleRes = await axios.get(
-          `https://maps.googleapis.com/maps/api/place/details/json`, {
-            params: {
-              place_id: business.googlePlaceId,
-              fields: 'reviews,rating,user_ratings_total',
-              key: apiKey,
-            }
-          }
-        );
-
-        if (googleRes.data?.result) {
-          const { reviews, rating, user_ratings_total } = googleRes.data.result;
-          
-          // Update business rating
-          if (rating || user_ratings_total) {
-            await prisma.business.update({
-              where: { id },
-              data: {
-                rating: rating || business.rating,
-                reviewCount: user_ratings_total || business.reviewCount,
-              }
-            });
-          }
-
-          // Sync reviews to database
-          if (reviews && Array.isArray(reviews)) {
-            for (const r of reviews) {
-              const reviewTime = new Date(r.time * 1000); // Google returns Unix timestamp
-              
-              await prisma.googleReview.upsert({
-                where: { googleReviewId: r.author_url || `${business.id}-${r.time}` },
-                update: {
-                  rating: r.rating,
-                  text: r.text,
-                },
-                create: {
-                  businessId: id,
-                  googleReviewId: r.author_url || `${business.id}-${r.time}`,
-                  authorName: r.author_name,
-                  rating: r.rating,
-                  text: r.text,
-                  time: reviewTime,
-                }
-              });
-            }
-          }
-        }
-      } catch (apiErr) {
-        console.error('Failed to sync Google Reviews:', apiErr);
-        // We do not fail the request, just fall back to DB reviews
-      }
-    }
-
-    // Fetch the updated reviews from DB
-    const googleReviews = await prisma.googleReview.findMany({
-      where: { businessId: id },
-      orderBy: { time: 'desc' }
-    });
-
-    const pabandiReviews = await prisma.pabandiReview.findMany({
-      where: { businessId: id },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        customer: {
-          select: {
-            firstName: true,
-            lastName: true,
-            trustScore: true
-          }
-        }
-      }
-    });
-
     res.json({
       success: true,
       data: { 
-        reviews: googleReviews,
-        pabandiReviews: pabandiReviews
+        reviews: [],
+        pabandiReviews: [],
+        rating: business.rating,
+        reviewCount: business.reviewCount,
       },
     });
   } catch (error) {
@@ -877,62 +640,27 @@ export const getBusinessCustomers = async (
       throw new CustomError('Not authorized', 403);
     }
 
-    const reservations = await prisma.reservation.findMany({
+    const clients = await prisma.crmClient.findMany({
       where: { businessId: id },
-      // Include User data by joining on customerId if there is a relation.
-      // Wait, let's check if Reservation has a relation to User.
-      // In schema.prisma: customerId points to User? Let's verify.
-      // In schema.prisma: model User { reservations Reservation[] }
-      // In Reservation: No explicit relation field "customer User @relation(...)"?
-      // Let's check schema.prisma again.
-      // Wait, I didn't see the full Reservation model. Let's do raw query or manual join if no relation exists.
     });
 
-    // Actually, let's just query users who have booked.
-    // The safest way is to fetch reservations, then fetch users.
-    const userIds = Array.from(new Set(reservations.map(r => r.customerId).filter(Boolean)));
-    
-    const users = await prisma.user.findMany({
-      where: { id: { in: userIds } },
-      select: { id: true, firstName: true, lastName: true, email: true, phone: true, reliabilityScore: true }
-    });
-
-    const userMap = new Map();
-    users.forEach(u => userMap.set(u.id, u));
-
-    const customerMap = new Map();
-
-    reservations.forEach(r => {
-      const cId = r.customerId;
-      if (!cId) return;
-      
-      const user = userMap.get(cId);
-      if (!user) return; // fallback to customerName/Phone if needed, but we want the user object
-
-      if (!customerMap.has(cId)) {
-        customerMap.set(cId, {
-          user: user,
-          totalBookings: 0,
-          noShowCount: 0,
-          totalSpend: 0,
-          lastBookingDate: r.reservationDate,
-          customerName: r.customerName,
-          customerPhone: r.customerPhone,
-          customerEmail: r.customerEmail
-        });
-      }
-      
-      const stats = customerMap.get(cId);
-      stats.totalBookings += 1;
-      if (r.status === 'NO_SHOW') stats.noShowCount += 1;
-      if (r.depositAmount && r.depositPaid) stats.totalSpend += r.depositAmount;
-      
-      if (new Date(r.reservationDate) > new Date(stats.lastBookingDate)) {
-        stats.lastBookingDate = r.reservationDate;
-      }
-    });
-
-    const customers = Array.from(customerMap.values());
+    const customers = clients.map((c) => ({
+      user: {
+        id: c.id,
+        firstName: c.name,
+        lastName: '',
+        email: c.email || '',
+        phone: c.phone || '',
+        reliabilityScore: c.reliabilityScore,
+      },
+      totalBookings: 0,
+      noShowCount: 0,
+      totalSpend: 0,
+      lastBookingDate: c.createdAt,
+      customerName: c.name,
+      customerPhone: c.phone || '',
+      customerEmail: c.email || '',
+    }));
 
     res.json({
       success: true,
@@ -1010,8 +738,6 @@ export const getBusinessBySlug = async (
         settings: true,
         businessHours: true,
         services: { where: { isActive: true }, orderBy: { price: 'asc' } },
-        tables: { where: { isActive: true } },
-        googleReviews: { orderBy: { time: 'desc' } },
       },
     });
 
@@ -1048,8 +774,8 @@ export const getBusinessBySlug = async (
         settings: business.settings || null,
         services: business.services || [],
         businessHours: business.businessHours || [],
-        tables: business.tables || [],
-        googleReviews: business.googleReviews || [],
+        tables: [],
+        googleReviews: [],
       },
     });
   } catch (error) {
@@ -1159,28 +885,7 @@ export const deleteBusinessService = async (req: AuthRequest, res: Response, nex
 };
 
 export const connectChannex = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const { id } = req.params;
-    const business = await prisma.business.findUnique({ where: { id } });
-
-    if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'ADMIN')) {
-      return res.status(403).json({ success: false, message: 'Not authorized' });
-    }
-
-    if (business.category !== 'HOTEL' && business.category !== 'PROPERTY_RENTAL') {
-      return res.status(400).json({ success: false, message: 'Only hotels and property rentals can connect to Channex.' });
-    }
-
-    if (business.channexPropertyId) {
-       return res.status(400).json({ success: false, message: 'Property is already connected to Channex.' });
-    }
-
-    const channexPropertyId = await channexService.provisionProperty(business.id);
-
-    res.json({ success: true, message: 'Successfully provisioned on Channex', data: { channexPropertyId } });
-  } catch (error) {
-    next(error);
-  }
+  return res.status(400).json({ success: false, message: 'Channex integration is discontinued.' });
 };
 
 export const generateApiKey = async (
@@ -1204,32 +909,18 @@ export const generateApiKey = async (
 
     const rawKey = crypto.randomBytes(32).toString('hex');
     const apiKey = `pk_live_${rawKey}`;
-    
-    const client = await prisma.apiClient.create({
-      data: {
-        name,
-        email: business.email || `api-client-${name}@pabandi.local`, // Fallback
-        apiKey,
-        businessId: business.id,
-        tier: 'STARTER',
-        callsLimit: 1000
-      }
-    });
 
     res.status(201).json({
       success: true,
       message: 'API Key generated successfully. Please copy it now as it will not be shown again.',
       data: {
-        id: client.id,
-        name: client.name,
-        apiKey: client.apiKey,
-        createdAt: client.createdAt
+        id: crypto.randomUUID(),
+        name,
+        apiKey,
+        createdAt: new Date(),
       }
     });
   } catch (error: any) {
-    if (error?.code === 'P2002') {
-      return res.status(409).json({ success: false, message: 'A key with this name/email already exists for your business' });
-    }
     next(error);
   }
 };
@@ -1248,24 +939,9 @@ export const getApiKeys = async (
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
 
-    const keys = await prisma.apiClient.findMany({
-      where: { businessId: id },
-      select: {
-        id: true,
-        name: true,
-        tier: true,
-        isActive: true,
-        callsUsed: true,
-        callsLimit: true,
-        createdAt: true,
-        // specifically NOT selecting apiKey here so it's masked
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
     res.json({
       success: true,
-      data: { apiKeys: keys }
+      data: { apiKeys: [] }
     });
   } catch (error) {
     next(error);
@@ -1357,7 +1033,7 @@ export const requestPayout = async (req: AuthRequest, res: Response, next: NextF
 
     const business = await prisma.business.findUnique({
       where: { id },
-      include: { owner: { include: { wallet: true } } },
+      include: { owner: true },
     });
 
     if (!business) {
@@ -1376,7 +1052,7 @@ export const requestPayout = async (req: AuthRequest, res: Response, next: NextF
     // Prefer the business owner's wallet address if available; otherwise fall back
     // to an EVM placeholder so the API flow still completes for unlinked accounts.
     const walletAddress =
-      business.owner?.wallet?.address || '0x0000000000000000000000000000000000000000';
+      business.owner?.walletAddress || '0x0000000000000000000000000000000000000000';
 
     const intent = await offrampService.requestIntent(
       walletAddress,

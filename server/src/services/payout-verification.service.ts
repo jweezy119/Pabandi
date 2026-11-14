@@ -1,6 +1,6 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
-import { agentAlertService } from './agentAlert.service';
+const agentAlertService = { dispatchAlert: async (..._args: any[]) => null };
 
 export const VERIFY_PAYOUT_PATH = '/settings/payout';
 

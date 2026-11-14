@@ -12,7 +12,7 @@ export class InvoiceGenerationService {
    * trust score.
    */
   async generateInvoiceFromJob(jobId: string) {
-    const job = await prisma.crmJob.findUnique({
+    const job = await prisma.booking.findUnique({
       where: { id: jobId },
       include: { client: true },
     });
@@ -21,7 +21,7 @@ export class InvoiceGenerationService {
       throw new Error('Job not found');
     }
 
-    if (job.status !== 'COMPLETED') {
+    if (job.status !== 'COMPLETED' && job.status !== 'completed') {
       throw new Error(`Job is not complete. Current status: ${job.status}`);
     }
 
@@ -46,20 +46,20 @@ export class InvoiceGenerationService {
     dueDate.setDate(dueDate.getDate() + 7);
 
     // Prepare line items
+    const jobAmount = (job.depositAmount || 0) + (job.travelFee || 0);
     const lineItems = [
       {
         description: job.serviceType || 'Service',
-        amount: job.price || 0
+        amount: jobAmount,
       }
     ];
 
     const subtotal = lineItems.reduce((sum, item) => sum + item.amount, 0);
 
-    // Apply deposit if applicable ('FUNDED' is not a value anything writes on the dead bus)
+    // Apply deposit if applicable
     let depositApplied = 0;
-    if (job.escrowStatus === 'FUNDED' && job.price > 0) {
-      // Assuming full price is escrowed when FUNDED
-      depositApplied = job.price;
+    if ((job.depositStatus === 'FUNDED' || job.depositStatus === 'funded' || job.depositPaid) && jobAmount > 0) {
+      depositApplied = job.depositAmount || 0;
     }
 
     const finalAmount = Math.max(0, subtotal - depositApplied);
@@ -67,7 +67,7 @@ export class InvoiceGenerationService {
     const invoice = await prisma.invoice.create({
       data: {
         businessId: job.businessId,
-        clientId: job.clientId,
+        clientId: job.clientId || '',
         // Optionally add jobId relation if we add it to the Invoice model
         // jobId: job.id,
         number: await this.generateInvoiceNumber(job.businessId),
@@ -79,11 +79,11 @@ export class InvoiceGenerationService {
       },
     });
 
-    if (job.escrowStatus === 'FUNDED') {
-      await prisma.crmJob.update({
+    if (job.depositStatus === 'FUNDED' || job.depositStatus === 'funded') {
+      await prisma.booking.update({
         where: { id: jobId },
         data: {
-          escrowStatus: 'RELEASED'
+          depositStatus: 'RELEASED'
         }
       });
     }

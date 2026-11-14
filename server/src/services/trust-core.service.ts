@@ -152,21 +152,7 @@ async function writeAuditTrail(
       return true;
     }
 
-    await prisma.systemAuditLog.create({
-      data: {
-        action: 'TRUST_SCORE_CHANGED',
-        targetId: id,
-        metadata: {
-          subject,
-          previousScore,
-          newScore,
-          reason: ctx.reason,
-          component: ctx.component ?? 'RELIABILITY',
-          methodology: METHODOLOGY_VERSION,
-          ...(ctx.metadata ?? {}),
-        },
-      },
-    });
+    logger.info('[TrustCore] score changed for %s (%s): %s -> %s (reason: %s)', subject, id, previousScore, newScore, ctx.reason);
     return true;
   } catch (err) {
     // A failed audit row must not fail the score write: the score is the
@@ -227,7 +213,7 @@ export async function writeReliabilityScore(
         await prisma.business.update({ where: { id }, data: { reliabilityScore: next } });
         break;
       case 'crmEmployee':
-        await prisma.crmEmployee.update({ where: { id }, data: { reliabilityScore: next } });
+        await prisma.technician.update({ where: { id }, data: { reliabilityScore: next } });
         break;
     }
   } catch (err) {
@@ -293,7 +279,7 @@ export async function readStoredReliabilityScore(
       return row?.reliabilityScore ?? null;
     }
     case 'crmEmployee': {
-      const row = await prisma.crmEmployee.findUnique({ where: { id }, select: { reliabilityScore: true } });
+      const row = await prisma.technician.findUnique({ where: { id }, select: { reliabilityScore: true } });
       return row?.reliabilityScore ?? null;
     }
   }
@@ -423,9 +409,9 @@ export async function collectClientSignals(
   clientId: string,
 ): Promise<{ signals: TrustSignals | null; sampleSize: number }> {
   const [jobs, invoices] = await Promise.all([
-    prisma.crmJob.findMany({
+    prisma.booking.findMany({
       where: { clientId },
-      select: { status: true, completedAt: true, scheduledDate: true, scheduledTime: true },
+      select: { status: true, completedAt: true, slotStart: true, slotEnd: true },
     }),
     prisma.invoice.findMany({
       where: { clientId },
@@ -447,17 +433,17 @@ export async function collectClientSignals(
   const disputeMeasurable = false;
 
   const resolvedJobs = jobs.filter(
-    (j) => j.status === 'COMPLETED' || j.status === 'CANCELLED',
+    (j: any) => j.status === 'COMPLETED' || j.status === 'completed' || j.status === 'CANCELLED' || j.status === 'cancelled',
   );
-  const completedJobs = jobs.filter((j) => j.status === 'COMPLETED');
-  const cancelledJobs = jobs.filter((j) => j.status === 'CANCELLED');
+  const completedJobs = jobs.filter((j: any) => j.status === 'COMPLETED' || j.status === 'completed');
+  const cancelledJobs = jobs.filter((j: any) => j.status === 'CANCELLED' || j.status === 'cancelled');
 
   const settledInvoices = invoices.filter(
-    (i) => i.status === 'paid' || i.status === 'overdue' || i.status === 'void',
+    (i: any) => i.status === 'paid' || i.status === 'overdue' || i.status === 'void',
   );
-  const paidInvoices = invoices.filter((i) => i.paidAt !== null);
+  const paidInvoices = invoices.filter((i: any) => i.paidAt !== null);
   const paidOnTime = paidInvoices.filter(
-    (i) => i.paidAt !== null && i.paidAt.getTime() <= i.dateDue.getTime(),
+    (i: any) => i.paidAt !== null && i.paidAt.getTime() <= i.dateDue.getTime(),
   );
 
   const transactions = resolvedJobs.length + settledInvoices.length;
@@ -600,7 +586,7 @@ export async function collectBusinessSignals(
   googleRating?: number,
 ): Promise<{ signals: TrustSignals | null; sampleSize: number }> {
   const [reservations, invoices, business] = await Promise.all([
-    prisma.reservation.findMany({
+    prisma.booking.findMany({
       where: { businessId },
       select: { status: true },
     }),
@@ -612,14 +598,14 @@ export async function collectBusinessSignals(
   ]);
 
   const resolved = reservations.filter(
-    (r) => r.status === 'COMPLETED' || r.status === 'NO_SHOW' || r.status === 'CANCELLED',
+    (r: any) => r.status === 'COMPLETED' || r.status === 'NO_SHOW' || r.status === 'CANCELLED' || r.status === 'completed' || r.status === 'cancelled',
   );
-  const kept = reservations.filter((r) => r.status === 'COMPLETED');
-  const cancelled = reservations.filter((r) => r.status === 'CANCELLED');
+  const kept = reservations.filter((r: any) => r.status === 'COMPLETED' || r.status === 'completed');
+  const cancelled = reservations.filter((r: any) => r.status === 'CANCELLED' || r.status === 'cancelled');
 
-  const settled = invoices.filter((i) => i.status === 'paid' || i.status === 'overdue');
+  const settled = invoices.filter((i: any) => i.status === 'paid' || i.status === 'overdue');
   const paidOnTime = settled.filter(
-    (i) => i.paidAt !== null && i.paidAt.getTime() <= i.dateDue.getTime(),
+    (i: any) => i.paidAt !== null && i.paidAt.getTime() <= i.dateDue.getTime(),
   );
 
   const transactions = resolved.length + settled.length;
@@ -686,7 +672,7 @@ export async function refreshClientTrust(
   const client = await prisma.crmClient.findUnique({ where: { id: clientId } });
   if (!client) throw new Error(`Client ${clientId} not found`);
 
-  const jobs = await prisma.crmJob.findMany({ where: { clientId } });
+  const jobs = await prisma.booking.findMany({ where: { clientId } });
   const stage = getClientStage(client, jobs);
   const score = await recomputeClientScore(clientId, reason);
 
@@ -772,7 +758,7 @@ export function initializeTrustCore(): void {
     if (!jobId) return;
 
     try {
-      await prisma.crmJob.update({
+      await prisma.booking.update({
         where: { id: jobId },
         data: { escrowStatus: 'HELD' },
       });
@@ -790,7 +776,7 @@ export function initializeTrustCore(): void {
     if (!jobId) return;
 
     try {
-      await prisma.crmJob.update({
+      await prisma.booking.update({
         where: { id: jobId },
         data: { escrowStatus: 'RELEASED' },
       });
@@ -818,7 +804,7 @@ export function initializeTrustCore(): void {
     if (!jobId) return;
 
     try {
-      await prisma.crmJob.update({
+      await prisma.booking.update({
         where: { id: jobId },
         data: { escrowStatus: 'DISPUTED' },
       });
@@ -845,7 +831,7 @@ export function initializeTrustCore(): void {
     if (!jobId) return;
 
     try {
-      await prisma.crmJob.update({
+      await prisma.booking.update({
         where: { id: jobId },
         data: { status: 'COMPLETED', completedAt: new Date() },
       });
@@ -880,16 +866,15 @@ export function initializeTrustCore(): void {
     const DELTA = { 'delivery.on_time': 10, 'delivery.late': -5, 'delivery.missed': -20 };
 
     try {
-      const job = await prisma.crmJob.findFirst({
+      const job = await prisma.booking.findFirst({
         where: { id: jobId },
         select: {
           passportId: true,
-          employee: { select: { passportId: true } },
         },
       });
       if (!job) return;
 
-      const passportId = job.passportId ?? job.employee?.passportId ?? null;
+      const passportId = job.passportId ?? null;
       if (!passportId) {
         logger.warn(
           `[TrustCore] ${eventType} for job ${jobId} had no worker passport; score not updated.`,

@@ -48,33 +48,27 @@ function fail(res: Response, err: any) {
 
 /** Jobs for a UTC day, newest first, with the client joined. */
 async function jobsOnDay(serviceBusinessId: string, from: Date, to: Date) {
-  return prisma.crmJob.findMany({
-    where: { serviceBusinessId, scheduledDate: { gte: from, lt: to } },
+  return prisma.booking.findMany({
+    where: { businessId: serviceBusinessId, slotStart: { gte: from, lt: to } },
     include: { client: true },
-    orderBy: { scheduledDate: 'asc' },
+    orderBy: { slotStart: 'asc' },
   });
 }
 
 /**
  * Flatten a job into the shape the dashboard's `Booking` type expects.
- *
- * `time` is the stored HH:mm string rather than a computed timestamp: the dashboard renders
- * it directly, and the column is already what the scheduler writes, so re-deriving it here
- * would risk the two disagreeing by a timezone.
  */
 function toBooking(job: any) {
   return {
     id: job.id,
-    customerName: job.client?.name ?? job.clientName ?? 'Unknown',
+    customerName: job.client?.name ?? 'Customer',
     customerPhone: job.client?.phone ?? '',
     customerEmail: job.client?.email ?? undefined,
-    time: job.scheduledTime ?? '',
+    time: job.slotStart ? new Date(job.slotStart).toISOString() : '',
     status: job.status,
-    notes: job.notes ?? undefined,
-    depositAmount: 0,
-    depositPaid: false,
-    serviceType: job.serviceType,
-    address: job.address ?? undefined,
+    notes: job.serviceType ?? undefined,
+    depositAmount: job.depositAmount ?? 0,
+    depositPaid: Boolean(job.depositPaid),
   };
 }
 
@@ -139,8 +133,8 @@ router.get('/:businessId/customers', async (req: AuthRequest, res: Response) => 
 router.get('/:businessId/employees', async (req: AuthRequest, res: Response) => {
   try {
     const { serviceBusinessId } = requireCrmContext(req);
-    const employees = await prisma.crmEmployee.findMany({
-      where: { serviceBusinessId },
+    const employees = await prisma.technician.findMany({
+      where: { businessId: serviceBusinessId },
       orderBy: { name: 'asc' },
     });
     res.json({ success: true, data: employees });
