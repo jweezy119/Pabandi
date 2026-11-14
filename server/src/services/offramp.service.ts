@@ -6,6 +6,7 @@ import { EventEmitter } from 'events';
 import { webhookService } from './webhook.service';
 const channelDispatcher = { dispatchNewIntent: async (_intent: any) => null };
 import { aiPaymentVerifierService } from './ai.payment.verifier.service';
+import { storeReceiptImage } from './storage.service';
 import { telegramBot } from './telegram-bot.service';
 import { InlineKeyboard } from 'grammy';
 import { CustomError } from '../middleware/errorHandler';
@@ -243,11 +244,14 @@ export class OfframpService {
 
     const expectedPkr = intent.quotePkr || Number((intent.amountUsdc * intent.minRatePkr).toFixed(2));
 
+    const storedImage = await storeReceiptImage(imageBase64);
     const proof = await prisma.offrampProof.create({
       data: {
         intentId,
         lpWallet,
-        imageBase64: imageBase64.length <= 100000 ? imageBase64 : imageBase64.slice(0, 1000) + '...',
+        imageHash: storedImage.hash,
+        imageStorageKey: storedImage.storageKey,
+        imageUrl: storedImage.url,
         status: 'PENDING',
         confidence: 0,
         verifyResult: {},
@@ -561,7 +565,7 @@ export class OfframpService {
             data: {
               intentId,
               lpWallet: intent.lpWallet!,
-              imageBase64: 'webhook_verified',
+              imageStorageKey: 'webhook_verified',
               verifyResult: verification.fields as any,
               plainTextExtract: { ref: verification.providerTxnRef },
               confidence: verification.confidence,

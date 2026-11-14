@@ -19,6 +19,7 @@ const cryptoService = {
   refundEscrowToCustomer: async (_id?: string) => {},
 };
 import { aiNlpService } from './ai.nlp.service';
+import { recordBookingRiskOutcome } from './bookingRisk.service';
 
 export const sendWhatsAppMessage = async (toPhone: string, message: string, options?: { sessionId?: string }) => {
   if (!process.env.OPENWA_API_KEY && !process.env.EVOLUTION_API_KEY) {
@@ -178,6 +179,7 @@ async function handleWhatsAppCancellation(phoneNumber: string, user: any) {
       where: { id: booking.id },
       data: { status: 'CANCELLED' },
     });
+    await recordBookingRiskOutcome(booking.id, 'CANCELLED');
 
     if (booking.depositPaid) {
       const payment = await prisma.payment.findFirst({

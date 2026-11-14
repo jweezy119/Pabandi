@@ -2,9 +2,11 @@ import axios from 'axios';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { CustomError } from '../middleware/errorHandler';
+import { storeReceiptImage } from './storage.service';
 
 const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY || '';
 const DASHSCOPE_VISION_URL =
+  process.env.DASHSCOPE_VISION_URL ||
   'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
 
 export interface PaymentProofFields {
@@ -208,6 +210,7 @@ Return ONLY valid JSON. Never enclose with markdown formatting.
 
     let createdReceipt: any = null;
     try {
+      const storedImage = await storeReceiptImage(imageBase64);
       createdReceipt = await prisma.paymentReceipt.create({
         data: {
           transactionRef: receiptRef,
@@ -218,7 +221,9 @@ Return ONLY valid JSON. Never enclose with markdown formatting.
           bank: fields.bank || null,
           timestamp: fields.timestamp ? new Date(fields.timestamp) : new Date(),
           screenshotUrl: options?.screenshotUrl || null,
-          imageBase64: imageBase64.length <= 100000 ? imageBase64 : imageBase64.slice(0, 1000) + '...',
+          imageHash: storedImage.hash,
+          imageStorageKey: storedImage.storageKey,
+          imageUrl: storedImage.url,
           rawJson: fields as any,
           confidence,
           status: finalStatus,

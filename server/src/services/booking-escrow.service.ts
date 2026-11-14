@@ -47,6 +47,12 @@ export interface EscrowEvidence {
   reason?: string;
   /** Structured facts backing the decision — geofence distance, override, etc. */
   facts?: Record<string, unknown>;
+  /** Standard rail that settled the funds, when one did. */
+  rail?: 'solana_pay' | 'x402' | 'stripe_connect' | 'circle' | 'square' | 'raast';
+  /** On-chain or rail transaction hash. Never report a simulated value as settled. */
+  txHash?: string;
+  /** Receipt or payment reference returned by the rail. */
+  receiptRef?: string;
 }
 
 /**
@@ -161,6 +167,10 @@ export async function advanceBookingEscrow(
     where: { referenceId },
     data: {
       status: to,
+      ...(evidence.rail ? { rail: evidence.rail } : {}),
+      ...(evidence.txHash ? { txHash: evidence.txHash } : {}),
+      ...(evidence.receiptRef ? { receiptRef: evidence.receiptRef } : {}),
+      ...(to === 'released' || to === 'refunded' ? { settledAt: new Date() } : {}),
       metadata: {
         ...meta,
         evidence: {

@@ -575,6 +575,11 @@ model UniversalEscrow {
   status      String    @default("draft")
   deadline    DateTime?
   metadata    Json?
+  rail        String?
+  txHash      String?
+  receiptRef  String?
+  settledAt   DateTime?
+  simulated   Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -638,8 +643,31 @@ model Booking {
 
   business Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
   client   CrmClient? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  risk     BookingRisk?
 
   @@index([businessId, slotStart])
+}
+
+model BookingRisk {
+  id            String   @id @default(cuid())
+  bookingId     String   @unique
+  riskScore     Float
+  confidence    Float
+  band          String
+  policy        String
+  factors       Json
+  features      Json
+  modelVersion  String
+  calibrated    Boolean  @default(false)
+  outcome       String?
+  outcomeAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([outcome])
 }
 
 model Invoice {
@@ -703,13 +731,15 @@ model PaymentReceipt {
   transactionRef String    @unique
   amount         Float
   currency       String    @default("PKR")
-  receiverId     String
-  senderId       String?
-  bank           String?
-  timestamp      DateTime?
-  screenshotUrl  String?
-  imageBase64    String?   @db.Text
-  rawJson        Json?
+  receiverId      String
+  senderId        String?
+  bank            String?
+  timestamp       DateTime?
+  screenshotUrl   String?
+  imageHash       String?   @unique
+  imageStorageKey String?
+  imageUrl        String?
+  rawJson         Json?
   confidence     Float     @default(0)
   status         String    @default("VERIFIED")
   intentId       String?
@@ -811,7 +841,9 @@ model OfframpProof {
   id               String    @id @default(cuid())
   intentId         String
   lpWallet         String
-  imageBase64      String
+  imageHash        String?   @unique
+  imageStorageKey  String?
+  imageUrl         String?
   plainTextExtract Json?
   verifyResult     Json
   confidence       Float

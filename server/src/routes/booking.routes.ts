@@ -7,6 +7,8 @@ import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
 import { formatBusinessDiscoveryItem } from '../utils/businessDiscovery';
+import { assessBookingRisk } from '../services/bookingRisk.service';
+import { ensureBookingEscrow } from '../services/booking-escrow.service';
 
 const router = Router();
 
@@ -152,9 +154,42 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       },
     });
 
+    let risk: any = null;
+    try {
+      risk = await assessBookingRisk({
+        bookingId: booking.id,
+        businessId,
+        slotStart: booking.slotStart,
+        serviceType,
+      });
+    } catch (riskError: any) {
+      logger.error('[Booking] risk assessment failed:', riskError?.message || riskError);
+    }
+
+    const business = await prisma.business.findUnique({
+      where: { id: businessId },
+      select: { ownerId: true },
+    });
+    if (business?.ownerId) {
+      try {
+        await ensureBookingEscrow({
+          bookingId: booking.id,
+          businessId,
+          sellerPartyId: business.ownerId,
+          buyerPartyId: req.user.id,
+          amount: depositAmount ?? 0,
+          currency: 'USD',
+          slotStart: booking.slotStart,
+          slotEnd: booking.slotEnd,
+        });
+      } catch (escrowError: any) {
+        logger.error('[Booking] escrow creation failed:', escrowError?.message || escrowError);
+      }
+    }
+
     return res.json({
       success: true,
-      data: booking,
+      data: { ...booking, risk },
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';

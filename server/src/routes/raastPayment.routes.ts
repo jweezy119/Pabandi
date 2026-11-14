@@ -3,6 +3,8 @@ import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { aiPaymentVerifierService } from '../services/ai.payment.verifier.service';
+import { recordBookingRiskOutcome } from '../services/bookingRisk.service';
+import { advanceBookingEscrow } from '../services/booking-escrow.service';
 import { releaseEscrowToBusiness } from '../services/booking.service';
 import multer from 'multer';
 import { uploadSecurity } from '../middleware/uploadSecurity';
@@ -131,6 +133,14 @@ router.post('/verify-public', upload.single('screenshot'), async (req: Request, 
         await prisma.booking.update({
           where: { id: booking.id },
           data: { depositPaid: true, depositStatus: 'FUNDED', status: 'CONFIRMED' },
+        });
+        await recordBookingRiskOutcome(booking.id, 'CONFIRMED');
+        await advanceBookingEscrow(booking.id, 'funded', {
+          source: 'raast-ocr',
+          rail: 'raast',
+          txHash: verification.fields.transactionRef,
+          receiptRef: verification.receiptId,
+          reason: 'Raast receipt verified by AI OCR.',
         });
         logger.info(`[RaastPublicVerify] Booking ${booking.id} marked as PAID via AI OCR`);
       }
@@ -315,6 +325,7 @@ router.post('/:reference/reject', authenticate, async (req: AuthRequest, res: Re
         where: { id: meta.reservationId },
         data: { depositStatus: 'NOT_REQUIRED', status: 'cancelled' },
       });
+      await recordBookingRiskOutcome(meta.reservationId, 'cancelled');
     }
 
     logger.info(`[RaastReject] ${reference}: rejected by ${req.user!.id}, reason: ${reason || 'none'}`);

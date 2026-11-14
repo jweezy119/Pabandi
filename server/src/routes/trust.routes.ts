@@ -9,9 +9,10 @@ import { signVerifiableCredential } from '../trust/vcKeys';
 import { verifyTrustDisclosure } from '../trust/disclosure.service';
 import {
   getBusinessTrustMetrics,
-  generateMockZkSignature,
-  verifyZkTrustProof,
 } from '../services/zkTrustProof.service';
+import { vcPublicJwk } from '../trust/vcKeys';
+import jwt from 'jsonwebtoken';
+import { createPublicKey } from 'crypto';
 import { TrustPassportPayload } from '../types/trustPassport.types';
 
 const router = Router();
@@ -103,7 +104,14 @@ router.post('/passport/generate', authenticate, async (req: Request, res: Respon
       disputeRate: `<${maxDisputeRate}%`,
     };
 
-    const signature = generateMockZkSignature('Pabandi', metrics.subjectId, predicates, issuedAt);
+    const signature = signVerifiableCredential(
+      {
+        subjectId: metrics.subjectId,
+        predicates,
+        issuedAt,
+      },
+      VC_EXPIRY_HOURS * 3600,
+    );
 
     const proofPayload: TrustPassportPayload = {
       issuer: 'Pabandi',
@@ -137,7 +145,21 @@ router.post('/passport/verify', verifyRateLimiter, async (req: Request, res: Res
   try {
     const proofPayload = req.body?.proof_payload || req.body?.payload || req.body;
 
-    const result = verifyZkTrustProof(proofPayload);
+    let result: { isValid: boolean; verifiedPredicates: string[]; error?: string };
+    try {
+      if (!proofPayload?.signature) throw new Error('Missing signature');
+      const jwk = vcPublicJwk();
+      const publicKey = createPublicKey({ key: { ...jwk } as any, format: 'jwk' });
+      const payload = jwt.verify(proofPayload.signature, publicKey, { algorithms: ['ES256'] }) as Record<string, any>;
+      if (payload.subjectId !== proofPayload.subjectId) throw new Error('Subject mismatch');
+      const predicates = payload.predicates ?? {};
+      result = {
+        isValid: true,
+        verifiedPredicates: Object.entries(predicates).map(([key, value]) => `${key} ${String(value)}`),
+      };
+    } catch (error: any) {
+      result = { isValid: false, verifiedPredicates: [], error: error?.message || 'Verification failed' };
+    }
 
     if (!result.isValid) {
       return res.status(400).json({
