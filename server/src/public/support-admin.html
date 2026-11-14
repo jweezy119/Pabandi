@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pabandi Support Admin</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: #0b0f14; color: #e6edf3; }
+    header { padding: 18px 22px; border-bottom: 1px solid #1f2937; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    h1 { font-size: 18px; margin: 0; }
+    main { padding: 20px; max-width: 1100px; margin: 0 auto; }
+    .card { background: #111827; border: 1px solid #1f2937; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    input, select, button { font: inherit; }
+    input, select { background: #0b1220; color: #e6edf3; border: 1px solid #30363d; border-radius: 8px; padding: 9px 10px; min-width: 150px; }
+    button { border: 1px solid #30363d; background: #1f6feb; color: white; border-radius: 8px; padding: 9px 12px; cursor: pointer; }
+    button.secondary { background: #21262d; }
+    button.danger { background: #b62324; border-color: #b62324; }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #1f2937; vertical-align: top; }
+    th { color: #9da7b3; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    .muted { color: #9da7b3; }
+    .ok { color: #3fb950; }
+    .bad { color: #f85149; }
+    .warn { color: #d29922; }
+    .hidden { display: none !important; }
+    .token-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .pill { padding: 3px 8px; border-radius: 999px; background: #21262d; border: 1px solid #30363d; font-size: 12px; }
+    .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .small { padding: 5px 8px; font-size: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Pabandi Support Admin</h1>
+      <div class="muted">Internal user support console</div>
+    </div>
+    <div id="conn" class="pill">disconnected</div>
+  </header>
+
+  <main>
+    <section class="card" id="tokenCard">
+      <div class="token-bar">
+        <input id="token" type="password" placeholder="Admin token" autocomplete="current-password" />
+        <button id="connect">Connect</button>
+        <span id="tokenMsg" class="muted"></span>
+      </div>
+    </section>
+
+    <section class="card hidden" id="tools">
+      <div class="row" style="justify-content: space-between;">
+        <div class="row">
+          <input id="q" placeholder="Search email, name, or phone" />
+          <select id="role">
+            <option value="">All roles</option>
+            <option value="CUSTOMER">CUSTOMER</option>
+            <option value="BUSINESS_OWNER">BUSINESS_OWNER</option>
+            <option value="TECHNICIAN">TECHNICIAN</option>
+            <option value="COORDINATOR">COORDINATOR</option>
+            <option value="ADMIN">ADMIN</option>
+          </select>
+          <button class="secondary" id="refresh">Refresh</button>
+        </div>
+        <div class="muted" id="summary"></div>
+      </div>
+    </section>
+
+    <section class="card hidden" id="createCard">
+      <h2>Create user</h2>
+      <div class="grid">
+        <input id="cEmail" placeholder="Email" type="email" />
+        <input id="cFirstName" placeholder="First name" />
+        <input id="cLastName" placeholder="Last name" />
+        <input id="cPhone" placeholder="Phone (optional)" />
+        <input id="cPassword" placeholder="Temporary password" type="text" />
+        <select id="cRole">
+          <option value="CUSTOMER">CUSTOMER</option>
+          <option value="BUSINESS_OWNER">BUSINESS_OWNER</option>
+          <option value="TECHNICIAN">TECHNICIAN</option>
+          <option value="COORDINATOR">COORDINATOR</option>
+        </select>
+      </div>
+      <div class="row" style="margin-top: 12px;">
+        <button id="createUser">Create user</button>
+        <span id="createMsg" class="muted"></span>
+      </div>
+    </section>
+
+    <section class="card hidden" id="usersCard">
+      <h2>Users</h2>
+      <div class="row" style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Role</th>
+              <th>Verified</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/support-admin.js"></script>
+</body>
+</html>

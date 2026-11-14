@@ -115,3 +115,5 @@ server/.env.production
 test-results/
 playwright-report/
 playwright/.cache/
+
+server/uploads/

@@ -248,6 +248,17 @@ app.use('/sdk', express.static(PUBLIC_DIR));
 app.use('/assets', express.static(path.join(SPA_DIR, 'assets')));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// Internal support admin console (token-protected; API lives under /api/v1/admin/support)
+app.get('/support-admin', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.sendFile(path.join(PUBLIC_DIR, 'support-admin.html'));
+});
+app.get('/support-admin.js', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  res.sendFile(path.join(PUBLIC_DIR, 'support-admin.js'));
+});
+
 // LLMs.txt & Agent discovery
 app.get('/llms.txt', (_req, res) => {
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');

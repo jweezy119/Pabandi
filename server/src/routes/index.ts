@@ -104,6 +104,9 @@ const domainRoutes: [string, string][] = [
   ['/webhooks', './webhook.routes'],
   ['/notifications', './notifications.routes'],
   ['/settings', './settings.routes'],
+
+  // 9. Internal support admin (token-protected user management)
+  ['/admin/support', './adminSupport.routes'],
 ];
 
 for (const [subPath, target] of domainRoutes) {
