@@ -78,6 +78,81 @@ router.post('/verify', requireIdempotency, authenticate, upload.single('screensh
 });
 
 /**
+ * POST /api/v1/payments/raast/verify-public
+ * Public, frictionless OCR receipt verification for customers paying invoices or bookings via Raast.
+ * Supports multipart/form-data ('screenshot') OR JSON body ({ imageBase64, reference, amount, raastId }).
+ */
+router.post('/verify-public', upload.single('screenshot'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const body = req.body || {};
+    const reference = body.reference || body.referenceId;
+    const amount = Number(body.amount || body.amountPkr || 0);
+    const destination = body.raastId || body.destinationRef || '03001234567';
+
+    let imageBase64 = body.imageBase64;
+    if (req.file) {
+      imageBase64 = req.file.buffer.toString('base64');
+    }
+
+    if (!imageBase64) {
+      return res.status(400).json({ success: false, error: 'Receipt image screenshot is required' });
+    }
+
+    // Clean base64 header if present (e.g. data:image/png;base64,...)
+    const cleanB64 = imageBase64.replace(/^data:image\/[a-z]+;base64,/, '');
+
+    const verification = await aiPaymentVerifierService.verify(
+      cleanB64,
+      amount,
+      destination,
+      { paymentId: reference }
+    );
+
+    const isVerified = verification.status === 'VERIFIED';
+
+    if (isVerified && reference) {
+      // 1. Check if reference matches an Invoice
+      const invoice = await prisma.invoice.findFirst({
+        where: { OR: [{ id: reference }, { number: reference }] },
+      });
+      if (invoice) {
+        await prisma.invoice.update({
+          where: { id: invoice.id },
+          data: { status: 'PAID' },
+        });
+        logger.info(`[RaastPublicVerify] Invoice ${invoice.id} marked as PAID via AI OCR (RRN: ${verification.fields.transactionRef})`);
+      }
+
+      // 2. Check if reference matches a Booking
+      const booking = await prisma.booking.findUnique({
+        where: { id: reference },
+      }).catch(() => null);
+      if (booking) {
+        await prisma.booking.update({
+          where: { id: booking.id },
+          data: { paymentStatus: 'PAID', status: 'CONFIRMED' },
+        });
+        logger.info(`[RaastPublicVerify] Booking ${booking.id} marked as PAID via AI OCR`);
+      }
+    }
+
+    return res.json({
+      success: true,
+      verified: isVerified,
+      status: verification.status,
+      confidence: verification.confidence,
+      rrn: verification.fields.transactionRef,
+      message: isVerified
+        ? `Payment verified instantly! Transaction reference ${verification.fields.transactionRef || 'confirmed'}.`
+        : 'Receipt submitted. Confidence below threshold, queued for 2-minute coordinator confirmation.',
+    });
+  } catch (error: any) {
+    logger.error('[RaastPublicVerify] error:', error);
+    next(error);
+  }
+});
+
+/**
  * GET /api/v1/payments/raast/pending
  * List pending Raast payments for a business (venue dashboard).
  */

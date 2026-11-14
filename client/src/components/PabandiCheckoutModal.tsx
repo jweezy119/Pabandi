@@ -13,13 +13,16 @@ import {
   AlertCircle,
   CheckCircle2,
   QrCode,
-  Info,
+  Upload,
+  Camera,
+  Loader2,
 } from 'lucide-react';
 import { Connection, Transaction } from '@solana/web3.js';
 import { API_HOST } from '../utils/apiHost';
 import { getAuthToken } from '../utils/authToken';
 import { useEmbeddedSolanaWallet } from '../hooks/useEmbeddedSolanaWallet';
 import { SecureQRCode } from './SecureQRCode';
+import { generateRaastEmvcoPayload } from '../utils/raastEmvco';
 
 export type PaymentRail = 'solana' | 'square' | 'raast' | 'wallets';
 
@@ -90,8 +93,15 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
   const [claimSent, setClaimSent] = useState(false);
   const [srAnnouncement, setSrAnnouncement] = useState<string>('');
   const [squareCardInstance, setSquareCardInstance] = useState<any>(null);
-  const [squareSdkReady, setSquareSdkReady] = useState(false);
   const [squareLoadingSdk, setSquareLoadingSdk] = useState(false);
+
+  // In-Modal AI OCR Receipt Verification
+  const [ocrReceiptFile, setOcrReceiptFile] = useState<File | null>(null);
+  const [ocrReceiptPreview, setOcrReceiptPreview] = useState<string | null>(null);
+  const [ocrScanning, setOcrScanning] = useState(false);
+  const [ocrVerified, setOcrVerified] = useState(false);
+  const [ocrError, setOcrError] = useState<string | null>(null);
+  const [verifiedRrn, setVerifiedRrn] = useState<string | null>(null);
 
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
@@ -116,9 +126,59 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
     title
   )}&message=${encodeURIComponent(squareNote || referenceId)}`;
 
-  const raastPayload = `raast:${raastId}?amount=${amountInPkr}&ref=${encodeURIComponent(
-    squareNote || referenceId
-  )}`;
+  // Standard SBP EMVCo Interoperable QR Payload
+  const raastPayload = generateRaastEmvcoPayload({
+    raastId,
+    amountPkr: amountInPkr,
+    referenceId: squareNote || referenceId,
+  });
+
+  const handleReceiptUpload = async (file: File) => {
+    setOcrReceiptFile(file);
+    setOcrError(null);
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const b64 = reader.result as string;
+      setOcrReceiptPreview(b64);
+      setOcrScanning(true);
+      setSrAnnouncement('Scanning payment receipt with AI OCR...');
+
+      try {
+        const res = await fetch(`${API_HOST}/api/v1/payments/raast/verify-public`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            reference: squareNote || referenceId,
+            referenceId,
+            amount: amountInPkr,
+            raastId,
+            imageBase64: b64,
+          }),
+        });
+
+        const json = await res.json();
+        if (json.success && json.verified) {
+          setOcrVerified(true);
+          setVerifiedRrn(json.rrn || 'CONFIRMED');
+          triggerHaptic('success');
+          setClaimSent(true);
+          setSrAnnouncement(`Payment verified via AI OCR! RRN: ${json.rrn || 'confirmed'}`);
+          setTimeout(() => {
+            onSuccess?.('raast', squareNote || referenceId);
+          }, 1500);
+        } else {
+          setClaimSent(true);
+          setOcrError(json.message || 'Receipt submitted. Confidence below threshold, queued for coordinator confirmation.');
+        }
+      } catch (err: any) {
+        setOcrError(err?.message || 'Failed to analyze receipt. You can still confirm manually.');
+      } finally {
+        setOcrScanning(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Keyboard navigation & Accessibility Focus Trap
   useEffect(() => {
@@ -254,7 +314,6 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
           await card.attach('#pabandi-square-card-container');
           if (mounted) {
             setSquareCardInstance(card);
-            setSquareSdkReady(true);
           }
         }
       } catch (e: any) {
@@ -951,6 +1010,28 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
                   </div>
                 </div>
 
+                {/* Bank IBAN (if provided) */}
+                {merchantIban && (
+                  <div className="flex items-center justify-between py-1.5 border-b border-[#BFB3A3]/20">
+                    <span className="text-[#5C5248] font-medium">Bank IBAN:</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-xs text-[#2A2520]">{ibanNumber}</span>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(ibanNumber, 'raast_iban', 'Bank IBAN')}
+                        aria-label="Copy Bank IBAN"
+                        className="p-1 rounded hover:bg-[#E8D9C5] text-[#5C5248]"
+                      >
+                        {copiedKey === 'raast_iban' ? (
+                          <Check size={12} className="text-emerald-600" />
+                        ) : (
+                          <Copy size={12} />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Reference */}
                 <div className="flex items-center justify-between py-1.5">
                   <span className="text-[#5C5248] font-medium">Reference / Memo:</span>
@@ -994,11 +1075,74 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
                 </div>
               </div>
 
+              {/* Instant AI OCR Receipt Upload */}
+              <div className="p-3.5 rounded-2xl bg-white/80 border border-emerald-500/30 space-y-2.5">
+                <div className="flex items-center justify-between text-xs font-bold text-emerald-950">
+                  <span className="flex items-center gap-1.5">
+                    <Camera className="w-4 h-4 text-emerald-700" />
+                    Instant Verification (Upload Screenshot)
+                  </span>
+                  <span className="text-[10px] font-mono bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
+                    AI OCR
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-[#5C5248] leading-tight">
+                  Take a screenshot in your banking app after transfer. Our OCR scans the RRN and confirms your payment in seconds.
+                </p>
+
+                {ocrVerified ? (
+                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 flex items-center gap-2.5 text-xs font-bold">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                    <div>
+                      <p>Payment Verified Instantly!</p>
+                      <p className="text-[10px] font-mono text-emerald-600">RRN: {verifiedRrn}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <label className="cursor-pointer flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-dashed border-emerald-500/50 bg-emerald-500/5 hover:bg-emerald-500/10 text-xs font-semibold text-emerald-900 transition-colors">
+                      {ocrScanning ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
+                          <span>Scanning receipt via OCR...</span>
+                        </>
+                      ) : (
+                        <>
+                          {ocrReceiptPreview ? (
+                            <img src={ocrReceiptPreview} alt="Receipt" className="w-5 h-5 object-cover rounded border border-emerald-400" />
+                          ) : (
+                            <Upload className="w-4 h-4 text-emerald-600" />
+                          )}
+                          <span>{ocrReceiptFile ? 'Change Receipt Screenshot' : 'Upload Bank Transfer Screenshot'}</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={ocrScanning}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleReceiptUpload(f);
+                        }}
+                      />
+                    </label>
+
+                    {ocrError && (
+                      <p className="text-[11px] text-amber-700 font-mono">
+                        {ocrError}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* Confirm Paid Action */}
               <button
                 type="button"
                 onClick={handleClaimPaid}
-                disabled={claimSent}
+                disabled={claimSent || ocrScanning}
                 className="w-full min-h-[48px] py-3 px-4 rounded-xl bg-[#5F6F52] text-white font-bold text-xs hover:opacity-95 transition-opacity disabled:opacity-75 flex items-center justify-center gap-2 shadow-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#5F6F52] focus-visible:outline-none"
               >
                 {claimSent ? (
@@ -1128,11 +1272,75 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
                 </div>
               </div>
 
+              {/* Instant AI OCR Verification Dropzone for Wallets */}
+              <div className="p-3 rounded-xl bg-white border border-[#BFB3A3]/50 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-[#2A2520] flex items-center gap-1.5">
+                    <Camera size={14} className="text-[#C97B5A]" />
+                    <span>Upload Wallet Screenshot (Instant Verification)</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-[#5F6F52] font-semibold bg-[#5F6F52]/10 px-2 py-0.5 rounded">
+                    AI OCR
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#5C5248]">
+                  Paid via JazzCash or EasyPaisa? Upload your receipt screenshot and our AI engine will verify the transaction ID instantly without manual review.
+                </p>
+
+                {ocrVerified ? (
+                  <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 flex items-center gap-2 text-xs font-bold">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <div>
+                      <p>Payment Verified Instantly!</p>
+                      <p className="text-[10px] font-mono text-emerald-600">Ref: {verifiedRrn}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <label className="flex-1 cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleReceiptUpload(f);
+                        }}
+                        disabled={ocrScanning}
+                      />
+                      <div className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-dashed border-[#BFB3A3] hover:border-[#C97B5A] bg-[#FAF8F5] text-xs font-medium text-[#2A2520] transition-colors">
+                        {ocrScanning ? (
+                          <>
+                            <Loader2 size={14} className="animate-spin text-[#C97B5A]" />
+                            <span>Scanning receipt...</span>
+                          </>
+                        ) : (
+                          <>
+                            {ocrReceiptPreview ? (
+                              <img src={ocrReceiptPreview} alt="Receipt" className="w-5 h-5 object-cover rounded border border-[#C97B5A]" />
+                            ) : (
+                              <Upload size={14} className="text-[#C97B5A]" />
+                            )}
+                            <span>{ocrReceiptFile ? 'Change Screenshot' : 'Choose Screenshot'}</span>
+                          </>
+                        )}
+                      </div>
+                    </label>
+                  </div>
+                )}
+
+                {ocrError && (
+                  <div className="p-2 rounded-lg bg-red-50 border border-red-200 text-[11px] text-red-700">
+                    {ocrError}
+                  </div>
+                )}
+              </div>
+
               {/* Submit Claim Action */}
               <button
                 type="button"
                 onClick={handleClaimPaid}
-                disabled={claimSent}
+                disabled={claimSent || ocrScanning}
                 className="w-full min-h-[48px] py-3 px-4 rounded-xl bg-[#C97B5A] text-white font-bold text-xs hover:opacity-95 transition-opacity disabled:opacity-75 flex items-center justify-center gap-2 shadow-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#C97B5A] focus-visible:outline-none"
               >
                 {claimSent ? (
