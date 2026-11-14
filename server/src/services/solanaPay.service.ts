@@ -3,7 +3,7 @@ import { Keypair, PublicKey } from '@solana/web3.js';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { cnftService } from './cnft.service';
-import { cryptoService } from './crypto.service';
+import { cryptoService } from './cryptoService';
 import { openwaService } from './openwa.service';
 import { openwaTemplateService } from './openwa.template.service';
 

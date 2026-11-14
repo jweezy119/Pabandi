@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { prisma } from '../utils/database';
 import {
   createBookingWithPayment,
   confirmPaymentAndIssueRewards,
@@ -139,7 +140,7 @@ router.get('/my-bookings', async (req: Request, res: Response, next: NextFunctio
       }).catch(() => []),
 
       prisma.reservation.findMany({
-        where: { userId },
+        where: { customerId: userId },
         include: {
           business: {
             select: { id: true, name: true, logoUrl: true, city: true, address: true, category: true, slug: true },
@@ -151,7 +152,7 @@ router.get('/my-bookings', async (req: Request, res: Response, next: NextFunctio
       bottleBookingService.getUserBookings(userId).catch(() => []),
     ]);
 
-    const formattedRegular = regularBookings.map((b) => ({
+    const formattedRegular = (regularBookings as any[]).map((b: any) => ({
       id: b.id,
       serviceType: b.serviceType,
       slotStart: b.slotStart,
@@ -164,7 +165,7 @@ router.get('/my-bookings', async (req: Request, res: Response, next: NextFunctio
       createdAt: b.createdAt,
     }));
 
-    const formattedReservations = reservations.map((r) => ({
+    const formattedReservations = (reservations as any[]).map((r: any) => ({
       id: r.id,
       serviceType: 'Dine-In Reservation',
       slotStart: r.reservationTime,

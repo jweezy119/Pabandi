@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build & Test Server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'server/package.json'
+
+      - name: Install dependencies
+        working-directory: server
+        run: npm ci --legacy-peer-deps
+
+      - name: Generate Prisma Client
+        working-directory: server
+        run: npx prisma generate
+
+      - name: TypeScript Build (Zero Errors)
+        working-directory: server
+        run: npm run compile
+
+      - name: Run Vitest Suite
+        working-directory: server
+        run: npm test -- --run
+        env:
+          NODE_ENV: test
+          JWT_SECRET: ci-test-secret-min-16-characters
+          PTP_SIGNING_SECRET: ci-ptp-signing-secret-key-test
+          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef

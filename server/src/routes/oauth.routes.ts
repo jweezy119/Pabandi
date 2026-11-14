@@ -2,11 +2,13 @@ import { Router, Request, Response } from 'express';
 import { authenticate, optionalAuthenticate, AuthRequest } from '../middleware/auth.middleware';
 import { prisma } from '../utils/database';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import {
   getJwks,
   signOidcToken,
   verifyOidcToken,
   scoreToTrustBand,
+  calculateJwkThumbprint,
   IamTokenClaims,
   TrustBand,
   PrincipalType,
@@ -35,7 +37,7 @@ function extractDPoPThumbprint(req: Request): string | undefined {
     const decoded = jwt.decode(dpopHeader, { complete: true });
     if (!decoded || !decoded.header || typeof decoded.header !== 'object') return undefined;
 
-    const jwk = (decoded.header as Record<string, unknown>).jwk;
+    const jwk = (decoded.header as unknown as Record<string, unknown>).jwk;
     if (!jwk || typeof jwk !== 'object') return undefined;
 
     return calculateJwkThumbprint(jwk as Record<string, unknown>);

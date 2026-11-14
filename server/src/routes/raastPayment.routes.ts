@@ -130,7 +130,7 @@ router.post('/verify-public', upload.single('screenshot'), async (req: Request, 
       if (booking) {
         await prisma.booking.update({
           where: { id: booking.id },
-          data: { paymentStatus: 'PAID', status: 'CONFIRMED' },
+          data: { depositPaid: true, depositStatus: 'FUNDED', status: 'CONFIRMED' },
         });
         logger.info(`[RaastPublicVerify] Booking ${booking.id} marked as PAID via AI OCR`);
       }

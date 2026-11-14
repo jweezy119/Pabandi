@@ -90,7 +90,7 @@ export class GoogleMapsAdapter implements DataSourceAdapter {
       ];
 
       if (geo) {
-        args.push('-geo', geo);
+        args.push('-geo', typeof geo === 'string' ? geo : JSON.stringify(geo));
       }
       if (radius) {
         args.push('-radius', String(radius));
@@ -122,7 +122,7 @@ export class GoogleMapsAdapter implements DataSourceAdapter {
       }
 
       const places = this.parseGoogleMapsOutput(rawContent);
-      return places.map((p) => this.mapPlace(p, category));
+      return places.map((p) => this.mapPlace(p, category as string | undefined));
     } catch (error) {
       logger.error(`[GoogleMaps] fetch failed: ${error instanceof Error ? error.message : String(error)}`);
       return [];

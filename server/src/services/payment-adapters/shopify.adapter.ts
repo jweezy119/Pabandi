@@ -1,4 +1,5 @@
-import '@shopify/shopify-api/adapters/node';
+const shopifyNodeAdapter = '@shopify/shopify-api/adapters/node';
+require(shopifyNodeAdapter);
 import { PaymentAdapter } from './types';
 import crypto from 'crypto';
 import { shopifyApi, ApiVersion } from '@shopify/shopify-api';

@@ -57,7 +57,7 @@ export const rateLimiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => isProviderWebhookPath(req.originalUrl || req.url || ''),
+  skip: (req: any) => isProviderWebhookPath(req.originalUrl || req.url || ''),
 });
 
 export const authRateLimiter = rateLimit({

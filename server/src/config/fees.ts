@@ -251,6 +251,12 @@ export const CATEGORY_PRICING: Record<BusinessCategory, CategoryPricing> = {
     rationale: 'High transaction value; fee is small relative to GMV.',
   },
 
+  // High-ticket service businesses
+  ROOFING: { multiplier: 1.0, rationale: 'High-ticket residential / commercial contracting.' },
+  HVAC: { multiplier: 1.0, rationale: 'Emergency and scheduled service work.' },
+  SECURITY: { multiplier: 1.0, rationale: 'Guards, equipment, and facility monitoring.' },
+  CONTRACTOR: { multiplier: 1.0, rationale: 'General and specialty contracting work.' },
+
   // Not really local services — priced neutrally rather than tuned, since we
   // have no evidence about how these behave on Pabandi.
   EVENT_VENUE: { multiplier: 1.0, rationale: 'Neutral pending data.' },

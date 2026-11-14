@@ -3,7 +3,7 @@ import { prisma } from '../utils/database';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { listAdminPlugins, getAdminPlugin, updateAdminPlugin } from '../services/openwa_admin.service';
 import { fail, ok } from '../utils/apiResponse';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { UserRole } from '@prisma/client';
 import { EMAIL_PATTERN } from '../utils/validators';
 

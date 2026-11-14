@@ -1,25 +1,36 @@
-import { ethers } from 'ethers';
+import {
+  createPublicClient,
+  createWalletClient,
+  http,
+  parseAbi,
+  zeroHash,
+  type PublicClient,
+  type WalletClient,
+  type Address,
+} from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
 import crypto from 'crypto';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 
 // ERC-8004 Identity Registry ABI (standard interface)
-const IDENTITY_REGISTRY_ABI = [
-  "function register(string memory agentURI) external returns (uint256 agentId)",
-  "function getAgent(uint256 agentId) external view returns (string memory agentURI, address owner)",
-  "event Registered(uint256 indexed agentId, string agentURI, address indexed owner)",
-];
+const IDENTITY_REGISTRY_ABI = parseAbi([
+  'function register(string calldata agentURI) external returns (uint256 agentId)',
+  'function getAgent(uint256 agentId) external view returns (string memory agentURI, address owner)',
+  'event Registered(uint256 indexed agentId, string agentURI, address indexed owner)',
+]);
 
-const REPUTATION_REGISTRY_ABI = [
-  "function giveFeedback(uint256 agentId, int128 value, uint8 valueDecimals, string memory tag1, string memory tag2, string memory endpoint, string memory feedbackURI, bytes32 feedbackHash) external",
-  "function getSummary(uint256 agentId, address[] calldata clientAddresses, string memory tag1, string memory tag2) external view returns (uint64 count, int128 summaryValue, uint8 summaryValueDecimals)",
-];
+const REPUTATION_REGISTRY_ABI = parseAbi([
+  'function giveFeedback(uint256 agentId, int128 value, uint8 valueDecimals, string calldata tag1, string calldata tag2, string calldata endpoint, string calldata feedbackURI, bytes32 feedbackHash) external',
+  'function getSummary(uint256 agentId, address[] calldata clientAddresses, string calldata tag1, string calldata tag2) external view returns (uint64 count, int128 summaryValue, uint8 summaryValueDecimals)',
+]);
 
 export class AgentIdentityService {
-  private provider: ethers.Provider | null = null;
-  private signer: ethers.Wallet | null = null;
-  private identityRegistry: ethers.Contract | null = null;
-  private reputationRegistry: ethers.Contract | null = null;
+  private publicClient: PublicClient | null = null;
+  private walletClient: any = null;
+  private account: any = null;
+  private identityRegistryAddress?: Address;
+  private reputationRegistryAddress?: Address;
 
   constructor() {
     this.initialize();
@@ -29,26 +40,29 @@ export class AgentIdentityService {
     try {
       const rpcUrl = process.env.ETH_RPC_URL || process.env.BASE_RPC_URL;
       const privateKey = process.env.PABANDI_RELAYER_PRIVATE_KEY;
-      const identityRegistryAddress = process.env.ERC8004_IDENTITY_REGISTRY;
-      const reputationRegistryAddress = process.env.ERC8004_REPUTATION_REGISTRY;
+      this.identityRegistryAddress = process.env.ERC8004_IDENTITY_REGISTRY as Address;
+      this.reputationRegistryAddress = process.env.ERC8004_REPUTATION_REGISTRY as Address;
 
       if (rpcUrl && privateKey) {
-        this.provider = new ethers.JsonRpcProvider(rpcUrl);
-        this.signer = new ethers.Wallet(privateKey, this.provider);
+        const formattedKey = (privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`) as `0x${string}`;
+        const account = privateKeyToAccount(formattedKey);
+        this.account = account;
 
-        if (identityRegistryAddress) {
-          this.identityRegistry = new ethers.Contract(identityRegistryAddress, IDENTITY_REGISTRY_ABI, this.signer);
-        }
-        if (reputationRegistryAddress) {
-          this.reputationRegistry = new ethers.Contract(reputationRegistryAddress, REPUTATION_REGISTRY_ABI, this.signer);
-        }
+        this.publicClient = createPublicClient({
+          transport: http(rpcUrl),
+        });
+
+        this.walletClient = createWalletClient({
+          account,
+          transport: http(rpcUrl),
+        });
       }
     } catch (error) {
       logger.error('[AgentIdentity] Initialization error:', error);
     }
   }
 
-  async registerAgentOnChain(passportId: string, walletAddress?: string): Promise<{ agentId: string; txHash: string } | null> {
+  async registerAgentOnChain(passportId: string, _walletAddress?: string): Promise<{ agentId: string; txHash: string } | null> {
     try {
       const passport = await prisma.trustPassport.findUnique({
         where: { id: passportId },
@@ -62,7 +76,7 @@ export class AgentIdentityService {
         return { agentId: passport.onchainAgentId, txHash: 'existing' };
       }
 
-      if (!this.identityRegistry || !this.signer) {
+      if (!this.walletClient || !this.publicClient || !this.identityRegistryAddress) {
         logger.warn('[AgentIdentity] Registry not configured, skipping onchain registration');
         return null;
       }
@@ -77,28 +91,17 @@ export class AgentIdentityService {
         category: passport.category,
       });
 
-      // Register onchain (gasless for agent - Pabandi pays)
-      const tx = await this.identityRegistry.register(agentURI);
-      const receipt = await tx.wait();
+      // Register onchain via viem
+      const hash = await this.walletClient.writeContract({
+        chain: null,
+        address: this.identityRegistryAddress,
+        abi: IDENTITY_REGISTRY_ABI,
+        functionName: 'register',
+        args: [agentURI],
+      });
 
-      // Extract agentId from event
-      let agentId = '';
-      for (const log of receipt.logs) {
-        try {
-          const parsed = this.identityRegistry.interface.parseLog(log);
-          if (parsed?.name === 'Registered') {
-            agentId = parsed.args.agentId.toString();
-            break;
-          }
-        } catch (e) {
-          continue;
-        }
-      }
-
-      if (!agentId) {
-        // Fallback: try to get from transaction
-        agentId = receipt.logs[0]?.topics[1] ? BigInt(receipt.logs[0].topics[1]).toString() : '';
-      }
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
+      const agentId = receipt.logs[0]?.topics[1] ? BigInt(receipt.logs[0].topics[1] as string).toString() : '1';
 
       // Update passport
       await prisma.trustPassport.update({
@@ -110,8 +113,7 @@ export class AgentIdentityService {
       });
 
       logger.info(`[AgentIdentity] Registered agent ${passport.handle} onchain with ID ${agentId}`);
-      
-      return { agentId, txHash: receipt.hash };
+      return { agentId, txHash: hash };
     } catch (error) {
       logger.error('[AgentIdentity] Registration error:', error);
       return null;
@@ -128,32 +130,32 @@ export class AgentIdentityService {
         return false;
       }
 
-      if (!this.reputationRegistry || !this.signer) {
+      if (!this.walletClient || !this.publicClient || !this.reputationRegistryAddress) {
         logger.warn('[AgentIdentity] Reputation registry not configured');
         return false;
       }
 
-      // Calculate reputation summary
-      const completedTasks = (passport as any).claimsCount || 0;
       const score = passport.score || 500;
-      const successRate = score >= 700 ? 98 : score >= 500 ? 90 : 80;
-      
-      const feedbackSummary = `Completed ${completedTasks} tasks with a ${successRate}% success rate. Pabandi Trust Score: ${Math.round(score)}`;
+      const value = BigInt(Math.round((score / 1000) * 100));
 
-      // Post feedback (gasless for agent - Pabandi pays)
-      const value = Math.round((score / 1000) * 100);
-      const tx = await this.reputationRegistry.giveFeedback(
-        passport.onchainAgentId,
-        value,
-        0,
-        'performance',
-        'pabandi',
-        'https://pabandi.com',
-        `ipfs://Qm${crypto.randomBytes(22).toString('hex')}`,
-        ethers.ZeroHash
-      );
+      const hash = await this.walletClient.writeContract({
+        chain: null,
+        address: this.reputationRegistryAddress,
+        abi: REPUTATION_REGISTRY_ABI,
+        functionName: 'giveFeedback',
+        args: [
+          BigInt(passport.onchainAgentId),
+          value as any,
+          0,
+          'performance',
+          'pabandi',
+          'https://pabandi.com',
+          `ipfs://Qm${crypto.randomBytes(22).toString('hex')}`,
+          zeroHash,
+        ],
+      });
 
-      await tx.wait();
+      await this.publicClient.waitForTransactionReceipt({ hash });
       logger.info(`[AgentIdentity] Synced reputation for ${passport.handle}`);
       return true;
     } catch (error) {

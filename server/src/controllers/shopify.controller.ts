@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../utils/database';
-require('@shopify/shopify-api/adapters/node');
+const shopifyNodeAdapter = '@shopify/shopify-api/adapters/node';
+require(shopifyNodeAdapter);
 import { shopifyApi, ApiVersion, DeliveryMethod } from '@shopify/shopify-api';
 import { VCService } from '../services/vc.service';
 

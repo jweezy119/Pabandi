@@ -126,7 +126,7 @@ export const getBusiness = async (
       throw notFoundError;
     }
 
-    let business = await prisma.business.findFirst({
+    let business: any = await prisma.business.findFirst({
       where: {
         OR: [
           { id },

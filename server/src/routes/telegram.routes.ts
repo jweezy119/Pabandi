@@ -106,7 +106,7 @@ router.post('/webhook', (req: Request, res: Response, next: NextFunction) => {
   }
 
   if (telegramWebhookHandler) {
-    return telegramWebhookHandler(req, res, next);
+    return (telegramWebhookHandler as any)(req, res, next);
   }
   return res.status(503).json({ success: false, message: 'Telegram bot not initialized' });
 });

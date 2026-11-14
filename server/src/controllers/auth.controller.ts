@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { PrismaClient, UserRole, BusinessCategory, ProfileType } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
 import crypto from 'crypto';
 import { PublicKey, Keypair } from '@solana/web3.js';
@@ -1491,7 +1491,7 @@ export const loginWithPrivy = async (req: AuthRequest, res: Response, next: Next
       include: { user: { include: { business: true } } },
     });
 
-    let user = userAuth?.user;
+    let user: any = userAuth?.user || null;
 
     if (!user && privyUserEmail) {
       user = await prisma.user.findUnique({

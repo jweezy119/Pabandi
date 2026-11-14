@@ -140,7 +140,7 @@ const FIXTURES: Fixture[] = [
 ];
 
 describe('computeEnsembleScore: fixed fixtures', () => {
-  it.each(FIXTURES)('$name → $expected', ({ signals, expected, derivation, name }) => {
+  it.each(FIXTURES)('$name → $expected', ({ signals, expected, derivation, name }: any) => {
     const actual = computeEnsembleScore(signals);
 
     // Float tolerance is tight but non-zero: the cancellation term is 1/6, and
@@ -209,7 +209,7 @@ describe('normalizeCancellationCount', () => {
     { count: 3, expected: 0.5, why: 'half of saturation' },
     { count: 6, expected: 1, why: 'exactly saturation' },
     { count: 1000, expected: 1, why: 'saturates, does not keep growing' },
-  ])('$count → $expected ($why)', ({ count, expected }) => {
+  ])('$count → $expected ($why)', ({ count, expected }: any) => {
     expect(normalizeCancellationCount(count)).toBeCloseTo(expected, 10);
   });
 });

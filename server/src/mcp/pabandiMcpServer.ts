@@ -2384,7 +2384,7 @@ export async function callTool(toolName: string, args: any, req?: Request): Prom
 
         if (typeof args.sdJwtPresentation === 'string' && args.sdJwtPresentation.trim()) {
           const sdRes = verifySdJwtPresentation(args.sdJwtPresentation.trim());
-          if (sdRes.valid && sdRes.disclosedClaims.trust_band) {
+          if (sdRes.valid && sdRes.disclosedClaims?.trust_band) {
             const band = String(sdRes.disclosedClaims.trust_band).toUpperCase();
             effectiveScore = band === 'A' ? 920 : band === 'B' ? 760 : band === 'C' ? 560 : 320;
             verifiedBand = bandForScore(effectiveScore);
@@ -2610,9 +2610,8 @@ export async function callTool(toolName: string, args: any, req?: Request): Prom
                   services: {
                     create: [
                       {
-                        serviceId: selectedService.id,
-                        quantity: 1,
-                        price: selectedService.price,
+                        service: { connect: { id: selectedService.id } },
+                        priceAtBooking: selectedService.price,
                       },
                     ],
                   },
@@ -2843,7 +2842,7 @@ export async function callTool(toolName: string, args: any, req?: Request): Prom
             tenantName,
             startDate: new Date(startDate),
             endDate: endDate ? new Date(endDate) : new Date(new Date(startDate).setFullYear(new Date(startDate).getFullYear() + 1)),
-            monthlyRent: resolvedRent,
+            rentAmount: resolvedRent,
             depositAmount: resolvedDeposit,
             status: 'PENDING_SIGNATURE',
           },
@@ -2853,12 +2852,15 @@ export async function callTool(toolName: string, args: any, req?: Request): Prom
         const { cnftService } = await import('../services/cnft.service');
         const cnft = await cnftService.mintBookingCredential({
           bookingId: lease.id,
+          businessId: property.userId || 'platform_property',
           businessName: property.title,
           serviceName: `Residential Lease / Stay: ${property.title}`,
-          datetime: startDate,
+          reservationDate: new Date(startDate).toISOString().slice(0, 10),
+          reservationTime: '12:00',
           customerName: tenantName,
-          customerWallet: args.tenantWallet,
+          customerWallet: args.tenantWallet || null,
           depositAmount: resolvedDeposit,
+          currency: 'USD',
         });
 
         return {

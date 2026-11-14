@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit validation (tsc check)..."
+node server/node_modules/typescript/bin/tsc -p server/tsconfig.json --noEmit || {
+  echo "❌ Server TypeScript compilation failed! Commit blocked."
+  exit 1
+}
+
+echo "✅ Pre-commit checks passed successfully."

@@ -34,7 +34,7 @@ export function validateDPoPProof(
       return { valid: false, error: 'MALFORMED_DPOP_HEADER' };
     }
 
-    const jwk = (decoded.header as Record<string, unknown>).jwk;
+    const jwk = (decoded.header as unknown as Record<string, unknown>).jwk;
     if (!jwk || typeof jwk !== 'object') {
       return { valid: false, error: 'MISSING_JWK_IN_DPOP_HEADER' };
     }

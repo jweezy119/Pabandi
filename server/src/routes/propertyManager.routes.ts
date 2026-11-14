@@ -560,7 +560,7 @@ router.post('/maintenance/:id/dispatch-contractor', authenticate, async (req: an
         data: {
           name: vendorName,
           email: contractorEmail || `${vendorName.toLowerCase().replace(/\s+/g, '')}@pabandi.contractor`,
-          serviceType: 'Contractor / Maintenance',
+          notes: 'Contractor / Maintenance',
           status: 'ACTIVE',
         },
       });

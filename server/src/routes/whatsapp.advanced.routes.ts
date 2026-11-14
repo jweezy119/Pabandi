@@ -378,7 +378,7 @@ router.post('/outreach/noshow-shield', async (req: Request, res: Response, next:
         recipient: ownerPhone,
         businessName,
         claimUrl,
-        sent: result.success,
+        sent: result.status === 'sent' || result.status === 'queued',
       },
     });
   } catch (error) {

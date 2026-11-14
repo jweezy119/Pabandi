@@ -302,7 +302,7 @@ export class WhatsAppSmartService {
               depositRequired: true,
               depositAmount: depositVal,
               depositPaid: false,
-              depositStatus: 'REQUIRED',
+              depositStatus: 'PENDING',
             }
           }).catch((err) => {
             console.warn('[WhatsApp Booking] Reservation create warning:', err.message);

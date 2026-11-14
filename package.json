@@ -1,19 +1,24 @@
 {
-  "name": "pabandi-escrow-contract",
+  "name": "pabandi-monorepo",
   "version": "1.0.0",
-  "description": "PabandiEscrow.sol — Solidity escrow for booking reservations on multi-chain",
+  "description": "Pabandi — Trust, Escrow, and Payments Platform",
   "main": "index.js",
-  "keywords": [
-    "multi-chain",
-    "escrew",
-    "solana",
-    "btc",
-    "bnb",
-    "eth",
-    "stellar",
-    "booking",
-    "pabandi"
-  ],
+  "scripts": {
+    "prepare": "husky install",
+    "pre-commit": "lint-staged",
+    "build:server": "npm --prefix server run build",
+    "build:client": "npm --prefix client run build",
+    "typecheck": "tsc --noEmit"
+  },
+  "lint-staged": {
+    "server/src/**/*.ts": [
+      "tsc -p server/tsconfig.json --noEmit"
+    ]
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
     "headroom-ai": "^0.37.0",

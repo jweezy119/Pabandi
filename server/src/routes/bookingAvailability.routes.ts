@@ -398,7 +398,7 @@ router.get('/:businessId/slots', async (req: Request, res: Response) => {
     }
 
     const slotCapacity = new Map<string, number>();
-    const maxConcurrent = business.maxConcurrentBookings || 1;
+    const maxConcurrent = business?.maxConcurrentBookings || 1;
 
     [...existingBookings, ...existingJobs].forEach(item => {
       const slotKey = 'slotStart' in item ? item.slotStart.toISOString() : item.scheduledDate.toISOString();

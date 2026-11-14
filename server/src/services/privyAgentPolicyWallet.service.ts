@@ -251,14 +251,15 @@ export async function provisionPrivyPolicyAgentWallet(
       where: { userId: input.ownerUserId },
     });
     if (passport) {
+      const passportAny = passport as any;
       const currentMeta =
-        passport.metadata && typeof passport.metadata === 'object'
-          ? (passport.metadata as Record<string, unknown>)
+        passportAny.metadata && typeof passportAny.metadata === 'object'
+          ? (passportAny.metadata as Record<string, unknown>)
           : {};
       const existingWallets = Array.isArray(currentMeta.privyAgentWallets)
         ? (currentMeta.privyAgentWallets as ProvisionedAgentPolicyWallet[])
         : [];
-      await prisma.trustPassport.update({
+      await (prisma.trustPassport as any).update({
         where: { id: passport.id },
         data: {
           metadata: JSON.parse(
@@ -292,8 +293,8 @@ export async function listPrivyPolicyAgentWallets(
       where: { userId: ownerUserId },
     });
     const meta =
-      passport?.metadata && typeof passport.metadata === 'object'
-        ? (passport.metadata as Record<string, unknown>)
+      (passport as any)?.metadata && typeof (passport as any).metadata === 'object'
+        ? ((passport as any).metadata as Record<string, unknown>)
         : {};
     if (Array.isArray(meta.privyAgentWallets)) {
       return meta.privyAgentWallets as ProvisionedAgentPolicyWallet[];
