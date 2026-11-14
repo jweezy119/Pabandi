@@ -37,10 +37,12 @@
   ],
   "endpoints": {
     "orchestrator": "https://pabandi.onrender.com/api/v1/payments",
-    "connectors": "https://pabandi.onrender.com/api/v1/connectors",
-    "recommendRail": "https://pabandi.onrender.com/api/v1/payments/recommend-rail",
-    "shariaCompliance": "https://pabandi.onrender.com/api/v1/sharia-compliance",
-    "agentMicropayments": "https://pabandi.onrender.com/api/v1/agent/premium-resource"
+    "agentApi": "https://pabandi.onrender.com/api/v1/agents",
+    "mcp": "https://pabandi.onrender.com/mcp",
+    "businesses": "https://pabandi.onrender.com/api/v1/agents/businesses",
+    "bookings": "https://pabandi.onrender.com/api/v1/agents/bookings",
+    "passportVerify": "https://pabandi.onrender.com/api/v1/agents/passport/verify",
+    "payouts": "https://pabandi.onrender.com/api/v1/agents/payouts"
   }
 }
 

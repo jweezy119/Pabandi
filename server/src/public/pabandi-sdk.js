@@ -59,7 +59,7 @@
 
     // ── Discovery ─────────────────────────────────────────────────────────
     async discover() {
-      return this._call('/mcp', { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'pabandi_discover_platform', arguments: {} } }, 'POST');
+      return this._call('/api/v1/pabandi/tools', {}, 'GET');
     }
 
     async listTools() {
@@ -69,30 +69,24 @@
     // ── Search ───────────────────────────────────────────────────────────
     async search(query, opts = {}) {
       const qs = new URLSearchParams({ ...opts, q: query });
-      return this._call(`/api/v1/businesses?${qs.toString()}`, {}, 'GET');
-    }
-
-    // ── App integration ──────────────────────────────────────────────────
-    async connectApp({ appName, scopes = [], webhookUrl, redirectUrl }) {
-      return this._call('/api/v1/apps/connect', { appName, scopes, webhookUrl, redirectUrl });
-    }
-
-    async getAppConfig(appId) {
-      const resp = await fetch(`${this.base}/api/v1/apps/${encodeURIComponent(appId || this.appId)}/config`, {
-        headers: this.bearer ? { Authorization: `Bearer ${this.bearer}` } : {},
-      });
-      const text = await resp.text();
-      let data;
-      try { data = JSON.parse(text); } catch { data = text; }
-      return { status: resp.status, ok: resp.ok, data };
+      return this._call(`/api/v1/agents/businesses?${qs.toString()}`, {}, 'GET');
     }
 
     async invoke(toolName, args = {}) {
-      return this._call('/api/v1/agents/invoke', { toolName, args });
+      return this._call('/mcp', {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: { name: toolName, arguments: args },
+      }, 'POST');
     }
 
-    async verifyPassport(token, need) {
-      return this._call('/mcp', { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'pabandi_verify_passport', arguments: { token, need } } }, 'POST');
+    async verifyPassport(credential, opts = {}) {
+      return this._call('/api/v1/agents/passport/verify', {
+        credential,
+        audienceBusinessId: opts.audienceBusinessId,
+        threshold: opts.threshold,
+      });
     }
 
     // ── Trust ───────────────────────────────────────────────────────────
@@ -102,18 +96,6 @@
       let data;
       try { data = JSON.parse(text); } catch { data = text; }
       return { status: resp.status, ok: resp.ok, data };
-    }
-
-    // ── Widget embed helper ──────────────────────────────────────────────
-    embedWidget(containerId, opts = {}) {
-      const container = typeof containerId === 'string' ? document.getElementById(containerId) : containerId;
-      if (!container) return;
-      const url = `${this.base}/sdk/widget.html?appId=${encodeURIComponent(this.appId || '')}&mode=${encodeURIComponent(opts.mode || 'search')}&theme=${encodeURIComponent(opts.theme || 'light')}`;
-      const iframe = document.createElement('iframe');
-      iframe.src = url;
-      iframe.style.cssText = 'width:100%;height:420px;border:none;border-radius:12px;';
-      container.innerHTML = '';
-      container.appendChild(iframe);
     }
   }
 

@@ -10,6 +10,7 @@ import { logger } from './utils/logger';
 import { rateLimiter } from './middleware/rateLimiter';
 import { requestIdMiddleware } from './middleware/requestId.middleware';
 import { apiRouter } from './routes/index';
+import mcpRouter from './routes/mcp.routes';
 
 // Load environment variables FIRST
 dotenv.config();
@@ -232,6 +233,9 @@ app.get('/health', (_req, res) => {
 app.get('/healthz', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
+
+// MCP Streamable HTTP endpoint (JSON-RPC 2.0, POST only)
+app.use('/mcp', mcpRouter);
 
 // Mount Central Domain Router
 app.use(`/api/${API_VERSION}`, apiRouter);

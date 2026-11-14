@@ -80,11 +80,9 @@ router.get('/.well-known/api-host', (_req: Request, res: Response) => {
         robots: '/robots.txt',
         openapi: '/openapi.yaml',
         tools: `/api/${process.env.API_VERSION || 'v1'}/pabandi/tools`,
-        agentRegistry: '/.well-known/agent-registry.json',
-        capabilityManifest: '/.well-known/agents.json',
-        ptp: '/.well-known/ptp.json',
+        agentManifest: '/.well-known/agent.json',
       },
-      signup: `/api/${process.env.API_VERSION || 'v1'}/agents/register`,
+      signup: `/api/${process.env.API_VERSION || 'v1'}/gigs/agents/register`,
     },
   });
 });

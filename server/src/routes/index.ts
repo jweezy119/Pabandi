@@ -107,6 +107,10 @@ const domainRoutes: [string, string][] = [
 
   // 9. Internal support admin (token-protected user management)
   ['/admin/support', './adminSupport.routes'],
+
+  // 10. AI agent surface: REST tools + machine-readable manifest
+  ['/agents', './agent.routes'],
+  ['/pabandi', './agent.routes'],
 ];
 
 for (const [subPath, target] of domainRoutes) {
