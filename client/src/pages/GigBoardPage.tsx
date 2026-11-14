@@ -251,18 +251,30 @@ export default function GigBoardPage() {
   const handleBid = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bidOpenGig) return;
+
+    const parsedQuote = Number(bidQuote);
+    if (!parsedQuote || parsedQuote <= 0) {
+      alert('Please enter a valid positive quote amount in USD.');
+      return;
+    }
+
     setBidding(true);
     try {
       await api.post(`/gigs/${bidOpenGig}/bid`, {
         agentId: user?.id || user?.walletAddress || undefined,
-        quoteUsd: Number(bidQuote) || 0,
+        quoteUsd: parsedQuote,
       });
       setBidOpenGig(null);
       setBidQuote('');
       fetchGigs();
       alert('Bid submitted successfully! The gig poster has been notified.');
     } catch (err: any) {
-      const msg = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Failed to submit bid';
+      const data = err?.response?.data;
+      const msg = typeof data?.error === 'string'
+        ? data.error
+        : typeof data?.message === 'string'
+        ? data.message
+        : data?.error?.message || err?.message || 'Failed to submit bid';
       alert(msg);
     } finally {
       setBidding(false);

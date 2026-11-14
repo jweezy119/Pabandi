@@ -16,18 +16,19 @@ router.get('/:id', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'Magic link ID is required' });
     }
 
-    // 1. Check Invoice
+    // IDOR Enumeration Guard: Block sequential integer enumeration (e.g. /1, /2, /3)
+    if (/^\d+$/.test(rawId)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Sequential link enumeration is forbidden. Secure magic links must use the unguessable CUID reference.',
+      });
+    }
+
+    // 1. Check Invoice by unguessable CUID
     let invoice = await prisma.invoice.findUnique({
       where: { id: rawId },
       include: { client: true },
     });
-
-    if (!invoice && !rawId.includes('-')) {
-      invoice = await prisma.invoice.findFirst({
-        where: { number: rawId },
-        include: { client: true },
-      });
-    }
 
     if (invoice) {
       const business = invoice.businessId

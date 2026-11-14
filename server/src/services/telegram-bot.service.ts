@@ -333,6 +333,14 @@ if (telegramBot) {
     // Operator Action: Mark as Sent (Live Production Loop)
     if (data.startsWith('SENT_') || data.startsWith('LP_SENT_')) {
       const intentId = data.replace(/^(SENT_|LP_SENT_)/, '');
+      const operatorChatId = process.env.OPERATOR_TELEGRAM_CHAT_ID;
+      const callerId = String(ctx.from?.id);
+
+      if (operatorChatId && callerId !== String(operatorChatId)) {
+        logger.warn(`[TelegramBot] Unauthorized Mark as Sent callback from telegram user ${callerId}`);
+        return ctx.answerCallbackQuery({ text: '⚠️ Unauthorized: Only the designated operator can confirm payouts.', show_alert: true });
+      }
+
       try {
         await prisma.offrampIntent.updateMany({
           where: { id: intentId },

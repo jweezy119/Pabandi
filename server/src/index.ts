@@ -192,6 +192,14 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
+// Square and payment webhook routes must receive raw bytes untouched for cryptographic signature verification
+app.use([
+  '/api/v1/payments/square-webhook',
+  '/api/v1/square-checkout/webhook',
+  '/api/v1/square/webhook',
+  '/api/v1/webhook/square',
+], express.raw({ type: 'application/json', limit: '10mb' }));
+
 // Body parsing middleware — capture raw body for webhook HMAC verification
 app.use(express.json({
   limit: '10mb',

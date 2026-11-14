@@ -184,15 +184,28 @@ export class SquareService {
 
     if (!signature) return false;
 
-    const expected = crypto
-      .createHmac('sha256', webhookSecret)
-      .update(url + body)
-      .digest('base64');
+    // Candidates for the notification URL: incoming URL, forced HTTPS URL, and configured URL
+    const candidateUrls = new Set<string>();
+    candidateUrls.add(url);
+    candidateUrls.add(`https://${url.replace(/^https?:\/\//, '')}`);
+    if (process.env.SQUARE_WEBHOOK_URL) {
+      candidateUrls.add(process.env.SQUARE_WEBHOOK_URL);
+    }
 
-    const a = Buffer.from(expected);
     const b = Buffer.from(signature);
-    if (a.length !== b.length) return false;
-    return crypto.timingSafeEqual(a, b);
+    for (const candidateUrl of candidateUrls) {
+      const expected = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(candidateUrl + body)
+        .digest('base64');
+
+      const a = Buffer.from(expected);
+      if (a.length === b.length && crypto.timingSafeEqual(a, b)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**

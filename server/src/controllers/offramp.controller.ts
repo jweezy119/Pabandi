@@ -569,7 +569,6 @@ export const getOperatorIntents = async (_req: Request, res: Response, next: Nex
                 'SENT_BY_LP',
                 'PROOF_SUBMITTED',
                 'PENDING_MANUAL_REVIEW',
-                'SETTLED',
               ],
             },
           },
@@ -726,6 +725,29 @@ export const operatorUploadReceipt = async (req: Request, res: Response, next: N
         receiptId: verification.receiptId,
       });
     }
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/v1/offramp/operator/clean-test-intents
+ * Allows operator to purge expired test intents or demo samples (e.g. 03001234567, REFUNDED)
+ */
+export const cleanTestIntents = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const deleted = await prisma.offrampIntent.deleteMany({
+      where: {
+        OR: [
+          { status: 'REFUNDED' },
+          { destinationRef: { contains: '03001234567' } },
+          { customerWallet: 'square_international_payer' },
+        ],
+      },
+    });
+
+    logger.info(`[Operator] Cleaned up ${deleted.count} test/demo offramp intents.`);
+    return ok(res, { deletedCount: deleted.count, message: `Successfully removed ${deleted.count} demo/expired test intents.` });
   } catch (error) {
     next(error);
   }

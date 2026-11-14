@@ -68,10 +68,24 @@ export const handleSquareWebhook = async (req: Request, res: Response, next: Nex
       (req.headers['x-square-signature'] as string | undefined);
     const webhookUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
 
-    const rawBody =
-      typeof (req as Request & { rawBody?: string }).rawBody === 'string'
-        ? (req as Request & { rawBody?: string }).rawBody as string
-        : JSON.stringify(req.body ?? {});
+    let rawBody = '';
+    if (Buffer.isBuffer(req.body)) {
+      rawBody = req.body.toString('utf8');
+      try {
+        req.body = JSON.parse(rawBody);
+      } catch {}
+    } else if (Buffer.isBuffer((req as any).rawBody)) {
+      rawBody = (req as any).rawBody.toString('utf8');
+    } else if (typeof (req as any).rawBody === 'string') {
+      rawBody = (req as any).rawBody;
+    } else if (typeof req.body === 'string') {
+      rawBody = req.body;
+      try {
+        req.body = JSON.parse(rawBody);
+      } catch {}
+    } else {
+      rawBody = JSON.stringify(req.body ?? {});
+    }
 
     const isValid = await squareService.verifyWebhook(rawBody, signature, webhookUrl);
     if (!isValid) {

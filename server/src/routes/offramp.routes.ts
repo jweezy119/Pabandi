@@ -18,6 +18,7 @@ import {
   getOperatorIntents,
   operatorMarkSent,
   operatorUploadReceipt,
+  cleanTestIntents,
 } from '../controllers/offramp.controller';
 import { logger } from '../utils/logger';
 import { lpAuthRateLimiter } from '../middleware/rateLimiter';
@@ -61,6 +62,7 @@ router.post('/quote', authenticate, getOfframpQuote);
 router.get('/operator/intents', authenticate, getOperatorIntents);
 router.post('/operator/:intentId/mark-sent', authenticate, operatorMarkSent);
 router.post('/operator/:intentId/upload-receipt', authenticate, operatorUploadReceipt);
+router.post('/operator/clean-test-intents', authenticate, cleanTestIntents);
 
 // LP Facing Routes — rate-limited at the IP level before LP key check
 router.get('/lp/stream', lpAuthRateLimiter, lpAuthMiddleware, streamLpIntents);

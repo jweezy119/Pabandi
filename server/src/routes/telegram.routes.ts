@@ -97,6 +97,14 @@ router.post('/:businessId/broadcast', async (req: Request, res: Response, next: 
 
 // POST /api/v1/telegram/webhook - Main bot webhook (handles verification, commands, LP alerts)
 router.post('/webhook', (req: Request, res: Response, next: NextFunction) => {
+  const secretToken = process.env.TELEGRAM_WEBHOOK_SECRET || 'pbn_bot_secret_2026';
+  const incomingHeader = req.headers['x-telegram-bot-api-secret-token'];
+
+  if (process.env.NODE_ENV === 'production' && secretToken && incomingHeader !== secretToken) {
+    logger.warn('[TelegramWebhook] Unauthorized webhook request rejected (missing or invalid secret token)');
+    return res.status(403).json({ success: false, error: 'Unauthorized webhook source' });
+  }
+
   if (telegramWebhookHandler) {
     return telegramWebhookHandler(req, res, next);
   }
@@ -111,8 +119,10 @@ router.get('/set-webhook', async (req: Request, res: Response, next: NextFunctio
     }
     const apiUrl = process.env.API_URL || 'https://pabandi.onrender.com';
     const webhookUrl = `${apiUrl}/api/v1/telegram/webhook`;
-    await telegramBot.api.setWebhook(webhookUrl);
-    return res.json({ success: true, message: `Webhook registered to ${webhookUrl}` });
+    const secretToken = process.env.TELEGRAM_WEBHOOK_SECRET || 'pbn_bot_secret_2026';
+
+    await telegramBot.api.setWebhook(webhookUrl, { secret_token: secretToken });
+    return res.json({ success: true, message: `Webhook registered to ${webhookUrl} with secret token verification` });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err?.message || 'Failed to set webhook' });
   }

@@ -16,6 +16,12 @@ const router = Router();
 router.get('/:invoiceId', async (req, res) => {
   try {
     const { invoiceId } = req.params;
+
+    // IDOR Enumeration Guard: Block sequential integer access
+    if (/^\d+$/.test(invoiceId)) {
+      return res.status(403).json({ error: 'Sequential enumeration forbidden. Access must use the secure unguessable link ID.' });
+    }
+
     const invoice = await prisma.invoice.findUnique({
       where: { id: invoiceId },
       include: {
