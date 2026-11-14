@@ -37,10 +37,8 @@ const TrustVerificationPage = lazy(() => import('./pages/settings/TrustVerificat
 const VerifyPayoutPage = lazy(() => import('./pages/VerifyPayoutPage'));
 const MilestoneDetailPage = lazy(() => import('./pages/MilestoneDetailPage'));
 const LPDashboard = lazy(() => import('./pages/Operator/LPDashboard'));
-const AuthPage = lazy(() => import('./pages/AuthPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
-const RegisterPage = lazy(() => import('./pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
 const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'));
 const OAuthConsentPage = lazy(() => import('./pages/OAuthConsentPage'));
 const ConsumerLayout = lazy(() => import('./pages/consumer/ConsumerLayout'));
@@ -67,7 +65,6 @@ const PersonalDashboardPage = lazy(() => import('./pages/me/PersonalDashboardPag
 const PersonalPassportPage = lazy(() => import('./pages/me/PersonalPassportPage'));
 const PersonalBookingsPage = lazy(() => import('./pages/me/PersonalBookingsPage'));
 const PersonalRewardsPage = lazy(() => import('./pages/me/PersonalRewardsPage'));
-const PayInvoicePage = lazy(() => import('./pages/PayInvoicePage'));
 const BookingExperience = lazy(() => import('./pages/BookingExperience'));
 const ServiceProviderDirectoryPage = lazy(() => import('./pages/ServiceProviderDirectoryPage'));
 const ServiceProviderDetailPage = lazy(() => import('./pages/ServiceProviderDetailPage'));

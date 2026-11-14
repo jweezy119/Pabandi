@@ -95,14 +95,37 @@ router.post('/:businessId/broadcast', async (req: Request, res: Response, next: 
   }
 });
 
+import ipaddr from 'ipaddr.js';
+
+const TELEGRAM_CIDRS = [
+  ipaddr.parseCIDR('149.154.160.0/20'),
+  ipaddr.parseCIDR('91.108.4.0/22'),
+];
+
+function isTelegramIp(clientIp: string): boolean {
+  try {
+    const cleanIp = clientIp.replace(/^::ffff:/, '');
+    const addr = ipaddr.parse(cleanIp);
+    return TELEGRAM_CIDRS.some(([range, bits]) => (addr as any).match(range, bits));
+  } catch {
+    return false;
+  }
+}
+
 // POST /api/v1/telegram/webhook - Main bot webhook (handles verification, commands, LP alerts)
 router.post('/webhook', (req: Request, res: Response, next: NextFunction) => {
   const secretToken = process.env.TELEGRAM_WEBHOOK_SECRET || 'pbn_bot_secret_2026';
   const incomingHeader = req.headers['x-telegram-bot-api-secret-token'];
+  const clientIp = (req.ip || req.socket.remoteAddress || '').replace(/^::ffff:/, '');
 
-  if (process.env.NODE_ENV === 'production' && secretToken && incomingHeader !== secretToken) {
-    logger.warn('[TelegramWebhook] Unauthorized webhook request rejected (missing or invalid secret token)');
-    return res.status(403).json({ success: false, error: 'Unauthorized webhook source' });
+  if (process.env.NODE_ENV === 'production') {
+    const isValidToken = Boolean(secretToken && incomingHeader === secretToken);
+    const isTelegramSource = isTelegramIp(clientIp);
+
+    if (!isValidToken && !isTelegramSource) {
+      logger.warn(`[TelegramWebhook] Unauthorized webhook request from ${clientIp} rejected (secret token & IP check failed)`);
+      return res.status(403).json({ success: false, error: 'Unauthorized webhook source' });
+    }
   }
 
   if (telegramWebhookHandler) {
