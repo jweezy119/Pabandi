@@ -69,8 +69,8 @@ if (fs.existsSync(SPA_APP)) {
   }
 }
 
-if (!fs.existsSync(path.join(SERVER_ROOT, 'dist', 'src', 'index.js'))) {
-  console.error('dist/src/index.js missing — compile failed');
+if (!fs.existsSync(path.join(SERVER_ROOT, 'dist', 'src', 'server.js')) && !fs.existsSync(path.join(SERVER_ROOT, 'dist', 'src', 'index.js'))) {
+  console.error('dist/src/server.js or dist/src/index.js missing — compile failed');
   process.exit(1);
 }
 console.log('assets staged');
