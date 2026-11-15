@@ -102,6 +102,11 @@ export const EXPECTED_COLUMNS: ExpectedColumn[] = [
     column: 'iban',
     purpose: 'IBAN payout destination for a business',
   },
+  {
+    table: 'BusinessSettings',
+    column: 'allowDisputes',
+    purpose: 'business settings: whether disputes are allowed',
+  },
 ];
 
 export interface SchemaCheckResult {

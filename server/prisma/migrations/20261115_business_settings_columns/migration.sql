@@ -1,0 +1,13 @@
+ALTER TABLE "BusinessSettings" ADD COLUMN IF NOT EXISTS "enabledModules" TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE "BusinessSettings" ADD COLUMN IF NOT EXISTS "enabledFeatures" JSONB;
+ALTER TABLE "BusinessSettings" ADD COLUMN IF NOT EXISTS "customFields" JSONB;
+ALTER TABLE "BusinessSettings" ADD COLUMN IF NOT EXISTS "dashboardLayout" JSONB;
+ALTER TABLE "BusinessSettings" ADD COLUMN IF NOT EXISTS "dashboardTheme" TEXT DEFAULT 'light';
+ALTER TABLE "BusinessSettings" ADD COLUMN IF NOT EXISTS "vertical" TEXT;
+ALTER TABLE "BusinessSettings" ADD COLUMN IF NOT EXISTS "allowDisputes" BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE "BusinessSettings" ADD COLUMN IF NOT EXISTS "maxAdvanceBookingDays" INTEGER NOT NULL DEFAULT 30;
+ALTER TABLE "BusinessSettings" ADD COLUMN IF NOT EXISTS "depositPercent" DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE "BusinessSettings" ADD COLUMN IF NOT EXISTS "autoConfirmBookings" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "BusinessSettings" ADD COLUMN IF NOT EXISTS "smsReminders" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "BusinessSettings" ADD COLUMN IF NOT EXISTS "emailReminders" BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE "BusinessSettings" ADD COLUMN IF NOT EXISTS "cancellationNoticeHours" INTEGER NOT NULL DEFAULT 24;
