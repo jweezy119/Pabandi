@@ -950,7 +950,6 @@ model CrmClient {
   totalJobs         Int      @default(0)
   totalSpent        Float    @default(0)
   lastJobAt         DateTime?
-  isActive          Boolean  @default(true)
   reliabilityScore  Float    @default(50)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -963,6 +962,7 @@ model CrmClient {
 
   @@index([businessId])
   @@index([name])
+  @@map("crm_clients")
 }
 
 model BusinessSettings {
