@@ -65,6 +65,15 @@ async function openAiJson(prompt: string, schema: JsonSchema, system?: string): 
   return response.choices?.[0]?.message?.content ?? '';
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms),
+    ),
+  ]);
+}
+
 async function googleJson(prompt: string, schema: JsonSchema, system?: string): Promise<string> {
   const { GoogleGenerativeAI } = await import('@google/generative-ai');
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
@@ -78,7 +87,7 @@ async function googleJson(prompt: string, schema: JsonSchema, system?: string): 
     },
     ...(system ? { systemInstruction: system } : {}),
   });
-  const result = await model.generateContent(prompt);
+  const result = await withTimeout(model.generateContent(prompt), 30_000, 'googleJson');
   return result.response?.text() ?? '';
 }
 
@@ -133,7 +142,7 @@ async function googleText(prompt: string, system?: string): Promise<string> {
     model: process.env.GEMINI_MODEL || 'gemini-3.8-flash',
     ...(system ? { systemInstruction: system } : {}),
   });
-  const result = await model.generateContent(prompt);
+  const result = await withTimeout(model.generateContent(prompt), 30_000, 'googleText');
   return result.response?.text() ?? '';
 }
 

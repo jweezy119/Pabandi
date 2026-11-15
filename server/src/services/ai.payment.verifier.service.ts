@@ -9,6 +9,15 @@ const DASHSCOPE_VISION_URL =
   process.env.DASHSCOPE_VISION_URL ||
   'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
 
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms),
+    ),
+  ]);
+}
+
 export interface PaymentProofFields {
   amount?: number;
   recipient?: string;
@@ -196,22 +205,26 @@ Return ONLY valid JSON. Never enclose with markdown formatting.
       },
     });
 
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            { text: prompt },
-            {
-              inlineData: {
-                mimeType: 'image/jpeg',
-                data: imageBase64,
+    const result = await withTimeout(
+      model.generateContent({
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: 'image/jpeg',
+                  data: imageBase64,
+                },
               },
-            },
-          ],
-        },
-      ],
-    });
+            ],
+          },
+        ],
+      }),
+      30_000,
+      'geminiVision',
+    );
 
     const text = result.response?.text() ?? '';
     return text.replace(/^```json\n?/, '').replace(/```$/, '').trim();
