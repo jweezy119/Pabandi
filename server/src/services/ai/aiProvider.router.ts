@@ -70,7 +70,7 @@ async function googleJson(prompt: string, schema: JsonSchema, system?: string): 
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
   const genAi = new GoogleGenerativeAI(apiKey);
   const model = genAi.getGenerativeModel({
-    model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+    model: process.env.GEMINI_MODEL || 'gemini-3.8-flash',
     generationConfig: {
       temperature: 0,
       responseMimeType: 'application/json',
@@ -130,7 +130,7 @@ async function googleText(prompt: string, system?: string): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
   const genAi = new GoogleGenerativeAI(apiKey);
   const model = genAi.getGenerativeModel({
-    model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+    model: process.env.GEMINI_MODEL || 'gemini-3.8-flash',
     ...(system ? { systemInstruction: system } : {}),
   });
   const result = await model.generateContent(prompt);

@@ -159,7 +159,7 @@ class AiNlpService {
     const status = aiProviderRouter.getStatus();
     return [
       ...(status.openai ? [process.env.OPENAI_MODEL || 'gpt-4o-mini'] : []),
-      ...(status.google ? [process.env.GEMINI_MODEL || 'gemini-2.0-flash'] : []),
+      ...(status.google ? [process.env.GEMINI_MODEL || 'gemini-3.8-flash'] : []),
       ...(status.dashscope ? [process.env.DASHSCOPE_MODEL || 'qwen-turbo'] : []),
     ];
   }
