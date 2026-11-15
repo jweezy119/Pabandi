@@ -140,11 +140,30 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(409).json({ success: false, error: 'Slot already booked' });
     }
 
+    // A Booking belongs to a CrmClient, not directly to a User. Resolve the
+    // client for this user/business, creating one on first booking so the
+    // foreign key is always valid.
+    const existingClient = await prisma.crmClient.findFirst({
+      where: { email: req.user.email, businessId },
+      select: { id: true },
+    });
+    const client =
+      existingClient ??
+      (await prisma.crmClient.create({
+        data: {
+          businessId,
+          name: `${req.user.firstName ?? ''} ${req.user.lastName ?? ''}`.trim() || req.user.email,
+          email: req.user.email,
+          phone: req.user.phone ?? null,
+        },
+        select: { id: true },
+      }));
+
     // Create the booking
     const booking = await prisma.booking.create({
       data: {
         businessId,
-        clientId: req.user.id,
+        clientId: client.id,
         slotStart: new Date(slotStart),
         slotEnd: new Date(slotEnd),
         serviceType,
