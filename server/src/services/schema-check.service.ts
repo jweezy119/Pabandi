@@ -107,6 +107,11 @@ export const EXPECTED_COLUMNS: ExpectedColumn[] = [
     column: 'allowDisputes',
     purpose: 'business settings: whether disputes are allowed',
   },
+  {
+    table: 'Booking',
+    column: 'depositPaid',
+    purpose: 'booking deposit state read by the booking flow',
+  },
 ];
 
 export interface SchemaCheckResult {
