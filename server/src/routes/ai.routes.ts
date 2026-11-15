@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { aiProviderRouter } from '../services/ai/aiProvider.router';
 import { jevStatus } from '../services/jev.service';
+import { prisma } from '../utils/database';
 
 const router = Router();
 
@@ -45,6 +46,30 @@ router.post('/test', authenticate, async (_req: AuthRequest, res: Response) => {
     return res.json({ success: true, data: result });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get('/debug-db', authenticate, async (_req: AuthRequest, res: Response) => {
+  try {
+    const clients = await prisma.crmClient.findMany({
+      take: 5,
+      select: { id: true, email: true, businessId: true, serviceBusinessId: true },
+    });
+    const fk = await prisma.$queryRaw<
+      Array<{ constraint_name: string; column_name: string; foreign_table: string; foreign_column: string }>
+    >`
+      SELECT tc.constraint_name, kcu.column_name, ccu.table_name AS foreign_table, ccu.column_name AS foreign_column
+      FROM information_schema.table_constraints tc
+      JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name
+      JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name
+      WHERE tc.constraint_type = 'FOREIGN KEY'
+        AND tc.table_name = 'Booking'
+        AND kcu.column_name = 'clientId'
+      LIMIT 5
+    `;
+    res.json({ success: true, data: { clients, bookingClientIdFk: fk } });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
