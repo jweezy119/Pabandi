@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS "CrmClient" (
     "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     "updatedAt" TIMESTAMPTZ NOT NULL,
     "passportId" TEXT,
-    CONSTRAINT "CrmClient_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "CrmClient_id_pkey" PRIMARY KEY ("id")
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS "CrmClient_passportId_key" ON "CrmClient"("passportId");
