@@ -73,4 +73,23 @@ router.get('/debug-db', authenticate, async (_req: AuthRequest, res: Response) =
   }
 });
 
+router.get('/debug-google', authenticate, async (_req: AuthRequest, res: Response) => {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
+    if (!apiKey) return res.status(400).json({ success: false, error: 'GEMINI_API_KEY not set' });
+    const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'say hi' }] }] }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    const text = await response.text();
+    res.json({ success: response.ok, status: response.status, model, body: text.slice(0, 1000) });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;
