@@ -71,6 +71,7 @@ app.use(
           'https://maps.googleapis.com',
           'https://api.devnet.solana.com',
           'wss://api.devnet.solana.com',
+          'https://api.mainnet-beta.solana.com',
           'https://nominatim.openstreetmap.org',
           'https://*.openstreetmap.org',
           'https://auth.privy.io',
@@ -159,6 +160,14 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(requestIdMiddleware);
 app.use((req, _res, next) => {
   logger.info(`${req.method} ${req.path}`);
+  next();
+});
+
+// API responses are dynamic and often authenticated. Say so explicitly so
+// Cloudflare and browsers do not store them even if a route forgets to set
+// its own Cache-Control.
+app.use('/api/', (_req, res, next) => {
+  res.set('Cache-Control', 'no-store');
   next();
 });
 
