@@ -38,6 +38,16 @@ export interface StatusUpdateNotification {
   scheduledTime?: string;
 }
 
+export interface PaidProofNotification {
+  recipientPhone: string;
+  bookingId: string;
+  amount: number;
+  currency: string;
+  publicId: string;
+  rail?: string | null;
+  txHash?: string | null;
+}
+
 // Memory queue for messages when template is pending approval or gateway offline
 export interface QueuedMessage {
   id: string;
@@ -110,6 +120,61 @@ export async function sendTechnicianDispatchWhatsApp(
       id: `queue_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       recipientPhone: data.technicianPhone,
       templateName: 'WORK_ORDER_ASSIGNED',
+      payload: data,
+      status: 'QUEUED_PENDING_APPROVAL',
+      queuedAt: new Date(),
+      reason: err.message,
+    });
+    return { success: true, queued: true };
+  }
+}
+
+/**
+ * Sends the public payment proof to the worker over WhatsApp.
+ *
+ * The proof is a public page, so the message carries the link rather than any
+ * banking detail. If the provider is not configured the message is queued, the
+ * same way a dispatch notification is, so a payout is never silently unproven.
+ */
+export async function sendPaidProofWhatsApp(
+  data: PaidProofNotification
+): Promise<{ success: boolean; queued: boolean; messageId?: string; error?: string }> {
+  const base = (process.env.APP_URL || 'https://pabandi.com').replace(/\/$/, '');
+  const proofUrl = `${base}/paid/${data.publicId}`;
+  const rail = data.rail || 'escrow release';
+  const templateText = `[Pabandi Payment] Booking #${data.bookingId.slice(-6)} was paid ${data.amount} ${data.currency} via ${rail}. Your public proof: ${proofUrl}`;
+
+  const compliance = validateUtilityCompliance(templateText);
+  if (!compliance.compliant) {
+    logger.warn(`[WhatsApp Compliance] Blocked non-compliant paid proof message: ${compliance.violation}`);
+    return { success: false, queued: false, error: compliance.violation };
+  }
+
+  const isProviderReady = Boolean(process.env.OPENWA_API_KEY || process.env.EVOLUTION_API_KEY);
+  if (!isProviderReady) {
+    logger.info(`[WhatsApp Queue] OpenWA/Evolution API not configured. Queuing paid proof ${data.publicId} for ${maskPhone(data.recipientPhone)}`);
+    messageQueue.push({
+      id: `queue_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      recipientPhone: data.recipientPhone,
+      templateName: 'PAID_PROOF',
+      payload: data,
+      status: 'QUEUED_PENDING_APPROVAL',
+      queuedAt: new Date(),
+      reason: 'WhatsApp provider offline or pending template verification',
+    });
+    return { success: true, queued: true };
+  }
+
+  try {
+    const msgId = await sendWhatsAppMessage(data.recipientPhone, templateText);
+    logger.info(`[WhatsApp PaidProof] Sent proof ${data.publicId} to ${maskPhone(data.recipientPhone)}`);
+    return { success: true, queued: false, messageId: msgId || undefined };
+  } catch (err: any) {
+    logger.error(`[WhatsApp PaidProof] Failed to send proof ${data.publicId} to ${maskPhone(data.recipientPhone)}:`, err.message);
+    messageQueue.push({
+      id: `queue_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      recipientPhone: data.recipientPhone,
+      templateName: 'PAID_PROOF',
       payload: data,
       status: 'QUEUED_PENDING_APPROVAL',
       queuedAt: new Date(),
