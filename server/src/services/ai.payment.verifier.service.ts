@@ -52,17 +52,10 @@ export class AiPaymentVerifierService {
     expectedDestination: string,
     options?: VerifyReceiptOptions
   ): Promise<PaymentVerificationResult> {
-    let parsed: PaymentProofFields;
-    let rawContent = '';
-
-    // Production OCR Mode: Strict AI OCR vision model execution
-    if (!DASHSCOPE_API_KEY || DASHSCOPE_API_KEY === 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY') {
-      logger.warn('[AI PaymentVerifier] DASHSCOPE_API_KEY not configured. Falling back to structured heuristic parser for manual review queue.');
-      parsed = this.parseFallback(expectedAmountPkr, expectedDestination, imageBase64);
-      rawContent = 'unconfigured_vision_provider';
-    } else {
-      // Live DashScope Multimodal Vision Call
-      const prompt = `
+    // Production OCR Mode: Strict AI OCR vision model execution.
+    // DashScope is the original provider; Gemini is the fallback for teams
+    // that only have a Google AI key. Both return the same strict JSON.
+    const prompt = `
 You are a Pakistani banking and payment receipt OCR engine (Raast, JazzCash, Easypaisa, Meezan, Nayapay, Sadapay).
 Extract the following fields in STRICT JSON format:
 {
@@ -78,26 +71,42 @@ Extract the following fields in STRICT JSON format:
 Return ONLY valid JSON. Never enclose with markdown formatting.
 `.trim();
 
-      const payload = {
-        model: 'qwen-vl-plus',
-        input: {
-          messages: [
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: prompt },
-                {
-                  type: 'image_url',
-                  image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
-                },
-              ],
-            },
-          ],
-        },
-        parameters: { result_format: 'message', max_tokens: 256, temperature: 0 },
-      };
+    const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
+    const hasDashscope =
+      Boolean(DASHSCOPE_API_KEY) && DASHSCOPE_API_KEY !== 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY';
 
-      try {
+    let parsed: PaymentProofFields;
+    let rawContent = '';
+
+    const cleanJson = (content: string) =>
+      content.replace(/^```json\n?/, '').replace(/```$/, '').trim();
+
+    const fallback = (reason: string) => {
+      logger.warn(`[AI PaymentVerifier] ${reason}. Falling back to structured heuristic parser for manual review queue.`);
+      return this.parseFallback(expectedAmountPkr, expectedDestination, imageBase64);
+    };
+
+    try {
+      if (hasDashscope) {
+        const payload = {
+          model: 'qwen-vl-plus',
+          input: {
+            messages: [
+              {
+                role: 'user',
+                content: [
+                  { type: 'text', text: prompt },
+                  {
+                    type: 'image_url',
+                    image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
+                  },
+                ],
+              },
+            ],
+          },
+          parameters: { result_format: 'message', max_tokens: 256, temperature: 0 },
+        };
+
         const response = await axios.post(DASHSCOPE_VISION_URL, payload, {
           headers: {
             Authorization: `Bearer ${DASHSCOPE_API_KEY}`,
@@ -106,18 +115,34 @@ Return ONLY valid JSON. Never enclose with markdown formatting.
           timeout: 20000,
         });
 
-        const content =
-          response.data?.output?.choices?.[0]?.message?.content?.trim() || '';
-        const cleaned = content
-          .replace(/^```json\n?/, '')
-          .replace(/```$/, '')
-          .trim();
-
+        const cleaned = cleanJson(response.data?.output?.choices?.[0]?.message?.content?.trim() || '');
         rawContent = cleaned;
         parsed = JSON.parse(cleaned) as PaymentProofFields;
-      } catch (error: any) {
-        logger.error('[AI PaymentVerifier] Vision model error, falling back:', error.response?.data || error.message);
-        parsed = this.parseFallback(expectedAmountPkr, expectedDestination, imageBase64);
+      } else if (geminiKey) {
+        const cleaned = await this.extractWithGemini(prompt, imageBase64);
+        rawContent = cleaned;
+        parsed = JSON.parse(cleaned) as PaymentProofFields;
+      } else {
+        parsed = fallback('No vision provider configured');
+        rawContent = 'unconfigured_vision_provider';
+      }
+    } catch (error: any) {
+      logger.error('[AI PaymentVerifier] Vision model error:', error.response?.data || error.message);
+
+      // If DashScope failed but Gemini is available, try the second provider
+      // before falling back to the heuristic parser.
+      if (hasDashscope && geminiKey) {
+        try {
+          const cleaned = await this.extractWithGemini(prompt, imageBase64);
+          rawContent = cleaned;
+          parsed = JSON.parse(cleaned) as PaymentProofFields;
+        } catch (geminiError: any) {
+          logger.error('[AI PaymentVerifier] Gemini fallback error:', geminiError.message);
+          parsed = fallback('Both vision providers failed');
+          rawContent = 'error_fallback';
+        }
+      } else {
+        parsed = fallback('Vision provider failed');
         rawContent = 'error_fallback';
       }
     }
@@ -155,6 +180,41 @@ Return ONLY valid JSON. Never enclose with markdown formatting.
       imageBase64,
       options
     );
+  }
+
+  private async extractWithGemini(prompt: string, imageBase64: string): Promise<string> {
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
+    if (!apiKey) throw new Error('GEMINI_API_KEY is not configured');
+
+    const genAi = new GoogleGenerativeAI(apiKey);
+    const model = genAi.getGenerativeModel({
+      model: process.env.GEMINI_MODEL || 'gemini-3.8-flash',
+      generationConfig: {
+        temperature: 0,
+        responseMimeType: 'application/json',
+      },
+    });
+
+    const result = await model.generateContent({
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                mimeType: 'image/jpeg',
+                data: imageBase64,
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    const text = result.response?.text() ?? '';
+    return text.replace(/^```json\n?/, '').replace(/```$/, '').trim();
   }
 
   private async evaluateAndPersist(
