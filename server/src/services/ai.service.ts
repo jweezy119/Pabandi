@@ -1,8 +1,30 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+const evolutionBaseUrl = (process.env.EVOLUTION_API_URL || '').replace(/\/+$/, '');
+const evolutionApiKey = process.env.EVOLUTION_API_KEY || '';
+const evolutionInstance = process.env.EVOLUTION_INSTANCE_ID || '';
+
 const openwaService = {
   sendPresence: async (_phone?: string, _state?: string, _opts?: any) => {},
-  sendText: async (_phone: string, _msg: string, _opts?: any) => ({ messageId: 'msg_' + Date.now() }),
+  sendText: async (phone: string, msg: string, _opts?: any) => {
+    if (!evolutionBaseUrl || !evolutionApiKey || !evolutionInstance) {
+      throw new Error('Evolution API not configured');
+    }
+    const res = await fetch(`${evolutionBaseUrl}/message/sendText/${evolutionInstance}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        api_key: evolutionApiKey,
+      },
+      body: JSON.stringify({ number: phone.replace(/\D/g, ''), text: msg }),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Evolution send failed (${res.status}): ${text}`);
+    }
+    const data = (await res.json().catch(() => ({}))) as any;
+    return { messageId: data?.key?.id || data?.id || 'sent' };
+  },
 };
 const openwaDropBotService = {
   isDropEngineCommand: (_msg: string) => false,
@@ -28,7 +50,7 @@ export const sendWhatsAppMessage = async (toPhone: string, message: string, opti
   }
 
   try {
-    const formattedPhone = toPhone.replace('+', '').replace(/\D/g, '') + '@c.us';
+    const formattedPhone = toPhone.replace(/\D/g, '');
 
     if (openwaService.sendPresence) {
       await openwaService.sendPresence(formattedPhone, 'composing', options).catch(() => {});

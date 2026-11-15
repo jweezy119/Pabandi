@@ -146,6 +146,18 @@ GET /api/v1/pabandi/tools
 GET /openapi.yaml
 ```
 
+## WhatsApp / Evolution API
+
+Outbound messages use Evolution API:
+
+```
+GET  /api/v1/whatsapp/health
+POST /api/v1/whatsapp/send
+POST /api/v1/whatsapp/webhook
+```
+
+Set `EVOLUTION_API_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE_ID`, and optionally `EVOLUTION_WEBHOOK_SECRET`. The webhook URL is `https://pabandi.onrender.com/api/v1/whatsapp/webhook`.
+
 ## Payments
 
 Live payment routes:

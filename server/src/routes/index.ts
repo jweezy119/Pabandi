@@ -101,6 +101,7 @@ const domainRoutes: [string, string][] = [
 
   // 8. Integrations & Platform
   ['/telegram', './telegram.routes'],
+  ['/whatsapp', './whatsapp.routes'],
   ['/webhooks', './webhook.routes'],
   ['/notifications', './notifications.routes'],
   ['/settings', './settings.routes'],
