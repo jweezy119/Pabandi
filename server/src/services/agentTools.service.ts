@@ -12,6 +12,7 @@ import {
 import { verifyTrustDisclosure } from '../trust/disclosure.service';
 import { payoutService } from './payout.service';
 import { createPaidProof } from './paidProof.service';
+import { assertAgentSpendAllowed, recordAgentSpend } from './agentKeys.service';
 
 export interface AgentToolUser {
   id: string;
@@ -21,6 +22,11 @@ export interface AgentToolUser {
   firstName?: string;
   lastName?: string;
   phone?: string;
+  agentKeyId?: string;
+  agentId?: string;
+  scopes?: string[];
+  spendLimitUsd?: number | null;
+  spendUsedUsd?: number;
 }
 
 export async function listBusinesses(query: {
@@ -116,6 +122,11 @@ export async function createBookingForAgent(
     throw new Error('businessId, slotStart, slotEnd, serviceType are required');
   }
 
+  const depositAmount = input.depositAmount ?? 0;
+  if (depositAmount > 0) {
+    await assertAgentSpendAllowed(user, depositAmount);
+  }
+
   const business = await prisma.business.findUnique({ where: { id: input.businessId }, select: { id: true, ownerId: true } });
   if (!business) throw new Error('Business not found');
 
@@ -140,6 +151,10 @@ export async function createBookingForAgent(
       status: 'pending',
     },
   });
+
+  if (depositAmount > 0) {
+    await recordAgentSpend(user, depositAmount);
+  }
 
   let risk: any = null;
   try {
@@ -216,6 +231,12 @@ export async function releaseBookingEscrow(
   const isOwner = booking.business?.ownerId === user.id;
   if (!isOwner && user.role !== 'ADMIN') throw new Error('Only the business owner or an admin can release escrow');
 
+  const escrowBefore = await getBookingEscrow(bookingId);
+  const releaseAmount = escrowBefore?.amount ?? booking.depositAmount ?? 0;
+  if (releaseAmount > 0) {
+    await assertAgentSpendAllowed(user, releaseAmount);
+  }
+
   const ok = await advanceBookingEscrow(bookingId, 'released', {
     source: 'agent-release',
     reason: input.reason || 'Released by agent after verified completion',
@@ -223,6 +244,10 @@ export async function releaseBookingEscrow(
     txHash: input.txHash,
     receiptRef: input.receiptRef,
   });
+
+  if (ok && releaseAmount > 0) {
+    await recordAgentSpend(user, releaseAmount);
+  }
 
   const escrow = await getBookingEscrow(bookingId);
   const workerId = booking.business?.ownerId || user.id;
@@ -287,7 +312,15 @@ export async function requestPayoutForAgent(
   user: AgentToolUser,
   input: { amountUsdc: number; method?: 'BANK' | 'CONNECT' | 'LOCAL' | 'CASHAPP'; destinationRef?: string }
 ) {
-  return payoutService.request(user.id, Number(input.amountUsdc), input.method || 'BANK', input.destinationRef);
+  const amount = Number(input.amountUsdc);
+  if (amount > 0) {
+    await assertAgentSpendAllowed(user, amount);
+  }
+  const payout = await payoutService.request(user.id, amount, input.method || 'BANK', input.destinationRef);
+  if (amount > 0) {
+    await recordAgentSpend(user, amount);
+  }
+  return payout;
 }
 
 export async function getPayoutHistoryForAgent(user: AgentToolUser) {

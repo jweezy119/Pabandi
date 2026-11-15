@@ -1,5 +1,6 @@
 import { AgentToolUser } from '../services/agentTools.service';
 import { agentToolHandlers } from '../services/agentTools.handlers';
+import { userHasScope } from '../services/agentScopes.service';
 
 export interface McpTool {
   name: string;
@@ -195,7 +196,13 @@ export async function callTool(name: string, args: Record<string, unknown>, user
   }
   if (tool.requiresAuth && !user) {
     return {
-      content: [{ type: 'text', text: JSON.stringify({ error: 'Authentication required. Send Authorization: Bearer <JWT>.' }) }],
+      content: [{ type: 'text', text: JSON.stringify({ error: 'Authentication required. Send Authorization: Bearer <JWT> or x-api-key.' }) }],
+      isError: true,
+    };
+  }
+  if (user && !userHasScope(user, name)) {
+    return {
+      content: [{ type: 'text', text: JSON.stringify({ error: `Agent key missing scope for ${name}` }) }],
       isError: true,
     };
   }

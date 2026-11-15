@@ -94,6 +94,14 @@ POST /api/v1/agents/keys
 { "name": "My Agent", "scopes": ["booking", "trust-verification"], "spendLimitUsd": 100 }
 ```
 
+Allowed scopes:
+
+```text
+directory  booking  trust  payout  proof  identity  *
+```
+
+`*` grants all scopes. `spendLimitUsd` is optional. Spend is counted on booking deposits, escrow releases, and payouts. When the limit is exceeded, the key is refused.
+
 Then call the agent API with:
 
 ```

@@ -1,8 +1,10 @@
 import crypto from 'crypto';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { AgentToolUser } from './agentTools.service';
 
 const KEY_PREFIX = 'pab_live_';
+const ALLOWED_SCOPES = ['directory', 'booking', 'trust', 'payout', 'proof', 'identity', '*'];
 
 export function hashAgentKey(rawKey: string): string {
   return crypto.createHash('sha256').update(rawKey).digest('hex');
@@ -18,6 +20,17 @@ export async function createAgentKey(
 ) {
   const name = String(input.name || '').trim();
   if (!name) throw new Error('Key name is required');
+
+  const scopes = input.scopes ?? [];
+  const invalidScope = scopes.find((scope) => !ALLOWED_SCOPES.includes(scope));
+  if (invalidScope) {
+    throw new Error(`Invalid scope: ${invalidScope}. Allowed: ${ALLOWED_SCOPES.join(', ')}`);
+  }
+
+  const spendLimitUsd = input.spendLimitUsd ?? null;
+  if (spendLimitUsd != null && Number(spendLimitUsd) < 0) {
+    throw new Error('spendLimitUsd must be zero or greater');
+  }
 
   const rawKey = generateAgentKey();
   const keyHash = hashAgentKey(rawKey);
@@ -57,6 +70,7 @@ export async function listAgentKeys(ownerUserId: string) {
       agentId: true,
       scopes: true,
       spendLimitUsd: true,
+      spendUsedUsd: true,
       lastUsedAt: true,
       createdAt: true,
     },
@@ -85,4 +99,28 @@ export async function touchAgentKey(id: string) {
   await prisma.agentApiKey
     .update({ where: { id }, data: { lastUsedAt: new Date() } })
     .catch(() => {});
+}
+
+export async function assertAgentSpendAllowed(user: AgentToolUser, amount: number) {
+  if (!user.agentKeyId) return;
+  const key = await prisma.agentApiKey.findUnique({ where: { id: user.agentKeyId } });
+  if (!key) throw new Error('Agent API key not found');
+  if (key.revokedAt) throw new Error('Agent API key is revoked');
+  if (key.spendLimitUsd != null && key.spendUsedUsd + amount > key.spendLimitUsd) {
+    throw new Error(
+      `Agent key spend limit exceeded (limit ${key.spendLimitUsd}, used ${key.spendUsedUsd}, requested ${amount})`
+    );
+  }
+}
+
+export async function recordAgentSpend(user: AgentToolUser, amount: number) {
+  if (!user.agentKeyId) return;
+  await prisma.agentApiKey
+    .update({
+      where: { id: user.agentKeyId },
+      data: { spendUsedUsd: { increment: amount } },
+    })
+    .catch((error) => {
+      logger.error('[AgentKeys] Failed to record spend:', error?.message || error);
+    });
 }

@@ -29,6 +29,8 @@ async function resolveAgentKey(req: Request) {
     agentKeyId: key.id,
     agentId: key.agentId ?? undefined,
     scopes: key.scopes,
+    spendLimitUsd: key.spendLimitUsd,
+    spendUsedUsd: key.spendUsedUsd,
   } as any;
 }
 

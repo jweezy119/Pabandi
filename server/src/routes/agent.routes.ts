@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { authenticate, optionalAuthenticate, AuthRequest } from '../middleware/auth.middleware';
 import { authenticateAgent } from '../middleware/agentAuth.middleware';
+import { optionalAgentAuth } from '../middleware/agentAuth.middleware';
+import { requireScopes } from '../services/agentScopes.service';
 import { TOOLS } from '../mcp/pabandiMcpServer';
 import { agentTools } from '../services/agentTools.service';
 import { createAgentKey, listAgentKeys, revokeAgentKey } from '../services/agentKeys.service';
@@ -45,7 +47,7 @@ router.delete('/keys/:id', authenticate, async (req: AuthRequest, res: Response)
   }
 });
 
-router.get('/businesses', async (req: Request, res: Response) => {
+router.get('/businesses', optionalAgentAuth, requireScopes('directory'), async (req: Request, res: Response) => {
   try {
     const result = await agentTools.listBusinesses({
       cursor: req.query.cursor as string,
@@ -62,7 +64,7 @@ router.get('/businesses', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/businesses/:id', async (req: Request, res: Response) => {
+router.get('/businesses/:id', optionalAgentAuth, requireScopes('directory'), async (req: Request, res: Response) => {
   try {
     res.json({ success: true, data: await agentTools.getBusinessById(req.params.id) });
   } catch (error: any) {
@@ -70,7 +72,7 @@ router.get('/businesses/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/bookings', authenticateAgent, async (req: AuthRequest, res: Response) => {
+router.post('/bookings', authenticateAgent, requireScopes('booking'), async (req: AuthRequest, res: Response) => {
   try {
     const booking = await agentTools.createBookingForAgent(req.user!, req.body || {});
     res.status(201).json({ success: true, data: booking });
@@ -87,7 +89,7 @@ router.get('/bookings/:id', optionalAuthenticate, async (req: Request, res: Resp
   }
 });
 
-router.post('/bookings/:id/checkin', authenticateAgent, async (req: AuthRequest, res: Response) => {
+router.post('/bookings/:id/checkin', authenticateAgent, requireScopes('booking'), async (req: AuthRequest, res: Response) => {
   try {
     const result = await agentTools.markBookingCheckin(req.user!, req.params.id, req.body || {});
     res.json({ success: true, data: result });
@@ -96,7 +98,7 @@ router.post('/bookings/:id/checkin', authenticateAgent, async (req: AuthRequest,
   }
 });
 
-router.post('/bookings/:id/release', authenticateAgent, async (req: AuthRequest, res: Response) => {
+router.post('/bookings/:id/release', authenticateAgent, requireScopes('booking'), async (req: AuthRequest, res: Response) => {
   try {
     const result = await agentTools.releaseBookingEscrow(req.user!, req.params.id, req.body || {});
     res.json({ success: true, data: result });
@@ -105,7 +107,7 @@ router.post('/bookings/:id/release', authenticateAgent, async (req: AuthRequest,
   }
 });
 
-router.post('/bookings/:id/refund', authenticateAgent, async (req: AuthRequest, res: Response) => {
+router.post('/bookings/:id/refund', authenticateAgent, requireScopes('booking'), async (req: AuthRequest, res: Response) => {
   try {
     const result = await agentTools.refundBookingForAgent(req.user!, req.params.id, String(req.body?.reason || ''));
     res.json({ success: true, data: result });
@@ -123,7 +125,7 @@ router.post('/passport/verify', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/payouts', authenticateAgent, async (req: AuthRequest, res: Response) => {
+router.post('/payouts', authenticateAgent, requireScopes('payout'), async (req: AuthRequest, res: Response) => {
   try {
     const payout = await agentTools.requestPayoutForAgent(req.user!, req.body || {});
     res.status(201).json({ success: true, data: payout });
@@ -132,7 +134,7 @@ router.post('/payouts', authenticateAgent, async (req: AuthRequest, res: Respons
   }
 });
 
-router.get('/payouts/history', authenticateAgent, async (req: AuthRequest, res: Response) => {
+router.get('/payouts/history', authenticateAgent, requireScopes('payout'), async (req: AuthRequest, res: Response) => {
   try {
     res.json({ success: true, data: await agentTools.getPayoutHistoryForAgent(req.user!) });
   } catch (error: any) {
@@ -140,7 +142,7 @@ router.get('/payouts/history', authenticateAgent, async (req: AuthRequest, res: 
   }
 });
 
-router.get('/identity', authenticateAgent, (req: AuthRequest, res: Response) => {
+router.get('/identity', authenticateAgent, requireScopes('identity'), (req: AuthRequest, res: Response) => {
   res.json({
     success: true,
     data: {
@@ -165,7 +167,7 @@ router.get('/paid/:publicId', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/workers/me/paid', authenticateAgent, async (req: AuthRequest, res: Response) => {
+router.get('/workers/me/paid', authenticateAgent, requireScopes('proof'), async (req: AuthRequest, res: Response) => {
   try {
     res.json({ success: true, data: await listPaidProofsForWorker(req.user!.id) });
   } catch (error: any) {

@@ -678,6 +678,7 @@ model AgentApiKey {
   agentId       String?
   scopes        String[]  @default([])
   spendLimitUsd Float?
+  spendUsedUsd  Float     @default(0)
   lastUsedAt    DateTime?
   revokedAt     DateTime?
   createdAt     DateTime  @default(now())
