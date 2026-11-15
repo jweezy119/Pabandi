@@ -1,5 +1,6 @@
 import { DisputeOutcome, DisputeType } from '@prisma/client';
 import { prisma } from '../utils/database';
+import { safeReviewDispute } from './jev.service';
 
 export class DisputeService {
   public async createDispute(
@@ -10,7 +11,7 @@ export class DisputeService {
     evidenceUrls: string[] = [],
     stakedAmount: number = 10
   ) {
-    return prisma.dispute.create({
+    const dispute = await prisma.dispute.create({
       data: {
         reportedById,
         userId,
@@ -23,6 +24,16 @@ export class DisputeService {
         contextId: reservationId,
       },
     });
+
+    const review = await safeReviewDispute({ description, evidenceUrls });
+    if (review) {
+      return prisma.dispute.update({
+        where: { id: dispute.id },
+        data: { aiReview: review.raw as any, aiConfidence: review.confidence },
+      });
+    }
+
+    return dispute;
   }
 
   public async fileContextDispute(params: {
@@ -34,7 +45,7 @@ export class DisputeService {
     evidenceUrls?: string[];
     stakedAmount?: number;
   }) {
-    return prisma.dispute.create({
+    const dispute = await prisma.dispute.create({
       data: {
         reportedById: params.filedById,
         userId: params.againstId,
@@ -47,6 +58,19 @@ export class DisputeService {
         contextId: params.contextId,
       },
     });
+
+    const review = await safeReviewDispute({
+      description: params.reason,
+      evidenceUrls: params.evidenceUrls,
+    });
+    if (review) {
+      return prisma.dispute.update({
+        where: { id: dispute.id },
+        data: { aiReview: review.raw as any, aiConfidence: review.confidence },
+      });
+    }
+
+    return dispute;
   }
 
   public async castVote(disputeId: string, jurorId: string, voteForId: string, reason?: string) {

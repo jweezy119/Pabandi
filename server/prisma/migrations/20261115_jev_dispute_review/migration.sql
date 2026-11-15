@@ -1,0 +1,2 @@
+ALTER TABLE "Dispute" ADD COLUMN "aiReview" JSONB;
+ALTER TABLE "Dispute" ADD COLUMN "aiConfidence" DOUBLE PRECISION;

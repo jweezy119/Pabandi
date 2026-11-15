@@ -212,6 +212,7 @@ app.get('/health', (_req, res) => {
           process.env.DASHSCOPE_API_KEY ||
           process.env.GEMINI_API_KEY
       ),
+      jevConfigured: Boolean((process.env.TYPESAFE_API_KEY || '').trim()),
       squareConfigured: Boolean((process.env.SQUARE_ACCESS_TOKEN || '').trim()),
       solanaConfigured: Boolean(
         (process.env.SOLANA_RPC_URL || process.env.SOLANA_MERCHANT_WALLET || '').trim()

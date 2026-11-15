@@ -602,6 +602,8 @@ model Dispute {
   contextType  String?
   contextId    String?
   evidenceUrls String[]
+  aiReview     Json?
+  aiConfidence Float?
 
   user     User? @relation("DisputesAgainst", fields: [userId], references: [id], onDelete: Cascade)
   reporter User? @relation("DisputesFiled", fields: [reportedById], references: [id])
