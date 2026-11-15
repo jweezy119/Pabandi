@@ -35,7 +35,11 @@ router.post('/test', authenticate, async (_req: AuthRequest, res: Response) => {
     );
 
     if (!result) {
-      return res.status(502).json({ success: false, error: 'No AI provider answered' });
+      return res.status(502).json({
+        success: false,
+        error: 'No AI provider answered',
+        providerErrors: aiProviderRouter.getLastError(),
+      });
     }
 
     return res.json({ success: true, data: result });

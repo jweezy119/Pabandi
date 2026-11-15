@@ -163,8 +163,14 @@ async function dashscopeText(prompt: string, system?: string): Promise<string> {
 }
 
 export class AiProviderRouter {
+  private lastErrors: Partial<Record<AiProviderName, string>> = {};
+
   getStatus() {
     return aiProviderStatus();
+  }
+
+  getLastError() {
+    return { ...this.lastErrors };
   }
 
   async generateJson<T>(
@@ -181,11 +187,15 @@ export class AiProviderRouter {
             : provider === 'google'
               ? await googleJson(prompt, schema, options.system)
               : await dashscopeJson(prompt, schema, options.system);
-        if (!raw) continue;
+        if (!raw) {
+          this.lastErrors[provider] = 'provider returned an empty response';
+          continue;
+        }
         const parsed = JSON.parse(extractJson(raw)) as T;
         return { data: parsed, provider, raw };
       } catch (error) {
-        logger.warn(`[AiRouter] ${provider} JSON generation failed:`, error instanceof Error ? error.message : error);
+        this.lastErrors[provider] = error instanceof Error ? error.message : String(error);
+        logger.warn(`[AiRouter] ${provider} JSON generation failed:`, this.lastErrors[provider]);
       }
     }
     return null;
@@ -205,8 +215,10 @@ export class AiProviderRouter {
               ? await googleText(prompt, options.system)
               : await dashscopeText(prompt, options.system);
         if (text) return { text, provider };
+        this.lastErrors[provider] = 'provider returned an empty response';
       } catch (error) {
-        logger.warn(`[AiRouter] ${provider} text generation failed:`, error instanceof Error ? error.message : error);
+        this.lastErrors[provider] = error instanceof Error ? error.message : String(error);
+        logger.warn(`[AiRouter] ${provider} text generation failed:`, this.lastErrors[provider]);
       }
     }
     return null;
