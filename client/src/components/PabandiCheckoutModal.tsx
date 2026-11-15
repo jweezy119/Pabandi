@@ -85,6 +85,7 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
   const [selectedRail, setSelectedRail] = useState<PaymentRail>(initialRail);
   const [loading, setLoading] = useState(false);
   const [signingPrivy, setSigningPrivy] = useState(false);
+  const [signingPhantom, setSigningPhantom] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [txSignature, setTxSignature] = useState<string | null>(null);
@@ -509,6 +510,85 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
     }
   };
 
+  const handlePhantomSolanaPay = async () => {
+    const solana = (window as any).solana;
+    if (!solana?.isPhantom) {
+      openExternalOrDeepLink(phantomDeepLink);
+      return;
+    }
+
+    setSigningPhantom(true);
+    setError(null);
+    setSrAnnouncement('Connecting Phantom and signing Solana USDC transfer');
+    try {
+      if (!solana.publicKey) {
+        await solana.connect();
+      }
+      const fromWallet = solana.publicKey.toBase58();
+
+      const token = getAuthToken();
+      const buildRes = await fetch(`${API_HOST}/api/v1/solana-usdc/transfer/build`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          fromWallet,
+          toWallet: targetVault,
+          amountUsdc: amountInUsd,
+        }),
+      });
+
+      const buildData = (await buildRes.json()) as {
+        success?: boolean;
+        transaction?: string;
+        error?: string;
+      };
+
+      if (!buildRes.ok || !buildData.transaction) {
+        throw new Error(buildData.error || 'Could not build Solana USDC transfer transaction');
+      }
+
+      const txBytes = Uint8Array.from(atob(buildData.transaction), (c) => c.charCodeAt(0));
+      const tx = Transaction.from(txBytes);
+      const signedTx = await solana.signTransaction(tx);
+      const rpcUrl =
+        import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+      const connection = new Connection(rpcUrl, 'confirmed');
+      const signature = await connection.sendRawTransaction(signedTx.serialize(), {
+        skipPreflight: false,
+        maxRetries: 3,
+      });
+
+      await fetch(`${API_HOST}/api/v1/solana-usdc/transfer/record`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          fromWallet,
+          toWallet: targetVault,
+          amountUsdc: amountInUsd,
+          txHash: signature,
+          type: 'FUNDING',
+          referenceId: squareNote || referenceId,
+        }),
+      });
+
+      setTxSignature(signature);
+      setSrAnnouncement('Solana payment verified and escrow funded on-chain');
+      onSuccess?.('solana', signature);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Phantom Solana payment failed';
+      setError(msg);
+      setSrAnnouncement(`Phantom error: ${msg}`);
+    } finally {
+      setSigningPhantom(false);
+    }
+  };
+
   const handleClaimPaid = async () => {
     setClaimSent(true);
     triggerHaptic('success');
@@ -806,14 +886,12 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      triggerHaptic('medium');
-                      openExternalOrDeepLink(phantomDeepLink);
-                    }}
-                    className="min-h-[44px] px-3 py-2.5 rounded-xl bg-[#AB9FF2]/20 hover:bg-[#AB9FF2]/30 text-[#4E44CE] border border-[#AB9FF2]/40 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-[#AB9FF2] focus-visible:outline-none"
+                    disabled={signingPhantom}
+                    onClick={handlePhantomSolanaPay}
+                    className="min-h-[44px] px-3 py-2.5 rounded-xl bg-[#AB9FF2]/20 hover:bg-[#AB9FF2]/30 text-[#4E44CE] border border-[#AB9FF2]/40 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-[#AB9FF2] focus-visible:outline-none disabled:opacity-50"
                   >
                     <Zap size={14} className="text-[#4E44CE]" aria-hidden="true" />
-                    <span>Open in Phantom</span>
+                    <span>{signingPhantom ? 'Signing...' : 'Open in Phantom'}</span>
                   </button>
 
                   <button

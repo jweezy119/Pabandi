@@ -90,6 +90,18 @@ export const EXPECTED_COLUMNS: ExpectedColumn[] = [
     nullable: true,
     purpose: 'trust events with no party attached record instead of failing a foreign key',
   },
+
+  // Business payout rails — registration and Raast payout paths read these.
+  {
+    table: 'Business',
+    column: 'raastId',
+    purpose: 'Raast payout destination for a business',
+  },
+  {
+    table: 'Business',
+    column: 'iban',
+    purpose: 'IBAN payout destination for a business',
+  },
 ];
 
 export interface SchemaCheckResult {
