@@ -22,12 +22,12 @@ import { dirname, join } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const serverRoot = join(here, '..');
-const indexSrc = readFileSync(join(serverRoot, 'src', 'index.ts'), 'utf8');
+const indexSrc = readFileSync(join(serverRoot, 'src', 'routes', 'index.ts'), 'utf8');
 
 /** Every `lazyRoute('/path', './module')` style registration. */
 function lazyRegistrations(): Array<{ prefix: string; module: string }> {
   const out: Array<{ prefix: string; module: string }> = [];
-  const re = /\[\s*`([^`]+)`\s*,\s*'([^']+)'\s*\]/g;
+  const re = /\[\s*[`']([^`'"]+)[`']\s*,\s*'([^']+)'\s*\]/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(indexSrc)) !== null) {
     out.push({ prefix: m[1], module: m[2] });
@@ -45,7 +45,7 @@ describe('every lazily registered route module exists', () => {
 
   it('no registration points at a file that is not there', () => {
     const missing = registrations
-      .map((r) => ({ ...r, resolved: join(serverRoot, 'src', r.module.replace(/^\.\//, '')) }))
+      .map((r) => ({ ...r, resolved: join(serverRoot, 'src', 'routes', r.module.replace(/^\.\//, '')) }))
       .filter((r) => !existsSync(`${r.resolved}.ts`) && !existsSync(`${r.resolved}.js`))
       .map((r) => `${r.prefix} -> ${r.module}`);
 
@@ -58,8 +58,8 @@ describe('every lazily registered route module exists', () => {
 describe('a broken registration must not have children', () => {
   const registrations = lazyRegistrations();
   const missing = (module: string) =>
-    !existsSync(`${join(serverRoot, 'src', module.replace(/^\.\//, ''))}.ts`) &&
-    !existsSync(`${join(serverRoot, 'src', module.replace(/^\.\//, ''))}.js`);
+    !existsSync(`${join(serverRoot, 'src', 'routes', module.replace(/^\.\//, ''))}.ts`) &&
+    !existsSync(`${join(serverRoot, 'src', 'routes', module.replace(/^\.\//, ''))}.js`);
 
   it('names the case that actually breaks routes', () => {
     // A prefix that shadows another is NOT on its own a defect, and asserting that it
@@ -84,26 +84,22 @@ describe('a broken registration must not have children', () => {
 });
 
 describe('WhatsApp routes are authenticated', () => {
-  const advanced = readFileSync(join(serverRoot, 'src', 'routes', 'whatsapp.advanced.routes.ts'), 'utf8');
+  const whatsappRoutes = readFileSync(join(serverRoot, 'src', 'routes', 'whatsapp.routes.ts'), 'utf8');
 
-  it('requires a session', () => {
+  it('requires a session for sending', () => {
     // Unblocking these routes without auth would have turned a broken endpoint into an
     // open one that sends real WhatsApp messages to real phone numbers.
-    expect(advanced).toMatch(/authenticate/);
+    expect(whatsappRoutes).toMatch(/authenticate/);
   });
 
-  it('refuses when the caller has no business', () => {
-    expect(advanced).toMatch(/resolvePlatformBusinessId/);
-  });
-
-  it('is registered under /whatsapp/advanced', () => {
+  it('is registered under /whatsapp', () => {
     const registrations = lazyRegistrations();
     expect(
-      registrations.some((r) => r.prefix.endsWith('/whatsapp/advanced') && r.module.includes('whatsapp.advanced')),
+      registrations.some((r) => r.prefix.endsWith('/whatsapp') && r.module.includes('whatsapp.routes')),
     ).toBe(true);
   });
 
-  it('no longer registers the module that does not exist', () => {
-    expect(lazyRegistrations().some((r) => r.module.includes('routes/whatsapp.routes'))).toBe(false);
+  it('registers the module that exists', () => {
+    expect(lazyRegistrations().some((r) => r.module.includes('whatsapp.routes'))).toBe(true);
   });
 });

@@ -11,6 +11,7 @@ import { rateLimiter } from './middleware/rateLimiter';
 import { requestIdMiddleware } from './middleware/requestId.middleware';
 import { apiRouter } from './routes/index';
 import mcpRouter from './routes/mcp.routes';
+import wellknownRouter from './routes/wellknown.routes';
 import { getPaidProofByPublicId } from './services/paidProof.service';
 
 // Load environment variables FIRST
@@ -361,6 +362,8 @@ app.get('/.well-known/jwks.json', (_req, res) => {
     res.json({ keys: [] });
   }
 });
+
+app.use('/.well-known', wellknownRouter);
 
 // Agent Discovery canonical routes
 try {

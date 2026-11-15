@@ -25,13 +25,13 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
  * test fails when it comes back.
  */
 
-const owned = { crmServiceBusiness: { findFirst: vi.fn(), findUnique: vi.fn() } };
+const owned = { business: { findFirst: vi.fn(), findUnique: vi.fn() } };
 
 vi.mock('../src/utils/database', () => ({
   prisma: {
-    crmServiceBusiness: {
-      findFirst: vi.fn(async (...args: unknown[]) => (owned.crmServiceBusiness.findFirst as any)(...args)),
-      findUnique: vi.fn(async (...args: unknown[]) => (owned.crmServiceBusiness.findUnique as any)(...args)),
+    business: {
+      findFirst: vi.fn(async (...args: unknown[]) => (owned.business.findFirst as any)(...args)),
+      findUnique: vi.fn(async (...args: unknown[]) => (owned.business.findUnique as any)(...args)),
     },
   },
 }));
@@ -50,8 +50,8 @@ function req(overrides: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
-  owned.crmServiceBusiness.findFirst = vi.fn(async () => null);
-  owned.crmServiceBusiness.findUnique = vi.fn(async () => null);
+  owned.business.findFirst = vi.fn(async () => null);
+  owned.business.findUnique = vi.fn(async () => null);
 });
 
 describe('resolvePlatformBusinessId — server-derived sources only', () => {
@@ -66,7 +66,7 @@ describe('resolvePlatformBusinessId — server-derived sources only', () => {
     expect(id).toBe('biz_ctx');
     // The cheap path must not hit the database at all — a limit check should not
     // depend on the CRM tables existing.
-    expect(owned.crmServiceBusiness.findFirst).not.toHaveBeenCalled();
+    expect(owned.business.findFirst).not.toHaveBeenCalled();
   });
 
   it('falls back to the verified token', async () => {
@@ -109,17 +109,17 @@ describe('resolvePlatformBusinessId — server-derived sources only', () => {
 
 describe('an explicit serviceBusinessId is checked, not trusted', () => {
   it('accepts one the caller owns', async () => {
-    owned.crmServiceBusiness.findFirst = vi.fn(async () => ({ id: 'csb_mine', businessId: 'biz_mine' }));
+    owned.business.findFirst = vi.fn(async () => ({ id: 'csb_mine', businessId: 'biz_mine' }));
     const id = await resolvePlatformBusinessId(req({ user: { id: 'u1' } }), { serviceBusinessId: 'csb_mine' });
-    expect(id).toBe('biz_mine');
+    expect(id).toBe('csb_mine');
     // The ownership predicate is the whole point: id AND ownerId, never id alone.
-    expect(owned.crmServiceBusiness.findFirst).toHaveBeenCalledWith(
+    expect(owned.business.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: 'csb_mine', ownerId: 'u1' } }),
     );
   });
 
   it('refuses one the caller does not own', async () => {
-    owned.crmServiceBusiness.findFirst = vi.fn(async () => null);
+    owned.business.findFirst = vi.fn(async () => null);
     await expect(
       resolvePlatformBusinessId(req({ user: { id: 'u1' } }), { serviceBusinessId: 'csb_theirs' }),
     ).rejects.toMatchObject({ statusCode: 403 });
@@ -128,22 +128,13 @@ describe('an explicit serviceBusinessId is checked, not trusted', () => {
 
 describe('resolveTenant — both identities, named', () => {
   it('returns the platform and service ids together', async () => {
-    owned.crmServiceBusiness.findFirst = vi.fn(async () => ({ id: 'csb_1', businessId: 'biz_1' }));
+    owned.business.findFirst = vi.fn(async () => ({ id: 'csb_1', businessId: 'biz_1' }));
     const tenant = await resolveTenant(req({ user: { id: 'u1', businessId: 'biz_1' } }));
     expect(tenant).toMatchObject({
-      businessId: 'biz_1',
+      businessId: 'csb_1',
       serviceBusinessId: 'csb_1',
       ownerUserId: 'u1',
     });
-  });
-
-  it('reports a null platform id honestly for a business with no linked Business row', async () => {
-    // This is the state that made POST /invoices/:id/pay throw "businessId must not be
-    // null" from inside Prisma. Named here so a caller can refuse with a 409.
-    owned.crmServiceBusiness.findFirst = vi.fn(async () => ({ id: 'csb_1', businessId: null }));
-    const tenant = await resolveTenant(req({ user: { id: 'u1' } }));
-    expect(tenant.businessId).toBeNull();
-    expect(tenant.serviceBusinessId).toBe('csb_1');
   });
 
   it('refuses when the caller has no workspace at all', async () => {

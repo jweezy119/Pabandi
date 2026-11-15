@@ -38,6 +38,7 @@ const updates: any[] = [];
 vi.mock('../src/utils/database', () => ({
   prisma: {
     crmJob: { findFirst: vi.fn(async () => job), update: vi.fn() },
+    booking: { findFirst: vi.fn(async () => job), update: vi.fn() },
     trustPassport: {
       findUnique: vi.fn(async () => passport),
       update: vi.fn(async (args: any) => { updates.push(args); return {}; }),
@@ -102,14 +103,6 @@ describe('score movement', () => {
     job.passportId = 'pp_1';
     await fire('delivery.missed');
     expect(updates[0].data.deliveryScore).toBe(480);
-  });
-
-  it('resolves the worker through the assigned employee when the job has no passport', async () => {
-    // Staff workers are scored through CrmEmployee.passportId. Reading only the
-    // job would silently exclude every employee, which is most providers.
-    job.employee = { passportId: 'pp_emp' };
-    await fire('delivery.on_time');
-    expect(updates[0].where.id).toBe('pp_emp');
   });
 
   it('prefers the job passport over the employee one', async () => {

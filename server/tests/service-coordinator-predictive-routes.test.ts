@@ -1,6 +1,14 @@
 import { describe, it, expect, beforeEach, afterAll, beforeAll, vi } from 'vitest';
 import { simulateRiskSchema } from '../src/validators/serviceCoordinator.validator';
 
+vi.mock('../src/lib/prisma', () => ({
+  prisma: {
+    business: { findFirst: vi.fn(async () => null) },
+    technician: { findFirst: vi.fn(async () => null) },
+    workOrderAssignment: { findFirst: vi.fn(async () => null) },
+  },
+}));
+
 /**
  * Route-level guarantees on the predictive endpoints (§7).
  *

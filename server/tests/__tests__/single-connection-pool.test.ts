@@ -34,7 +34,8 @@ describe('one Prisma connection pool', () => {
   const offenders: string[] = [];
 
   for (const f of files) {
-    if (ALLOWED.has(f)) continue;
+    const normalized = f.replace(/\\/g, '/');
+    if (ALLOWED.has(normalized)) continue;
     const src = readFileSync(resolve(SRC, f), 'utf8');
     // Comments describe the pattern; only executable construction counts.
     const code = src

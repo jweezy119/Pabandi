@@ -1,5 +1,7 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, configDefaults } from 'vitest/config';
 import path from 'path';
+
+const isCi = process.env.CI === 'true';
 
 export default defineConfig({
   resolve: {
@@ -17,6 +19,12 @@ export default defineConfig({
     // assertion is about the source tree, so it has to sit in the source tree to
     // read it with the same relative paths a reviewer would.
     include: ['tests/**/*.test.ts', 'src/**/__tests__/**/*.test.ts'],
+    exclude: [
+      ...configDefaults.exclude,
+      // Integration suites need a disposable Postgres. CI has none, and a
+      // beforeAll that throws is a failed suite, not a skipped one.
+      ...(isCi ? ['tests/**/*.integration.test.ts'] : []),
+    ],
 
     // File parallelism OFF, and this is the fix for the flake documented below.
     //

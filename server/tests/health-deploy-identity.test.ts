@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs';
  * be done from inside a unit test.
  */
 
-const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
+const source = readFileSync(new URL('../src/app.ts', import.meta.url), 'utf8');
 
 describe('health reports its build identity', () => {
   it('does not hardcode a deploy version', () => {

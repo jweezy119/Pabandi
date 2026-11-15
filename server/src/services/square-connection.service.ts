@@ -323,10 +323,10 @@ export function parseInvoiceNote(note: string | null | undefined): { invoiceId: 
   if (note.startsWith(INVOICE_NOTE_PREFIX)) {
     const rest = note.slice(INVOICE_NOTE_PREFIX.length);
     const sep = rest.indexOf(':');
-    if (sep > 0) {
+    if (sep > 0 && sep < rest.length - 1) {
       return { invoiceId: rest.slice(0, sep), invoiceNumber: rest.slice(sep + 1) };
     }
-    return { invoiceId: rest, invoiceNumber: '' };
+    return null;
   }
   const match = note.match(/(?:inv_|invoice[:#])([a-zA-Z0-9_-]+)/i);
   if (match) {

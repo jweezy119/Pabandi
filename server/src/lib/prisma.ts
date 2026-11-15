@@ -1,11 +1,9 @@
-import { PrismaClient } from '@prisma/client';
 import { createTenantClient } from './prisma-tenant';
 import { tenantContext } from './tenant-context';
+import { prisma as basePrisma } from '../utils/database';
 
-const prismaClient = new PrismaClient();
-
-export function getPrismaClient(): PrismaClient {
-  return createTenantClient(prismaClient, () => tenantContext.getStore()?.businessId ?? '') as PrismaClient;
+export function getPrismaClient() {
+  return createTenantClient(basePrisma, () => tenantContext.getStore()?.businessId ?? '') as typeof basePrisma;
 }
 
 export const prisma = getPrismaClient();

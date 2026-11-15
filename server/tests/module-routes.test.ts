@@ -37,7 +37,7 @@ function moduleRoutes(): Array<{ key: string; label: string; route: string | nul
   const src = read(MODULES);
   const out: Array<{ key: string; label: string; route: string | null }> = [];
   // Descriptors are object literals: { id: 'x', key: 'x', label: 'X', ..., route: '...' }
-  for (const block of src.split(/\n  \{\n/).slice(1)) {
+  for (const block of src.split(/\r?\n\s*\{\r?\n/).slice(1)) {
     const key = block.match(/\bkey:\s*'([^']+)'/)?.[1];
     const label = block.match(/\blabel:\s*'([^']+)'/)?.[1];
     if (!key || !label) continue;

@@ -270,4 +270,8 @@ export const optionalIdempotency = async (
   return requireIdempotency(req, res, next);
 };
 
-export const idempotency = optionalIdempotency;
+export const idempotency = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void | Response> => optionalIdempotency(req, res, next);

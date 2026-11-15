@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   CLIENT_STATUSES,
@@ -37,7 +38,7 @@ import {
  * copies.
  */
 
-const here = new URL('.', import.meta.url).pathname;
+const here = fileURLToPath(new URL('.', import.meta.url));
 const clientSrc = (p: string) => readFileSync(join(here, '../../client/src', p), 'utf8');
 
 /** Source with comments stripped, so prose explaining a fix is not mistaken for it. */
