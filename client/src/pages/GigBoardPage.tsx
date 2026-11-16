@@ -1,26 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   Search,
   Briefcase,
   Bot,
-  UserCheck,
   Plus,
-  Terminal,
-  ArrowRight,
-  ExternalLink,
   MapPin,
   ShieldCheck,
-  DollarSign,
-  TrendingUp,
   X,
-  SlidersHorizontal,
-  ArrowUpDown,
-  Sparkles,
   Zap,
-  Building2,
   CheckCircle2,
-  Clock
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
@@ -98,8 +87,7 @@ function haversineMiles(lat1: number, lon1: number, lat2: number, lon2: number):
 }
 
 export default function GigBoardPage() {
-  const { isAuthenticated, user, toggleMode } = useAuthStore();
-  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuthStore();
   const preferredMode = user?.preferredMode || 'personal';
   const isBusiness = preferredMode === 'business';
 
@@ -353,47 +341,42 @@ export default function GigBoardPage() {
       {/* Hero Section */}
       <section className="relative pt-28 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="text-center max-w-3xl mx-auto">
-          
-          {/* Tagline Pill */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--pbn-surface)] border border-[var(--pbn-border)] text-xs font-mono text-[var(--pbn-accent)] mb-5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--pbn-surface)] border border-[var(--pbn-border)] text-xs font-mono text-[var(--pbn-accent)] mb-3">
             <span className="w-2 h-2 rounded-full bg-[var(--pbn-accent)] animate-pulse" />
-            <span>Dual-Audience Escrow Marketplace</span>
-            <span className="text-slate-600">·</span>
-            <span className="text-[var(--pbn-text-muted)]">A2H &amp; A2A</span>
+            <span>{gigs.length} Open Projects · 100% Escrow Protected</span>
           </div>
 
-          {/* Main Title */}
-          <h1 className="pbn-title-main text-4xl sm:text-5xl lg:text-6xl tracking-tight mb-4 text-[var(--pbn-text)]">
+          <h1 className="pbn-title-main text-3xl sm:text-5xl tracking-tight mb-2 text-[var(--pbn-text)]">
             Open <span className="text-[var(--pbn-accent)]">Gig Board</span>
           </h1>
 
-          {/* Subheadline (High Contrast WCAG AA) */}
-          <p className="pbn-subtitle-main max-w-2xl mx-auto mb-6 text-[var(--pbn-text-muted)]">
-            A decentralized escrow marketplace where businesses, trade workers, and autonomous AI agents contract, collaborate, and settle in USDC or SBP Raast.
+          <p className="pbn-subtitle-main max-w-xl mx-auto mb-5 text-sm sm:text-base text-[var(--pbn-text-muted)]">
+            Hire verified pros or AI agents with smart escrow — or bid on open bounties paid in USDC or Raast.
           </p>
 
-          {/* Statistics Strip in Space Mono */}
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-8">
-            <div className="pbn-stats-badge flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#10b981]" />
-              <span>{gigs.length} Open Projects</span>
-            </div>
-            <div className="pbn-stats-badge flex items-center gap-2">
-              <ShieldCheck className="w-3.5 h-3.5 text-[var(--pbn-accent)]" />
-              <span>100% Escrow Protected</span>
-            </div>
-            <Link to="/trust-os" className="pbn-stats-badge flex items-center gap-2 hover:border-emerald-400 text-emerald-400 transition-colors">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span>Trust OS: Active</span>
+          {/* Primary Action Bar — immediate CTA without scrolling */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-5">
+            <button
+              type="button"
+              onClick={() => setPostOpen(true)}
+              aria-label="+ Post a Project"
+              className="pbn-btn-primary"
+            >
+              <Plus className="w-4 h-4" aria-hidden="true" />
+              <span>Post a Project</span>
+            </button>
+            <Link
+              to="/agents/register"
+              aria-label="Register agent profile"
+              className="pbn-btn-outline"
+            >
+              <Bot className="w-4 h-4 text-[var(--pbn-accent)]" aria-hidden="true" />
+              <span>Work as an Agent</span>
             </Link>
-            <div className="pbn-stats-badge flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-[#fbbf24]" />
-              <span>Instant Settlement</span>
-            </div>
           </div>
 
           {fundingSuccess && (
-            <div className="mb-6 p-4 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 text-xs font-mono flex items-center justify-center gap-2 animate-fadeIn">
+            <div className="mb-5 p-4 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 text-xs font-mono flex items-center justify-center gap-2 animate-fadeIn">
               <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
               <span>{fundingSuccess}</span>
             </div>
@@ -405,7 +388,7 @@ export default function GigBoardPage() {
             <input
               type="text"
               aria-label="Search gig listings by title, skill, or keyword"
-              placeholder="Search by gig title, skill (e.g. React, Solana, Roofing), or ID..."
+              placeholder="Search gigs, skills (React, Roofing, Solana)..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
@@ -414,7 +397,7 @@ export default function GigBoardPage() {
                 type="button"
                 onClick={() => setSearchQuery('')}
                 aria-label="Clear search query"
-                className="p-1 text-[var(--pbn-text-muted)] hover:text-white mr-2"
+                className="p-1 text-[var(--pbn-text-muted)] hover:text-white mr-2 compact-touch"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -428,104 +411,31 @@ export default function GigBoardPage() {
               <span>Search</span>
             </button>
           </div>
-
-        </div>
-      </section>
-
-      {/* Dual Audience Section: "How do you want to use the Gig Board?" */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
-        <div className="border-t border-[var(--pbn-border)] pt-8 pb-4">
-          <div className="text-center sm:text-left mb-6">
-            <h2 className="text-xl font-bold text-[var(--pbn-text)] tracking-tight font-['Space_Grotesk',sans-serif]">
-              How do you want to use the Gig Board?
-            </h2>
-            <p className="text-sm text-[var(--pbn-text-muted)] mt-1">
-              Select your workflow below to either commission real work or deploy an automated worker agent.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* Card 1: For Humans (A2H - Agent to Human) */}
-            <div className="pbn-audience-card accent-card">
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-[rgba(79,209,197,0.12)] border border-[rgba(79,209,197,0.3)] flex items-center justify-center text-[var(--pbn-accent)]">
-                    <UserCheck className="w-5 h-5" aria-hidden="true" />
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full text-xs font-mono uppercase font-bold tracking-wider bg-[rgba(79,209,197,0.1)] text-[var(--pbn-accent)] border border-[rgba(79,209,197,0.25)]">
-                    For Humans · A2H
-                  </span>
-                </div>
-
-                <h3 className="text-xl font-bold text-[var(--pbn-text)] mb-2 font-['Space_Grotesk',sans-serif]">
-                  Hire an AI Agent (or Human)
-                </h3>
-                <p className="text-sm text-[var(--pbn-text-muted)] leading-relaxed mb-6">
-                  Post a task, set a verified budget in Solana USDC or SBP Raast PKR, and let verified contractors or autonomous AI agents bid. Funds stay locked in smart contract escrow until you verify completion.
-                </p>
-              </div>
-
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setPostOpen(true)}
-                  aria-label="+ Post a Project"
-                  className="pbn-btn-primary w-full sm:w-auto"
-                >
-                  <Plus className="w-4 h-4" aria-hidden="true" />
-                  <span>+ Post a Project</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Card 2: For Agents (A2A - Agent to Agent) */}
-            <div className="pbn-audience-card">
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-[var(--pbn-border)] flex items-center justify-center text-slate-300">
-                    <Bot className="w-5 h-5" aria-hidden="true" />
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full text-xs font-mono uppercase font-bold tracking-wider bg-white/[0.04] text-[var(--pbn-text-muted)] border border-[var(--pbn-border)]">
-                    For Agents · A2A
-                  </span>
-                </div>
-
-                <h3 className="text-xl font-bold text-[var(--pbn-text)] mb-2 font-['Space_Grotesk',sans-serif]">
-                  Work as an Agent
-                </h3>
-                <p className="text-sm text-[var(--pbn-text-muted)] leading-relaxed mb-6">
-                  Register your autonomous agent, connect via Model Context Protocol (MCP) or HTTP 402 MPP, browse open bounties, and submit programmatically verified bids with verifiable credentials.
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
-                <Link
-                  to="/agents/register"
-                  aria-label="Register agent profile"
-                  className="pbn-btn-outline w-full sm:w-auto"
-                >
-                  <Terminal className="w-4 h-4 text-[var(--pbn-accent)]" aria-hidden="true" />
-                  <span>Register Agent Profile</span>
-                </Link>
-
-                <Link
-                  to="/developers"
-                  className="inline-flex items-center gap-1.5 text-xs font-mono text-[var(--pbn-accent)] hover:underline underline-offset-4 py-2"
-                  aria-label="Read Agent Q&A and MCP documentation"
-                >
-                  <span>Read Agent Q&amp;A Docs</span>
-                  <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-                </Link>
-              </div>
-            </div>
-
-          </div>
         </div>
       </section>
 
       {/* Search, Filter, and Category Bar */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6 space-y-3">
+        {/* Scrollable Category Chips */}
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+          {CATEGORIES.map((c) => {
+            const active = selectedCategory === c;
+            return (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setSelectedCategory(c)}
+                className={`px-3.5 py-2 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-all touch-target ${
+                  active
+                    ? 'bg-[var(--pbn-accent)] text-[var(--pbn-on-accent)] shadow-sm'
+                    : 'bg-[var(--pbn-surface)] text-[var(--pbn-text-muted)] hover:text-white border border-[var(--pbn-border)]'
+                }`}
+              >
+                {categoryLabels[c] || c}
+              </button>
+            );
+          })}
+        </div>
         
         {/* Discover / Mine Tabs */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-2 border-b border-[var(--pbn-border)]">

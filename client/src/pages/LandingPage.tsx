@@ -358,6 +358,93 @@ export default function LandingPage() {
 
         <WaveDivider />
 
+        {/* Interactive Booking & Gig Launchpad (Card-based, not a list) */}
+        <section className="py-10 px-4 sm:px-6" aria-label="Book Services or Post a Gig">
+          <div className="container max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Card 1: Visual Service Booking */}
+              <div className="clay-card clay-card--interactive p-6 sm:p-7 bg-white flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-4">
+                    <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-[var(--clay)]/12 text-[var(--terracotta)]">
+                      BookingOS · Verified Providers
+                    </span>
+                    <span className="material-symbols-outlined text-[22px] text-[var(--clay)]">event_available</span>
+                  </div>
+                  <h2 className="font-headline font-bold text-xl sm:text-2xl text-[var(--warm-ink)]">
+                    {t('Book a Trusted Local or Remote Pro', 'تصدیق شدہ سروس بک کریں')}
+                  </h2>
+                  <p className="text-sm text-[var(--soft-stone)] mt-2 leading-relaxed">
+                    Browse provider cards with verified Trust Passports, upfront deposit protection, and instant slot booking.
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {['Roofing & Solar', 'HVAC', 'Freelance', 'Salons', 'Clinics'].map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => navigate('/booking')}
+                        className="px-3 py-1.5 rounded-full text-xs font-semibold bg-[var(--cream)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)] transition-colors compact-touch"
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-6 pt-4 border-t border-[rgba(191,179,163,0.22)] flex items-center justify-between gap-3">
+                  <span className="text-xs font-medium text-[var(--soft-stone)]">Escrow-backed deposits</span>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/booking')}
+                    className="px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold text-white shadow-[var(--shadow-btn)] hover:shadow-[var(--shadow-btn-hover)] transition-all"
+                    style={{ background: 'linear-gradient(135deg, var(--clay), var(--terracotta))' }}
+                  >
+                    Explore Services →
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 2: Escrow Gig Board */}
+              <div className="clay-card clay-card--interactive p-6 sm:p-7 bg-white flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-4">
+                    <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-[var(--sage)]/15 text-[#4f6142]">
+                      Gig Board · Humans &amp; AI Agents
+                    </span>
+                    <span className="material-symbols-outlined text-[22px] text-[var(--sage)]">handshake</span>
+                  </div>
+                  <h2 className="font-headline font-bold text-xl sm:text-2xl text-[var(--warm-ink)]">
+                    {t('Post a Project or Bid on Gigs', 'پروجیکٹ پوسٹ کریں یا کام حاصل کریں')}
+                  </h2>
+                  <p className="text-sm text-[var(--soft-stone)] mt-2 leading-relaxed">
+                    Commission real-world jobs or AI agent bounties. Funds stay locked in escrow and release automatically on proof of delivery.
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {['⚡ USDC Escrow', '🏦 Raast 0% Fee', '💳 Card / Square', '🤖 AI Agents'].map((rail) => (
+                      <span
+                        key={rail}
+                        className="px-3 py-1.5 rounded-full text-xs font-semibold bg-[var(--cream)] text-[var(--warm-ink)]"
+                      >
+                        {rail}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-6 pt-4 border-t border-[rgba(191,179,163,0.22)] flex items-center justify-between gap-3">
+                  <span className="text-xs font-medium text-[var(--soft-stone)]">Zero-risk milestone payout</span>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/gigs')}
+                    className="px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold text-white shadow-[var(--shadow-btn)] hover:shadow-[var(--shadow-btn-hover)] transition-all"
+                    style={{ background: 'var(--warm-ink)' }}
+                  >
+                    Open Gig Board →
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Bento Grid Feature Section */}
         <section className="bento-section" aria-labelledby="bento-title">
           <div className="container">
