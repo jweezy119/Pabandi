@@ -11,8 +11,7 @@ import {
 } from './booking-escrow.service';
 import { verifyTrustDisclosure } from '../trust/disclosure.service';
 import { payoutService } from './payout.service';
-import { createPaidProof } from './paidProof.service';
-import { sendPaidProofWhatsApp } from './serviceCoordinatorWhatsApp.service';
+import { issuePaidProof } from './paidProof.service';
 import { assertAgentSpendAllowed, recordAgentSpend } from './agentKeys.service';
 
 export interface AgentToolUser {
@@ -254,7 +253,7 @@ export async function releaseBookingEscrow(
   const workerId = booking.business?.ownerId || user.id;
   const amount = escrow?.amount ?? booking.depositAmount ?? 0;
   const currency = escrow?.currency || 'USD';
-  const proof = await createPaidProof({
+  const proof = await issuePaidProof({
     bookingId,
     workerId,
     amount,
@@ -263,24 +262,6 @@ export async function releaseBookingEscrow(
     txHash: input.txHash,
     receiptRef: input.receiptRef,
   });
-
-  // The worker's own record of the payout. A missing phone is not fatal: the
-  // proof page still exists and can be shared from the app.
-  const worker = await prisma.user.findUnique({
-    where: { id: workerId },
-    select: { phone: true },
-  });
-  if (worker?.phone) {
-    await sendPaidProofWhatsApp({
-      recipientPhone: worker.phone,
-      bookingId,
-      amount,
-      currency,
-      publicId: proof.publicId,
-      rail: proof.rail,
-      txHash: proof.txHash,
-    });
-  }
 
   return { bookingId, released: ok, proof };
 }

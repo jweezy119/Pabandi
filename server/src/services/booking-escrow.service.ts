@@ -31,6 +31,7 @@
 
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { issuePaidProof } from './paidProof.service';
 
 import {
   bookingEscrowReference,
@@ -180,6 +181,36 @@ export async function advanceBookingEscrow(
       } as any,
     },
   });
+
+  // A released escrow is a payout. Issue the public proof and notify the
+  // worker here so every release path — webhook, agent, or manual — produces
+  // one. `issuePaidProof` is idempotent on bookingId and only notifies on the
+  // first creation.
+  if (to === 'released') {
+    try {
+      const booking = await prisma.booking.findUnique({
+        where: { id: bookingId },
+        include: { business: { select: { ownerId: true } } },
+      });
+      const escrow = await prisma.universalEscrow.findUnique({
+        where: { referenceId },
+      });
+
+      if (booking && escrow && booking.business?.ownerId) {
+        await issuePaidProof({
+          bookingId,
+          workerId: booking.business.ownerId,
+          amount: escrow.amount,
+          currency: escrow.currency,
+          rail: (escrow as any).rail,
+          txHash: (escrow as any).txHash,
+          receiptRef: (escrow as any).receiptRef,
+        });
+      }
+    } catch (proofError: any) {
+      logger.error(`[BookingEscrow] Paid proof issuance failed for ${bookingId}:`, proofError?.message || proofError);
+    }
+  }
 
   logger.info(`[BookingEscrow] ${bookingId}: ${from} → ${to} (${evidence.source}).`);
   return true;
