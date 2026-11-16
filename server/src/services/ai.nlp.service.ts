@@ -233,7 +233,13 @@ class AiNlpService {
     const routed = await aiProviderRouter.generateText(prompt, { system });
     if (routed?.text) return routed.text;
 
-    return 'Sorry, I am having trouble understanding right now. Please try again or use the app.';
+    // No provider answered. Still honour simple {{variable}} templates so a
+    // WhatsApp reply is not lost to an AI outage.
+    const interpolated = template.replace(
+      /\{\{(\w+)\}\}/g,
+      (_match, key) => String(contextVars[key] ?? ''),
+    );
+    return interpolated.trim() || 'Sorry, I am having trouble understanding right now. Please try again or use the app.';
   }
 }
 
