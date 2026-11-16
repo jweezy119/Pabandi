@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { aiProviderRouter } from '../services/ai/aiProvider.router';
+import { aiNlpService } from '../services/ai.nlp.service';
 import { jevStatus } from '../services/jev.service';
 import { prisma } from '../utils/database';
 
@@ -20,10 +21,43 @@ router.get('/status', (_req, res: Response) => {
   });
 });
 
-/**
- * One real call through the provider chain. Authenticated because it spends
- * money and is the only way to prove the configured key actually answers.
- */
+router.get('/models', (_req, res: Response) => {
+  res.json({
+    success: true,
+    data: {
+      providers: aiProviderRouter.getStatus(),
+      models: aiNlpService.getEnabledModels(),
+      jev: jevStatus(),
+    },
+  });
+});
+
+router.post('/nlp/classify', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const message = String(req.body?.message ?? '').trim();
+    if (!message) {
+      return res.status(400).json({ success: false, error: 'message is required' });
+    }
+    const result = await aiNlpService.classifyIntentAndLanguage(message);
+    return res.json({ success: true, data: result });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.post('/nlp/generate', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const template = String(req.body?.template ?? '').trim();
+    if (!template) {
+      return res.status(400).json({ success: false, error: 'template is required' });
+    }
+    const context = req.body?.context && typeof req.body.context === 'object' ? req.body.context : {};
+    const text = await aiNlpService.generateCopy(template, context);
+    return res.json({ success: true, data: { text } });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
 router.post('/test', authenticate, async (_req: AuthRequest, res: Response) => {
   try {
     const result = await aiProviderRouter.generateJson<{ answer: string }>(
