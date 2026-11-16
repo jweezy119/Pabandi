@@ -429,6 +429,35 @@ a[role="button"]:not(:disabled):active {
 .safe-area-bottom {
   padding-bottom: var(--pab-mobile-nav-safe);
 }
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* ── Fluid mobile viewport & native touch feel ─────────────────── */
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+a, button, [role="button"], input, select, textarea {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.h-dvh-shell {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.min-h-dvh-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
 
 /* ── Hide scrollbar on mobile nav ──────────────────────────────── */
 @media (max-width: 767px) {
@@ -440,11 +469,14 @@ a[role="button"]:not(:disabled):active {
 @media (max-width: 767px) {
   .mobile-tap,
   .touch-target,
-  button, 
   .btn,
-  a[role="button"] {
+  a[role="button"]:not(.compact-touch) {
     min-height: 44px;
     min-width: 44px;
+  }
+
+  button:not(.compact-touch) {
+    min-height: 40px;
   }
   
   body {
@@ -452,9 +484,14 @@ a[role="button"]:not(:disabled):active {
   }
 }
 
-/* ── Smooth horizontal scroll on mobile ────────────────────────── */
-.mobile-scroll {
+/* ── Smooth momentum scroll on mobile ──────────────────────────── */
+.mobile-scroll,
+.overflow-y-auto,
+.overflow-auto {
   -webkit-overflow-scrolling: touch;
+}
+
+.mobile-scroll {
   scroll-behavior: smooth;
 }
 

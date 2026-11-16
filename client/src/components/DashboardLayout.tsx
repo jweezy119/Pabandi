@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CommandPalette } from './CommandPalette';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { PageTransition } from './PageTransition';
 
 const MotionLink = motion(Link);
 
@@ -70,15 +71,6 @@ const colorMap: Record<string, { icon: string; active: string; activeBg: string;
     text: 'text-[var(--soft-stone)]',
     indicator: 'var(--sky-wash)',
   },
-};
-
-const OS_DESCRIPTIONS: Record<string, string> = {
-  'FreightOS': 'Freight & logistics platform',
-  'PropertyOS': 'Property management platform',
-  'BookingOS': 'Booking & discovery platform',
-  'Contact OS': 'CRM & sales pipeline',
-  'CapitalOS': 'Finance & accounting',
-  'Trust OS': 'Reliability & ZK Reputation Engine',
 };
 
 const colorKeys: Record<string, string> = {
@@ -205,8 +197,6 @@ export default function DashboardLayout({
       ? location.pathname === item.path
       : location.pathname === item.path || location.pathname.startsWith(item.path + '/');
 
-  const description = OS_DESCRIPTIONS[osName] || '';
-
   function toggleGroup(label: string) {
     setExpandedGroups(prev => {
       const next = new Set(prev);
@@ -226,7 +216,7 @@ export default function DashboardLayout({
   }, [navItems.length, osName, reducedMotion]);
 
   return (
-    <div className="h-full flex" style={{ background: 'var(--atmosphere)' }}>
+    <div className="h-dvh-shell flex overflow-hidden" style={{ background: 'var(--atmosphere)' }}>
       {/* Mobile overlay */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -245,7 +235,7 @@ export default function DashboardLayout({
 
       {/* ─── Sidebar — lifted off content with warm shadow ────────── */}
       <aside
-        className={`absolute lg:static z-50 w-64 h-full flex flex-col transition-transform duration-300 ${
+        className={`fixed inset-y-0 left-0 lg:static z-50 w-64 h-full flex flex-col safe-area-top safe-area-bottom transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
         style={{
@@ -354,11 +344,11 @@ export default function DashboardLayout({
                   transition={{ type: 'spring', stiffness: 380, damping: 30, staggerChildren: 0.06 }}
                   className="space-y-1"
                 >
-                  <div
-                    className="flex items-center justify-between px-4 py-2 rounded-2xl"
+                  <motion.button
+                    type="button"
+                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-2xl text-left touch-target"
                     style={{ cursor: 'pointer' }}
                     onClick={() => toggleGroup(group.label)}
-                    role="button"
                     aria-expanded={isExpanded}
                     aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${group.label} section`}
                     whileTap={{ scale: 0.98 }}
@@ -375,11 +365,11 @@ export default function DashboardLayout({
                       <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--warm-ink)', fontFamily: 'var(--font-label)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                         {group.label}
                       </span>
-                      <span className="text-[10px" style={{ color: 'var(--soft-stone)' }}>
+                      <span className="text-[10px]" style={{ color: 'var(--soft-stone)' }}>
                         {group.items.length}
                       </span>
                     </div>
-                  </div>
+                  </motion.button>
 
                   {/* Group content — slides open/closed */}
                   <AnimatePresence initial={false}>
@@ -478,69 +468,77 @@ export default function DashboardLayout({
       </aside>
 
       {/* ─── Main content ─────────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col min-w-0 pb-16 lg:pb-0">
+      <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {/* Mobile header */}
-        <div className="lg:hidden flex items-center justify-between p-4 bg-[var(--warm-sand)] border-b border-[rgba(191,179,163,0.2)]">
-          <div className="flex items-center gap-3">
-            <div className={`w-8 h-8 rounded-lg ${colors.icon} flex items-center justify-center text-[var(--warm-ink)] font-bold text-sm`}>
+        <div className="lg:hidden flex-none sticky top-0 z-30 safe-area-top flex items-center justify-between px-4 py-3 bg-[var(--warm-sand)]/92 backdrop-blur-xl border-b border-[rgba(191,179,163,0.25)]">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className={`w-8 h-8 rounded-lg ${colors.icon} flex items-center justify-center text-[var(--warm-ink)] font-bold text-sm shrink-0`}>
               {osIcon}
             </div>
-            <h1 className="text-base font-bold text-[var(--warm-ink)]">{osName}</h1>
+            <h1 className="text-base font-bold text-[var(--warm-ink)] truncate">{osName}</h1>
           </div>
-          <button
+          <motion.button
+            whileTap={{ scale: 0.9 }}
             onClick={() => setSidebarOpen(true)}
-            className="p-2 -mr-2 text-[var(--soft-stone)] hover:bg-[rgba(232,217,197,0.5)] rounded-lg touch-target"
+            className="p-2 -mr-2 text-[var(--soft-stone)] hover:bg-[rgba(232,217,197,0.5)] rounded-xl touch-target flex items-center justify-center"
             aria-label="Open sidebar"
           >
             <span className="material-symbols-outlined">menu</span>
-          </button>
+          </motion.button>
         </div>
 
         {/* Page content */}
-        <motion.div
-          key={location.pathname}
-          className="flex-1 overflow-auto p-5 lg:p-8"
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, ease: [0.22, 1.0, 0.36, 1] }}
-        >
-          {children}
-        </motion.div>
+        <div className="flex-1 overflow-y-auto overscroll-y-contain p-4 sm:p-5 lg:p-8 pb-[var(--pab-mobile-nav-height)] lg:pb-8">
+          <PageTransition>
+            {children}
+          </PageTransition>
+        </div>
 
         {/* Mobile bottom tab bar */}
         <nav
           className="lg:hidden fixed bottom-0 inset-x-0 z-40 safe-area-bottom"
           style={{
-            background: 'rgba(232, 217, 197, 0.95)',
+            height: 'var(--pab-mobile-nav-height)',
+            background: 'rgba(232, 217, 197, 0.94)',
             backdropFilter: 'blur(16px)',
-            borderTop: '1px solid rgba(191, 179, 163, 0.2)',
-            boxShadow: '0 -4px 16px rgba(180, 130, 90, 0.06)',
+            borderTop: '1px solid rgba(191, 179, 163, 0.25)',
+            boxShadow: '0 -4px 16px rgba(180, 130, 90, 0.08)',
           }}
         >
-          <div className="flex overflow-x-auto no-scrollbar">
+          <div className="flex h-full items-center overflow-x-auto no-scrollbar px-1">
             {navItems.slice(0, 5).map((item) => {
               const active = isActive(item);
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className="flex-1 flex flex-col items-center justify-center gap-0.5 px-2 py-2.5 min-w-[64px] transition-colors duration-200"
+                  className="relative flex-1 flex flex-col items-center justify-center gap-0.5 px-1.5 py-2 min-w-[60px] touch-target transition-colors duration-200"
                   style={{
                     color: active ? 'var(--clay)' : 'var(--soft-stone)',
                     fontSize: '11px',
                     fontWeight: active ? 700 : 500,
                   }}
                 >
-                  <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
-                    {item.icon}
-                  </span>
-                  <span className="truncate max-w-full">{item.label}</span>
+                  <motion.div
+                    whileTap={{ scale: 0.9 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+                    className="flex flex-col items-center gap-0.5 max-w-full"
+                  >
+                    <span
+                      className="material-symbols-outlined text-[20px]"
+                      style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}
+                      aria-hidden="true"
+                    >
+                      {item.icon}
+                    </span>
+                    <span className="truncate max-w-full">{item.label}</span>
+                  </motion.div>
                   {active && (
                     <motion.span
                       layoutId="mobile-tab-indicator"
                       className="w-8 h-0.5 rounded-full mt-0.5"
                       style={{ background: 'var(--clay)' }}
-                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                      transition={{ type: 'spring', stiffness: 420, damping: 32 }}
                     />
                   )}
                 </Link>

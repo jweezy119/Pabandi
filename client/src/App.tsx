@@ -162,7 +162,7 @@ const AgentDashboardPage = lazy(() => import('./pages/me/AgentDashboardPage'));
 // and they drag in the wallet, Solana, QR and map libraries — around 100 KB gzipped that
 // a CRM user never needs. They were the largest thing still in the first load after route
 // splitting, so they are deferred too.
-import { AnimatePresence } from 'framer-motion';
+import { MotionConfig } from 'framer-motion';
 import { useBusinessSettings } from './hooks/useBusinessSettings';
 
 function FeatureGate({ feature, children }: { feature: string; children: React.ReactNode }) {
@@ -266,26 +266,16 @@ function AnimatedAppRoutes() {
   }, []);
 
   return (
-    // Routes load on demand, so something has to hold the frame while a chunk arrives.
-    //
-    // Placed INSIDE AnimatePresence so the fallback participates in the same transition
-    // as the page it replaces — outside it, every navigation would flash the exit
-    // animation and then hold on a blank frame.
-    //
-    // The fallback is deliberately near-empty and fills the viewport: a spinner in a
-    // centred box on a white page reads as a broken app on mobile, where the visible
-    // area is small and the content below it would otherwise jump when it arrives.
-    <AnimatePresence mode="wait">
-      <AppErrorBoundary>
-        <Suspense
-          fallback={
-            <div className="min-h-screen bg-[var(--cream)] flex items-center justify-center">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--clay)]" />
-            </div>
-          }
-        >
-      <ClayToastProvider>
-        <Routes location={location} key={location.pathname}>
+    <AppErrorBoundary>
+      <Suspense
+        fallback={
+          <div className="min-h-dvh-shell bg-[var(--cream)] flex items-center justify-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--clay)]" />
+          </div>
+        }
+      >
+        <ClayToastProvider>
+          <Routes location={location}>
         {/* Public sandbox demo, shareable interactive simulator proposal, and merchant compliance/pricing — no authentication required */}
         <Route path="/sandbox" element={<SandboxApp />} />
         <Route path="/sandbox/deal" element={<DealSimulatorPage />} />
@@ -697,19 +687,20 @@ function AnimatedAppRoutes() {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       </ClayToastProvider>
-        </Suspense>
-      </AppErrorBoundary>
-    </AnimatePresence>
+      </Suspense>
+    </AppErrorBoundary>
   );
 }
 
 function App() {
   return (
-    <HelmetProvider>
-      <LanguageProvider>
-        <AnimatedAppRoutes />
-      </LanguageProvider>
-    </HelmetProvider>
+    <MotionConfig reducedMotion="user">
+      <HelmetProvider>
+        <LanguageProvider>
+          <AnimatedAppRoutes />
+        </LanguageProvider>
+      </HelmetProvider>
+    </MotionConfig>
   );
 }
 

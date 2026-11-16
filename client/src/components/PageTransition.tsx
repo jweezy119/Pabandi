@@ -1,20 +1,27 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 
 export function PageTransition({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-  
+  const reduced = useReducedMotion();
+
   return (
-    <motion.div
-      key={location.pathname}
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.3, ease: [0.25, 0.9, 0.35, 1] }}
-      className="w-full h-full"
-    >
-      {children}
-    </motion.div>
+    <AnimatePresence mode="popLayout" initial={false}>
+      <motion.div
+        key={location.pathname}
+        initial={reduced ? { opacity: 0 } : { opacity: 0, y: 6 }}
+        animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0 }}
+        exit={reduced ? { opacity: 0 } : { opacity: 0, y: -4 }}
+        transition={{
+          duration: reduced ? 0.12 : 0.22,
+          ease: [0.22, 1.0, 0.36, 1],
+        }}
+        className="w-full min-h-full"
+        style={{ willChange: 'transform, opacity' }}
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
   );
 }

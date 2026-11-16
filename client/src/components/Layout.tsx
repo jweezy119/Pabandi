@@ -1,4 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation, useNavigationType } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { PageTransition } from './PageTransition';
 import GlobalAIConciergeWidget from './GlobalAIConciergeWidget';
 import { NotificationBell } from './NotificationBell';
@@ -47,16 +48,25 @@ function Dropdown({ label, children, current }: { label: string; children: React
           expand_more
         </span>
       </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 pt-3 z-40" onClick={() => setOpen(false)}>
-            <div className="bg-[#FAF6F0]/95 backdrop-blur-xl border border-[rgba(191,179,163,0.45)] rounded-2xl shadow-[var(--shadow-lift)] py-2 min-w-[190px] transform transition-all duration-200 origin-top">
-              {children}
-            </div>
-          </div>
-        </>
-      )}
+      <AnimatePresence>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: -6, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+              className="absolute top-full left-0 pt-3 z-40 origin-top"
+              onClick={() => setOpen(false)}
+            >
+              <div className="bg-[#FAF6F0]/95 backdrop-blur-xl border border-[rgba(191,179,163,0.45)] rounded-2xl shadow-[var(--shadow-lift)] py-2 min-w-[190px]">
+                {children}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -74,49 +84,64 @@ function DropdownItem({ to, children }: { to: string; children: React.ReactNode 
 
 function MobileMoreSheet({ onClose, pathname }: { onClose: () => void; pathname: string }) {
   const sections = [
+    { title: 'PabandiOS Suite', items: [
+      { to: '/property', icon: 'apartment', label: 'PropertyOS' },
+      { to: '/capital', icon: 'account_balance', label: 'CapitalOS' },
+      { to: '/trust-os', icon: 'shield', label: 'TrustOS' },
+      { to: '/sandbox', icon: 'architecture', label: 'Sandbox' },
+    ]},
     { title: 'Marketplace', items: [
-    { to: '/live-selling', icon: 'videocam', label: 'Live Selling' },
-    { to: '/hospitality', icon: 'hotel', label: 'Hospitality' },
-    { to: '/freelance', icon: 'group', label: 'Freelancers' },
-    { to: '/gigs', icon: 'work', label: 'Gig Board' },
-    { to: '/agent-dashboard', icon: 'smart_toy', label: 'AI Agent Loop' },
-    { to: '/booking', icon: 'event', label: 'BookingOS' },
-    { to: '/freight', icon: 'local_shipping', label: 'FreightOS' },
-    { to: '/property', icon: 'apartment', label: 'PropertyOS' },
+      { to: '/live-selling', icon: 'videocam', label: 'Live Selling' },
+      { to: '/hospitality', icon: 'hotel', label: 'Hospitality' },
+      { to: '/freelance', icon: 'group', label: 'Freelancers' },
+      { to: '/gigs', icon: 'work', label: 'Gig Board' },
+      { to: '/agent-dashboard', icon: 'smart_toy', label: 'AI Agent Loop' },
+      { to: '/booking', icon: 'event', label: 'BookingOS' },
     ]},
-    { title: 'Trust & Safety', items: [
+    { title: 'Trust & Money', items: [
       { to: '/trust', icon: 'verified', label: 'Trust Passports' },
-      { to: '/background-check', icon: 'fact_check', label: 'Background Check' },
-      { to: '/protected-deposit', icon: 'shield', label: 'Protected Deposit' },
-      { to: '/arbitration', icon: 'gavel', label: 'Arbitration' },
-    ]},
-    { title: 'Money', items: [
       { to: '/cashout', icon: 'payments', label: 'Cash Out' },
       { to: '/payroll', icon: 'account_balance_wallet', label: 'Instant Pay' },
       { to: '/economy', icon: 'trending_up', label: 'Economy' },
       { to: '/web3', icon: 'token', label: 'Web3' },
+      { to: '/protected-deposit', icon: 'shield', label: 'Protected Deposit' },
     ]},
     { title: 'Company', items: [
       { to: '/about', icon: 'info', label: 'About' },
       { to: '/sharia-compliance', icon: 'menu_book', label: 'Sharia Compliance' },
       { to: '/technology', icon: 'memory', label: 'Technology' },
       { to: '/join', icon: 'storefront', label: 'List Business' },
-      { to: '/developer', icon: 'code', label: 'API Docs' },
+      { to: '/developers', icon: 'code', label: 'API Docs' },
     ]},
   ];
   return (
-    <div className="fixed inset-0 z-[70] bg-[var(--cream)]/50 backdrop-blur-sm flex items-end justify-center p-4" onClick={onClose}>
-      <div className="w-full max-w-lg max-h-[80vh] overflow-y-auto bg-surface-bright border border-outline-variant/20 rounded-3xl p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-[70] bg-[var(--warm-ink)]/30 backdrop-blur-sm flex items-end justify-center p-2 sm:p-4 safe-area-bottom"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: '100%', opacity: 0.5 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: '100%', opacity: 0.5 }}
+        transition={{ type: 'spring', stiffness: 360, damping: 32 }}
+        className="w-full max-w-lg max-h-[82dvh] overflow-y-auto overscroll-y-contain bg-[#FAF6F0] border border-[rgba(191,179,163,0.45)] rounded-3xl p-4 pb-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 rounded-full bg-[var(--soft-stone)]/25 mx-auto mb-3" />
         <div className="flex items-center justify-between mb-3">
-          <p className="font-headline font-bold text-base">Explore Pabandi</p>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[var(--warm-sand)]/10 flex items-center justify-center touch-target">
+          <p className="font-headline font-bold text-base text-[var(--warm-ink)]">Explore Pabandi</p>
+          <button onClick={onClose} className="w-9 h-9 rounded-full bg-[var(--warm-sand)]/60 flex items-center justify-center touch-target compact-touch" aria-label="Close menu">
             <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
         </div>
         <div className="space-y-4">
-          {sections.filter(sec => sec.title !== 'Marketplace' && sec.title !== 'Trust & Safety' && sec.title !== 'Company').map((sec) => (
+          {sections.map((sec) => (
             <div key={sec.title}>
-              <p className="text-[11px] uppercase tracking-widest opacity-50 px-1 mb-1.5">{sec.title}</p>
+              <p className="text-[11px] uppercase tracking-widest text-[var(--soft-stone)] font-semibold px-1 mb-1.5">{sec.title}</p>
               <div className="grid grid-cols-2 gap-2">
                 {sec.items.map((it) => {
                   const current = pathname.startsWith(it.to);
@@ -125,10 +150,10 @@ function MobileMoreSheet({ onClose, pathname }: { onClose: () => void; pathname:
                       key={it.to}
                       to={it.to}
                       onClick={onClose}
-                      className={`flex items-center gap-3 rounded-2xl px-3 py-3 transition-all touch-target ${current ? 'bg-primary-container/40 text-primary' : 'bg-surface-container-high text-on-surface hover:bg-surface-container-highest'}`}
+                      className={`flex items-center gap-2.5 rounded-2xl px-3 py-3 transition-all touch-target active:scale-[0.98] ${current ? 'bg-[var(--clay)]/15 text-[var(--terracotta)] font-bold' : 'bg-white/80 text-[var(--warm-ink)] hover:bg-white'}`}
                     >
                       <span className="material-symbols-outlined text-[20px]">{it.icon}</span>
-                      <span className="font-body text-sm font-semibold">{it.label}</span>
+                      <span className="font-body text-sm font-semibold truncate">{it.label}</span>
                     </Link>
                   );
                 })}
@@ -136,8 +161,8 @@ function MobileMoreSheet({ onClose, pathname }: { onClose: () => void; pathname:
             </div>
           ))}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -145,16 +170,30 @@ function MobileTab({ to, icon, label, current }: { to: string; icon: string; lab
   return (
     <Link
       to={to}
-      className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-2xl transition-all duration-200 touch-target ${
+      className={`relative flex-1 flex flex-col items-center justify-center gap-0.5 px-1.5 py-1.5 rounded-2xl transition-colors duration-200 touch-target max-w-[80px] ${
         current
-          ? 'text-primary bg-primary-container/30 scale-[1.05]'
-          : 'text-on-surface-variant hover:text-primary active:scale-95'
+          ? 'text-[var(--terracotta)]'
+          : 'text-[var(--soft-stone)] hover:text-[var(--terracotta)]'
       }`}
+      aria-current={current ? 'page' : undefined}
     >
-      <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: current ? "'FILL' 1" : "'FILL' 0" }}>
-        {icon}
-      </span>
-      <span className="font-body text-[10px] font-semibold tracking-wide">{label}</span>
+      {current && (
+        <motion.span
+          layoutId="public-mobile-tab-indicator"
+          className="absolute inset-x-1.5 inset-y-0.5 rounded-2xl bg-[var(--clay)]/14 pointer-events-none"
+          transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+        />
+      )}
+      <motion.div
+        whileTap={{ scale: 0.9 }}
+        transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+        className="relative z-10 flex flex-col items-center gap-0.5"
+      >
+        <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: current ? "'FILL' 1" : "'FILL' 0" }}>
+          {icon}
+        </span>
+        <span className={`font-body text-[10px] tracking-wide ${current ? 'font-bold' : 'font-semibold'}`}>{label}</span>
+      </motion.div>
     </Link>
   );
 }
@@ -168,19 +207,34 @@ function SearchSheet({ onClose }: { onClose: () => void }) {
     onClose();
   };
   return (
-    <div className="fixed inset-0 z-[70] bg-[var(--cream)]/50 backdrop-blur-sm flex items-end md:items-center justify-center p-4" onClick={onClose}>
-      <div className="w-full max-w-lg bg-surface-bright border border-outline-variant/20 rounded-3xl p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-2 rounded-2xl border border-outline-variant/20 bg-surface-container-low px-3 py-2">
-          <span className="material-symbols-outlined text-outline">search</span>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.18 }}
+      className="fixed inset-0 z-[70] bg-[var(--warm-ink)]/30 backdrop-blur-sm flex items-end md:items-center justify-center p-3 sm:p-4 safe-area-bottom"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: 32, opacity: 0, scale: 0.98 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        exit={{ y: 24, opacity: 0, scale: 0.98 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+        className="w-full max-w-lg bg-[#FAF6F0] border border-[rgba(191,179,163,0.45)] rounded-3xl p-4 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 rounded-full bg-[var(--soft-stone)]/25 mx-auto mb-3 md:hidden" />
+        <div className="flex items-center gap-2 rounded-2xl border border-[rgba(191,179,163,0.45)] bg-white px-3 py-2">
+          <span className="material-symbols-outlined text-[var(--soft-stone)]">search</span>
           <input
             autoFocus
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && go()}
             placeholder="Find venues, live sellers, services..."
-            className="bg-transparent w-full text-sm font-body focus:outline-none"
+            className="bg-transparent w-full text-sm font-body focus:outline-none text-[var(--warm-ink)]"
           />
-          <button onClick={go} className="px-3 py-1.5 rounded-xl bg-primary text-on-primary text-xs font-bold">Search</button>
+          <button onClick={go} className="px-3.5 py-1.5 rounded-xl bg-[var(--clay)] text-white text-xs font-bold shrink-0">Search</button>
         </div>
         <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar">
           {['Chicago', 'Live Selling', 'Freelance', 'Hospitality'].map((chip) => (
@@ -195,14 +249,14 @@ function SearchSheet({ onClose }: { onClose: () => void }) {
                 setQ(chip);
                 go();
               }}
-              className="shrink-0 px-4 py-2.5 rounded-xl bg-surface-container-high text-xs font-bold text-on-surface hover:bg-surface-container-highest transition-colors touch-target"
+              className="shrink-0 px-4 py-2 rounded-xl bg-white border border-[rgba(191,179,163,0.3)] text-xs font-bold text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]/50 transition-colors touch-target compact-touch"
             >
               {chip}
             </button>
           ))}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -331,7 +385,7 @@ export default function Layout() {
   }, [location.pathname]);
 
    return (
-    <div className="bg-transparent text-on-surface font-body antialiased min-h-screen flex flex-col relative w-full overflow-x-hidden">
+    <div className="bg-transparent text-on-surface font-body antialiased min-h-dvh-shell flex flex-col relative w-full overflow-x-hidden">
       {offline && (
         <div className="fixed top-0 left-0 right-0 z-[60] bg-amber-500 text-[var(--warm-ink)] text-center text-xs font-bold py-1.5 px-4">
           You are offline — some features may be limited
@@ -349,7 +403,7 @@ export default function Layout() {
       </div>
 
       {!isAuthPage && !isStandalone && (
-        <header className={`flex justify-between items-center w-full px-3 sm:px-6 h-14 sm:h-16 fixed top-0 z-40 border-b transition-all duration-300 ${scrolled ? 'bg-[var(--cream)]/80 backdrop-blur-xl border-[var(--soft-stone)]/30 shadow-sm' : 'bg-[var(--cream)]/60 backdrop-blur-xl border-[var(--soft-stone)]/20'}`}>
+        <header className={`flex justify-between items-center w-full px-3 sm:px-6 min-h-[3.5rem] sm:min-h-[4rem] safe-area-top fixed top-0 z-40 border-b transition-all duration-300 ${scrolled ? 'bg-[var(--cream)]/88 backdrop-blur-xl border-[var(--soft-stone)]/30 shadow-sm' : 'bg-[var(--cream)]/70 backdrop-blur-xl border-[var(--soft-stone)]/20'}`}>
           <div className="flex items-center gap-2 sm:gap-3">
             {isAuthenticated ? (
               <Link to={isOwnerOrAdmin ? '/dashboard' : '/profile'} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[var(--clay)] text-[var(--warm-ink)] flex items-center justify-center text-xs sm:text-sm font-bold shrink-0 touch-target">
@@ -428,21 +482,21 @@ export default function Layout() {
       </main>
 
       {!isAuthPage && !isStandalone && (
-        <nav className="fixed bottom-0 w-full z-50 bg-[#FAF6F0]/90 backdrop-blur-xl border-t border-[rgba(191,179,163,0.4)] md:hidden safe-area-pb" style={{ height: 'var(--pab-mobile-nav-height)' }}>
-          <div className="flex justify-around items-center px-1 py-1.5 max-w-md mx-auto">
+        <nav className="fixed bottom-0 inset-x-0 z-50 bg-[#FAF6F0]/92 backdrop-blur-xl border-t border-[rgba(191,179,163,0.4)] md:hidden safe-area-pb" style={{ height: 'var(--pab-mobile-nav-height)', boxShadow: '0 -4px 20px rgba(180, 130, 90, 0.08)' }} aria-label="Mobile navigation">
+          <div className="flex justify-around items-center h-full px-2 py-1 max-w-md mx-auto">
             <MobileTab to="/" icon="explore" label="Home" current={location.pathname === '/'} />
-            <MobileTab to="/contact" icon="trending_up" label="Contact" current={location.pathname.startsWith('/contact')} />
+            <MobileTab to="/contact" icon="contacts" label="Contact" current={location.pathname.startsWith('/contact')} />
             <MobileTab to="/booking" icon="event" label="Booking" current={location.pathname.startsWith('/booking')} />
-            <MobileTab to="/property" icon="apartment" label="Property" current={location.pathname.startsWith('/property')} />
-            <MobileTab to="/freight" icon="local_shipping" label="Freight" current={location.pathname.startsWith('/freight')} />
-            <MobileTab to="/capital" icon="account_balance" label="Capital" current={location.pathname.startsWith('/capital')} />
-            <button
+            <MobileTab to="/trust" icon="verified_user" label="Trust" current={location.pathname.startsWith('/trust')} />
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 28 }}
               onClick={() => setMoreOpen(true)}
-              className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-2xl transition-all touch-target ${moreOpen ? 'text-[var(--terracotta)] bg-[var(--clay)]/15 scale-[1.05]' : 'text-[var(--soft-stone)] hover:text-[var(--terracotta)] active:scale-95'}`}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-1.5 py-1.5 rounded-2xl transition-colors touch-target max-w-[80px] ${moreOpen ? 'text-[var(--terracotta)] bg-[var(--clay)]/15' : 'text-[var(--soft-stone)] hover:text-[var(--terracotta)]'}`}
             >
-              <span className="material-symbols-outlined text-[24px]">apps</span>
+              <span className="material-symbols-outlined text-[22px]">apps</span>
               <span className="font-body text-[10px] font-semibold tracking-wide">More</span>
-            </button>
+            </motion.button>
           </div>
         </nav>
       )}
@@ -500,8 +554,12 @@ export default function Layout() {
         </footer>
       )}
 
-      {searchOpen && <SearchSheet onClose={() => setSearchOpen(false)} />}
-      {moreOpen && <MobileMoreSheet onClose={() => setMoreOpen(false)} pathname={location.pathname} />}
+      <AnimatePresence>
+        {searchOpen && <SearchSheet onClose={() => setSearchOpen(false)} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {moreOpen && <MobileMoreSheet onClose={() => setMoreOpen(false)} pathname={location.pathname} />}
+      </AnimatePresence>
     </div>
   );
 }

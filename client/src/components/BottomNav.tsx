@@ -1,54 +1,59 @@
-import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Home, Search, CreditCard, Settings } from 'lucide-react';
 
 const TABS = [
-  { id: 'home', label: 'Home', href: '/app', icon: <Home size={20} /> },
-  { id: 'discover', label: 'Discover', href: '/app/discover', icon: <Search size={20} /> },
-  { id: 'passport', label: 'Passport', href: '/app/passport', icon: <CreditCard size={20} /> },
-  { id: 'settings', label: 'Settings', href: '/app/settings', icon: <Settings size={20} /> },
+  { id: 'home', label: 'Home', href: '/app', icon: Home, exact: true },
+  { id: 'discover', label: 'Discover', href: '/app/discover', icon: Search, exact: false },
+  { id: 'passport', label: 'Passport', href: '/app/passport', icon: CreditCard, exact: false },
+  { id: 'settings', label: 'Settings', href: '/app/settings', icon: Settings, exact: false },
 ];
 
 export default function BottomNav() {
-  const [activeTab, setActiveTab] = useState('home');
   const location = useLocation();
 
-  // Sync active tab from URL
-  const tabFromPath = TABS.find((t) => location.pathname === t.href || location.pathname.startsWith(t.href));
-  if (tabFromPath) setActiveTab(tabFromPath.id);
-
   return (
-    <div
-      className="fixed bottom-0 left-0 right-0 h-20 bg-white border-t border-amber-200 shadow-lg z-50 pb-[env(safe-area-inset-bottom)]"
+    <nav
+      className="fixed bottom-0 inset-x-0 z-50 bg-[#FAF6F0]/92 backdrop-blur-xl border-t border-[rgba(191,179,163,0.35)] safe-area-bottom"
+      style={{ height: 'var(--pab-mobile-nav-height)', boxShadow: '0 -4px 20px rgba(180, 130, 90, 0.08)' }}
+      aria-label="Consumer navigation"
     >
-      <div className="flex justify-around items-center h-full px-4 pt-2">
+      <div className="flex justify-around items-center h-full px-3 max-w-md mx-auto">
         {TABS.map((tab) => {
-          const isActive = activeTab === tab.id;
+          const isActive = tab.exact
+            ? location.pathname === tab.href
+            : location.pathname === tab.href || location.pathname.startsWith(tab.href + '/');
+          const Icon = tab.icon;
           return (
-            <button
+            <Link
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className="flex flex-col items-center gap-1 p-2 transition-colors"
+              to={tab.href}
+              className={`relative flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-2xl touch-target transition-colors ${
+                isActive ? 'text-[var(--terracotta)]' : 'text-[var(--soft-stone)] hover:text-[var(--terracotta)]'
+              }`}
+              aria-current={isActive ? 'page' : undefined}
             >
-              <Link
-                to={tab.href}
-                className="block text-center"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setActiveTab(tab.id);
-                }}
+              {isActive && (
+                <motion.span
+                  layoutId="consumer-tab-indicator"
+                  className="absolute inset-x-2 inset-y-1 rounded-2xl bg-[var(--clay)]/14 pointer-events-none"
+                  transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                />
+              )}
+              <motion.div
+                whileTap={{ scale: 0.9 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+                className="relative z-10 flex flex-col items-center gap-0.5"
               >
-                {tab.icon}
-                <span
-                  className={`text-xs font-bold ${isActive ? 'text-amber-500' : 'text-amber-400'}`}
-                >
+                <Icon size={20} strokeWidth={isActive ? 2.4 : 1.9} />
+                <span className={`text-[11px] ${isActive ? 'font-bold' : 'font-medium'}`}>
                   {tab.label}
                 </span>
-              </Link>
-            </button>
+              </motion.div>
+            </Link>
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 }
