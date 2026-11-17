@@ -740,16 +740,17 @@ export default function GigBoardPage() {
       {/* Post Project Modal */}
       {postOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/70 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="post-project-title"
           onClick={() => setPostOpen(false)}
         >
           <div
-            className="bg-[var(--pbn-bg-raised)] rounded-2xl p-6 sm:p-8 max-w-lg w-full border border-[var(--pbn-border-strong)] shadow-2xl relative text-[var(--pbn-text)]"
+            className="bg-[var(--pbn-bg-raised)] rounded-t-3xl sm:rounded-2xl p-5 sm:p-8 max-w-lg w-full max-h-[90dvh] overflow-y-auto overscroll-y-contain safe-area-bottom border border-[var(--pbn-border-strong)] shadow-2xl relative text-[var(--pbn-text)]"
             onClick={(e) => e.stopPropagation()}
           >
+            <div className="w-10 h-1 rounded-full bg-white/20 mx-auto mb-4 sm:hidden" />
             <div className="flex items-center justify-between pb-4 border-b border-[var(--pbn-border)] mb-5">
               <div className="flex items-center gap-2">
                 <Briefcase className="w-5 h-5 text-[var(--pbn-accent)]" aria-hidden="true" />
@@ -889,16 +890,17 @@ export default function GigBoardPage() {
       {/* Place Bid Modal */}
       {bidOpenGig && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/70 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="place-bid-title"
           onClick={() => setBidOpenGig(null)}
         >
           <div
-            className="bg-[var(--pbn-bg-raised)] rounded-2xl p-6 sm:p-8 max-w-md w-full border border-[var(--pbn-border-strong)] shadow-2xl relative text-[var(--pbn-text)]"
+            className="bg-[var(--pbn-bg-raised)] rounded-t-3xl sm:rounded-2xl p-5 sm:p-8 max-w-md w-full max-h-[85dvh] overflow-y-auto overscroll-y-contain safe-area-bottom border border-[var(--pbn-border-strong)] shadow-2xl relative text-[var(--pbn-text)]"
             onClick={(e) => e.stopPropagation()}
           >
+            <div className="w-10 h-1 rounded-full bg-white/20 mx-auto mb-4 sm:hidden" />
             <div className="flex items-center justify-between pb-4 border-b border-[var(--pbn-border)] mb-4">
               <h3 id="place-bid-title" className="text-xl font-bold font-['Space_Grotesk',sans-serif]">
                 Place Your Proposal Bid

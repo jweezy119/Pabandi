@@ -59,7 +59,7 @@ export default function PersonalBookingsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-4 max-w-4xl mx-auto py-8">
+      <div className="space-y-4 max-w-4xl mx-auto px-4 sm:px-6 py-8">
         <h1 className="text-2xl font-extrabold" style={{ color: 'var(--warm-ink)' }}>
           My Bookings & Escrows
         </h1>
@@ -71,7 +71,7 @@ export default function PersonalBookingsPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto py-6">
+    <div className="space-y-6 max-w-4xl mx-auto px-4 sm:px-6 py-6 mobile-safe-bottom">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: 'var(--warm-ink)' }}>
