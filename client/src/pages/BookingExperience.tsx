@@ -969,6 +969,29 @@ export default function BookingExperience() {
         </div>
       </div>
 
+      {/* Sticky Mobile Quick-Book Bar */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-[#FAF6F0]/95 backdrop-blur-xl border-t border-[rgba(191,179,163,0.35)] px-4 py-3 safe-area-bottom shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[11px] font-semibold text-[var(--soft-stone)] truncate">
+              {format(selectedDate, 'MMM d')} · {selectedTime || 'Select time'}
+            </div>
+            <div className="money-number text-base text-[var(--warm-ink)]">
+              {effectiveServiceValue > 0 ? `$${effectiveServiceValue.toLocaleString()}` : 'Escrow Protected'}
+            </div>
+          </div>
+          <Button
+            onClick={handleBookTable}
+            disabled={!selectedTime || bookingMutation.isLoading || submitting}
+            className="px-5 py-3 text-sm font-bold rounded-full shrink-0"
+          >
+            {submitting || bookingMutation.isLoading
+              ? 'Securing…'
+              : schema.buttonText || (schema.showPartySize ? 'Reserve →' : 'Book Now →')}
+          </Button>
+        </div>
+      </div>
+
       {/* Deposit prompt and a page-scoped Toaster -- see FluidBookingPage for
           why the Toaster is scoped rather than mounted app-wide. */}
       <EmbeddedCheckoutModal

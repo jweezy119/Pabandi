@@ -600,7 +600,7 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm transition-opacity"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm transition-opacity"
       role="dialog"
       aria-modal="true"
       aria-labelledby="pabandi-checkout-modal-title"
@@ -615,9 +615,10 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
       <div
         ref={modalRef}
         tabIndex={-1}
-        className="w-full max-w-lg max-h-[92vh] flex flex-col rounded-2xl bg-[#FBF8F3] text-[#2A2520] border border-[#BFB3A3]/50 shadow-2xl overflow-hidden focus:outline-none"
+        className="w-full max-w-lg max-h-[92dvh] flex flex-col rounded-t-3xl sm:rounded-2xl bg-[#FBF8F3] text-[#2A2520] border border-[#BFB3A3]/50 shadow-2xl overflow-hidden focus:outline-none safe-area-bottom"
         onClick={(e) => e.stopPropagation()}
       >
+        <div className="w-10 h-1 rounded-full bg-[#BFB3A3]/60 mx-auto mt-2.5 sm:hidden shrink-0" />
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#BFB3A3]/30 bg-[#F5EFE6]">
           <div className="flex items-center gap-2.5">

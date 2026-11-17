@@ -164,3 +164,25 @@
   border-color: rgba(255, 255, 255, 0.08) !important;
   color: #e8eef4 !important;
 }
+
+/* ── Checkout Modal & Warm-Literal Dark Mode Overrides ─────────── */
+[data-theme="dark"] .bg-\[\#FBF8F3\],
+[data-theme="dark"] .bg-\[\#F5EFE6\] {
+  background-color: #101a24 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #e8eef4 !important;
+}
+
+[data-theme="dark"] .bg-\[\#E8D9C5\]\/40 {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .text-\[\#2A2520\] {
+  color: #e8eef4 !important;
+}
+
+[data-theme="dark"] .text-\[\#5C5248\],
+[data-theme="dark"] .text-\[\#6B5E52\] {
+  color: #8a9aa8 !important;
+}
