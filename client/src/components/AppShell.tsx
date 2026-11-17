@@ -35,7 +35,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // OS pages that bring their own DashboardLayout mobile navigation or drawer
   // (BookingOS, ContactOS, PropertyOS, FreightOS, CapitalOS, TrustOS) manage their
   // own bottom tab bar. Stacking AppShell's bottom nav on top creates a double-bar collision.
-  const isDashboardLayoutPage = /^\/(booking|contact|property|freight|capital|trust-os)(\/|$)/.test(location.pathname);
+  const isDashboardLayoutPage = /^\/(booking|contact|property|freight|capital|trust-os|coordinator|simulator|ledger|cod|dashboard\/trust-passport)(\/|$)/.test(location.pathname);
 
   return (
     <div className="flex flex-col h-dvh-shell bg-[var(--bg-main)] overflow-hidden" data-mode={user?.preferredMode || 'business'}>

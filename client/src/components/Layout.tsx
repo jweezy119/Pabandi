@@ -351,7 +351,7 @@ export default function Layout() {
   // /booking, /freight, /property, /contact, /capital bring their own chrome
   // (DashboardLayout sidebar). Rendering the main header/footer/nav on top
   // stacks two top bars and two bottom bars — so stand down here.
-  const isStandalone = /^\/(booking|freight|property|contact|capital|sitara)(\/|$)/.test(location.pathname);
+  const isStandalone = /^\/(booking|freight|property|contact|capital|sitara|trust-os|coordinator|simulator|ledger|cod)(\/|$)/.test(location.pathname);
   const [searchOpen, setSearchOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const initials = user
