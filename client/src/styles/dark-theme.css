@@ -109,8 +109,13 @@
 
 /* ── Utility surface overrides for Tailwind light classes ──────── */
 [data-theme="dark"] .bg-white,
-[data-theme="dark"] .bg-white\/80 {
+[data-theme="dark"] .bg-white\/60,
+[data-theme="dark"] .bg-white\/70,
+[data-theme="dark"] .bg-white\/80,
+[data-theme="dark"] .bg-white\/90,
+[data-theme="dark"] .bg-white\/95 {
   background-color: #101a24 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
   color: #e8eef4;
 }
 
@@ -122,13 +127,15 @@
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
+[data-theme="dark"] .bg-\[var\(--cream\)\],
 [data-theme="dark"] .bg-\[var\(--cream\)\]\/60,
 [data-theme="dark"] .bg-\[var\(--cream\)\]\/70,
 [data-theme="dark"] .bg-\[var\(--cream\)\]\/80,
 [data-theme="dark"] .bg-\[var\(--cream\)\]\/88 {
-  background-color: rgba(10, 17, 24, 0.88) !important;
+  background-color: rgba(10, 17, 24, 0.90) !important;
 }
 
+[data-theme="dark"] .bg-\[var\(--warm-sand\)\]\/80,
 [data-theme="dark"] .bg-\[var\(--warm-sand\)\]\/92,
 [data-theme="dark"] .bg-\[var\(--warm-sand\)\] {
   background-color: rgba(16, 26, 36, 0.94) !important;
@@ -136,7 +143,8 @@
 
 /* Accent button contrast (bright teal needs dark ink text) */
 [data-theme="dark"] [style*="var(--clay)"][class*="text-white"],
-[data-theme="dark"] .bg-\[var\(--clay\)\].text-white {
+[data-theme="dark"] .bg-\[var\(--clay\)\].text-white,
+[data-theme="dark"] .clay-tab--active {
   color: #06231f !important;
 }
 

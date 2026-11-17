@@ -518,35 +518,39 @@ export default function BookingExperience() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
       {/* Header (Layout header handles main nav; this is booking-specific context) */}
-      <header className="sticky top-16 z-40 backdrop-blur-xl bg-[var(--warm-sand)]/80 border-b border-[rgba(191,179,163,0.2)] px-4 py-3">
+      <header className="sticky top-14 sm:top-16 z-30 backdrop-blur-xl bg-[var(--warm-sand)]/80 border-b border-[rgba(191,179,163,0.2)] px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <button onClick={() => setStep('search')} className="text-[var(--soft-stone)] hover:text-[var(--warm-ink)]">
+          <button
+            type="button"
+            onClick={() => (id ? navigate(-1) : setStep('search'))}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--soft-stone)] hover:text-[var(--warm-ink)] touch-target compact-touch"
+          >
             ← Back
           </button>
-          <h1 className="font-bold text-[var(--warm-ink)]">Pabandi</h1>
-          <div className="w-16" />
+          <h1 className="font-bold text-[var(--warm-ink)] truncate max-w-[180px] sm:max-w-xs">{business?.name || 'Pabandi'}</h1>
+          <div className="w-14" />
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 py-6 pb-28 lg:pb-12">
+      <div className="max-w-5xl mx-auto px-4 py-6 mobile-safe-bottom lg:pb-12">
         {/* Business Hero */}
         {business && (
-          <div className="relative h-64 md:h-80 rounded-xl overflow-hidden mb-6">
+          <div className="relative h-56 sm:h-64 md:h-80 rounded-2xl overflow-hidden mb-6 shadow-[var(--shadow-soft)]">
             {business.coverImageUrl ? (
               <img src={business.coverImageUrl} alt={business.name} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center">
+              <div className="w-full h-full bg-gradient-to-br from-[#101a24] via-[#182736] to-[#0a1118] flex items-center justify-center">
                 <span className="text-6xl">{schema.heroEmoji || '🍽️'}</span>
               </div>
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-            <div className="absolute bottom-0 left-0 p-6">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
               <div className="flex items-center gap-2 mb-2">
                 {business.rating && <Badge tone="success">⭐ {business.rating}</Badge>}
                 {business.trustScore && <Badge tone="info">Trust: {business.trustScore}</Badge>}
               </div>
-              <h1 className="text-3xl font-bold text-[var(--warm-ink)]">{business.name}</h1>
-              <p className="text-[var(--soft-stone)]">{business.address}</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">{business.name}</h1>
+              <p className="text-sm text-white/80 mt-0.5">{business.address}</p>
             </div>
           </div>
         )}
