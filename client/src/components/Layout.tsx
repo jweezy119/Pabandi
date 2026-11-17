@@ -4,6 +4,7 @@ import { PageTransition } from './PageTransition';
 import GlobalAIConciergeWidget from './GlobalAIConciergeWidget';
 import { NotificationBell } from './NotificationBell';
 import { ModeToggle } from './ModeToggle';
+import { ThemeToggle } from './ThemeToggle';
 import { useAuthStore } from '../store/authStore';
 import { useEffect, useState, useRef } from 'react';
 
@@ -439,6 +440,7 @@ export default function Layout() {
           </nav>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
+            <ThemeToggle />
             <button onClick={() => setSearchOpen(true)} className="md:hidden w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[var(--warm-sand)]/10 backdrop-blur text-on-surface flex items-center justify-center touch-target hover:bg-white/20 active:scale-95 transition-all duration-200">
               <span className="material-symbols-outlined text-[18px] sm:text-[20px]">search</span>
             </button>

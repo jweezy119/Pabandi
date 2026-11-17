@@ -10,8 +10,21 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="application-name" content="Pabandi" />
-    <meta name="theme-color" content="#020617" />
+    <meta name="theme-color" content="#0a1118" />
     <meta name="color-scheme" content="dark light" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('pabandi-theme');
+          if (t === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>Pabandi | Commitment, Secured.</title>
     <meta name="description" content="Pabandi is the trust-and-commitment layer for the informal economy: local discovery, escrow-backed bookings, $PAB rewards, and portable Passport reputation for sellers, gig providers, live sellers, and hosts." />

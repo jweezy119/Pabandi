@@ -1,0 +1,158 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Pabandi Obsidian Dark Theme — Matches Login & Sign Up Aesthetic
+   Deep Ocean Navy (#0a1118) · Raised Slate (#101a24) · Teal (#4fd1c5)
+   ═══════════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* ── Core palette mapped to Login/Signup obsidian tokens ─────── */
+  --cream:       #0a1118;
+  --warm-sand:   #101a24;
+  --warm-ink:    #e8eef4;
+  --soft-stone:  #8a9aa8;
+  --clay:        #4fd1c5;
+  --terracotta:  #38b2ac;
+  --sage:        #34d399;
+  --dusty-rose:  #f472b6;
+  --muted-ochre: #fbbf24;
+  --sky-wash:    #60a5fa;
+
+  /* ── Mode theme overrides ─────────────────────────────────────── */
+  --color-primary: #4fd1c5;
+  --color-primary-light: rgba(79, 209, 197, 0.18);
+  --bg-main: #0a1118;
+  --bg-surface: #101a24;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --text-main: #e8eef4;
+  --text-muted: #8a9aa8;
+
+  /* ── Atmosphere ───────────────────────────────────────────────── */
+  --atmosphere: radial-gradient(
+    ellipse at top left,
+    #101c28 0%,
+    #0a1118 55%,
+    #070c12 100%
+  );
+
+  /* ── Shadows ──────────────────────────────────────────────────── */
+  --shadow-soft:
+    0 1px 2px rgba(0, 0, 0, 0.35),
+    0 6px 18px rgba(0, 0, 0, 0.40);
+  --shadow-lift:
+    0 8px 28px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(79, 209, 197, 0.18);
+  --shadow-pressed:
+    0 1px 3px rgba(0, 0, 0, 0.45);
+  --shadow-btn:
+    0 2px 8px rgba(79, 209, 197, 0.20),
+    0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-btn-hover:
+    0 4px 16px rgba(79, 209, 197, 0.30),
+    0 2px 6px rgba(0, 0, 0, 0.40);
+  --shadow-sidebar:
+    2px 0 24px rgba(0, 0, 0, 0.45);
+  --shadow-modal:
+    0 24px 80px rgba(0, 0, 0, 0.72),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] body {
+  background-color: #0a1118;
+  color: #e8eef4;
+}
+
+/* ── Clay surfaces in Obsidian Dark Mode ───────────────────────── */
+[data-theme="dark"] .clay-card {
+  background: #101a24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e8eef4;
+}
+
+[data-theme="dark"] .clay-card::before {
+  background: linear-gradient(90deg, rgba(79, 209, 197, 0.22) 0%, transparent 45%);
+}
+
+[data-theme="dark"] .clay-card--flat,
+[data-theme="dark"] .clay-card--pressed {
+  background: #0d1620;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .clay-field-input {
+  background: #0a1118;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e8eef4;
+}
+
+[data-theme="dark"] .clay-field-input:focus {
+  border-color: #4fd1c5;
+  box-shadow: 0 0 0 3px rgba(79, 209, 197, 0.16);
+}
+
+[data-theme="dark"] .clay-field-input::placeholder {
+  color: #5a6a78;
+  opacity: 1;
+}
+
+[data-theme="dark"] .clay-filter-chip--inactive {
+  background: #101a24;
+  color: #8a9aa8;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .clay-filter-chip--active {
+  background: #4fd1c5;
+  color: #06231f;
+}
+
+/* ── Utility surface overrides for Tailwind light classes ──────── */
+[data-theme="dark"] .bg-white,
+[data-theme="dark"] .bg-white\/80 {
+  background-color: #101a24 !important;
+  color: #e8eef4;
+}
+
+[data-theme="dark"] .bg-\[\#FAF6F0\],
+[data-theme="dark"] .bg-\[\#FAF6F0\]\/90,
+[data-theme="dark"] .bg-\[\#FAF6F0\]\/92,
+[data-theme="dark"] .bg-\[\#FAF6F0\]\/95 {
+  background-color: rgba(16, 26, 36, 0.94) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .bg-\[var\(--cream\)\]\/60,
+[data-theme="dark"] .bg-\[var\(--cream\)\]\/70,
+[data-theme="dark"] .bg-\[var\(--cream\)\]\/80,
+[data-theme="dark"] .bg-\[var\(--cream\)\]\/88 {
+  background-color: rgba(10, 17, 24, 0.88) !important;
+}
+
+[data-theme="dark"] .bg-\[var\(--warm-sand\)\]\/92,
+[data-theme="dark"] .bg-\[var\(--warm-sand\)\] {
+  background-color: rgba(16, 26, 36, 0.94) !important;
+}
+
+/* Accent button contrast (bright teal needs dark ink text) */
+[data-theme="dark"] [style*="var(--clay)"][class*="text-white"],
+[data-theme="dark"] .bg-\[var\(--clay\)\].text-white {
+  color: #06231f !important;
+}
+
+/* ── LandingPage dark mode support ─────────────────────────────── */
+[data-theme="dark"] .landing-page,
+[data-theme="dark"] .hero,
+[data-theme="dark"] .bento-section,
+[data-theme="dark"] .cta-section {
+  background: transparent;
+  color: #e8eef4;
+}
+
+[data-theme="dark"] .bento-card,
+[data-theme="dark"] .hero-trust-badge,
+[data-theme="dark"] .testimonial-card {
+  background: #101a24 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #e8eef4 !important;
+}

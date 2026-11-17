@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CommandPalette } from './CommandPalette';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { PageTransition } from './PageTransition';
+import { ThemeToggle } from './ThemeToggle';
 
 const MotionLink = motion(Link);
 
@@ -445,8 +446,14 @@ export default function DashboardLayout({
           })}
         </nav>
 
-        {/* Support card */}
-        <div className="p-4" style={{ borderTop: '1px solid rgba(191,179,163,0.2)' }}>
+        {/* Support & Theme card */}
+        <div className="p-4 space-y-2.5" style={{ borderTop: '1px solid rgba(191,179,163,0.2)' }}>
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--soft-stone)', fontFamily: 'var(--font-label)' }}>
+              Appearance
+            </span>
+            <ThemeToggle />
+          </div>
           <div
             className="rounded-2xl p-4"
             style={{
@@ -477,14 +484,17 @@ export default function DashboardLayout({
             </div>
             <h1 className="text-base font-bold text-[var(--warm-ink)] truncate">{osName}</h1>
           </div>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 -mr-2 text-[var(--soft-stone)] hover:bg-[rgba(232,217,197,0.5)] rounded-xl touch-target flex items-center justify-center"
-            aria-label="Open sidebar"
-          >
-            <span className="material-symbols-outlined">menu</span>
-          </motion.button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 -mr-2 text-[var(--soft-stone)] hover:bg-[rgba(232,217,197,0.5)] rounded-xl touch-target flex items-center justify-center"
+              aria-label="Open sidebar"
+            >
+              <span className="material-symbols-outlined">menu</span>
+            </motion.button>
+          </div>
         </div>
 
         {/* Page content */}

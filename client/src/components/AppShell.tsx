@@ -5,6 +5,7 @@ import { ModuleSwitcher } from './ModuleSwitcher';
 import { UserMenu } from './UserMenu';
 import { SupportWidget } from './SupportWidget';
 import { ModeToggle } from './ModeToggle';
+import { ThemeToggle } from './ThemeToggle';
 import { useAuthStore } from '../store/authStore';
 import { WalletModal } from './WalletModal';
 import { useWalletModal } from '../hooks/useWalletModal';
@@ -71,6 +72,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="font-bold text-xs sm:text-sm leading-tight" style={{ color: isBusiness ? 'var(--clay)' : 'var(--sage)' }}>{wallet.pabBalance} PAB</span>
           </button>
           <ModeToggle />
+          <ThemeToggle />
           <UserMenu />
         </div>
       </header>
