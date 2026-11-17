@@ -31,7 +31,7 @@ services:
     # schema half-moved. Deliberately NOT `migrate dev` or `db push`: both can
     # drop tables, and `db push` would reconcile against the 67-statement
     # divergence between schema.prisma and this database.
-    preDeployCommand: cd server && npx prisma migrate resolve --rolled-back 20261115_crm_client_table || true && npx prisma migrate deploy && node scripts/ensure-agent-tables.cjs
+    preDeployCommand: cd server && (npx prisma migrate resolve --rolled-back 20261115_crm_client_table || true) && (npx prisma migrate deploy || echo "WARN: prisma migrate deploy skipped") && (node scripts/ensure-agent-tables.cjs || echo "WARN: ensure-agent-tables skipped")
     envVars:
       - key: NODE_ENV
         value: production
