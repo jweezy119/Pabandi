@@ -4,6 +4,7 @@ import { aiProviderRouter } from '../services/ai/aiProvider.router';
 import { aiNlpService } from '../services/ai.nlp.service';
 import { jevStatus } from '../services/jev.service';
 import { prisma } from '../utils/database';
+import { checkSchema } from '../services/schema-check.service';
 
 const router = Router();
 
@@ -124,6 +125,11 @@ router.get('/debug-google', authenticate, async (_req: AuthRequest, res: Respons
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
   }
+});
+
+router.get('/debug-schema', authenticate, async (_req: AuthRequest, res: Response) => {
+  const result = await checkSchema();
+  res.json({ success: true, data: result });
 });
 
 export default router;
