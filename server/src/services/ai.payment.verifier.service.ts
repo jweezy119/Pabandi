@@ -18,6 +18,57 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   ]);
 }
 
+function nvidiaVisionModels(): string[] {
+  const raw =
+    process.env.NVIDIA_VISION_MODELS ||
+    'nvidia/nemotron-3.5-super-vl-120b-a12b,z-ai/glm-5.3-flash,minimaxai/minimax-m3.1-flash,stepfun-ai/step-5-preview';
+  return raw
+    .split(',')
+    .map((m) => m.trim())
+    .filter(Boolean);
+}
+
+export async function nvidiaVisionJson(prompt: string, imageBase64: string): Promise<string> {
+  const apiKey = process.env.NVIDIA_API_KEY || '';
+  if (!apiKey) throw new Error('NVIDIA_API_KEY is not configured');
+  const { default: OpenAI } = await import('openai');
+  const client = new OpenAI({
+    apiKey,
+    baseURL: process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1',
+    timeout: 25_000,
+    maxRetries: 0,
+  });
+
+  let lastError: any;
+  for (const model of nvidiaVisionModels()) {
+    try {
+      const response = await client.chat.completions.create({
+        model,
+        temperature: 0,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              {
+                type: 'image_url',
+                image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
+              },
+            ],
+          },
+        ],
+        response_format: { type: 'json_object' },
+      } as any);
+      const text = response.choices?.[0]?.message?.content ?? '';
+      return text.replace(/^```json\n?/, '').replace(/```$/, '').trim();
+    } catch (error: any) {
+      if (error?.status === 401 || error?.status === 403) throw error;
+      lastError = error;
+    }
+  }
+  throw lastError || new Error('No NVIDIA vision model available');
+}
+
 export interface PaymentProofFields {
   amount?: number;
   recipient?: string;
@@ -81,6 +132,7 @@ Return ONLY valid JSON. Never enclose with markdown formatting.
 `.trim();
 
     const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
+    const nvidiaKey = process.env.NVIDIA_API_KEY || '';
     const hasDashscope =
       Boolean(DASHSCOPE_API_KEY) && DASHSCOPE_API_KEY !== 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY';
 
@@ -127,6 +179,10 @@ Return ONLY valid JSON. Never enclose with markdown formatting.
         const cleaned = cleanJson(response.data?.output?.choices?.[0]?.message?.content?.trim() || '');
         rawContent = cleaned;
         parsed = JSON.parse(cleaned) as PaymentProofFields;
+      } else if (nvidiaKey) {
+        const cleaned = await nvidiaVisionJson(prompt, imageBase64);
+        rawContent = cleaned;
+        parsed = JSON.parse(cleaned) as PaymentProofFields;
       } else if (geminiKey) {
         const cleaned = await this.extractWithGemini(prompt, imageBase64);
         rawContent = cleaned;
@@ -138,9 +194,31 @@ Return ONLY valid JSON. Never enclose with markdown formatting.
     } catch (error: any) {
       logger.error('[AI PaymentVerifier] Vision model error:', error.response?.data || error.message);
 
-      // If DashScope failed but Gemini is available, try the second provider
-      // before falling back to the heuristic parser.
-      if (hasDashscope && geminiKey) {
+      // If DashScope failed, try NVIDIA then Gemini before falling back to the
+      // heuristic parser.
+      if (hasDashscope && nvidiaKey) {
+        try {
+          const cleaned = await nvidiaVisionJson(prompt, imageBase64);
+          rawContent = cleaned;
+          parsed = JSON.parse(cleaned) as PaymentProofFields;
+        } catch (nvidiaError: any) {
+          logger.error('[AI PaymentVerifier] NVIDIA vision fallback error:', nvidiaError.message);
+          if (geminiKey) {
+            try {
+              const cleaned = await this.extractWithGemini(prompt, imageBase64);
+              rawContent = cleaned;
+              parsed = JSON.parse(cleaned) as PaymentProofFields;
+            } catch (geminiError: any) {
+              logger.error('[AI PaymentVerifier] Gemini fallback error:', geminiError.message);
+              parsed = fallback('All vision providers failed');
+              rawContent = 'error_fallback';
+            }
+          } else {
+            parsed = fallback('All vision providers failed');
+            rawContent = 'error_fallback';
+          }
+        }
+      } else if (hasDashscope && geminiKey) {
         try {
           const cleaned = await this.extractWithGemini(prompt, imageBase64);
           rawContent = cleaned;

@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
-import { aiProviderRouter } from '../services/ai/aiProvider.router';
+import { aiProviderRouter, aiProviderStatus } from '../services/ai/aiProvider.router';
+import { nvidiaVisionJson } from '../services/ai.payment.verifier.service';
 import { aiNlpService } from '../services/ai.nlp.service';
 import { jevStatus } from '../services/jev.service';
 import { prisma } from '../utils/database';
@@ -144,6 +145,20 @@ router.get('/debug-nvidia-models', authenticate, async (_req: AuthRequest, res: 
     });
     const models = await client.models.list();
     res.json({ success: true, data: models.data.map((m) => m.id) });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.post('/test-vision', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { imageBase64, prompt } = req.body || {};
+    if (!imageBase64) return res.status(400).json({ success: false, error: 'imageBase64 required' });
+    const text = await nvidiaVisionJson(
+      prompt || 'Describe what you see in this image as JSON.',
+      imageBase64,
+    );
+    res.json({ success: true, data: { text } });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
   }
