@@ -123,12 +123,48 @@ function pollinationsOpts() {
   };
 }
 
+export function nvidiaModelList(): string[] {
+  const single = (process.env.NVIDIA_MODEL || '').trim();
+  if (single && single !== 'auto') return [single];
+  const raw =
+    process.env.NVIDIA_MODELS ||
+    'moonshotai/kimi-k3.1-pro,z-ai/glm-5.3-flash,minimaxai/minimax-m3.1-flash,google/gemma-4-31b-it,nvidia/nemotron-3.5-lightning-30b-a3b,nvidia/nemotron-3-ultra-550b-a55b,stepfun-ai/step-5-preview';
+  return raw
+    .split(',')
+    .map((m) => m.trim())
+    .filter(Boolean);
+}
+
+function isAuthError(error: any): boolean {
+  return error?.status === 401 || error?.status === 403 || /(401|403)/.test(String(error?.message));
+}
+
 async function nvidiaJson(prompt: string, schema: JsonSchema, system?: string): Promise<string> {
-  return openAiCompatibleJson(nvidiaOpts(), prompt, schema, system);
+  const opts = nvidiaOpts();
+  let lastError: any;
+  for (const model of nvidiaModelList()) {
+    try {
+      return await openAiCompatibleJson({ ...opts, model }, prompt, schema, system);
+    } catch (error) {
+      if (isAuthError(error)) throw error;
+      lastError = error;
+    }
+  }
+  throw lastError || new Error('No NVIDIA model available');
 }
 
 async function nvidiaText(prompt: string, system?: string): Promise<string> {
-  return openAiCompatibleText(nvidiaOpts(), prompt, system);
+  const opts = nvidiaOpts();
+  let lastError: any;
+  for (const model of nvidiaModelList()) {
+    try {
+      return await openAiCompatibleText({ ...opts, model }, prompt, system);
+    } catch (error) {
+      if (isAuthError(error)) throw error;
+      lastError = error;
+    }
+  }
+  throw lastError || new Error('No NVIDIA model available');
 }
 
 async function pollinationsJson(prompt: string, schema: JsonSchema, system?: string): Promise<string> {
