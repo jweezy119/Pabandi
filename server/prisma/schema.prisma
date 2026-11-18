@@ -1285,7 +1285,7 @@ model CrmDeal {
   @@index([serviceBusinessId])
   @@index([businessId])
   @@index([stage])
-  @@map("crm_deals")
+  @@map("CrmDeal")
 }
 
 model CrmTask {
@@ -1306,7 +1306,7 @@ model CrmTask {
   @@index([serviceBusinessId])
   @@index([businessId])
   @@index([status])
-  @@map("crm_tasks")
+  @@map("CrmTask")
 }
 
 model CrmActivity {
@@ -1323,7 +1323,7 @@ model CrmActivity {
   @@index([serviceBusinessId])
   @@index([businessId])
   @@index([type])
-  @@map("crm_activities")
+  @@map("CrmActivity")
 }
 
 model CrmFile {
@@ -1337,7 +1337,7 @@ model CrmFile {
 
   @@index([serviceBusinessId])
   @@index([businessId])
-  @@map("crm_files")
+  @@map("CrmFile")
 }
 
 model CrmEmployee {
@@ -1415,5 +1415,5 @@ model CrmAvailability {
   updatedAt         DateTime @updatedAt
 
   @@unique([serviceBusinessId, weekday])
-  @@map("crm_availability")
+  @@map("CrmAvailability")
 }

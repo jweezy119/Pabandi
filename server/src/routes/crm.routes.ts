@@ -669,7 +669,6 @@ router.post('/deals', async (req: AuthRequest, res: Response, next: NextFunction
         clientId: clientId ? String(clientId) : null,
         ownerName: ownerName ? String(ownerName) : null,
         lostReason: lostReason ? String(lostReason) : null,
-        businessId,
         serviceBusinessId: businessId,
         ...(stage === 'WON' || stage === 'LOST' ? { closedAt: new Date() } : {}),
       },
@@ -768,7 +767,6 @@ router.post('/import/deals', async (req: AuthRequest, res: Response, next: NextF
             probability: Number(cell('probability') || 10),
             expectedCloseDate: cell('expectedclosedate') ? new Date(cell('expectedclosedate')) : null,
             notes: cell('notes') || null,
-            businessId,
             serviceBusinessId: businessId,
           },
         }),
@@ -814,7 +812,6 @@ router.post('/tasks', async (req: AuthRequest, res: Response, next: NextFunction
         clientId: clientId ? String(clientId) : null,
         dealId: dealId ? String(dealId) : null,
         assignedTo: assignedTo ? String(assignedTo) : null,
-        businessId,
         serviceBusinessId: businessId,
       },
     });
@@ -909,7 +906,6 @@ router.post('/activities', async (req: AuthRequest, res: Response, next: NextFun
         description: description ? String(description) : null,
         clientId: clientId ? String(clientId) : null,
         dealId: dealId ? String(dealId) : null,
-        businessId,
         serviceBusinessId: businessId,
       },
     });
@@ -976,7 +972,6 @@ router.post('/files', async (req: AuthRequest, res: Response, next: NextFunction
         name: String(name),
         url: String(url),
         clientId: clientId ? String(clientId) : null,
-        businessId,
         serviceBusinessId: businessId,
       },
     });
@@ -1184,7 +1179,7 @@ router.get('/alerts', async (req: AuthRequest, res: Response, next: NextFunction
     const crm = requireCrmContext(req);
     const businessId = crm.businessId!;
     const alerts = await prisma.crmAlert.findMany({
-      where: { OR: [{ businessId }, { serviceBusinessId: businessId }], dismissed: false },
+      where: { serviceBusinessId: businessId, dismissed: false },
       orderBy: { createdAt: 'desc' },
     });
     ok(res, alerts);
@@ -1198,7 +1193,7 @@ router.post('/alerts/:id/dismiss', async (req: AuthRequest, res: Response, next:
     const crm = requireCrmContext(req);
     const businessId = crm.businessId!;
     const existing = await prisma.crmAlert.findFirst({
-      where: { id: req.params.id, OR: [{ businessId }, { serviceBusinessId: businessId }] },
+      where: { id: req.params.id, serviceBusinessId: businessId },
       select: { id: true },
     });
     if (!existing) throw new CustomError('Alert not found', 404);

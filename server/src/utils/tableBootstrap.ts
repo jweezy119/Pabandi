@@ -36,6 +36,7 @@ const SQL_FILES = [
   'customfields-canonical.sql',
   'crm-file-tenant.sql',
   'service-coordinator.sql',
+  'crm-task-tenant.sql',
 ];
 const SQL_DIR_CANDIDATES = [
   path.join(__dirname, '..', '..', 'sql'),
