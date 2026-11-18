@@ -59,7 +59,7 @@ router.post('/nlp/generate', authenticate, async (req: AuthRequest, res: Respons
     return res.status(500).json({ success: false, error: error.message });
   }
 });
-router.post('/test', authenticate, async (_req: AuthRequest, res: Response) => {
+router.post('/test', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const result = await aiProviderRouter.generateJson<{ answer: string }>(
       'Reply with one short sentence: the Gemini integration is working.',
@@ -68,6 +68,7 @@ router.post('/test', authenticate, async (_req: AuthRequest, res: Response) => {
         properties: { answer: { type: 'string' } },
         required: ['answer'],
       },
+      { provider: req.body?.provider },
     );
 
     if (!result) {
