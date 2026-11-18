@@ -219,7 +219,9 @@ app.get('/health', (_req, res) => {
         process.env.OPENAI_API_KEY ||
           process.env.ANTHROPIC_API_KEY ||
           process.env.DASHSCOPE_API_KEY ||
-          process.env.GEMINI_API_KEY
+          process.env.GEMINI_API_KEY ||
+          process.env.NVIDIA_API_KEY ||
+          process.env.POLLINATIONS_ENABLED === 'true'
       ),
       jevConfigured: Boolean((process.env.TYPESAFE_API_KEY || '').trim()),
       squareConfigured: Boolean((process.env.SQUARE_ACCESS_TOKEN || '').trim()),

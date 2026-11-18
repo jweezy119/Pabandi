@@ -79,13 +79,11 @@ describe('schema check — the failing case', () => {
   });
 
   it('detects a column that exists but has the wrong nullability', async () => {
-    // The discriminator that identifies which database a process is attached
-    // to: InvoiceTrustEvent.invoiceId is nullable only on a database that has
-    // had the trust-event migration. Present-but-NOT NULL is a different
-    // failure from absent, and only one of them is fixed by adding a column.
+    // Business.raastId is optional. Present-but-NOT NULL is a different failure
+    // from absent, and only one of them is fixed by adding a column.
     queryRaw.mockResolvedValue(
       allPresent().map((r) =>
-        r.column_name === 'invoiceId' ? { ...r, is_nullable: 'NO' as const } : r,
+        r.column_name === 'raastId' ? { ...r, is_nullable: 'NO' as const } : r,
       ),
     );
 
@@ -175,12 +173,14 @@ describe('the columns being checked are the ones that matter', () => {
     );
   });
 
-  it('requires the trust-event columns to be nullable, not merely present', () => {
-    // Present-but-NOT NULL still rejects every one of the 21 event call sites
-    // that have no invoice, so a presence-only check would call that healthy.
-    const trustColumns = EXPECTED_COLUMNS.filter((c) => c.table === 'InvoiceTrustEvent');
-    expect(trustColumns.length).toBeGreaterThan(0);
-    for (const column of trustColumns) {
+  it('requires optional business payout columns to be nullable, not merely present', () => {
+    // Present-but-NOT NULL still rejects a business with no Raast/IBAN, so a
+    // presence-only check would call that healthy.
+    const payoutColumns = EXPECTED_COLUMNS.filter(
+      (c) => c.table === 'Business' && (c.column === 'raastId' || c.column === 'iban'),
+    );
+    expect(payoutColumns.length).toBe(2);
+    for (const column of payoutColumns) {
       expect(column.nullable, `${column.column} must be checked as nullable`).toBe(true);
     }
   });

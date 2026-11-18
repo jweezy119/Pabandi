@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { logger } from '../../utils/logger';
 
-export type AiProviderName = 'openai' | 'google' | 'dashscope';
+export type AiProviderName = 'openai' | 'google' | 'dashscope' | 'nvidia' | 'pollinations';
 
 export interface JsonSchema {
   type: 'object';
@@ -31,6 +31,8 @@ function providerChain(): AiProviderName[] {
   if (process.env.OPENAI_API_KEY) chain.push('openai');
   if (process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY) chain.push('google');
   if (process.env.DASHSCOPE_API_KEY) chain.push('dashscope');
+  if (process.env.NVIDIA_API_KEY) chain.push('nvidia');
+  if (process.env.POLLINATIONS_ENABLED === 'true') chain.push('pollinations');
   return chain;
 }
 
@@ -39,6 +41,8 @@ export function aiProviderStatus(): Record<AiProviderName, boolean> {
     openai: Boolean(process.env.OPENAI_API_KEY),
     google: Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY),
     dashscope: Boolean(process.env.DASHSCOPE_API_KEY),
+    nvidia: Boolean(process.env.NVIDIA_API_KEY),
+    pollinations: process.env.POLLINATIONS_ENABLED === 'true',
   };
 }
 
@@ -63,6 +67,111 @@ async function openAiJson(prompt: string, schema: JsonSchema, system?: string): 
     response_format: { type: 'json_object' },
   } as any);
   return response.choices?.[0]?.message?.content ?? '';
+}
+
+async function openAiCompatibleJson(
+  opts: { apiKey: string; baseURL: string; model: string },
+  prompt: string,
+  schema: JsonSchema,
+  system?: string,
+): Promise<string> {
+  const { default: OpenAI } = await import('openai');
+  const client = new OpenAI({ apiKey: opts.apiKey, baseURL: opts.baseURL });
+  const response = await client.chat.completions.create({
+    model: opts.model,
+    temperature: 0,
+    messages: [
+      ...(system ? [{ role: 'system', content: system }] : []),
+      { role: 'user', content: prompt },
+    ],
+    response_format: { type: 'json_object' },
+  } as any);
+  return response.choices?.[0]?.message?.content ?? '';
+}
+
+async function openAiCompatibleText(
+  opts: { apiKey: string; baseURL: string; model: string },
+  prompt: string,
+  system?: string,
+): Promise<string> {
+  const { default: OpenAI } = await import('openai');
+  const client = new OpenAI({ apiKey: opts.apiKey, baseURL: opts.baseURL });
+  const response = await client.chat.completions.create({
+    model: opts.model,
+    temperature: 0.2,
+    messages: [
+      ...(system ? [{ role: 'system', content: system }] : []),
+      { role: 'user', content: prompt },
+    ],
+  } as any);
+  return response.choices?.[0]?.message?.content ?? '';
+}
+
+function nvidiaOpts() {
+  return {
+    apiKey: process.env.NVIDIA_API_KEY || '',
+    baseURL: process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1',
+    model: process.env.NVIDIA_MODEL || 'openai/gpt-oss-20b',
+  };
+}
+
+function pollinationsOpts() {
+  return {
+    apiKey: 'pollinations',
+    baseURL: process.env.POLLINATIONS_BASE_URL || 'https://text.pollinations.ai/openai',
+    model: process.env.POLLINATIONS_MODEL || 'gpt-oss-20b',
+  };
+}
+
+async function nvidiaJson(prompt: string, schema: JsonSchema, system?: string): Promise<string> {
+  return openAiCompatibleJson(nvidiaOpts(), prompt, schema, system);
+}
+
+async function nvidiaText(prompt: string, system?: string): Promise<string> {
+  return openAiCompatibleText(nvidiaOpts(), prompt, system);
+}
+
+async function pollinationsJson(prompt: string, schema: JsonSchema, system?: string): Promise<string> {
+  return openAiCompatibleJson(pollinationsOpts(), prompt, schema, system);
+}
+
+async function pollinationsText(prompt: string, system?: string): Promise<string> {
+  return openAiCompatibleText(pollinationsOpts(), prompt, system);
+}
+
+async function runJson(
+  provider: AiProviderName,
+  prompt: string,
+  schema: JsonSchema,
+  system?: string,
+): Promise<string> {
+  switch (provider) {
+    case 'openai':
+      return openAiJson(prompt, schema, system);
+    case 'google':
+      return googleJson(prompt, schema, system);
+    case 'dashscope':
+      return dashscopeJson(prompt, schema, system);
+    case 'nvidia':
+      return nvidiaJson(prompt, schema, system);
+    case 'pollinations':
+      return pollinationsJson(prompt, schema, system);
+  }
+}
+
+async function runText(provider: AiProviderName, prompt: string, system?: string): Promise<string> {
+  switch (provider) {
+    case 'openai':
+      return openAiText(prompt, system);
+    case 'google':
+      return googleText(prompt, system);
+    case 'dashscope':
+      return dashscopeText(prompt, system);
+    case 'nvidia':
+      return nvidiaText(prompt, system);
+    case 'pollinations':
+      return pollinationsText(prompt, system);
+  }
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
@@ -190,12 +299,7 @@ export class AiProviderRouter {
     const chain = options.provider ? [options.provider] : providerChain();
     for (const provider of chain) {
       try {
-        const raw =
-          provider === 'openai'
-            ? await openAiJson(prompt, schema, options.system)
-            : provider === 'google'
-              ? await googleJson(prompt, schema, options.system)
-              : await dashscopeJson(prompt, schema, options.system);
+        const raw = await runJson(provider, prompt, schema, options.system);
         if (!raw) {
           this.lastErrors[provider] = 'provider returned an empty response';
           continue;
@@ -217,12 +321,7 @@ export class AiProviderRouter {
     const chain = options.provider ? [options.provider] : providerChain();
     for (const provider of chain) {
       try {
-        const text =
-          provider === 'openai'
-            ? await openAiText(prompt, options.system)
-            : provider === 'google'
-              ? await googleText(prompt, options.system)
-              : await dashscopeText(prompt, options.system);
+        const text = await runText(provider, prompt, options.system);
         if (text) return { text, provider };
         this.lastErrors[provider] = 'provider returned an empty response';
       } catch (error) {

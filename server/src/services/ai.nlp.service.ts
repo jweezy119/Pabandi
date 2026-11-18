@@ -161,6 +161,8 @@ class AiNlpService {
       ...(status.openai ? [process.env.OPENAI_MODEL || 'gpt-4o-mini'] : []),
       ...(status.google ? [process.env.GEMINI_MODEL || 'gemini-3.8-flash'] : []),
       ...(status.dashscope ? [process.env.DASHSCOPE_MODEL || 'qwen-turbo'] : []),
+      ...(status.nvidia ? [process.env.NVIDIA_MODEL || 'openai/gpt-oss-20b'] : []),
+      ...(status.pollinations ? [process.env.POLLINATIONS_MODEL || 'gpt-oss-20b'] : []),
     ];
   }
 

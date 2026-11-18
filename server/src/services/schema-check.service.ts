@@ -75,11 +75,13 @@ export const EXPECTED_COLUMNS: ExpectedColumn[] = [
   {
     table: 'Business',
     column: 'raastId',
+    nullable: true,
     purpose: 'Raast payout destination for a business',
   },
   {
     table: 'Business',
     column: 'iban',
+    nullable: true,
     purpose: 'IBAN payout destination for a business',
   },
   {
