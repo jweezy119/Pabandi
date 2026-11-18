@@ -71,26 +71,6 @@ export const EXPECTED_COLUMNS: ExpectedColumn[] = [
     purpose: 'auto-retry: keeps where an invoice first started after a rail switch',
   },
 
-  // trust-core — InvoiceTrustEvent, made nullable 20261010.
-  //
-  // `nullable` is the discriminator that matters here. 21 of 32 trust-event
-  // call sites have no invoice and were being filed against an arbitrary one.
-  // Nullable invoiceId AND passportId is what a correct database looks like
-  // after that fix, so it is the single most reliable signal of which database
-  // a running process is attached to.
-  {
-    table: 'InvoiceTrustEvent',
-    column: 'invoiceId',
-    nullable: true,
-    purpose: 'trust events without an invoice (bookings, check-ins, escrow) record correctly',
-  },
-  {
-    table: 'InvoiceTrustEvent',
-    column: 'passportId',
-    nullable: true,
-    purpose: 'trust events with no party attached record instead of failing a foreign key',
-  },
-
   // Business payout rails — registration and Raast payout paths read these.
   {
     table: 'Business',
