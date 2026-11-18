@@ -29,10 +29,12 @@ interface ProviderAttempt {
 function providerChain(): AiProviderName[] {
   const chain: AiProviderName[] = [];
   if (process.env.OPENAI_API_KEY) chain.push('openai');
-  if (process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY) chain.push('google');
   if (process.env.DASHSCOPE_API_KEY) chain.push('dashscope');
   if (process.env.NVIDIA_API_KEY) chain.push('nvidia');
   if (process.env.POLLINATIONS_ENABLED === 'true') chain.push('pollinations');
+  // Gemini is last: it is unreachable from some Render networks and its 30s
+  // timeout would otherwise delay every request that could be served faster.
+  if (process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY) chain.push('google');
   return chain;
 }
 
