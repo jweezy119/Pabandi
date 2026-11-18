@@ -77,16 +77,45 @@ businessStatsRouter.get('/', authenticate, async (req: AuthRequest, res: Respons
           business: null,
           openInvoices: { count: 0, totalUsd: 0 },
           todayBookings: { count: 0 },
+          businessId: null,
+          businessName: null,
+          todayRevenue: 0,
+          todayRevenueCurrency: 'USD',
+          pendingEscrows: { count: 0, totalUsd: 0 },
+          saasCredit: 0,
+          todayJobs: [],
         },
       });
     }
 
-    const [invoices, bookings] = await Promise.all([
+    const startOfDay = new Date();
+    startOfDay.setUTCHours(0, 0, 0, 0);
+    const endOfDay = new Date(startOfDay);
+    endOfDay.setUTCDate(endOfDay.getUTCDate() + 1);
+
+    const [invoices, bookings, heldEscrows, paidToday] = await Promise.all([
       prisma.invoice.findMany({
         where: { businessId: business.id, status: 'PENDING' },
       }),
-      prisma.booking.count({
-        where: { businessId: business.id },
+      prisma.booking.findMany({
+        where: {
+          businessId: business.id,
+          slotStart: { gte: startOfDay, lt: endOfDay },
+        },
+        include: { client: true },
+        orderBy: { slotStart: 'asc' },
+      }),
+      prisma.escrow.findMany({
+        where: { businessId: business.id, status: 'HELD' },
+        select: { amount: true },
+      }),
+      prisma.invoice.aggregate({
+        where: {
+          businessId: business.id,
+          status: 'PAID',
+          paidAt: { gte: startOfDay, lt: endOfDay },
+        },
+        _sum: { subtotal: true },
       }),
     ]);
 
@@ -102,7 +131,25 @@ businessStatsRouter.get('/', authenticate, async (req: AuthRequest, res: Respons
           count: invoices.length,
           totalUsd: invoices.reduce((sum, inv) => sum + (inv.subtotal || 0), 0),
         },
-        todayBookings: { count: bookings },
+        todayBookings: { count: bookings.length },
+        // Shape expected by the ContactOS dashboard.
+        businessId: business.id,
+        businessName: business.name,
+        todayRevenue: paidToday._sum.subtotal ?? 0,
+        todayRevenueCurrency: 'USD',
+        pendingEscrows: {
+          count: heldEscrows.length,
+          totalUsd: +heldEscrows.reduce((sum, e) => sum + e.amount, 0).toFixed(2),
+        },
+        saasCredit: 0,
+        todayJobs: bookings.map((booking) => ({
+          id: booking.id,
+          client: booking.client?.name || 'Guest',
+          time: booking.slotStart,
+          endTime: booking.slotEnd,
+          service: booking.serviceType,
+          status: booking.status,
+        })),
       },
     });
   } catch (e) {

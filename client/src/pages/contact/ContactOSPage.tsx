@@ -72,8 +72,8 @@ export default function ContactOSPage() {
   );
 
   const todayRevenue = stats?.todayRevenue ?? 0;
-  const pendingEscrows = stats?.pendingEscrows.count ?? 0;
-  const pendingEscrowUsd = stats?.pendingEscrows.totalUsd ?? 0;
+  const pendingEscrows = stats?.pendingEscrows?.count ?? 0;
+  const pendingEscrowUsd = stats?.pendingEscrows?.totalUsd ?? 0;
   const saasCreditReal = stats?.saasCredit ?? null;
   const todaysRealJobs = stats?.todayJobs ?? [];
   const deals: Array<{ stage?: string }> = [];
