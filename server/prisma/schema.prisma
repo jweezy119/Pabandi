@@ -1258,3 +1258,162 @@ model ReconciliationMatch {
   @@index([createdAt])
   @@index([settlementStatus, settlesAt])
 }
+
+// ── Contact OS CRM tables ───────────────────────────────────────────────────
+// These are written by the CRM router. They are separate from the platform's
+// Booking/Invoice rows so a CRM-native feature (deals, tasks, activities) does
+// not have to impersonate a booking to exist.
+
+model CrmDeal {
+  id                String    @id @default(cuid())
+  title             String
+  value             Float     @default(0)
+  currency          String    @default("USD")
+  stage             String    @default("LEAD")
+  probability       Int       @default(10)
+  expectedCloseDate DateTime?
+  closedAt          DateTime?
+  lostReason        String?
+  notes             String?
+  clientId          String?
+  ownerName         String?
+  businessId        String?
+  serviceBusinessId String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([serviceBusinessId])
+  @@index([businessId])
+  @@index([stage])
+  @@map("crm_deals")
+}
+
+model CrmTask {
+  id                String   @id @default(cuid())
+  title             String
+  description       String?
+  status            String   @default("TODO")
+  priority          String   @default("MEDIUM")
+  dueDate           DateTime?
+  clientId          String?
+  dealId            String?
+  assignedTo        String?
+  businessId        String?
+  serviceBusinessId String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([serviceBusinessId])
+  @@index([businessId])
+  @@index([status])
+  @@map("crm_tasks")
+}
+
+model CrmActivity {
+  id                String   @id @default(cuid())
+  type              String   @default("NOTE")
+  description       String?
+  clientId          String?
+  dealId            String?
+  businessId        String?
+  serviceBusinessId String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([serviceBusinessId])
+  @@index([businessId])
+  @@index([type])
+  @@map("crm_activities")
+}
+
+model CrmFile {
+  id                String   @id @default(cuid())
+  name              String
+  url               String
+  clientId          String?
+  businessId        String?
+  serviceBusinessId String?
+  createdAt         DateTime @default(now())
+
+  @@index([serviceBusinessId])
+  @@index([businessId])
+  @@map("crm_files")
+}
+
+model CrmEmployee {
+  id                String    @id @default(cuid())
+  name              String
+  email             String?
+  phone             String?
+  role              String
+  payRate           Float     @default(0)
+  payType           String    @default("HOURLY")
+  isActive          Boolean   @default(true)
+  rating            Float     @default(5)
+  jobsCompleted     Int       @default(0)
+  lastBookingAt     DateTime?
+  businessId        String?
+  serviceBusinessId String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([serviceBusinessId])
+  @@index([businessId])
+  @@map("crm_employees")
+}
+
+model CrmPayroll {
+  id                String   @id @default(cuid())
+  employeeId        String
+  periodStart       DateTime
+  periodEnd         DateTime
+  hoursWorked       Float     @default(0)
+  jobsCompleted     Int       @default(0)
+  grossPay          Float
+  deductions        Float     @default(0)
+  netPay            Float
+  status            String    @default("PENDING")
+  paidAt            DateTime?
+  businessId        String?
+  serviceBusinessId String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([serviceBusinessId])
+  @@index([businessId])
+  @@index([employeeId])
+  @@map("crm_payrolls")
+}
+
+model CrmAlert {
+  id                String    @id @default(cuid())
+  type              String
+  title             String
+  message           String
+  entityType        String
+  entityId          String
+  dismissed         Boolean   @default(false)
+  dismissedAt       DateTime?
+  businessId        String?
+  serviceBusinessId String?
+  createdAt         DateTime @default(now())
+
+  @@index([serviceBusinessId])
+  @@index([businessId])
+  @@map("crm_alerts")
+}
+
+model CrmAvailability {
+  id                String   @id @default(cuid())
+  weekday           Int
+  startTime         String
+  endTime           String
+  slotMinutes       Int       @default(60)
+  bufferMinutes     Int       @default(15)
+  serviceBusinessId String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([serviceBusinessId, weekday])
+  @@map("crm_availability")
+}
