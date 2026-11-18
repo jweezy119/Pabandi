@@ -7,34 +7,22 @@ const router = Router();
 
 router.post('/', authenticate, async (req: any, res: Response) => {
   try {
-    const { reservationId, againstId, reason, evidenceUrls, stakedAmount, escrowId } = req.body;
+    const { reservationId, contextType, contextId, againstId, reason, evidenceUrls, stakedAmount, escrowId } = req.body;
     const filedById = req.user.id;
-
-    if (escrowId) {
-      const dispute = await disputeService.fileContextDispute({
-        contextType: 'ESCROW',
-        contextId: escrowId,
-        filedById,
-        againstId: againstId || filedById,
-        reason: reason || 'Disputed escrow',
-        evidenceUrls,
-        stakedAmount: stakedAmount || 0,
-      });
-      return res.status(201).json({ success: true, dispute });
-    }
 
     if (!againstId || !reason) {
       return res.status(400).json({ error: 'Missing required fields: againstId and reason' });
     }
 
-    const dispute = await disputeService.createDispute(
-      reservationId || 'N/A',
+    const dispute = await disputeService.fileContextDispute({
+      contextType: escrowId ? 'ESCROW' : (contextType || 'BOOKING'),
+      contextId: escrowId || contextId || reservationId || 'N/A',
       filedById,
       againstId,
       reason,
-      evidenceUrls || [],
-      stakedAmount || 10
-    );
+      evidenceUrls,
+      stakedAmount: stakedAmount || 0,
+    });
 
     return res.status(201).json({ success: true, dispute });
   } catch (error: any) {
