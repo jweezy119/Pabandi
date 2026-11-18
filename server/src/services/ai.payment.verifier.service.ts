@@ -21,7 +21,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
 function nvidiaVisionModels(): string[] {
   const raw =
     process.env.NVIDIA_VISION_MODELS ||
-    'nvidia/nemotron-3.5-super-vl-120b-a12b,z-ai/glm-5.3-flash,minimaxai/minimax-m3.1-flash,stepfun-ai/step-5-preview';
+    'z-ai/glm-5.3-flash,minimaxai/minimax-m3.1-flash,stepfun-ai/step-5-preview';
   return raw
     .split(',')
     .map((m) => m.trim())
@@ -35,7 +35,7 @@ export async function nvidiaVisionJson(prompt: string, imageBase64: string): Pro
   const client = new OpenAI({
     apiKey,
     baseURL: process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1',
-    timeout: 25_000,
+    timeout: 15_000,
     maxRetries: 0,
   });
 
