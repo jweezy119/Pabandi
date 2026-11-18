@@ -76,7 +76,12 @@ async function openAiCompatibleJson(
   system?: string,
 ): Promise<string> {
   const { default: OpenAI } = await import('openai');
-  const client = new OpenAI({ apiKey: opts.apiKey, baseURL: opts.baseURL });
+  const client = new OpenAI({
+    apiKey: opts.apiKey,
+    baseURL: opts.baseURL,
+    timeout: 20_000,
+    maxRetries: 0,
+  });
   const response = await client.chat.completions.create({
     model: opts.model,
     temperature: 0,
@@ -95,7 +100,12 @@ async function openAiCompatibleText(
   system?: string,
 ): Promise<string> {
   const { default: OpenAI } = await import('openai');
-  const client = new OpenAI({ apiKey: opts.apiKey, baseURL: opts.baseURL });
+  const client = new OpenAI({
+    apiKey: opts.apiKey,
+    baseURL: opts.baseURL,
+    timeout: 20_000,
+    maxRetries: 0,
+  });
   const response = await client.chat.completions.create({
     model: opts.model,
     temperature: 0.2,
