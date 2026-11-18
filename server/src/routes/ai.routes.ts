@@ -133,4 +133,20 @@ router.get('/debug-schema', authenticate, async (_req: AuthRequest, res: Respons
   res.json({ success: true, data: result });
 });
 
+router.get('/debug-nvidia-models', authenticate, async (_req: AuthRequest, res: Response) => {
+  try {
+    const apiKey = process.env.NVIDIA_API_KEY || '';
+    if (!apiKey) return res.status(400).json({ success: false, error: 'NVIDIA_API_KEY not set' });
+    const { default: OpenAI } = await import('openai');
+    const client = new OpenAI({
+      apiKey,
+      baseURL: process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1',
+    });
+    const models = await client.models.list();
+    res.json({ success: true, data: models.data.map((m) => m.id) });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;
