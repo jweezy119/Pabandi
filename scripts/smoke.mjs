@@ -328,7 +328,7 @@ async function checkAppMounts() {
     return;
   }
 
-  for (const route of ['/', '/contact']) {
+  for (const route of ['/', '/booking', '/contact']) {
     const url = `${TARGETS.site}${route}`;
     let mounted = false;
     let lastDetail = '';
@@ -461,14 +461,14 @@ async function checkBundleContainsFix(bundleInfo) {
 // /health was reporting `ok` alongside.
 async function checkEntryPoints() {
   const checks = [
-    ['GET /', TARGETS.site],
-    ['GET /contact', TARGETS.site],
-    ['GET /login', TARGETS.site],
-    ['GET /dashboard', TARGETS.site],
-    ['GET /api/v1/fees/schedule', TARGETS.api],
-    ['GET /api/v1/tokenomics/summary', TARGETS.api],
-    ['GET /api/v1/escrow/templates', TARGETS.api],
-    ['GET /api/v1/subscriptions/pricing', TARGETS.api],
+    ['GET /', `${TARGETS.site}/`],
+    ['GET /booking', `${TARGETS.site}/booking`],
+    ['GET /contact', `${TARGETS.site}/contact`],
+    ['GET /login', `${TARGETS.site}/login`],
+    ['GET /api/v1/booking/businesses', `${TARGETS.api}/api/v1/booking/businesses`],
+    ['GET /api/v1/fees/schedule', `${TARGETS.api}/api/v1/fees/schedule`],
+    ['GET /api/v1/escrow/templates', `${TARGETS.api}/api/v1/escrow/templates`],
+    ['GET /api/v1/ai/status', `${TARGETS.api}/api/v1/ai/status`],
   ];
 
   for (const [label, url] of checks) {
@@ -491,8 +491,8 @@ async function checkEntryPoints() {
 // missing env var took down six route modules this way and /health still said ok.
 async function checkRouteModulesLoad() {
   const routes = [
-    '/api/v1/crypto/wallet',
-    '/api/v1/contacts',
+    '/api/v1/booking/businesses',
+    '/api/v1/booking/my-bookings',
     '/api/v1/crm/clients',
     '/api/v1/crm/dashboard',
   ];
@@ -521,11 +521,11 @@ async function checkRouteModulesLoad() {
 // ── 9. Webhook endpoints must reject forged input ─────────────────────────
 // These are public by design; the signature is the authentication. A 200 here
 // would mean anyone can mint a paid subscription.
+// Note: legacy PayPal (/reconciliation/webhook/paypal) and Whop (/subscriptions/webhook)
+// routes were removed in the 4e5b9e39 core-wedge cleanup, so only live webhooks are checked.
 async function checkWebhooksRejectForgeries() {
   const endpoints = [
     ['Square', '/api/v1/square-checkout/webhook'],
-    ['PayPal', '/api/v1/reconciliation/webhook/paypal'],
-    ['Whop', '/api/v1/subscriptions/webhook'],
   ];
 
   for (const [name, path] of endpoints) {

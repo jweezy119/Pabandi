@@ -80,6 +80,7 @@ const domainRoutes: [string, string][] = [
   // 5. Payments & Invoicing Domain
   ['/payments', './payment.routes'],
   ['/payments/raast', './raastPayment.routes'],
+  ['/solana-usdc', './solanaUsdc.routes'],
   ['/fiat', './fiatPayment.routes'],
   ['/square', './square.routes'],
   ['/square-checkout', './squareCheckout.routes'],
