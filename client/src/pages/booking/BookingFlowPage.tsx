@@ -18,6 +18,10 @@ interface Business {
   category: string;
   city: string;
   rating: number;
+  phone?: string;
+  raastId?: string;
+  solanaWallet?: string;
+  walletAddress?: string;
 }
 
 interface Slot {
@@ -49,15 +53,17 @@ export default function BookingFlowPage() {
     }
   };
 
-  const fetchSlots = async () => {
-    if (!selectedBusiness) return;
+  const fetchSlots = async (businessId: string) => {
     try {
+      const startDate = new Date().toISOString().split('T')[0];
+      const endDate = new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       const res = await apiClient.get(
-        `/booking-availability/${selectedBusiness.id}/slots?startDate=${new Date().toISOString().split('T')[0]}&endDate=${new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}`
+        `/booking/${businessId}/slots?startDate=${startDate}&endDate=${endDate}`
       );
-      setSlots(res.data.data || []);
+      setSlots(res.data?.data || res.data?.slots || []);
     } catch (err: any) {
       console.error('[BookingFlow] fetch slots error:', err.message);
+      setSlots([]);
     }
   };
 
@@ -71,8 +77,8 @@ export default function BookingFlowPage() {
     try {
       const res = await apiClient.post('/booking', {
         businessId: selectedBusiness.id,
-        slotStart: new Date(`${selectedSlot.date}T${selectedSlot.startTime}:00`).toISOString(),
-        slotEnd: new Date(`${selectedSlot.date}T${selectedSlot.endTime}:00`).toISOString(),
+        slotStart: new Date(`${selectedSlot.date}T${selectedSlot.startTime}:00Z`).toISOString(),
+        slotEnd: new Date(`${selectedSlot.date}T${selectedSlot.endTime}:00Z`).toISOString(),
         serviceType: selectedBusiness.category,
         numberOfGuests: partySize,
         depositAmount,
@@ -80,8 +86,8 @@ export default function BookingFlowPage() {
 
       if (res.data.success) {
         setSuccess({
-          bookingId: res.data.data.bookingId,
-          escrowId: res.data.data.escrowId,
+          bookingId: res.data.data.bookingId || res.data.data.id,
+          escrowId: res.data.data.escrowId || `booking-${res.data.data.id}`,
         });
         setCheckoutOpen(true);
       }
@@ -163,7 +169,7 @@ export default function BookingFlowPage() {
                         onClick={() => {
                           setSelectedBusiness(b);
                           setSelectedSlot(null);
-                          fetchSlots();
+                          void fetchSlots(b.id);
                         }}
                         className={`w-full py-3 rounded-xl border text-left text-sm transition ${
                           selectedBusiness?.id === b.id
@@ -220,9 +226,26 @@ export default function BookingFlowPage() {
                       {loading ? 'Booking…' : 'Confirm Booking'}
                     </ClayButton>
                   </div>
+                ) : selectedBusiness && slots.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
+                    {slots
+                      .filter((s) => s.available)
+                      .slice(0, 24)
+                      .map((slot) => (
+                        <button
+                          key={`${slot.date}-${slot.startTime}`}
+                          type="button"
+                          onClick={() => setSelectedSlot(slot)}
+                          className="p-2.5 rounded-xl border border-[rgba(191,179,163,0.35)] bg-[var(--warm-sand)]/40 hover:border-[var(--clay)] text-left text-xs transition"
+                        >
+                          <div className="font-bold text-[var(--warm-ink)]">{slot.startTime}</div>
+                          <div className="text-[10px] text-[var(--soft-stone)]">{slot.date}</div>
+                        </button>
+                      ))}
+                  </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-48 text-[var(--soft-stone)] text-sm">
-                    <p>Select a business to see available slots</p>
+                    <p>{selectedBusiness ? 'Loading available slots…' : 'Select a business to see available slots'}</p>
                   </div>
                 )}
               </ClayCard>

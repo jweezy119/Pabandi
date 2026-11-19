@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getAuthToken } from '../../utils/authToken';
+import { apiClient } from '../../services/api';
 import { ClayCard } from '../../components/clay/ClayCard';
 
 interface BookingRecord {
@@ -31,19 +31,9 @@ export default function PersonalBookingsPage() {
     let isMounted = true;
     const fetchBookings = async () => {
       try {
-        const token = getAuthToken();
-        const headers: Record<string, string> = {};
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-
-        const res = await fetch(
-          `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/bookings/my-bookings`,
-          { headers }
-        );
-        if (res.ok) {
-          const json = await res.json();
-          if (isMounted) {
-            setBookings(json.data || []);
-          }
+        const res = await apiClient.get('/booking/my-bookings');
+        if (isMounted) {
+          setBookings(res.data?.data || []);
         }
       } catch (e) {
         console.error('Failed to load personal bookings:', e);

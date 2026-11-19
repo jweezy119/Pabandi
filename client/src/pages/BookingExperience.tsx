@@ -1,20 +1,18 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { useQuery, useMutation } from 'react-query';
+import { useQuery } from 'react-query';
 import toast, { Toaster } from 'react-hot-toast';
 import { Shield, FileCheck2, Link2, Copy, Check } from 'lucide-react';
 import {
+  apiClient,
   businessService,
-  reservationService,
-  walletService,
-  propertyManagerService,
   privyTrustService,
 } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Surface, Button, Badge } from '../design-system';
 import { format, addDays, isSameDay } from 'date-fns';
-import { useEngineCheckout } from '../hooks/useEngineCheckout';
 import { EmbeddedCheckoutModal, type DepositPrompt } from '../components/EmbeddedCheckoutModal';
+import { PabandiCheckoutModal, type PaymentRail } from '../components/PabandiCheckoutModal';
 import { VaultLocked } from '../components/GuaranteeVisuals';
 import { getBookingSchema } from '../config/bookingSchemas';
 
@@ -49,6 +47,11 @@ interface Business {
   requireDeposit?: boolean;
   depositAmount?: number | null;
   depositPercentage?: number | null;
+  raastId?: string | null;
+  iban?: string | null;
+  solanaWallet?: string | null;
+  walletAddress?: string | null;
+  settings?: { raastId?: string | null } | null;
   services?: BusinessServiceItem[];
 }
 
@@ -57,9 +60,25 @@ interface TimeSlot {
   available: boolean;
 }
 
-const DEFAULT_SOLANA_VAULT =
-  import.meta.env.VITE_ESCROW_VAULT_ADDRESS || 'GsbwXfJraMomNxBcjYLcG3mxkBUiyWXAB32fGbSQQRre';
-const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+const DEFAULT_TIME_SLOTS: TimeSlot[] = [
+  { time: '11:00', available: true },
+  { time: '11:30', available: true },
+  { time: '12:00', available: true },
+  { time: '12:30', available: true },
+  { time: '13:00', available: true },
+  { time: '13:30', available: true },
+  { time: '18:00', available: true },
+  { time: '18:30', available: true },
+  { time: '19:00', available: true },
+  { time: '19:30', available: true },
+  { time: '20:00', available: true },
+  { time: '20:30', available: true },
+  { time: '21:00', available: true },
+];
+
+function extractBusinessFromResponse(res: any): Business | null {
+  return (res?.data?.data?.business ?? res?.data?.business ?? null) as Business | null;
+}
 
 // ── Main Booking Page ──────────────────────────────────────────────────────
 export default function BookingExperience() {
@@ -67,7 +86,7 @@ export default function BookingExperience() {
   const params = useParams();
   const id = params.id || params.businessSlug || params.slug;
   const [searchParams] = useSearchParams();
-  const { isAuthenticated, user } = useAuthStore();
+  const { user } = useAuthStore();
   const [step, setStep] = useState<'search' | 'detail' | 'confirm'>(id ? 'detail' : 'search');
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
   const [selectedService, setSelectedService] = useState<BusinessServiceItem | null>(null);
@@ -77,6 +96,7 @@ export default function BookingExperience() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Business[]>([]);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Guest / customer contact state (so unauthenticated clients on /book/:id never hit a login wall)
   const [customerName, setCustomerName] = useState(
@@ -84,10 +104,6 @@ export default function BookingExperience() {
   );
   const [customerEmail, setCustomerEmail] = useState(user?.email || '');
   const [customerPhone, setCustomerPhone] = useState(user?.phone || '');
-  const guestPrincipalId = useMemo(
-    () => `guest_${Math.random().toString(36).slice(2, 10)}`,
-    []
-  );
 
   // Booking form state
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -97,38 +113,30 @@ export default function BookingExperience() {
   const [specialRequests, setSpecialRequests] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'square' | 'solana' | 'safepay' | 'bsc'>('solana');
   const [bookingComplete, setBookingComplete] = useState(false);
+  const [createdBooking, setCreatedBooking] = useState<{ id: string; escrowId?: string } | null>(null);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
   /**
-   * The deposit the engine charged for this reservation, for the confirmation
-   * screen. `$0` means "engine waived it" and is kept distinct from `null`,
-   * which means "never decided".
+   * The deposit charged for this reservation, for the confirmation screen.
+   * `$0` means waived; `null` means not decided yet.
    */
   const [paidDeposit, setPaidDeposit] = useState<number | null>(null);
   const [depositPrompt, setDepositPrompt] = useState<DepositPrompt | null>(null);
-  const [checkoutPurpose, setCheckoutPurpose] = useState<'booking_deposit' | 'trust_dossier'>('booking_deposit');
   const [unlockedDossier, setUnlockedDossier] = useState<any | null>(null);
   const [dossierLoading, setDossierLoading] = useState(false);
 
-  // The engine decides whether a deposit applies. This page no longer reads a
-  // Trust Score to work that out -- it never did here, but it did carry a
-  // `trustScore` field and render it, which implied a client-side judgement
-  // that was never actually made. See FluidBookingPage for the same migration
-  // where the logic did exist.
-  const { runAction, closeSession, submitting } = useEngineCheckout();
-
-  useEffect(() => {
-    return () => {
-      void closeSession();
-    };
-  }, [closeSession]);
-
-  // Fetch business details
-  const { data: businessData } = useQuery(
+  // Fetch business details (unwraps { success, data: { business } })
+  const {
+    data: businessData,
+    isLoading: businessLoading,
+    isError: businessError,
+  } = useQuery(
     ['business', id],
     () => businessService.getBusiness(id!),
     {
       enabled: !!id,
-      onSuccess: (data) => {
-        const biz = data.data?.business as Business | undefined;
+      retry: 1,
+      onSuccess: (res) => {
+        const biz = extractBusinessFromResponse(res);
         if (biz) {
           setSelectedBusiness(biz);
           if (biz.services && biz.services.length > 0 && !selectedService) {
@@ -139,39 +147,45 @@ export default function BookingExperience() {
     }
   );
 
-  // Fetch wallet balance
-  useQuery('wallet-balances', () => walletService.getBalances(), { enabled: isAuthenticated });
+  const business = selectedBusiness || extractBusinessFromResponse(businessData);
+  const selectedDateKey = format(selectedDate, 'yyyy-MM-dd');
 
-  // Search businesses
+  // Fetch live slot availability for the selected date (falls back cleanly to defaults)
+  const { data: slotsData } = useQuery(
+    ['booking-slots', business?.id, selectedDateKey],
+    () => apiClient.get(`/booking/${business!.id}/slots`, { params: { date: selectedDateKey } }),
+    {
+      enabled: !!business?.id,
+      retry: false,
+    }
+  );
+
+  // Search businesses via live BookingOS discovery endpoint
   const searchBusinesses = async () => {
     if (!searchQuery.trim()) return;
     setLoading(true);
     try {
-      const res = await propertyManagerService.searchHotels({ query: searchQuery });
-      setSearchResults(res.data?.data?.hotels || res.data?.data?.businesses || []);
+      const res = await apiClient.get('/booking/businesses', { params: { query: searchQuery.trim() } });
+      setSearchResults(res.data?.items || res.data?.data || []);
     } catch (e) {
       console.error('Search failed:', e);
+      toast.error('Could not search businesses right now.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Generate time slots
-  const timeSlots: TimeSlot[] = [
-    { time: '11:00', available: true },
-    { time: '11:30', available: true },
-    { time: '12:00', available: true },
-    { time: '12:30', available: false },
-    { time: '13:00', available: true },
-    { time: '13:30', available: true },
-    { time: '18:00', available: true },
-    { time: '18:30', available: true },
-    { time: '19:00', available: true },
-    { time: '19:30', available: false },
-    { time: '20:00', available: true },
-    { time: '20:30', available: true },
-    { time: '21:00', available: true },
-  ];
+  // Time slots from server availability, or default schedule
+  const timeSlots: TimeSlot[] = useMemo(() => {
+    const raw = slotsData?.data?.data ?? slotsData?.data?.slots;
+    if (Array.isArray(raw) && raw.length > 0) {
+      return raw.map((s: any) => ({
+        time: s.time || s.startTime,
+        available: s.available !== false,
+      }));
+    }
+    return DEFAULT_TIME_SLOTS;
+  }, [slotsData]);
 
   const effectiveServiceValue = useMemo(() => {
     const parsedCustom = Number(customAmountUsd);
@@ -202,7 +216,7 @@ export default function BookingExperience() {
   };
 
   const handleRequestTrustDossier = async () => {
-    const biz = selectedBusiness || businessData?.data?.business;
+    const biz = business;
     if (!biz?.id) return;
     setDossierLoading(true);
     try {
@@ -211,7 +225,6 @@ export default function BookingExperience() {
       if (!quote?.checkoutUrl) {
         throw new Error('Could not generate Dossier quote');
       }
-      setCheckoutPurpose('trust_dossier');
       setDepositPrompt({
         title: `Unlock Signed Counterparty Dossier ($${Number(quote.amount || 9).toFixed(2)} USDC)`,
         checkoutUrl: quote.checkoutUrl,
@@ -220,176 +233,146 @@ export default function BookingExperience() {
         currency: 'USDC',
         referenceId: quote.referenceId,
       });
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to quote Counterparty Dossier');
+    } catch (err: any) {
+      const status = err?.response?.status;
+      toast.error(
+        status === 404
+          ? 'Counterparty Dossier service is currently unavailable.'
+          : err instanceof Error
+          ? err.message
+          : 'Failed to quote Counterparty Dossier'
+      );
     } finally {
       setDossierLoading(false);
     }
   };
 
-  // Booking mutation
-  const bookingMutation = useMutation(
-    (data: any) => reservationService.createReservation(data),
-    {
-      onSuccess: () => {
-        setBookingComplete(true);
-      },
-      onError: () => {
-        // Guest bookings without a JWT still complete after engine/escrow verification
-        setBookingComplete(true);
-      },
-    }
-  );
-
-  const business = selectedBusiness || businessData?.data?.business;
   const schema = useMemo(() => {
     return getBookingSchema(business?.vertical || business?.category);
   }, [business]);
 
+  const computedDeposit = useMemo(() => {
+    if (!business) return 0;
+    if (business.depositAmount && business.depositAmount > 0) {
+      return Number(business.depositAmount);
+    }
+    if (business.depositPercentage && business.depositPercentage > 0 && effectiveServiceValue > 0) {
+      return Math.round(effectiveServiceValue * (business.depositPercentage / 100) * 100) / 100;
+    }
+    if (business.requireDeposit && effectiveServiceValue > 0) {
+      return Math.round(effectiveServiceValue * 0.2 * 100) / 100;
+    }
+    return 0;
+  }, [business, effectiveServiceValue]);
+
+  const checkoutInitialRail: PaymentRail =
+    paymentMethod === 'square' ? 'square' : paymentMethod === 'safepay' ? 'raast' : 'solana';
+
   const handleBookTable = async () => {
-    if (!selectedBusiness || !selectedTime) return;
-    const effectiveOwnerId = user?.id || guestPrincipalId;
+    const targetBusiness = business;
+    if (!targetBusiness) {
+      toast.error('Business details are still loading. Please try again.');
+      return;
+    }
+    if (!selectedTime) {
+      toast.error('Please select a time slot.');
+      return;
+    }
+
     const resolvedName =
       customerName.trim() ||
       (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Valued Client');
 
     const serviceValue = effectiveServiceValue;
+    const depositDue = computedDeposit;
 
-    const reservationPayload = {
-      businessId: selectedBusiness.id,
-      serviceId: selectedService?.id,
-      serviceName: effectiveServiceName,
-      serviceValue,
-      reservationDate: format(selectedDate, 'yyyy-MM-dd'),
-      reservationTime: selectedTime,
-      numberOfGuests: schema.showPartySize ? guests : 1,
-      customerName: resolvedName,
-      customerEmail: customerEmail.trim() || undefined,
-      customerPhone: customerPhone.trim() || undefined,
-      clientAddress: schema.showServiceAddress ? serviceAddress.trim() : undefined,
-      serviceAddress: schema.showServiceAddress ? serviceAddress.trim() : undefined,
-      specialRequests: schema.showSpecialRequests ? specialRequests : undefined,
-      projectDescription: schema.showProjectDescription ? customServiceLabel : undefined,
-      paymentMethod,
-    };
-
-    const outcome = await runAction({
-      actionType: 'booking',
-      amount: 0,
-      payload: reservationPayload,
-      ownerType: 'user',
-      ownerId: effectiveOwnerId,
-    });
-
-    if (!outcome) return;
-
-    if (outcome.actionRequired === 'deposit_required' && outcome.deposit) {
-      const deposit = outcome.deposit;
-      const feeAmount =
-        deposit.platformFeeAmount ?? Math.round(deposit.amount * 0.02 * 100) / 100;
-      const totalPayable =
-        deposit.totalPayableAmount ?? Math.round((deposit.amount + feeAmount) * 100) / 100;
-      const fallbackSolanaUri = `solana:${DEFAULT_SOLANA_VAULT}?amount=${totalPayable.toFixed(2)}&spl-token=${USDC_MINT}`;
-      const effectiveCheckoutUrl = deposit.checkoutUrl || fallbackSolanaUri;
-
-      setCheckoutPurpose('booking_deposit');
-      setPaidDeposit(deposit.amount);
-      setDepositPrompt({
-        title: 'Confirm Escrow Deposit',
-        checkoutUrl: effectiveCheckoutUrl,
-        description: deposit.explanation,
-        amount: deposit.amount,
-        platformFeeAmount: feeAmount,
-        totalPayableAmount: totalPayable,
-        currency: deposit.currency,
-        band: deposit.band,
-        referenceId: `booking-${selectedBusiness.id}-${format(selectedDate, 'yyyyMMdd')}`,
+    setSubmitting(true);
+    try {
+      const res = await apiClient.post('/booking', {
+        businessId: targetBusiness.id,
+        serviceId: selectedService?.id,
+        serviceName: effectiveServiceName,
+        serviceType: selectedService?.name || effectiveServiceName || targetBusiness.category || 'Booking',
+        serviceValue,
+        reservationDate: selectedDateKey,
+        reservationTime: selectedTime,
+        durationMinutes: selectedService?.duration || 60,
+        numberOfGuests: schema.showPartySize ? guests : 1,
+        depositAmount: depositDue,
+        customerName: resolvedName,
+        customerEmail: customerEmail.trim() || user?.email || undefined,
+        customerPhone: customerPhone.trim() || user?.phone || undefined,
+        clientAddress: schema.showServiceAddress ? serviceAddress.trim() : undefined,
+        serviceAddress: schema.showServiceAddress ? serviceAddress.trim() : undefined,
+        specialRequests: schema.showSpecialRequests ? specialRequests : undefined,
+        projectDescription: schema.showProjectDescription ? customServiceLabel : undefined,
+        paymentMethod,
       });
-      return;
-    }
 
-    toast.success('Booking confirmed. No deposit required.');
-    setPaidDeposit(0);
-    if (isAuthenticated) {
-      bookingMutation.mutate(reservationPayload);
-    } else {
-      setBookingComplete(true);
+      const created = res.data?.data;
+      const bookingId = created?.bookingId || created?.id;
+      const escrowId = created?.escrowId;
+      setCreatedBooking(bookingId ? { id: bookingId, escrowId } : null);
+
+      if (depositDue > 0 && bookingId) {
+        setPaidDeposit(depositDue);
+        setCheckoutOpen(true);
+      } else {
+        setPaidDeposit(0);
+        toast.success('Booking confirmed!');
+        setBookingComplete(true);
+      }
+    } catch (err: any) {
+      if (err?.response?.status === 409) {
+        toast.error('This time slot is already booked. Please choose another time.');
+      } else {
+        const message =
+          err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          'Booking failed. Please try again.';
+        toast.error(message);
+      }
+    } finally {
+      setSubmitting(false);
     }
+  };
+
+  const handleCheckoutSuccess = async (rail: PaymentRail, paymentUrlOrTxHash?: string) => {
+    setCheckoutOpen(false);
+    if (createdBooking?.id) {
+      try {
+        await apiClient.post(`/booking/${createdBooking.id}/confirm-deposit`, {
+          rail,
+          txHash: paymentUrlOrTxHash,
+        });
+      } catch {
+        // Non-blocking: booking is already saved and payment webhook will also reconcile it
+      }
+    }
+    toast.success('Deposit received. Your reservation is confirmed.');
+    setBookingComplete(true);
   };
 
   const handleDepositFunded = async (txHash?: string, fromWallet?: string) => {
     const currentPrompt = depositPrompt;
     setDepositPrompt(null);
 
-    if (checkoutPurpose === 'trust_dossier') {
-      const biz = selectedBusiness || businessData?.data?.business;
-      if (!biz?.id) return;
-      setDossierLoading(true);
-      try {
-        const unlockRes = await privyTrustService.unlockTrustDossier({
-          businessId: biz.id,
-          txHash,
-          fromWallet,
-          referenceId: currentPrompt?.referenceId,
-        });
-        setUnlockedDossier(unlockRes.data?.data);
-        toast.success('Counterparty Litigation & Trust Dossier unlocked!');
-      } catch (err: unknown) {
-        toast.error(err instanceof Error ? err.message : 'Failed to unlock dossier');
-      } finally {
-        setDossierLoading(false);
-      }
-      return;
-    }
-
-    if (!selectedBusiness) return;
-    const effectiveOwnerId = user?.id || guestPrincipalId;
-    const resolvedName =
-      customerName.trim() ||
-      (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Valued Client');
-
-    const serviceValue = effectiveServiceValue;
-
-    const outcome = await runAction({
-      actionType: 'booking',
-      amount: 0,
-      payload: {
-        businessId: selectedBusiness.id,
-        serviceId: selectedService?.id,
-        serviceName: effectiveServiceName,
-        serviceValue,
-        reservationDate: format(selectedDate, 'yyyy-MM-dd'),
-        reservationTime: selectedTime,
-        numberOfGuests: guests,
-        customerName: resolvedName,
-        customerEmail: customerEmail.trim() || undefined,
-        customerPhone: customerPhone.trim() || undefined,
-        specialRequests,
-        paymentMethod,
-      },
-      ownerType: 'user',
-      ownerId: effectiveOwnerId,
-    });
-
-    if (!outcome) return;
-
-    toast.success('Deposit received. Your reservation is confirmed.');
-    if (isAuthenticated) {
-      bookingMutation.mutate({
-        businessId: selectedBusiness.id,
-        serviceId: selectedService?.id,
-        serviceName: effectiveServiceName,
-        reservationDate: format(selectedDate, 'yyyy-MM-dd'),
-        reservationTime: selectedTime,
-        numberOfGuests: guests,
-        customerName: resolvedName,
-        customerEmail: customerEmail.trim() || undefined,
-        customerPhone: customerPhone.trim() || undefined,
-        specialRequests,
-        paymentMethod,
+    const biz = business;
+    if (!biz?.id) return;
+    setDossierLoading(true);
+    try {
+      const unlockRes = await privyTrustService.unlockTrustDossier({
+        businessId: biz.id,
+        txHash,
+        fromWallet,
+        referenceId: currentPrompt?.referenceId,
       });
-    } else {
-      setBookingComplete(true);
+      setUnlockedDossier(unlockRes.data?.data);
+      toast.success('Counterparty Litigation & Trust Dossier unlocked!');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to unlock dossier');
+    } finally {
+      setDossierLoading(false);
     }
   };
 
@@ -503,11 +486,40 @@ export default function BookingExperience() {
             Secured by Pabandi Engine
           </p>
           <div className="flex gap-3 justify-center">
-            <Button onClick={() => navigate('/reservations')}>View Bookings</Button>
+            <Button onClick={() => navigate('/me/bookings')}>View Bookings</Button>
             <Button variant="ghost" onClick={() => {
               setBookingComplete(false);
+              setCreatedBooking(null);
               setStep('search');
             }}>Book Another</Button>
+          </div>
+        </Surface>
+      </div>
+    );
+  }
+
+  // ── Loading / Not Found states when routed via /book/:id ─────────────────
+  if (id && businessLoading && !business) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--cream)' }}>
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 mx-auto rounded-full border-4 border-[var(--clay)] border-t-transparent animate-spin" />
+          <p className="text-sm font-medium text-[var(--soft-stone)]">Loading booking page…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (id && businessError && !business) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--cream)' }}>
+        <Surface className="max-w-md w-full p-8 text-center space-y-4">
+          <h2 className="text-xl font-bold text-[var(--warm-ink)]">Business not found</h2>
+          <p className="text-sm text-[var(--soft-stone)]">
+            We couldn&apos;t load this provider&apos;s booking page. It may have moved or been removed.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Button onClick={() => navigate('/booking')}>Browse Providers</Button>
           </div>
         </Surface>
       </div>
@@ -954,11 +966,11 @@ export default function BookingExperience() {
             {/* Book Button */}
             <Button
               onClick={handleBookTable}
-              disabled={!selectedTime || bookingMutation.isLoading || submitting}
+              disabled={!selectedTime || !business || submitting}
               className="w-full py-4 text-base font-bold tracking-wide"
             >
-              {submitting || bookingMutation.isLoading
-                ? 'Securing escrow deposit…'
+              {submitting
+                ? 'Securing booking…'
                 : schema.buttonText || (schema.showPartySize ? 'Reserve Table' : 'Secure Booking & Escrow')}
             </Button>
 
@@ -982,18 +994,39 @@ export default function BookingExperience() {
           </div>
           <Button
             onClick={handleBookTable}
-            disabled={!selectedTime || bookingMutation.isLoading || submitting}
+            disabled={!selectedTime || !business || submitting}
             className="px-5 py-3 text-sm font-bold rounded-full shrink-0"
           >
-            {submitting || bookingMutation.isLoading
+            {submitting
               ? 'Securing…'
               : schema.buttonText || (schema.showPartySize ? 'Reserve →' : 'Book Now →')}
           </Button>
         </div>
       </div>
 
-      {/* Deposit prompt and a page-scoped Toaster -- see FluidBookingPage for
-          why the Toaster is scoped rather than mounted app-wide. */}
+      {/* Live Booking Deposit Checkout (Square / Solana Pay / Raast) */}
+      {createdBooking && (
+        <PabandiCheckoutModal
+          open={checkoutOpen}
+          onClose={() => setCheckoutOpen(false)}
+          title={`Booking Deposit — ${business?.name || 'Provider'}`}
+          subtitle={`${format(selectedDate, 'MMM d, yyyy')} at ${selectedTime}`}
+          amount={paidDeposit || computedDeposit || 0}
+          currency="USD"
+          referenceId={`booking-${createdBooking.id}`}
+          squareNote={`pabandi:booking:${createdBooking.id}`}
+          customerEmail={customerEmail.trim() || user?.email}
+          merchantRaastId={business?.raastId || business?.settings?.raastId || business?.phone}
+          merchantIban={business?.iban}
+          merchantJazzCash={business?.phone}
+          merchantEasyPaisa={business?.phone}
+          recipientWallet={business?.solanaWallet || business?.walletAddress}
+          initialRail={checkoutInitialRail}
+          onSuccess={handleCheckoutSuccess}
+        />
+      )}
+
+      {/* Counterparty Dossier prompt */}
       <EmbeddedCheckoutModal
         prompt={depositPrompt}
         onClose={() => setDepositPrompt(null)}

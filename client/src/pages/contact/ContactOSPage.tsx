@@ -273,9 +273,11 @@ export default function ContactOSPage() {
           </div>
 
           {/* ── First Run Checklist ──────────────────────────────── */}
-          <div className="mb-6">
-            <FirstRunChecklist />
-          </div>
+          {enrolled === true && (
+            <div className="mb-6">
+              <FirstRunChecklist />
+            </div>
+          )}
 
           {/* ── Key Metrics — REAL numbers from /business/stats ── */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

@@ -1,4 +1,6 @@
 import { Router, Response, NextFunction } from 'express';
+import jwt, { Secret } from 'jsonwebtoken';
+import { BusinessCategory, UserRole } from '@prisma/client';
 import { prisma } from '../utils/database';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { resolveCrmBusiness, requireCrmContext } from '../middleware/crmContext.middleware';
@@ -19,10 +21,84 @@ import { logger } from '../utils/logger';
  */
 const router = Router();
 
-router.use(authenticate, resolveCrmBusiness);
-
 const ok = (res: Response, data: unknown, extra: Record<string, unknown> = {}) =>
   res.json({ success: true, data, ...extra });
+
+const SERVICE_TYPE_TO_CATEGORY: Record<string, BusinessCategory> = {
+  salon: BusinessCategory.SALON,
+  consulting: BusinessCategory.PROFESSIONAL,
+  trades: BusinessCategory.CONTRACTOR,
+  real_estate: BusinessCategory.PROPERTY_RENTAL,
+  logistics: BusinessCategory.OTHER,
+  general: BusinessCategory.OTHER,
+};
+
+// Enrollment MUST run before resolveCrmBusiness; otherwise unenrolled accounts
+// hit a 403 Catch-22 when trying to enroll from /contact/setup.
+router.post('/enroll', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new CustomError('Authentication required', 401);
+
+    const { businessName, serviceType, phone, address } = req.body ?? {};
+    const existing = await prisma.business.findFirst({
+      where: { ownerId: userId },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const vertical = typeof serviceType === 'string' && serviceType.trim() ? serviceType.trim() : 'general';
+    const category = SERVICE_TYPE_TO_CATEGORY[vertical] ?? BusinessCategory.OTHER;
+
+    const business =
+      existing ??
+      (await prisma.business.create({
+        data: {
+          ownerId: userId,
+          name: (typeof businessName === 'string' && businessName.trim()) || 'My Business',
+          category,
+          address: (typeof address === 'string' && address.trim()) || 'Not specified',
+          phone: typeof phone === 'string' && phone.trim() ? phone.trim() : null,
+          email: req.user?.email ?? null,
+          settings: {
+            create: {
+              vertical,
+            },
+          },
+        },
+      }));
+
+    if (req.user?.role === UserRole.CUSTOMER) {
+      await prisma.user
+        .update({
+          where: { id: userId },
+          data: { role: UserRole.BUSINESS_OWNER },
+        })
+        .catch(() => {});
+    }
+
+    const secret = process.env.JWT_SECRET;
+    const token = secret
+      ? jwt.sign(
+          {
+            id: userId,
+            email: req.user?.email ?? '',
+            role: req.user?.role === UserRole.CUSTOMER ? UserRole.BUSINESS_OWNER : req.user?.role ?? UserRole.BUSINESS_OWNER,
+            businessId: business.id,
+            activeBusinessId: business.id,
+            mode: 'business',
+          },
+          secret as Secret,
+          { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any }
+        )
+      : undefined;
+
+    ok(res, { enrolled: true, businessId: business.id, business }, token ? { token } : {});
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.use(authenticate, resolveCrmBusiness);
 
 // ── Clients ─────────────────────────────────────────────────────────────────
 
@@ -1208,14 +1284,5 @@ router.post('/alerts/:id/dismiss', async (req: AuthRequest, res: Response, next:
 
 router.get('/quotes', (_req: AuthRequest, res: Response) => ok(res, []));
 router.post('/quotes', (_req: AuthRequest, res: Response) => ok(res, { id: null, stub: true }));
-
-router.post('/enroll', async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const crm = requireCrmContext(req);
-    ok(res, { enrolled: true, businessId: crm.businessId });
-  } catch (e) {
-    next(e);
-  }
-});
 
 export default router;

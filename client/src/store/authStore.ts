@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { authService, cryptoService, crmService } from '../services/api';
+import { authService, crmService } from '../services/api';
 import { syncBusinessId } from '../utils/businessContext';
 
 export type ProfileType = 'SOLO_BUILDER' | 'CLIENT' | 'SERVICE_BUSINESS';
@@ -198,23 +198,16 @@ export const useAuthStore = create<AuthState>()(
           },
         })),
       fetchWalletData: async () => {
-        try {
-          if (!get().isAuthenticated) return;
-          const res = await cryptoService.getWallet();
-          const data = res.data?.data ?? res.data;
-          if (data) {
-            set((state) => ({
-              wallet: {
-                ...state.wallet,
-                pabBalance: data.balance || 0,
-                totalEarned: data.totalEarned?._sum?.amount || data.totalEarned || 0,
-                address: data.solanaAddress || state.wallet.address,
-                type: data.solanaAddress ? 'phantom' : state.wallet.type,
-              },
-            }));
-          }
-        } catch {
-          // Wallet data fetch failed silently — non-critical
+        const { isAuthenticated, user } = get();
+        if (!isAuthenticated) return;
+        const walletAddress = user?.walletAddress || null;
+        if (walletAddress) {
+          set((state) => ({
+            wallet: {
+              ...state.wallet,
+              address: state.wallet.address || walletAddress,
+            },
+          }));
         }
       },
       updateProfile: (updatedUser: Partial<User>) => 

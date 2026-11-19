@@ -44,7 +44,7 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", 'https://maps.googleapis.com'],
+        scriptSrc: ["'self'", 'https://maps.googleapis.com', 'https://telegram.org'],
         styleSrc: ["'self'", 'https://fonts.googleapis.com', "'unsafe-inline'"],
         imgSrc: [
           "'self'",

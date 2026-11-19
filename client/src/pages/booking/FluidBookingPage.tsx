@@ -1,19 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import {
   Calendar, Clock, Users, ChevronRight, Check, Shield, Zap, ArrowLeft, Mail, CreditCard
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Toaster } from 'react-hot-toast';
-import { getAuthToken } from '../../utils/authToken';
+import { apiClient, businessService } from '../../services/api';
 import { HalalBadge } from '../../components/halal';
-import { useEngineCheckout } from '../../hooks/useEngineCheckout';
-import { EmbeddedCheckoutModal, type DepositPrompt } from '../../components/EmbeddedCheckoutModal';
+import { PabandiCheckoutModal, type PaymentRail } from '../../components/PabandiCheckoutModal';
 import { VaultLocked } from '../../components/GuaranteeVisuals';
 import { ClayButton } from '../../components/clay/ClayButton';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
 
 interface Slot {
   startTime: string;
@@ -46,7 +43,6 @@ interface Business {
 
 export default function FluidBookingPage() {
   const { businessSlug } = useParams<{ businessSlug: string }>();
-  const navigate = useNavigate();
   const { user } = useAuthStore();
 
   const [step, setStep] = useState(1);
@@ -58,14 +54,9 @@ export default function FluidBookingPage() {
   const [guests, setGuests] = useState(1);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [booking, setBooking] = useState<any>(null);
-  const [depositPrompt, setDepositPrompt] = useState<DepositPrompt | null>(null);
-  /**
-   * The deposit that actually secured this booking, for the confirmation
-   * breakdown. `$0` is meaningful (the engine waived it) and is distinguished
-   * from `null` — "not decided yet", which still renders the breakdown rows
-   * with placeholders rather than inventing a figure.
-   */
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [paidDeposit, setPaidDeposit] = useState<number | null>(null);
   const [customerInfo, setCustomerInfo] = useState({
     name: user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : '',
@@ -73,17 +64,6 @@ export default function FluidBookingPage() {
     phone: user?.phone || '',
     requests: '',
   });
-
-  // The engine. Owns the session, the balance, and the deposit decision.
-  const { runAction, closeSession, session, submitting } = useEngineCheckout();
-
-  // Release the tab when the page goes away, so an abandoned checkout does not
-  // hold its limit until expiry.
-  useEffect(() => {
-    return () => {
-      void closeSession();
-    };
-  }, [closeSession]);
 
   useEffect(() => {
     if (businessSlug) loadBusiness();
@@ -95,13 +75,14 @@ export default function FluidBookingPage() {
 
   const loadBusiness = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/booking-availability/${businessSlug}`);
-      if (res.ok) {
-        const data = await res.json();
-        setBusiness(data.data.business);
-        setServices(data.data.services || []);
-        if (data.data.services?.length === 1) {
-          setSelectedService(data.data.services[0]);
+      const res = await businessService.getBusiness(businessSlug!);
+      const biz = res.data?.data?.business ?? res.data?.business;
+      if (biz) {
+        setBusiness(biz);
+        const list = biz.services || [];
+        setServices(list);
+        if (list.length === 1) {
+          setSelectedService(list[0]);
         }
       }
     } catch (err) {
@@ -114,13 +95,10 @@ export default function FluidBookingPage() {
   const loadSlots = async () => {
     if (!business || !selectedDate) return;
     try {
-      const params = new URLSearchParams({ date: selectedDate });
-      if (selectedService) params.set('serviceId', selectedService.id);
-      const res = await fetch(`${API_BASE}/api/v1/fluid-booking/availability/${business.id}?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        setSlots(data.data.slots || []);
-      }
+      const res = await apiClient.get(`/booking/${business.id}/slots`, {
+        params: { date: selectedDate, ...(selectedService ? { serviceId: selectedService.id } : {}) },
+      });
+      setSlots(res.data?.data || res.data?.slots || []);
     } catch (err) {
       console.error('Failed to load slots:', err);
     }
@@ -128,137 +106,73 @@ export default function FluidBookingPage() {
 
   const handleBook = async () => {
     if (!business || !selectedDate || !selectedTime) return;
-    if (!user?.id) {
-      toast.error('Please sign in to complete your booking.');
-      navigate('/login');
-      return;
-    }
 
     const amount = selectedService?.discountPrice || selectedService?.price || 0;
-    const bookingPayload = {
-      businessId: business.id,
-      serviceId: selectedService?.id,
-      serviceValue: amount,
-      date: selectedDate,
-      time: selectedTime,
-      guests,
-      customerName: customerInfo.name,
-      customerEmail: customerInfo.email,
-      customerPhone: customerInfo.phone,
-      specialRequests: customerInfo.requests,
-    };
+    const bizAny = business as any;
+    const depositDue =
+      bizAny.depositAmount && bizAny.depositAmount > 0
+        ? Number(bizAny.depositAmount)
+        : bizAny.depositPercentage && bizAny.depositPercentage > 0 && amount > 0
+        ? Math.round(amount * (bizAny.depositPercentage / 100) * 100) / 100
+        : 0;
 
-    // ── THE ENGINE DECIDES, NOT THIS PAGE ───────────────────────────────────
-    // This used to compute a deposit and a trust waiver client-side and gate
-    // the booking on the result. Both are gone: the engine resolves the Trust
-    // Score from the real principal, decides whether a deposit is required,
-    // and answers with `actionRequired`. A rule enforced in a browser is a
-    // suggestion, and it disagreed with the server's own copy of the score.
-    //
-    // `serviceValue` is the booking's value for deposit policy evaluation while
-    // `amount: 0` keeps high-ticket contractor jobs ($1,500-$15,000) from
-    // exceeding the session tab limit.
-    const outcome = await runAction({
-      actionType: 'booking',
-      amount: 0,
-      payload: bookingPayload,
-      ownerType: 'user',
-      ownerId: user.id,
-    });
-
-    if (!outcome) return;
-
-    if (outcome.actionRequired === 'deposit_required' && outcome.deposit) {
-      const deposit = outcome.deposit;
-      const defaultVault =
-        import.meta.env.VITE_ESCROW_VAULT_ADDRESS || 'GsbwXfJraMomNxBcjYLcG3mxkBUiyWXAB32fGbSQQRre';
-      const fallbackSolanaUri = `solana:${defaultVault}?amount=${deposit.amount}&spl-token=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`;
-      const effectiveCheckoutUrl = deposit.checkoutUrl || fallbackSolanaUri;
-
-      setPaidDeposit(deposit.amount);
-      setDepositPrompt({
-        checkoutUrl: effectiveCheckoutUrl,
-        description: deposit.explanation,
-        amount: deposit.amount,
-        currency: deposit.currency,
-        band: deposit.band,
-        referenceId: `booking-${business.id}-${selectedDate}`,
-      });
-      return;
-    }
-
-    // No deposit needed. Say so explicitly: the user was shown a deposit-shaped
-    // flow and deserves to be told it did not apply.
-    toast.success('Booking confirmed. No deposit required.');
-    setPaidDeposit(0);
-
-    // The reservation itself is still created by the booking service. The
-    // engine authorises the spend; it does not own the booking row.
-    await createReservation(bookingPayload);
-  };
-
-  const createReservation = async (bookingPayload: Record<string, unknown>) => {
+    setSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/fluid-booking/book`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${getAuthToken() || ''}`,
-        },
-        body: JSON.stringify(bookingPayload),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setBooking(data.data);
-        setStep(4);
-      } else {
-        toast.error(data.error || 'Could not create the reservation.');
-      }
-    } catch (err) {
-      toast.error('Could not create the reservation.');
-    }
-  };
-
-  /** Re-run the same booking after a deposit clears. */
-  const handleDepositFunded = async () => {
-    setDepositPrompt(null);
-
-    if (!business || !user?.id) return;
-
-    const serviceValue = selectedService?.discountPrice || selectedService?.price || 0;
-    const outcome = await runAction({
-      actionType: 'booking',
-      amount: 0,
-      payload: {
+      const res = await apiClient.post('/booking', {
         businessId: business.id,
         serviceId: selectedService?.id,
-        serviceValue,
-        date: selectedDate,
-        time: selectedTime,
-        guests,
+        serviceName: selectedService?.name || 'Booking',
+        serviceType: selectedService?.name || 'Booking',
+        serviceValue: amount,
+        reservationDate: selectedDate,
+        reservationTime: selectedTime,
+        durationMinutes: selectedService?.duration || 60,
+        numberOfGuests: guests,
+        depositAmount: depositDue,
         customerName: customerInfo.name,
         customerEmail: customerInfo.email,
         customerPhone: customerInfo.phone,
         specialRequests: customerInfo.requests,
-      },
-      ownerType: 'user',
-      ownerId: user.id,
-    });
+      });
 
-    if (!outcome) return;
+      if (res.data?.success) {
+        const created = res.data.data;
+        setBooking(created);
+        setPaidDeposit(depositDue);
+        if (depositDue > 0) {
+          setCheckoutOpen(true);
+        } else {
+          toast.success('Booking confirmed!');
+          setStep(4);
+        }
+      } else {
+        toast.error(res.data?.error || 'Could not create the reservation.');
+      }
+    } catch (err: any) {
+      if (err?.response?.status === 409) {
+        toast.error('This slot is already booked. Please choose another time.');
+      } else {
+        toast.error(err?.response?.data?.error || 'Could not create the reservation.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
+  const handleCheckoutSuccess = async (rail: PaymentRail, paymentUrlOrTxHash?: string) => {
+    setCheckoutOpen(false);
+    if (booking?.id) {
+      try {
+        await apiClient.post(`/booking/${booking.id}/confirm-deposit`, {
+          rail,
+          txHash: paymentUrlOrTxHash,
+        });
+      } catch {
+        // Non-blocking
+      }
+    }
     toast.success('Deposit received. Your booking is confirmed.');
-    await createReservation({
-      businessId: business.id,
-      serviceId: selectedService?.id,
-      date: selectedDate,
-      time: selectedTime,
-      guests,
-      customerName: customerInfo.name,
-      customerEmail: customerInfo.email,
-      customerPhone: customerInfo.phone,
-      specialRequests: customerInfo.requests,
-    });
+    setStep(4);
   };
 
   const getDates = () => {
@@ -629,33 +543,6 @@ export default function FluidBookingPage() {
               )}
             </div>
 
-            {/*
-              What used to be here was a trust panel reading
-              `booking.trust.score >= 80 ? 'Your trusted status waives the
-              deposit!' : ...` and a Deposit row computed from
-              `booking.payment.amount` -- client-side judgement about whether a
-              score was high enough, over a score the client was handed.
-
-              Both are gone. `actionRequired` from the engine is the only input
-              to this decision now, and it was already applied before the user
-              ever reached this screen. What remains is the session balance, so
-              they can see what the booking cost against their tab.
-            */}
-            {session && (
-              <div className="p-4 rounded-2xl bg-[var(--sage)]/5 border border-[var(--sage)]/15">
-                <div className="flex items-center gap-2 mb-2">
-                  <Shield size={16} className="text-[var(--sage)]" />
-                  <span className="text-sm font-semibold text-[var(--warm-ink)]">
-                    Charged to your session
-                  </span>
-                </div>
-                <p className="text-xs text-[var(--soft-stone)]">
-                  {session.currency} {session.spent} of {session.totalLimit} used.
-                  {paidDeposit ? ' The deposit was collected at checkout on top of this.' : ' No deposit was required for this booking.'}
-                </p>
-              </div>
-            )}
-
             {/* Sharia-compliant booking card */}
             <div className="p-4 rounded-2xl bg-emerald-500/8 border border-emerald-500/20">
               <div className="flex items-center gap-2 mb-2">
@@ -692,11 +579,20 @@ export default function FluidBookingPage() {
           The modal is rendered by the page rather than portalled so it inherits
           the engine's lifetime: it cannot outlive the checkout that opened it.
         */}
-        <EmbeddedCheckoutModal
-          prompt={depositPrompt}
-          onClose={() => setDepositPrompt(null)}
-          onFunded={handleDepositFunded}
-        />
+        {booking && (
+          <PabandiCheckoutModal
+            open={checkoutOpen}
+            onClose={() => setCheckoutOpen(false)}
+            title={`Booking Deposit — ${business?.name || 'Provider'}`}
+            subtitle={`${selectedDate} at ${selectedTime}`}
+            amount={paidDeposit || 0}
+            currency="USD"
+            referenceId={`booking-${booking.id}`}
+            squareNote={`pabandi:booking:${booking.id}`}
+            customerEmail={customerInfo.email}
+            onSuccess={handleCheckoutSuccess}
+          />
+        )}
 
         {/* Deposit summary - shows what was paid and why, even after modal closes */}
         {paidDeposit != null && paidDeposit > 0 && booking && (

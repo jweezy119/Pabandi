@@ -64,6 +64,7 @@ const domainRoutes: [string, string][] = [
   ['/dashboard', './dashboard.routes'],
   ['/onboarding', './onboarding.routes'],
   ['/booking', './booking.routes'],
+  ['/bookings', './booking.routes'],
 
   // 2. User & Profile Domain
   ['/users', './user.routes'],

@@ -553,8 +553,8 @@ function AnimatedAppRoutes() {
               produces, so it takes this route.
             */}
             <Route path="book/:id" element={<BookingExperience />} />
-            <Route path="reservations" element={<PlaceholderPage />} />
-            <Route path="reservations/new" element={<PlaceholderPage />} />
+            <Route path="reservations" element={<Navigate to="/me/bookings" replace />} />
+            <Route path="reservations/new" element={<Navigate to="/booking" replace />} />
             <Route path="nightlife" element={<PlaceholderPage />} />
             <Route path="promoter" element={<PlaceholderPage />} />
             <Route path="agent-dashboard" element={<PlaceholderPage />} />
