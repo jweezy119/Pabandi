@@ -8,6 +8,8 @@ import {
   advanceBookingEscrow,
   bookingEscrowReference,
   ensureBookingEscrow,
+  forfeitBookingDeposit,
+  refundBookingDeposit,
 } from '../services/booking-escrow.service';
 
 const router = Router();
@@ -180,6 +182,212 @@ router.get('/my-bookings', authenticate, async (req: AuthRequest, res: Response)
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('[Booking] my-bookings error:', message);
+    return res.status(500).json({ success: false, error: message });
+  }
+});
+
+// ── Business-owner booking management (/bookings/public/...) ────────────────
+
+async function resolveOwnedBusinessId(
+  req: AuthRequest,
+  requestedId?: string
+): Promise<string | null> {
+  const userId = req.user?.id;
+  if (!userId) return null;
+
+  const cleanRequested =
+    requestedId && !['me', 'null', 'undefined'].includes(requestedId.trim().toLowerCase())
+      ? requestedId.trim()
+      : undefined;
+
+  if (req.user?.role === 'ADMIN' && cleanRequested) {
+    return cleanRequested;
+  }
+
+  const owned = await prisma.business.findFirst({
+    where: cleanRequested
+      ? { id: cleanRequested, ownerId: userId }
+      : { ownerId: userId },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true },
+  });
+  return owned?.id ?? null;
+}
+
+async function findAuthorizedBooking(req: AuthRequest, bookingId: string) {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: { business: { select: { id: true, ownerId: true } } },
+  });
+  if (!booking) return { error: 404 as const, message: 'Booking not found', booking: null };
+  const isAdmin = req.user?.role === 'ADMIN';
+  const isOwner = Boolean(req.user?.id && booking.business?.ownerId === req.user.id);
+  if (!isAdmin && !isOwner) {
+    return { error: 403 as const, message: 'Not authorized to manage this booking', booking: null };
+  }
+  return { error: null, message: null, booking };
+}
+
+// GET /api/v1/bookings/public/business/:businessId - List bookings for business owner
+router.get('/public/business/:businessId', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const businessId = await resolveOwnedBusinessId(req, req.params.businessId);
+    if (!businessId) {
+      return res.status(403).json({ success: false, error: 'No business found for this account' });
+    }
+
+    const status = typeof req.query.status === 'string' ? req.query.status.trim() : 'all';
+    const page = Math.max(1, parseInt(String(req.query.page ?? '1'), 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit ?? '20'), 10) || 20));
+
+    const where: any = { businessId };
+    if (status && status !== 'all') {
+      where.status = status;
+    }
+
+    const [bookings, total] = await Promise.all([
+      prisma.booking.findMany({
+        where,
+        include: {
+          client: { select: { id: true, name: true, email: true, phone: true } },
+        },
+        orderBy: { slotStart: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.booking.count({ where }),
+    ]);
+
+    return res.json({
+      success: true,
+      data: bookings,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('[Booking] business list error:', message);
+    return res.status(500).json({ success: false, error: message });
+  }
+});
+
+// POST /api/v1/bookings/public/:id/confirm
+router.post('/public/:id/confirm', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const check = await findAuthorizedBooking(req, req.params.id);
+    if (check.error || !check.booking) {
+      return res.status(check.error || 404).json({ success: false, error: check.message });
+    }
+    const updated = await prisma.booking.update({
+      where: { id: check.booking.id },
+      data: { status: 'confirmed' },
+    });
+    return res.json({ success: true, data: updated });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('[Booking] confirm error:', message);
+    return res.status(500).json({ success: false, error: message });
+  }
+});
+
+// POST /api/v1/bookings/public/:id/cancel
+router.post('/public/:id/cancel', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const check = await findAuthorizedBooking(req, req.params.id);
+    if (check.error || !check.booking) {
+      return res.status(check.error || 404).json({ success: false, error: check.message });
+    }
+    const updated = await prisma.booking.update({
+      where: { id: check.booking.id },
+      data: { status: 'cancelled' },
+    });
+    await refundBookingDeposit(check.booking.id, 'Cancelled by business').catch(() => {});
+    await prisma.bookingRisk
+      .updateMany({
+        where: { bookingId: check.booking.id },
+        data: { outcome: 'cancelled', outcomeAt: new Date() },
+      })
+      .catch(() => {});
+    return res.json({ success: true, data: updated });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('[Booking] cancel error:', message);
+    return res.status(500).json({ success: false, error: message });
+  }
+});
+
+// POST /api/v1/bookings/public/:id/attend
+router.post('/public/:id/attend', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const check = await findAuthorizedBooking(req, req.params.id);
+    if (check.error || !check.booking) {
+      return res.status(check.error || 404).json({ success: false, error: check.message });
+    }
+    const now = new Date();
+    const updated = await prisma.booking.update({
+      where: { id: check.booking.id },
+      data: { status: 'attended', completedAt: now, escrowStatus: 'released' },
+    });
+
+    await advanceBookingEscrow(check.booking.id, 'conditions_met', {
+      source: 'owner-checkin',
+      reason: 'Client checked in by business owner',
+    }).catch(() => {});
+    await advanceBookingEscrow(check.booking.id, 'released', {
+      source: 'owner-checkin',
+      reason: 'Appointment attended — deposit released',
+    }).catch(() => {});
+
+    if (check.booking.clientId) {
+      await prisma.crmClient
+        .update({
+          where: { id: check.booking.clientId },
+          data: { totalJobs: { increment: 1 }, lastJobAt: now },
+        })
+        .catch(() => {});
+    }
+    await prisma.bookingRisk
+      .updateMany({
+        where: { bookingId: check.booking.id },
+        data: { outcome: 'attended', outcomeAt: now },
+      })
+      .catch(() => {});
+
+    return res.json({ success: true, data: updated });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('[Booking] attend error:', message);
+    return res.status(500).json({ success: false, error: message });
+  }
+});
+
+// POST /api/v1/bookings/public/:id/no-show
+router.post('/public/:id/no-show', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const check = await findAuthorizedBooking(req, req.params.id);
+    if (check.error || !check.booking) {
+      return res.status(check.error || 404).json({ success: false, error: check.message });
+    }
+    const now = new Date();
+    const updated = await prisma.booking.update({
+      where: { id: check.booking.id },
+      data: { status: 'no_show', escrowStatus: 'released' },
+    });
+    await forfeitBookingDeposit(check.booking.id, 'Marked as no-show by business').catch(() => {});
+    await prisma.bookingRisk
+      .updateMany({
+        where: { bookingId: check.booking.id },
+        data: { outcome: 'no_show', outcomeAt: now },
+      })
+      .catch(() => {});
+    return res.json({ success: true, data: updated });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('[Booking] no-show error:', message);
     return res.status(500).json({ success: false, error: message });
   }
 });

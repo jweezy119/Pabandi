@@ -105,10 +105,23 @@ export default function BookingExperience() {
   const [customerEmail, setCustomerEmail] = useState(user?.email || '');
   const [customerPhone, setCustomerPhone] = useState(user?.phone || '');
 
-  // Booking form state
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedTime, setSelectedTime] = useState<string>('11:00');
-  const [guests, setGuests] = useState(2);
+  // Booking form state (honors deep-link params from AI Concierge: ?date=&time=&guests=)
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    const paramDate = searchParams.get('date');
+    if (paramDate && /^\d{4}-\d{2}-\d{2}$/.test(paramDate)) {
+      const parsed = new Date(`${paramDate}T12:00:00`);
+      if (!Number.isNaN(parsed.getTime())) return parsed;
+    }
+    return new Date();
+  });
+  const [selectedTime, setSelectedTime] = useState<string>(() => {
+    const paramTime = searchParams.get('time');
+    return paramTime && /^\d{2}:\d{2}$/.test(paramTime) ? paramTime : '11:00';
+  });
+  const [guests, setGuests] = useState<number>(() => {
+    const paramGuests = Number(searchParams.get('guests'));
+    return Number.isFinite(paramGuests) && paramGuests >= 1 && paramGuests <= 50 ? paramGuests : 2;
+  });
   const [serviceAddress, setServiceAddress] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'square' | 'solana' | 'safepay' | 'bsc'>('solana');

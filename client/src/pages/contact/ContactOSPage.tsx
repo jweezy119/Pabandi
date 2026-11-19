@@ -116,7 +116,7 @@ export default function ContactOSPage() {
         );
         if (!cancelled && bizRes.ok) {
           const biz = await bizRes.json();
-          setBusinessName(biz.data?.name || biz.name || 'Your Business');
+          setBusinessName(biz.data?.business?.name || biz.data?.name || biz.name || 'Your Business');
         }
 
         if (cancelled) return;

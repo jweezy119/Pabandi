@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { FiFilter, FiCheck, FiX, FiClock, FiUser, FiAlertCircle, FiMoreVertical, FiEdit } from 'react-icons/fi';
-import apiClient from '@/services/api';
-import { Surface, Button, Chip, tokens } from '@/design-system';
+import { useState, useEffect } from 'react';
+import { FiCheck, FiClock, FiUser, FiAlertCircle } from 'react-icons/fi';
+import apiClient from '../../services/api';
+import { useAuthStore } from '../../store/authStore';
+import { Surface, Button, Chip } from '../../design-system';
 import toast from 'react-hot-toast';
 
 type StatusFilter = 'all' | 'pending' | 'confirmed' | 'attended' | 'no_show' | 'cancelled';
@@ -13,6 +14,7 @@ interface Booking {
   serviceType: string;
   status: string;
   depositAmount: number;
+  depositPaid?: boolean;
   depositStatus: string;
   client?: { id: string; name: string; email: string; phone: string };
   job?: { id: string; status: string };
@@ -20,26 +22,28 @@ interface Booking {
 }
 
 export default function BookingsManagementPage() {
+  const { user } = useAuthStore();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<StatusFilter>('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     loadBookings();
-  }, [filter, page]);
+  }, [filter, page, user?.businessId]);
 
   const loadBookings = async () => {
     setLoading(true);
     try {
-      const businessId = localStorage.getItem('businessId');
-      const res = await apiClient.get(`/api/v1/bookings/public/business/${businessId}?status=${filter}&page=${page}&limit=20`);
+      const businessId = user?.businessId || localStorage.getItem('businessId') || 'me';
+      const res = await apiClient.get(
+        `/bookings/public/business/${businessId}?status=${filter}&page=${page}&limit=20`
+      );
       if (res.data.success) {
-        setBookings(res.data.data);
-        setTotalPages(res.data.pagination.totalPages);
+        setBookings(res.data.data || []);
+        setTotalPages(res.data.pagination?.totalPages || 1);
       }
     } catch (e) {
       toast.error('Failed to load bookings');
@@ -58,8 +62,8 @@ export default function BookingsManagementPage() {
         case 'attend': endpoint = 'attend'; break;
         case 'no-show': endpoint = 'no-show'; break;
       }
-      await apiClient.post(`/api/v1/bookings/public/${bookingId}/${endpoint}`);
-      toast.success(`Booking ${action}d`);
+      await apiClient.post(`/bookings/public/${bookingId}/${endpoint}`);
+      toast.success(`Booking ${action === 'no-show' ? 'marked as no-show' : `${action}ed`}`);
       loadBookings();
     } catch (e: any) {
       toast.error(e.response?.data?.error || `Failed to ${action}`);
@@ -68,14 +72,14 @@ export default function BookingsManagementPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusTone = (status: string): 'warning' | 'info' | 'success' | 'danger' => {
     switch (status) {
       case 'pending': return 'warning';
       case 'confirmed': return 'info';
       case 'attended': return 'success';
       case 'no_show': return 'danger';
-      case 'cancelled': return 'neutral';
-      default: return 'neutral';
+      case 'cancelled': return 'info';
+      default: return 'info';
     }
   };
 
@@ -137,12 +141,12 @@ export default function BookingsManagementPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 flex-wrap mb-2">
                       <span className="font-semibold text-[var(--warm-ink)]">{booking.serviceType}</span>
-                      <Chip label={booking.status.replace('_', ' ')} variant={getStatusColor(booking.status) as any} size="sm" />
-                      {booking.depositAmount > 0 && booking.depositStatus === 'required' && (
-                        <Chip label="Deposit Required" variant="warning" size="sm" />
+                      <Chip tone={getStatusTone(booking.status)}>{booking.status.replace('_', ' ')}</Chip>
+                      {booking.depositAmount > 0 && (booking.depositStatus === 'required' || booking.depositStatus === 'pending') && !booking.depositPaid && (
+                        <Chip tone="warning">Deposit Required</Chip>
                       )}
-                      {booking.depositStatus === 'funded' && (
-                        <Chip label="Deposit Paid" variant="success" size="sm" />
+                      {(booking.depositPaid || booking.depositStatus === 'funded' || booking.depositStatus === 'paid') && (
+                        <Chip tone="success">Deposit Paid</Chip>
                       )}
                     </div>
                     <div className="text-sm text-[var(--soft-stone)] flex flex-wrap gap-4">
@@ -156,7 +160,7 @@ export default function BookingsManagementPage() {
                   <div className="flex items-center gap-2 md:ml-4">
                     {booking.status === 'pending' && (
                       <>
-                        <Button variant="secondary" size="sm" onClick={() => handleAction(booking.id, 'confirm')} disabled={actionLoading === booking.id}>
+                        <Button variant="outline" size="sm" onClick={() => handleAction(booking.id, 'confirm')} disabled={actionLoading === booking.id}>
                           Confirm
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => handleAction(booking.id, 'cancel')} disabled={actionLoading === booking.id} className="text-[var(--terracotta)]">
@@ -175,13 +179,13 @@ export default function BookingsManagementPage() {
                       </>
                     )}
                     {booking.status === 'attended' && (
-                      <Chip label="Completed" variant="success" size="sm" />
+                      <Chip tone="success">Completed</Chip>
                     )}
                     {booking.status === 'cancelled' && (
-                      <Chip label="Cancelled" variant="neutral" size="sm" />
+                      <Chip tone="info">Cancelled</Chip>
                     )}
                     {booking.status === 'no_show' && (
-                      <Chip label="No-Show" variant="danger" size="sm" />
+                      <Chip tone="danger">No-Show</Chip>
                     )}
                   </div>
                 </div>

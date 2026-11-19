@@ -100,6 +100,7 @@ const BookingOSPage = lazy(() => import('./pages/booking/BookingOSPage'));
 const BookingMapPage = lazy(() => import('./pages/booking/BookingMapPage'));
 const BookingFlowPage = lazy(() => import('./pages/booking/BookingFlowPage'));
 const ContactOSPage = lazy(() => import('./pages/contact/ContactOSPage'));
+const ContactBookingsPage = lazy(() => import('./pages/contact/BookingsPage'));
 const ContactClientsPage = lazy(() => import('./pages/contact/ContactClientsPage'));
 const ContactClientDetailPage = lazy(() => import('./pages/contact/ContactClientDetailPage'));
 const ContactDealsPage = lazy(() => import('./pages/contact/ContactDealsPage'));
@@ -332,6 +333,7 @@ function AnimatedAppRoutes() {
 
            {/* Contact OS - CRM & Sales */}
            <Route path="contact" element={<BusinessGuard><ContactOSPage /></BusinessGuard>} />
+          <Route path="contact/bookings" element={<BusinessGuard><ContactBookingsPage /></BusinessGuard>} />
            <Route path="contact/clients" element={<BusinessGuard><FeatureGate feature="clients"><ContactClientsPage /></FeatureGate></BusinessGuard>} />
            <Route path="contact/clients/:id" element={<BusinessGuard><FeatureGate feature="clients"><ContactClientDetailPage /></FeatureGate></BusinessGuard>} />
            <Route path="contact/jobs" element={<BusinessGuard><FeatureGate feature="jobs"><ContactJobsPage /></FeatureGate></BusinessGuard>} />

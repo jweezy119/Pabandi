@@ -3,8 +3,10 @@ import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { aiProviderRouter, aiProviderStatus } from '../services/ai/aiProvider.router';
 import { nvidiaVisionJson } from '../services/ai.payment.verifier.service';
 import { aiNlpService } from '../services/ai.nlp.service';
+import { runConcierge } from '../services/concierge.service';
 import { jevStatus } from '../services/jev.service';
 import { prisma } from '../utils/database';
+import { logger } from '../utils/logger';
 import { checkSchema } from '../services/schema-check.service';
 
 const router = Router();
@@ -83,6 +85,48 @@ router.post('/test', authenticate, async (req: AuthRequest, res: Response) => {
     return res.json({ success: true, data: result });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * AI Concierge — natural-language discovery + booking proposal.
+ *
+ * Powers the global concierge widget. Authenticated (the widget only mounts for
+ * signed-in users), and reads the wallet address from the body to tailor escrow
+ * framing. Returns a proposal the client deep-links into the booking flow; it
+ * never creates a booking or moves money here.
+ */
+router.post('/concierge', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const query = String(req.body?.query ?? '').trim();
+    if (!query) {
+      return res.status(400).json({ success: false, error: 'query is required' });
+    }
+
+    const result = await runConcierge({
+      query,
+      walletAddress: req.body?.walletAddress ? String(req.body.walletAddress) : undefined,
+      city: req.body?.city ? String(req.body.city) : undefined,
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        message: result.message,
+        intent: result.intent,
+        language: result.language,
+        proposal: result.proposal,
+        alternatives: result.alternatives,
+        provider: result.provider,
+      },
+      // Convenience mirror so older clients reading `data.message` / `data.proposal`
+      // keep working alongside the canonical `data.data` envelope.
+      message: result.message,
+      proposal: result.proposal,
+    });
+  } catch (error: any) {
+    logger.error('[AI Concierge] request failed:', error?.message || error);
+    return res.status(500).json({ success: false, error: 'Concierge unavailable right now' });
   }
 });
 
