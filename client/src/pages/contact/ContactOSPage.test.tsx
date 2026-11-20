@@ -114,7 +114,7 @@ describe('ContactOSPage redirect', () => {
     // the page rendered and that it rendered the right page.
     renderContactOS(200);
 
-    await waitFor(() => expect(screen.getByText(/business dashboard — escrow, gigs, and agent activity/i)).toBeTruthy(),
+    await waitFor(() => expect(screen.getByText(/your clients, scheduled work, and protected payments/i)).toBeTruthy(),
       { timeout: RENDER_TIMEOUT_MS });
     expect(screen.queryByText('setup wizard')).toBeNull();
     expect(screen.getByTestId('path').textContent).toBe('/contact');
@@ -135,7 +135,7 @@ describe('ContactOSPage redirect', () => {
     // account into the wizard whenever the API had a bad minute.
     renderContactOS(500);
 
-    await waitFor(() => expect(screen.getByText(/business dashboard — escrow, gigs, and agent activity/i)).toBeTruthy(),
+    await waitFor(() => expect(screen.getByText(/your clients, scheduled work, and protected payments/i)).toBeTruthy(),
       { timeout: RENDER_TIMEOUT_MS });
     expect(screen.queryByText('setup wizard')).toBeNull();
   });
