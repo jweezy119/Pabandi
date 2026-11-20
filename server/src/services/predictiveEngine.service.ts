@@ -1,4 +1,6 @@
-import { evaluateHitlPolicy, confidenceFromProbability, type HitlAction } from './hitlPolicy';
+import type { HitlAction } from './hitlPolicy';
+import { buildPriorHierarchy, logistic, logit, predictAdditiveRisk } from './riskModel';
+import type { PriorCounts, PriorConfig, PriorHierarchyInput, ShrunkPrior } from './riskModel';
 import { logger } from '../utils/logger';
 
 /**
@@ -114,31 +116,18 @@ export interface ModelWeights {
   sampleSize: number;
 }
 
-export interface PriorCounts {
-  onTime: number;
-  wentWrong: number;
-}
-
-export interface ShrunkPrior {
-  alpha: number;
-  beta: number;
-  /** Posterior mean of finishing on time, after shrinkage. */
-  posteriorOnTime: number;
-  posteriorRisk: number;
-  sampleSize: number;
-  /** w — how much the child's own data was trusted over the parent. */
-  weight: number;
-}
-
-export interface PriorConfig {
-  kVertical: number;
-  kTechnician: number;
-}
-
-export const DEFAULT_PRIOR_CONFIG: PriorConfig = {
-  kVertical: Number(process.env.HITL_K_VERTICAL ?? 50),
-  kTechnician: Number(process.env.HITL_K_TECHNICIAN ?? 20),
-};
+// The prior maths and the additive model core now live in riskModel.ts, which
+// the booking-risk path shares. They are re-exported here because this module
+// was their original home and callers — including the tests — import them from
+// here.
+export type { PriorCounts, ShrunkPrior, PriorConfig, PriorHierarchyInput } from './riskModel';
+export {
+  DEFAULT_PRIOR_CONFIG,
+  buildPriorHierarchy,
+  logistic,
+  logit,
+  shrinkPrior,
+} from './riskModel';
 
 /* ── Feature extraction ─────────────────────────────────────────────────── */
 
@@ -250,78 +239,8 @@ export function extractFeatures(workOrder: WorkOrderLike, context: FeatureContex
 }
 
 /* ── Hierarchical priors ────────────────────────────────────────────────── */
-
-/**
- * Shrink a child's Beta posterior toward its parent's.
- *
- * `w = n / (n + k)` is the empirical-Bayes weight: with no observations the
- * child is entirely the parent, and as n grows the child's own data takes over.
- * k is how many observations it takes for the child to be halfway trusted —
- * the spec's k_v = 50 and k_t = 20.
- *
- * Both α and β are shrunk, not just the mean, so the posterior's spread is
- * shrunk too. Shrinking only the mean would leave a technician with two
- * observations looking as certain as one with two hundred.
- */
-export function shrinkPrior(
-  child: PriorCounts,
-  parent: { alpha: number; beta: number },
-  k: number,
-): ShrunkPrior {
-  const n = child.onTime + child.wentWrong;
-  const childAlpha = 1 + child.onTime;
-  const childBeta = 1 + child.wentWrong;
-  const weight = n / (n + k);
-
-  const alpha = weight * childAlpha + (1 - weight) * parent.alpha;
-  const beta = weight * childBeta + (1 - weight) * parent.beta;
-  const posteriorOnTime = alpha / (alpha + beta);
-
-  return {
-    alpha,
-    beta,
-    posteriorOnTime,
-    posteriorRisk: 1 - posteriorOnTime,
-    sampleSize: n,
-    weight,
-  };
-}
-
-export interface PriorHierarchyInput {
-  global: PriorCounts;
-  vertical: PriorCounts;
-  technician: PriorCounts;
-}
-
-/**
- * Global → vertical → technician. The global prior starts from a uniform
- * Beta(1,1), which is the least assumptive place to begin; the vertical and
- * technician levels are then shrunk toward their parent.
- */
-export function buildPriorHierarchy(
-  input: PriorHierarchyInput,
-  config: PriorConfig = DEFAULT_PRIOR_CONFIG,
-): { global: ShrunkPrior; vertical: ShrunkPrior; technician: ShrunkPrior } {
-  const globalPrior = shrinkPrior(input.global, { alpha: 1, beta: 1 }, 1);
-  const verticalPrior = shrinkPrior(input.vertical, globalPrior, config.kVertical);
-  const technicianPrior = shrinkPrior(input.technician, verticalPrior, config.kTechnician);
-
-  return { global: globalPrior, vertical: verticalPrior, technician: technicianPrior };
-}
-
-/* ── The model ──────────────────────────────────────────────────────────── */
-
-export function logistic(z: number): number {
-  // Clamped so a large |z| cannot overflow exp and produce NaN.
-  if (z > 40) return 1;
-  if (z < -40) return 0;
-  return 1 / (1 + Math.exp(-z));
-}
-
-export function logit(p: number): number {
-  const clamped = Math.min(1 - 1e-9, Math.max(1e-9, p));
-  return Math.log(clamped / (1 - clamped));
-}
+/* The shrinkage and hierarchy maths live in riskModel.ts and are re-exported  */
+/* above; this module only supplies the work-order feature vocabulary.        */
 
 function zeroFeatures(): WorkOrderFeatures {
   return {
@@ -429,22 +348,22 @@ export function predictRiskPoint(params: {
   const centredFeatures = centred(features, weights.trainingMeans);
   const betas = weightsVector(weights);
 
-  let z = logit(baselineRisk);
-  for (let index = 0; index < betas.length; index++) {
-    z += betas[index] * featuresVector(centredFeatures)[index];
-  }
-
-  const riskScore = logistic(z);
-  const confidence = confidenceFromProbability(riskScore);
-  const band = riskScore < 0.35 ? 'low' : riskScore > 0.7 ? 'high' : 'medium';
-  const decision = evaluateHitlPolicy(riskScore, confidence);
+  // The additive core is shared with the booking-risk path; this module only
+  // supplies the feature vocabulary and the work-order explanation copy.
+  const prediction = predictAdditiveRisk({
+    names: FEATURE_NAMES,
+    values: featuresVector(features),
+    coefficients: betas,
+    trainingMeans: featuresVector(weights.trainingMeans),
+    baselineRisk,
+  });
 
   return {
-    riskScore,
-    confidence,
-    band,
-    policy: decision.action,
-    needsEvidenceBundle: decision.needsEvidenceBundle,
+    riskScore: prediction.riskScore,
+    confidence: prediction.confidence,
+    band: prediction.band,
+    policy: prediction.policy,
+    needsEvidenceBundle: prediction.needsEvidenceBundle,
     factors: explainFactors(centredFeatures, betas, weights, baselineRisk),
     features,
     calibrated: weights.sampleSize > 0,
@@ -1320,75 +1239,4 @@ export async function simulateWorkOrderRisk(
 }
 
 /* ── Dynamic Risk Pricing Engine (DRPE) Deposit Policy ─────────────────── */
-
-export type ClientRiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
-
-export interface DrpeDepositDecision {
-  /** Normalized 0–100 client Trust Score (70 = brand new default, 90+ = verified). */
-  trustScore: number;
-  riskLevel: ClientRiskLevel;
-  /** 0 for verified clients (90+), 20 for brand new / unverified clients (<90). */
-  depositPercent: 0 | 20;
-  depositAmount: number;
-  serviceValue: number;
-  /** Merchant-facing Coordinator banner, e.g. "Client Risk: LOW. Deposit Required: 0%." */
-  merchantBanner: string;
-  /** Plain-language explanation shown to the client before paying. */
-  clientMessage: string;
-}
-
-/**
- * Normalizes a Trust Score stored on either a 0–100 scale (Prisma default 70)
- * or a 0–1000 scale (e.g. 700, 920) onto a canonical 0–100 score.
- */
-export function normalizeTrustScore(raw?: number | null): number {
-  if (typeof raw !== 'number' || !Number.isFinite(raw)) return 70;
-  const scaled = raw > 100 ? raw / 10 : raw;
-  return Math.max(0, Math.min(100, Math.round(scaled)));
-}
-
-/**
- * Evaluates the US DRPE deposit policy before checkout:
- * - Verified client (Trust Score >= 90): 0% deposit — book immediately, pay upon completion.
- * - Brand new / standard client (Trust Score < 90, e.g. 70): 20% deposit via Square or USDC escrow.
- */
-export function evaluateBookingDepositPolicy(params: {
-  trustScore?: number | null;
-  serviceValue: number;
-  predictedRiskScore?: number;
-}): DrpeDepositDecision {
-  const trustScore = normalizeTrustScore(params.trustScore);
-  const serviceValue = Math.max(0, Number.isFinite(params.serviceValue) ? params.serviceValue : 0);
-
-  if (trustScore >= 90) {
-    return {
-      trustScore,
-      riskLevel: 'LOW',
-      depositPercent: 0,
-      depositAmount: 0,
-      serviceValue,
-      merchantBanner: 'Client Risk: LOW. Deposit Required: 0%.',
-      clientMessage: 'Verified Trust Score (90+) — 0% deposit required. Book now and pay upon completion.',
-    };
-  }
-
-  const riskLevel: ClientRiskLevel =
-    trustScore < 50 || (typeof params.predictedRiskScore === 'number' && params.predictedRiskScore >= 0.7)
-      ? 'HIGH'
-      : 'MEDIUM';
-
-  const depositPercent = 20 as const;
-  const depositAmount =
-    serviceValue > 0 ? Math.round(serviceValue * (depositPercent / 100) * 100) / 100 : 0;
-
-  return {
-    trustScore,
-    riskLevel,
-    depositPercent,
-    depositAmount,
-    serviceValue,
-    merchantBanner: `Client Risk: ${riskLevel}. Deposit Required: ${depositPercent}%.`,
-    clientMessage:
-      'New or unverified profile — a refundable 20% deposit is required via Square or USDC escrow. Reach Trust Score 90+ to unlock 0% deposits.',
-  };
-}
+/* Moved to bookingDepositPolicy.service.ts — see the note there for why.   */
