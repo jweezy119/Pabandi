@@ -114,7 +114,7 @@
     "undici": "^8.12.3",
     "uuid": "^8.3.2",
     "winston": "^3.19.0",
-    "zod": "^3.22.4"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
