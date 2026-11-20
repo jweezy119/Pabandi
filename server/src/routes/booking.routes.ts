@@ -765,6 +765,7 @@ router.post('/', optionalAuthenticate, async (req: AuthRequest, res: Response) =
         businessId: business.id,
         slotStart: booking.slotStart,
         serviceType: resolvedServiceType,
+        serviceValue: numericServiceValue,
       });
     } catch (riskError: any) {
       logger.error('[Booking] risk assessment failed:', riskError?.message || riskError);
