@@ -2,13 +2,15 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import {
   buildPriorHierarchy,
-  evaluateBookingDepositPolicy,
   loadModelWeights,
   predictRiskPoint,
-  type DrpeDepositDecision,
   type RiskPrediction,
   type WorkOrderFeatures,
 } from './predictiveEngine.service';
+import {
+  evaluateBookingDepositPolicy,
+  type DrpeDepositDecision,
+} from './bookingDepositPolicy.service';
 
 function complexityFor(serviceType: string): number {
   const value = serviceType.toLowerCase();

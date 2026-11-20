@@ -4,6 +4,7 @@ import { authenticate, optionalAuthenticate, AuthRequest } from '../middleware/a
 import { logger } from '../utils/logger';
 import { formatBusinessDiscoveryItem } from '../utils/businessDiscovery';
 import { assessBookingRisk, quoteBookingRiskAndDeposit } from '../services/bookingRisk.service';
+import { resolveRequiredDeposit } from '../services/bookingDepositPolicy.service';
 import {
   advanceBookingEscrow,
   bookingEscrowReference,
@@ -556,7 +557,8 @@ router.post('/', optionalAuthenticate, async (req: AuthRequest, res: Response) =
       serviceName,
       serviceValue,
       numberOfGuests,
-      depositAmount,
+      // `depositAmount` is deliberately not read: the server derives the
+      // deposit from the DRPE policy and the catalog price.
       customerName,
       customerEmail,
       customerPhone,
@@ -574,7 +576,16 @@ router.post('/', optionalAuthenticate, async (req: AuthRequest, res: Response) =
     // Resolve business by id or slug
     const business = await prisma.business.findFirst({
       where: { OR: [{ id: String(businessId) }, { slug: String(businessId) }] },
-      select: { id: true, ownerId: true, category: true, maxConcurrentBookings: true },
+      select: {
+        id: true,
+        ownerId: true,
+        category: true,
+        maxConcurrentBookings: true,
+        // Server-side pricing. The deposit is a percentage of the service's real
+        // price, so the business's own deposit settings have to be in scope too.
+        depositAmount: true,
+        depositPercentage: true,
+      },
     });
 
     if (!business) {
@@ -682,9 +693,23 @@ router.post('/', optionalAuthenticate, async (req: AuthRequest, res: Response) =
       }
     }
 
-    const numericServiceValue = Number.isFinite(Number(serviceValue))
-      ? Math.max(0, Number(serviceValue))
-      : 0;
+    // Price the service server-side. The client's serviceValue is only a last
+    // resort for bookings that reference no catalog entry: using it as the
+    // primary source lets a caller understate the value and shrink its own
+    // deposit.
+    let numericServiceValue = 0;
+    if (serviceId) {
+      const catalogService = await prisma.businessService.findFirst({
+        where: { id: String(serviceId), businessId: business.id, isActive: true },
+        select: { price: true },
+      });
+      if (catalogService) numericServiceValue = Math.max(0, catalogService.price);
+    }
+    if (numericServiceValue === 0) {
+      numericServiceValue = Number.isFinite(Number(serviceValue))
+        ? Math.max(0, Number(serviceValue))
+        : 0;
+    }
 
     const { drpe } = await quoteBookingRiskAndDeposit({
       businessId: business.id,
@@ -694,13 +719,14 @@ router.post('/', optionalAuthenticate, async (req: AuthRequest, res: Response) =
       trustScore: resolvedTrustScore,
     });
 
-    const requestedDeposit = Number.isFinite(Number(depositAmount)) ? Math.max(0, Number(depositAmount)) : 0;
-    const numericDeposit =
-      drpe.depositPercent === 0
-        ? 0
-        : numericServiceValue > 0
-          ? drpe.depositAmount
-          : requestedDeposit;
+    // The caller's depositAmount is deliberately not consulted. It used to be
+    // the fallback whenever the service value was unknown, which meant sending
+    // `serviceValue: 0` (or omitting it) produced a deposit-free booking
+    // regardless of trust score.
+    const numericDeposit = resolveRequiredDeposit({
+      drpe,
+      businessDepositAmount: business.depositAmount,
+    });
 
     // Create the booking
     const booking = await prisma.booking.create({
