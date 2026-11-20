@@ -1573,7 +1573,16 @@ export const completeOnboarding = async (
       return res.status(401).json({ success: false, message: 'Authentication required' });
     }
 
-    const { profileType, username, businessName, industry } = req.body;
+    const {
+      profileType,
+      username,
+      businessName,
+      industry,
+      firstName,
+      lastName,
+      phone,
+      location,
+    } = req.body;
 
     if (!profileType || !['SOLO_BUILDER', 'CLIENT', 'SERVICE_BUSINESS'].includes(profileType)) {
       return res.status(400).json({
@@ -1583,16 +1592,37 @@ export const completeOnboarding = async (
     }
 
     const cleanUsername = username ? String(username).replace(/^@/, '').toLowerCase().trim() : undefined;
+    const cleanFirstName = typeof firstName === 'string' ? firstName.trim().slice(0, 80) : '';
+    const cleanLastName = typeof lastName === 'string' ? lastName.trim().slice(0, 80) : '';
+    const cleanPhone = typeof phone === 'string' ? phone.trim().slice(0, 32) : '';
+    const cleanLocation = typeof location === 'string' ? location.trim().slice(0, 120) : '';
 
     // Fetch existing user to preserve any attestations/boosts
     const existingUser = await prisma.user.findUnique({ where: { id: userId } });
     const currentScore = existingUser?.trustScore && existingUser.trustScore >= 700 ? existingUser.trustScore : 700;
+
+    if (cleanPhone && cleanPhone !== existingUser?.phone) {
+      const phoneOwner = await prisma.user.findFirst({
+        where: { phone: cleanPhone, id: { not: userId } },
+        select: { id: true },
+      });
+      if (phoneOwner) {
+        return res.status(409).json({
+          success: false,
+          message: 'That phone number is already linked to another account.',
+        });
+      }
+    }
 
     let updateData: any = {
       profileType: profileType as ProfileType,
       trustScore: currentScore,
       disputeRate: 0.0,
       ...(cleanUsername && { username: cleanUsername }),
+      ...(cleanFirstName && { firstName: cleanFirstName }),
+      ...(typeof lastName === 'string' && cleanLastName !== '' && { lastName: cleanLastName }),
+      ...(cleanPhone && { phone: cleanPhone }),
+      ...(cleanLocation && { location: cleanLocation }),
     };
 
     if (profileType === 'SOLO_BUILDER') {
@@ -1648,6 +1678,8 @@ export const completeOnboarding = async (
         email: true,
         firstName: true,
         lastName: true,
+        phone: true,
+        location: true,
         username: true,
         role: true,
         profileType: true,
@@ -1664,10 +1696,38 @@ export const completeOnboarding = async (
       },
     });
 
+    const activeBusinessId = updatedUser.business?.id ?? null;
+    const resolvedMode: 'business' | 'personal' =
+      updatedUser.preferredMode === 'personal' ? 'personal' : 'business';
+
+    // Reissue JWT so the `mode`, `role`, and `businessId` claims immediately reflect
+    // the completed onboarding selection (e.g. personal/CUSTOMER for standard profiles).
+    const token = jwt.sign(
+      {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        businessId: activeBusinessId,
+        activeBusinessId,
+        mode: resolvedMode,
+      } as JwtPayload,
+      JWT_SECRET as Secret,
+      { expiresIn: JWT_EXPIRES_IN as any }
+    );
+
+    // Frictionlessly initialize Trust Passport for newly onboarded profiles
+    ensureTrustPassport(updatedUser.id, updatedUser.firstName).catch(() => {});
+
     return res.json({
       success: true,
       message: 'Onboarding completed successfully',
-      data: { user: updatedUser },
+      data: {
+        user: {
+          ...updatedUser,
+          businessId: activeBusinessId,
+        },
+        token,
+      },
     });
   } catch (error) {
     logger.error('[Auth] completeOnboarding error:', error);

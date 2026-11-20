@@ -32,6 +32,8 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const LedgerInvoiceNewPage = lazy(() => import('./pages/ledger/LedgerInvoiceNewPage'));
 const LedgerExpenseNewPage = lazy(() => import('./pages/ledger/LedgerExpenseNewPage'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
+const CustomersPage = lazy(() => import('./pages/CustomersPage'));
+const TransparencyPage = lazy(() => import('./pages/TransparencyPage'));
 const GuaranteePage = lazy(() => import('./pages/GuaranteePage'));
 const TrustVerifyPage = lazy(() => import('./pages/TrustVerifyPage'));
 const TrustVerificationPage = lazy(() => import('./pages/settings/TrustVerificationPage'));
@@ -442,6 +444,11 @@ function AnimatedAppRoutes() {
 
           {/* Landing page - standalone, no chrome */}
           <Route path="/" element={<LandingPage />} />
+          {/* Public Customer Hub & Standard Personal Profile signup */}
+          <Route path="/customers" element={<CustomersPage />} />
+          <Route path="/customer" element={<Navigate to="/customers" replace />} />
+          {/* Live On-Chain Proof of Non-Custody / TVL Transparency Page */}
+          <Route path="/transparency" element={<TransparencyPage />} />
           {/* The guarantee pitch — its own document, also no chrome. Defensible
               as a sibling of "/" and not a child of Layout: it is read before
               signup, by people who have no dashboard to return to. */}

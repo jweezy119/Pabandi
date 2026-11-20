@@ -264,22 +264,97 @@ export default function BookingExperience() {
     return getBookingSchema(business?.vertical || business?.category);
   }, [business]);
 
+  // Normalize user Trust Score onto 0–100 (70 = brand new default, 90+ = verified 0% deposit)
+  const fallbackTrustScore = useMemo(() => {
+    const raw = user?.trustScore;
+    if (typeof raw !== 'number' || !Number.isFinite(raw)) return 70;
+    return Math.max(0, Math.min(100, Math.round(raw > 100 ? raw / 10 : raw)));
+  }, [user?.trustScore]);
+
+  // Run predictiveEngine.service.ts DRPE risk quote BEFORE the client pays
+  const { data: drpeQuoteResponse } = useQuery(
+    [
+      'booking-risk-quote',
+      business?.id,
+      effectiveServiceValue,
+      effectiveServiceName,
+      selectedDateKey,
+      selectedTime,
+      customerEmail.trim() || user?.email || '',
+    ],
+    () =>
+      apiClient.post('/booking/risk-quote', {
+        businessId: business!.id,
+        serviceType: selectedService?.name || effectiveServiceName || business?.category || 'Booking',
+        serviceValue: effectiveServiceValue,
+        reservationDate: selectedDateKey,
+        reservationTime: selectedTime,
+        customerEmail: customerEmail.trim() || user?.email || undefined,
+      }),
+    {
+      enabled: !!business?.id,
+      retry: false,
+    }
+  );
+
+  const drpeDecision = useMemo(() => {
+    const remote = drpeQuoteResponse?.data?.data;
+    if (remote && typeof remote.depositPercent === 'number') {
+      return {
+        trustScore: Number(remote.trustScore ?? fallbackTrustScore),
+        riskLevel: String(remote.riskLevel || (remote.depositPercent === 0 ? 'LOW' : 'MEDIUM')) as 'LOW' | 'MEDIUM' | 'HIGH',
+        depositPercent: Number(remote.depositPercent) as 0 | 20,
+        depositAmount: Number(remote.depositAmount ?? 0),
+        merchantBanner: String(
+          remote.merchantBanner ||
+            `Client Risk: ${remote.depositPercent === 0 ? 'LOW' : 'MEDIUM'}. Deposit Required: ${remote.depositPercent}%.`
+        ),
+        clientMessage: String(remote.clientMessage || ''),
+      };
+    }
+
+    // Deterministic client fallback matching predictiveEngine.service.ts
+    if (fallbackTrustScore >= 90) {
+      return {
+        trustScore: fallbackTrustScore,
+        riskLevel: 'LOW' as const,
+        depositPercent: 0 as const,
+        depositAmount: 0,
+        merchantBanner: 'Client Risk: LOW. Deposit Required: 0%.',
+        clientMessage: 'Verified Trust Score (90+) — 0% deposit required. Book now and pay upon completion.',
+      };
+    }
+
+    const baseValue = effectiveServiceValue > 0 ? effectiveServiceValue : Number(business?.depositAmount || 0);
+    const deposit20 = baseValue > 0 ? Math.round(baseValue * 0.2 * 100) / 100 : 0;
+    const riskLevel = fallbackTrustScore < 50 ? ('HIGH' as const) : ('MEDIUM' as const);
+    return {
+      trustScore: fallbackTrustScore,
+      riskLevel,
+      depositPercent: 20 as const,
+      depositAmount: deposit20,
+      merchantBanner: `Client Risk: ${riskLevel}. Deposit Required: 20%.`,
+      clientMessage:
+        'New or unverified client (Trust Score 70) — a 20% refundable deposit is required via Square or USDC escrow.',
+    };
+  }, [drpeQuoteResponse, fallbackTrustScore, effectiveServiceValue, business?.depositAmount]);
+
   const computedDeposit = useMemo(() => {
     if (!business) return 0;
+    // DRPE verified clients (Trust Score 90+) get 0% deposit — book & pay upon completion
+    if (drpeDecision.depositPercent === 0) return 0;
+    if (drpeDecision.depositAmount > 0) return drpeDecision.depositAmount;
     if (business.depositAmount && business.depositAmount > 0) {
       return Number(business.depositAmount);
     }
-    if (business.depositPercentage && business.depositPercentage > 0 && effectiveServiceValue > 0) {
-      return Math.round(effectiveServiceValue * (business.depositPercentage / 100) * 100) / 100;
-    }
-    if (business.requireDeposit && effectiveServiceValue > 0) {
+    if (effectiveServiceValue > 0) {
       return Math.round(effectiveServiceValue * 0.2 * 100) / 100;
     }
     return 0;
-  }, [business, effectiveServiceValue]);
+  }, [business, drpeDecision, effectiveServiceValue]);
 
   const checkoutInitialRail: PaymentRail =
-    paymentMethod === 'square' ? 'square' : paymentMethod === 'safepay' ? 'raast' : 'solana';
+    paymentMethod === 'square' ? 'square' : 'solana';
 
   const handleBookTable = async () => {
     const targetBusiness = business;
@@ -325,14 +400,20 @@ export default function BookingExperience() {
       const created = res.data?.data;
       const bookingId = created?.bookingId || created?.id;
       const escrowId = created?.escrowId;
+      const authoritativeDeposit =
+        typeof created?.depositAmount === 'number' ? created.depositAmount : depositDue;
       setCreatedBooking(bookingId ? { id: bookingId, escrowId } : null);
 
-      if (depositDue > 0 && bookingId) {
-        setPaidDeposit(depositDue);
+      if (authoritativeDeposit > 0 && bookingId) {
+        setPaidDeposit(authoritativeDeposit);
         setCheckoutOpen(true);
       } else {
         setPaidDeposit(0);
-        toast.success('Booking confirmed!');
+        toast.success(
+          drpeDecision.depositPercent === 0
+            ? 'Booking confirmed with 0% deposit (Verified Trust Score)! Pay upon completion.'
+            : 'Booking confirmed!'
+        );
         setBookingComplete(true);
       }
     } catch (err: any) {
@@ -933,10 +1014,52 @@ export default function BookingExperience() {
               </Surface>
             )}
 
-            {/* Payment Method */}
+            {/* DRPE Trust Score & Dynamic Deposit Summary */}
+            <Surface className="p-5">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--terracotta)]">
+                  Dynamic Deposit Check (DRPE)
+                </span>
+                <span
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                    drpeDecision.depositPercent === 0
+                      ? 'bg-[#E9F4EC] text-[#2D6A4F]'
+                      : 'bg-[var(--warm-sand)] text-[var(--warm-ink)]'
+                  }`}
+                  data-testid="drpe-deposit-badge"
+                >
+                  Trust Score {drpeDecision.trustScore} · {drpeDecision.depositPercent}% Deposit
+                </span>
+              </div>
+              <p className="text-xs font-semibold text-[var(--warm-ink)]">
+                {drpeDecision.merchantBanner}
+              </p>
+              <p className="text-xs text-[var(--soft-stone)] mt-1 leading-relaxed">
+                {drpeDecision.clientMessage}
+              </p>
+            </Surface>
+
+            {/* US Payment Method Selector (Solana Pay USDC 0% Fee + Square Card 2.9% + 30¢) */}
             <Surface className="p-6">
               <h3 className="font-bold text-[var(--warm-ink)] mb-4">Payment Method</h3>
               <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('solana')}
+                  className={`w-full p-3.5 rounded-xl text-left transition-all ${
+                    paymentMethod === 'solana'
+                      ? 'bg-[#E9F4EC]/70 border-2 border-[#2D6A4F] shadow-sm'
+                      : 'bg-[var(--warm-sand)]/50 border border-[rgba(191,179,163,0.4)] hover:border-[#2D6A4F]/60'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-[var(--warm-ink)]">⚡ Digital Dollars (Solana Pay / USDC)</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#2D6A4F] text-white">
+                      0% Fee
+                    </span>
+                  </div>
+                  <div className="text-xs text-[var(--soft-stone)] mt-0.5">Instant settlement · Zero processing fees</div>
+                </button>
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('square')}
@@ -946,32 +1069,11 @@ export default function BookingExperience() {
                       : 'bg-[var(--warm-sand)]/50 border border-[rgba(191,179,163,0.4)] hover:border-[var(--clay)]/50'
                   }`}
                 >
-                  <div className="font-semibold text-[var(--warm-ink)]">💳 Square Checkout</div>
-                  <div className="text-xs text-[var(--soft-stone)]">Card, Apple Pay, Google Pay, or Cash App</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('solana')}
-                  className={`w-full p-3.5 rounded-xl text-left transition-all ${
-                    paymentMethod === 'solana'
-                      ? 'bg-[var(--clay)]/15 border-2 border-[var(--clay)] shadow-sm'
-                      : 'bg-[var(--warm-sand)]/50 border border-[rgba(191,179,163,0.4)] hover:border-[var(--clay)]/50'
-                  }`}
-                >
-                  <div className="font-semibold text-[var(--warm-ink)]">⚡ Solana Pay</div>
-                  <div className="text-xs text-[var(--soft-stone)]">Instant USDC, SOL, or $PAB</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('safepay')}
-                  className={`w-full p-3.5 rounded-xl text-left transition-all ${
-                    paymentMethod === 'safepay'
-                      ? 'bg-[var(--clay)]/15 border-2 border-[var(--clay)] shadow-sm'
-                      : 'bg-[var(--warm-sand)]/50 border border-[rgba(191,179,163,0.4)] hover:border-[var(--clay)]/50'
-                  }`}
-                >
-                  <div className="font-semibold text-[var(--warm-ink)]">🏦 SafePay / Raast</div>
-                  <div className="text-xs text-[var(--soft-stone)]">PKR Bank or local card</div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-[var(--warm-ink)]">💳 Credit/Debit Card (Square)</span>
+                    <span className="text-[10px] font-semibold text-[var(--soft-stone)]">2.9% + 30¢</span>
+                  </div>
+                  <div className="text-xs text-[var(--soft-stone)] mt-0.5">Card, Apple Pay, Google Pay, or Cash App</div>
                 </button>
               </div>
             </Surface>

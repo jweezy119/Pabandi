@@ -5,9 +5,10 @@ import { Button } from '../../../components/primitives/Button';
 import { Input } from '../../../components/primitives/Input';
 import ClaySelect from '../components/ClaySelect';
 import { useAuthStore } from '../../../store/authStore';
-import { Plus, Trash2, Edit2, X, Check, Upload, Star, Package } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Check, Upload, Star, Package, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getAuthToken } from '../../../utils/authToken';
+import { useVerticalPersona } from '../../../config/verticalPersonas';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
 const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() || ''}` });
@@ -47,12 +48,14 @@ interface Service {
 
 export function ServiceCatalogPage() {
   const { user } = useAuthStore();
+  const persona = useVerticalPersona();
   const businessId = (user as any)?.business?.id || localStorage.getItem('businessId') || '';
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Service | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [loadingStarters, setLoadingStarters] = useState(false);
   const [form, setForm] = useState<Partial<Service>>({});
   const [tagInput, setTagInput] = useState('');
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -144,19 +147,65 @@ export function ServiceCatalogPage() {
     setForm((f) => ({ ...f, tags: (f.tags || []).filter((_, i) => i !== index) }));
   };
 
+  const handleLoadStarterServices = async () => {
+    if (!businessId) {
+      toast.error('Please finish setting up your business first');
+      return;
+    }
+    setLoadingStarters(true);
+    try {
+      const existingNames = new Set(services.map((s) => s.name.toLowerCase()));
+      const toCreate = persona.starterServices.filter(
+        (tpl) => !existingNames.has(tpl.name.toLowerCase())
+      );
+      if (toCreate.length === 0) {
+        toast.success('All starter services are already in your menu!');
+        return;
+      }
+      let added = 0;
+      for (const tpl of toCreate) {
+        const res = await fetch(`${API_BASE}/api/v1/businesses/${businessId}/services`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({
+            ...tpl,
+            isActive: true,
+            tags: [persona.id],
+          }),
+        });
+        if (res.ok) added++;
+      }
+      toast.success(`Added ${added} starter ${persona.shortLabel.toLowerCase()} services — edit any price anytime!`);
+      loadServices();
+    } catch {
+      toast.error('Could not load starter services');
+    } finally {
+      setLoadingStarters(false);
+    }
+  };
+
   if (loading) return <div className="p-8">Loading...</div>;
 
   return (
     <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between clay-heading pb-2">
+        <div className="flex flex-wrap items-center justify-between gap-3 clay-heading pb-2">
           <div>
-            <h1 className="text-2xl font-bold text-[var(--warm-ink)] font-headline">Service Catalog</h1>
-            <p className="text-sm text-[var(--soft-stone)] mt-0.5">Manage your services with categories, images, and variants</p>
+            <h1 className="text-2xl font-bold text-[var(--warm-ink)] font-headline">
+              {persona.emoji} {persona.shortLabel} Service Menu
+            </h1>
+            <p className="text-sm text-[var(--soft-stone)] mt-0.5">
+              Set your prices and durations once — clients can book right from your menu
+            </p>
           </div>
-          <Button variant="primary" onClick={() => { setEditing(null); setForm({ duration: 60, isActive: true, tags: [], locationType: 'on-site' }); setShowForm(true); }}>
-            <Plus size={16} /> Add Service
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={handleLoadStarterServices} disabled={loadingStarters}>
+              <Sparkles size={15} /> {loadingStarters ? 'Adding…' : 'Load Starter Menu'}
+            </Button>
+            <Button variant="primary" onClick={() => { setEditing(null); setForm({ duration: 60, isActive: true, tags: [], locationType: 'on-site' }); setShowForm(true); }}>
+              <Plus size={16} /> Add Service
+            </Button>
+          </div>
         </div>
 
         {showForm && (
@@ -253,10 +302,34 @@ export function ServiceCatalogPage() {
 
         <div className="space-y-3">
           {services.length === 0 ? (
-            <Card className="text-center py-12">
-              <Package size={40} className="mx-auto text-[var(--soft-stone)] mb-3" />
-              <h3 className="text-lg font-bold text-[var(--warm-ink)] font-headline">No services yet</h3>
-              <p className="text-sm text-[var(--soft-stone)] mt-1">Add your first service to start booking</p>
+            <Card className="py-10 px-6 text-center space-y-4">
+              <div className="text-4xl">{persona.emoji}</div>
+              <div>
+                <h3 className="text-lg font-bold text-[var(--warm-ink)] font-headline">
+                  Start fast with a ready-made {persona.shortLabel.toLowerCase()} menu
+                </h3>
+                <p className="text-sm text-[var(--soft-stone)] mt-1 max-w-md mx-auto">
+                  Load {persona.starterServices.length} realistic starter services in one click, then adjust names, prices, or durations however you like.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-w-xl mx-auto text-left">
+                {persona.starterServices.map((tpl) => (
+                  <div
+                    key={tpl.name}
+                    className="p-3 rounded-xl bg-[var(--cream)] border border-[rgba(191,179,163,0.35)]"
+                  >
+                    <div className="font-semibold text-sm text-[var(--warm-ink)]">{tpl.name}</div>
+                    <div className="text-xs text-[var(--soft-stone)] mt-0.5">
+                      ${tpl.price} · {tpl.duration} min
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-center gap-2 pt-1">
+                <Button variant="primary" onClick={handleLoadStarterServices} disabled={loadingStarters}>
+                  <Sparkles size={15} /> {loadingStarters ? 'Adding starter menu…' : `Load ${persona.shortLabel} Starter Menu`}
+                </Button>
+              </div>
             </Card>
           ) : (
             services.map(service => (

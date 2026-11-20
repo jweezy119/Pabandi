@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getAuthToken } from '../../../utils/authToken';
 import { useBusinessSettings } from '../../../hooks/useBusinessSettings';
+import { getVerticalPersona } from '../../../config/verticalPersonas';
 
 /**
  * First-run guidance, driven by what is actually in the account.
@@ -126,10 +127,14 @@ export function FirstRunChecklist() {
 
   if (dismissed || !progress) return null;
 
+  const persona = getVerticalPersona(settings.vertical);
   const enabled = settings.enabledFeatures?.contact ?? [];
   // A step for a feature this vertical does not have is not "not done", it does not
   // apply. Offering it would send someone to a page that redirects straight back.
-  const steps = STEPS.filter((s) => !s.feature || enabled.includes(s.feature));
+  const steps = STEPS.filter((s) => !s.feature || enabled.includes(s.feature)).map((s) => {
+    const custom = persona.checklist[s.key];
+    return custom ? { ...s, title: custom.title, detail: custom.detail, cta: custom.cta } : s;
+  });
   const remaining = steps.filter((s) => (progress[s.key] ?? 0) === 0);
 
   // Nothing left to do — get out of the way. Reappearing at the bottom of the list on

@@ -3,7 +3,7 @@ import { prisma } from '../utils/database';
 import { authenticate, optionalAuthenticate, AuthRequest } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
 import { formatBusinessDiscoveryItem } from '../utils/businessDiscovery';
-import { assessBookingRisk } from '../services/bookingRisk.service';
+import { assessBookingRisk, quoteBookingRiskAndDeposit } from '../services/bookingRisk.service';
 import {
   advanceBookingEscrow,
   bookingEscrowReference,
@@ -467,6 +467,80 @@ router.get('/:businessId/slots', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/v1/booking/risk-quote - Pre-checkout DRPE Trust Score & deposit evaluation
+router.post('/risk-quote', optionalAuthenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const {
+      businessId,
+      serviceType,
+      serviceValue,
+      slotStart: rawSlotStart,
+      reservationDate,
+      reservationTime,
+      customerEmail,
+    } = req.body ?? {};
+
+    if (!businessId) {
+      return res.status(400).json({ success: false, error: 'businessId is required' });
+    }
+
+    let slotStartDate = new Date();
+    if (rawSlotStart) {
+      const parsed = new Date(rawSlotStart);
+      if (!Number.isNaN(parsed.getTime())) slotStartDate = parsed;
+    } else if (reservationDate && reservationTime) {
+      const parsed = new Date(`${reservationDate}T${reservationTime}:00Z`);
+      if (!Number.isNaN(parsed.getTime())) slotStartDate = parsed;
+    }
+
+    // Resolve client's Trust Score (defaults to 70 for brand new clients)
+    let resolvedTrustScore: number = 70;
+    if (req.user?.id) {
+      const userRecord = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { trustScore: true },
+      });
+      if (typeof userRecord?.trustScore === 'number') {
+        resolvedTrustScore = userRecord.trustScore;
+      }
+    } else if (typeof customerEmail === 'string' && customerEmail.trim()) {
+      const userRecord = await prisma.user.findUnique({
+        where: { email: customerEmail.trim().toLowerCase() },
+        select: { trustScore: true },
+      });
+      if (typeof userRecord?.trustScore === 'number') {
+        resolvedTrustScore = userRecord.trustScore;
+      }
+    }
+
+    const numericServiceValue = Number.isFinite(Number(serviceValue))
+      ? Math.max(0, Number(serviceValue))
+      : 0;
+
+    const { prediction, drpe } = await quoteBookingRiskAndDeposit({
+      businessId: String(businessId),
+      slotStart: slotStartDate,
+      serviceType: typeof serviceType === 'string' && serviceType.trim() ? serviceType.trim() : 'Booking',
+      serviceValue: numericServiceValue,
+      trustScore: resolvedTrustScore,
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        ...drpe,
+        riskScore: prediction.riskScore,
+        riskBand: prediction.band,
+        policy: prediction.policy,
+      },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('[Booking] risk-quote error:', message);
+    return res.status(500).json({ success: false, error: message });
+  }
+});
+
 // POST /api/v1/booking - Create a booking + escrow (supports authenticated & guest bookings)
 router.post('/', optionalAuthenticate, async (req: AuthRequest, res: Response) => {
   try {
@@ -588,7 +662,45 @@ router.post('/', optionalAuthenticate, async (req: AuthRequest, res: Response) =
         select: { id: true },
       }));
 
-    const numericDeposit = Number.isFinite(Number(depositAmount)) ? Math.max(0, Number(depositAmount)) : 0;
+    // Run DRPE predictive risk check before finalizing deposit requirements
+    let resolvedTrustScore = 70;
+    if (req.user?.id) {
+      const userRecord = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { trustScore: true },
+      });
+      if (typeof userRecord?.trustScore === 'number') {
+        resolvedTrustScore = userRecord.trustScore;
+      }
+    } else if (resolvedEmail) {
+      const userRecord = await prisma.user.findUnique({
+        where: { email: resolvedEmail },
+        select: { trustScore: true },
+      });
+      if (typeof userRecord?.trustScore === 'number') {
+        resolvedTrustScore = userRecord.trustScore;
+      }
+    }
+
+    const numericServiceValue = Number.isFinite(Number(serviceValue))
+      ? Math.max(0, Number(serviceValue))
+      : 0;
+
+    const { drpe } = await quoteBookingRiskAndDeposit({
+      businessId: business.id,
+      slotStart: slotStartDate,
+      serviceType: resolvedServiceType,
+      serviceValue: numericServiceValue,
+      trustScore: resolvedTrustScore,
+    });
+
+    const requestedDeposit = Number.isFinite(Number(depositAmount)) ? Math.max(0, Number(depositAmount)) : 0;
+    const numericDeposit =
+      drpe.depositPercent === 0
+        ? 0
+        : numericServiceValue > 0
+          ? drpe.depositAmount
+          : requestedDeposit;
 
     // Create the booking
     const booking = await prisma.booking.create({
@@ -610,11 +722,12 @@ router.post('/', optionalAuthenticate, async (req: AuthRequest, res: Response) =
           customerPhone: resolvedPhone,
           serviceId: serviceId ?? null,
           serviceName: serviceName ?? resolvedServiceType,
-          serviceValue: Number.isFinite(Number(serviceValue)) ? Number(serviceValue) : null,
+          serviceValue: numericServiceValue || null,
           numberOfGuests: Number.isFinite(Number(numberOfGuests)) ? Number(numberOfGuests) : 1,
           specialRequests: specialRequests ?? null,
           projectDescription: projectDescription ?? null,
           paymentMethod: paymentMethod ?? null,
+          drpe,
         } as any,
       },
     });
@@ -656,6 +769,7 @@ router.post('/', optionalAuthenticate, async (req: AuthRequest, res: Response) =
         bookingId: booking.id,
         escrowId,
         risk,
+        drpe,
       },
     });
   } catch (error: unknown) {

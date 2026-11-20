@@ -21,8 +21,12 @@ import {
   Sparkles,
   Camera,
   Coins,
+  CheckCircle2,
+  Circle,
+  Trophy,
+  X,
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ClayButton } from '../../components/clay/ClayButton';
 import { ClayCard } from '../../components/clay/ClayCard';
 import { ClayBadge } from '../../components/primitives';
@@ -40,7 +44,22 @@ import {
 export default function PersonalDashboardPage() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
+
+  const [showWelcomeBanner, setShowWelcomeBanner] = useState(
+    () => searchParams.get('welcome') === '1'
+  );
+  const [questCollapsed, setQuestCollapsed] = useState(false);
+
+  const dismissWelcome = () => {
+    setShowWelcomeBanner(false);
+    if (searchParams.has('welcome')) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('welcome');
+      setSearchParams(next, { replace: true });
+    }
+  };
 
   // Real aggregate data, polled every 30s (Trust Sync).
   const {
@@ -62,6 +81,48 @@ export default function PersonalDashboardPage() {
   const tier = stats?.trustScore.tier ?? null;
   const yieldEarned = stats?.yieldEarned ?? null;
   const hasReleaseable = escrows.some((e) => e.canRelease);
+
+  // Light gamification: endowed-progress Customer Quick-Start Quest
+  const hasContactDetails = Boolean(user?.phone || user?.location);
+  const hasBookedOrScored = escrows.length > 0 || (score != null && score > 0);
+  const hasReleasedEscrow = yieldEarned != null && yieldEarned > 0;
+  const questSteps = [
+    {
+      id: 'profile',
+      label: 'Personal Profile Created',
+      detail: 'Your Trust Passport & Personal Hub are live.',
+      done: true,
+      actionLabel: null as string | null,
+      actionTo: null as string | null,
+    },
+    {
+      id: 'contact',
+      label: 'Add Phone or City for 1-Tap Bookings',
+      detail: 'Auto-fills your contact info whenever you reserve a business.',
+      done: hasContactDetails,
+      actionLabel: 'Update Profile',
+      actionTo: '/me/profile',
+    },
+    {
+      id: 'first-booking',
+      label: 'Book or Reserve Your First Business',
+      detail: 'Browse verified local & remote pros with escrow protection.',
+      done: hasBookedOrScored,
+      actionLabel: 'Browse Businesses',
+      actionTo: '/booking',
+    },
+    {
+      id: 'first-release',
+      label: 'Verify & Release Your First Escrow',
+      detail: 'Unlocks your next Trust Tier & 50% yield rebate.',
+      done: hasReleasedEscrow,
+      actionLabel: 'View Escrows',
+      actionTo: '#escrows',
+    },
+  ];
+  const completedQuestCount = questSteps.filter((s) => s.done).length;
+  const questProgressPct = Math.round((completedQuestCount / questSteps.length) * 100);
+  const showQuickStartQuest = completedQuestCount < questSteps.length;
 
   const handleRelease = async (escrow: ActiveEscrowItem) => {
     setReleasing(true);
@@ -131,6 +192,138 @@ export default function PersonalDashboardPage() {
               <p className="text-xs text-[var(--soft-stone)]">Your personal trust &amp; escrow hub</p>
             </div>
           </div>
+
+          {/* ── Celebratory Welcome Banner (?welcome=1) ─────────── */}
+          <AnimatePresence>
+            {showWelcomeBanner && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                data-testid="welcome-banner"
+                className="mb-6 relative rounded-[var(--radius-card)] border border-[var(--sage)]/45 bg-gradient-to-br from-[var(--sage)]/18 via-[var(--cream)] to-[var(--warm-sand)]/50 p-5 shadow-[var(--shadow-soft)]"
+              >
+                <button
+                  type="button"
+                  onClick={dismissWelcome}
+                  aria-label="Dismiss welcome banner"
+                  className="absolute right-3.5 top-3.5 p-1 rounded-full text-[var(--soft-stone)] hover:text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]/60 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pr-6">
+                  <div>
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#4f6142]">
+                      <Trophy className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span>Personal Profile Unlocked</span>
+                    </span>
+                    <h2 className="font-headline text-lg sm:text-xl font-bold text-[var(--warm-ink)] mt-1">
+                      Welcome to Pabandi, {user?.firstName && user.firstName !== 'User' ? user.firstName : 'friend'}!
+                    </h2>
+                    <p className="text-xs text-[#5a5348] mt-1">
+                      Your standard personal profile &amp; Trust Passport are live. You&apos;re ready to book or reserve any verified business.
+                    </p>
+                  </div>
+                  <Link
+                    to="/booking"
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white shrink-0 shadow-[var(--shadow-btn)] transition-all hover:opacity-95"
+                    style={{ background: 'linear-gradient(135deg, var(--clay), var(--terracotta))' }}
+                  >
+                    <span>Explore &amp; Book a Business</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ── Customer Quick-Start Quest (Endowed Progress) ───── */}
+          {showQuickStartQuest && (
+            <div className="mb-6" data-testid="customer-quickstart-quest">
+              <ClayCard className="border border-[rgba(191,179,163,0.45)] bg-white/80 p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-[var(--clay)]/14 text-[var(--terracotta)] flex items-center justify-center shrink-0">
+                      <Trophy className="h-4 w-4" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <h2 className="font-headline text-base font-bold text-[var(--warm-ink)]">
+                        Quick-Start Progress
+                      </h2>
+                      <p className="text-xs text-[#6c6258]">
+                        {completedQuestCount} of {questSteps.length} milestones complete · {questProgressPct}%
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setQuestCollapsed((v) => !v)}
+                    aria-expanded={!questCollapsed}
+                    className="text-xs font-semibold text-[var(--terracotta)] hover:underline inline-flex items-center gap-1"
+                  >
+                    <span>{questCollapsed ? 'Show' : 'Hide'}</span>
+                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${questCollapsed ? '' : 'rotate-180'}`} />
+                  </button>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[var(--warm-sand)]">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-[var(--clay)] to-[var(--sage)]"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${questProgressPct}%` }}
+                    transition={{ type: 'spring', stiffness: 130, damping: 20 }}
+                  />
+                </div>
+
+                {!questCollapsed && (
+                  <ul className="mt-4 space-y-2.5">
+                    {questSteps.map((q) => (
+                      <li
+                        key={q.id}
+                        className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 border transition-colors ${
+                          q.done
+                            ? 'bg-[var(--sage)]/10 border-[var(--sage)]/25'
+                            : 'bg-[var(--cream)]/60 border-[rgba(191,179,163,0.3)]'
+                        }`}
+                      >
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          {q.done ? (
+                            <CheckCircle2 className="h-4 w-4 text-[var(--sage)] shrink-0 mt-0.5" aria-hidden="true" />
+                          ) : (
+                            <Circle className="h-4 w-4 text-[var(--soft-stone)] shrink-0 mt-0.5" aria-hidden="true" />
+                          )}
+                          <div className="min-w-0">
+                            <p className={`text-xs font-bold ${q.done ? 'text-[#4f6142] line-through' : 'text-[var(--warm-ink)]'}`}>
+                              {q.label}
+                            </p>
+                            <p className="text-[11px] text-[#6c6258] truncate">{q.detail}</p>
+                          </div>
+                        </div>
+                        {!q.done && q.actionLabel && q.actionTo && (
+                          q.actionTo.startsWith('#') ? (
+                            <a
+                              href={q.actionTo}
+                              className="shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-[var(--warm-sand)] text-[var(--warm-ink)] hover:bg-[var(--clay)] hover:text-white transition-colors"
+                            >
+                              {q.actionLabel}
+                            </a>
+                          ) : (
+                            <Link
+                              to={q.actionTo}
+                              className="shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-[var(--clay)] text-white hover:bg-[var(--terracotta)] transition-colors"
+                            >
+                              {q.actionLabel}
+                            </Link>
+                          )
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </ClayCard>
+            </div>
+          )}
 
           {/* ── Assistive banner ────────────────────────────────── */}
           <AnimatePresence>

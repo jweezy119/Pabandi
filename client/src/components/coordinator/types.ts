@@ -166,6 +166,10 @@ export interface WorkOrder {
   attachments: WorkOrderAttachment[];
   auditCount: number;
   risk?: RiskAssessment;
+  /** Optional 0–100 client Trust Score from DRPE (90+ = 0% deposit, 70 = 20% deposit). */
+  clientTrustScore?: number;
+  /** Optional explicit DRPE deposit percentage required for this work order (0 or 20). */
+  depositRequiredPercent?: number;
 }
 
 /** The technician currently on the job, or null when unassigned. */

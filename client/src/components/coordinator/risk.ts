@@ -49,3 +49,44 @@ export function riskTooltip(band: RiskBand, score: number): string {
 
 export const OUT_OF_RANGE_TOOLTIP =
   'This estimate is outside the range our model was trained on, so we are less confident in it than the other numbers.';
+
+/**
+ * Formats the merchant-facing DRPE summary line shown on the Coordinator Dashboard:
+ * - Verified / Low-risk client (Trust Score 90+ or low risk band): "Client Risk: LOW. Deposit Required: 0%."
+ * - Brand new / Medium-risk client (Trust Score 70): "Client Risk: MEDIUM. Deposit Required: 20%."
+ * - Elevated-risk client: "Client Risk: HIGH. Deposit Required: 20%."
+ */
+export function formatClientRiskDepositSummary(params: {
+  clientTrustScore?: number;
+  depositRequiredPercent?: number;
+  riskScore?: number;
+  riskBandOverride?: RiskBand;
+}): string | null {
+  if (typeof params.clientTrustScore === 'number' && Number.isFinite(params.clientTrustScore)) {
+    const normalized =
+      params.clientTrustScore > 100
+        ? Math.round(params.clientTrustScore / 10)
+        : Math.round(params.clientTrustScore);
+    if (normalized >= 90) {
+      const pct = typeof params.depositRequiredPercent === 'number' ? params.depositRequiredPercent : 0;
+      return `Client Risk: LOW. Deposit Required: ${pct}%.`;
+    }
+    const level = normalized < 50 ? 'HIGH' : 'MEDIUM';
+    const pct = typeof params.depositRequiredPercent === 'number' ? params.depositRequiredPercent : 20;
+    return `Client Risk: ${level}. Deposit Required: ${pct}%.`;
+  }
+
+  if (typeof params.riskScore === 'number' && Number.isFinite(params.riskScore)) {
+    const band = riskBand(params.riskScore, params.riskBandOverride);
+    const level = band === 'low' ? 'LOW' : band === 'high' ? 'HIGH' : 'MEDIUM';
+    const pct =
+      typeof params.depositRequiredPercent === 'number'
+        ? params.depositRequiredPercent
+        : band === 'low'
+          ? 0
+          : 20;
+    return `Client Risk: ${level}. Deposit Required: ${pct}%.`;
+  }
+
+  return null;
+}

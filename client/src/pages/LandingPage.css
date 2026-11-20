@@ -225,6 +225,33 @@ img {
   position: relative;
 }
 
+.nav-list a.nav-tab-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.nav-tab-icon {
+  color: var(--clay);
+  flex-shrink: 0;
+  transition: transform 0.2s var(--ease-clay), color 0.2s var(--ease-clay);
+}
+
+.nav-list a.nav-tab-link:hover .nav-tab-icon,
+.nav-list a.nav-tab-link.is-active .nav-tab-icon {
+  color: var(--terracotta);
+  transform: translateY(-1px);
+}
+
+.nav-list a.nav-tab-link.is-active {
+  color: var(--terracotta);
+  font-weight: 700;
+}
+
+.nav-list a.nav-tab-link.is-active::after {
+  width: 100%;
+}
+
 .nav-list a::after {
   content: '';
   position: absolute;

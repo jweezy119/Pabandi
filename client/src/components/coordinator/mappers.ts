@@ -58,6 +58,20 @@ export function normalizeWorkOrder(raw: any): WorkOrder {
     // Prisma returns `_count: { auditLog: n }`; the surface wants a flat number.
     auditCount: raw._count?.auditLog ?? 0,
     risk: riskAssessmentFromApi(raw.risk) ?? undefined,
+    clientTrustScore:
+      typeof raw.clientTrustScore === 'number'
+        ? raw.clientTrustScore
+        : typeof raw.customer?.trustScore === 'number'
+          ? raw.customer.trustScore
+          : typeof raw.metadata?.drpe?.trustScore === 'number'
+            ? raw.metadata.drpe.trustScore
+            : undefined,
+    depositRequiredPercent:
+      typeof raw.depositRequiredPercent === 'number'
+        ? raw.depositRequiredPercent
+        : typeof raw.metadata?.drpe?.depositPercent === 'number'
+          ? raw.metadata.drpe.depositPercent
+          : undefined,
   };
 }
 

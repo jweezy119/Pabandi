@@ -18,6 +18,8 @@ import { TrustScoreBreakdown } from './components/TrustScoreBreakdown';
 import { TrustDossier } from './components/TrustDossier';
 import { ClientTermsSuggestion } from './components/ClientTermsSuggestion';
 import { TrustProofButton } from './components/TrustProofButton';
+import { QuickFriendlyMessageCard } from './components/QuickFriendlyMessageCard';
+import { useVerticalPersona } from '../../config/verticalPersonas';
 
 // 'Property' is the tenancy half of this person. It was absent because a tenant and
 // a CRM client were unrelated records; they are now linked by a real foreign key
@@ -27,6 +29,7 @@ const TABS = ['Command Center', 'Property', 'Files'];
 
 export default function ContactClientDetailPage() {
   const { id } = useParams();
+  const persona = useVerticalPersona();
   const [client, setClient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Command Center');
@@ -221,6 +224,25 @@ export default function ContactClientDetailPage() {
                   someone with no completed jobs can still have a long payment history
                   worth pricing terms on. */}
               <ClientTermsSuggestion clientId={id!} />
+              <QuickFriendlyMessageCard
+                clientName={client.name}
+                clientPhone={client.phone}
+                clientEmail={client.email}
+                onLogActivity={async (payload) => {
+                  const baseUrl = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
+                  const res = await fetch(`${baseUrl}/api/v1/crm/activities`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      Authorization: `Bearer ${getAuthToken()}`,
+                    },
+                    body: JSON.stringify({ ...payload, clientId: id }),
+                  });
+                  if (res.ok) {
+                    fetchClientAllData();
+                  }
+                }}
+              />
               <ClientIntelligencePanel clientId={id!} />
               <TrustScoreBreakdown clientId={id!} />
               <ClientTimeline activities={activities} deals={deals} invoices={invoices} jobs={jobs} notes={client.notes} files={files} />
@@ -274,7 +296,12 @@ export default function ContactClientDetailPage() {
               </select>
             </div>
             <Input label="Title" required value={activityForm.title} onChange={(e: any) => setActivityForm({ ...activityForm, title: e.target.value })} />
-            <Input label="Description" value={activityForm.description} onChange={(e: any) => setActivityForm({ ...activityForm, description: e.target.value })} />
+            <Input
+              label="Notes"
+              placeholder={persona.notePlaceholder}
+              value={activityForm.description}
+              onChange={(e: any) => setActivityForm({ ...activityForm, description: e.target.value })}
+            />
             <div className="flex justify-end gap-3 pt-4"><Button variant="ghost" onClick={() => setShowActivityModal(false)}>Cancel</Button><Button type="submit" variant="primary">Save</Button></div>
           </form>
         </Modal>

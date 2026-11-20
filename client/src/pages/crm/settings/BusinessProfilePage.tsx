@@ -13,14 +13,13 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
 const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() || ''}` });
 
 const SERVICE_TYPES = [
-  { value: 'salon', label: 'Salon & Spa' },
-  { value: 'consulting', label: 'Consulting' },
-  { value: 'trades', label: 'Trades & Home Services' },
-  { value: 'real_estate', label: 'Real Estate' },
-  { value: 'logistics', label: 'Logistics & Freight' },
-  { value: 'healthcare', label: 'Healthcare' },
-  { value: 'hospitality', label: 'Hospitality' },
-  { value: 'general', label: 'General Services' },
+  { value: 'salon', label: 'Salon & Beauty' },
+  { value: 'trades', label: 'Trades & Home Repair' },
+  { value: 'cleaning', label: 'Cleaning & Home Care' },
+  { value: 'consulting', label: 'Consulting & Coaching' },
+  { value: 'real_estate', label: 'Real Estate & Property' },
+  { value: 'wellness', label: 'Wellness, Fitness & Clinic' },
+  { value: 'general', label: 'General Small Business' },
 ];
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];

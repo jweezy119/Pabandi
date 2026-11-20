@@ -82,7 +82,9 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
   merchantEasyPaisa,
   initialRail = 'solana',
 }) => {
-  const [selectedRail, setSelectedRail] = useState<PaymentRail>(initialRail);
+  const [selectedRail, setSelectedRail] = useState<PaymentRail>(
+    initialRail === 'square' ? 'square' : 'solana'
+  );
   const [loading, setLoading] = useState(false);
   const [signingPrivy, setSigningPrivy] = useState(false);
   const [signingPhantom, setSigningPhantom] = useState(false);
@@ -647,47 +649,41 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
           </button>
         </div>
 
-        {/* Amount Banner with Dual Currency */}
+        {/* Amount Banner (US Market: USDC 0% Fee vs Square Card 2.9% + 30¢) */}
         <div className="px-5 py-3.5 bg-[#E8D9C5]/40 border-b border-[#BFB3A3]/30 flex flex-wrap items-baseline justify-between gap-2">
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#6B5E52] block">
               Escrow Protected Total
             </span>
             <span className="text-xs text-[#5C5248]">
-              {selectedRail === 'raast' || selectedRail === 'wallets'
-                ? `≈ $${amountInUsd.toFixed(2)} USD`
-                : `≈ Rs. ${amountInPkr.toLocaleString()} PKR`}
+              {selectedRail === 'solana'
+                ? '0% fee · Instant settlement via Solana Pay'
+                : `Standard card fee: 2.9% + 30¢ (est. $${(amountInUsd * 0.029 + 0.3).toFixed(2)})`}
             </span>
           </div>
           <div className="text-right">
             <span className="text-2xl font-black text-[#C97B5A] tracking-tight">
-              {selectedRail === 'raast' || selectedRail === 'wallets'
-                ? `Rs. ${amountInPkr.toLocaleString()}`
-                : `$${amountInUsd.toFixed(2)}`}
+              ${amountInUsd.toFixed(2)}
             </span>
             <span className="ml-1 text-xs font-semibold text-[#5C5248]">
-              {selectedRail === 'solana'
-                ? 'USDC'
-                : selectedRail === 'raast' || selectedRail === 'wallets'
-                ? 'PKR'
-                : 'USD'}
+              {selectedRail === 'solana' ? 'USDC' : 'USD'}
             </span>
           </div>
         </div>
 
         {/* Scrollable Content */}
         <div className="p-5 space-y-4 overflow-y-auto">
-          {/* Rail Selector (Accessible Tablist) */}
+          {/* US Primary Rail Selector (Accessible 2-Tab Layout) */}
           <div>
             <label className="block text-xs font-bold text-[#4A3E31] mb-2 uppercase tracking-wide">
-              Select Payment Rail
+              Select Payment Method
             </label>
             <div
               role="tablist"
               aria-label="Payment rails"
-              className="grid grid-cols-2 sm:grid-cols-4 gap-2"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-2.5"
             >
-              {/* Solana USDC */}
+              {/* 1. Digital Dollars (Solana Pay / USDC) — Primary 0% Fee Highlight */}
               <button
                 type="button"
                 role="tab"
@@ -695,20 +691,24 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
                 aria-selected={selectedRail === 'solana'}
                 aria-controls="panel-solana"
                 onClick={() => handleSelectRail('solana')}
-                className={`min-h-[56px] flex flex-col items-center justify-center p-2 rounded-xl border-2 text-center transition-all focus-visible:ring-2 focus-visible:ring-[#C97B5A] focus-visible:outline-none ${
+                className={`min-h-[68px] flex flex-col items-start justify-center p-3 rounded-xl border-2 text-left transition-all focus-visible:ring-2 focus-visible:ring-[#C97B5A] focus-visible:outline-none ${
                   selectedRail === 'solana'
-                    ? 'border-[#C97B5A] bg-[#C97B5A]/10 text-[#2A2520] font-bold shadow-sm'
-                    : 'border-[#BFB3A3]/40 bg-white/70 text-[#5C5248] hover:border-[#C97B5A]/50'
+                    ? 'border-[#2D6A4F] bg-[#E9F4EC]/70 text-[#1B4332] shadow-sm'
+                    : 'border-[#BFB3A3]/45 bg-white/80 text-[#5C5248] hover:border-[#2D6A4F]/60'
                 }`}
               >
-                <div className="flex items-center gap-1">
-                  <Zap size={14} className="text-[#5F6F52]" aria-hidden="true" />
-                  <span className="text-xs">Solana</span>
+                <div className="flex items-center justify-between w-full gap-1.5">
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-[#2A2520]">
+                    <Zap size={14} className="text-[#2D6A4F]" aria-hidden="true" />
+                    Digital Dollars (Solana Pay / USDC)
+                  </span>
                 </div>
-                <span className="text-[10px] text-[#5C5248]">USDC (0% FX)</span>
+                <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#2D6A4F] text-white">
+                  0% Fee · Instant Settlement
+                </span>
               </button>
 
-              {/* Square / Card */}
+              {/* 2. Credit/Debit Card (Square) — Standard 2.9% + 30¢ */}
               <button
                 type="button"
                 role="tab"
@@ -716,59 +716,19 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
                 aria-selected={selectedRail === 'square'}
                 aria-controls="panel-square"
                 onClick={() => handleSelectRail('square')}
-                className={`min-h-[56px] flex flex-col items-center justify-center p-2 rounded-xl border-2 text-center transition-all focus-visible:ring-2 focus-visible:ring-[#C97B5A] focus-visible:outline-none ${
+                className={`min-h-[68px] flex flex-col items-start justify-center p-3 rounded-xl border-2 text-left transition-all focus-visible:ring-2 focus-visible:ring-[#C97B5A] focus-visible:outline-none ${
                   selectedRail === 'square'
-                    ? 'border-[#C97B5A] bg-[#C97B5A]/10 text-[#2A2520] font-bold shadow-sm'
-                    : 'border-[#BFB3A3]/40 bg-white/70 text-[#5C5248] hover:border-[#C97B5A]/50'
+                    ? 'border-[#C97B5A] bg-[#C97B5A]/10 text-[#2A2520] shadow-sm'
+                    : 'border-[#BFB3A3]/45 bg-white/80 text-[#5C5248] hover:border-[#C97B5A]/60'
                 }`}
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-[#2A2520]">
                   <CreditCard size={14} className="text-[#C97B5A]" aria-hidden="true" />
-                  <span className="text-xs">Cards</span>
+                  <span>Credit/Debit Card (Square)</span>
                 </div>
-                <span className="text-[10px] text-[#5C5248]">Apple/Google Pay</span>
-              </button>
-
-              {/* Raast */}
-              <button
-                type="button"
-                role="tab"
-                id="tab-raast"
-                aria-selected={selectedRail === 'raast'}
-                aria-controls="panel-raast"
-                onClick={() => handleSelectRail('raast')}
-                className={`min-h-[56px] flex flex-col items-center justify-center p-2 rounded-xl border-2 text-center transition-all focus-visible:ring-2 focus-visible:ring-[#C97B5A] focus-visible:outline-none ${
-                  selectedRail === 'raast'
-                    ? 'border-[#C97B5A] bg-[#C97B5A]/10 text-[#2A2520] font-bold shadow-sm'
-                    : 'border-[#BFB3A3]/40 bg-white/70 text-[#5C5248] hover:border-[#C97B5A]/50'
-                }`}
-              >
-                <div className="flex items-center gap-1">
-                  <Building2 size={14} className="text-[#5F6F52]" aria-hidden="true" />
-                  <span className="text-xs">Raast</span>
-                </div>
-                <span className="text-[10px] text-[#5C5248]">0% Fee Bank</span>
-              </button>
-
-              {/* Wallets (JazzCash / EasyPaisa) */}
-              <button
-                type="button"
-                role="tab"
-                id="tab-wallets"
-                aria-selected={selectedRail === 'wallets'}
-                aria-controls="panel-wallets"
-                onClick={() => handleSelectRail('wallets')}
-                className={`min-h-[56px] flex flex-col items-center justify-center p-2 rounded-xl border-2 text-center transition-all focus-visible:ring-2 focus-visible:ring-[#C97B5A] focus-visible:outline-none ${
-                  selectedRail === 'wallets'
-                    ? 'border-[#C97B5A] bg-[#C97B5A]/10 text-[#2A2520] font-bold shadow-sm'
-                    : 'border-[#BFB3A3]/40 bg-white/70 text-[#5C5248] hover:border-[#C97B5A]/50'
-                }`}
-              >
-                <div className="flex items-center gap-1">
-                  <Smartphone size={14} className="text-[#C97B5A]" aria-hidden="true" />
-                  <span className="text-xs">Wallets</span>
-                </div>
-                <span className="text-[10px] text-[#5C5248]">Jazz/EasyPaisa</span>
+                <span className="mt-1 text-[11px] font-medium text-[#5C5248]">
+                  Standard 2.9% + 30¢ fee · Apple/Google Pay
+                </span>
               </button>
             </div>
           </div>
@@ -951,12 +911,17 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
               className="space-y-3.5"
             >
               <div className="p-3.5 rounded-xl bg-white/70 border border-[#BFB3A3]/40 text-xs text-[#4A3E31] space-y-1.5">
-                <div className="flex items-center gap-1.5 font-bold text-[#2A2520]">
-                  <CreditCard size={15} className="text-[#C97B5A]" aria-hidden="true" />
-                  <span>Square Web Payments (Card, Apple Pay, Google Pay)</span>
+                <div className="flex items-center justify-between gap-1.5 font-bold text-[#2A2520]">
+                  <span className="flex items-center gap-1.5">
+                    <CreditCard size={15} className="text-[#C97B5A]" aria-hidden="true" />
+                    <span>Credit/Debit Card (Square Web Payments)</span>
+                  </span>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#E8D9C5] text-[#4A3E31]">
+                    2.9% + 30¢ fee
+                  </span>
                 </div>
                 <p className="leading-relaxed text-[#5C5248]">
-                  Pay directly via Credit/Debit Card, Apple Pay, Google Pay, or Cash App. Zero crypto required.
+                  Pay via Credit/Debit Card, Apple Pay, Google Pay, or Cash App. Or switch to <strong>Digital Dollars (Solana Pay / USDC)</strong> above for 0% fee instant settlement.
                 </p>
               </div>
 
@@ -1437,11 +1402,11 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
             </div>
           )}
 
-          {/* Sharia Compliance & Escrow Notice */}
+          {/* Non-Custodial Escrow Notice */}
           <div className="p-2.5 rounded-xl bg-[#5F6F52]/10 border border-[#5F6F52]/25 text-[11px] text-[#3e4935] flex items-start gap-2">
             <Shield size={14} className="text-[#5F6F52] mt-0.5 shrink-0" aria-hidden="true" />
             <span className="leading-snug">
-              <strong>Sharia-Compliant Escrow:</strong> Your funds are held in a Sharia-compliant escrow. Any profit generated by the liquidity vault is shared 50/50, with no guaranteed interest (Riba) involved.
+              <strong>100% Non-Custodial Escrow:</strong> USDC deposits lock directly in Pabandi&apos;s Solana smart contract and settle instantly upon verified completion.
             </span>
           </div>
 
@@ -1449,9 +1414,9 @@ export const PabandiCheckoutModal: React.FC<PabandiCheckoutModalProps> = ({
           <div className="pt-2 border-t border-[#BFB3A3]/30 flex items-center justify-between text-[11px] text-[#5C5248]">
             <div className="flex items-center gap-1.5">
               <Shield size={13} className="text-[#5F6F52]" aria-hidden="true" />
-              <span>Sulha Cryptographic Escrow Guarantee · AAOIFI Aligned</span>
+              <span>Non-Custodial Smart Contract · Solana Pay &amp; Square</span>
             </div>
-            <span className="font-mono text-[10px]">PABANDI v2.0</span>
+            <span className="font-mono text-[10px]">PABANDI US</span>
           </div>
         </div>
       </div>

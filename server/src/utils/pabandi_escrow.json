@@ -1,5 +1,5 @@
 {
-  "address": "6ebgdhyUV7zEHqRmpnaPguWQPYJu9Vq4dpFs79VduTjG",
+  "address": "EUSLC8q2b2SezvMQFhvU98EFrWkEasTdvrjqdJgYn2qc",
   "metadata": {
     "name": "pabandi_escrow",
     "version": "0.1.0",
@@ -8,10 +8,146 @@
   },
   "instructions": [
     {
+      "name": "dispute_escrow",
+      "docs": [
+        "Freezes an Active escrow for Sulha dispute evidence arbitration.",
+        "Callable only by the customer or the business."
+      ],
+      "discriminator": [
+        198,
+        174,
+        139,
+        70,
+        87,
+        79,
+        181,
+        139
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "signer": true
+        },
+        {
+          "name": "escrow_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "escrow_state.reservation_id",
+                "account": "EscrowState"
+              },
+              {
+                "kind": "account",
+                "path": "escrow_state.customer",
+                "account": "EscrowState"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "reason_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "initialize_config",
+      "docs": [
+        "Initializes the singleton ProtocolConfig PDA.",
+        "Transfer `admin` to a Squads Multisig for production governance."
+      ],
+      "discriminator": [
+        208,
+        127,
+        21,
+        1,
+        194,
+        190,
+        196,
+        70
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "protocol_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "oracle",
+          "type": "pubkey"
+        },
+        {
+          "name": "treasury",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
       "name": "initialize_escrow",
       "docs": [
-        "Initializes a new dynamic risk-priced escrow.",
-        "The oracle signs the transaction and provides the customer's Trust Score (0-100)."
+        "Initializes a new dynamic risk-priced escrow supporting both SPL Token (USDC)",
+        "and Token-2022 (Phantom CASH) via TokenInterface + transfer_checked.",
+        "The authorized ProtocolConfig oracle co-signs to attest the customer's Trust Score (0-100)."
       ],
       "discriminator": [
         243,
@@ -37,92 +173,33 @@
         },
         {
           "name": "customer_token_account",
-          "writable": true,
+          "writable": true
+        },
+        {
+          "name": "protocol_config",
           "pda": {
             "seeds": [
               {
-                "kind": "account",
-                "path": "customer"
-              },
-              {
                 "kind": "const",
                 "value": [
-                  6,
-                  221,
-                  246,
-                  225,
-                  215,
-                  101,
-                  161,
-                  147,
-                  217,
-                  203,
-                  225,
-                  70,
-                  206,
-                  235,
-                  121,
-                  172,
-                  28,
-                  180,
-                  133,
-                  237,
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
                   95,
-                  91,
-                  55,
-                  145,
-                  58,
-                  140,
-                  245,
-                  133,
-                  126,
-                  255,
-                  0,
-                  169
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
                 ]
-              },
-              {
-                "kind": "account",
-                "path": "mint"
               }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
+            ]
           }
         },
         {
@@ -193,7 +270,6 @@
         },
         {
           "name": "oracle",
-          "writable": true,
           "signer": true
         },
         {
@@ -201,8 +277,7 @@
           "address": "11111111111111111111111111111111"
         },
         {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          "name": "token_program"
         },
         {
           "name": "rent",
@@ -231,7 +306,7 @@
     {
       "name": "refund_escrow",
       "docs": [
-        "Refunds the customer if the deadline passes and business hasn't claimed/checked in."
+        "Refunds the customer if the deadline passes and the escrow is still Active (not Released or Disputed)."
       ],
       "discriminator": [
         107,
@@ -251,6 +326,9 @@
           "relations": [
             "escrow_state"
           ]
+        },
+        {
+          "name": "mint"
         },
         {
           "name": "escrow_state",
@@ -324,98 +402,10 @@
         },
         {
           "name": "customer_token_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "customer"
-              },
-              {
-                "kind": "const",
-                "value": [
-                  6,
-                  221,
-                  246,
-                  225,
-                  215,
-                  101,
-                  161,
-                  147,
-                  217,
-                  203,
-                  225,
-                  70,
-                  206,
-                  235,
-                  121,
-                  172,
-                  28,
-                  180,
-                  133,
-                  237,
-                  95,
-                  91,
-                  55,
-                  145,
-                  58,
-                  140,
-                  245,
-                  133,
-                  126,
-                  255,
-                  0,
-                  169
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "escrow_state.mint",
-                "account": "EscrowState"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
+          "writable": true
         },
         {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          "name": "token_program"
         }
       ],
       "args": []
@@ -423,9 +413,8 @@
     {
       "name": "release_escrow",
       "docs": [
-        "Releases funds to the business and platform treasury.",
-        "In DRPE Tier 1, this can be triggered by a designated Oracle wallet",
-        "representing Pabandi Backend (CHECKED_IN webhook)."
+        "Releases funds to the verified business and ProtocolConfig treasury.",
+        "Only callable by the authorized ProtocolConfig oracle on an Active escrow."
       ],
       "discriminator": [
         146,
@@ -440,11 +429,41 @@
       "accounts": [
         {
           "name": "oracle_trigger",
-          "docs": [
-            "Oracle trigger for Tier 1 - could be the Pabandi Backend Signer"
-          ],
-          "writable": true,
           "signer": true
+        },
+        {
+          "name": "protocol_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "customer",
+          "writable": true
+        },
+        {
+          "name": "mint"
         },
         {
           "name": "escrow_state",
@@ -518,106 +537,244 @@
         },
         {
           "name": "business_token_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "escrow_state.business",
-                "account": "EscrowState"
-              },
-              {
-                "kind": "const",
-                "value": [
-                  6,
-                  221,
-                  246,
-                  225,
-                  215,
-                  101,
-                  161,
-                  147,
-                  217,
-                  203,
-                  225,
-                  70,
-                  206,
-                  235,
-                  121,
-                  172,
-                  28,
-                  180,
-                  133,
-                  237,
-                  95,
-                  91,
-                  55,
-                  145,
-                  58,
-                  140,
-                  245,
-                  133,
-                  126,
-                  255,
-                  0,
-                  169
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "escrow_state.mint",
-                "account": "EscrowState"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
+          "writable": true
         },
         {
           "name": "treasury_token_account",
           "writable": true
         },
         {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          "name": "token_program"
         }
       ],
       "args": []
+    },
+    {
+      "name": "resolve_dispute",
+      "docs": [
+        "Resolves a Disputed escrow by splitting the locked deposit according to `business_bps` (0..=10_000).",
+        "Callable only by the authorized ProtocolConfig oracle."
+      ],
+      "discriminator": [
+        231,
+        6,
+        202,
+        6,
+        96,
+        103,
+        12,
+        230
+      ],
+      "accounts": [
+        {
+          "name": "oracle_trigger",
+          "signer": true
+        },
+        {
+          "name": "protocol_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "customer",
+          "writable": true
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "escrow_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "escrow_state.reservation_id",
+                "account": "EscrowState"
+              },
+              {
+                "kind": "account",
+                "path": "escrow_state.customer",
+                "account": "EscrowState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "escrow_state.reservation_id",
+                "account": "EscrowState"
+              },
+              {
+                "kind": "account",
+                "path": "escrow_state.customer",
+                "account": "EscrowState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "business_token_account",
+          "writable": true
+        },
+        {
+          "name": "customer_token_account",
+          "writable": true
+        },
+        {
+          "name": "treasury_token_account",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "business_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "update_config",
+      "docs": [
+        "Updates protocol governance parameters (admin-only; intended for Squads Multisig)."
+      ],
+      "discriminator": [
+        29,
+        158,
+        252,
+        191,
+        10,
+        83,
+        219,
+        99
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "protocol_config"
+          ]
+        },
+        {
+          "name": "protocol_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "new_admin",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "new_oracle",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "new_treasury",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "paused",
+          "type": {
+            "option": "bool"
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -633,9 +790,48 @@
         229,
         108
       ]
+    },
+    {
+      "name": "ProtocolConfig",
+      "discriminator": [
+        207,
+        91,
+        250,
+        28,
+        152,
+        179,
+        215,
+        209
+      ]
     }
   ],
   "events": [
+    {
+      "name": "DisputeResolved",
+      "discriminator": [
+        121,
+        64,
+        249,
+        153,
+        139,
+        128,
+        236,
+        187
+      ]
+    },
+    {
+      "name": "EscrowDisputed",
+      "discriminator": [
+        132,
+        73,
+        81,
+        200,
+        177,
+        51,
+        128,
+        18
+      ]
+    },
     {
       "name": "EscrowInitialized",
       "discriminator": [
@@ -674,6 +870,19 @@
         113,
         112
       ]
+    },
+    {
+      "name": "ProtocolConfigUpdated",
+      "discriminator": [
+        20,
+        99,
+        32,
+        237,
+        111,
+        86,
+        195,
+        199
+      ]
     }
   ],
   "errors": [
@@ -684,16 +893,139 @@
     },
     {
       "code": 6001,
+      "name": "NotActive",
+      "msg": "Escrow is not active."
+    },
+    {
+      "code": 6002,
+      "name": "NotDisputed",
+      "msg": "Escrow is not in disputed state."
+    },
+    {
+      "code": 6003,
       "name": "DeadlineNotReached",
       "msg": "Deadline has not been reached yet."
     },
     {
-      "code": 6002,
-      "name": "InvalidOracleFeed",
-      "msg": "Invalid Switchboard Oracle Feed."
+      "code": 6004,
+      "name": "InvalidDeadline",
+      "msg": "Deadline must be in the future."
+    },
+    {
+      "code": 6005,
+      "name": "InvalidTrustScore",
+      "msg": "Trust score must be between 0 and 100."
+    },
+    {
+      "code": 6006,
+      "name": "InvalidAmount",
+      "msg": "Amount must be greater than zero."
+    },
+    {
+      "code": 6007,
+      "name": "InvalidReservationId",
+      "msg": "Reservation ID must be 1 to 64 bytes."
+    },
+    {
+      "code": 6008,
+      "name": "InvalidParty",
+      "msg": "Invalid party address."
+    },
+    {
+      "code": 6009,
+      "name": "InvalidPubkey",
+      "msg": "Invalid public key."
+    },
+    {
+      "code": 6010,
+      "name": "UnauthorizedAdmin",
+      "msg": "Caller is not the authorized protocol admin."
+    },
+    {
+      "code": 6011,
+      "name": "UnauthorizedOracle",
+      "msg": "Caller is not the authorized protocol oracle."
+    },
+    {
+      "code": 6012,
+      "name": "UnauthorizedParty",
+      "msg": "Caller is not a party to this escrow."
+    },
+    {
+      "code": 6013,
+      "name": "InvalidTreasury",
+      "msg": "Treasury token account does not belong to the configured protocol treasury."
+    },
+    {
+      "code": 6014,
+      "name": "InvalidSplit",
+      "msg": "Dispute split basis points must be <= 10000."
+    },
+    {
+      "code": 6015,
+      "name": "ProtocolPaused",
+      "msg": "Protocol is currently paused."
+    },
+    {
+      "code": 6016,
+      "name": "MathOverflow",
+      "msg": "Arithmetic overflow."
     }
   ],
   "types": [
+    {
+      "name": "DisputeResolved",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "reservation_id",
+            "type": "string"
+          },
+          {
+            "name": "business_bps",
+            "type": "u16"
+          },
+          {
+            "name": "business_payout",
+            "type": "u64"
+          },
+          {
+            "name": "customer_refund",
+            "type": "u64"
+          },
+          {
+            "name": "fee_collected",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "EscrowDisputed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "reservation_id",
+            "type": "string"
+          },
+          {
+            "name": "caller",
+            "type": "pubkey"
+          },
+          {
+            "name": "reason_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
     {
       "name": "EscrowInitialized",
       "type": {
@@ -784,6 +1116,10 @@
             "type": "pubkey"
           },
           {
+            "name": "trust_score",
+            "type": "u8"
+          },
+          {
             "name": "total_amount",
             "type": "u64"
           },
@@ -800,8 +1136,25 @@
             "type": "i64"
           },
           {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "EscrowStatus"
+              }
+            }
+          },
+          {
             "name": "is_resolved",
             "type": "bool"
+          },
+          {
+            "name": "dispute_reason_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
             "name": "state_bump",
@@ -810,6 +1163,81 @@
           {
             "name": "vault_bump",
             "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "EscrowStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Active"
+          },
+          {
+            "name": "Released"
+          },
+          {
+            "name": "Disputed"
+          },
+          {
+            "name": "Resolved"
+          },
+          {
+            "name": "Refunded"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProtocolConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "oracle",
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury",
+            "type": "pubkey"
+          },
+          {
+            "name": "paused",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProtocolConfigUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "oracle",
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury",
+            "type": "pubkey"
+          },
+          {
+            "name": "paused",
+            "type": "bool"
           }
         ]
       }

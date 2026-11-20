@@ -1,88 +1,15 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { useBusinessSettings, VERTICAL_PRESETS } from '../../hooks/useBusinessSettings';
 import { useAuthStore } from '../../store/authStore';
+import { VERTICAL_LIST, getVerticalPersona } from '../../config/verticalPersonas';
+import { DigitalDollarsSetupCard } from '../../components/DigitalDollarsSetupCard';
+import { getAuthToken } from '../../utils/authToken';
 
-// ─── Vertical definitions with richer metadata ──────────────────────────────
-const VERTICALS = [
-  {
-    id: 'salon',
-    label: 'Salon / Beauty',
-    emoji: '💅',
-    description: 'Hair, nails, spa, and beauty services',
-    example: 'Glow Beauty Studio',
-    color: '#D4A5A5',
-    bgLight: '#FDF0EF',
-    highlights: ['Client profiles', 'Booking integration', 'Invoice history', 'Reliability scores'],
-  },
-  {
-    id: 'consulting',
-    label: 'Consulting / Coaching',
-    emoji: '🎯',
-    description: 'Strategy, coaching, and advisory services',
-    example: 'Peak Performance Co.',
-    color: '#8A9A7B',
-    bgLight: '#F3F6F0',
-    highlights: ['Deal pipeline', 'Task management', 'Meeting tracking', 'Proposal follow-ups'],
-  },
-  {
-    id: 'trades',
-    label: 'Trades / Contractors',
-    emoji: '🔧',
-    description: 'Plumbers, electricians, builders & more',
-    example: 'Bright Spark Electric',
-    color: '#C97B5A',
-    bgLight: '#FDF5F1',
-    highlights: ['Job scheduling', 'Quote tracking', 'Invoicing', 'Client reliability'],
-  },
-  {
-    id: 'real_estate',
-    label: 'Real Estate',
-    emoji: '🏠',
-    description: 'Property sales, rentals, and management',
-    example: 'Prestige Property Group',
-    color: '#D9A854',
-    bgLight: '#FDF8EE',
-    // 'Company accounts' removed: it was marketing a feature with no model, no
-    // page, and no route behind it.
-    highlights: ['Pipeline stages', 'Task lists', 'Activity feed', 'Invoicing'],
-  },
-  {
-    id: 'logistics',
-    label: 'Logistics / Freight',
-    emoji: '🚚',
-    description: 'Freight, transport, and delivery services',
-    example: 'Swift Cargo Solutions',
-    color: '#7B9EAD',
-    bgLight: '#EFF5F8',
-    highlights: ['Client management', 'Job invoicing', 'Activity logs'],
-  },
-  {
-    id: 'general',
-    label: 'General Business',
-    emoji: '🏢',
-    description: 'Any other service or product business',
-    example: 'My Business',
-    color: '#9B8EA0',
-    bgLight: '#F5F2F7',
-    highlights: ['Full CRM features', 'Pipeline tracking', 'Invoices & tasks'],
-  },
-];
+const API_BASE = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
 
-// ─── Feature label map ────────────────────────────────────────────────────────
-const FEATURE_LABELS: Record<string, { icon: string; label: string }> = {
-  clients: { icon: 'groups', label: 'Verified Clients' },
-  deals: { icon: 'handshake', label: 'Deals pipeline' },
-  invoices: { icon: 'receipt_long', label: 'Escrow & Payments' },
-  activities: { icon: 'timeline', label: 'Activity feed' },
-  tasks: { icon: 'task_alt', label: 'Task manager' },
-  jobs: { icon: 'work', label: 'Jobs & scheduling' },
-  reliability: { icon: 'verified', label: 'Reliability scores' },
-  escrow: { icon: 'security', label: 'Escrow payments' },
-};
-
-// ─── Step 1: Vertical picker ─────────────────────────────────────────────────
+// ─── Step 1: Vertical picker (7 focused local SMB verticals) ──────────────────
 function VerticalStep({
   selected,
   onSelect,
@@ -94,34 +21,39 @@ function VerticalStep({
 }) {
   return (
     <div>
-      <div className="mb-8">
-        <h2 style={{ color: 'var(--warm-ink)', fontFamily: 'Fraunces, serif' }}
-            className="text-2xl font-bold mb-2">
+      <div className="mb-6">
+        <h2
+          style={{ color: 'var(--warm-ink)', fontFamily: 'Fraunces, serif' }}
+          className="text-2xl font-bold mb-2"
+        >
           What kind of business do you run?
         </h2>
         <p style={{ color: 'var(--soft-stone)' }} className="text-sm">
-          We'll set up your CRM with the right tools for your industry. You can always change this later.
+          We’ll tailor your menus, starter services, and client messages to match how you actually work.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-        {VERTICALS.map((v) => {
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-7">
+        {VERTICAL_LIST.map((v) => {
           const isSelected = selected === v.id;
           return (
             <button
               key={v.id}
+              type="button"
               onClick={() => onSelect(v.id)}
               className="text-left rounded-2xl p-4 border-2 transition-all duration-200"
               style={{
-                borderColor: isSelected ? v.color : 'rgba(191,179,163,0.25)',
+                borderColor: isSelected ? v.accentColor : 'rgba(191,179,163,0.25)',
                 backgroundColor: isSelected ? v.bgLight : 'white',
-                boxShadow: isSelected ? `0 0 0 1px ${v.color}30, var(--shadow-soft)` : 'var(--shadow-soft)',
+                boxShadow: isSelected
+                  ? `0 0 0 1px ${v.accentColor}30, var(--shadow-soft)`
+                  : 'var(--shadow-soft)',
                 transform: isSelected ? 'translateY(-2px)' : 'none',
               }}
             >
               <div className="flex items-start gap-3">
                 <span className="text-2xl flex-shrink-0 mt-0.5">{v.emoji}</span>
-                <div>
+                <div className="min-w-0">
                   <div className="font-bold text-sm" style={{ color: 'var(--warm-ink)' }}>
                     {v.label}
                   </div>
@@ -130,8 +62,10 @@ function VerticalStep({
                   </div>
                 </div>
                 {isSelected && (
-                  <span className="material-symbols-outlined ml-auto text-lg flex-shrink-0"
-                        style={{ color: v.color }}>
+                  <span
+                    className="material-symbols-outlined ml-auto text-lg flex-shrink-0"
+                    style={{ color: v.accentColor }}
+                  >
                     check_circle
                   </span>
                 )}
@@ -142,9 +76,10 @@ function VerticalStep({
       </div>
 
       <button
+        type="button"
         onClick={onNext}
         disabled={!selected}
-        className="w-full py-4 rounded-2xl font-bold text-[var(--warm-ink)] transition-all duration-200"
+        className="w-full py-4 rounded-2xl font-bold text-white transition-all duration-200"
         style={{
           backgroundColor: selected ? 'var(--clay)' : 'var(--soft-stone)',
           opacity: selected ? 1 : 0.5,
@@ -152,13 +87,13 @@ function VerticalStep({
           fontSize: '1rem',
         }}
       >
-        Set up my workspace →
+        Personalize my workspace →
       </button>
     </div>
   );
 }
 
-// ─── Step 2: Feature review ───────────────────────────────────────────────────
+// ─── Step 2: Business Name + Tailored CRM Preview ─────────────────────────────
 function FeatureReviewStep({
   verticalId,
   businessName,
@@ -176,30 +111,25 @@ function FeatureReviewStep({
   canConfirm: boolean;
   enrolling: boolean;
 }) {
-  const vertical = VERTICALS.find((v) => v.id === verticalId)!;
-  const preset = VERTICAL_PRESETS[verticalId];
-  const contactFeatures = preset.features.contact || [];
+  const persona = getVerticalPersona(verticalId);
+  const preset = VERTICAL_PRESETS[verticalId] || VERTICAL_PRESETS.general;
 
   return (
     <div>
-      {/* The business name. Enrollment needs it, and this wizard never asked for it
-          — so the CRM could only ever be enrolled with a placeholder, or not at
-          all. It was not at all: no step called /crm/enroll, so every /crm route
-          403'd and "Save Changes" silently did nothing. */}
       <div className="mb-6">
         <label
           htmlFor="setup-business-name"
           className="block text-sm font-medium mb-1.5"
           style={{ color: 'var(--warm-ink)' }}
         >
-          Business name
+          What’s your business called?
         </label>
         <input
           id="setup-business-name"
           type="text"
           value={businessName}
           onChange={(e) => onBusinessNameChange(e.target.value)}
-          placeholder={vertical.label}
+          placeholder={persona.exampleBusiness}
           autoComplete="organization"
           required
           className="w-full rounded-xl px-4 py-3 text-base outline-none focus:ring-2"
@@ -209,119 +139,160 @@ function FeatureReviewStep({
             color: 'var(--warm-ink)',
           }}
         />
-        <p className="text-xs mt-1.5" style={{ color: 'var(--warm-stone)' }}>
-          Shown on your booking page and in every message a customer receives.
+        <p className="text-xs mt-1.5" style={{ color: 'var(--soft-stone)' }}>
+          Used on your booking page and in friendly reminders your {persona.navLabels.clients.toLowerCase()} receive.
         </p>
       </div>
 
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-4">
-          <span className="text-3xl">{vertical.emoji}</span>
-          <div>
-            <h2 style={{ color: 'var(--warm-ink)', fontFamily: 'Fraunces, serif' }}
-                className="text-2xl font-bold">
-              {vertical.label}
-            </h2>
-            <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>
-              Here's what we'll enable for you
-            </p>
-          </div>
+      <div className="mb-5 flex items-center gap-3">
+        <span className="text-3xl">{persona.emoji}</span>
+        <div>
+          <h2
+            style={{ color: 'var(--warm-ink)', fontFamily: 'Fraunces, serif' }}
+            className="text-xl font-bold"
+          >
+            Built for {persona.label}
+          </h2>
+          <p className="text-xs" style={{ color: 'var(--soft-stone)' }}>
+            Your workspace speaks your language from day one
+          </p>
         </div>
       </div>
 
-      {/* Features being enabled */}
+      {/* Tailored Vocabulary Preview */}
       <div className="rounded-2xl border border-[rgba(191,179,163,0.3)] overflow-hidden mb-4">
-        <div className="px-5 py-3 text-xs font-bold uppercase tracking-wider"
-             style={{ backgroundColor: 'var(--warm-sand)', color: 'var(--soft-stone)' }}>
-          ContactOS features included
-        </div>
-        <div className="divide-y divide-[rgba(191,179,163,0.2)]">
-          {contactFeatures.map((fId) => {
-            const meta = FEATURE_LABELS[fId];
-            if (!meta) return null;
-            return (
-              <div key={fId} className="flex items-center gap-3 px-5 py-3 bg-white">
-                <span className="material-symbols-outlined text-sm" style={{ color: 'var(--clay)' }}>
-                  {meta.icon}
-                </span>
-                <span className="text-sm font-medium" style={{ color: 'var(--warm-ink)' }}>
-                  {meta.label}
-                </span>
-                <span className="ml-auto material-symbols-outlined text-sm" style={{ color: 'var(--sage)' }}>
-                  check
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Pipeline stages */}
-      <div className="rounded-2xl border border-[rgba(191,179,163,0.3)] overflow-hidden mb-8">
-        <div className="px-5 py-3 text-xs font-bold uppercase tracking-wider"
-             style={{ backgroundColor: 'var(--warm-sand)', color: 'var(--soft-stone)' }}>
-          Your deal pipeline stages
+        <div
+          className="px-5 py-2.5 text-xs font-bold uppercase tracking-wider"
+          style={{ backgroundColor: 'var(--warm-sand)', color: 'var(--soft-stone)' }}
+        >
+          Your personalized CRM tabs
         </div>
         <div className="flex flex-wrap gap-2 px-5 py-4 bg-white">
-          {preset.pipelineStages.map((stage, i) => (
-            <span key={i} className="px-3 py-1 rounded-full text-xs font-bold"
-                  style={{ backgroundColor: `${vertical.color}20`, color: vertical.color, border: `1px solid ${vertical.color}40` }}>
-              {stage}
+          {[
+            persona.navLabels.clients,
+            persona.navLabels.jobs,
+            persona.navLabels.deals,
+            persona.navLabels.invoices,
+            persona.navLabels.team,
+          ].map((lbl) => (
+            <span
+              key={lbl}
+              className="px-3 py-1 rounded-full text-xs font-semibold"
+              style={{
+                backgroundColor: persona.bgLight,
+                color: 'var(--warm-ink)',
+                border: `1px solid ${persona.accentColor}40`,
+              }}
+            >
+              {lbl}
             </span>
           ))}
         </div>
       </div>
 
+      {/* Pipeline stages */}
+      <div className="rounded-2xl border border-[rgba(191,179,163,0.3)] overflow-hidden mb-6">
+        <div
+          className="px-5 py-2.5 text-xs font-bold uppercase tracking-wider"
+          style={{ backgroundColor: 'var(--warm-sand)', color: 'var(--soft-stone)' }}
+        >
+          Ready-to-use starter services ({persona.starterServices.length})
+        </div>
+        <div className="px-5 py-3.5 bg-white space-y-1.5">
+          {persona.starterServices.slice(0, 3).map((s) => (
+            <div key={s.name} className="flex items-center justify-between text-xs">
+              <span className="font-medium text-[var(--warm-ink)]">{s.name}</span>
+              <span className="text-[var(--soft-stone)]">
+                ${s.price} · {s.duration}m
+              </span>
+            </div>
+          ))}
+          <div className="pt-2 flex flex-wrap gap-1.5">
+            {preset.pipelineStages.map((stage, i) => (
+              <span
+                key={i}
+                className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
+                style={{
+                  backgroundColor: `${persona.accentColor}20`,
+                  color: 'var(--warm-ink)',
+                }}
+              >
+                {stage}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="flex gap-3">
         <button
+          type="button"
           onClick={onBack}
           className="flex-1 py-4 rounded-2xl font-bold transition-all duration-200 border-2"
-          style={{ borderColor: 'rgba(191,179,163,0.4)', color: 'var(--soft-stone)', backgroundColor: 'white' }}
+          style={{
+            borderColor: 'rgba(191,179,163,0.4)',
+            color: 'var(--soft-stone)',
+            backgroundColor: 'white',
+          }}
         >
           ← Back
         </button>
         <button
+          type="button"
           onClick={onConfirm}
           disabled={!canConfirm || enrolling}
-          className="flex-[2] py-4 rounded-2xl font-bold text-[var(--warm-ink)] transition-all duration-200 hover:opacity-90 disabled:opacity-40"
+          className="flex-[2] py-4 rounded-2xl font-bold text-white transition-all duration-200 hover:opacity-90 disabled:opacity-40"
           style={{ backgroundColor: 'var(--clay)', fontSize: '1rem' }}
         >
-          {enrolling ? 'Setting up…' : "Looks good — let's go 🎉"}
+          {enrolling ? 'Setting up…' : 'Create my workspace →'}
         </button>
       </div>
     </div>
   );
 }
 
-// ─── Step 3: Done celebration ─────────────────────────────────────────────────
-function DoneStep({ verticalId, onEnter }: { verticalId: string; onEnter: () => void }) {
-  const vertical = VERTICALS.find((v) => v.id === verticalId)!;
-  return (
-    <div className="text-center py-6">
-      <div className="text-6xl mb-4 animate-bounce">{vertical.emoji}</div>
-      <h2 style={{ color: 'var(--warm-ink)', fontFamily: 'Fraunces, serif' }}
-          className="text-3xl font-bold mb-3">
-        You're all set!
-      </h2>
-      <p style={{ color: 'var(--soft-stone)' }} className="text-base mb-2 max-w-sm mx-auto">
-        Your <strong style={{ color: 'var(--clay)' }}>{vertical.label}</strong> workspace is ready.
-        Add your first client and start building relationships that last.
-      </p>
+// ─── Step 3: Optional Zero-Friction Payouts + Enter Workspace ─────────────────
+function PaymentAndDoneStep({
+  verticalId,
+  businessName,
+  onSaveSolanaAddress,
+  onEnter,
+}: {
+  verticalId: string;
+  businessName: string;
+  onSaveSolanaAddress: (addr: string) => Promise<void>;
+  onEnter: () => void;
+}) {
+  const persona = getVerticalPersona(verticalId);
 
-      <div className="flex justify-center gap-2 my-8">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="w-2 h-2 rounded-full"
-               style={{ backgroundColor: 'var(--clay)', opacity: 1 - i * 0.3 }} />
-        ))}
+  return (
+    <div className="space-y-5">
+      <div className="text-center">
+        <div className="text-4xl mb-2">{persona.emoji}</div>
+        <h2
+          style={{ color: 'var(--warm-ink)', fontFamily: 'Fraunces, serif' }}
+          className="text-2xl font-bold"
+        >
+          {businessName || persona.label} is ready!
+        </h2>
+        <p style={{ color: 'var(--soft-stone)' }} className="text-sm mt-1">
+          Optional: turn on low-fee Instant Digital Dollars now, or skip and set up payments anytime later.
+        </p>
       </div>
 
+      <DigitalDollarsSetupCard onSaveAddress={onSaveSolanaAddress} compact />
+
       <button
+        type="button"
         onClick={onEnter}
-        className="w-full py-5 rounded-2xl font-bold text-[var(--warm-ink)] text-lg transition-all duration-200 hover:opacity-90 shadow-lg"
+        className="w-full py-4 rounded-2xl font-bold text-white text-base transition-all duration-200 hover:opacity-90 shadow-md"
         style={{ backgroundColor: 'var(--clay)' }}
       >
-        Enter my workspace →
+        Enter my {persona.shortLabel} CRM →
       </button>
+      <p className="text-center text-xs text-[var(--soft-stone)]">
+        You can always add Bank Transfer, Square, PayPal, or Digital Dollars later in Settings.
+      </p>
     </div>
   );
 }
@@ -329,7 +300,7 @@ function DoneStep({ verticalId, onEnter }: { verticalId: string; onEnter: () => 
 // ─── Progress indicator ───────────────────────────────────────────────────────
 function Progress({ step, total }: { step: number; total: number }) {
   return (
-    <div className="flex items-center gap-2 mb-10">
+    <div className="flex items-center gap-2 mb-8">
       {Array.from({ length: total }).map((_, i) => (
         <div
           key={i}
@@ -358,41 +329,21 @@ export default function SetupWizardPage() {
   const [enrolling, setEnrolling] = useState(false);
   const [enrollError, setEnrollError] = useState<string | null>(null);
 
-  /**
-   * Create the CrmServiceBusiness row.
-   *
-   * THIS WAS NEVER CALLED, and it is why the CRM did not work.
-   *
-   * Every /crm/* route sits behind resolveCrmBusiness, which 403s with
-   * "No service business enrolled for this account" when the row does not exist.
-   * The setup wizard marked local preferences complete and moved on, so enrollment
-   * never happened: the customer finished setup, landed on the clients page, and
-   * every read and write 403'd. Save Changes appeared to do nothing because the
-   * failure was console.error'd and never rendered.
-   *
-   * enrollBusiness is idempotent server-side (it returns the existing pairing), so
-   * a retry or a second visit is safe.
-   */
   const enroll = async () => {
     if (!selectedVertical) return;
     setEnrolling(true);
     setEnrollError(null);
     try {
       const user = useAuthStore.getState().user;
-      // Via the store, not crmService directly: enrollment reissues the token so its
-      // `businessId` claim stops being null, and only the store persists it.
       await useAuthStore.getState().enrollBusiness({
         businessName: businessName.trim(),
         ownerName: (user as any)?.name || (user as any)?.firstName || businessName.trim(),
-        // The preset id IS the serviceType the server categorises on.
         serviceType: selectedVertical,
       });
       applyPreset(selectedVertical);
       markSetupComplete();
       setStep(3);
     } catch (err: any) {
-      // Shown, not logged. If enrollment fails the CRM is unusable, and the
-      // customer must be told rather than dropped into a broken screen.
       const message =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
@@ -403,35 +354,54 @@ export default function SetupWizardPage() {
     }
   };
 
+  const handleSaveSolanaAddress = async (solanaAddress: string) => {
+    const user = useAuthStore.getState().user as any;
+    const businessId =
+      user?.business?.id || user?.businessId || localStorage.getItem('businessId') || '';
+    if (!businessId) {
+      throw new Error('Workspace ID not found yet — you can save this anytime in Payment Settings.');
+    }
+    const res = await fetch(`${API_BASE}/api/v1/payment-methods`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getAuthToken() || ''}`,
+      },
+      body: JSON.stringify({ businessId, railId: 'solana', target: solanaAddress }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Could not save digital dollar payout method');
+    }
+  };
+
   const handleConfirm = () => {
     if (!selectedVertical || !businessName.trim()) return;
     void enroll();
   };
 
   const handleEnter = () => {
-    navigate('/contact/clients?onboarded=true');
+    navigate('/contact?onboarded=true');
   };
 
   return (
     <>
       <Helmet>
         <title>Set up ContactOS — Pabandi</title>
-        <meta name="description" content="Configure your ContactOS CRM for your business type." />
+        <meta name="description" content="Personalize your Pabandi small-business CRM in under a minute." />
       </Helmet>
 
-      {/* Full-page gradient background */}
       <div
         className="min-h-screen flex items-center justify-center px-4 py-12"
         style={{
           background: 'linear-gradient(135deg, #F5EFE6 0%, #EDE0D0 50%, #F0E8DA 100%)',
         }}
       >
-        {/* Card */}
-        <div className="w-full max-w-lg">
+        <div className="w-full max-w-xl">
           {/* Header */}
-          <div className="text-center mb-10">
+          <div className="text-center mb-8">
             <div
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 text-sm font-bold"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-5 text-sm font-bold"
               style={{ backgroundColor: 'rgba(201, 123, 90, 0.12)', color: 'var(--clay)' }}
             >
               <span className="material-symbols-outlined text-sm">contacts</span>
@@ -444,16 +414,16 @@ export default function SetupWizardPage() {
               Welcome to your CRM
             </h1>
             <p style={{ color: 'var(--soft-stone)' }} className="text-base">
-              Takes 30 seconds. No technical knowledge needed.
+              Takes under a minute. Built for real local businesses — zero jargon.
             </p>
           </div>
 
           {/* Wizard card */}
           <div
-            className="rounded-3xl bg-white p-8"
+            className="rounded-3xl bg-white p-7 sm:p-8"
             style={{ boxShadow: '0 20px 60px rgba(180,130,90,0.15), 0 4px 16px rgba(0,0,0,0.05)' }}
           >
-            {step < 3 && <Progress step={step} total={2} />}
+            <Progress step={step} total={3} />
 
             {step === 1 && (
               <VerticalStep
@@ -467,7 +437,10 @@ export default function SetupWizardPage() {
               <div
                 role="alert"
                 className="mb-4 flex items-start gap-2 rounded-xl px-3 py-2.5 text-sm"
-                style={{ background: 'var(--danger-container, #FCE8E6)', color: 'var(--on-danger-container, #8C1D18)' }}
+                style={{
+                  background: 'var(--danger-container, #FCE8E6)',
+                  color: 'var(--on-danger-container, #8C1D18)',
+                }}
               >
                 <span className="material-symbols-outlined text-[18px] shrink-0 mt-px">error</span>
                 <span>{enrollError}</span>
@@ -487,7 +460,12 @@ export default function SetupWizardPage() {
             )}
 
             {step === 3 && selectedVertical && (
-              <DoneStep verticalId={selectedVertical} onEnter={handleEnter} />
+              <PaymentAndDoneStep
+                verticalId={selectedVertical}
+                businessName={businessName}
+                onSaveSolanaAddress={handleSaveSolanaAddress}
+                onEnter={handleEnter}
+              />
             )}
           </div>
 
@@ -495,6 +473,7 @@ export default function SetupWizardPage() {
           {step < 3 && (
             <div className="text-center mt-6">
               <button
+                type="button"
                 onClick={handleEnter}
                 className="text-sm hover:underline transition"
                 style={{ color: 'var(--soft-stone)' }}

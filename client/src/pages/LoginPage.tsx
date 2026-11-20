@@ -5,6 +5,7 @@ import { Mail, ArrowRight, ShieldCheck, Terminal, AlertCircle, Loader2, KeyRound
 import { useAuthStore } from '../store/authStore';
 import { authService, API_HOST } from '../services/api';
 import { signMessageWithPhantom } from '../utils/web3';
+import { safeInternalPath } from '../utils/accountMode';
 import { usePrivy } from '@privy-io/react-auth';
 import '../styles/pbn-tokens.css';
 
@@ -133,22 +134,32 @@ export default function LoginPage() {
   const privyAppId = import.meta.env.VITE_PRIVY_APP_ID;
   const isPrivyConfigured = Boolean(privyAppId && typeof privyAppId === 'string' && privyAppId.length === 25);
 
+  const intentParam = searchParams.get('intent');
+  const safeReturnTo = safeInternalPath(searchParams.get('return_to'));
+
+  const buildOnboardingUrl = React.useCallback(() => {
+    const qs = new URLSearchParams();
+    if (intentParam) qs.set('intent', intentParam);
+    if (safeReturnTo) qs.set('return_to', safeReturnTo);
+    const str = qs.toString();
+    return str ? `/onboarding?${str}` : '/onboarding';
+  }, [intentParam, safeReturnTo]);
+
   // If already authenticated, redirect appropriately
   React.useEffect(() => {
     if (isAuthenticated && user) {
       if (!user.profileType) {
-        navigate('/onboarding', { replace: true });
+        navigate(buildOnboardingUrl(), { replace: true });
       } else {
-        const returnTo = searchParams.get('return_to');
-        navigate(returnTo || '/dashboard', { replace: true });
+        navigate(safeReturnTo || '/dashboard', { replace: true });
       }
     }
-  }, [isAuthenticated, user, navigate, searchParams]);
+  }, [isAuthenticated, user, navigate, buildOnboardingUrl, safeReturnTo]);
 
   // 1. GitHub OAuth
   const handleGitHubAuth = () => {
     const origin = encodeURIComponent(window.location.origin);
-    const returnTo = encodeURIComponent('/onboarding');
+    const returnTo = encodeURIComponent(buildOnboardingUrl());
     window.location.href = `${API_HOST}/api/v1/auth/social/github?origin=${origin}&return_to=${returnTo}`;
   };
 
@@ -165,10 +176,9 @@ export default function LoginPage() {
       setAuth(authedUser, token, refreshToken);
       setStatusMessage('Telegram authenticated! Routing...');
       if (!authedUser.profileType) {
-        navigate('/onboarding', { replace: true });
+        navigate(buildOnboardingUrl(), { replace: true });
       } else {
-        const returnTo = searchParams.get('return_to');
-        navigate(returnTo || '/dashboard', { replace: true });
+        navigate(safeReturnTo || '/dashboard', { replace: true });
       }
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || 'Telegram authentication failed';
@@ -219,7 +229,7 @@ export default function LoginPage() {
       setStatusMessage('Verifying signature on-chain...');
       await loginWithWallet(address, signature);
       setStatusMessage('Authenticated successfully!');
-      navigate('/onboarding', { replace: true });
+      navigate(buildOnboardingUrl(), { replace: true });
     } catch (err: any) {
       setErrorMessage(err?.message || 'Wallet connection cancelled or failed.');
     } finally {
@@ -278,10 +288,9 @@ export default function LoginPage() {
 
       setStatusMessage('Authentication successful! Routing...');
       if (!authedUser.profileType) {
-        navigate('/onboarding', { replace: true });
+        navigate(buildOnboardingUrl(), { replace: true });
       } else {
-        const returnTo = searchParams.get('return_to');
-        navigate(returnTo || '/dashboard', { replace: true });
+        navigate(safeReturnTo || '/dashboard', { replace: true });
       }
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || 'Invalid or expired verification code.';
@@ -373,7 +382,7 @@ export default function LoginPage() {
             <PrivyButtonInner
               onAuthenticated={(u, t, r) => {
                 setAuth(u, t, r);
-                navigate('/onboarding');
+                navigate(buildOnboardingUrl());
               }}
               onError={(msg) => setErrorMessage(msg)}
               loading={walletLoading}

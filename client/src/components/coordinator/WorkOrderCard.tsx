@@ -1,4 +1,5 @@
 import { PRIORITY_LABEL, shortWorkOrderId } from './labels';
+import { formatClientRiskDepositSummary } from './risk';
 import RiskChip, { RiskChipHelp } from './RiskChip';
 import type { WorkOrder } from './types';
 import { assignedTechnician } from './types';
@@ -23,6 +24,12 @@ export interface WorkOrderCardProps {
  */
 export default function WorkOrderCard({ workOrder, selected, onSelect }: WorkOrderCardProps) {
   const technician = assignedTechnician(workOrder);
+  const depositSummary = formatClientRiskDepositSummary({
+    clientTrustScore: workOrder.clientTrustScore,
+    depositRequiredPercent: workOrder.depositRequiredPercent,
+    riskScore: workOrder.risk?.score,
+    riskBandOverride: workOrder.risk?.band,
+  });
 
   return (
     <li className="pbn-work-card__item">
@@ -51,6 +58,11 @@ export default function WorkOrderCard({ workOrder, selected, onSelect }: WorkOrd
 
         <span className="pbn-work-card__meta">
           <span className="pbn-work-card__address">{workOrder.address}</span>
+          {depositSummary && (
+            <span className="pbn-work-card__deposit" data-testid="coordinator-deposit-summary">
+              {depositSummary}
+            </span>
+          )}
         </span>
 
         <span className="pbn-work-card__foot">

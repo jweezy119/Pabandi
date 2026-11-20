@@ -10,6 +10,7 @@ import {
   STATUS_LABEL,
 } from './labels';
 import RiskChip from './RiskChip';
+import { formatClientRiskDepositSummary } from './risk';
 import Tooltip from './Tooltip';
 import { assignedTechnician, type HitlPolicy, type RiskFactor, type WorkOrder } from './types';
 import WhatIfStrip from './WhatIfStrip';
@@ -100,6 +101,12 @@ function InspectorEmptyState() {
  */
 function InspectorDetail({ workOrder }: { workOrder: WorkOrder }) {
   const technician = assignedTechnician(workOrder);
+  const depositSummary = formatClientRiskDepositSummary({
+    clientTrustScore: workOrder.clientTrustScore,
+    depositRequiredPercent: workOrder.depositRequiredPercent,
+    riskScore: workOrder.risk?.score,
+    riskBandOverride: workOrder.risk?.band,
+  });
 
   return (
     <div className="pbn-inspector__detail">
@@ -110,16 +117,21 @@ function InspectorDetail({ workOrder }: { workOrder: WorkOrder }) {
         </span>
       </div>
 
-      {workOrder.risk && (
+      {(workOrder.risk || depositSummary) && (
         <section className="pbn-inspector__section" aria-labelledby="pbn-risk-heading">
           <h3 className="pbn-inspector__section-title" id="pbn-risk-heading">
             Risk
           </h3>
-          <RiskChip assessment={workOrder.risk} />
-          {workOrder.risk.policy && (
+          {workOrder.risk && <RiskChip assessment={workOrder.risk} />}
+          {depositSummary && (
+            <p className="pbn-inspector__policy" data-testid="inspector-deposit-summary">
+              <strong>{depositSummary}</strong>
+            </p>
+          )}
+          {workOrder.risk?.policy && (
             <p className="pbn-inspector__policy">{POLICY_LINE[workOrder.risk.policy]}</p>
           )}
-          {workOrder.risk.calibrated === false && (
+          {workOrder.risk?.calibrated === false && (
             <p className="pbn-inspector__note">
               We have not scored enough of your jobs yet to fully trust this number. It gets
               more accurate as more jobs are completed.

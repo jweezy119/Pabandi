@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { Building2, UserCheck, Bot, Tag } from 'lucide-react';
 import { GUARANTEE_STEPS } from '../components/GuaranteeVisuals';
 import { useAuthStore } from '../store/authStore';
 import { useLanguage } from '../context/LanguageContext';
@@ -223,11 +224,22 @@ export default function LandingPage() {
             <span>PabandiOS</span>
           </Link>
           <nav className="nav-list" aria-label="Main">
-            <Link to="/contact">{t('For Businesses', 'کاروبار کے لیے')}</Link>
-            <Link to="/agents">{t('For AI Developers', 'اے آئی ڈویلپرز')}</Link>
-            <Link to="/impact">{t('Financial Inclusion', 'معاشی شمولیت')}</Link>
-            <Link to="/sharia-compliance">{t('Sharia', 'شرعی اصول')}</Link>
-            <Link to="/pricing">{t('Pricing', 'قیمتیں')}</Link>
+            <Link to="/contact" className="nav-tab-link">
+              <Building2 className="nav-tab-icon" size={15} aria-hidden="true" />
+              <span>{t('For Businesses', 'کاروبار کے لیے')}</span>
+            </Link>
+            <Link to="/customers" className="nav-tab-link">
+              <UserCheck className="nav-tab-icon" size={15} aria-hidden="true" />
+              <span>{t('For Customers', 'صارفین کے لیے')}</span>
+            </Link>
+            <Link to="/agents" className="nav-tab-link">
+              <Bot className="nav-tab-icon" size={15} aria-hidden="true" />
+              <span>{t('For AI Developers', 'اے آئی ڈویلپرز')}</span>
+            </Link>
+            <Link to="/pricing" className="nav-tab-link">
+              <Tag className="nav-tab-icon" size={15} aria-hidden="true" />
+              <span>{t('Pricing', 'قیمتیں')}</span>
+            </Link>
           </nav>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -922,6 +934,7 @@ export default function LandingPage() {
           </div>
 
           <nav className="footer-nav" aria-label="Footer">
+            <Link to="/transparency">Transparency (Live TVL)</Link>
             <Link to="/guarantee">The Guarantee</Link>
             <Link to="/impact">Financial Inclusion</Link>
             <Link to="/sharia-compliance">Sharia Compliance</Link>

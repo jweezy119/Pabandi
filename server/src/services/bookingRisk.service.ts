@@ -2,8 +2,11 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import {
   buildPriorHierarchy,
+  evaluateBookingDepositPolicy,
   loadModelWeights,
   predictRiskPoint,
+  type DrpeDepositDecision,
+  type RiskPrediction,
   type WorkOrderFeatures,
 } from './predictiveEngine.service';
 
@@ -76,6 +79,64 @@ export async function assessBookingRisk(params: {
     `[BookingRisk] booking=${params.bookingId} score=${prediction.riskScore.toFixed(3)} band=${prediction.band} policy=${prediction.policy}`,
   );
   return risk;
+}
+
+export async function quoteBookingRiskAndDeposit(params: {
+  businessId: string;
+  slotStart: Date;
+  serviceType: string;
+  serviceValue: number;
+  trustScore?: number | null;
+}): Promise<{
+  prediction: RiskPrediction;
+  drpe: DrpeDepositDecision;
+}> {
+  const weights = loadModelWeights();
+  const dayStart = new Date(params.slotStart);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(dayStart);
+  dayEnd.setDate(dayEnd.getDate() + 1);
+
+  let sameDayCount = 0;
+  try {
+    sameDayCount = await prisma.booking.count({
+      where: {
+        businessId: params.businessId,
+        slotStart: { gte: dayStart, lt: dayEnd },
+        status: { in: ['pending', 'confirmed', 'COMPLETED'] },
+      },
+    });
+  } catch {
+    sameDayCount = 0;
+  }
+
+  const features: WorkOrderFeatures = {
+    schedule_density: sameDayCount,
+    lead_time_days: daysBetween(new Date(), params.slotStart),
+    issue_type_complexity: complexityFor(params.serviceType),
+    technician_skill_match: 1,
+    technician_experience_years: 0,
+  };
+
+  const prior = buildPriorHierarchy({
+    global: weights.globalCounts,
+    vertical: weights.verticalCounts['general'] ?? weights.globalCounts,
+    technician: { onTime: 0, wentWrong: 0 },
+  });
+
+  const prediction = predictRiskPoint({
+    features,
+    weights,
+    baselineRisk: prior.technician.posteriorRisk,
+  });
+
+  const drpe = evaluateBookingDepositPolicy({
+    trustScore: params.trustScore,
+    serviceValue: params.serviceValue,
+    predictedRiskScore: prediction.riskScore,
+  });
+
+  return { prediction, drpe };
 }
 
 export async function recordBookingRiskOutcome(bookingId: string, status: string) {

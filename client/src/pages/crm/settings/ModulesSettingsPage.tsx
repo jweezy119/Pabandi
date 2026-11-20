@@ -34,18 +34,7 @@ const MODULES = [
     accentColor: 'sage',
     route: '/booking',
     isDefault: false,
-    verticals: ['salon', 'consulting'],
-    subFeatures: []
-  },
-  {
-    id: 'freight',
-    name: 'FreightOS',
-    description: 'Freight & logistics platform',
-    icon: 'local_shipping',
-    accentColor: 'sky-wash',
-    route: '/freight',
-    isDefault: false,
-    verticals: ['logistics'],
+    verticals: ['salon', 'cleaning', 'consulting', 'wellness'],
     subFeatures: []
   },
   {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Terminal,
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore, type ProfileType } from '../store/authStore';
 import { authService } from '../services/api';
+import { safeInternalPath } from '../utils/accountMode';
 import '../styles/pbn-tokens.css';
 
 const INDUSTRY_OPTIONS = [
@@ -29,12 +30,24 @@ const INDUSTRY_OPTIONS = [
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, setUser } = useAuthStore();
+  const [searchParams] = useSearchParams();
+  const { user, isAuthenticated, setUser, setToken } = useAuthStore();
 
-  const [selectedProfile, setSelectedProfile] = useState<ProfileType | null>(null);
+  const intentParam = searchParams.get('intent');
+  const safeReturnTo = safeInternalPath(searchParams.get('return_to'));
+
+  const [selectedProfile, setSelectedProfile] = useState<ProfileType | null>(
+    () => (intentParam === 'customer' ? 'CLIENT' : null)
+  );
   const [username, setUsername] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [industry, setIndustry] = useState('commercial');
+  const [firstName, setFirstName] = useState(
+    () => (user?.firstName && user.firstName !== 'User' ? user.firstName : '')
+  );
+  const [lastName, setLastName] = useState(() => user?.lastName || '');
+  const [customerPhone, setCustomerPhone] = useState(() => user?.phone || '');
+  const [customerCity, setCustomerCity] = useState(() => user?.location || '');
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -133,6 +146,11 @@ export default function OnboardingPage() {
       return;
     }
 
+    if (selectedProfile === 'CLIENT' && !firstName.trim()) {
+      setErrorMessage('Please enter your first name for your personal profile.');
+      return;
+    }
+
     if (selectedProfile === 'SERVICE_BUSINESS' && !businessName.trim()) {
       setErrorMessage('Please enter your business name.');
       return;
@@ -150,14 +168,26 @@ export default function OnboardingPage() {
         username: cleanHandle || undefined,
         businessName: businessName.trim() || undefined,
         industry: industry || undefined,
+        ...(selectedProfile === 'CLIENT'
+          ? {
+              firstName: firstName.trim(),
+              lastName: lastName.trim() || undefined,
+              phone: customerPhone.trim() || undefined,
+              location: customerCity.trim() || undefined,
+            }
+          : {}),
       });
 
-      const updatedUser = response.data?.data?.user;
+      const payload = response.data?.data ?? response.data;
+      const updatedUser = payload?.user;
       if (updatedUser) {
         setUser(updatedUser);
       }
+      if (payload?.token) {
+        setToken(payload.token);
+      }
 
-      setStatusMessage('Onboarding complete! Redirecting to your dashboard...');
+      setStatusMessage('Onboarding complete! Redirecting to your hub...');
       
       // Route appropriately
       if (selectedProfile === 'SERVICE_BUSINESS') {
@@ -165,7 +195,7 @@ export default function OnboardingPage() {
       } else if (selectedProfile === 'SOLO_BUILDER') {
         navigate('/gigs', { replace: true });
       } else {
-        navigate('/dashboard', { replace: true });
+        navigate(safeReturnTo || '/me?welcome=1', { replace: true });
       }
     } catch (err: any) {
       const msg =
@@ -290,10 +320,10 @@ export default function OnboardingPage() {
                 <ShoppingBag className="h-6 w-6" />
               </div>
               <h2 className="text-base font-semibold text-[#e8eef4]">
-                Client / Buyer
+                Customer / Personal Profile
               </h2>
               <p className="mt-1.5 text-xs text-[#8a9aa8] leading-relaxed">
-                Hire verified professionals or AI agents, backed by secure escrow.
+                Book, reserve, and utilize verified businesses with escrow protection.
               </p>
             </div>
             <div className="mt-4 flex items-center justify-between pt-3 border-t border-[var(--pbn-border)]/50">
@@ -446,24 +476,84 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {/* Form 2: Client */}
+              {/* Form 2: Customer / Personal Profile */}
               {selectedProfile === 'CLIENT' && (
                 <div className="space-y-4">
                   <div className="rounded-xl border border-[var(--pbn-border)] bg-[#0a1118] p-4 text-xs text-[#8a9aa8] leading-relaxed">
-                    <p className="text-[#e8eef4] font-medium mb-1">Zero configuration required</p>
-                    Your client profile is ready immediately. You can post gigs, fund milestones in escrow, and hire verified service professionals.
+                    <p className="text-[#e8eef4] font-medium mb-1">Standard Personal Profile</p>
+                    Add your name so businesses recognize your bookings and reservations automatically.
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="client-first-name" className="block text-xs font-semibold uppercase tracking-wider text-[#8a9aa8] mb-1.5">
+                        First Name *
+                      </label>
+                      <input
+                        id="client-first-name"
+                        type="text"
+                        required
+                        autoFocus
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        placeholder="Amina"
+                        className="w-full min-h-[46px] rounded-xl border border-[var(--pbn-border)] bg-[#0a1118] px-4 py-2.5 text-sm text-[#e8eef4] placeholder-[#5a6a78] focus:border-[var(--pbn-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--pbn-accent)]/30"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="client-last-name" className="block text-xs font-semibold uppercase tracking-wider text-[#8a9aa8] mb-1.5">
+                        Last Name (optional)
+                      </label>
+                      <input
+                        id="client-last-name"
+                        type="text"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        placeholder="Khan"
+                        className="w-full min-h-[46px] rounded-xl border border-[var(--pbn-border)] bg-[#0a1118] px-4 py-2.5 text-sm text-[#e8eef4] placeholder-[#5a6a78] focus:border-[var(--pbn-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--pbn-accent)]/30"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="client-phone" className="block text-xs font-semibold uppercase tracking-wider text-[#8a9aa8] mb-1.5">
+                        Phone (optional)
+                      </label>
+                      <input
+                        id="client-phone"
+                        type="tel"
+                        value={customerPhone}
+                        onChange={(e) => setCustomerPhone(e.target.value)}
+                        placeholder="+1 (312) 555-0199"
+                        className="w-full min-h-[46px] rounded-xl border border-[var(--pbn-border)] bg-[#0a1118] px-4 py-2.5 text-sm text-[#e8eef4] placeholder-[#5a6a78] focus:border-[var(--pbn-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--pbn-accent)]/30"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="client-city" className="block text-xs font-semibold uppercase tracking-wider text-[#8a9aa8] mb-1.5">
+                        City (optional)
+                      </label>
+                      <input
+                        id="client-city"
+                        type="text"
+                        value={customerCity}
+                        onChange={(e) => setCustomerCity(e.target.value)}
+                        placeholder="Chicago or Lahore"
+                        className="w-full min-h-[46px] rounded-xl border border-[var(--pbn-border)] bg-[#0a1118] px-4 py-2.5 text-sm text-[#e8eef4] placeholder-[#5a6a78] focus:border-[var(--pbn-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--pbn-accent)]/30"
+                      />
+                    </div>
                   </div>
 
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !firstName.trim()}
                     className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[var(--pbn-accent)] px-4 py-3 text-sm font-semibold text-[#0a1118] transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--pbn-accent)] active:scale-[0.99] disabled:opacity-50"
                   >
                     {loading ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
                     ) : (
                       <>
-                        <span>Continue as Client</span>
+                        <span>Open My Personal Hub</span>
                         <ArrowRight className="h-4 w-4" />
                       </>
                     )}

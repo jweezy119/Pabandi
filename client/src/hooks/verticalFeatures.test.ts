@@ -20,7 +20,7 @@ import { VERTICAL_PRESETS } from './useBusinessSettings';
  */
 
 /** Verticals whose business is delivering a booked service. */
-const SERVICE_DELIVERY = ['salon', 'trades', 'real_estate', 'logistics'];
+const SERVICE_DELIVERY = ['salon', 'trades', 'cleaning', 'real_estate', 'wellness'];
 
 /** True of any business, whatever it sells. */
 const CORE = ['clients', 'deals', 'invoices', 'activities'];

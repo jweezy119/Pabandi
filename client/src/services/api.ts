@@ -146,6 +146,10 @@ export const authService = {
     username?: string;
     businessName?: string;
     industry?: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    location?: string;
   }) => apiClient.post('/auth/onboarding', data),
   telegramAuth: (payload: { authData?: any; initData?: string }) =>
     apiClient.post('/auth/telegram', payload),

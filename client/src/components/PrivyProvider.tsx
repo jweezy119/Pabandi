@@ -22,7 +22,7 @@ export function PrivyProvider({ children }: { children: React.ReactNode }) {
       walletChainType: 'solana-only',
       showWalletLoginFirst: false,
     },
-    loginMethods: ['email', 'wallet'],
+    loginMethods: ['email', 'google', 'apple', 'wallet'],
     embeddedWallets: {
       solana: { createOnLogin: 'users-without-wallets' },
     },

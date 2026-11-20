@@ -1318,3 +1318,77 @@ export async function simulateWorkOrderRisk(
     outOfRangeFeatures: range.outOfRangeFeatures,
   };
 }
+
+/* ── Dynamic Risk Pricing Engine (DRPE) Deposit Policy ─────────────────── */
+
+export type ClientRiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
+
+export interface DrpeDepositDecision {
+  /** Normalized 0–100 client Trust Score (70 = brand new default, 90+ = verified). */
+  trustScore: number;
+  riskLevel: ClientRiskLevel;
+  /** 0 for verified clients (90+), 20 for brand new / unverified clients (<90). */
+  depositPercent: 0 | 20;
+  depositAmount: number;
+  serviceValue: number;
+  /** Merchant-facing Coordinator banner, e.g. "Client Risk: LOW. Deposit Required: 0%." */
+  merchantBanner: string;
+  /** Plain-language explanation shown to the client before paying. */
+  clientMessage: string;
+}
+
+/**
+ * Normalizes a Trust Score stored on either a 0–100 scale (Prisma default 70)
+ * or a 0–1000 scale (e.g. 700, 920) onto a canonical 0–100 score.
+ */
+export function normalizeTrustScore(raw?: number | null): number {
+  if (typeof raw !== 'number' || !Number.isFinite(raw)) return 70;
+  const scaled = raw > 100 ? raw / 10 : raw;
+  return Math.max(0, Math.min(100, Math.round(scaled)));
+}
+
+/**
+ * Evaluates the US DRPE deposit policy before checkout:
+ * - Verified client (Trust Score >= 90): 0% deposit — book immediately, pay upon completion.
+ * - Brand new / standard client (Trust Score < 90, e.g. 70): 20% deposit via Square or USDC escrow.
+ */
+export function evaluateBookingDepositPolicy(params: {
+  trustScore?: number | null;
+  serviceValue: number;
+  predictedRiskScore?: number;
+}): DrpeDepositDecision {
+  const trustScore = normalizeTrustScore(params.trustScore);
+  const serviceValue = Math.max(0, Number.isFinite(params.serviceValue) ? params.serviceValue : 0);
+
+  if (trustScore >= 90) {
+    return {
+      trustScore,
+      riskLevel: 'LOW',
+      depositPercent: 0,
+      depositAmount: 0,
+      serviceValue,
+      merchantBanner: 'Client Risk: LOW. Deposit Required: 0%.',
+      clientMessage: 'Verified Trust Score (90+) — 0% deposit required. Book now and pay upon completion.',
+    };
+  }
+
+  const riskLevel: ClientRiskLevel =
+    trustScore < 50 || (typeof params.predictedRiskScore === 'number' && params.predictedRiskScore >= 0.7)
+      ? 'HIGH'
+      : 'MEDIUM';
+
+  const depositPercent = 20 as const;
+  const depositAmount =
+    serviceValue > 0 ? Math.round(serviceValue * (depositPercent / 100) * 100) / 100 : 0;
+
+  return {
+    trustScore,
+    riskLevel,
+    depositPercent,
+    depositAmount,
+    serviceValue,
+    merchantBanner: `Client Risk: ${riskLevel}. Deposit Required: ${depositPercent}%.`,
+    clientMessage:
+      'New or unverified profile — a refundable 20% deposit is required via Square or USDC escrow. Reach Trust Score 90+ to unlock 0% deposits.',
+  };
+}

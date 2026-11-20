@@ -10,6 +10,7 @@
     "@coral-xyz/anchor": "^0.32.1",
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.1.1",
+    "@phantom/browser-sdk": "^2.0.4",
     "@privy-io/react-auth": "^3.45.0",
     "@rollup/rollup-linux-x64-gnu": "^4.61.1",
     "@solana-program/memo": "^0.15.0",

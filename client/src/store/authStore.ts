@@ -13,6 +13,7 @@ export interface User {
   name?: string;
   username?: string | null;
   phone?: string;
+  location?: string | null;
   role: string;
   profileType?: ProfileType | null;
   /**

@@ -116,24 +116,25 @@ const OS_ROOT: Record<string, string> = {
 };
 
 import { useBusinessSettings } from '../hooks/useBusinessSettings';
+import { getVerticalPersona } from '../config/verticalPersonas';
 
 function buildNavFromSettings(settings: any, osName: string, defaultNav?: NavItem[]): NavItem[] {
+  const persona = getVerticalPersona(settings?.vertical);
   const map: Record<string, any[]> = {
      'Contact OS': [
       { path: '/contact', label: 'Dashboard', icon: 'dashboard', feature: null, end: true },
-      // Guarantee vocabulary. The pages did not move; what they are *for* did.
-      // A "Verified Client" is someone an escrow has vouched for; a
-      // "Guaranteed Booking" is a deal whose deposit we can point at.
-      { path: '/contact/clients', label: 'Verified Clients', icon: 'verified_user', feature: 'clients' },
-      { path: '/contact/deals', label: 'Guaranteed Bookings', icon: 'workspace_premium', feature: 'deals' },
-      { path: '/contact/jobs', label: 'Jobs', icon: 'work', feature: 'jobs' },
+      // Industry-personalized display labels powered by verticalPersonas.ts.
+      // Underlying routes and canonical CRM states stay unified across all verticals.
+      { path: '/contact/clients', label: persona.navLabels.clients, icon: 'verified_user', feature: 'clients' },
+      { path: '/contact/deals', label: persona.navLabels.deals, icon: 'workspace_premium', feature: 'deals' },
+      { path: '/contact/jobs', label: persona.navLabels.jobs, icon: 'work', feature: 'jobs' },
       { path: '/coordinator', label: 'Coordinator', icon: 'precision_manufacturing', feature: 'jobs' },
-      { path: '/contact/activities', label: 'Activities', icon: 'notifications', feature: 'activities' },
-      { path: '/contact/tasks', label: 'Tasks', icon: 'check', feature: 'tasks' },
-      { path: '/contact/invoices', label: 'Escrow & Payments', icon: 'lock', feature: 'invoices' },
+      { path: '/contact/activities', label: persona.navLabels.activities, icon: 'notifications', feature: 'activities' },
+      { path: '/contact/tasks', label: persona.navLabels.tasks, icon: 'check', feature: 'tasks' },
+      { path: '/contact/invoices', label: persona.navLabels.invoices, icon: 'lock', feature: 'invoices' },
       { path: '/contact/money-flow', label: 'Money Flow', icon: 'account_balance_wallet', feature: 'invoices' },
       { path: '/contact/trust-passport', label: 'Trust Passport', icon: 'shield_check', feature: null },
-      { path: '/contact/team', label: 'Team', icon: 'users', feature: 'team' },
+      { path: '/contact/team', label: persona.navLabels.team, icon: 'users', feature: 'team' },
       // NOTE: 'Companies' / B2B accounts used to sit here. It was removed
       // rather than pointed somewhere: there is no Company model, and CrmClient
       // has no company or account field, so there is no data behind the idea

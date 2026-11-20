@@ -52,12 +52,17 @@
   <div class="fee" id="feeNote">Platform rake (1%): 0.0005 SOL · You send total: 0.0505 SOL</div>
 
   <button id="pay">Connect Wallet &amp; Pay in SOL</button>
-  <div class="status mut" id="status">Idle. Connect a Solana wallet (Phantom) or paste a base58 key to pay.</div>
+  <div class="status mut" id="status">Idle. Connect Phantom wallet to settle on-chain, or run a guided demo booking.</div>
 </div>
 
 <script>
-const API = 'https://pabandi.onrender.com/api/v1/economy';
-const RPC = 'https://mainnet.helius-rpc.com/?api-key=3caa4d83-82b5-4e35-a377-799a0eb1082c';
+const API = window.location.origin.includes('localhost')
+  ? `${window.location.origin}/api/v1/economy`
+  : 'https://pabandi.onrender.com/api/v1/economy';
+const CLUSTER = new URLSearchParams(location.search).get('cluster') === 'devnet' ? 'devnet' : 'mainnet-beta';
+const RPC = CLUSTER === 'devnet'
+  ? 'https://api.devnet.solana.com'
+  : 'https://api.mainnet-beta.solana.com';
 const { Connection, Transaction, PublicKey, LAMPORTS_PER_SOL } = solanaWeb3;
 const conn = new Connection(RPC, 'confirmed');
 

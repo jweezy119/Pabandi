@@ -6,7 +6,10 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-pabandi_escrow = "6ebgdhyUV7zEHqRmpnaPguWQPYJu9Vq4dpFs79VduTjG"
+pabandi_escrow = "EUSLC8q2b2SezvMQFhvU98EFrWkEasTdvrjqdJgYn2qc"
+
+[programs.devnet]
+pabandi_escrow = "EUSLC8q2b2SezvMQFhvU98EFrWkEasTdvrjqdJgYn2qc"
 
 [provider]
 cluster = "localnet"

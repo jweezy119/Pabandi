@@ -13,6 +13,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { useBusinessSettings } from '../../hooks/useBusinessSettings';
+import { useVerticalPersona } from '../../config/verticalPersonas';
 import { useAuthStore } from '../../store/authStore';
 import { getAuthToken } from '../../utils/authToken';
 import { ClayButton } from '../../components/clay/ClayButton';
@@ -31,6 +32,7 @@ export default function ContactOSPage() {
   const [enrolled, setEnrolled] = useState<boolean | null>(null);
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const persona = useVerticalPersona();
 
   const businessId = (user as { business?: { id?: string } | null } | null)?.business?.id
     || (user as { businessId?: string | null } | null)?.businessId
@@ -243,12 +245,44 @@ export default function ContactOSPage() {
       </Helmet>
       <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay">
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          {/* ── Greeting + Assistive AI Banner ────────────────── */}
+          {/* ── Greeting + Personalized Quick Actions ────────────────── */}
           <div className="clay-fade mb-6">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
               <div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold mb-1.5"
+                     style={{ backgroundColor: persona.bgLight, color: 'var(--warm-ink)' }}>
+                  <span>{persona.emoji}</span>
+                  <span>{persona.label}</span>
+                </div>
                 <h1 className="text-3xl font-bold text-[var(--warm-ink)]">{businessName}</h1>
-                <p className="text-sm text-[var(--soft-stone)]">Business dashboard — escrow, gigs, and agent activity</p>
+                <p className="text-sm text-[var(--soft-stone)]">{persona.dashboardGreeting}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  to="/contact/clients"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white border border-[rgba(191,179,163,0.45)] text-[var(--warm-ink)] hover:border-[var(--clay)] transition"
+                >
+                  + {persona.quickActions.addClient}
+                </Link>
+                <Link
+                  to="/contact/jobs"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white transition hover:opacity-90"
+                  style={{ backgroundColor: 'var(--clay)' }}
+                >
+                  + {persona.quickActions.scheduleWork}
+                </Link>
+                <Link
+                  to="/contact/settings/services"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white border border-[rgba(191,179,163,0.45)] text-[var(--warm-ink)] hover:border-[var(--clay)] transition"
+                >
+                  Service Menu
+                </Link>
+                <Link
+                  to="/contact/settings/payment"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white border border-[rgba(191,179,163,0.45)] text-[var(--warm-ink)] hover:border-[var(--clay)] transition"
+                >
+                  Get Paid Setup
+                </Link>
               </div>
             </div>
             <AnimatePresence>

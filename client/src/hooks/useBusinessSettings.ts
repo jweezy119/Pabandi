@@ -94,7 +94,7 @@ export const VERTICAL_PRESETS: Record<string, {
     pipelineStages: ['Lead', 'Discovery Call', 'Proposal', 'Active', 'Closed Won', 'Closed Lost'],
   },
   trades: {
-    label: 'Trades / Contractors',
+    label: 'Trades & Home Repair',
     modules: ['contact'],
     features: {
       // 'team' added: /contact/team and /contact/team/:id are FeatureGate'd on it
@@ -104,8 +104,16 @@ export const VERTICAL_PRESETS: Record<string, {
     },
     pipelineStages: ['Enquiry', 'Quote Sent', 'Job Scheduled', 'In Progress', 'Invoiced', 'Paid'],
   },
+  cleaning: {
+    label: 'Cleaning & Home Care',
+    modules: ['contact', 'booking'],
+    features: {
+      contact: ['clients', 'deals', 'invoices', 'jobs', 'activities', 'tasks', 'team', 'reliability'],
+    },
+    pipelineStages: ['Inquiry', 'Quoted', 'Booked', 'Completed', 'Recurring'],
+  },
   real_estate: {
-    label: 'Real Estate',
+    label: 'Real Estate & Property',
     modules: ['contact', 'property'],
     features: {
       // 'companies' removed: no Company model, no route, no page.
@@ -114,22 +122,16 @@ export const VERTICAL_PRESETS: Record<string, {
     },
     pipelineStages: ['Prospect', 'Showing', 'Offer', 'Under Contract', 'Closed'],
   },
-  logistics: {
-    label: 'Logistics / Freight',
-    modules: ['contact', 'freight'],
+  wellness: {
+    label: 'Wellness, Fitness & Clinic',
+    modules: ['contact', 'booking'],
     features: {
-      // 'jobs' added, and it is not optional for this vertical: a logistics business
-      // exists to move things, FreightOS lists them straight out of /crm/jobs, and
-      // this preset had the feature switched off in the CRM that owns the records.
-      // 'team' added: /contact/team and /contact/team/:id are FeatureGate'd on it
-      // and no preset enabled it, so the staff roster was unreachable for every
-      // account — including the people jobs get assigned to.
       contact: ['clients', 'deals', 'invoices', 'jobs', 'activities', 'tasks', 'team', 'reliability'],
     },
-    pipelineStages: ['Quote', 'Accepted', 'In Transit', 'Delivered', 'Invoiced'],
+    pipelineStages: ['Inquiry', 'Intake Booked', 'Active Plan', 'Completed', 'Repeat Member'],
   },
   general: {
-    label: 'General Business',
+    label: 'General Small Business',
     modules: ['contact'],
     features: {
       contact: ['clients', 'deals', 'invoices', 'activities', 'tasks', 'team', 'reliability'],
