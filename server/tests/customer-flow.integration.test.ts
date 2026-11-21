@@ -162,7 +162,7 @@ describe('customer flow: register -> set up business -> add a client', () => {
   beforeAll(async () => {
     const dbName = assertIsolatedDatabase();
 
-    const { default: app } = await import('../src/app');
+    const { default: app } = await import('../src/index');
     server = app.listen(0);
     await new Promise<void>((resolve) => server.once('listening', () => resolve()));
     baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
