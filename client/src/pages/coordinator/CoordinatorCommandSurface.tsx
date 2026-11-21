@@ -17,6 +17,7 @@ import WorkOrderStream from '../../components/coordinator/WorkOrderStream';
 import { coordinatorService } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import ManualReviewAlerts from './ManualReviewAlerts';
+import NewWorkOrderDialog from '../../components/coordinator/NewWorkOrderDialog';
 
 /**
  * The four former tabs, now filters over one stream (§3). Labels are plain
@@ -93,6 +94,7 @@ export default function CoordinatorCommandSurface() {
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [streamFilter, setStreamFilter] = useState<StreamFilter>(EMPTY_FILTER);
+  const [showNewOrder, setShowNewOrder] = useState(false);
 
   const loadWorkOrders = useCallback(async () => {
     setLoading(true);
@@ -167,9 +169,7 @@ export default function CoordinatorCommandSurface() {
         filters={withCounts(FILTERS, workOrders.length)}
         activeFilter={activeFilter}
         onFilterChange={setActiveFilter}
-        onNewWorkOrder={() => {
-          /* Phase 4 wires this to the create-work-order form. */
-        }}
+        onNewWorkOrder={() => setShowNewOrder(true)}
         onConnectWhatsApp={() => {
           /* Phase 4 wires this to WhatsApp onboarding. */
         }}
@@ -194,6 +194,15 @@ export default function CoordinatorCommandSurface() {
         />
       )}
       <ManualReviewAlerts />
+      {showNewOrder && (
+        <NewWorkOrderDialog
+          onCancel={() => setShowNewOrder(false)}
+          onCreated={() => {
+            setShowNewOrder(false);
+            void loadWorkOrders();
+          }}
+        />
+      )}
     </>
   );
 }

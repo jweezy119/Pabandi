@@ -1463,3 +1463,119 @@ html[data-pbn-text-size='large'] .pbn-commandbar__input {
 .pbn-range--out-of-range .pbn-range__reading {
   color: var(--pbn-text-muted);
 }
+
+/* ── New work order dialog ─────────────────────────────────────────────── */
+
+.pbn-dialog__panel--wide {
+  max-width: 34rem;
+}
+
+.pbn-dialog__subtitle {
+  margin: var(--pbn-space-2) 0 0;
+  font: var(--pbn-text-meta);
+  color: var(--pbn-text-muted);
+}
+
+.pbn-dialog__error {
+  margin: 0 0 var(--pbn-space-4);
+  padding: var(--pbn-space-3);
+  border-radius: var(--pbn-radius-md);
+  background: color-mix(in srgb, var(--pbn-danger, #d64545) 14%, transparent);
+  color: var(--pbn-danger, #d64545);
+  font: var(--pbn-text-meta);
+}
+
+.pbn-field {
+  display: block;
+  margin: 0 0 var(--pbn-space-4);
+  padding: 0;
+  border: 0;
+}
+
+.pbn-field__label {
+  display: block;
+  margin-bottom: var(--pbn-space-2);
+  font: var(--pbn-text-meta);
+  font-weight: 600;
+  color: var(--pbn-text);
+}
+
+.pbn-field__input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--pbn-space-3);
+  border: 1px solid var(--pbn-border-strong);
+  border-radius: var(--pbn-radius-md);
+  background: var(--pbn-surface);
+  color: var(--pbn-text);
+  font: var(--pbn-text-body);
+}
+
+.pbn-field__input::placeholder {
+  color: var(--pbn-text-faint);
+}
+
+.pbn-field__input:focus-visible {
+  outline: var(--pbn-focus-ring);
+  outline-offset: 1px;
+}
+
+.pbn-field__toggle {
+  margin-top: var(--pbn-space-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--pbn-accent);
+  font: var(--pbn-text-meta);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.pbn-field__hints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pbn-space-2);
+  margin-top: var(--pbn-space-2);
+}
+
+.pbn-field__chip {
+  padding: var(--pbn-space-1) var(--pbn-space-3);
+  border: 1px solid var(--pbn-border);
+  border-radius: var(--pbn-radius-sm);
+  background: var(--pbn-surface);
+  color: var(--pbn-text-muted);
+  font: var(--pbn-text-meta);
+  cursor: pointer;
+}
+
+.pbn-field__chip:hover {
+  background: var(--pbn-surface-hover);
+}
+
+.pbn-field__chip--choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--pbn-space-2);
+  cursor: pointer;
+}
+
+.pbn-field__chip--choice:has(input:checked) {
+  border-color: var(--pbn-accent);
+  background: color-mix(in srgb, var(--pbn-accent) 12%, transparent);
+  color: var(--pbn-text);
+}
+
+.pbn-field__chip--choice input {
+  margin-top: 2px;
+}
+
+.pbn-field__chip--choice small {
+  display: block;
+  color: var(--pbn-text-muted);
+  font-size: 0.75rem;
+}
+
+.pbn-dialog__panel--wide .pbn-dialog__actions {
+  margin-top: var(--pbn-space-5);
+}
