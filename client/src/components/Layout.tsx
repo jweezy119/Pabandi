@@ -109,6 +109,7 @@ function MobileMoreSheet({ onClose, pathname }: { onClose: () => void; pathname:
     ]},
     { title: 'Company', items: [
       { to: '/about', icon: 'info', label: 'About' },
+      { to: '/contact-us', icon: 'mail', label: 'Contact Us' },
       { to: '/sharia-compliance', icon: 'menu_book', label: 'Sharia Compliance' },
       { to: '/technology', icon: 'memory', label: 'Technology' },
       { to: '/join', icon: 'storefront', label: 'List Business' },
@@ -423,6 +424,7 @@ export default function Layout() {
 
           <nav className="hidden md:flex items-center gap-2 font-headline text-sm">
             <DesktopNavLink to="/" current={location.pathname === '/'}>Home</DesktopNavLink>
+            <DesktopNavLink to="/contact-us" current={location.pathname.startsWith('/partners') || location.pathname.startsWith('/contact-us')}>Contact</DesktopNavLink>
             <Dropdown label="PabandiOS Suite" current={['/booking', '/freight', '/property', '/contact', '/capital'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/contact">Contact OS</DropdownItem>
               <DropdownItem to="/booking">BookingOS</DropdownItem>
@@ -533,8 +535,8 @@ export default function Layout() {
               <div>
                 <p className="font-headline font-bold text-base text-[var(--warm-ink)] mb-3">Company</p>
                 <Link to="/about" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">About</Link>
+                <Link to="/contact-us" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">Contact Us</Link>
                 <Link to="/technology" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">Technology</Link>
-                <Link to="/contact-us" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">Contact</Link>
                 <Link to="/blog" className="block text-[var(--soft-stone)] font-medium hover:text-[var(--terracotta)] py-1 transition-colors">Blog</Link>
               </div>
             </div>

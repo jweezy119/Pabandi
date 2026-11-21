@@ -85,6 +85,7 @@ const DemoWalkthroughPage = lazy(() => import('./pages/DemoWalkthroughPage'));
 const AgentOnboardingPage = lazy(() => import('./pages/AgentOnboardingPage'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
+const ContactUsPage = lazy(() => import('./pages/ContactUsPage'));
 const BusinessWorkspaceShell = lazy(() => import('./pages/business-os/BusinessWorkspaceShell'));
 const PublicCustomerProfilePage = lazy(() => import('./pages/PublicCustomerProfilePage').then((m) => ({ default: m.PublicCustomerProfilePage })));
 const PropertyOSPage = lazy(() => import('./pages/property/PropertyOSPage'));
@@ -639,7 +640,7 @@ function AnimatedAppRoutes() {
             <Route path="profiles/category/:category" element={<PlaceholderPage />} />
             <Route path="profiles/:id" element={<PlaceholderPage />} />
             <Route path="technology" element={<PlaceholderPage />} />
-            <Route path="contact-us" element={<PlaceholderPage />} />
+            <Route path="contact-us" element={<ContactUsPage />} />
             <Route path="forgot-password" element={<PlaceholderPage />} />
             <Route path="reset-password/:token" element={<PlaceholderPage />} />
 
@@ -658,7 +659,7 @@ function AnimatedAppRoutes() {
             <Route path="agents/payments" element={<AgentPaymentsPage />} />
             <Route path="developer" element={<Navigate to="/developers" replace />} />
 
-            <Route path="partners" element={<PlaceholderPage />} />
+            <Route path="partners" element={<ContactUsPage />} />
             <Route path="grants" element={<PlaceholderPage />} />
             <Route path="promo" element={<PlaceholderPage />} />
             <Route path="promotions" element={<PlaceholderPage />} />
