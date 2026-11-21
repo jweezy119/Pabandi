@@ -316,14 +316,12 @@ function AnimatedAppRoutes() {
           {/* <Route path="freight/carriers" element={<FreightCarriersPage />} /> */}
           {/* <Route path="freight/rates" element={<FreightRateCalculatorPage />} /> */}
 
-          {/* BookingOS (formerly Sitara) - Booking & Discovery */}
-          <Route path="booking" element={<BookingOSPage />} />
-          <Route path="booking/map" element={<BookingMapPage />} />
-          <Route path="booking/flow" element={<BookingFlowPage />} />
-          <Route path="booking/flow/:id" element={<BookingExperience />} />
-          <Route path="booking/flow/:businessSlug" element={<BookingExperience />} />
-          <Route path="booking/:id" element={<BookingExperience />} />
-          <Route path="booking/:businessSlug" element={<BookingExperience />} />
+          {/* BookingOS (formerly Sitara) - Booking & Discovery.
+              Moved to the public <Layout> group below: inside AppShellLayout an
+              anonymous visitor is redirected to /login, so the directory was
+              unreachable to exactly the people it is for. These pages carry their
+              own DashboardLayout and only READ auth state, so nothing in them
+              requires a session. */}
           <Route path="simulator" element={<SimulatorPage />} />
           <Route path="b/:id" element={<MagicLinkPage />} />
           <Route path="pay/:invoiceId" element={<MagicLinkPage />} />
@@ -561,6 +559,14 @@ function AnimatedAppRoutes() {
               BookingExperience is the id-keyed page, which is what that link
               produces, so it takes this route.
             */}
+            {/* BookingOS directory & business pages - public by design. */}
+            <Route path="booking" element={<BookingOSPage />} />
+            <Route path="booking/map" element={<BookingMapPage />} />
+            <Route path="booking/flow" element={<BookingFlowPage />} />
+            <Route path="booking/flow/:id" element={<BookingExperience />} />
+            <Route path="booking/flow/:businessSlug" element={<BookingExperience />} />
+            <Route path="booking/:id" element={<BookingExperience />} />
+            <Route path="booking/:businessSlug" element={<BookingExperience />} />
             <Route path="book/:id" element={<BookingExperience />} />
             <Route path="reservations" element={<Navigate to="/me/bookings" replace />} />
             <Route path="reservations/new" element={<Navigate to="/booking" replace />} />
