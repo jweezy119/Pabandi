@@ -111,6 +111,7 @@ const domainRoutes: [string, string][] = [
 
   // 8b. Contact OS CRM
   ['/crm', './crm.routes'],
+  ['/outreach', './outreach.routes'],
 
   // 9. Internal support admin (token-protected user management)
   ['/admin/support', './adminSupport.routes'],

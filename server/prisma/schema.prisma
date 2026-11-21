@@ -954,6 +954,11 @@ model CrmClient {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   passportId        String?  @unique
+  // Whether this business may send marketing outreach to the client. Defaults
+  // to true because these are the business's own customers, not a list Pabandi
+  // sourced; the unsubscribe endpoint clears it.
+  marketingOptIn    Boolean   @default(true)
+  marketingOptInAt  DateTime?
 
   passport TrustPassport? @relation(fields: [passportId], references: [id])
   business Business?      @relation(fields: [businessId], references: [id])
@@ -1182,6 +1187,49 @@ model TrustAuditTrail {
 
   @@index([userId])
   @@index([component])
+}
+
+model OutreachCampaign {
+  id          String   @id @default(cuid())
+  businessId  String
+  name        String
+  channel     String   @default("EMAIL")
+  subject     String?
+  body        String
+  // DRAFT -> SENDING -> SENT | FAILED
+  status      String   @default("DRAFT")
+  // Snapshot of the audience rule, so a campaign stays reproducible after the
+  // client list changes underneath it.
+  segment     String?
+  totalCount  Int      @default(0)
+  sentCount   Int      @default(0)
+  failedCount Int      @default(0)
+  createdById String
+  // Returned to a retried send so a double-tap cannot email a customer twice.
+  idempotencyKey String? @unique
+  sentAt      DateTime?
+  createdAt   DateTime @default(now())
+  recipients  OutreachRecipient[]
+
+  @@index([businessId, createdAt])
+  @@map("outreach_campaigns")
+}
+
+model OutreachRecipient {
+  id         String   @id @default(cuid())
+  campaignId String
+  clientId   String?
+  // Denormalised so the audit trail survives the client row being deleted.
+  to         String
+  // PENDING -> SENT | FAILED
+  status     String   @default("PENDING")
+  error      String?
+  sentAt     DateTime?
+
+  campaign   OutreachCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@map("outreach_recipients")
 }
 
 model CrmExpense {

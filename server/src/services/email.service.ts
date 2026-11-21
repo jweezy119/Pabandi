@@ -22,15 +22,19 @@ export interface SendEmailArgs {
   to: string;
   subject: string;
   html: string;
+  // Plain-text alternative. Outreach is sent as text rather than markup, so the
+  // HTML is a minimal wrapper and the text is what the customer actually reads.
+  text?: string;
 }
 
-export async function sendEmail({ to, subject, html }: SendEmailArgs) {
+export async function sendEmail({ to, subject, html, text }: SendEmailArgs) {
   if (!process.env.RESEND_API_KEY) {
     console.log('[email] no API key, skipping send to', to);
     return { skipped: true };
   }
   try {
-    const result = await getClient().emails.send({ from: FROM, to, subject, html });
+    // `text` is a documented Resend field; the pinned client types predate it.
+    const result = await getClient().emails.send({ from: FROM, to, subject, html, text } as any);
     if (result && (result as any).error) {
       const resendErr = (result as any).error;
       const message = typeof resendErr === 'object' ? (resendErr.message || JSON.stringify(resendErr)) : String(resendErr);
