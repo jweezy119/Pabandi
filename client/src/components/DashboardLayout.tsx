@@ -131,6 +131,7 @@ function buildNavFromSettings(settings: any, osName: string, defaultNav?: NavIte
       { path: '/coordinator', label: 'Coordinator', icon: 'precision_manufacturing', feature: 'jobs' },
       { path: '/contact/activities', label: persona.navLabels.activities, icon: 'notifications', feature: 'activities' },
       { path: '/contact/tasks', label: persona.navLabels.tasks, icon: 'check', feature: 'tasks' },
+      { path: '/outreach', label: 'Reach Customers', icon: 'campaign', feature: null },
       { path: '/contact/invoices', label: persona.navLabels.invoices, icon: 'lock', feature: 'invoices' },
       { path: '/contact/money-flow', label: 'Money Flow', icon: 'account_balance_wallet', feature: 'invoices' },
       { path: '/contact/trust-passport', label: 'Trust Passport', icon: 'shield_check', feature: null },
