@@ -158,7 +158,7 @@ async function createDeal(token: string, body: Record<string, unknown>) {
 describe('crm deals: pipeline CRUD', () => {
   beforeAll(async () => {
     assertIsolatedDatabase();
-    const { default: app } = await import('../src/app');
+    const { default: app } = await import('../src/index');
     server = app.listen(0);
     await new Promise<void>((r) => server.once('listening', () => r()));
     baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;

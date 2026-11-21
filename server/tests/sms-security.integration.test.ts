@@ -107,7 +107,7 @@ async function seedBusiness(slug: string, tier: 'free' | 'starter' | 'pro' | 'bu
 describe('SMS is authenticated, tenant-scoped, and gated by tier', () => {
   beforeAll(async () => {
     assertIsolatedDatabase();
-    const { default: app } = await import('../src/app');
+    const { default: app } = await import('../src/index');
     server = app.listen(0);
     await new Promise<void>((r) => server.once('listening', () => r()));
     baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -244,7 +244,7 @@ describe('the Twilio webhook is verified, and fails closed', () => {
   beforeAll(async () => {
     assertIsolatedDatabase();
     process.env.TWILIO_AUTH_TOKEN = AUTH_TOKEN;
-    const { default: app } = await import('../src/app');
+    const { default: app } = await import('../src/index');
     server = app.listen(0);
     await new Promise<void>((r) => server.once('listening', () => r()));
     baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
