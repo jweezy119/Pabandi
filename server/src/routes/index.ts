@@ -116,7 +116,9 @@ const domainRoutes: [string, string][] = [
   // mounted, so the landing page, module switcher and invoice share links had
   // been calling 404s. Restored and wired.
   ['/simulator', './simulator.routes'],
-  ['/public', './publicStats.routes'],
+  // Mounted at the full path, not at '/public': the router inside defines
+  // `GET /`, so mounting it at '/public' would only ever serve '/public'.
+  ['/public/stats', './publicStats.routes'],
 
   // 9. Internal support admin (token-protected user management)
   ['/admin/support', './adminSupport.routes'],
