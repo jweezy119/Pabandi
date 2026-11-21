@@ -11,7 +11,9 @@ function getClient(): Resend {
   if (!client) client = new Resend(process.env.RESEND_API_KEY || '');
   return client;
 }
-const FROM = process.env.EMAIL_FROM || 'noreply@pabandi.com';
+// The address the domain is verified for. Overridable so a per-business
+// sending domain can be introduced without touching every call site.
+const FROM = process.env.EMAIL_FROM || 'jay@pabandi.com';
 
 /**
  * Args for sendEmail. Explicit because every one of these was implicitly `any`,
