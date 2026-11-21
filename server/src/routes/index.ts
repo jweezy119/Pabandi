@@ -112,6 +112,11 @@ const domainRoutes: [string, string][] = [
   // 8b. Contact OS CRM
   ['/crm', './crm.routes'],
   ['/outreach', './outreach.routes'],
+  // Simulator + public landing stats. Both route files existed but were never
+  // mounted, so the landing page, module switcher and invoice share links had
+  // been calling 404s. Restored and wired.
+  ['/simulator', './simulator.routes'],
+  ['/public', './publicStats.routes'],
 
   // 9. Internal support admin (token-protected user management)
   ['/admin/support', './adminSupport.routes'],
