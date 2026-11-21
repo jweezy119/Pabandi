@@ -39,7 +39,7 @@ let baseUrl: string;
 
 beforeAll(async () => {
   const dbName = assertIsolatedDatabase();
-  const { default: app } = await import('../src/index');
+  const { default: app } = await import('../src/app');
   server = app.listen(0);
   await new Promise<void>((resolve) => server.once('listening', () => resolve()));
   baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;

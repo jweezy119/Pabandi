@@ -1,8 +1,6 @@
 import { defineConfig, configDefaults } from 'vitest/config';
 import path from 'path';
 
-const isCi = process.env.CI === 'true';
-
 export default defineConfig({
   resolve: {
     alias: {
@@ -21,9 +19,18 @@ export default defineConfig({
     include: ['tests/**/*.test.ts', 'src/**/__tests__/**/*.test.ts'],
     exclude: [
       ...configDefaults.exclude,
-      // Integration suites need a disposable Postgres. CI has none, and a
-      // beforeAll that throws is a failed suite, not a skipped one.
-      ...(isCi ? ['tests/**/*.integration.test.ts'] : []),
+      // Integration suites are NOT excluded in CI. This exclusion was added when
+      // CI had no database ("CI has none" — it did, later), so twelve suites
+      // covering tenant isolation, money writes, CRM lifecycle and job
+      // scheduling have never once run in the pipeline. The `verify` job
+      // provisions a throwaway Postgres at `pabandi_test`, which satisfies each
+      // suite's own assertIsolatedDatabase guard, so they run there and skip
+      // locally — where there is genuinely no database.
+      //
+      // Turning this back on also exposed that every suite imported
+      // '../src/index', which does not exist — the app is exported from
+      // '../src/app'. They could never have passed, which is why the exclusion
+      // was so load-bearing.
     ],
 
     // File parallelism OFF, and this is the fix for the flake documented below.
