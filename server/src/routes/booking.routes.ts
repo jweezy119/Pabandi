@@ -6,6 +6,10 @@ import { formatBusinessDiscoveryItem } from '../utils/businessDiscovery';
 import { assessBookingRisk, quoteBookingRiskAndDeposit } from '../services/bookingRisk.service';
 import { resolveRequiredDeposit } from '../services/bookingDepositPolicy.service';
 import {
+  cancelWorkOrderForBooking,
+  createWorkOrderForBooking,
+} from '../services/bookingWorkOrder.service';
+import {
   advanceBookingEscrow,
   bookingEscrowReference,
   ensureBookingEscrow,
@@ -307,6 +311,10 @@ router.post('/public/:id/cancel', authenticate, async (req: AuthRequest, res: Re
       data: { status: 'cancelled' },
     });
     await refundBookingDeposit(check.booking.id, 'Cancelled by business').catch(() => {});
+    // A cancelled booking should not stay live in the coordinator.
+    await cancelWorkOrderForBooking(check.booking.id).catch((err: unknown) => {
+      logger.error('[Booking] work order cancellation failed:', err);
+    });
     await prisma.bookingRisk
       .updateMany({
         where: { bookingId: check.booking.id },
@@ -787,6 +795,29 @@ router.post('/', optionalAuthenticate, async (req: AuthRequest, res: Response) =
       } catch (escrowError: any) {
         logger.error('[Booking] escrow creation failed:', escrowError?.message || escrowError);
       }
+    }
+
+    // Turn the booking into a coordinator work order. Best effort on purpose:
+    // a failure here must never fail the booking, which is the thing the
+    // customer actually asked for. See services/bookingWorkOrder.service.ts.
+    try {
+      const bookingMetadata = (booking.metadata ?? {}) as Record<string, unknown>;
+      await createWorkOrderForBooking(
+        {
+          bookingId: booking.id,
+          businessId: business.id,
+          serviceType: resolvedServiceType,
+          serviceName: (bookingMetadata.serviceName as string) || serviceName || null,
+          notes:
+            [specialRequests, projectDescription].filter(Boolean).join('\n') || null,
+          address: resolvedAddress,
+          slotStart: booking.slotStart,
+          createdById: business.ownerId || req.user?.id || 'system',
+        },
+        { name: resolvedName, email: resolvedEmail },
+      );
+    } catch (workOrderError: any) {
+      logger.error('[Booking] work order creation failed:', workOrderError?.message || workOrderError);
     }
 
     return res.json({

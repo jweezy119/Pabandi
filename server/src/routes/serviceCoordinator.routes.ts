@@ -172,16 +172,44 @@ router.get('/work-orders', requireCoordinatorRole(['OWNER', 'COORDINATOR', 'TECH
       settings?.vertical ?? null,
     );
 
+    // Link each work order back to the booking that created it, and carry the
+    // deposit state. "Not paid yet" is the single most useful thing an owner
+    // can see in the morning, and without the link the two records cannot be
+    // opened from each other.
+    const workOrderIds = workOrders.map((wo: any) => wo.id);
+    const linkedBookings = workOrderIds.length
+      ? await prisma.booking.findMany({
+          where: { workOrderId: { in: workOrderIds } },
+          select: {
+            id: true,
+            workOrderId: true,
+            status: true,
+            depositStatus: true,
+            depositAmount: true,
+          },
+        })
+      : [];
+    const bookingByWorkOrder = new Map(
+      linkedBookings.map((b: any) => [b.workOrderId, b]),
+    );
+
     // Mask phone numbers in response for PII protection
-    const sanitized = workOrders.map((wo: any) => ({
-      ...wo,
-      risk: riskById.get(wo.id) ?? null,
-      customer: wo.customer ? {
-        ...wo.customer,
-        phoneMasked: maskPhone(decryptPii(wo.customer.phoneEncrypted || '')),
-        addressMasked: maskAddress(wo.customer.address || wo.address),
-      } : null,
-    }));
+    const sanitized = workOrders.map((wo: any) => {
+      const source = bookingByWorkOrder.get(wo.id);
+      return {
+        ...wo,
+        risk: riskById.get(wo.id) ?? null,
+        sourceBookingId: source?.id ?? null,
+        bookingStatus: source?.status ?? null,
+        depositStatus: source?.depositStatus ?? null,
+        depositAmount: source?.depositAmount ?? null,
+        customer: wo.customer ? {
+          ...wo.customer,
+          phoneMasked: maskPhone(decryptPii(wo.customer.phoneEncrypted || '')),
+          addressMasked: maskAddress(wo.customer.address || wo.address),
+        } : null,
+      };
+    });
 
     res.json({ success: true, data: sanitized });
   } catch (err: any) {

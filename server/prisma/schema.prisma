@@ -394,6 +394,7 @@ model WorkOrder {
   updatedAt     DateTime              @updatedAt
   customer      Customer              @relation(fields: [customerId], references: [id])
   business      Business              @relation(fields: [businessId], references: [id])
+  booking       Booking?
   assignments   WorkOrderAssignment[]
   attachments   WorkOrderAttachment[]
   auditLog      WorkOrderAudit[]
@@ -646,6 +647,11 @@ model Booking {
   business Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
   client   CrmClient? @relation(fields: [clientId], references: [id], onDelete: SetNull)
   risk     BookingRisk?
+  // The coordinator work order this booking created. @unique is the idempotency
+  // mechanism: at most one work order per booking, and a retry cannot make a
+  // second. See services/bookingWorkOrder.service.ts.
+  workOrderId String? @unique
+  workOrder   WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
 
   @@index([businessId, slotStart])
 }
