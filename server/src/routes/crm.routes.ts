@@ -365,7 +365,16 @@ router.get('/jobs', async (req: AuthRequest, res: Response, next: NextFunction) 
         { client: { is: { name: { contains: search, mode: 'insensitive' } } } },
       ];
     }
-    const sortBy = String(req.query.sortBy ?? 'slotStart');
+    // The API speaks `scheduledDate` (it is what the response exposes) but the
+    // column is `slotStart`. Passing the query value straight into orderBy made
+    // Prisma throw on an unknown argument, which 500'd the whole Jobs page.
+    const BOOKING_SORT_COLUMNS = [
+      'slotStart', 'createdAt', 'updatedAt', 'status', 'serviceType', 'id', 'completedAt',
+    ];
+    const API_TO_COLUMN: Record<string, string> = { scheduledDate: 'slotStart' };
+    const requestedSort = String(req.query.sortBy ?? 'slotStart');
+    const mappedSort = API_TO_COLUMN[requestedSort] ?? requestedSort;
+    const sortBy = BOOKING_SORT_COLUMNS.includes(mappedSort) ? mappedSort : 'slotStart';
     const sortOrder = req.query.sortOrder === 'asc' ? 'asc' : 'desc';
     const page = Math.max(1, Number(req.query.page ?? 1));
     const limit = Math.min(200, Math.max(1, Number(req.query.limit ?? 50)));
