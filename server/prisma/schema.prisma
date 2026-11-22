@@ -984,7 +984,10 @@ model BusinessSettings {
   enabledFeatures         Json?
   customFields            Json?
   dashboardLayout         Json?
-  dashboardTheme          String?  @default("light")
+  // Json, not String: ModularDashboard saves a DashboardTheme object and
+  // settings.service reads it back as one. It was a String, so every
+  // PUT /settings/dashboard-layout 500'd on Prisma validation.
+  dashboardTheme          Json?
   vertical                String?
   allowDisputes           Boolean  @default(true)
   maxAdvanceBookingDays   Int      @default(30)
