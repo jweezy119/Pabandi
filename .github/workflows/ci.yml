@@ -36,8 +36,8 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql://pabandi:***@localhost:5432/pabandi_test
-      DIRECT_URL: postgresql://pabandi:***@localhost:5432/pabandi_test
+      DATABASE_URL: postgresql://pabandi:pabandi@localhost:5432/pabandi_test
+      DIRECT_URL: postgresql://pabandi:pabandi@localhost:5432/pabandi_test
 
     steps:
       - name: Checkout code
