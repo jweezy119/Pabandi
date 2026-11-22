@@ -32,14 +32,17 @@ function assertIsolatedDatabase() {
   return name;
 }
 
+// Emails carry the marker (for the user), ids carry the scope. Both must match
+// the cleanup below, or a rerun collides with its own leftovers.
 const MARKER = '@workorder.pabandi.dev';
+const SCOPE = 'workorderpabandidev';
 
 let server: Server;
 let baseUrl: string;
 
 beforeAll(async () => {
   const dbName = assertIsolatedDatabase();
-  const { default: app } = await import('../src/index');
+  const { default: app } = await import('../src/app');
   server = app.listen(0);
   await new Promise<void>((resolve) => server.once('listening', () => resolve()));
   baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -62,19 +65,24 @@ describe('bookings create work orders', () => {
 
   beforeEach(async () => {
     const { prisma } = await import('../src/utils/database');
-    await prisma.workOrder.deleteMany({ where: { businessId: { contains: MARKER } } });
-    await prisma.booking.deleteMany({ where: { businessId: { contains: MARKER } } });
-    await prisma.customer.deleteMany({ where: { businessId: { contains: MARKER } } });
-    await prisma.crmClient.deleteMany({ where: { businessId: { contains: MARKER } } });
-    await prisma.business.deleteMany({ where: { id: { contains: MARKER } } });
+    await prisma.workOrder.deleteMany({ where: { businessId: { contains: SCOPE } } });
+    await prisma.booking.deleteMany({ where: { businessId: { contains: SCOPE } } });
+    await prisma.customer.deleteMany({ where: { businessId: { contains: SCOPE } } });
+    await prisma.crmClient.deleteMany({ where: { businessId: { contains: SCOPE } } });
+    await prisma.business.deleteMany({ where: { id: { contains: SCOPE } } });
     await prisma.user.deleteMany({ where: { email: { contains: MARKER } } });
 
     const user = await prisma.user.create({
-      data: { email: `owner${MARKER}`, firstName: 'Owner' },
+      data: {
+        email: `owner${MARKER}`,
+        firstName: 'Owner',
+        lastName: 'Test',
+        passwordHash: 'x',
+      },
     });
     const business = await prisma.business.create({
       data: {
-        id: `biz_${MARKER.replace('@', '').replace(/\./g, '_')}`,
+        id: `biz_${SCOPE}`,
         ownerId: user.id,
         name: 'DMG Motors',
         category: 'OTHER',

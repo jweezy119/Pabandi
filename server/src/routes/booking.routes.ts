@@ -6,8 +6,13 @@ import { formatBusinessDiscoveryItem } from '../utils/businessDiscovery';
 import { assessBookingRisk, quoteBookingRiskAndDeposit } from '../services/bookingRisk.service';
 import { resolveRequiredDeposit } from '../services/bookingDepositPolicy.service';
 import {
+
   cancelWorkOrderForBooking,
+
+  auditWorkOrderCreation,
+  buildWorkOrderDraft,
   createWorkOrderForBooking,
+
 } from '../services/bookingWorkOrder.service';
 import {
   advanceBookingEscrow,
@@ -802,20 +807,24 @@ router.post('/', optionalAuthenticate, async (req: AuthRequest, res: Response) =
     // customer actually asked for. See services/bookingWorkOrder.service.ts.
     try {
       const bookingMetadata = (booking.metadata ?? {}) as Record<string, unknown>;
-      await createWorkOrderForBooking(
-        {
-          bookingId: booking.id,
-          businessId: business.id,
-          serviceType: resolvedServiceType,
-          serviceName: (bookingMetadata.serviceName as string) || serviceName || null,
-          notes:
-            [specialRequests, projectDescription].filter(Boolean).join('\n') || null,
-          address: resolvedAddress,
-          slotStart: booking.slotStart,
-          createdById: business.ownerId || req.user?.id || 'system',
-        },
-        { name: resolvedName, email: resolvedEmail },
-      );
+      const source = {
+        bookingId: booking.id,
+        businessId: business.id,
+        serviceType: resolvedServiceType,
+        serviceName: (bookingMetadata.serviceName as string) || serviceName || null,
+        notes:
+          [specialRequests, projectDescription].filter(Boolean).join('\n') || null,
+        address: resolvedAddress,
+        slotStart: booking.slotStart,
+        createdById: business.ownerId || req.user?.id || 'system',
+      };
+      const workOrderId = await createWorkOrderForBooking(source, {
+        name: resolvedName,
+        email: resolvedEmail,
+      });
+      if (workOrderId) {
+        await auditWorkOrderCreation(workOrderId, source, buildWorkOrderDraft(source));
+      }
     } catch (workOrderError: any) {
       logger.error('[Booking] work order creation failed:', workOrderError?.message || workOrderError);
     }
