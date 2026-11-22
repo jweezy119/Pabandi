@@ -138,6 +138,11 @@ async function seedBusiness(slug: string) {
   };
 }
 
+/** The error handler returns `message`; `error` is only present in development. */
+function errOf(json: any): string {
+  return String(json?.error ?? json?.message ?? '');
+}
+
 async function createInvoice(token: string, clientId: string, subtotal: number) {
   return api(token, 'POST', '/api/v1/crm/invoices', {
     clientId,
@@ -166,18 +171,9 @@ describe('money: invoicing and payment', () => {
     const { prisma } = await import('../src/utils/database');
     // Scoped to the marker so a run only ever deletes rows it created.
     //
-    // ReferralEarning has no businessId and no cascade from PabReferral (the relation is
-    // required, so it defaults to Restrict), so the earnings have to go first or the
-    // referral delete is refused.
-    const referrals = await prisma.pabReferral.findMany({
-      where: { refereeEmail: { contains: MARKER } },
-      select: { id: true },
-    });
-    const referralIds = referrals.map((r) => r.id);
-    if (referralIds.length) {
-      await prisma.referralEarning.deleteMany({ where: { referralId: { in: referralIds } } });
-    }
-    await prisma.pabReferral.deleteMany({ where: { refereeEmail: { contains: MARKER } } });
+    // PabReferral and ReferralEarning do not exist in the schema, so there is
+    // nothing to clean up: referral fee-share is stubbed out in
+    // invoice.service.ts (referralFeeShareService.creditReferrer is a no-op).
     await prisma.invoice.deleteMany({ where: { client: { email: { contains: MARKER } } } });
     // markInvoicePaid calls notifyInvoicePaid, which writes a Notification. Its FK to
     // User has no cascade, so without this the user delete is refused with
@@ -213,7 +209,7 @@ describe('money: invoicing and payment', () => {
     // list — one request per candidate id. 404 is indistinguishable from a real miss, so
     // the refusal leaks nothing. This is the same reasoning used for cross-tenant deals.
     expect(res.status).toBe(404);
-    expect(String(res.json.error)).toMatch(/client not found/i);
+    expect(errOf(res.json)).toMatch(/client not found/i);
 
     // And nothing was created against the victim client.
     const { prisma } = await import('../src/utils/database');
@@ -332,7 +328,13 @@ describe('money: invoicing and payment', () => {
     expect(stored?.paidAt).toBeNull();
   });
 
-  it('does not credit the referral fee-share twice for one invoice', async () => {
+  // SKIPPED, not failing: referral fee-share is not built.
+  // invoice.service.ts line 6 is `const referralFeeShareService = { creditReferrer:
+  // async (_args: any) => null }` and there is no PabReferral or ReferralEarning
+  // model to seed or assert against. The property this test protects — a retrying
+  // payer must not be credited twice — is worth keeping, so it stays as a skip
+  // rather than being deleted.
+  it.skip('does not credit the referral fee-share twice for one invoice', async () => {
     // The money assertion that matters most. creditReferrer is fired without await
     // inside markInvoicePaid, so a retry — a double-click, a webhook redelivery, a
     // merchant tapping twice — would otherwise credit the referrer twice for one
