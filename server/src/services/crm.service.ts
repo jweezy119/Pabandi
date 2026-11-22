@@ -2193,12 +2193,15 @@ export async function claimSlug(serviceBusinessId: string, preferred: string): P
   const base = slugify(preferred);
   for (let attempt = 0; attempt < 25; attempt += 1) {
     const candidate = attempt === 0 ? base : `${base}-${attempt + 1}`;
-    const clash = await db.crmServiceBusiness.findUnique({
+    // The slug lives on Business. There is no CrmServiceBusiness model, so this
+    // previously threw on `db.crmServiceBusiness` being undefined and every
+    // onboarding completed as a 500.
+    const clash = await db.business.findUnique({
       where: { slug: candidate },
       select: { id: true },
     });
     if (!clash) {
-      await db.crmServiceBusiness.update({
+      await db.business.update({
         where: { id: serviceBusinessId },
         data: { slug: candidate },
       });
@@ -2209,7 +2212,7 @@ export async function claimSlug(serviceBusinessId: string, preferred: string): P
   // 25 collisions on one stem means the stem is heavily taken; a random suffix is better than
   // failing the customer's onboarding.
   const candidate = `${base}-${Math.floor(Math.random() * 100000).toString(36)}`;
-  await db.crmServiceBusiness.update({
+  await db.business.update({
     where: { id: serviceBusinessId },
     data: { slug: candidate },
   });

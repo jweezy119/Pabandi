@@ -6,6 +6,7 @@ import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { resolveCrmBusiness, requireCrmContext } from '../middleware/crmContext.middleware';
 import { CustomError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
+import { checkAvailabilityWindow } from '../services/crm.service';
 
 /**
  * Contact OS CRM API.
@@ -428,8 +429,28 @@ router.post('/jobs', async (req: AuthRequest, res: Response, next: NextFunction)
 
     const start = new Date(scheduledDate);
     if (Number.isNaN(start.getTime())) throw new CustomError('scheduledDate must be a valid date', 400);
+    // `scheduledTime` ("HH:mm") was accepted and then discarded, so every job
+    // was created at midnight. scheduledDate is a bare YYYY-MM-DD, which parses
+    // as UTC, so the time is applied in UTC to match.
+    if (scheduledTime && /^\d{1,2}:\d{2}/.test(String(scheduledTime))) {
+      const [hh, mm] = String(scheduledTime).split(':').map(Number);
+      start.setUTCHours(hh, mm, 0, 0);
+    }
     const duration = Number(durationMinutes ?? 60);
     const end = new Date(start.getTime() + (Number.isFinite(duration) ? duration : 60) * 60000);
+
+    // Opening hours are enforced here, not only in the (now-removed) CrmJob
+    // service path: a job outside them is refused rather than silently booked.
+    const availability = await checkAvailabilityWindow(
+      businessId,
+      start,
+      scheduledTime,
+      duration,
+    );
+    const allowConflict = req.body?.allowConflict === true;
+    if (!availability.ok && !allowConflict) {
+      throw new CustomError(availability.reason ?? 'Outside opening hours', 409);
+    }
 
     const job = await prisma.booking.create({
       data: {
@@ -440,12 +461,15 @@ router.post('/jobs', async (req: AuthRequest, res: Response, next: NextFunction)
         slotEnd: end,
         clientAddress: address ? String(address) : null,
         depositAmount: Number(price ?? 0),
-        status: 'pending',
+        // The CRM job vocabulary is SCHEDULED/IN_PROGRESS/COMPLETED/CANCELLED
+        // (domain/crm.ts JOB_STATUSES). The lowercase 'pending' predates it.
+        status: 'SCHEDULED',
         metadata: notes ? { notes: String(notes) } : undefined,
       },
       include: { client: true },
     });
-    ok(res, job);
+    // 201: this creates a job (a booking row).
+    res.status(201).json({ success: true, data: job });
   } catch (e) {
     next(e);
   }

@@ -92,14 +92,20 @@ router.post('/complete', async (req: AuthRequest, res: Response) => {
       }),
       // Replace rather than append: re-running onboarding on a business that already has crew
       // would otherwise double the roster every time the wizard is opened.
-      prisma.technician.deleteMany({ where: { businessId: crm.serviceBusinessId } }),
+      // CrmEmployee, not Technician: the dashboard's Employees tab and
+      // POST /api/v1/crm/employees both read CrmEmployee, so crew written to
+      // Technician never appeared anywhere the business owner looks.
+      prisma.crmEmployee.deleteMany({ where: { serviceBusinessId: crm.serviceBusinessId } }),
       ...crewRows.map((row) =>
-        prisma.technician.create({
+        prisma.crmEmployee.create({
           data: {
             businessId: crm.serviceBusinessId,
+            serviceBusinessId: crm.serviceBusinessId,
             name: row.name,
-            phoneEncrypted: row.phone || '',
-            skills: [row.role],
+            phone: row.phone,
+            role: row.role,
+            payRate: row.payRate,
+            payType: row.payType,
           },
         })
       ),

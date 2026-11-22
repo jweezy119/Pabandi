@@ -64,7 +64,11 @@ function toBooking(job: any) {
     customerName: job.client?.name ?? 'Customer',
     customerPhone: job.client?.phone ?? '',
     customerEmail: job.client?.email ?? undefined,
-    time: job.slotStart ? new Date(job.slotStart).toISOString() : '',
+    // The dashboard renders {b.time} straight into the card, so this is a
+    // wall-clock time, not a timestamp.
+    time: job.slotStart
+      ? new Date(job.slotStart).toISOString().slice(11, 16)
+      : '',
     status: job.status,
     notes: job.serviceType ?? undefined,
     depositAmount: job.depositAmount ?? 0,
@@ -133,11 +137,25 @@ router.get('/:businessId/customers', async (req: AuthRequest, res: Response) => 
 router.get('/:businessId/employees', async (req: AuthRequest, res: Response) => {
   try {
     const { serviceBusinessId } = requireCrmContext(req);
-    const employees = await prisma.technician.findMany({
-      where: { businessId: serviceBusinessId },
+    // crmEmployee, not technician: POST /api/v1/crm/employees creates CrmEmployee
+    // rows, so reading Technician made this tab empty for every CRM business.
+    const employees = await prisma.crmEmployee.findMany({
+      where: { serviceBusinessId },
       orderBy: { name: 'asc' },
     });
-    res.json({ success: true, data: employees });
+    res.json({
+      success: true,
+      data: employees.map((e) => ({
+        id: e.id,
+        name: e.name,
+        phone: e.phone ?? undefined,
+        payRate: e.payRate,
+        payType: e.payType,
+        // Not derived yet. Zero, not a computed guess.
+        jobsThisWeek: 0,
+        estimatedEarnings: 0,
+      })),
+    });
   } catch (err) {
     fail(res, err);
   }
