@@ -8,6 +8,8 @@ import { CustomError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 import { checkAvailabilityWindow } from '../services/crm.service';
 import { createInvoice } from '../services/invoice.service';
+import { DEAL_STAGES, STAGE_PROBABILITY } from '../domain/crm';
+import { parseCsv, csvCell } from '../utils/csv';
 
 /**
  * Contact OS CRM API.
@@ -273,24 +275,90 @@ router.post('/import/clients', async (req: AuthRequest, res: Response, next: Nex
   try {
     const crm = requireCrmContext(req);
     const businessId = crm.businessId!;
-    const rows = Array.isArray(req.body?.rows) ? req.body.rows : [];
-    let imported = 0;
-    for (const row of rows.slice(0, 500)) {
-      const name = row?.name ? String(row.name).trim() : '';
-      if (!name) continue;
-      await prisma.crmClient.create({
+    const csvData = String(req.body?.csvData ?? '');
+    if (!csvData.trim()) throw new CustomError('csvData is required', 400);
+    if (Buffer.byteLength(csvData, 'utf8') > MAX_CSV_BYTES) {
+      throw new CustomError(`CSV is larger than ${MAX_CSV_BYTES} bytes`, 413);
+    }
+
+    const rows = parseCsvOr400(csvData);
+    if (rows.length < 2) throw new CustomError('CSV needs a header row and at least one data row', 400);
+    const header = csvHeader(rows);
+    if (!header.includes('name')) throw new CustomError('CSV must have a "name" column', 400);
+    if (rows.length - 1 > MAX_IMPORT_ROWS) {
+      throw new CustomError(`CSV has too many rows (max ${MAX_IMPORT_ROWS})`, 400);
+    }
+
+    const total = rows.length - 1;
+    // Dupes are matched against what the business already has AND against earlier rows
+    // in this file, so a file cannot create two clients with the same name either.
+    const seen = new Set<string>();
+    const existing = await prisma.crmClient.findMany({
+      where: { serviceBusinessId: businessId },
+      select: { name: true, email: true },
+    });
+    for (const c of existing) {
+      if (c.name) seen.add(`name:${c.name.trim().toLowerCase()}`);
+      if (c.email) seen.add(`email:${c.email.trim().toLowerCase()}`);
+    }
+
+    const errors: string[] = [];
+    const parsed: Array<{ data: any }> = [];
+
+    for (let r = 1; r < rows.length; r += 1) {
+      const row = rows[r];
+      const rowNumber = r + 1;
+      const name = csvCell(row, header, 'name');
+      if (!name) {
+        errors.push(`Row ${rowNumber}: name is required`);
+        continue;
+      }
+
+      const email = csvCell(row, header, 'email').toLowerCase();
+      const clashes: string[] = [];
+      if (seen.has(`name:${name.toLowerCase()}`)) clashes.push('name');
+      if (email && seen.has(`email:${email}`)) clashes.push('email');
+      if (clashes.length) {
+        errors.push(`Row ${rowNumber}: a client with this ${clashes.join(' or ')} already exists`);
+        continue;
+      }
+      seen.add(`name:${name.toLowerCase()}`);
+      if (email) seen.add(`email:${email}`);
+
+      // `company` is in the wizard's template, so it is kept rather than dropped.
+      const company = csvCell(row, header, 'company');
+      const notesRaw = csvCell(row, header, 'notes');
+      const notes = [notesRaw, company ? `Company: ${company}` : ''].filter(Boolean).join('; ');
+
+      parsed.push({
         data: {
           businessId,
           serviceBusinessId: businessId,
           name,
-          email: row.email ? String(row.email).trim().toLowerCase() : '',
-          phone: row.phone ? String(row.phone) : '',
-          company: row.company ? String(row.company) : null,
+          email,
+          phone: csvCell(row, header, 'phone'),
+          address: csvCell(row, header, 'address'),
+          notes: notes || null,
+          status: csvCell(row, header, 'status') || 'ACTIVE',
         },
       });
-      imported += 1;
     }
-    ok(res, { imported, skipped: rows.length - imported, errors: [] });
+
+    // Same rule as the deals import: nothing partial lands.
+    if (errors.length) {
+      const reported = errors.slice(0, MAX_REPORTED_ERRORS);
+      return res.status(201).json({
+        success: true,
+        data: {
+          imported: 0,
+          skipped: total,
+          errors: [...reported, `${errors.length} row(s) failed; nothing was imported.`],
+        },
+      });
+    }
+
+    await prisma.$transaction(parsed.map((p) => prisma.crmClient.create(p)));
+    res.status(201).json({ success: true, data: { imported: parsed.length, skipped: 0, errors: [] } });
   } catch (e) {
     next(e);
   }
@@ -776,12 +844,45 @@ router.post('/deals', async (req: AuthRequest, res: Response, next: NextFunction
     const businessId = crm.businessId!;
     const { title, value, stage, probability, expectedCloseDate, notes, clientId, ownerName, lostReason } = req.body ?? {};
     if (!title || !String(title).trim()) throw new CustomError('title is required', 400);
+
+    // Stage is validated against DEAL_STAGES: lowercase 'won' is what the legacy
+    // ContactDeal rows use, and storing it would put the deal in a column the
+    // kanban does not render, which reads to the user as data loss.
+    const stageValue = stage ? String(stage) : 'LEAD';
+    if (!(DEAL_STAGES as readonly string[]).includes(stageValue)) {
+      throw new CustomError(`stage must be one of ${DEAL_STAGES.join(', ')}`, 400);
+    }
+
+    const valueNumber = Number(value ?? 0);
+    if (!Number.isFinite(valueNumber) || valueNumber < 0) {
+      throw new CustomError('value must be a non-negative number', 400);
+    }
+
+    // An absent probability falls back to what the stage is worth, so the kanban
+    // forecast and the column cannot disagree. The client sends
+    // `parseInt(form.probability) || 10`, so an empty field arrives as absent.
+    const probabilityProvided = probability !== undefined && probability !== null && probability !== '';
+    const probabilityNumber = probabilityProvided ? Number(probability) : STAGE_PROBABILITY[stageValue as keyof typeof STAGE_PROBABILITY];
+    if (!Number.isFinite(probabilityNumber) || probabilityNumber < 0 || probabilityNumber > 100) {
+      throw new CustomError('probability must be between 0 and 100', 400);
+    }
+
+    // A deal filed against another business's client shows in their record, so the
+    // client id is checked against the tenant rather than trusted.
+    if (clientId) {
+      const client = await prisma.crmClient.findFirst({
+        where: { id: String(clientId), serviceBusinessId: businessId },
+        select: { id: true },
+      });
+      if (!client) throw new CustomError('Client not found', 404);
+    }
+
     const deal = await prisma.crmDeal.create({
       data: {
         title: String(title).trim(),
-        value: Number(value ?? 0),
-        stage: stage ? String(stage) : 'LEAD',
-        probability: Number(probability ?? 10),
+        value: valueNumber,
+        stage: stageValue,
+        probability: probabilityNumber,
         expectedCloseDate: expectedCloseDate ? new Date(expectedCloseDate) : null,
         notes: notes ? String(notes) : null,
         clientId: clientId ? String(clientId) : null,
@@ -824,15 +925,46 @@ router.patch('/deals/:id', async (req: AuthRequest, res: Response, next: NextFun
     const { title, value, stage, probability, expectedCloseDate, notes, clientId, ownerName, lostReason } = req.body ?? {};
     const patch: any = {};
     if (title !== undefined) patch.title = String(title).trim();
-    if (value !== undefined) patch.value = Number(value);
-    if (stage !== undefined) {
-      patch.stage = String(stage);
-      if (stage === 'WON' || stage === 'LOST') patch.closedAt = new Date();
+    if (value !== undefined) {
+      const n = Number(value);
+      if (!Number.isFinite(n) || n < 0) throw new CustomError('value must be a non-negative number', 400);
+      patch.value = n;
     }
-    if (probability !== undefined) patch.probability = Number(probability);
+    if (stage !== undefined) {
+      const stageValue = String(stage);
+      if (!(DEAL_STAGES as readonly string[]).includes(stageValue)) {
+        throw new CustomError(`stage must be one of ${DEAL_STAGES.join(', ')}`, 400);
+      }
+      patch.stage = stageValue;
+      if (stageValue === 'WON' || stageValue === 'LOST') {
+        patch.closedAt = new Date();
+      } else {
+        // Reopening a closed deal must clear the close stamp, or the kanban shows
+        // an open deal with a closedAt in the past.
+        patch.closedAt = null;
+      }
+    }
+    if (probability !== undefined) {
+      const n = Number(probability);
+      if (!Number.isFinite(n) || n < 0 || n > 100) throw new CustomError('probability must be between 0 and 100', 400);
+      patch.probability = n;
+    } else if (patch.stage !== undefined) {
+      // A stage transition moves the forecast with it unless the caller set one
+      // explicitly, so the kanban and the column cannot disagree.
+      patch.probability = STAGE_PROBABILITY[patch.stage as keyof typeof STAGE_PROBABILITY];
+    }
     if (expectedCloseDate !== undefined) patch.expectedCloseDate = expectedCloseDate ? new Date(expectedCloseDate) : null;
     if (notes !== undefined) patch.notes = notes ? String(notes) : null;
-    if (clientId !== undefined) patch.clientId = clientId ? String(clientId) : null;
+    if (clientId !== undefined) {
+      if (clientId) {
+        const client = await prisma.crmClient.findFirst({
+          where: { id: String(clientId), serviceBusinessId: businessId },
+          select: { id: true },
+        });
+        if (!client) throw new CustomError('Client not found', 404);
+      }
+      patch.clientId = clientId ? String(clientId) : null;
+    }
     if (ownerName !== undefined) patch.ownerName = ownerName ? String(ownerName) : null;
     if (lostReason !== undefined) patch.lostReason = lostReason ? String(lostReason) : null;
     const deal = await prisma.crmDeal.update({ where: { id: existing.id }, data: patch });
@@ -858,40 +990,165 @@ router.delete('/deals/:id', async (req: AuthRequest, res: Response, next: NextFu
   }
 });
 
+/** Byte cap: a body over this is refused, never truncated. Truncating would */
+/** import an arbitrary prefix and report success. */
+const MAX_CSV_BYTES = 1_000_000;
+/** Row cap, for the same reason: importing a prefix is not a partial success. */
+const MAX_IMPORT_ROWS = 1000;
+/** Error cap, so a 1000-row bad file cannot become a multi-megabyte response. */
+const MAX_REPORTED_ERRORS = 20;
+
+/**
+ * Resolve a CSV `client` cell against the CALLER's tenant.
+ *
+ * A name that matches more than one client is refused rather than guessed: picking
+ * one would file the deal against an arbitrary customer. An email is exact, so it
+ * disambiguates.
+ */
+async function resolveImportClient(
+  serviceBusinessId: string,
+  raw: string,
+): Promise<{ id: string | null; error?: string }> {
+  const value = raw.trim();
+  if (!value) return { id: null };
+
+  // Email first, then name. The test marker itself contains an '@', so an '@'
+  // cannot be what decides which path a value takes.
+  const byEmail = await prisma.crmClient.findFirst({
+    where: { serviceBusinessId, email: value.toLowerCase() },
+    select: { id: true },
+  });
+  if (byEmail) return { id: byEmail.id };
+
+  const byName = await prisma.crmClient.findMany({
+    where: { serviceBusinessId, name: value },
+    select: { id: true },
+  });
+  if (byName.length === 1) return { id: byName[0].id };
+  if (byName.length > 1) {
+    return { id: null, error: `more than one client named "${value}" in this business` };
+  }
+  return { id: null, error: `client "${value}" not found in this business` };
+}
+
+/** Parse CSV text or throw a 400 with the parser's reason. */
+function parseCsvOr400(csvData: string): string[][] {
+  try {
+    return parseCsv(csvData);
+  } catch (e: any) {
+    throw new CustomError(e?.message ?? 'Could not parse CSV', 400);
+  }
+}
+
+/** Header row lower-cased, so `expectedCloseDate` matches `expectedclosedate`. */
+function csvHeader(rows: string[][]): string[] {
+  return rows[0].map((h) => h.trim().toLowerCase());
+}
 router.post('/import/deals', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const crm = requireCrmContext(req);
     const businessId = crm.businessId!;
     const csvData = String(req.body?.csvData ?? '');
     if (!csvData.trim()) throw new CustomError('csvData is required', 400);
-    const rows = csvData.split(/\r?\n/).map((line) => line.split(','));
-    if (rows.length < 2) throw new CustomError('CSV needs a header row and at least one data row', 400);
-    const header = rows[0].map((h) => h.trim().toLowerCase());
-    const titleIdx = header.indexOf('title');
-    if (titleIdx === -1) throw new CustomError('CSV must have a "title" column', 400);
-    const imported: any[] = [];
-    for (const row of rows.slice(1)) {
-      const title = (row[titleIdx] ?? '').trim();
-      if (!title) continue;
-      const cell = (name: string) => {
-        const i = header.indexOf(name);
-        return i === -1 ? '' : (row[i] ?? '').trim();
-      };
-      imported.push(
-        await prisma.crmDeal.create({
-          data: {
-            title,
-            value: Number(cell('value') || 0),
-            stage: cell('stage') || 'LEAD',
-            probability: Number(cell('probability') || 10),
-            expectedCloseDate: cell('expectedclosedate') ? new Date(cell('expectedclosedate')) : null,
-            notes: cell('notes') || null,
-            serviceBusinessId: businessId,
-          },
-        }),
-      );
+    if (Buffer.byteLength(csvData, 'utf8') > MAX_CSV_BYTES) {
+      throw new CustomError(`CSV is larger than ${MAX_CSV_BYTES} bytes`, 413);
     }
-    ok(res, { imported: imported.length, skipped: 0, errors: [] });
+
+    const rows = parseCsvOr400(csvData);
+    if (rows.length < 2) throw new CustomError('CSV needs a header row and at least one data row', 400);
+    const header = csvHeader(rows);
+    if (!header.includes('title')) throw new CustomError('CSV must have a "title" column', 400);
+    if (rows.length - 1 > MAX_IMPORT_ROWS) {
+      throw new CustomError(`CSV has too many rows (max ${MAX_IMPORT_ROWS})`, 400);
+    }
+
+    const total = rows.length - 1;
+    const errors: string[] = [];
+    const parsed: Array<{ data: any }> = [];
+
+    for (let r = 1; r < rows.length; r += 1) {
+      const row = rows[r];
+      // Row 1 is the header, so the user's row number is one higher.
+      const rowNumber = r + 1;
+      const title = csvCell(row, header, 'title');
+      if (!title) {
+        errors.push(`Row ${rowNumber}: title is required`);
+        continue;
+      }
+
+      const stage = csvCell(row, header, 'stage') || 'LEAD';
+      if (!(DEAL_STAGES as readonly string[]).includes(stage)) {
+        errors.push(`Row ${rowNumber}: unknown stage "${stage}"`);
+        continue;
+      }
+
+      const rawValue = csvCell(row, header, 'value');
+      const value = Number(rawValue || 0);
+      if (!Number.isFinite(value) || value < 0) {
+        errors.push(`Row ${rowNumber}: value must be a non-negative number (got "${rawValue}")`);
+        continue;
+      }
+
+      // A blank probability takes the stage's own value rather than 0 or NaN.
+      const rawProbability = csvCell(row, header, 'probability');
+      const probability = rawProbability === ''
+        ? STAGE_PROBABILITY[stage as keyof typeof STAGE_PROBABILITY]
+        : Number(rawProbability);
+      if (!Number.isFinite(probability) || probability < 0 || probability > 100) {
+        errors.push(`Row ${rowNumber}: probability must be between 0 and 100 (got "${rawProbability}")`);
+        continue;
+      }
+
+      const rawDate = csvCell(row, header, 'expectedclosedate');
+      const expectedCloseDate = rawDate ? new Date(rawDate) : null;
+      if (expectedCloseDate && Number.isNaN(expectedCloseDate.getTime())) {
+        errors.push(`Row ${rowNumber}: expectedCloseDate must be a valid date`);
+        continue;
+      }
+
+      const clientRaw = csvCell(row, header, 'client');
+      let clientId: string | null = null;
+      if (clientRaw) {
+        const resolved = await resolveImportClient(businessId, clientRaw);
+        if (resolved.error) {
+          errors.push(`Row ${rowNumber}: ${resolved.error}`);
+          continue;
+        }
+        clientId = resolved.id;
+      }
+
+      parsed.push({
+        data: {
+          title,
+          value,
+          stage,
+          probability,
+          expectedCloseDate,
+          clientId,
+          notes: csvCell(row, header, 'notes') || null,
+          serviceBusinessId: businessId,
+          ...(stage === 'WON' || stage === 'LOST' ? { closedAt: new Date() } : {}),
+        },
+      });
+    }
+
+    // ALL-OR-NOTHING. A pipeline whose value column feeds the forecast cannot be
+    // left half-populated by a bad file and still look right, so every row is
+    // validated before anything is written.
+    if (errors.length) {
+      const reported = errors.slice(0, MAX_REPORTED_ERRORS);
+      return res.status(201).json({
+        success: true,
+        data: {
+          imported: 0,
+          skipped: total,
+          errors: [...reported, `${errors.length} row(s) failed; nothing was imported.`],
+        },
+      });
+    }
+
+    await prisma.$transaction(parsed.map((p) => prisma.crmDeal.create(p)));
+    res.status(201).json({ success: true, data: { imported: parsed.length, skipped: 0, errors: [] } });
   } catch (e) {
     next(e);
   }
@@ -1086,6 +1343,29 @@ router.post('/files', async (req: AuthRequest, res: Response, next: NextFunction
     const businessId = crm.businessId!;
     const { name, url, clientId } = req.body ?? {};
     if (!name || !url) throw new CustomError('name and url are required', 400);
+
+    // This renders as a link on a page an operator looks at, so the protocol is the
+    // boundary that matters. `javascript:` and `data:` URLs execute in that page.
+    try {
+      const parsed = new URL(String(url));
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        throw new CustomError('url must be an absolute http(s) URL', 400);
+      }
+    } catch (e: any) {
+      if (e?.statusCode === 400) throw e;
+      throw new CustomError('url must be an absolute http(s) URL', 400);
+    }
+
+    // The client is never taken on trust: a file filed against another business's
+    // client would show in their record.
+    if (clientId) {
+      const client = await prisma.crmClient.findFirst({
+        where: { id: String(clientId), serviceBusinessId: businessId },
+        select: { id: true },
+      });
+      if (!client) throw new CustomError('Client not found', 404);
+    }
+
     const file = await prisma.crmFile.create({
       data: {
         name: String(name),
@@ -1094,7 +1374,8 @@ router.post('/files', async (req: AuthRequest, res: Response, next: NextFunction
         serviceBusinessId: businessId,
       },
     });
-    ok(res, file);
+    // 201: this creates a file record.
+    res.status(201).json({ success: true, data: file });
   } catch (e) {
     next(e);
   }

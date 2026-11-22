@@ -517,7 +517,7 @@ describe('crm deals: pipeline CRUD', () => {
         name: `Duplicate${MARKER}`,
         email: `dup2${MARKER}`,
         serviceBusinessId: (
-          await prisma.crmServiceBusiness.findFirst({
+          await prisma.business.findFirst({
             where: { owner: { email: { contains: `ambig${MARKER}` } } },
             select: { id: true },
           })
@@ -618,8 +618,13 @@ it('imports clients from CSV and refuses duplicates', async () => {
     expect(ok.json.data.imported).toBe(2);
     expect(ok.json.data.errors).toEqual([]);
 
+    // CrmClient has no serviceBusiness relation — only serviceBusinessId.
+    const biz = await prisma.business.findFirst({
+      where: { owner: { email: { contains: `impc${MARKER}` } } },
+      select: { id: true },
+    });
     const created = await prisma.crmClient.findMany({
-      where: { serviceBusiness: { is: { owner: { email: { contains: `impc${MARKER}` } } } } },
+      where: { serviceBusinessId: biz?.id },
     });
     expect(created).toHaveLength(3); // 2 imported + the seeded one
     const ada = created.find((c) => c.name.startsWith('Ada'))!;
@@ -645,7 +650,7 @@ it('imports clients from CSV and refuses duplicates', async () => {
 
     // And nothing partial landed.
     const after = await prisma.crmClient.findMany({
-      where: { serviceBusiness: { is: { owner: { email: { contains: `impc${MARKER}` } } } } },
+      where: { serviceBusinessId: biz?.id },
     });
     expect(after).toHaveLength(3);
   });
@@ -662,8 +667,12 @@ it('imports clients from CSV and refuses duplicates', async () => {
     expect(res.status, JSON.stringify(res.json)).toBe(201);
 
     const { prisma } = await import('../src/utils/database');
+    const bizB = await prisma.business.findFirst({
+      where: { owner: { email: { contains: `impcb${MARKER}` } } },
+      select: { id: true },
+    });
     const inB = await prisma.crmClient.count({
-      where: { name: `Injected${MARKER}`, serviceBusiness: { is: { owner: { email: { contains: `impcb${MARKER}` } } } } },
+      where: { name: `Injected${MARKER}`, serviceBusinessId: bizB?.id },
     });
     expect(inB, 'an import must never land in another tenant').toBe(0);
     void b;
