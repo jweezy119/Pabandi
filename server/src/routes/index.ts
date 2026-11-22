@@ -114,6 +114,9 @@ const domainRoutes: [string, string][] = [
   // Deleted in the 4e5b9e39 purge while the client still called all six
   // endpoints, so the CRM analytics page had been rendering six 404s.
   ['/reports', './reports.routes'],
+  // The whole SMS feature was deleted in the 4e5b9e39 purge while the client
+  // still called /api/v1/sms/*. Restored, with its models and a tier gate.
+  ['/sms', './sms.routes'],
   ['/outreach', './outreach.routes'],
   // Simulator + public landing stats. Both route files existed but were never
   // mounted, so the landing page, module switcher and invoice share links had
