@@ -14,7 +14,12 @@ import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
  * keeps the assertions about behaviour instead of about query text.
  */
 
-type ColumnRow = { table_name: string; column_name: string; is_nullable: 'YES' | 'NO' };
+type ColumnRow = {
+  table_name: string;
+  column_name: string;
+  is_nullable: 'YES' | 'NO';
+  data_type: string;
+};
 
 const queryRaw = vi.fn();
 
@@ -33,12 +38,13 @@ beforeAll(async () => {
   ({ checkSchema, EXPECTED_COLUMNS } = await import('../src/services/schema-check.service'));
 });
 
-/** Every expected column present and nullable where required. */
+/** Every expected column present, nullable where required, correctly typed. */
 function allPresent(): ColumnRow[] {
   return EXPECTED_COLUMNS.map((c) => ({
     table_name: c.table,
     column_name: c.column,
     is_nullable: (c.nullable ? 'YES' : 'NO') as 'YES' | 'NO',
+    data_type: c.dataType ?? 'text',
   }));
 }
 
@@ -91,6 +97,24 @@ describe('schema check — the failing case', () => {
     expect(result.ok).toBe(false);
     expect(result.notNullable).toHaveLength(1);
     expect(result.notNullable[0]).toMatch(/expected nullable/);
+    expect(result.missing).toEqual([]);
+  });
+
+  it('detects a column that exists but has the wrong type', async () => {
+    // dashboardTheme was TEXT for months while the client sent an object: the
+    // column was present, so a presence-only check called it healthy and every
+    // dashboard save 500'd. Present-but-wrong-type is the same failure as absent.
+    queryRaw.mockResolvedValue(
+      allPresent().map((r) =>
+        r.column_name === 'dashboardTheme' ? { ...r, data_type: 'text' } : r,
+      ),
+    );
+
+    const result = await checkSchema();
+    expect(result.ok).toBe(false);
+    expect(result.wrongType).toHaveLength(1);
+    expect(result.wrongType[0]).toMatch(/dashboardTheme/);
+    expect(result.wrongType[0]).toMatch(/expected jsonb, found text/);
     expect(result.missing).toEqual([]);
   });
 
@@ -189,5 +213,22 @@ describe('the columns being checked are the ones that matter', () => {
     for (const column of EXPECTED_COLUMNS) {
       expect(column.purpose.length, `${column.column} needs a purpose`).toBeGreaterThan(10);
     }
+  });
+
+  it('covers the columns the three 20261122 migrations added', () => {
+    // These shipped as migrations only, and CI builds its schema with `db push`,
+    // so nothing in the pipeline proves they reached production. This check is
+    // the only thing that does.
+    const keys = EXPECTED_COLUMNS.map((c) => `${c.table}.${c.column}`);
+    expect(keys).toEqual(
+      expect.arrayContaining([
+        'Booking.employeeId',
+        'Booking.checkedInAt',
+        'Booking.checkedOutAt',
+        'BusinessSettings.dashboardTheme',
+        'SMSLog.businessId',
+        'MerchantSubscription.tier',
+      ]),
+    );
   });
 });
