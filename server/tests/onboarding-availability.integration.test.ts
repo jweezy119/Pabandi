@@ -158,11 +158,24 @@ describe('onboarding + availability', () => {
   beforeEach(async () => {
     const { prisma } = await import('../src/utils/database');
     const owner = { email: { contains: MARKER } };
-    await prisma.crmJob.deleteMany({ where: { address: { contains: MARKER } } });
-    await prisma.crmAvailability.deleteMany({ where: { serviceBusiness: { is: { owner } } } });
+    // No CrmJob model: the jobs routes write Booking rows, and `address` is
+    // stored as `clientAddress`.
+    await prisma.booking.deleteMany({ where: { clientAddress: { contains: MARKER } } });
+    // CrmAvailability has no relation to Business or User — only
+    // serviceBusinessId, which is the Business id.
+    const businesses = await prisma.business.findMany({ where: owner, select: { id: true } });
+    if (businesses.length) {
+      await prisma.crmAvailability.deleteMany({
+        where: { serviceBusinessId: { in: businesses.map((b) => b.id) } },
+      });
+    }
     await prisma.crmEmployee.deleteMany({ where: { email: { contains: MARKER } } });
     await prisma.notification.deleteMany({ where: { user: owner } });
     await prisma.crmClient.deleteMany({ where: { email: { contains: MARKER } } });
+    // Business.owner is an optional relation (SetNull), so deleting the user
+    // leaves the Business row — and its @unique slug — behind. The next run then
+    // collides and onboarding returns acme-cleaning-2.
+    await prisma.business.deleteMany({ where: { owner: { email: { contains: MARKER } } } });
     await prisma.user.deleteMany({ where: owner });
   });
 
@@ -248,8 +261,13 @@ describe('onboarding + availability', () => {
     await onboard(b, 'Rerun', HOURS, payload);
 
     const { prisma } = await import('../src/utils/database');
+    // CrmEmployee has no relation to Business — only serviceBusinessId.
+    const biz = await prisma.business.findFirst({
+      where: { owner: { email: { contains: `rerun${MARKER}` } } },
+      select: { id: true },
+    });
     const crew = await prisma.crmEmployee.count({
-      where: { serviceBusiness: { is: { owner: { email: { contains: `rerun${MARKER}` } } } } },
+      where: { serviceBusinessId: biz?.id },
     });
     // Re-opening the wizard must not double the roster every time.
     expect(crew).toBe(1);

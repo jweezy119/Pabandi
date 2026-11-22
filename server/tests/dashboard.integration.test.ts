@@ -164,7 +164,9 @@ describe('dashboard api', () => {
 
   beforeEach(async () => {
     const { prisma } = await import('../src/utils/database');
-    await prisma.crmJob.deleteMany({ where: { address: { contains: MARKER } } });
+    // There is no CrmJob model: the CRM jobs route writes Booking rows, and
+// `address` maps to `clientAddress`.
+await prisma.booking.deleteMany({ where: { clientAddress: { contains: MARKER } } });
     await prisma.crmExpense.deleteMany({ where: { description: { contains: MARKER } } });
     await prisma.crmEmployee.deleteMany({ where: { email: { contains: MARKER } } });
     await prisma.notification.deleteMany({ where: { user: { email: { contains: MARKER } } } });
