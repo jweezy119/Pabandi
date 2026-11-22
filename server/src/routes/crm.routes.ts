@@ -7,6 +7,7 @@ import { resolveCrmBusiness, requireCrmContext } from '../middleware/crmContext.
 import { CustomError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 import { checkAvailabilityWindow } from '../services/crm.service';
+import { createInvoice } from '../services/invoice.service';
 
 /**
  * Contact OS CRM API.
@@ -595,21 +596,19 @@ router.post('/invoices', async (req: AuthRequest, res: Response, next: NextFunct
   try {
     const crm = requireCrmContext(req);
     const businessId = crm.businessId!;
-    const { clientId, number, dateDue, lineItems, subtotal, notes } = req.body ?? {};
-    if (!clientId) throw new CustomError('clientId is required', 400);
-    const invoice = await prisma.invoice.create({
-      data: {
-        businessId,
-        clientId: String(clientId),
-        number: String(number ?? `INV-${Date.now()}`),
-        dateDue: dateDue ? new Date(dateDue) : new Date(),
-        lineItems: lineItems ?? [],
-        subtotal: Number(subtotal ?? 0),
-        notes: notes ? String(notes) : null,
-        status: 'draft',
-      },
+    // Delegate to the invoice service rather than duplicating the insert here.
+    // The local version numbered invoices `INV-${Date.now()}`, skipped the
+    // client-ownership check entirely, and reported 200 for a creation — so a
+    // caller could invoice a client belonging to another business and get a
+    // number no other part of the system recognises.
+    const invoice = await createInvoice(businessId, {
+      clientId: String(req.body?.clientId ?? ''),
+      dateDue: req.body?.dateDue,
+      lineItems: req.body?.lineItems ?? [],
+      subtotal: Number(req.body?.subtotal ?? 0),
+      notes: req.body?.notes,
     });
-    ok(res, invoice);
+    res.status(201).json({ success: true, data: invoice });
   } catch (e) {
     next(e);
   }
@@ -682,7 +681,8 @@ router.post('/expenses', async (req: AuthRequest, res: Response, next: NextFunct
         date: date ? new Date(date) : new Date(),
       },
     });
-    ok(res, expense);
+    // 201: this creates an expense.
+    res.status(201).json({ success: true, data: expense });
   } catch (e) {
     next(e);
   }
@@ -791,7 +791,8 @@ router.post('/deals', async (req: AuthRequest, res: Response, next: NextFunction
         ...(stage === 'WON' || stage === 'LOST' ? { closedAt: new Date() } : {}),
       },
     });
-    ok(res, deal);
+    // 201: this creates a deal.
+    res.status(201).json({ success: true, data: deal });
   } catch (e) {
     next(e);
   }

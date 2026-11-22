@@ -168,7 +168,8 @@ describe('reports: tenant isolation', () => {
     // Invoice.clientId is a required FK with no cascade, so invoices go before clients.
     await prisma.invoice.deleteMany({ where: { client: { email: { contains: MARKER } } } });
     await prisma.crmExpense.deleteMany({ where: { description: { contains: MARKER } } });
-    await prisma.crmActivity.deleteMany({ where: { title: { contains: MARKER } } });
+    // CrmActivity has no title; the text lives in description.
+    await prisma.crmActivity.deleteMany({ where: { description: { contains: MARKER } } });
     await prisma.notification.deleteMany({ where: { user: { email: { contains: MARKER } } } });
     await prisma.crmClient.deleteMany({ where: { email: { contains: MARKER } } });
     await prisma.user.deleteMany({ where: { email: { contains: MARKER } } });
