@@ -15,30 +15,6 @@ jobs:
     name: Build & Test Server
     runs-on: ubuntu-latest
 
-    # The integration suites need a real database. `verify` has provisioned one
-    # since it was added; this job did not, which is why enabling the first
-    # repaired suite turned it red. Same throwaway container, same name shape —
-    # deliberately NOT the repo's DATABASE_URL secret, which points at
-    # production.
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: pabandi
-          POSTGRES_PASSWORD: pabandi
-          POSTGRES_DB: pabandi_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    env:
-      DATABASE_URL: postgresql://pabandi:***@localhost:5432/pabandi_test
-      DIRECT_URL: postgresql://pabandi:***@localhost:5432/pabandi_test
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -57,12 +33,6 @@ jobs:
       - name: Generate Prisma Client
         working-directory: server
         run: npx prisma generate
-
-      - name: Build the test database
-        working-directory: server
-        # `db push`, not `migrate deploy`: the migration folder cannot build this
-        # database. Same reasoning as the identical step in verify.yml.
-        run: npx prisma db push
 
       - name: TypeScript Build (Zero Errors)
         working-directory: server

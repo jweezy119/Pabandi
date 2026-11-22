@@ -3,6 +3,10 @@ import path from 'path';
 
 const isCi = process.env.CI === 'true';
 
+// Same test the suites apply to themselves: a database whose name marks it as
+// throwable. Used only to decide whether CI can run them at all.
+const hasDisposableDatabase = /test|integration|ci/i.test(process.env.DATABASE_URL ?? '');
+
 export default defineConfig({
   resolve: {
     alias: {
@@ -21,21 +25,17 @@ export default defineConfig({
     include: ['tests/**/*.test.ts', 'src/**/__tests__/**/*.test.ts'],
     exclude: [
       ...configDefaults.exclude,
-      // Integration suites are NOT excluded in CI as a class. They used to be,
-      // with the comment "CI has none" about a database — but the `verify` job
-      // has provisioned a throwaway Postgres at `pabandi_test` since it was
-      // added, which is exactly what each suite's assertIsolatedDatabase guard
-      // asks for.
-      //
-      // What actually kept them off was that every suite imported
-      // '../src/index', and there is no src/index.ts — the app is exported from
-      // src/app.ts. That is fixed. The remaining suites have drifted from the
-      // schema (CrmFile.fileName is `name`, several seeds are missing required
-      // fields), so they are enabled one at a time rather than all at once.
-      //
-      // A suite is removed from this list once it passes against the real
-      // database. Locally none of them are excluded — with no DATABASE_URL they
-      // skip on their own guard.
+      // Integration suites are excluded in CI only when CI has no disposable
+      // database. The `verify` job provisions one (pabandi_test) and runs them;
+      // `ci.yml` does not, so there they stay off. Locally nothing is excluded —
+      // with no DATABASE_URL the suites skip on their own assertIsolatedDatabase
+      // guard, and pointed at a real database they run.
+      ...(isCi && !hasDisposableDatabase
+        ? ['tests/**/*.integration.test.ts']
+        : []),
+      // Suites still being repaired against the current schema. Each one is
+      // removed from this list once it passes against a real database, so the
+      // class comes online incrementally rather than all at once.
       ...(isCi
         ? [
             'tests/crm-deals.integration.test.ts',
