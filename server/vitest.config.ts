@@ -21,9 +21,36 @@ export default defineConfig({
     include: ['tests/**/*.test.ts', 'src/**/__tests__/**/*.test.ts'],
     exclude: [
       ...configDefaults.exclude,
-      // Integration suites need a disposable Postgres. CI has none, and a
-      // beforeAll that throws is a failed suite, not a skipped one.
-      ...(isCi ? ['tests/**/*.integration.test.ts'] : []),
+      // Integration suites are NOT excluded in CI as a class. They used to be,
+      // with the comment "CI has none" about a database — but the `verify` job
+      // has provisioned a throwaway Postgres at `pabandi_test` since it was
+      // added, which is exactly what each suite's assertIsolatedDatabase guard
+      // asks for.
+      //
+      // What actually kept them off was that every suite imported
+      // '../src/index', and there is no src/index.ts — the app is exported from
+      // src/app.ts. That is fixed. The remaining suites have drifted from the
+      // schema (CrmFile.fileName is `name`, several seeds are missing required
+      // fields), so they are enabled one at a time rather than all at once.
+      //
+      // A suite is removed from this list once it passes against the real
+      // database. Locally none of them are excluded — with no DATABASE_URL they
+      // skip on their own guard.
+      ...(isCi
+        ? [
+            'tests/crm-deals.integration.test.ts',
+            'tests/crm-employee-scope.integration.test.ts',
+            'tests/crm-settings-files.integration.test.ts',
+            'tests/customer-flow.integration.test.ts',
+            'tests/dashboard.integration.test.ts',
+            'tests/job-scheduling.integration.test.ts',
+            'tests/money-flow.integration.test.ts',
+            'tests/onboarding-availability.integration.test.ts',
+            'tests/reports-tenant.integration.test.ts',
+            'tests/settings-tenant.integration.test.ts',
+            'tests/sms-security.integration.test.ts',
+          ]
+        : []),
     ],
 
     // File parallelism OFF, and this is the fix for the flake documented below.
