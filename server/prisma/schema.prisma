@@ -647,6 +647,12 @@ model Booking {
   escrowStatus  String?
   completedAt   DateTime?
   passportId    String?
+  // The CRM employee this job is assigned to. There is no separate assignment
+  // table: CRM jobs ARE bookings, so a second table mirroring them would be a
+  // dead relation nothing else reads.
+  employeeId    String?
+  checkedInAt   DateTime?
+  checkedOutAt  DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -660,6 +666,8 @@ model Booking {
   workOrder   WorkOrder?   @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
 
   @@index([businessId, slotStart])
+  @@index([employeeId])
+  @@index([employeeId, slotStart])
 }
 
 model BookingRisk {
