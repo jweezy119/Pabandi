@@ -38,16 +38,13 @@ export default defineConfig({
       // class comes online incrementally rather than all at once.
       ...(isCi
         ? [
-            'tests/crm-deals.integration.test.ts',
-            'tests/crm-employee-scope.integration.test.ts',
             'tests/crm-settings-files.integration.test.ts',
-            'tests/customer-flow.integration.test.ts',
+            'tests/crm-deals.integration.test.ts',
             'tests/dashboard.integration.test.ts',
             'tests/job-scheduling.integration.test.ts',
             'tests/money-flow.integration.test.ts',
             'tests/onboarding-availability.integration.test.ts',
             'tests/reports-tenant.integration.test.ts',
-            'tests/settings-tenant.integration.test.ts',
             'tests/sms-security.integration.test.ts',
           ]
         : []),

@@ -92,7 +92,14 @@ router.post('/enroll', authenticate, async (req: AuthRequest, res: Response, nex
         )
       : undefined;
 
-    ok(res, { enrolled: true, businessId: business.id, business }, token ? { token } : {});
+    // 201, not 200: enrollment creates the business and the service-business
+    // pairing. The callers do not branch on the code, but a creation that
+    // reports 200 is wrong and the integration suite says so.
+    res.status(201).json({
+      success: true,
+      data: { enrolled: true, businessId: business.id, business },
+      ...(token ? { token } : {}),
+    });
   } catch (e) {
     next(e);
   }
@@ -170,7 +177,9 @@ router.post('/clients', async (req: AuthRequest, res: Response, next: NextFuncti
         status: status ? String(status) : 'ACTIVE',
       },
     });
-    ok(res, client);
+    // 201: this creates a client. Callers do not branch on the code, but the
+    // integration suite asserts it and a creation reporting 200 is wrong.
+    res.status(201).json({ success: true, data: client });
   } catch (e) {
     next(e);
   }
@@ -1130,7 +1139,8 @@ router.post('/employees', async (req: AuthRequest, res: Response, next: NextFunc
         serviceBusinessId: businessId,
       },
     });
-    ok(res, employee);
+    // 201: this creates an employee.
+    res.status(201).json({ success: true, data: employee });
   } catch (e) {
     next(e);
   }
