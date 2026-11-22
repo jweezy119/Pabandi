@@ -124,8 +124,8 @@ describe('crm settings + files', () => {
 
   beforeEach(async () => {
     const { prisma } = await import('../src/utils/database');
-    await prisma.crmFile.deleteMany({ where: { fileName: { contains: MARKER } } });
-    await prisma.crmFile.deleteMany({ where: { fileUrl: { contains: 'files.example.test' } } });
+    await prisma.crmFile.deleteMany({ where: { name: { contains: MARKER } } });
+    await prisma.crmFile.deleteMany({ where: { url: { contains: 'files.example.test' } } });
     await prisma.businessSettings.deleteMany({ where: { businessId: { contains: MARKER } } });
     await prisma.notification.deleteMany({ where: { user: { email: { contains: MARKER } } } });
     await prisma.crmClient.deleteMany({ where: { email: { contains: MARKER } } });
@@ -140,8 +140,13 @@ describe('crm settings + files', () => {
   it('reads customFields from the one canonical column', async () => {
     const b = await seedBusiness('shape');
     const { prisma } = await import('../src/utils/database');
-    await prisma.businessSettings.create({
-      data: { businessId: b.businessId, customFields: { client: [{ key: 'vip', label: 'VIP' }] } },
+    // upsert, not create: enrollment already calls ensureSettings, so the row
+// exists and create violates the unique index on businessId. Both branches
+// carry the values — with only `create`, the existing row keeps its old ones.
+await prisma.businessSettings.upsert({
+      where: { businessId: b.businessId },
+      create: { businessId: b.businessId, customFields: { client: [{ key: 'vip', label: 'VIP' }] } },
+      update: { businessId: b.businessId, customFields: { client: [{ key: 'vip', label: 'VIP' }] } },
     });
 
     const res = await api(b.token, 'GET', '/api/v1/crm/settings');
@@ -205,8 +210,17 @@ describe('crm settings + files', () => {
   it('does not let a custom-fields save wipe notification preferences', async () => {
     const b = await seedBusiness('nowipe');
     const { prisma } = await import('../src/utils/database');
-    await prisma.businessSettings.create({
-      data: {
+    // upsert, not create: enrollment already calls ensureSettings, so the row
+// exists and create violates the unique index on businessId. Both branches
+// carry the values — with only `create`, the existing row keeps its old ones.
+await prisma.businessSettings.upsert({
+      where: { businessId: b.businessId },
+      create: {
+        businessId: b.businessId,
+        customFields: { client: [{ key: 'keepme', label: 'KeepMe' }] },
+        enabledFeatures: { notifications: [{ event: 'invoice_paid', enabled: true }] },
+      },
+      update: {
         businessId: b.businessId,
         customFields: { client: [{ key: 'keepme', label: 'KeepMe' }] },
         enabledFeatures: { notifications: [{ event: 'invoice_paid', enabled: true }] },
@@ -239,8 +253,17 @@ describe('crm settings + files', () => {
   it('a dashboard save does not wipe custom fields or flags', async () => {
     const b = await seedBusiness('dashsave');
     const { prisma } = await import('../src/utils/database');
-    await prisma.businessSettings.create({
-      data: {
+    // upsert, not create: enrollment already calls ensureSettings, so the row
+// exists and create violates the unique index on businessId. Both branches
+// carry the values — with only `create`, the existing row keeps its old ones.
+await prisma.businessSettings.upsert({
+      where: { businessId: b.businessId },
+      create: {
+        businessId: b.businessId,
+        customFields: { client: [{ key: 'survive', label: 'Survive' }] },
+        enabledFeatures: { notifications: [{ event: 'invoice_paid', enabled: true }] },
+      },
+      update: {
         businessId: b.businessId,
         customFields: { client: [{ key: 'survive', label: 'Survive' }] },
         enabledFeatures: { notifications: [{ event: 'invoice_paid', enabled: true }] },
@@ -286,8 +309,17 @@ describe('crm settings + files', () => {
   it('merges the flag bag when a request carries both custom fields and flags', async () => {
     const b = await seedBusiness('bothbag');
     const { prisma } = await import('../src/utils/database');
-    await prisma.businessSettings.create({
-      data: {
+    // upsert, not create: enrollment already calls ensureSettings, so the row
+// exists and create violates the unique index on businessId. Both branches
+// carry the values — with only `create`, the existing row keeps its old ones.
+await prisma.businessSettings.upsert({
+      where: { businessId: b.businessId },
+      create: {
+        businessId: b.businessId,
+        customFields: { client: [{ key: 'seeded', label: 'Seeded' }] },
+        enabledFeatures: { notifications: [{ event: 'invoice_paid', enabled: true }], contact: ['crm'] },
+      },
+      update: {
         businessId: b.businessId,
         customFields: { client: [{ key: 'seeded', label: 'Seeded' }] },
         enabledFeatures: { notifications: [{ event: 'invoice_paid', enabled: true }], contact: ['crm'] },
@@ -322,8 +354,13 @@ describe('crm settings + files', () => {
     const a = await seedBusiness('setta');
     const b = await seedBusiness('settb');
     const { prisma } = await import('../src/utils/database');
-    await prisma.businessSettings.create({
-      data: { businessId: b.businessId, customFields: { client: [{ key: 'secret', label: 'Secret' }] } },
+    // upsert, not create: enrollment already calls ensureSettings, so the row
+// exists and create violates the unique index on businessId. Both branches
+// carry the values — with only `create`, the existing row keeps its old ones.
+await prisma.businessSettings.upsert({
+      where: { businessId: b.businessId },
+      create: { businessId: b.businessId, customFields: { client: [{ key: 'secret', label: 'Secret' }] } },
+      update: { businessId: b.businessId, customFields: { client: [{ key: 'secret', label: 'Secret' }] } },
     });
 
     const res = await api(a.token, 'GET', `/api/v1/crm/settings?businessId=${b.businessId}`);
@@ -342,13 +379,13 @@ describe('crm settings + files', () => {
     // list was permanently empty. Registering is now possible.
     const created = await api(a.token, 'POST', '/api/v1/crm/files', {
       clientId: a.clientId,
-      fileName: 'Invoice 001.pdf',
-      fileUrl: 'https://files.example.test/invoice-001.pdf',
+      name: 'Invoice 001.pdf',
+      url: 'https://files.example.test/invoice-001.pdf',
       fileSize: 20480,
       fileType: 'application/pdf',
     });
     expect(created.status, JSON.stringify(created.json)).toBe(201);
-    expect(created.json.data.fileName).toBe('Invoice 001.pdf');
+    expect(created.json.data.name).toBe('Invoice 001.pdf');
 
     const { prisma } = await import('../src/utils/database');
     const row = await prisma.crmFile.findUnique({
@@ -370,20 +407,20 @@ describe('crm settings + files', () => {
 
     const res = await api(a.token, 'POST', '/api/v1/crm/files', {
       clientId: b.clientId,
-      fileName: 'Injected.pdf',
-      fileUrl: 'https://files.example.test/injected.pdf',
+      name: 'Injected.pdf',
+      url: 'https://files.example.test/injected.pdf',
     });
     expect(res.status, JSON.stringify(res.json)).toBe(404);
 
     const { prisma } = await import('../src/utils/database');
-    expect(await prisma.crmFile.count({ where: { fileName: 'Injected.pdf' } })).toBe(0);
+    expect(await prisma.crmFile.count({ where: { name: 'Injected.pdf' } })).toBe(0);
   });
 
-  it('refuses a fileUrl that is not an absolute http(s) URL', async () => {
+  it('refuses a url that is not an absolute http(s) URL', async () => {
     const a = await seedBusiness('fileurl');
     // This value renders as a link on a page an operator is looking at, so the protocol is the
     // boundary that matters -- not the file extension.
-    for (const fileUrl of [
+    for (const url of [
       'javascript:alert(1)',
       'data:text/html,<script>alert(1)</script>',
       '/relative/path.pdf',
@@ -391,10 +428,10 @@ describe('crm settings + files', () => {
     ]) {
       const res = await api(a.token, 'POST', '/api/v1/crm/files', {
         clientId: a.clientId,
-        fileName: 'x.pdf',
-        fileUrl,
+        name: 'x.pdf',
+        url,
       });
-      expect(res.status, `${fileUrl}: ${JSON.stringify(res.json)}`).toBe(400);
+      expect(res.status, `${url}: ${JSON.stringify(res.json)}`).toBe(400);
     }
   });
 
@@ -404,14 +441,14 @@ describe('crm settings + files', () => {
 
     const fileA = await api(a.token, 'POST', '/api/v1/crm/files', {
       clientId: a.clientId,
-      fileName: `A ${MARKER}.pdf`,
-      fileUrl: 'https://files.example.test/a.pdf',
+      name: `A ${MARKER}.pdf`,
+      url: 'https://files.example.test/a.pdf',
     });
     expect(fileA.status, JSON.stringify(fileA.json)).toBe(201);
     await api(b.token, 'POST', '/api/v1/crm/files', {
       clientId: b.clientId,
-      fileName: `B ${MARKER}.pdf`,
-      fileUrl: 'https://files.example.test/b.pdf',
+      name: `B ${MARKER}.pdf`,
+      url: 'https://files.example.test/b.pdf',
     });
 
     // With rows present, a missing tenant filter WOULD leak.
@@ -440,8 +477,17 @@ describe('crm settings + files', () => {
   it('merges the flag bag when a request carries both custom fields and flags', async () => {
     const b = await seedBusiness('bothbag');
     const { prisma } = await import('../src/utils/database');
-    await prisma.businessSettings.create({
-      data: {
+    // upsert, not create: enrollment already calls ensureSettings, so the row
+// exists and create violates the unique index on businessId. Both branches
+// carry the values — with only `create`, the existing row keeps its old ones.
+await prisma.businessSettings.upsert({
+      where: { businessId: b.businessId },
+      create: {
+        businessId: b.businessId,
+        customFields: { client: [{ key: 'seeded', label: 'Seeded' }] },
+        enabledFeatures: { notifications: [{ event: 'invoice_paid', enabled: true }], contact: ['crm'] },
+      },
+      update: {
         businessId: b.businessId,
         customFields: { client: [{ key: 'seeded', label: 'Seeded' }] },
         enabledFeatures: { notifications: [{ event: 'invoice_paid', enabled: true }], contact: ['crm'] },
@@ -476,8 +522,13 @@ describe('crm settings + files', () => {
     const a = await seedBusiness('setta');
     const b = await seedBusiness('settb');
     const { prisma } = await import('../src/utils/database');
-    await prisma.businessSettings.create({
-      data: { businessId: b.businessId, customFields: { client: [{ key: 'secret', label: 'Secret' }] } },
+    // upsert, not create: enrollment already calls ensureSettings, so the row
+// exists and create violates the unique index on businessId. Both branches
+// carry the values — with only `create`, the existing row keeps its old ones.
+await prisma.businessSettings.upsert({
+      where: { businessId: b.businessId },
+      create: { businessId: b.businessId, customFields: { client: [{ key: 'secret', label: 'Secret' }] } },
+      update: { businessId: b.businessId, customFields: { client: [{ key: 'secret', label: 'Secret' }] } },
     });
 
     const res = await api(a.token, 'GET', `/api/v1/crm/settings?businessId=${b.businessId}`);
