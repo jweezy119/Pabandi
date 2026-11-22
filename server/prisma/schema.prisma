@@ -233,9 +233,9 @@ model Business {
   email                 String?
   website               String?
   googlePlaceId         String?
-  externalId            String?           @unique
+  externalId            String?          @unique
   stripeAccountId       String?
-  businessTier          String            @default("STANDARD")
+  businessTier          String           @default("STANDARD")
   logoUrl               String?
   coverImageUrl         String?
   latitude              Float?
@@ -267,26 +267,32 @@ model Business {
   serviceRadiusMiles    Float?           @default(25)
   maxConcurrentBookings Int              @default(1)
 
-  owner            User?                   @relation("BusinessOwner", fields: [ownerId], references: [id])
-  technicians      Technician[]
-  customers        Customer[]
-  workOrders       WorkOrder[]
-  bookings         Booking[]
-  invoices         Invoice[]
-  payments         Payment[]               @relation("businessPayments")
-  gigs             Gig[]
-  telegramBot      TelegramBot?
-  crmClients       CrmClient[]
-  settings         BusinessSettings?
-  businessHours    BusinessHours[]
-  services         BusinessService[]
-  squareConnection SquareConnection?
-  checkoutSessions CheckoutSession[]
-  fiatPayments     FiatPayment[]
-  webhookEndpoints WebhookEndpoint[]
-  expenses         CrmExpense[]
-  paymentMethods   BusinessPaymentMethod[]
-  feeAssessments   FeeAssessment[]
+  owner                User?                   @relation("BusinessOwner", fields: [ownerId], references: [id])
+  // Restored with the SMS feature (4e5b9e39 removed all four models). Each is
+  // cascade-deleted with the business, so no orphan-cleanup path is needed.
+  sMSLogs              SMSLog[]
+  merchantSubscription MerchantSubscription?
+  businessSmsProvider  BusinessSmsProvider?
+  channelMessages      ChannelMessage[]
+  technicians          Technician[]
+  customers            Customer[]
+  workOrders           WorkOrder[]
+  bookings             Booking[]
+  invoices             Invoice[]
+  payments             Payment[]               @relation("businessPayments")
+  gigs                 Gig[]
+  telegramBot          TelegramBot?
+  crmClients           CrmClient[]
+  settings             BusinessSettings?
+  businessHours        BusinessHours[]
+  services             BusinessService[]
+  squareConnection     SquareConnection?
+  checkoutSessions     CheckoutSession[]
+  fiatPayments         FiatPayment[]
+  webhookEndpoints     WebhookEndpoint[]
+  expenses             CrmExpense[]
+  paymentMethods       BusinessPaymentMethod[]
+  feeAssessments       FeeAssessment[]
 
   @@index([ownerId])
   @@index([slug])
@@ -342,18 +348,18 @@ model TrustPassport {
 // ══════════════════════════════════════════════════════════════════════════════
 
 model Technician {
-  id              String                @id @default(cuid())
-  businessId      String
-  name            String
-  phoneEncrypted  String
-  skills          String[]
-  active          Boolean               @default(true)
-  experienceYears Int                   @default(0)
-  reliabilityScore Float                @default(50.0)
-  passportId      String?
-  createdAt       DateTime              @default(now())
-  business        Business              @relation(fields: [businessId], references: [id])
-  assignments     WorkOrderAssignment[]
+  id               String                @id @default(cuid())
+  businessId       String
+  name             String
+  phoneEncrypted   String
+  skills           String[]
+  active           Boolean               @default(true)
+  experienceYears  Int                   @default(0)
+  reliabilityScore Float                 @default(50.0)
+  passportId       String?
+  createdAt        DateTime              @default(now())
+  business         Business              @relation(fields: [businessId], references: [id])
+  assignments      WorkOrderAssignment[]
 
   @@index([businessId])
   @@index([active])
@@ -618,7 +624,7 @@ model Dispute {
 // ══════════════════════════════════════════════════════════════════════════════
 
 model Booking {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   businessId    String
   clientId      String?
   slotStart     DateTime
@@ -626,7 +632,7 @@ model Booking {
   serviceType   String
   depositAmount Float?
   depositStatus String?
-  status        String   @default("pending")
+  status        String    @default("pending")
   paymentRef    String?
   paidVia       String?
   metadata      Json?
@@ -635,44 +641,44 @@ model Booking {
   clientLng     Float?
   distanceMiles Float?
   driveMinutes  Int?
-  travelFee     Float?   @default(0)
+  travelFee     Float?    @default(0)
   depositReason String?
-  depositPaid   Boolean  @default(false)
+  depositPaid   Boolean   @default(false)
   escrowStatus  String?
   completedAt   DateTime?
   passportId    String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  business Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  client   CrmClient? @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  risk     BookingRisk?
+  business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client      CrmClient?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  risk        BookingRisk?
   // The coordinator work order this booking created. @unique is the idempotency
   // mechanism: at most one work order per booking, and a retry cannot make a
   // second. See services/bookingWorkOrder.service.ts.
-  workOrderId String? @unique
-  workOrder   WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+  workOrderId String?      @unique
+  workOrder   WorkOrder?   @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
 
   @@index([businessId, slotStart])
 }
 
 model BookingRisk {
-  id            String   @id @default(cuid())
-  bookingId     String   @unique
-  riskScore     Float
-  confidence    Float
-  band          String
-  policy        String
-  factors       Json
-  features      Json
-  modelVersion  String
-  calibrated    Boolean  @default(false)
-  outcome       String?
-  outcomeAt     DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String    @id @default(cuid())
+  bookingId    String    @unique
+  riskScore    Float
+  confidence   Float
+  band         String
+  policy       String
+  factors      Json
+  features     Json
+  modelVersion String
+  calibrated   Boolean   @default(false)
+  outcome      String?
+  outcomeAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@index([bookingId])
   @@index([outcome])
@@ -768,10 +774,10 @@ model Payment {
 }
 
 model PaymentReceipt {
-  id             String    @id @default(cuid())
-  transactionRef String    @unique
-  amount         Float
-  currency       String    @default("PKR")
+  id              String    @id @default(cuid())
+  transactionRef  String    @unique
+  amount          Float
+  currency        String    @default("PKR")
   receiverId      String
   senderId        String?
   bank            String?
@@ -781,14 +787,14 @@ model PaymentReceipt {
   imageStorageKey String?
   imageUrl        String?
   rawJson         Json?
-  confidence     Float     @default(0)
-  status         String    @default("VERIFIED")
-  intentId       String?
-  paymentId      String?
-  verifiedBy     String?
-  reviewNotes    String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  confidence      Float     @default(0)
+  status          String    @default("VERIFIED")
+  intentId        String?
+  paymentId       String?
+  verifiedBy      String?
+  reviewNotes     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@index([transactionRef])
   @@index([receiverId])
@@ -942,7 +948,7 @@ model TelegramBot {
 }
 
 model CrmClient {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   businessId        String?
   serviceBusinessId String?
   name              String
@@ -951,15 +957,15 @@ model CrmClient {
   address           String?
   company           String?
   notes             String?
-  status            String   @default("ACTIVE")
-  stage             String?  @default("LEAD")
-  totalJobs         Int      @default(0)
-  totalSpent        Float    @default(0)
+  status            String    @default("ACTIVE")
+  stage             String?   @default("LEAD")
+  totalJobs         Int       @default(0)
+  totalSpent        Float     @default(0)
   lastJobAt         DateTime?
-  reliabilityScore  Float    @default(50)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  passportId        String?  @unique
+  reliabilityScore  Float     @default(50)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  passportId        String?   @unique
   // Whether this business may send marketing outreach to the client. Defaults
   // to true because these are the business's own customers, not a list Pabandi
   // sourced; the unsubscribe endpoint clears it.
@@ -1213,7 +1219,7 @@ model ProjectSimulation {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  agentRuns      SimulationAgentRun[]
+  agentRuns SimulationAgentRun[]
 
   @@index([userId])
   @@index([status])
@@ -1222,14 +1228,14 @@ model ProjectSimulation {
 model SimulationAgentRun {
   id              String   @id @default(cuid())
   simulationId    String
-  agentRole       String   // materials | staffing | timeline | cost
+  agentRole       String // materials | staffing | timeline | cost
   inputPayload    Json
   outputPayload   Json?
   status          String   @default("pending") // pending | running | completed | failed
   executionTimeMs Int?
   createdAt       DateTime @default(now())
 
-  simulation      ProjectSimulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  simulation ProjectSimulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
 
   @@index([simulationId])
   @@index([agentRole])
@@ -1237,43 +1243,43 @@ model SimulationAgentRun {
 }
 
 model OutreachCampaign {
-  id          String   @id @default(cuid())
-  businessId  String
-  name        String
-  channel     String   @default("EMAIL")
-  subject     String?
-  body        String
+  id             String              @id @default(cuid())
+  businessId     String
+  name           String
+  channel        String              @default("EMAIL")
+  subject        String?
+  body           String
   // DRAFT -> SENDING -> SENT | FAILED
-  status      String   @default("DRAFT")
+  status         String              @default("DRAFT")
   // Snapshot of the audience rule, so a campaign stays reproducible after the
   // client list changes underneath it.
-  segment     String?
-  totalCount  Int      @default(0)
-  sentCount   Int      @default(0)
-  failedCount Int      @default(0)
-  createdById String
+  segment        String?
+  totalCount     Int                 @default(0)
+  sentCount      Int                 @default(0)
+  failedCount    Int                 @default(0)
+  createdById    String
   // Returned to a retried send so a double-tap cannot email a customer twice.
-  idempotencyKey String? @unique
-  sentAt      DateTime?
-  createdAt   DateTime @default(now())
-  recipients  OutreachRecipient[]
+  idempotencyKey String?             @unique
+  sentAt         DateTime?
+  createdAt      DateTime            @default(now())
+  recipients     OutreachRecipient[]
 
   @@index([businessId, createdAt])
   @@map("outreach_campaigns")
 }
 
 model OutreachRecipient {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   campaignId String
   clientId   String?
   // Denormalised so the audit trail survives the client row being deleted.
   to         String
   // PENDING -> SENT | FAILED
-  status     String   @default("PENDING")
+  status     String    @default("PENDING")
   error      String?
   sentAt     DateTime?
 
-  campaign   OutreachCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign OutreachCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@index([campaignId])
   @@map("outreach_recipients")
@@ -1384,19 +1390,19 @@ model CrmDeal {
 }
 
 model CrmTask {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   title             String
   description       String?
-  status            String   @default("TODO")
-  priority          String   @default("MEDIUM")
+  status            String    @default("TODO")
+  priority          String    @default("MEDIUM")
   dueDate           DateTime?
   clientId          String?
   dealId            String?
   assignedTo        String?
   businessId        String?
   serviceBusinessId String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   @@index([serviceBusinessId])
   @@index([businessId])
@@ -1458,7 +1464,7 @@ model CrmEmployee {
 }
 
 model CrmPayroll {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   employeeId        String
   periodStart       DateTime
   periodEnd         DateTime
@@ -1471,8 +1477,8 @@ model CrmPayroll {
   paidAt            DateTime?
   businessId        String?
   serviceBusinessId String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   @@index([serviceBusinessId])
   @@index([businessId])
@@ -1491,7 +1497,7 @@ model CrmAlert {
   dismissedAt       DateTime?
   businessId        String?
   serviceBusinessId String?
-  createdAt         DateTime @default(now())
+  createdAt         DateTime  @default(now())
 
   @@index([serviceBusinessId])
   @@index([businessId])
@@ -1503,12 +1509,104 @@ model CrmAvailability {
   weekday           Int
   startTime         String
   endTime           String
-  slotMinutes       Int       @default(60)
-  bufferMinutes     Int       @default(15)
+  slotMinutes       Int      @default(60)
+  bufferMinutes     Int      @default(15)
   serviceBusinessId String
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   @@unique([serviceBusinessId, weekday])
   @@map("CrmAvailability")
+}
+
+model SMSLog {
+  id          String    @id @default(cuid())
+  businessId  String
+  to          String
+  message     String
+  provider    String // TWILIO, VONAGE
+  status      String    @default("PENDING")
+  externalId  String?
+  cost        Float?
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  error       String?
+  createdAt   DateTime  @default(now())
+  business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([status])
+  @@index([provider])
+}
+
+model ChannelMessage {
+  id          String    @id @default(cuid())
+  businessId  String
+  customerId  String
+  channel     String // WHATSAPP, TELEGRAM, SMS
+  direction   String // INCOMING, OUTGOING
+  content     String
+  status      String    @default("PENDING")
+  externalId  String?
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  failedAt    DateTime?
+  error       String?
+  createdAt   DateTime  @default(now())
+  business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([customerId])
+  @@index([channel])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model BusinessSmsProvider {
+  id             String    @id @default(cuid())
+  businessId     String    @unique
+  business       Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  /// TWILIO | VONAGE
+  provider       String
+  /// AES-256-GCM blob. Written once, never read back to the client.
+  credentials    String
+  /// The sending number, held separately because it is displayed on every outbound
+  /// message and so is safe to return — unlike the secret.
+  fromNumber     String
+  /// PENDING until verified against the provider, then VERIFIED or FAILED.
+  status         String    @default("PENDING")
+  lastError      String?
+  lastVerifiedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([businessId])
+  @@index([status])
+}
+
+model MerchantSubscription {
+  id                 String    @id @default(cuid())
+  /// UNIQUE, and load-bearing: the Business side is a one-to-one, which is what lets
+  /// the fee engine read a merchant's tier without a query for duplicates.
+  businessId         String    @unique
+  business           Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  /// free | starter | pro | business
+  tier               String    @default("free")
+  status             String    @default("inactive")
+  whopMembershipId   String?
+  whopPlanId         String?
+  whopCompanyId      String?
+  priceCents         Int       @default(0)
+  currency           String    @default("USD")
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean   @default(false)
+  canceledAt         DateTime?
+  lastWebhookId      String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([businessId, status])
+  @@index([whopMembershipId])
+  @@index([status])
 }

@@ -39,7 +39,6 @@ export default defineConfig({
       ...(isCi
         ? [
             'tests/job-scheduling.integration.test.ts',
-            'tests/sms-security.integration.test.ts',
           ]
         : []),
     ],
