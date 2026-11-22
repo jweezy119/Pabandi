@@ -180,7 +180,9 @@ describe('jobs: double-booking', () => {
 
   beforeEach(async () => {
     const { prisma } = await import('../src/utils/database');
-    await prisma.crmJob.deleteMany({ where: { address: { contains: MARKER } } });
+    // No CrmJob model: the CRM jobs routes write Booking rows, and `address`
+    // is stored as `clientAddress`.
+    await prisma.booking.deleteMany({ where: { clientAddress: { contains: MARKER } } });
     await prisma.crmEmployee.deleteMany({ where: { email: { contains: MARKER } } });
     await prisma.notification.deleteMany({ where: { user: { email: { contains: MARKER } } } });
     await prisma.crmClient.deleteMany({ where: { email: { contains: MARKER } } });
@@ -195,10 +197,14 @@ describe('jobs: double-booking', () => {
     // The assignment is real, not just accepted: crm.service records it in CrmJobAssignment
     // and leaves CrmJob.employeeId null, so the row is the thing to check.
     const { prisma } = await import('../src/utils/database');
-    const assignments = await prisma.crmJobAssignment.count({
-      where: { jobId: res.json.data.id, employeeId: b.employeeId },
+    // The assignee lives on the Booking; there is no CrmJobAssignment table.
+    const job = await prisma.booking.findUnique({
+      where: { id: res.json.data.id },
+      select: { employeeId: true },
     });
-    expect(assignments, 'the job must actually be assigned to the employee').toBe(1);
+    expect(job?.employeeId, 'the job must actually be assigned to the employee').toBe(
+      b.employeeId,
+    );
   });
 
   it('refuses a second job overlapping the same employee', async () => {
@@ -215,7 +221,9 @@ describe('jobs: double-booking', () => {
     expect(second.json.conflicts[0].startsAt).toBeTruthy();
 
     const { prisma } = await import('../src/utils/database');
-    expect(await prisma.crmJob.count({ where: { address: { contains: MARKER } } })).toBe(1);
+    expect(
+      await prisma.booking.count({ where: { clientAddress: { contains: MARKER } } }),
+    ).toBe(1);
   });
 
   it('allows back-to-back jobs (half-open window)', async () => {
@@ -312,8 +320,14 @@ describe('jobs: double-booking', () => {
     expect(clash.status, JSON.stringify(clash.json)).toBe(409);
 
     const { prisma } = await import('../src/utils/database');
-    const assignments = await prisma.crmJobAssignment.count({ where: { jobId: free.json.data.id } });
-    expect(assignments, 'a refused reassignment must not leave an assignment behind').toBe(0);
+    const afterAssign = await prisma.booking.findUnique({
+      where: { id: free.json.data.id },
+      select: { employeeId: true },
+    });
+    expect(
+      afterAssign?.employeeId,
+      'a refused reassignment must not leave an assignment behind',
+    ).toBeNull();
   });
 
   it('allows re-assigning a job to the employee it is already on', async () => {
@@ -361,7 +375,9 @@ describe('jobs: tenant isolation', () => {
 
   beforeEach(async () => {
     const { prisma } = await import('../src/utils/database');
-    await prisma.crmJob.deleteMany({ where: { address: { contains: MARKER } } });
+    // No CrmJob model: the CRM jobs routes write Booking rows, and `address`
+    // is stored as `clientAddress`.
+    await prisma.booking.deleteMany({ where: { clientAddress: { contains: MARKER } } });
     await prisma.crmEmployee.deleteMany({ where: { email: { contains: MARKER } } });
     await prisma.notification.deleteMany({ where: { user: { email: { contains: MARKER } } } });
     await prisma.crmClient.deleteMany({ where: { email: { contains: MARKER } } });

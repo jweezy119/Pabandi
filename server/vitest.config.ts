@@ -38,7 +38,6 @@ export default defineConfig({
       // class comes online incrementally rather than all at once.
       ...(isCi
         ? [
-            'tests/job-scheduling.integration.test.ts',
           ]
         : []),
     ],

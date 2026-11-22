@@ -6,7 +6,8 @@ import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { resolveCrmBusiness, requireCrmContext } from '../middleware/crmContext.middleware';
 import { CustomError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
-import { checkAvailabilityWindow } from '../services/crm.service';
+import { checkAvailabilityWindow, assertNoConflict } from '../services/crm.service';
+import * as jobService from '../services/job.service';
 import { createInvoice } from '../services/invoice.service';
 import { DEAL_STAGES, STAGE_PROBABILITY } from '../domain/crm';
 import { parseCsv, csvCell } from '../utils/csv';
@@ -493,7 +494,17 @@ router.post('/jobs', async (req: AuthRequest, res: Response, next: NextFunction)
   try {
     const crm = requireCrmContext(req);
     const businessId = crm.businessId!;
-    const { clientId, serviceType, scheduledDate, scheduledTime, durationMinutes, address, notes, price } = req.body ?? {};
+    const {
+      clientId,
+      serviceType,
+      scheduledDate,
+      scheduledTime,
+      durationMinutes,
+      address,
+      notes,
+      price,
+      employeeId,
+    } = req.body ?? {};
     if (!serviceType || !scheduledDate) throw new CustomError('serviceType and scheduledDate are required', 400);
 
     const start = new Date(scheduledDate);
@@ -521,6 +532,21 @@ router.post('/jobs', async (req: AuthRequest, res: Response, next: NextFunction)
       throw new CustomError(availability.reason ?? 'Outside opening hours', 409);
     }
 
+    // An assignee is checked against the tenant and then against their own
+    // calendar. Neither happened: a job could be filed against another
+    // business's employee and one employee could be booked on two overlapping
+    // jobs, which is the whole point of assigning one.
+    if (employeeId) {
+      const employee = await prisma.crmEmployee.findFirst({
+        where: { id: String(employeeId), serviceBusinessId: businessId },
+        select: { id: true },
+      });
+      if (!employee) throw new CustomError('Employee not found for this business', 404);
+      await assertNoConflict(businessId, String(employeeId), start, scheduledTime, duration, {
+        allowConflict,
+      });
+    }
+
     const job = await prisma.booking.create({
       data: {
         businessId,
@@ -533,6 +559,7 @@ router.post('/jobs', async (req: AuthRequest, res: Response, next: NextFunction)
         // The CRM job vocabulary is SCHEDULED/IN_PROGRESS/COMPLETED/CANCELLED
         // (domain/crm.ts JOB_STATUSES). The lowercase 'pending' predates it.
         status: 'SCHEDULED',
+        employeeId: employeeId ? String(employeeId) : null,
         metadata: notes ? { notes: String(notes) } : undefined,
       },
       include: { client: true },
@@ -613,8 +640,31 @@ router.post('/jobs/:id/noshow', async (req: AuthRequest, res: Response, next: Ne
   }
 });
 
-router.post('/jobs/:id/assign', (_req: AuthRequest, res: Response) => {
-  ok(res, { assigned: false, reason: 'employees are not available in this deployment' });
+/**
+ * Assign or reassign a job.
+ *
+ * This was a stub reading "employees are not available in this deployment", so the
+ * CRM could not put a name on a job at all. Reassignment carries the same clash
+ * check as a create: it is the easiest way to manufacture a double-booking after
+ * the fact, and the job is excluded from its own check so re-assigning to the
+ * employee it is already on is not a self-conflict.
+ */
+router.post('/jobs/:id/assign', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    const { employeeId } = req.body ?? {};
+    if (!employeeId) throw new CustomError('employeeId is required', 400);
+
+    const job = await jobService.assignJob(
+      crm.businessId!,
+      req.params.id,
+      String(employeeId),
+      { allowConflict: req.body?.allowConflict === true },
+    );
+    ok(res, job);
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.delete('/jobs/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {

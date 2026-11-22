@@ -117,6 +117,10 @@ const domainRoutes: [string, string][] = [
   // The whole SMS feature was deleted in the 4e5b9e39 purge while the client
   // still called /api/v1/sms/*. Restored, with its models and a tier gate.
   ['/sms', './sms.routes'],
+  // Removed in the 4e5b9e39 purge along with job.service.ts; the assignee
+  // endpoint was left behind as a stub reading "employees are not available
+  // in this deployment".
+  ['/jobs', './job.routes'],
   ['/outreach', './outreach.routes'],
   // Simulator + public landing stats. Both route files existed but were never
   // mounted, so the landing page, module switcher and invoice share links had

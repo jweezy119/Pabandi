@@ -1943,39 +1943,38 @@ export async function findJobConflicts(
   const windowStart = new Date(start.getTime() - 864e5);
   const windowEnd = new Date(end.getTime() + 864e5);
 
-  const candidates = await db.crmJob.findMany({
+  const candidates = await db.booking.findMany({
     where: {
-      serviceBusinessId,
+      businessId: serviceBusinessId,
       status: { not: 'CANCELLED' },
-      scheduledDate: { gte: windowStart, lte: windowEnd },
+      slotStart: { gte: windowStart, lte: windowEnd },
       ...(excludeJobId ? { id: { not: excludeJobId } } : {}),
-      OR: [{ employeeId }, { assignments: { some: { employeeId } } }],
+      // CRM jobs ARE bookings, and the assignee lives on the booking. There is
+      // no CrmJob or CrmJobAssignment table any more.
+      employeeId,
     },
     select: {
       id: true,
       serviceType: true,
-      scheduledDate: true,
-      scheduledTime: true,
-      durationMinutes: true,
-      duration: true,
+      slotStart: true,
+      slotEnd: true,
       status: true,
     },
   });
 
   const conflicts: ScheduleConflict[] = [];
   for (const job of candidates) {
-    const otherStart = composeJobStart(job.scheduledDate, job.scheduledTime);
-    if (!otherStart) continue;
-    const otherEnd = new Date(
-      otherStart.getTime() + jobDurationMinutes(job) * 60000,
-    );
+    const otherStart = job.slotStart;
+    const otherEnd = job.slotEnd ?? new Date(otherStart.getTime() + 60 * 60000);
     // Half-open overlap: touching endpoints are not a conflict.
     if (start < otherEnd && otherStart < end) {
       conflicts.push({
         jobId: job.id,
         serviceType: job.serviceType,
-        scheduledDate: job.scheduledDate.toISOString(),
-        scheduledTime: job.scheduledTime,
+        scheduledDate: otherStart.toISOString(),
+        scheduledTime: `${String(otherStart.getUTCHours()).padStart(2, '0')}:${String(
+          otherStart.getUTCMinutes(),
+        ).padStart(2, '0')}`,
         startsAt: otherStart.toISOString(),
         endsAt: otherEnd.toISOString(),
       });
