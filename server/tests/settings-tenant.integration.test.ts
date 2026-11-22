@@ -145,11 +145,15 @@ describe('settings: authentication and tenant isolation', () => {
     const attacker = await seedBusiness('attacker');
     const { prisma } = await import('../src/utils/database');
 
-    await prisma.businessSettings.create({
-      data: {
+    // upsert, not create: enrollment already calls ensureSettings, so the row
+    // exists and a plain create violates the unique index on businessId.
+    await prisma.businessSettings.upsert({
+      where: { businessId: victim.businessId },
+      create: {
         businessId: victim.businessId,
         customFields: { client: [{ key: 'vip', label: 'VictimSecret' }] },
       },
+      update: {},
     });
 
     for (const path of ['/api/v1/settings/config', '/api/v1/settings/dashboard-layout']) {
@@ -168,11 +172,15 @@ describe('settings: authentication and tenant isolation', () => {
     const attacker = await seedBusiness('wattacker');
     const { prisma } = await import('../src/utils/database');
 
-    await prisma.businessSettings.create({
-      data: {
+    // upsert, not create: enrollment already calls ensureSettings, so the row
+    // exists and a plain create violates the unique index on businessId.
+    await prisma.businessSettings.upsert({
+      where: { businessId: victim.businessId },
+      create: {
         businessId: victim.businessId,
         customFields: { client: [{ key: 'keep', label: 'MustSurvive' }] },
       },
+      update: { customFields: { client: [{ key: 'keep', label: 'MustSurvive' }] } },
     });
 
     const res = await api(attacker.token, 'PUT', '/api/v1/settings/config', {
@@ -194,8 +202,10 @@ describe('settings: authentication and tenant isolation', () => {
   it('serves the caller their own settings', async () => {
     const own = await seedBusiness('own');
     const { prisma } = await import('../src/utils/database');
-    await prisma.businessSettings.create({
-      data: { businessId: own.businessId, customFields: { client: [{ key: 'mine', label: 'Mine' }] } },
+    await prisma.businessSettings.upsert({
+      where: { businessId: own.businessId },
+      create: { businessId: own.businessId, customFields: { client: [{ key: 'mine', label: 'Mine' }] } },
+      update: { customFields: { client: [{ key: 'mine', label: 'Mine' }] } },
     });
 
     const res = await api(own.token, 'GET', '/api/v1/settings/config');

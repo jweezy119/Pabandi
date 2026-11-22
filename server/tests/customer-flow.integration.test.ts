@@ -230,7 +230,7 @@ describe('customer flow: register -> set up business -> add a client', () => {
       serviceType: 'general',
     });
     expect(again.status).toBe(201);
-    expect(again.json.data.crmBusiness.id).toBe(enroll.json.data.crmBusiness.id);
+    expect(again.json.data.business.id).toBe(enroll.json.data.business.id);
     expect(again.json.data.business.id).toBe(enroll.json.data.business.id);
   });
 
