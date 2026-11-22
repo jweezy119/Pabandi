@@ -94,7 +94,7 @@ describe('CRM employee writes are tenant-scoped', () => {
       throw new Error(`Refusing to run against database "${name}"`);
     }
 
-    const { default: app } = await import('../src/index');
+    const { default: app } = await import('../src/app');
     server = app.listen(0);
     await new Promise<void>((r) => server.once('listening', () => r()));
     baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;

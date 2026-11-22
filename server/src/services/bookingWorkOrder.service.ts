@@ -108,72 +108,83 @@ export async function createWorkOrderForBooking(
   source: WorkOrderSource,
   client: { name?: string | null; email?: string | null },
 ): Promise<string | null> {
-  // Claim first. `workOrderId: null` in the where makes this atomic: only one
-  // caller can win the update.
-  const claimed = await prisma.booking.updateMany({
-    where: { id: source.bookingId, workOrderId: null },
-    data: { workOrderId: 'pending' },
-  });
-  if (claimed.count === 0) return null;
-
   try {
-    const customerId = await resolveCoordinatorCustomer(source.businessId, client);
-    if (!customerId) {
-      // Nothing to attach it to. Release the claim rather than leaving a
-      // permanent 'pending' that blocks every later attempt.
-      await prisma.booking.update({
+    return await prisma.$transaction(async (tx) => {
+      // Read-then-create inside the transaction. The UNIQUE index on
+      // Booking.workOrderId is the real arbiter: if two callers get this far,
+      // the second UPDATE blocks behind the first and then fails the unique
+      // check, which rolls back its work order too. Exactly one survives.
+      //
+      // (An earlier version claimed the slot by writing the literal 'pending'
+      // into workOrderId. That violates the foreign key — there is no WorkOrder
+      // row with that id — so the claim itself was the bug.)
+      const booking = await tx.booking.findUnique({
         where: { id: source.bookingId },
-        data: { workOrderId: null },
+        select: { workOrderId: true },
       });
+      if (!booking || booking.workOrderId) return null;
+
+      const customerId = await resolveCoordinatorCustomer(source.businessId, client);
+      if (!customerId) return null;
+
+      const draft = buildWorkOrderDraft(source);
+
+      const workOrder = await tx.workOrder.create({
+        data: {
+          businessId: source.businessId,
+          customerId,
+          status: 'PENDING_ASSIGNMENT',
+          priority: draft.priority,
+          issueType: draft.issueType,
+          description: draft.description,
+          address: draft.address,
+          accessNotes: draft.accessNotes,
+          scheduledFor: draft.scheduledFor,
+          createdById: source.createdById,
+        },
+      });
+
+      await tx.booking.update({
+        where: { id: source.bookingId },
+        data: { workOrderId: workOrder.id },
+      });
+
+      return workOrder.id;
+    });
+  } catch (err) {
+    // A unique violation means another caller won the race. That is success,
+    // not failure: the booking has its work order.
+    if (err && typeof err === 'object' && (err as { code?: string }).code === 'P2002') {
       return null;
     }
-
-    const draft = buildWorkOrderDraft(source);
-
-    const workOrder = await prisma.workOrder.create({
-      data: {
-        businessId: source.businessId,
-        customerId,
-        status: 'PENDING_ASSIGNMENT',
-        priority: draft.priority,
-        issueType: draft.issueType,
-        description: draft.description,
-        address: draft.address,
-        accessNotes: draft.accessNotes,
-        scheduledFor: draft.scheduledFor,
-        createdById: source.createdById,
-      },
-    });
-
-    await prisma.booking.update({
-      where: { id: source.bookingId },
-      data: { workOrderId: workOrder.id },
-    });
-
-    await recordWorkOrderAudit({
-      workOrderId: workOrder.id,
-      actorId: source.createdById,
-      action: 'CREATED',
-      after: {
-        id: workOrder.id,
-        priority: draft.priority,
-        issueType: draft.issueType,
-        address: draft.address,
-        sourceBookingId: source.bookingId,
-      },
-      requestId: `booking_${source.bookingId}`,
-    }).catch((err: unknown) => {
-      // The work order exists; a missing audit row should not fail the booking.
-      logger.error('[BookingWorkOrder] audit failed:', err);
-    });
-
-    return workOrder.id;
-  } catch (err) {
-    await prisma.booking
-      .update({ where: { id: source.bookingId }, data: { workOrderId: null } })
-      .catch(() => {});
     throw err;
   }
+}
+
+/**
+ * Write the creation into the append-only audit trail. Deliberately outside the
+ * transaction: the work order exists, and a missing audit row should not undo it.
+ */
+export async function auditWorkOrderCreation(
+  workOrderId: string,
+  source: WorkOrderSource,
+  draft: WorkOrderDraft,
+): Promise<void> {
+  await recordWorkOrderAudit({
+    workOrderId,
+    actorId: source.createdById,
+    action: 'CREATED',
+    after: {
+      id: workOrderId,
+      priority: draft.priority,
+      issueType: draft.issueType,
+      address: draft.address,
+      sourceBookingId: source.bookingId,
+    },
+    requestId: `booking_${source.bookingId}`,
+  }).catch((err: unknown) => {
+    logger.error('[BookingWorkOrder] audit failed:', err);
+  });
 }
 
 /**
