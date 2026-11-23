@@ -192,10 +192,28 @@ app.use('/api/', (req: any, _res: any, next: any) => {
 });
 
 // Health check endpoints
-let lastSchemaCheck: { ok: boolean; checked: number } = { ok: true, checked: 6 };
+let lastSchemaCheck: {
+  ok: boolean;
+  checked: number;
+  missing: string[];
+  notNullable: string[];
+  wrongType: string[];
+} = { ok: true, checked: 6, missing: [], notNullable: [], wrongType: [] };
 
-export function setSchemaCheckStatus(status: { ok: boolean; checked: number }) {
-  lastSchemaCheck = status;
+export function setSchemaCheckStatus(status: {
+  ok: boolean;
+  checked: number;
+  missing?: string[];
+  notNullable?: string[];
+  wrongType?: string[];
+}) {
+  lastSchemaCheck = {
+    ok: status.ok,
+    checked: status.checked,
+    missing: status.missing ?? [],
+    notNullable: status.notNullable ?? [],
+    wrongType: status.wrongType ?? [],
+  };
 }
 
 app.get('/health', (_req, res) => {
@@ -237,6 +255,13 @@ app.get('/health', (_req, res) => {
     schema: {
       ok: lastSchemaCheck.ok,
       checked: lastSchemaCheck.checked,
+      // The counts alone say "something is wrong"; the names say which migration
+      // to run. /health is public, but these are column names and reasons, not
+      // credentials — and an operator who can curl the site can already see it
+      // is broken.
+      missing: lastSchemaCheck.missing,
+      notNullable: lastSchemaCheck.notNullable,
+      wrongType: lastSchemaCheck.wrongType,
     },
     deployVersion: process.env.RENDER_GIT_COMMIT || 'unknown',
     commitSha: process.env.RENDER_GIT_COMMIT || null,
