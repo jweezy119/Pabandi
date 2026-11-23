@@ -204,7 +204,14 @@ export const register = async (
   next: NextFunction
 ) => {
   try {
-    const { email, password, firstName, lastName, phone, role, refCode, code } = req.body;
+    const { email, password, firstName, lastName, phone, role, refCode, code } = req.body ?? {};
+
+    // Without this, an empty body reached `prisma.user.findUnique({ where: {
+    // email: undefined } })` and `isReservedTestDomain(undefined)`, and the
+    // caller got a 500 from a public endpoint instead of a 400.
+    if (!email || !password) {
+      throw new CustomError('Email and password are required', 400);
+    }
 
     if (isReservedTestDomain(email)) {
       return res.status(400).json({
@@ -543,7 +550,13 @@ export const login = async (
   next: NextFunction
   ) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body ?? {};
+
+    // A missing field used to reach Prisma as `email: undefined`, which throws
+    // and surfaced as a 500 on a public endpoint. Validate instead.
+    if (!email || !password) {
+      throw new CustomError('Email and password are required', 400);
+    }
 
     logger.info(`Login controller received email: '${email}'`);
 
@@ -1022,7 +1035,15 @@ export const forgotPassword = async (
   next: NextFunction
 ) => {
   try {
-    const { email } = req.body;
+    const { email } = req.body ?? {};
+    // Same shape as the missing-token case below: answer as if it succeeded, so
+    // a malformed request neither 500s nor reveals anything.
+    if (!email) {
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.',
+      });
+    }
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
