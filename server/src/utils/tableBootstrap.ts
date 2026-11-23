@@ -65,20 +65,52 @@ function statementsFor(fileName: string): { file: string; statements: string[] }
 
 let bootstrapped: Promise<void> | null = null;
 
+/**
+ * Outcome of the last bootstrap attempt, exposed on /health.
+ *
+ * WHY: this bootstrap is the ONLY thing that creates these tables in production,
+ * so when the schema is wrong the question is always "did it run, and did it
+ * work?" — and until now the only answer lived in a deploy log that needs
+ * dashboard access. Three migrations' worth of columns were missing in
+ * production for hours while every check that could be run from outside said
+ * nothing about the bootstrap at all.
+ */
+let lastBootstrap: {
+  ranAt: string;
+  files: Array<{ file: string; statements: number }>;
+  error: string | null;
+} | null = null;
+
+export function getBootstrapStatus() {
+  return lastBootstrap;
+}
+
 export function ensureAgentTables(): Promise<void> {
   if (!bootstrapped) {
     bootstrapped = (async () => {
+      const ranAt = new Date().toISOString();
+      const files: Array<{ file: string; statements: number }> = [];
       let total = 0;
-      for (const fileName of SQL_FILES) {
-        const { statements } = statementsFor(fileName);
-        for (const sql of statements) {
-          await prisma.$executeRawUnsafe(sql);
+      try {
+        for (const fileName of SQL_FILES) {
+          const { statements } = statementsFor(fileName);
+          for (const sql of statements) {
+            await prisma.$executeRawUnsafe(sql);
+          }
+          total += statements.length;
+          files.push({ file: fileName, statements: statements.length });
+          logger.info(`[table-bootstrap] ${fileName} ready (${statements.length} statements)`);
         }
-        total += statements.length;
-        logger.info(`[table-bootstrap] ${fileName} ready (${statements.length} statements)`);
-      }
-      if (total === 0) {
-        throw new Error('no DDL statements found — refusing to report ready');
+        if (total === 0) {
+          throw new Error('no DDL statements found — refusing to report ready');
+        }
+        lastBootstrap = { ranAt, files, error: null };
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        // Record the partial run too: which files succeeded before the failure is
+        // the difference between "did not run" and "ran and broke halfway".
+        lastBootstrap = { ranAt, files, error: message };
+        throw error;
       }
     })().catch((error: unknown) => {
       const message = error instanceof Error ? error.message : String(error);

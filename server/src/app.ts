@@ -13,6 +13,7 @@ import { apiRouter } from './routes/index';
 import mcpRouter from './routes/mcp.routes';
 import wellknownRouter from './routes/wellknown.routes';
 import { getPaidProofByPublicId } from './services/paidProof.service';
+import { getBootstrapStatus } from './utils/tableBootstrap';
 
 // Load environment variables FIRST
 dotenv.config();
@@ -263,6 +264,10 @@ app.get('/health', (_req, res) => {
       notNullable: lastSchemaCheck.notNullable,
       wrongType: lastSchemaCheck.wrongType,
     },
+    // The bootstrap is the ONLY thing that creates these tables in production,
+    // so "did it run, and did it work?" is the first question whenever the schema
+    // check above is red. Without this the answer lived only in the deploy log.
+    bootstrap: getBootstrapStatus(),
     deployVersion: process.env.RENDER_GIT_COMMIT || 'unknown',
     commitSha: process.env.RENDER_GIT_COMMIT || null,
     startedAt: process.env.PABANDI_STARTED_AT || null,

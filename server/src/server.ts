@@ -48,15 +48,29 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
     logger.warn(`TrustCore initialization skipped: ${err?.message ?? err}`);
   }
 
-  // Schema self-check
-  void logSchemaCheck().then((result) => {
-    setSchemaCheckStatus(result);
-  });
-  setInterval(() => {
+  // Table bootstrap FIRST, then the schema self-check.
+  //
+  // Order matters. The bootstrap is what actually creates these tables in
+  // production, so a check that runs before it reports a failure the boot then
+  // fixes — and /health serves that stale failure for up to ten minutes. That is
+  // exactly the window that made a real outage look like a fixed one.
+  setImmediate(async () => {
+    try {
+      const { ensureAgentTables } = await import('./utils/tableBootstrap');
+      await ensureAgentTables();
+    } catch {
+      // Optional — the schema check below reports precisely what is missing.
+    }
+
     void logSchemaCheck().then((result) => {
       setSchemaCheckStatus(result);
     });
-  }, 10 * 60 * 1000).unref();
+    setInterval(() => {
+      void logSchemaCheck().then((result) => {
+        setSchemaCheckStatus(result);
+      });
+    }, 10 * 60 * 1000).unref();
+  });
 
   // Background Crons
   try {
@@ -71,16 +85,6 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
   } catch (err: any) {
     logger.warn(`Cron initialization warning: ${err?.message ?? err}`);
   }
-
-  // Table bootstrap
-  setImmediate(async () => {
-    try {
-      const { ensureAgentTables } = await import('./utils/tableBootstrap');
-      await ensureAgentTables();
-    } catch {
-      // Optional
-    }
-  });
 });
 
 // Graceful shutdown
