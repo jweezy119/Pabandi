@@ -215,6 +215,40 @@ describe('the columns being checked are the ones that matter', () => {
     }
   });
 
+  it('ships every migrated object through the deploy path, not just prisma/migrations', () => {
+    // The deploy path runs server/sql/*.sql (ensure-agent-tables.cjs and
+    // tableBootstrap.ts), NOT `prisma migrate deploy`. Three 20261122 migrations
+    // applied cleanly everywhere and still never reached production because their
+    // objects existed only in the migration folder. This asserts the SQL file that
+    // carries them is registered in BOTH lists, so it cannot drift out again.
+    const fs = require('fs');
+    const path = require('path');
+    const read = (p) => fs.readFileSync(path.join(__dirname, '..', p), 'utf8');
+
+    const hook = read('scripts/ensure-agent-tables.cjs');
+    const boot = read('src/utils/tableBootstrap.ts');
+
+    for (const [name, src] of [
+      ['ensure-agent-tables.cjs', hook],
+      ['tableBootstrap.ts', boot],
+    ]) {
+      expect(src, `${name} must run shipped-migrations.sql`).toContain('shipped-migrations.sql');
+    }
+
+    // And the file must actually carry the objects the check expects.
+    const sql = read('sql/shipped-migrations.sql');
+    for (const object of [
+      '"employeeId"',
+      '"checkedInAt"',
+      '"checkedOutAt"',
+      'dashboardTheme',
+      'SMSLog',
+      'ChannelMessage',
+    ]) {
+      expect(sql, `shipped-migrations.sql must create ${object}`).toContain(object);
+    }
+  });
+
   it('covers the columns the three 20261122 migrations added', () => {
     // These shipped as migrations only, and CI builds its schema with `db push`,
     // so nothing in the pipeline proves they reached production. This check is
