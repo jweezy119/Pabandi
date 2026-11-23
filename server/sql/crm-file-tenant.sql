@@ -17,6 +17,17 @@
 -- prisma/schema.prisma — keep the two in step, and add this filename to SQL_FILES in
 -- ensure-agent-tables.cjs.
 
+CREATE TABLE IF NOT EXISTS "CrmFile" (
+  "id"                TEXT        NOT NULL,
+  "name"              TEXT        NOT NULL,
+  "url"               TEXT        NOT NULL,
+  "clientId"          TEXT,
+  "businessId"        TEXT,
+  "serviceBusinessId" TEXT,
+  "createdAt"         TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "CrmFile_pkey" PRIMARY KEY ("id")
+);
+
 ALTER TABLE "CrmFile" ADD COLUMN IF NOT EXISTS "serviceBusinessId" TEXT;
 ALTER TABLE "CrmFile" ALTER COLUMN "businessId" DROP NOT NULL;
 
