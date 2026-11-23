@@ -31,7 +31,19 @@ services:
     # schema half-moved. Deliberately NOT `migrate dev` or `db push`: both can
     # drop tables, and `db push` would reconcile against the 67-statement
     # divergence between schema.prisma and this database.
-    preDeployCommand: cd server && (npx prisma migrate resolve --rolled-back 20261115_crm_client_table || true) && (npx prisma migrate deploy || echo "WARN: prisma migrate deploy skipped") && (node scripts/ensure-agent-tables.cjs || echo "WARN: ensure-agent-tables skipped")
+    # `migrate deploy` is deliberately NON-blocking - made so in 75b15aab so UI and
+    # app deploys proceed while a database role is pending. Do not make it fail the
+    # deploy without understanding that.
+    #
+    # It is also deliberately NOISY about why. P3009 means a migration is recorded
+    # as FAILED in _prisma_migrations, and Prisma then refuses to apply anything
+    # newer - so every migration after it silently never lands, the deploy still
+    # goes green, and the schema drifts from schema.prisma with nothing but a
+    # one-line WARN to show for it. That is exactly how the three 20261122
+    # migrations failed to reach production while every deploy reported success.
+    # (Validated: the value must stay a YAML plain scalar, so it must not contain
+    # a colon followed by a space anywhere inside it.)
+    preDeployCommand: cd server && (npx prisma migrate resolve --rolled-back 20261115_crm_client_table || true) && (npx prisma migrate deploy || echo "WARN - prisma migrate deploy DID NOT COMPLETE. Migrations added after this point have NOT been applied. If the output above says P3009, a migration is recorded as failed and Prisma will apply nothing newer until it is resolved. Run 'npx prisma migrate status' to name it, then 'npx prisma migrate resolve --rolled-back <migration_name>' if it never applied (or --applied if it did), then redeploy. Verify against the live schema with curl -s https://pabandi.onrender.com/health") && (node scripts/ensure-agent-tables.cjs || echo "WARN - ensure-agent-tables skipped")
     envVars:
       - key: NODE_ENV
         value: production
