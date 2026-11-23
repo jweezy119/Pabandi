@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { rateLimit } from 'express-rate-limit';
 import { authenticate, optionalAuthenticate, AuthRequest } from '../middleware/auth.middleware';
 import { authenticateAgent } from '../middleware/agentAuth.middleware';
 import { optionalAgentAuth } from '../middleware/agentAuth.middleware';
@@ -7,8 +8,21 @@ import { TOOLS } from '../mcp/pabandiMcpServer';
 import { agentTools } from '../services/agentTools.service';
 import { createAgentKey, listAgentKeys, revokeAgentKey } from '../services/agentKeys.service';
 import { getPaidProofByPublicId, listPaidProofsForWorker } from '../services/paidProof.service';
+import { webacyRiskService } from '../services/webacyRisk.service';
 
 const router = Router();
+
+// Strict rate limit for public wallet screening to protect Webacy free-tier API quota.
+const walletScreenRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: 'Too many wallet screening requests. Rate limit exceeded (30 req/min).',
+  },
+});
 
 router.get('/tools', (_req: Request, res: Response) => {
   res.json({
@@ -119,6 +133,25 @@ router.post('/bookings/:id/refund', authenticateAgent, requireScopes('booking'),
 router.post('/passport/verify', async (req: Request, res: Response) => {
   try {
     const result = await agentTools.verifyPassportProof(req.body || {});
+    res.json({ success: true, data: result });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+router.post('/wallet/screen', walletScreenRateLimiter, async (req: Request, res: Response) => {
+  try {
+    const walletAddress = String(req.body?.walletAddress || '');
+    const result = await webacyRiskService.screenSolanaWallet(walletAddress);
+    res.json({ success: true, data: result });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+router.get('/wallet/screen/:walletAddress', walletScreenRateLimiter, async (req: Request, res: Response) => {
+  try {
+    const result = await webacyRiskService.screenSolanaWallet(req.params.walletAddress);
     res.json({ success: true, data: result });
   } catch (error: any) {
     res.status(400).json({ success: false, error: error.message });

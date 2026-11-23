@@ -125,6 +125,22 @@ export const TOOLS: McpTool[] = [
     },
   },
   {
+    name: 'pabandi_screen_wallet',
+    description:
+      'Screen a Solana wallet address for on-chain threat score, drainer activity, and sanctions risk via Webacy Risk Intelligence before funding escrow.',
+    requiresAuth: false,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        walletAddress: {
+          type: 'string',
+          description: 'Base58-encoded Solana wallet address to screen.',
+        },
+      },
+      required: ['walletAddress'],
+    },
+  },
+  {
     name: 'pabandi_request_payout',
     description: 'Request a USDC payout to a local rail, bank, or connected account. Requires authentication.',
     requiresAuth: true,
@@ -184,7 +200,7 @@ export function initializeResult(clientProtocolVersion?: string) {
       'Authenticate with Authorization: Bearer <JWT> or x-api-key: <pab_live_...>. ' +
       'Use pabandi_list_businesses and pabandi_get_business to find supply, ' +
       'pabandi_create_booking to reserve, pabandi_mark_checkin to record verified attendance, ' +
-      'pabandi_release_escrow only after completion, and pabandi_verify_passport to check trust. ' +
+      'pabandi_release_escrow only after completion, pabandi_verify_passport to check behavioral trust, and pabandi_screen_wallet to check on-chain Solana wallet risk via Webacy. ' +
       'Money-moving tools require a Bearer JWT from /api/v1/auth/login. Never report simulated escrow as settled.',
   };
 }

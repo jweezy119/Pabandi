@@ -16,6 +16,17 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { COLD_START_SCORE, clampReliabilityScore } from '../config/trust-weights';
+import { webacyRiskService, type WebacyWalletRiskResult } from './webacyRisk.service';
+
+async function safeScreenPassportWallet(walletAddress?: string | null): Promise<WebacyWalletRiskResult | null> {
+  if (!walletAddress || !walletAddress.trim()) return null;
+  try {
+    return await webacyRiskService.screenSolanaWallet(walletAddress);
+  } catch (err: any) {
+    logger.debug?.(`[TrustPassport] Skipping on-chain wallet screen for "${walletAddress}": ${err?.message || err}`);
+    return null;
+  }
+}
 
 export class TrustPassportService {
   /** Create / update a passport for a provider. */
@@ -135,6 +146,7 @@ export class TrustPassportService {
         // Neutral baseline = 70. Each completed escrow adds +2 (capped at +25), + clean dispute record.
         const dynamicScore = Math.min(99, Math.max(70, 70 + Math.min(totalEscrows * 2, 25)));
         const trustBand = dynamicScore >= 85 ? 'TIER_1_TOP' : dynamicScore >= 75 ? 'TIER_2_PROVEN' : 'TIER_3_NEUTRAL';
+        const onchainRisk = await safeScreenPassportWallet(user.walletAddress);
 
         return {
           public: true,
@@ -162,12 +174,18 @@ export class TrustPassportService {
             tamperProof: true,
             timestamp: new Date().toISOString(),
           },
-          backgroundCheck: {
-            recommendation: 'VERIFIED_CLEAR',
-            riskScore: 0,
-            riskBand: 'LOW',
-            completedAt: new Date().toISOString(),
-          },
+          onchainRisk,
+          backgroundCheck:
+            onchainRisk && onchainRisk.status === 'ok'
+              ? {
+                  provider: 'webacy',
+                  recommendation: onchainRisk.blocked ? 'FLAGGED_HIGH_RISK' : 'VERIFIED_CLEAR',
+                  riskScore: onchainRisk.overallRisk,
+                  riskBand: onchainRisk.riskBand,
+                  isSanctioned: onchainRisk.isSanctioned,
+                  completedAt: onchainRisk.checkedAt,
+                }
+              : null,
           protections: {
             activeDeposits: totalEscrows > 0 ? 1 : 0,
             totalDepositsUSD: totalEscrows * 50,
@@ -229,6 +247,7 @@ export class TrustPassportService {
 
     // Increment claims count (someone looked) and capture the new value
     const updated = await prisma.trustPassport.update({ where: { id: p.id }, data: { claimsCount: { increment: 1 } } });
+    const onchainRisk = await safeScreenPassportWallet(p.walletAddress);
 
     return {
       public: true,
@@ -255,6 +274,7 @@ export class TrustPassportService {
         // passport tier table. There is no observed behaviour behind this
         // number at all, so it is the cold-start baseline — neutral, and true.
         : { trustBand: 'D', trustVelocity: 0, reliabilityScore: COLD_START_SCORE, profileCompleteness: 0.5 },
+      onchainRisk,
       backgroundCheck: bc
         ? {
             recommendation: bc.recommendation,
@@ -262,7 +282,16 @@ export class TrustPassportService {
             riskBand: bc.riskBand,
             completedAt: bc.completedAt,
           }
-        : null,
+        : onchainRisk && onchainRisk.status === 'ok'
+          ? {
+              provider: 'webacy',
+              recommendation: onchainRisk.blocked ? 'FLAGGED_HIGH_RISK' : 'VERIFIED_CLEAR',
+              riskScore: onchainRisk.overallRisk,
+              riskBand: onchainRisk.riskBand,
+              isSanctioned: onchainRisk.isSanctioned,
+              completedAt: onchainRisk.checkedAt,
+            }
+          : null,
       protections: {
         activeDeposits: deposits.length,
         totalDepositsUSD,

@@ -13,6 +13,7 @@ import {
 import * as anchor from '@coral-xyz/anchor';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { webacyRiskService } from './webacyRisk.service';
 import IDL from '../utils/pabandi_escrow.json';
 
 const SOLANA_CLUSTER = (process.env.SOLANA_CLUSTER || 'devnet').toLowerCase();
@@ -157,6 +158,10 @@ export const solanaEscrowService = {
     if (!user) {
       throw new Error(`Oracle user not registered for wallet: ${customerWallet}`);
     }
+
+    // Screen customer wallet via Webacy Risk Intelligence before co-signing escrow.
+    // Hard-blocks sanctioned or critical-risk wallets; fails open with warning on free-tier 429/timeout.
+    await webacyRiskService.assertSolanaWalletSafeForEscrow(customerWallet);
 
     // Co-sign as the Tier 1 Attestation Oracle
     transaction.sign([oracleKeypair]);

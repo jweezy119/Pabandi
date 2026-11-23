@@ -9,6 +9,7 @@ export const TOOL_SCOPES: Record<string, string[]> = {
   pabandi_release_escrow: ['booking'],
   pabandi_refund_booking: ['booking'],
   pabandi_verify_passport: ['trust'],
+  pabandi_screen_wallet: ['trust'],
   pabandi_request_payout: ['payout'],
   pabandi_get_payout_history: ['payout'],
   pabandi_get_paid_proof: ['proof'],

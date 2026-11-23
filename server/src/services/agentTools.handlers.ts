@@ -1,5 +1,6 @@
 import { AgentToolUser, agentTools } from './agentTools.service';
 import { getPaidProofByPublicId, listPaidProofsForWorker } from './paidProof.service';
+import { webacyRiskService } from './webacyRisk.service';
 
 type Handler = (args: any, user?: AgentToolUser) => Promise<any>;
 
@@ -30,6 +31,7 @@ export const agentToolHandlers: Record<string, Handler> = {
       audienceBusinessId: args.audienceBusinessId,
       threshold: args.threshold,
     }),
+  pabandi_screen_wallet: (args) => webacyRiskService.screenSolanaWallet(String(args.walletAddress || '')),
   pabandi_request_payout: (args, user) =>
     agentTools.requestPayoutForAgent(user as AgentToolUser, {
       amountUsdc: Number(args.amountUsdc),
