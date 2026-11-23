@@ -42,27 +42,6 @@ CREATE INDEX IF NOT EXISTS "Booking_employeeId_slotStart_idx" ON "Booking"("empl
 -- converted column must be a no-op, and the USING clause reads through ::text so
 -- it converges rather than double-encoding if it ever does run twice.
 
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = current_schema()
-      AND table_name = 'BusinessSettings'
-      AND column_name = 'dashboardTheme'
-      AND data_type <> 'jsonb'
-  ) THEN
-    ALTER TABLE "BusinessSettings"
-      ALTER COLUMN "dashboardTheme" TYPE JSONB
-      USING CASE
-        WHEN "dashboardTheme" IS NULL THEN NULL::jsonb
-        WHEN btrim("dashboardTheme"::text) IN ('', 'null', '"null"') THEN NULL::jsonb
-        WHEN btrim("dashboardTheme"::text) ~ '^[[:space:]]*[{\[]' THEN btrim("dashboardTheme"::text)::jsonb
-        ELSE to_jsonb(btrim(btrim("dashboardTheme"::text), '"'))
-      END;
-  END IF;
-END
-$$;
-
 -- ── 20261122_sms_models ───────────────────────────────────────────────────────
 -- SMSLog and ChannelMessage. (MerchantSubscription and BusinessSmsProvider come
 -- from fee-tables.sql and sms-provider-tables.sql.)
@@ -122,6 +101,32 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ChannelMessage_businessId_fkey') THEN
     ALTER TABLE "ChannelMessage" ADD CONSTRAINT "ChannelMessage_businessId_fkey"
       FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END
+$$;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = current_schema()
+      AND table_name = 'BusinessSettings'
+      AND column_name = 'dashboardTheme'
+      AND data_type <> 'jsonb'
+  ) THEN
+    -- The old column carried a TEXT default ('light'). PostgreSQL refuses to
+    -- change the type while a default of the old type is attached —
+    -- "default for column cannot be cast automatically to type jsonb" — so it has
+    -- to go first. The USING clause below is what actually converts the values.
+    ALTER TABLE "BusinessSettings" ALTER COLUMN "dashboardTheme" DROP DEFAULT;
+    ALTER TABLE "BusinessSettings"
+      ALTER COLUMN "dashboardTheme" TYPE JSONB
+      USING CASE
+        WHEN "dashboardTheme" IS NULL THEN NULL::jsonb
+        WHEN btrim("dashboardTheme"::text) IN ('', 'null', '"null"') THEN NULL::jsonb
+        WHEN btrim("dashboardTheme"::text) ~ '^[[:space:]]*[{\[]' THEN btrim("dashboardTheme"::text)::jsonb
+        ELSE to_jsonb(btrim(btrim("dashboardTheme"::text), '"'))
+      END;
   END IF;
 END
 $$;
