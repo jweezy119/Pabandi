@@ -197,6 +197,21 @@ describe('email code login', () => {
     expect(after?.accountLockedUntil).toBeNull();
   });
 
+  it('answers 400 rather than 500 when required fields are missing', async () => {
+    // All three of these returned a bare 500 in production on an empty body:
+    // the missing value reached Prisma as `email: undefined`, which throws.
+    for (const path of ['/api/v1/auth/register', '/api/v1/auth/login']) {
+      const res = await api('POST', path, {});
+      expect(res.status, `${path}: ${JSON.stringify(res.json)}`).toBe(400);
+    }
+
+    // forgot-password deliberately answers as though it succeeded, so a
+    // malformed request neither 500s nor reveals whether the address exists.
+    const forgot = await api('POST', '/api/v1/auth/forgot-password', {});
+    expect(forgot.status).toBe(200);
+    expect(String(forgot.json?.message)).toMatch(/reset link/i);
+  });
+
   it('refuses to say whether a code is valid for an email with no code', async () => {
     const email = `nocode${MARKER}`;
     await api('POST', '/api/v1/auth/request-code', { email });
