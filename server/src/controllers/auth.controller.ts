@@ -835,7 +835,7 @@ export const requestLoginCode = async (
       }
     }
 
-    res.json({ success: true, message: 'Code sent', isNewUser });
+    res.json({ success: true, message: 'Code sent' });
   } catch (error) {
     next(error);
   }
@@ -872,14 +872,39 @@ export const verifyLoginCode = async (
       return res.status(400).json({ success: false, message: 'Code expired. Please request a new one.' });
     }
 
+    // Same account lockout as the password path. Without this the code is a
+    // 6-digit secret with only a per-IP limiter in front of it, which a
+    // distributed attacker walks around; a per-account lockout is what makes
+    // guessing infeasible.
+    if (user.accountLockedUntil && user.accountLockedUntil > new Date()) {
+      throw new CustomError(
+        'Account is temporarily locked due to multiple failed login attempts. Please try again later.',
+        403,
+      );
+    }
+
     if (code !== user.verificationCode) {
-      return res.status(400).json({ success: false, message: 'Invalid code' });
+      const failedAttempts = (user.failedLoginAttempts || 0) + 1;
+      const lock = failedAttempts >= 5 ? new Date(Date.now() + 15 * 60 * 1000) : null;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { failedLoginAttempts: failedAttempts, accountLockedUntil: lock },
+      });
+      throw new CustomError('Invalid code', 400);
     }
 
     // Clear the verification code
     await prisma.user.update({
       where: { id: user.id },
-      data: { verificationCode: null, verificationCodeExpires: null, isEmailVerified: true },
+      data: {
+        verificationCode: null,
+        verificationCodeExpires: null,
+        isEmailVerified: true,
+        // A successful login clears the guess counter, so a lockout is a
+        // 15-minute penalty rather than a permanent trap.
+        failedLoginAttempts: 0,
+        accountLockedUntil: null,
+      },
     });
 
     const codeBusinessId = (user.business as { id?: string } | null)?.id ?? null;
