@@ -50,11 +50,11 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
 
   // Schema self-check
   void logSchemaCheck().then((result) => {
-    setSchemaCheckStatus({ ok: result.ok, checked: result.checked });
+    setSchemaCheckStatus(result);
   });
   setInterval(() => {
     void logSchemaCheck().then((result) => {
-      setSchemaCheckStatus({ ok: result.ok, checked: result.checked });
+      setSchemaCheckStatus(result);
     });
   }, 10 * 60 * 1000).unref();
 
