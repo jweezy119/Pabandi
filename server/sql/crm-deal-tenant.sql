@@ -22,6 +22,44 @@
 -- prisma/schema.prisma — keep the two in step, and add this filename to SQL_FILES in
 -- ensure-agent-tables.cjs.
 
+-- The table itself is created here too, guarded. This file has always assumed
+-- CrmDeal exists, and in production it does not: the deploy path never ran
+-- anything that created it, so every ALTER below failed with 42P01 and — because
+-- the bootstrap used to abort on the first failing file — every file after this
+-- one silently never ran either. Creating it makes this file self-sufficient.
+CREATE TABLE IF NOT EXISTS "CrmDeal" (
+  "id"                TEXT        NOT NULL,
+  "title"             TEXT        NOT NULL,
+  "value"             DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "currency"          TEXT        NOT NULL DEFAULT 'USD',
+  "stage"             TEXT        NOT NULL DEFAULT 'LEAD',
+  "probability"       INTEGER     NOT NULL DEFAULT 10,
+  "expectedCloseDate" TIMESTAMP(3),
+  "closedAt"          TIMESTAMP(3),
+  "lostReason"        TEXT,
+  "notes"             TEXT,
+  "clientId"          TEXT,
+  "ownerName"         TEXT,
+  "businessId"        TEXT,
+  "serviceBusinessId" TEXT,
+  "createdAt"         TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt"         TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "CrmDeal_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE IF NOT EXISTS "CrmActivity" (
+  "id"                TEXT        NOT NULL,
+  "type"              TEXT        NOT NULL DEFAULT 'NOTE',
+  "description"       TEXT,
+  "clientId"          TEXT,
+  "dealId"            TEXT,
+  "businessId"        TEXT,
+  "serviceBusinessId" TEXT,
+  "createdAt"         TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt"         TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "CrmActivity_pkey" PRIMARY KEY ("id")
+);
+
 ALTER TABLE "CrmDeal" ADD COLUMN IF NOT EXISTS "serviceBusinessId" TEXT;
 
 -- CrmDeal.businessId is relaxed to nullable for the same reason: a deal created in
