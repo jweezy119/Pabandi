@@ -121,13 +121,34 @@ function statementsFor(fileName) {
 }
 
 async function main() {
+  let firstError = null;
+
   for (const fileName of SQL_FILES) {
-    const stmts = statementsFor(fileName);
-    for (const sql of stmts) {
-      await prisma.$executeRawUnsafe(sql);
-      console.log(`ok: ${sql.split('\n')[0].slice(0, 64)}`);
+    try {
+      const stmts = statementsFor(fileName);
+      for (const sql of stmts) {
+        await prisma.$executeRawUnsafe(sql);
+        console.log(`ok: ${sql.split('\n')[0].slice(0, 64)}`);
+      }
+      console.log(`${fileName} ensured (${stmts.length} statements)`);
+    } catch (err) {
+      // ONE FILE MUST NOT ABORT THE REST.
+      //
+      // This loop used to let a throw escape to main().catch, which exits the
+      // process — so a single divergent table name in the fifth file meant files
+      // six onward never ran. Same failure, same consequence, as the runtime
+      // bootstrap: shipped-migrations.sql sat unexecuted through several deploys
+      // while every deploy still reported success.
+      if (!firstError) firstError = err.message;
+      console.error(`${fileName} FAILED: ${err.message}`);
     }
-    console.log(`${fileName} ensured (${stmts.length} statements)`);
+  }
+
+  if (firstError) {
+    // Non-zero, because something genuinely did not apply — but only AFTER the
+    // remaining files have had their chance.
+    console.error(`ensure-agent-tables finished with failures: ${firstError}`);
+    process.exitCode = 1;
   }
   console.log('all raw-SQL tables ensured');
 }

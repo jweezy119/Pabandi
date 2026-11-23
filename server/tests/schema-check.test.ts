@@ -249,6 +249,33 @@ describe('the columns being checked are the ones that matter', () => {
     }
   });
 
+  it('no single SQL file can strand the ones after it', () => {
+    // The bootstrap used to abort on the first failing file. crm-deal-tenant.sql
+    // failed in production (its table did not exist), so every file after it —
+    // including shipped-migrations.sql — silently never ran across several
+    // deploys. Two properties now prevent a repeat:
+    //   1. each bootstrap isolates a failing file and continues;
+    //   2. crm-deal-tenant.sql creates its own tables, so it cannot be the one
+    //      that breaks the chain.
+    const fs = require('fs');
+    const path = require('path');
+    const read = (p) => fs.readFileSync(path.join(__dirname, '..', p), 'utf8');
+
+    const boot = read('src/utils/tableBootstrap.ts');
+    const hook = read('scripts/ensure-agent-tables.cjs');
+    for (const [name, src] of [
+      ['tableBootstrap.ts', boot],
+      ['ensure-agent-tables.cjs', hook],
+    ]) {
+      expect(src, `${name} must isolate a failing file`).toMatch(/catch\s*\(/);
+      expect(src, `${name} must report the failing file`).toMatch(/FAILED/);
+    }
+
+    const deals = read('sql/crm-deal-tenant.sql');
+    expect(deals).toContain('CREATE TABLE IF NOT EXISTS "CrmDeal"');
+    expect(deals).toContain('CREATE TABLE IF NOT EXISTS "CrmActivity"');
+  });
+
   it('covers the columns the three 20261122 migrations added', () => {
     // These shipped as migrations only, and CI builds its schema with `db push`,
     // so nothing in the pipeline proves they reached production. This check is

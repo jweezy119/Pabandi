@@ -75,9 +75,11 @@ let bootstrapped: Promise<void> | null = null;
  * production for hours while every check that could be run from outside said
  * nothing about the bootstrap at all.
  */
+type BootstrapFile = { file: string; statements: number; error?: string };
+
 let lastBootstrap: {
   ranAt: string;
-  files: Array<{ file: string; statements: number }>;
+  files: BootstrapFile[];
   error: string | null;
 } | null = null;
 
@@ -89,10 +91,12 @@ export function ensureAgentTables(): Promise<void> {
   if (!bootstrapped) {
     bootstrapped = (async () => {
       const ranAt = new Date().toISOString();
-      const files: Array<{ file: string; statements: number }> = [];
+      const files: BootstrapFile[] = [];
       let total = 0;
-      try {
-        for (const fileName of SQL_FILES) {
+      let firstError: string | null = null;
+
+      for (const fileName of SQL_FILES) {
+        try {
           const { statements } = statementsFor(fileName);
           for (const sql of statements) {
             await prisma.$executeRawUnsafe(sql);
@@ -100,17 +104,33 @@ export function ensureAgentTables(): Promise<void> {
           total += statements.length;
           files.push({ file: fileName, statements: statements.length });
           logger.info(`[table-bootstrap] ${fileName} ready (${statements.length} statements)`);
+        } catch (error: unknown) {
+          // ONE FILE MUST NOT ABORT THE REST.
+          //
+          // This loop used to let a throw escape, and the caller caught it and
+          // stopped — so a single divergent table name in the fifth file meant
+          // files six through eleven never ran. That is exactly how
+          // shipped-migrations.sql (the file carrying the 20261122 migrations)
+          // sat unexecuted in production through several deploys while
+          // /health reported the schema as merely "missing columns".
+          const message = error instanceof Error ? error.message : String(error);
+          files.push({ file: fileName, statements: 0, error: message });
+          if (!firstError) firstError = message;
+          logger.error(`[table-bootstrap] ${fileName} FAILED: ${message}`);
         }
-        if (total === 0) {
-          throw new Error('no DDL statements found — refusing to report ready');
-        }
-        lastBootstrap = { ranAt, files, error: null };
-      } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : String(error);
-        // Record the partial run too: which files succeeded before the failure is
-        // the difference between "did not run" and "ran and broke halfway".
-        lastBootstrap = { ranAt, files, error: message };
-        throw error;
+      }
+
+      lastBootstrap = { ranAt, files, error: firstError };
+
+      if (total === 0) {
+        throw new Error('no DDL statements found — refusing to report ready');
+      }
+      // Resolve, not reject: the per-file outcomes are the result. A rejected
+      // promise would make callers treat the whole bootstrap as skipped.
+      if (firstError) {
+        logger.warn(
+          `[table-bootstrap] finished with failures — ${files.filter((f) => f.error).length} of ${files.length} files did not apply.`,
+        );
       }
     })().catch((error: unknown) => {
       const message = error instanceof Error ? error.message : String(error);
