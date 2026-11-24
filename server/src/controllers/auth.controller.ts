@@ -1674,15 +1674,15 @@ export const completeOnboarding = async (
     if (profileType === 'SOLO_BUILDER') {
       updateData.role = UserRole.FREELANCER;
       updateData.preferredMode = 'personal';
-      updateData.activeMode = UserRole.CUSTOMER;
+      updateData.activeMode = 'FREELANCER';
     } else if (profileType === 'CLIENT') {
       updateData.role = UserRole.CUSTOMER;
       updateData.preferredMode = 'personal';
-      updateData.activeMode = UserRole.CUSTOMER;
+      updateData.activeMode = 'CUSTOMER';
     } else if (profileType === 'SERVICE_BUSINESS') {
       updateData.role = UserRole.BUSINESS_OWNER;
       updateData.preferredMode = 'business';
-      updateData.activeMode = UserRole.BUSINESS_OWNER;
+      updateData.activeMode = 'BUSINESS';
 
       if (businessName) {
         const category = resolveCategoryFromVertical(industry || 'commercial');
