@@ -37,6 +37,7 @@ const SQL_FILES = [
   'crm-file-tenant.sql',
   'service-coordinator.sql',
   'crm-task-tenant.sql',
+  'crm-outreach-tenant.sql',
   'shipped-migrations.sql',
 ];
 const SQL_DIR_CANDIDATES = [

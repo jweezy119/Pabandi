@@ -292,4 +292,35 @@ describe('the columns being checked are the ones that matter', () => {
       ]),
     );
   });
+
+  it('covers the outreach consent columns that POST /crm/clients writes', () => {
+    // Found on the live site, not in review: creating a client failed with
+    // "The column `marketingOptIn` does not exist in the current database" while
+    // /health reported ok:true. The column shipped as a migration only, and
+    // EXPECTED_COLUMNS had no entry for it, so nothing objected. Adding a client
+    // is the first step of the revenue journey, so it is now asserted twice:
+    // once by the runtime check, once by the deploy path.
+    const fs = require('fs');
+    const path = require('path');
+    const read = (p) => fs.readFileSync(path.join(__dirname, '..', p), 'utf8');
+
+    const keys = EXPECTED_COLUMNS.map((c) => `${c.table}.${c.column}`);
+    expect(keys).toEqual(
+      expect.arrayContaining(['crm_clients.marketingOptIn', 'crm_clients.marketingOptInAt']),
+    );
+
+    // The mapped name, not the model name. CrmClient carries @@map("crm_clients"),
+    // so information_schema never reports "CrmClient" and an ALTER against it
+    // fails with 42P01 everywhere Prisma built the schema.
+    const sql = read('sql/crm-outreach-tenant.sql');
+    expect(sql).toContain('"crm_clients"');
+    expect(sql).not.toContain('ALTER TABLE "CrmClient"');
+
+    for (const [name, src] of [
+      ['ensure-agent-tables.cjs', read('scripts/ensure-agent-tables.cjs')],
+      ['tableBootstrap.ts', read('src/utils/tableBootstrap.ts')],
+    ]) {
+      expect(src, `${name} must run crm-outreach-tenant.sql`).toContain('crm-outreach-tenant.sql');
+    }
+  });
 });

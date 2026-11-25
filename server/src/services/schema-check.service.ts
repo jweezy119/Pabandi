@@ -157,6 +157,25 @@ export const EXPECTED_COLUMNS: ExpectedColumn[] = [
     column: 'businessId',
     purpose: 'unified inbox message mirror',
   },
+
+  // 20261121_outreach. Client creation 500'd on production with "The column
+  // `marketingOptIn` does not exist" while /health reported ok:true — this list
+  // did not include them, so the runtime check had no opinion about them. Adding
+  // client is the first step of the revenue journey, so its columns are worth
+  // asserting, not just its existence.
+  {
+    // The mapped name, not the model name: information_schema reports what
+    // @@map produced, so "CrmClient" here would read as missing on every database.
+    table: 'crm_clients',
+    column: 'marketingOptIn',
+    purpose: 'outreach consent: POST /crm/clients writes it on every create',
+  },
+  {
+    table: 'crm_clients',
+    column: 'marketingOptInAt',
+    nullable: true,
+    purpose: 'outreach consent timestamp: when consent was recorded',
+  },
 ];
 
 export interface SchemaCheckResult {

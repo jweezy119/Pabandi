@@ -1,0 +1,34 @@
+-- CrmClient marketing opt-in — added by prisma/migrations/20261121_outreach.
+--
+-- WHY THIS FILE EXISTS
+-- `POST /api/v1/crm/clients` failed on production with:
+--
+--   Invalid `prisma.crmClient.create()` invocation:
+--   The column `marketingOptIn` does not exist in the current database.
+--
+-- which means a business owner could not add their first client — the step every
+-- invoice and payment depends on. The column was added to schema.prisma and to a
+-- migration, but nothing in the deploy path applies migrations: Render's
+-- preDeployCommand runs ensure-agent-tables.cjs over server/sql/*.sql, and
+-- tableBootstrap.ts runs the same files at boot. A migration alone never lands.
+--
+-- It also survived `/health`, which reported `schema.ok: true`. EXPECTED_COLUMNS
+-- in schema-check.service.ts is hand-maintained and did not include these two
+-- columns, so the runtime check had no opinion about them. They are listed there
+-- now; this file is the other half.
+--
+-- Idempotent, safe on every deploy and every boot. Mirrors CrmClient in
+-- prisma/schema.prisma — keep the two in step.
+--
+-- The table is `crm_clients`, not "CrmClient": the model carries
+-- @@map("crm_clients"), and information_schema reports the mapped name. An ALTER
+-- against "CrmClient" fails with 42P01 on a database where the table was created
+-- by Prisma — which is every database this project has.
+--
+-- marketingOptIn is NOT NULL with a default, so existing rows backfill to true
+-- (opted in) rather than null: a null here reads as "unknown", and outreach code
+-- treats unknown as do-not-contact. Flipping the default would silently suppress
+-- contact with every existing client.
+
+ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "marketingOptIn" BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "marketingOptInAt" TIMESTAMP(3);
