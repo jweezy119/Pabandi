@@ -219,13 +219,14 @@ export default function DashboardLayout({
   }, [navItems.length, osName, reducedMotion]);
 
   return (
-    <div className="h-dvh-shell flex overflow-hidden" style={{ background: 'var(--atmosphere)' }}>
+    <div className="pg-dashboard h-dvh-shell flex overflow-hidden relative">
+      <div className="pg-grid-bg" style={{ opacity: 0.45 }} aria-hidden="true" />
       {/* Mobile overlay */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
             className="fixed inset-0 z-40 lg:hidden"
-            style={{ backgroundColor: 'rgba(42, 37, 32, 0.25)', backdropFilter: 'blur(4px)' }}
+            style={{ backgroundColor: 'rgba(7, 9, 18, 0.6)', backdropFilter: 'blur(6px)' }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -236,18 +237,20 @@ export default function DashboardLayout({
         )}
       </AnimatePresence>
 
-      {/* ─── Sidebar — lifted off content with warm shadow ────────── */}
+      {/* ─── Sidebar — frosted translucent dark glass ─────────────── */}
       <aside
-        className={`fixed inset-y-0 left-0 lg:static z-50 w-64 h-full flex flex-col safe-area-top safe-area-bottom transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${
+        className={`fixed inset-y-0 left-0 lg:static z-50 w-[82vw] max-w-[300px] lg:w-64 h-full flex flex-col safe-area-top safe-area-bottom transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
         style={{
-          background: 'var(--warm-sand)',
-          boxShadow: 'var(--shadow-sidebar)',
+          background: 'rgba(10, 14, 28, 0.88)',
+          backdropFilter: 'blur(22px) saturate(150%)',
+          WebkitBackdropFilter: 'blur(22px) saturate(150%)',
+          borderRight: '1px solid rgba(255, 255, 255, 0.08)',
         }}
       >
         {/* Brand */}
-        <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid rgba(191,179,163,0.2)' }}>
+        <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
           <Link to={osRoot} className="flex items-center gap-3">
             <div
               className={`w-10 h-10 rounded-xl ${colors.icon} flex items-center justify-center text-[var(--warm-ink)] font-bold text-lg`}
@@ -459,8 +462,8 @@ export default function DashboardLayout({
           <div
             className="rounded-2xl p-4"
             style={{
-              background: 'rgba(255, 255, 255, 0.5)',
-              boxShadow: '0 1px 4px rgba(180, 130, 90, 0.06)',
+              background: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
             }}
           >
             <div style={{ fontSize: '11px', color: 'var(--soft-stone)', fontFamily: 'var(--font-label)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -477,21 +480,37 @@ export default function DashboardLayout({
       </aside>
 
       {/* ─── Main content ─────────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+      <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative z-10">
         {/* Mobile header */}
-        <div className="lg:hidden flex-none sticky top-0 z-30 safe-area-top flex items-center justify-between px-4 py-3 bg-[var(--warm-sand)]/92 backdrop-blur-xl border-b border-[rgba(191,179,163,0.25)]">
+        <div
+          className="lg:hidden flex-none sticky top-0 z-30 safe-area-top flex items-center justify-between px-4 py-3"
+          style={{
+            background: 'rgba(10, 14, 28, 0.86)',
+            backdropFilter: 'blur(18px)',
+            WebkitBackdropFilter: 'blur(18px)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          }}
+        >
           <div className="flex items-center gap-3 min-w-0">
-            <div className={`w-8 h-8 rounded-lg ${colors.icon} flex items-center justify-center text-[var(--warm-ink)] font-bold text-sm shrink-0`}>
+            <div className={`w-8 h-8 rounded-lg ${colors.icon} flex items-center justify-center text-[#1a0f0a] font-bold text-sm shrink-0`}>
               {osIcon}
             </div>
             <h1 className="text-base font-bold text-[var(--warm-ink)] truncate">{osName}</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={openPalette}
+              className="w-10 h-10 flex items-center justify-center text-[var(--soft-stone)] hover:text-[var(--warm-ink)] hover:bg-white/10 rounded-xl"
+              aria-label="Quick search"
+            >
+              <span className="material-symbols-outlined text-[20px]">search</span>
+            </button>
             <ThemeToggle />
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => setSidebarOpen(true)}
-              className="p-2 -mr-2 text-[var(--soft-stone)] hover:bg-[rgba(232,217,197,0.5)] rounded-xl touch-target flex items-center justify-center"
+              className="p-2 -mr-2 text-[var(--soft-stone)] hover:bg-white/10 rounded-xl touch-target flex items-center justify-center"
               aria-label="Open sidebar"
             >
               <span className="material-symbols-outlined">menu</span>
@@ -511,10 +530,10 @@ export default function DashboardLayout({
           className="lg:hidden fixed bottom-0 inset-x-0 z-40 safe-area-bottom"
           style={{
             height: 'var(--pab-mobile-nav-height)',
-            background: 'rgba(232, 217, 197, 0.94)',
-            backdropFilter: 'blur(16px)',
-            borderTop: '1px solid rgba(191, 179, 163, 0.25)',
-            boxShadow: '0 -4px 16px rgba(180, 130, 90, 0.08)',
+            background: 'rgba(10, 14, 28, 0.92)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
           }}
         >
           <div className="flex h-full items-center overflow-x-auto no-scrollbar px-1">

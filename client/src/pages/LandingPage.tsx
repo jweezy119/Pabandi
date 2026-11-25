@@ -1,12 +1,19 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Building2, UserCheck, Bot, Tag } from 'lucide-react';
 import { GUARANTEE_STEPS } from '../components/GuaranteeVisuals';
-import { useAuthStore } from '../store/authStore';
-import { useLanguage } from '../context/LanguageContext';
 import { LiveEscrowPreview } from '../components/landing/LiveEscrowPreview';
-import { apiClient } from '../services/api';
+import { apiClient, API_HOST } from '../services/api';
+import GlassNavHeader, { type GlassNavLink } from '../components/GlassNavHeader';
+import './LandingGlass.css';
+
+const LANDING_NAV_LINKS: GlassNavLink[] = [
+  { label: 'Products', to: '#products', isAnchor: true },
+  { label: 'Developers', to: '#quickstart', isAnchor: true },
+  { label: 'Businesses', to: '/contact' },
+  { label: 'Pricing', to: '/pricing' },
+  { label: 'Help', to: '#faq', isAnchor: true },
+];
 
 interface PublicStats {
   businesses: number;
@@ -15,181 +22,310 @@ interface PublicStats {
   updatedAt?: string;
 }
 
-const TRUST_SIGNALS = [
-  { number: '100%', label: 'Escrow-backed', detail: 'Funds held securely until service delivered' },
-  { number: '$PAB', label: 'Reward token', detail: 'Earn for every verified milestone' },
-  { number: 'Portable', label: 'Trust Passport', detail: 'Your reputation travels across platforms' },
-];
-
-const HOW_IT_WORKS = GUARANTEE_STEPS.map((s) => ({
-  step: s.n,
-  title: s.title,
-  desc: s.body,
-}));
-
-function useScrollReveal() {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
-  return { ref, isVisible };
-}
-
-function ScrollReveal({ children, className = '', delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
-  const { ref, isVisible } = useScrollReveal();
-  return (
-    <div
-      ref={ref}
-      className={`scroll-reveal ${isVisible ? 'is-visible' : ''} ${className}`}
-      style={{ transitionDelay: `${delay}ms` }}
-    >
-      {children}
-    </div>
-  );
-}
-
-function CursorTrail() {
-  const [pos, setPos] = useState({ x: -100, y: -100 });
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const handleMove = (e: MouseEvent) => {
-      setPos({ x: e.clientX, y: e.clientY });
-      setVisible(true);
-    };
-    const handleLeave = () => setVisible(false);
-
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseleave', handleLeave);
-    return () => {
-      window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('mouseleave', handleLeave);
-    };
-  }, []);
-
-  if (!visible) return null;
-
-  return (
-    <div
-      className="cursor-trail"
-      style={{ left: pos.x, top: pos.y }}
-    />
-  );
-}
-
-function WaveDivider() {
-  return (
-    <div className="wave-divider">
-      <svg viewBox="0 0 1200 60" preserveAspectRatio="none">
-        <path
-          className="wave-anim"
-          d="M0,30 C200,50 400,10 600,30 C800,50 1000,10 1200,30 L1200,60 L0,60 Z"
-          fill="var(--warm-sand)"
-        />
-      </svg>
-    </div>
-  );
-}
-
-function MagneticButton({ children, className = '', ...props }: { children: React.ReactNode; className?: string; [key: string]: unknown }) {
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const btnRef = useRef<HTMLButtonElement>(null);
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!btnRef.current) return;
-    const rect = btnRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const deltaX = (e.clientX - centerX) * 0.15;
-    const deltaY = (e.clientY - centerY) * 0.15;
-    setOffset({ x: deltaX, y: deltaY });
-  };
-
-  const handleMouseLeave = () => {
-    setOffset({ x: 0, y: 0 });
-  };
-
-  return (
-    <button
-      ref={btnRef}
-      className={`magnetic-btn ${className}`}
-      style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-}
-
 const JSON_LD_DATA = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
   name: 'Pabandi',
   applicationCategory: 'BusinessApplication',
   operatingSystem: 'Web, Android, iOS',
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'USD',
-  },
-  description: 'The settlement & trust layer for hybrid commerce. Escrow-backed deposits, portable trust scores, and CRM for businesses and AI agents.',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  description:
+    'The settlement & trust layer for hybrid commerce. Escrow-backed deposits, portable trust scores, and CRM for businesses and AI agents.',
 };
+
+/* ── Helpful intents: "what do you want to do?" ─────────────────────────── */
+const INTENTS = [
+  { ico: '🛡️', label: 'Protect a client booking', to: '/signup?module=contact' },
+  { ico: '🤖', label: 'Let my AI agent hire a human', to: '/agents' },
+  { ico: '🔍', label: 'Verify a Trust Passport', to: '/verify-trust' },
+  { ico: '🧪', label: 'Simulate a project', to: '/p/estimate/demo' },
+  { ico: '⌘', label: 'Read the API docs', to: '/developers' },
+];
+
+/* ── Trajectory console: an agent hires a human, end to end ─────────────── */
+type TagKind = 'agent' | 'predict' | 'escrow' | 'human' | 'proof' | 'settle';
+const TRAJECTORY: { t: string; tag: TagKind; label: string; msg: string; code: string }[] = [
+  { t: '00:00.0', tag: 'agent', label: 'AGENT', msg: 'Research agent requests a roofing inspection', code: 'pabandi_search_services { skill: "tpo_membrane" }' },
+  { t: '00:00.4', tag: 'predict', label: 'PREDICT', msg: 'Bayesian risk check before any money moves', code: 'P(fulfill)=0.93 · P(dispute)=0.04 · policy=ASSISTED' },
+  { t: '00:01.1', tag: 'escrow', label: 'ESCROW', msg: '$450 USDC locked in 2 milestones', code: 'collateral=15% · sulha_bond=$25 · rail=solana' },
+  { t: '00:02.6', tag: 'human', label: 'HUMAN', msg: 'Coordinator approves dispatch in one tap', code: 'a2h_action { decision: "APPROVE" } → WhatsApp sent' },
+  { t: '02:41:07', tag: 'proof', label: 'PROOF', msg: 'Technician uploads VCAP-signed photos', code: 'sha256:9f2c…e41a verified against scope' },
+  { t: '02:41:09', tag: 'settle', label: 'SETTLE', msg: 'Milestone released · passports updated', code: 'payout=$382.50 · trust +4 · receipt signed (ed25519)' },
+];
+
+function TrajectoryConsole() {
+  const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const [count, setCount] = useState(reduce ? TRAJECTORY.length : 0);
+  const [run, setRun] = useState(4092);
+
+  useEffect(() => {
+    if (reduce) return;
+    const id = window.setInterval(() => {
+      setCount((c) => {
+        if (c >= TRAJECTORY.length + 3) {
+          setRun((r) => r + 1);
+          return 0;
+        }
+        return c + 1;
+      });
+    }, 1100);
+    return () => window.clearInterval(id);
+  }, [reduce]);
+
+  const shown = Math.min(count, TRAJECTORY.length);
+  const done = shown === TRAJECTORY.length;
+
+  return (
+    <div className="pg-glass pg-console" aria-label="Example trajectory: an AI agent hires a human through Pabandi">
+      <div className="pg-console-bar">
+        <div className="pg-dots"><i /><i /><i /></div>
+        <span className="pg-console-title">trajectory · run_{run}</span>
+        <span className="pg-live"><i />live</span>
+      </div>
+      <div className="pg-traj" key={run}>
+        {TRAJECTORY.slice(0, shown).map((s) => (
+          <div className="pg-step" key={s.t}>
+            <span className="t">{s.t}</span>
+            <span className={`pg-tag ${s.tag}`}>{s.label}</span>
+            <div className="msg">
+              {s.msg}
+              <code>{s.code}</code>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="pg-console-foot">
+        <span>{shown}/{TRAJECTORY.length} steps · append-only log</span>
+        <span>{done ? <b>✓ settled</b> : 'running…'}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ── Paths ──────────────────────────────────────────────────────────────── */
+const PATHS = [
+  {
+    ico: '🏢',
+    accent: 'var(--pg-clay)',
+    title: 'For service businesses',
+    desc: 'Stop no-shows and get paid on time with escrow-backed deposits.',
+    steps: ['Create your workspace in ContactOS', 'Send a scope-locked proposal', 'Client funds escrow, you deliver, funds release'],
+    cta: 'Start free pilot',
+    to: '/signup?module=contact',
+  },
+  {
+    ico: '🤖',
+    accent: 'var(--pg-indigo)',
+    title: 'For AI developers',
+    desc: 'Give your agents a safe way to hire humans and pay for results.',
+    steps: ['Add the Pabandi MCP server', 'Predict risk, then lock escrow', 'Escalate to a human when policy says so'],
+    cta: 'Open developer portal',
+    to: '/agents',
+  },
+  {
+    ico: '🙋',
+    accent: 'var(--pg-teal)',
+    title: 'For clients & customers',
+    desc: 'Book with confidence. Your money is held until the job is done.',
+    steps: ['Check the provider’s Trust Passport', 'Pay a protected deposit', 'Release on delivery or open Sulha mediation'],
+    cta: 'Verify a passport',
+    to: '/verify-trust',
+  },
+];
+
+/* ── Product catalog ────────────────────────────────────────────────────── */
+type Cat = 'all' | 'trust' | 'payments' | 'ai';
+const PRODUCTS: { cat: Exclude<Cat, 'all'>; ico: string; title: string; desc: string; endpoint: string; method: string; to: string; isNew?: boolean }[] = [
+  { cat: 'trust', ico: '◈', title: 'Trust Passport', desc: 'Portable, signed reputation for humans and agents: completions, disputes, and reliability.', method: 'GET', endpoint: '/trust-passport/{handle}', to: '/verify-trust' },
+  { cat: 'payments', ico: '🔒', title: 'Non-custodial Escrow', desc: 'Milestone escrow across Square, Safepay/Raast and Solana Pay. Funds release on verified delivery.', method: 'MCP', endpoint: 'pabandi_escrow_lock', to: '/guarantee' },
+  { cat: 'ai', ico: '📈', title: 'Predictive Engine', desc: 'Bayesian completion and dispute forecasts with explainable factors, before money moves.', method: 'POST', endpoint: '/predictive/task-risk', to: '/developers', isNew: true },
+  { cat: 'ai', ico: '🤝', title: 'Agent-to-Human Bridge', desc: 'Agents propose; humans approve, modify or reject in one tap. Every decision is audited.', method: 'MCP', endpoint: 'pabandi_request_human_review', to: '/agents', isNew: true },
+  { cat: 'payments', ico: '⚡', title: 'x402 & Agent Sessions', desc: 'Gasless session budgets and per-call payments so agents can transact without a signature every time.', method: 'MCP', endpoint: 'pabandi_open_session', to: '/agents' },
+  { cat: 'trust', ico: '⚖️', title: 'Sulha Mediation', desc: 'AI-assisted dispute resolution that compares deliverables against the agreed scope.', method: 'MCP', endpoint: 'pabandi_submit_dispute_evidence', to: '/compliance' },
+];
+
+/* ── Quickstart ─────────────────────────────────────────────────────────── */
+const QUICKSTART = [
+  {
+    id: 'mcp',
+    title: 'Connect your agent',
+    desc: 'Add one MCP server. Public tools work without a key.',
+    file: 'mcp.json',
+    code: `{
+  "mcpServers": {
+    "pabandi": {
+      "url": "https://api.pabandi.com/mcp"
+    }
+  }
+}`,
+    out: `tools/list → 50+ tools
+  pabandi_verify_passport      (free)
+  pabandi_predict_task_risk
+  pabandi_escrow_lock
+  pabandi_request_human_review`,
+  },
+  {
+    id: 'predict',
+    title: 'Predict before you commit',
+    desc: 'Score the job and get a recommended oversight policy.',
+    file: 'predict.sh',
+    code: `# Forecast completion + choose human-in-the-loop policy
+curl -X POST https://api.pabandi.com/api/v1/predictive/task-risk \\
+  -H "Authorization: Bearer $PABANDI_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "scopeComplexity": "medium",
+    "budgetUsd": 450,
+    "leadTimeHours": 24,
+    "requiresVcapProof": true
+  }'`,
+    out: `{
+  "completionProbability": 0.93,
+  "riskTier": "LOW",
+  "hitlPolicy": "ASSISTED",
+  "recommendations": ["Safe to dispatch"]
+}`,
+  },
+  {
+    id: 'verify',
+    title: 'Verify anyone, anywhere',
+    desc: 'Check a Trust Passport. No auth required.',
+    file: 'verify.sh',
+    code: `# Public: no API key needed
+curl https://api.pabandi.com/api/v1/trust-passport/apex-design`,
+    out: `{
+  "handle": "apex-design",
+  "reliability": 98.4,
+  "completed": 212,
+  "disputes": 1,
+  "signature": "ed25519:…"
+}`,
+  },
+];
+
+function CodeBlock({ text }: { text: string }) {
+  return (
+    <pre className="pg-pre">
+      {text.split('\n').map((line, i) => (
+        <div key={i} className={/^\s*(#|\/\/)/.test(line) ? 'c' : undefined}>{line || ' '}</div>
+      ))}
+    </pre>
+  );
+}
+
+function Quickstart() {
+  const [active, setActive] = useState(0);
+  const [copied, setCopied] = useState(false);
+  const q = QUICKSTART[active];
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(q.code);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
+
+  return (
+    <div className="pg-qs">
+      <div>
+        <span className="pg-eyebrow">Quickstart</span>
+        <h2 className="pg-h2">From zero to a settled job in three calls</h2>
+        <p className="pg-sub">Plain HTTP or Model Context Protocol. Pick the one your stack already speaks.</p>
+        <div className="pg-qs-steps" role="tablist" aria-label="Quickstart steps">
+          {QUICKSTART.map((s, i) => (
+            <button
+              key={s.id}
+              role="tab"
+              aria-selected={i === active}
+              className={`pg-qs-step ${i === active ? 'active' : ''}`}
+              onClick={() => setActive(i)}
+            >
+              <span className="n">{i + 1}</span>
+              <span>
+                <h5>{s.title}</h5>
+                <p>{s.desc}</p>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="pg-glass pg-code">
+        <div className="pg-code-tabs">
+          {QUICKSTART.map((s, i) => (
+            <button key={s.id} className={`pg-code-tab ${i === active ? 'active' : ''}`} onClick={() => setActive(i)}>
+              {s.file}
+            </button>
+          ))}
+          <button className="pg-copy" onClick={copy} aria-live="polite">{copied ? '✓ copied' : 'copy'}</button>
+        </div>
+        <CodeBlock text={q.code} />
+        <div className="pg-code-out">
+          <div className="pg-code-out-label">RESPONSE</div>
+          <CodeBlock text={q.out} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── FAQ ────────────────────────────────────────────────────────────────── */
+const FAQ = [
+  { q: 'Does Pabandi ever hold my money?', a: 'No. Deposits sit in non-custodial escrow on the rail you choose (Square, Safepay/Raast or Solana) and release only when the agreed milestone is verified. Nobody, including us, can move them outside those rules.' },
+  { q: 'What happens if the job goes wrong?', a: 'Either side can open Sulha mediation. It compares the submitted deliverables against the scope both parties agreed to, and recommends a split before anything escalates to a human panel.' },
+  { q: 'How do AI agents use Pabandi safely?', a: 'Agents call our MCP tools to search, predict risk and lock escrow. The predictive engine assigns an oversight policy (autonomous, assisted, or human-mandatory), and anything above the threshold is sent to a real person for one-tap approval.' },
+  { q: 'Where does the prediction come from?', a: 'A Beta-binomial model over real outcomes on the platform: completions, no-shows, disputes, lead time and verification. New users shrink toward a population prior, so thin history is not over-trusted. Every score ships with the factors behind it.' },
+  { q: 'What does it cost to start?', a: 'The pilot cohort is free up to $5,000 / PKR 1.4M in monthly escrow. Agents pay per call via x402; public tools such as passport verification are always free.' },
+];
+
+/* ── Reveal on scroll ───────────────────────────────────────────────────── */
+function Reveal({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => e.isIntersecting && setInView(true), { threshold: 0.12 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className={`pg-reveal ${inView ? 'in' : ''} ${className}`} style={{ transitionDelay: `${delay}ms` }}>
+      {children}
+    </div>
+  );
+}
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
-  const { language, setLanguage, isRTL, t } = useLanguage();
-  const landingRef = useRef<HTMLDivElement>(null);
-
   const [stats, setStats] = useState<PublicStats | null>(null);
+  const [cat, setCat] = useState<Cat>('all');
 
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
     apiClient
       .get<{ success: boolean; data: PublicStats }>('/public/stats')
       .then((res) => {
-        if (isMounted && res.data?.success && res.data.data) {
-          setStats(res.data.data);
-        }
+        if (mounted && res.data?.success && res.data.data) setStats(res.data.data);
       })
-      .catch(() => {
-        // Stats fallback handled gracefully in render
-      });
+      .catch(() => {});
     return () => {
-      isMounted = false;
+      mounted = false;
     };
   }, []);
 
   const hasSubstantialStats = (stats?.businesses ?? 0) >= 10 || (stats?.escrowedUsd ?? 0) >= 1000;
+  const products = cat === 'all' ? PRODUCTS : PRODUCTS.filter((p) => p.cat === cat);
 
   return (
-    <div className={`landing ${isRTL ? 'landing-rtl' : ''}`} ref={landingRef} dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="pg-root">
       <Helmet>
-        <title>{t('Pabandi — Guarantee Your Next Project. Pay Only When It\'s Done.', 'پابندی — اپنے اگلے پروجیکٹ کی ضمانت دیں۔ کام مکمل ہونے پر ہی ادائیگی کریں۔')}</title>
+        <title>Pabandi — Guarantee Your Next Project. Pay Only When It's Done.</title>
         <meta
           name="description"
-          content={t(
-            'AI-powered trust scores, non-custodial escrow, and a full CRM for humans and AI agents. Stop no-shows, secure revenue, and let autonomous agents handle the rest.',
-            'غیر سودی اسکرو، تصدیق شدہ ٹرسٹ اسکور، اور انسانوں و اے آئی ایجنٹس کے لیے مکمل سی آر ایم۔'
-          )}
+          content="AI-powered trust scores, non-custodial escrow, and a full CRM for humans and AI agents. Stop no-shows, secure revenue, and let autonomous agents handle the rest."
         />
         <meta property="og:title" content="Pabandi — The Settlement & Trust Layer for Hybrid Commerce" />
         <meta
@@ -199,757 +335,366 @@ export default function LandingPage() {
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://pabandi.com" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Pabandi — Guarantee Your Next Project. Pay Only When It's Done." />
-        <meta
-          name="twitter:description"
-          content="Stop no-shows and secure client revenue. Escrow deposits with multi-rail settlement across Square, Safepay, and Solana."
-        />
+        <meta name="theme-color" content="#070912" />
         <script type="application/ld+json">{JSON.stringify(JSON_LD_DATA)}</script>
       </Helmet>
 
-      <CursorTrail />
+      <div className="pg-grid-bg" aria-hidden="true" />
+      <div className="pg-aurora a1" aria-hidden="true" />
+      <div className="pg-aurora a2" aria-hidden="true" />
+      <div className="pg-aurora a3" aria-hidden="true" />
 
-      {/* Floating Ambient Orbs */}
-      <div className="orbs-container" aria-hidden="true">
-        <div className="orb orb-1" />
-        <div className="orb orb-2" />
-        <div className="orb orb-3" />
-      </div>
-
-      {/* Header */}
-      <header className="header">
-        <div className="container">
-          <Link to="/" className="logo">
-            <span className="logo-mark">◈</span>
-            <span>PabandiOS</span>
-          </Link>
-          <nav className="nav-list" aria-label="Main">
-            <Link to="/contact" className="nav-tab-link">
-              <Building2 className="nav-tab-icon" size={15} aria-hidden="true" />
-              <span>{t('For Businesses', 'کاروبار کے لیے')}</span>
-            </Link>
-            <Link to="/customers" className="nav-tab-link">
-              <UserCheck className="nav-tab-icon" size={15} aria-hidden="true" />
-              <span>{t('For Customers', 'صارفین کے لیے')}</span>
-            </Link>
-            <Link to="/agents" className="nav-tab-link">
-              <Bot className="nav-tab-icon" size={15} aria-hidden="true" />
-              <span>{t('For AI Developers', 'اے آئی ڈویلپرز')}</span>
-            </Link>
-            <Link to="/pricing" className="nav-tab-link">
-              <Tag className="nav-tab-icon" size={15} aria-hidden="true" />
-              <span>{t('Pricing', 'قیمتیں')}</span>
-            </Link>
-          </nav>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            {/* Language Switcher Pill */}
-            <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.06)', borderRadius: '8px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <button
-                type="button"
-                onClick={() => setLanguage('EN')}
-                style={{
-                  padding: '3px 8px',
-                  borderRadius: '6px',
-                  fontSize: '11px',
-                  fontWeight: language === 'EN' ? 700 : 400,
-                  background: language === 'EN' ? '#C97B5A' : 'transparent',
-                  color: language === 'EN' ? '#fff' : '#8a9aa8',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                EN
-              </button>
-              <button
-                type="button"
-                onClick={() => setLanguage('UR')}
-                style={{
-                  padding: '3px 8px',
-                  borderRadius: '6px',
-                  fontSize: '11px',
-                  fontWeight: language === 'UR' ? 700 : 400,
-                  background: language === 'UR' ? '#C97B5A' : 'transparent',
-                  color: language === 'UR' ? '#fff' : '#8a9aa8',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                اردو
-              </button>
-            </div>
-
-            {isAuthenticated ? (
-              <Link to="/dashboard" className="cta-nav">{t('Dashboard', 'ڈیش بورڈ')}</Link>
-            ) : (
-              <Link to="/signup?module=contact" className="cta-nav">{t('Get Started', 'شروع کریں')}</Link>
-            )}
-          </div>
-        </div>
-      </header>
+      {/* ── Nav ─────────────────────────────────────────────────────────── */}
+      <GlassNavHeader links={LANDING_NAV_LINKS} />
 
       <main>
-        {/* Split Hero Section */}
-        <section className="hero" aria-labelledby="hero-title">
-          <div className="container">
-            <div className="hero-inner">
-              {/* Left Side: Pitch */}
-              <div className="hero-content">
-                <p className="hero-kicker">
-                  {t(
-                    'THE SETTLEMENT & TRUST LAYER FOR HYBRID COMMERCE',
-                    'ہائبرڈ تجارت کے لیے تصفیہ اور اعتماد کا خود مختار نیٹ ورک'
-                  )}
-                </p>
-                <h1 id="hero-title" className="hero-title">
-                  {language === 'UR' ? (
-                    <>
-                      <span className="word">اپنے اگلے پروجیکٹ کی</span>{' '}
-                      <span className="word">ضمانت دیں۔</span><br />
-                      <span className="word hero-accent">کام مکمل ہونے پر</span>{' '}
-                      <span className="word hero-accent">ادائیگی کریں۔</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="word">Guarantee Your</span>{' '}
-                      <span className="word">Next Project.</span><br />
-                      <span className="word hero-accent">Pay Only When</span>{' '}
-                      <span className="word hero-accent">It's Done.</span>
-                    </>
-                  )}
-                </h1>
-                <p className="hero-subtitle">
-                  {t(
-                    'AI-powered trust scores, non-custodial escrow, and a full CRM for humans and AI agents. Stop no-shows, secure revenue, and let autonomous agents handle the rest.',
-                    'اے آئی ٹرسٹ اسکور، غیر سودی اسکرو اور انسانوں و ایجنٹس کے لیے سی آر ایم۔ رقم کے ضیاع کو روکیں اور بغیر کسی خطرے کے سودوں کو محفوظ بنائیں۔'
-                  )}
-                </p>
-
-                <div className="hero-actions">
-                  <MagneticButton
-                    className="btn btn-large btn-primary"
-                    onClick={() => navigate('/signup?module=contact')}
-                    style={{ padding: '0.875rem 1.75rem', fontSize: '1rem', fontWeight: 700 }}
-                  >
-                    {t('Start Guaranteeing Bookings', 'بکنگ کی ضمانت شروع کریں')}
-                  </MagneticButton>
-                  <MagneticButton
-                    className="btn btn-large btn-secondary"
-                    onClick={() => navigate('/p/estimate/demo')}
-                    style={{ padding: '0.875rem 1.5rem', fontSize: '1rem', fontWeight: 600 }}
-                  >
-                    {t('Run a Project Simulation →', 'پروجیکٹ سمولیشن چلائیں ←')}
-                  </MagneticButton>
-                </div>
-
-                {/* Trust Badges Row */}
-                <div className="hero-trust-row">
-                  <span>{t('Settlement Rails:', 'ادائیگی کے چینلز:')}</span>
-                  <div className="hero-trust-badge">
-                    <span>💳</span>
-                    <span>Square (Cards)</span>
-                  </div>
-                  <div className="hero-trust-badge">
-                    <span>🏦</span>
-                    <span>Raast (0% Fee SBP)</span>
-                  </div>
-                  <div className="hero-trust-badge">
-                    <span>⚡</span>
-                    <span>Solana USDC Escrow</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Side: Live Product Preview */}
-              <div className="hero-visual">
-                <LiveEscrowPreview />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <WaveDivider />
-
-        {/* Interactive Booking & Gig Launchpad (Card-based, not a list) */}
-        <section className="py-10 px-4 sm:px-6" aria-label="Book Services or Post a Gig">
-          <div className="container max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Card 1: Visual Service Booking */}
-              <div className="clay-card clay-card--interactive p-6 sm:p-7 bg-white flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-4">
-                    <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-[var(--clay)]/12 text-[var(--terracotta)]">
-                      BookingOS · Verified Providers
-                    </span>
-                    <span className="material-symbols-outlined text-[22px] text-[var(--clay)]">event_available</span>
-                  </div>
-                  <h2 className="font-headline font-bold text-xl sm:text-2xl text-[var(--warm-ink)]">
-                    {t('Book a Trusted Local or Remote Pro', 'تصدیق شدہ سروس بک کریں')}
-                  </h2>
-                  <p className="text-sm text-[var(--soft-stone)] mt-2 leading-relaxed">
-                    Browse provider cards with verified Trust Passports, upfront deposit protection, and instant slot booking.
-                  </p>
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {['Roofing & Solar', 'HVAC', 'Freelance', 'Salons', 'Clinics'].map((cat) => (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => navigate('/booking')}
-                        className="px-3 py-1.5 rounded-full text-xs font-semibold bg-[var(--cream)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)] transition-colors compact-touch"
-                      >
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="mt-6 pt-4 border-t border-[rgba(191,179,163,0.22)] flex items-center justify-between gap-3">
-                  <span className="text-xs font-medium text-[var(--soft-stone)]">Escrow-backed deposits</span>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/booking')}
-                    className="px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold text-white shadow-[var(--shadow-btn)] hover:shadow-[var(--shadow-btn-hover)] transition-all"
-                    style={{ background: 'linear-gradient(135deg, var(--clay), var(--terracotta))' }}
-                  >
-                    Explore Services →
-                  </button>
-                </div>
-              </div>
-
-              {/* Card 2: Escrow Gig Board */}
-              <div className="clay-card clay-card--interactive p-6 sm:p-7 bg-white flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-4">
-                    <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-[var(--sage)]/15 text-[#4f6142]">
-                      Gig Board · Humans &amp; AI Agents
-                    </span>
-                    <span className="material-symbols-outlined text-[22px] text-[var(--sage)]">handshake</span>
-                  </div>
-                  <h2 className="font-headline font-bold text-xl sm:text-2xl text-[var(--warm-ink)]">
-                    {t('Post a Project or Bid on Gigs', 'پروجیکٹ پوسٹ کریں یا کام حاصل کریں')}
-                  </h2>
-                  <p className="text-sm text-[var(--soft-stone)] mt-2 leading-relaxed">
-                    Commission real-world jobs or AI agent bounties. Funds stay locked in escrow and release automatically on proof of delivery.
-                  </p>
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {['⚡ USDC Escrow', '🏦 Raast 0% Fee', '💳 Card / Square', '🤖 AI Agents'].map((rail) => (
-                      <span
-                        key={rail}
-                        className="px-3 py-1.5 rounded-full text-xs font-semibold bg-[var(--cream)] text-[var(--warm-ink)]"
-                      >
-                        {rail}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div className="mt-6 pt-4 border-t border-[rgba(191,179,163,0.22)] flex items-center justify-between gap-3">
-                  <span className="text-xs font-medium text-[var(--soft-stone)]">Zero-risk milestone payout</span>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/gigs')}
-                    className="px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold text-white shadow-[var(--shadow-btn)] hover:shadow-[var(--shadow-btn-hover)] transition-all"
-                    style={{ background: 'var(--warm-ink)' }}
-                  >
-                    Open Gig Board →
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Bento Grid Feature Section */}
-        <section className="bento-section" aria-labelledby="bento-title">
-          <div className="container">
-            <ScrollReveal>
-              <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto' }}>
-                <span className="bento-tag">PROVEN INFRASTRUCTURE</span>
-                <h2 id="bento-title" className="section-title">
-                  Programmable Trust for the Hybrid Economy
-                </h2>
-                <p className="section-subtitle">
-                  Everything you need to close high-ticket client deals and settle machine-to-machine bounties without counterparty risk.
-                </p>
-              </div>
-            </ScrollReveal>
-
-            <div className="bento-grid">
-              {/* Large Card: Trust Passport & AI Scoring */}
-              <div className="bento-card bento-card-large">
-                <span className="bento-tag">REPUTATION LAYER</span>
-                <h3 className="bento-title">Trust Passport & AI Scoring</h3>
-                <p className="bento-desc">
-                  Verify any human or AI agent's reliability before you commit. Portable soulbound credentials track verified on-time completions, dispute history, and liquidity capacity.
-                </p>
-                <div className="bento-visual-slot">
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div
-                        style={{
-                          width: '44px',
-                          height: '44px',
-                          borderRadius: '50%',
-                          background: 'linear-gradient(135deg, #C97B5A, #A85A3C)',
-                          color: 'white',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 700,
-                        }}
-                      >
-                        ◈
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--warm-ink)' }}>Verified Trust Passport #4092</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--soft-stone)' }}>Cryptographically signed · Zero fraud rate</div>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--soft-stone)', fontWeight: 600 }}>RELIABILITY SCORE</span>
-                      <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#8A9A7B' }}>98.4 / 100</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tall Card: Non-Custodial Escrow */}
-              <div className="bento-card bento-card-tall">
-                <span className="bento-tag">ESCROW SECURITY</span>
-                <h3 className="bento-title">Non-Custodial Escrow</h3>
-                <p className="bento-desc">
-                  Lock client deposits in tamper-proof escrow contracts. Funds disburse only when deliverables match agreed scope milestones.
-                </p>
-                <div className="bento-visual-slot" style={{ marginTop: 'auto', textAlign: 'center' }}>
-                  <div
-                    style={{
-                      width: '64px',
-                      height: '64px',
-                      borderRadius: '50%',
-                      background: 'rgba(201, 123, 90, 0.15)',
-                      border: '2px solid var(--clay)',
-                      color: 'var(--clay)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1.75rem',
-                      margin: '0 auto 1rem',
-                    }}
-                  >
-                    🔒
-                  </div>
-                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--warm-ink)', marginBottom: '0.25rem' }}>
-                    Multi-Rail Settlement Vault
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--soft-stone)', lineHeight: 1.5 }}>
-                    Supports Square (USD Cards), Safepay/Raast (PKR Direct Bank), and Solana Pay (Instant USDC).
-                  </div>
-                </div>
-              </div>
-
-              {/* Medium Card: Scope-Locked Interactive Proposals */}
-              <div className="bento-card bento-card-medium">
-                <span className="bento-tag">SCOPING & CLOSING</span>
-                <h3 className="bento-title">Scope-Locked Interactive Proposals</h3>
-                <p className="bento-desc">
-                  Generate instant proposals with dynamic pricing and milestone schedules. Clients approve with one click and fund escrow deposits without leaving the proposal.
-                </p>
-                <div className="bento-visual-slot" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--soft-stone)', fontWeight: 600 }}>SAMPLE DEMO</span>
-                    <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--warm-ink)' }}>Public Client Proposal Widget</div>
-                  </div>
-                  <Link
-                    to="/p/estimate/demo"
-                    style={{
-                      background: 'var(--clay)',
-                      color: 'white',
-                      padding: '0.5rem 1rem',
-                      borderRadius: 'var(--radius-sm)',
-                      fontWeight: 700,
-                      fontSize: '0.8125rem',
-                    }}
-                  >
-                    Try Live Proposal →
-                  </Link>
-                </div>
-              </div>
-
-              {/* Small Card: Agentic CRM */}
-              <div className="bento-card">
-                <span className="bento-tag">CONTACTOS</span>
-                <h3 className="bento-title">Agentic CRM</h3>
-                <p className="bento-desc">
-                  A full CRM that works for humans and autonomous agents. Tracks deals, appointments, clients, and automated payment triggers in one unified dashboard.
-                </p>
-                <div style={{ marginTop: 'auto', paddingTop: '0.75rem' }}>
-                  <Link to="/contact" className="module-link">Open ContactOS →</Link>
-                </div>
-              </div>
-
-              {/* Small Card: Sulha Arbitration */}
-              <div className="bento-card">
-                <span className="bento-tag">DISPUTE MEDIATION</span>
-                <h3 className="bento-title">Sulha Arbitration</h3>
-                <p className="bento-desc">
-                  AI-assisted dispute resolution that acts as digital mediation for your deals. Evaluates proposal terms against submitted deliverables before any escalation.
-                </p>
-                <div style={{ marginTop: 'auto', paddingTop: '0.75rem' }}>
-                  <Link to="/compliance" className="module-link">Mediation & Compliance →</Link>
-                </div>
-              </div>
-
-              {/* Wide Banner Card: Agent-Ready Architecture */}
-              <div className="bento-card bento-card-wide">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
-                  <div style={{ maxWidth: '640px' }}>
-                    <span className="bento-tag">MACHINE COMMERCE READY</span>
-                    <h3 className="bento-title" style={{ fontSize: '1.5rem' }}>Model Context Protocol (MCP) & Agent Wallets</h3>
-                    <p className="bento-desc" style={{ marginBottom: 0 }}>
-                      Expose your business services directly to AI agents. Native MCP endpoints, x402 payment headers, and programmatic escrow triggers allow agents to discover, hire, and pay you autonomously.
-                    </p>
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <Link
-                      to="/agents"
-                      style={{
-                        background: 'var(--warm-ink)',
-                        color: 'white',
-                        padding: '0.75rem 1.25rem',
-                        borderRadius: 'var(--radius-sm)',
-                        fontWeight: 700,
-                        fontSize: '0.875rem',
-                      }}
-                    >
-                      For AI Developers →
-                    </Link>
-                    <Link
-                      to="/developers"
-                      style={{
-                        background: 'white',
-                        color: 'var(--warm-ink)',
-                        border: '1px solid rgba(191,179,163,0.4)',
-                        padding: '0.75rem 1.25rem',
-                        borderRadius: 'var(--radius-sm)',
-                        fontWeight: 700,
-                        fontSize: '0.875rem',
-                      }}
-                    >
-                      API Docs
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <WaveDivider />
-
-        {/* Dynamic Honest Social Proof */}
-        <section className="social-proof-section" aria-labelledby="social-proof-title">
-          <div className="container">
-            <ScrollReveal>
-              <span className="bento-tag">PROVEN NETWORK</span>
-              <h2 id="social-proof-title" className="section-title">
-                Settling Deals with Integrity & Transparency
-              </h2>
-              <p className="section-subtitle">
-                Built with industry standard payment processors and decentralized trust infrastructure.
+        {/* ── Hero ──────────────────────────────────────────────────────── */}
+        <section className="pg-hero" aria-labelledby="pg-hero-title">
+          <div className="pg-container pg-hero-grid">
+            <div>
+              <Link to="/agents" className="pg-pill">
+                <b>NEW</b> Predictive engine + agent-to-human bridge →
+              </Link>
+              <h1 id="pg-hero-title" className="pg-h1">
+                Trust and settlement for <span className="pg-grad">humans and AI agents.</span>
+              </h1>
+              <p className="pg-lead">
+                Escrow-backed deposits, portable Trust Passports and a predictive risk engine, so anyone can hire anyone, and
+                only pay when the work is done.
               </p>
-            </ScrollReveal>
 
-            {/* Partner & Payment Rails Strip */}
-            <div className="partner-logo-bar">
-              <div className="partner-pill">
-                <span>💳</span>
-                <span>Square</span>
+              <div className="pg-glass pg-intent" role="navigation" aria-label="What do you want to do?">
+                <div className="pg-intent-label">
+                  <span>›</span> what do you want to do?<span className="caret" />
+                </div>
+                <div className="pg-intent-chips">
+                  {INTENTS.map((it) => (
+                    <button key={it.label} className="pg-chip" onClick={() => navigate(it.to)}>
+                      <span className="ico" aria-hidden="true">{it.ico}</span>
+                      {it.label}
+                      <span className="arr" aria-hidden="true">→</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="partner-pill">
-                <span>🇵🇰</span>
-                <span>Safepay</span>
+
+              <div className="pg-hero-ctas">
+                <button className="pg-btn pg-btn-primary pg-btn-lg" onClick={() => navigate('/signup?module=contact')}>
+                  Start free pilot
+                </button>
+                <a href="#quickstart" className="pg-btn pg-btn-ghost pg-btn-lg">View quickstart</a>
               </div>
-              <div className="partner-pill">
-                <span>🏦</span>
-                <span>Raast P2M</span>
-              </div>
-              <div className="partner-pill">
-                <span>⚡</span>
-                <span>Solana</span>
-              </div>
-              <div className="partner-pill">
-                <span>🔐</span>
-                <span>Privy Auth</span>
+              <div className="pg-hero-note">
+                <span><i />No card required</span>
+                <span><i />Non-custodial</span>
+                <span><i />USD · PKR · USDC</span>
               </div>
             </div>
 
-            {/* Dynamic Metric Counter (Threshold-gated) */}
-            <div className="platform-metrics-grid">
-              <div className="platform-metric-card">
-                <div className="platform-metric-number">
-                  {hasSubstantialStats ? stats?.businesses : 'Cohort 1'}
-                </div>
-                <div className="platform-metric-label">
-                  {hasSubstantialStats ? 'Businesses Onboarded' : 'Pilot Businesses'}
-                </div>
-                <div className="platform-metric-sub">
-                  Active service providers in Lahore & Chicago
-                </div>
-              </div>
-
-              <div className="platform-metric-card">
-                <div className="platform-metric-number">
-                  {hasSubstantialStats ? `$${(stats?.escrowedUsd ?? 0).toLocaleString()}` : '$0'}
-                </div>
-                <div className="platform-metric-label">
-                  Escrow Funds Guaranteed
-                </div>
-                <div className="platform-metric-sub">
-                  Protected across non-custodial milestones
-                </div>
-              </div>
-
-              <div className="platform-metric-card">
-                <div className="platform-metric-number">
-                  100%
-                </div>
-                <div className="platform-metric-label">
-                  No-Show Protection
-                </div>
-                <div className="platform-metric-sub">
-                  Milestone-locked upfront deposits
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonials */}
-            <div className="testimonials-grid">
-              <div className="testimonial-card">
-                <p className="testimonial-quote">
-                  "Clients used to reschedule three times and ghost when invoice day came. With Pabandi's 50% escrow deposit, we eliminated no-shows entirely on our web dev agency bookings."
-                </p>
-                <div className="testimonial-author">
-                  <div className="testimonial-avatar">HA</div>
-                  <div>
-                    <div className="testimonial-name">Hamza A.</div>
-                    <div className="testimonial-role">Founder, Apex Design Studio (Lahore) · Verified Pilot</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="testimonial-card">
-                <p className="testimonial-quote">
-                  "We connected our autonomous research agent via the Pabandi MCP tool. It now hires human subject-matter experts, funds escrow in USDC, and releases funds upon file verification."
-                </p>
-                <div className="testimonial-author">
-                  <div className="testimonial-avatar">EK</div>
-                  <div>
-                    <div className="testimonial-name">Elena K.</div>
-                    <div className="testimonial-role">AI Systems Engineer, SwarmLogic (Chicago) · Pilot User</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="testimonial-card">
-                <p className="testimonial-quote">
-                  "Safepay and Square settlement in one place means I can charge US clients in USD and local clients via Raast without maintaining two separate systems. The Trust Passport gives us instant credibility."
-                </p>
-                <div className="testimonial-author">
-                  <div className="testimonial-avatar">ZM</div>
-                  <div>
-                    <div className="testimonial-name">Zain M.</div>
-                    <div className="testimonial-role">Managing Partner, Crescent Legal Consultancy</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <TrajectoryConsole />
           </div>
         </section>
 
-        <WaveDivider />
+        {/* ── Rails ─────────────────────────────────────────────────────── */}
+        <section className="pg-rails" aria-label="Settlement rails and partners">
+          <div className="pg-container pg-rails-inner">
+            <span className="pg-rails-label">SETTLES ON</span>
+            {['💳 Square', '🇵🇰 Safepay', '🏦 Raast P2M', '⚡ Solana Pay', '🔐 Privy', '🧩 MCP', '💸 x402'].map((r) => (
+              <span key={r} className="pg-rail">{r}</span>
+            ))}
+          </div>
+        </section>
 
-        {/* The Escrow Flow */}
-        <section className="how-it-works" aria-labelledby="how-title">
-          <div className="container">
-            <ScrollReveal>
-              <h2 id="how-title" className="section-title">The Escrow Flow in Four Moves</h2>
-            </ScrollReveal>
-            <ScrollReveal delay={80}>
-              <p className="section-subtitle">
-                The deposit never sits in anyone's personal bank account. It sits securely in escrow, and releases only upon verified delivery.{' '}
-                <Link to="/guarantee" className="module-link">The full guarantee →</Link>
-              </p>
-            </ScrollReveal>
-            <div className="steps-container">
-              {HOW_IT_WORKS.map((step) => (
-                <ScrollReveal key={step.step} delay={Number(step.step) * 80}>
-                  <div className="step-card">
-                    <div className="step-number">{step.step}</div>
-                    <h3 className="step-title">{step.title}</h3>
-                    <p className="step-desc">{step.desc}</p>
+        {/* ── Paths ─────────────────────────────────────────────────────── */}
+        <section className="pg-section" aria-labelledby="pg-paths-title">
+          <div className="pg-container">
+            <Reveal className="pg-head center">
+              <span className="pg-eyebrow">Get started</span>
+              <h2 id="pg-paths-title" className="pg-h2">Pick your path</h2>
+              <p className="pg-sub">Three ways in, one shared trust layer underneath.</p>
+            </Reveal>
+            <div className="pg-paths">
+              {PATHS.map((p, i) => (
+                <Reveal key={p.title} delay={i * 80}>
+                  <div className="pg-glass pg-path" style={{ ['--accent' as string]: p.accent, height: '100%' }}>
+                    <div className="pg-path-icon" aria-hidden="true">{p.ico}</div>
+                    <h3>{p.title}</h3>
+                    <p>{p.desc}</p>
+                    <ol>
+                      {p.steps.map((s) => <li key={s}>{s}</li>)}
+                    </ol>
+                    <Link to={p.to} className="pg-link">{p.cta} <span>→</span></Link>
                   </div>
-                </ScrollReveal>
+                </Reveal>
               ))}
             </div>
           </div>
         </section>
 
-        <WaveDivider />
+        {/* ── Products ──────────────────────────────────────────────────── */}
+        <section id="products" className="pg-section" aria-labelledby="pg-products-title">
+          <div className="pg-container">
+            <Reveal className="pg-head">
+              <span className="pg-eyebrow">Products</span>
+              <h2 id="pg-products-title" className="pg-h2">Building blocks for programmable trust</h2>
+              <p className="pg-sub">Use them from the dashboard, the REST API, or as MCP tools your agents can call directly.</p>
+            </Reveal>
+            <div className="pg-catalog-tabs" role="tablist" aria-label="Filter products">
+              {([['all', 'All'], ['trust', 'Trust & identity'], ['payments', 'Payments & escrow'], ['ai', 'AI & agents']] as [Cat, string][]).map(([k, l]) => (
+                <button key={k} role="tab" aria-selected={cat === k} className={`pg-tab ${cat === k ? 'active' : ''}`} onClick={() => setCat(k)}>
+                  {l}
+                </button>
+              ))}
+            </div>
+            <div className="pg-catalog">
+              {products.map((p) => (
+                <Link key={p.title} to={p.to} className="pg-glass pg-product">
+                  <div className="pg-product-top">
+                    <span className="pg-product-ico" aria-hidden="true">{p.ico}</span>
+                    <span className={`pg-badge ${p.isNew ? 'new' : ''}`}>{p.isNew ? 'NEW' : p.cat.toUpperCase()}</span>
+                  </div>
+                  <h4>{p.title}</h4>
+                  <p>{p.desc}</p>
+                  <div className="pg-endpoint"><em>{p.method}</em>{p.endpoint}</div>
+                  <span className="pg-link">Explore <span>→</span></span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
 
-        {/* Pricing Teaser Section */}
-        <section className="pricing-teaser-section" aria-labelledby="pricing-teaser-title">
-          <div className="container">
-            <ScrollReveal>
-              <span className="bento-tag">SIMPLE PRICING</span>
-              <h2 id="pricing-teaser-title" className="section-title">
-                Transparent Pricing for Growing Businesses
-              </h2>
-              <p className="section-subtitle">
-                Start with our zero-fee pilot program. Upgrade as your deal volume scales.
+        {/* ── Quickstart ────────────────────────────────────────────────── */}
+        <section id="quickstart" className="pg-section">
+          <div className="pg-container">
+            <Reveal>
+              <Quickstart />
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ── Flow ──────────────────────────────────────────────────────── */}
+        <section className="pg-section" aria-labelledby="pg-flow-title">
+          <div className="pg-container">
+            <Reveal className="pg-head center">
+              <span className="pg-eyebrow">How it works</span>
+              <h2 id="pg-flow-title" className="pg-h2">The escrow flow in four moves</h2>
+              <p className="pg-sub">
+                The deposit never sits in anyone’s personal account. It is held in escrow and releases on verified delivery.{' '}
+                <Link to="/guarantee" className="pg-link" style={{ display: 'inline-flex' }}>Read the guarantee <span>→</span></Link>
               </p>
-            </ScrollReveal>
+            </Reveal>
+            <div className="pg-flow">
+              {GUARANTEE_STEPS.map((s, i) => (
+                <Reveal key={s.n} delay={i * 90} className="pg-flow-step">
+                  <div className="pg-glass pg-flow-num">{s.n}</div>
+                  <h4>{s.title}</h4>
+                  <p>{s.body}</p>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
 
-            <div className="pricing-cards-grid">
-              {/* Pilot Tier */}
-              <div className="pricing-card">
-                <div className="pricing-card-tier">Pilot Cohort</div>
-                <div className="pricing-card-price">$0 <span style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--soft-stone)' }}>/ month</span></div>
-                <p className="pricing-card-desc">For service businesses joining our launch program in Lahore & Chicago.</p>
-                <ul className="pricing-card-features">
-                  <li><span className="check">✓</span> Up to $5,000 / PKR 1,400,000 monthly escrow</li>
-                  <li><span className="check">✓</span> ContactOS CRM & deal pipeline</li>
-                  <li><span className="check">✓</span> Square & Safepay payment links</li>
-                  <li><span className="check">✓</span> Portable Trust Passport minting</li>
-                </ul>
-                <button
-                  type="button"
-                  onClick={() => navigate('/signup?module=contact')}
-                  className="btn btn-primary"
-                  style={{ width: '100%', marginTop: 'auto' }}
-                >
-                  Join Free Pilot
-                </button>
+        {/* ── Live demo ─────────────────────────────────────────────────── */}
+        <section className="pg-section" aria-labelledby="pg-demo-title">
+          <div className="pg-container">
+            <Reveal className="pg-head center">
+              <span className="pg-eyebrow">Try it</span>
+              <h2 id="pg-demo-title" className="pg-h2">Price a protected project, live</h2>
+              <p className="pg-sub">Pick a project type and see the deposit, milestones and payout split before you sign up.</p>
+            </Reveal>
+            <Reveal>
+              <div className="pg-glass pg-demo">
+                <div className="pg-demo-inner">
+                  <LiveEscrowPreview />
+                </div>
               </div>
+            </Reveal>
+          </div>
+        </section>
 
-              {/* Pro Tier */}
-              <div className="pricing-card featured">
-                <div className="pricing-card-tier">Pro Business</div>
-                <div className="pricing-card-price">$29 <span style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--soft-stone)' }}>/ month</span></div>
-                <p className="pricing-card-desc">For scaling agencies and consultancies needing higher limits and automation.</p>
-                <ul className="pricing-card-features">
-                  <li><span className="check">✓</span> Unlimited escrow volume & milestones</li>
-                  <li><span className="check">✓</span> Custom branded proposals (`/p/estimate`)</li>
-                  <li><span className="check">✓</span> Priority Sulha arbitration support</li>
-                  <li><span className="check">✓</span> Automated SMS & WhatsApp reminders</li>
-                </ul>
-                <button
-                  type="button"
-                  onClick={() => navigate('/pricing')}
-                  className="btn btn-primary"
-                  style={{ width: '100%', marginTop: 'auto', background: 'var(--terracotta)' }}
-                >
-                  View Pro Features →
-                </button>
+        {/* ── Proof ─────────────────────────────────────────────────────── */}
+        <section className="pg-section" aria-labelledby="pg-proof-title">
+          <div className="pg-container">
+            <Reveal className="pg-head center">
+              <span className="pg-eyebrow">Network</span>
+              <h2 id="pg-proof-title" className="pg-h2">Settling deals in the open</h2>
+            </Reveal>
+            <div className="pg-metrics">
+              <div className="pg-glass pg-metric">
+                <div className="v">{hasSubstantialStats ? stats?.businesses : 'Cohort 1'}</div>
+                <div className="l">{hasSubstantialStats ? 'Businesses onboarded' : 'Pilot businesses'}</div>
+                <div className="d">Service providers in Lahore &amp; Chicago</div>
               </div>
+              <div className="pg-glass pg-metric">
+                <div className="v">{hasSubstantialStats ? `$${(stats?.escrowedUsd ?? 0).toLocaleString()}` : '$0'}</div>
+                <div className="l">Escrow guaranteed</div>
+                <div className="d">Protected across non-custodial milestones</div>
+              </div>
+              <div className="pg-glass pg-metric">
+                <div className="v">100%</div>
+                <div className="l">No-show protection</div>
+                <div className="d">Milestone-locked upfront deposits</div>
+              </div>
+            </div>
+            <div className="pg-quotes">
+              {[
+                { q: 'Clients used to reschedule three times and ghost when invoice day came. With a 50% escrow deposit, we eliminated no-shows on our agency bookings.', i: 'HA', n: 'Hamza A.', r: 'Founder, Apex Design Studio · Pilot' },
+                { q: 'Our research agent now hires human experts through the MCP tools, funds escrow in USDC, and releases on file verification.', i: 'EK', n: 'Elena K.', r: 'AI Systems Engineer, SwarmLogic · Pilot' },
+                { q: 'USD through Square and PKR through Raast in one place. The Trust Passport gives us instant credibility with new clients.', i: 'ZM', n: 'Zain M.', r: 'Managing Partner, Crescent Legal' },
+              ].map((t) => (
+                <figure key={t.n} className="pg-glass pg-quote" style={{ margin: 0 }}>
+                  <p>“{t.q}”</p>
+                  <figcaption className="pg-quote-who">
+                    <span className="pg-avatar">{t.i}</span>
+                    <span><b>{t.n}</b><small>{t.r}</small></span>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        </section>
 
-              {/* Agent / Enterprise Tier */}
-              <div className="pricing-card">
-                <div className="pricing-card-tier">Autonomous Agents</div>
-                <div className="pricing-card-price">Custom <span style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--soft-stone)' }}>/ usage</span></div>
-                <p className="pricing-card-desc">For developers building M2M swarms, MCP servers, and autonomous agent systems.</p>
-                <ul className="pricing-card-features">
-                  <li><span className="check">✓</span> Dedicated MCP server endpoint</li>
-                  <li><span className="check">✓</span> x402 programmatic settlement headers</li>
-                  <li><span className="check">✓</span> Session budget authorization</li>
-                  <li><span className="check">✓</span> 99.99% SLA webhook guarantees</li>
+        {/* ── Pricing ───────────────────────────────────────────────────── */}
+        <section className="pg-section" aria-labelledby="pg-pricing-title">
+          <div className="pg-container">
+            <Reveal className="pg-head center">
+              <span className="pg-eyebrow">Pricing</span>
+              <h2 id="pg-pricing-title" className="pg-h2">Start free. Scale when it works.</h2>
+            </Reveal>
+            <div className="pg-pricing">
+              <div className="pg-glass pg-price">
+                <span className="tier">Pilot cohort</span>
+                <div className="amt">$0 <small>/ month</small></div>
+                <p>For service businesses joining the launch program.</p>
+                <ul>
+                  <li>Up to $5,000 / PKR 1.4M monthly escrow</li>
+                  <li>ContactOS CRM &amp; deal pipeline</li>
+                  <li>Square &amp; Safepay payment links</li>
+                  <li>Trust Passport minting</li>
                 </ul>
-                <button
-                  type="button"
-                  onClick={() => navigate('/agents')}
-                  className="btn btn-secondary"
-                  style={{ width: '100%', marginTop: 'auto' }}
-                >
-                  Explore Developer Portal
-                </button>
+                <button className="pg-btn pg-btn-ghost" onClick={() => navigate('/signup?module=contact')}>Join free pilot</button>
+              </div>
+              <div className="pg-glass pg-price featured">
+                <span className="pg-ribbon">Most popular</span>
+                <span className="tier">Pro business</span>
+                <div className="amt">$29 <small>/ month</small></div>
+                <p>For agencies and consultancies that need higher limits and automation.</p>
+                <ul>
+                  <li>Unlimited escrow volume &amp; milestones</li>
+                  <li>Branded proposals</li>
+                  <li>Priority Sulha mediation</li>
+                  <li>SMS &amp; WhatsApp reminders</li>
+                </ul>
+                <button className="pg-btn pg-btn-primary" onClick={() => navigate('/pricing')}>See Pro features</button>
+              </div>
+              <div className="pg-glass pg-price">
+                <span className="tier">Autonomous agents</span>
+                <div className="amt">Usage <small>/ per call</small></div>
+                <p>For developers building MCP servers and multi-agent systems.</p>
+                <ul>
+                  <li>Dedicated MCP endpoint</li>
+                  <li>x402 programmatic settlement</li>
+                  <li>Session budget authorization</li>
+                  <li>Signed webhook receipts</li>
+                </ul>
+                <button className="pg-btn pg-btn-ghost" onClick={() => navigate('/agents')}>Explore developer portal</button>
               </div>
             </div>
           </div>
         </section>
 
-        <WaveDivider />
-
-        {/* Final CTA */}
-        <section className="cta-section" aria-labelledby="cta-title">
-          <div className="container">
-            <ScrollReveal>
-              <h2 id="cta-title" className="section-title">Ready to Guarantee Your Next Booking?</h2>
-            </ScrollReveal>
-            <ScrollReveal delay={150}>
-              <p className="section-subtitle">
-                Lock your next client with escrow protection. Five minutes to set up. Multi-currency settlement in USD, PKR, and USDC.
-              </p>
-            </ScrollReveal>
-            <ScrollReveal delay={300}>
-              <div className="cta-buttons" style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <MagneticButton className="btn btn-large btn-primary" onClick={() => navigate('/signup?module=contact')}>
-                  Start Guaranteeing Bookings
-                </MagneticButton>
-                <MagneticButton className="btn btn-large btn-secondary" onClick={() => navigate('/sandbox')}>
-                  Try the Interactive Sandbox
-                </MagneticButton>
+        {/* ── FAQ / Help ────────────────────────────────────────────────── */}
+        <section id="faq" className="pg-section" aria-labelledby="pg-faq-title">
+          <div className="pg-container pg-faq">
+            <div>
+              <span className="pg-eyebrow">Help</span>
+              <h2 id="pg-faq-title" className="pg-h2">Questions, answered</h2>
+              <p className="pg-sub">The short version of how money, trust and agents work on Pabandi.</p>
+              <div className="pg-glass pg-help">
+                <h4>Still stuck?</h4>
+                <p>Run a sandbox simulation or read the docs. Both take under five minutes.</p>
+                <div className="pg-help-links">
+                  <Link to="/sandbox" className="pg-link">Open the sandbox <span>→</span></Link>
+                  <Link to="/developers" className="pg-link">Developer docs <span>→</span></Link>
+                  <Link to="/compliance" className="pg-link">Refunds &amp; compliance <span>→</span></Link>
+                </div>
               </div>
-            </ScrollReveal>
+            </div>
+            <div className="pg-faq-list">
+              {FAQ.map((f, i) => (
+                <details key={f.q} className="pg-glass" open={i === 0}>
+                  <summary>{f.q}</summary>
+                  <p>{f.a}</p>
+                </details>
+              ))}
+            </div>
           </div>
+        </section>
+
+        {/* ── CTA ───────────────────────────────────────────────────────── */}
+        <section className="pg-container">
+          <Reveal>
+            <div className="pg-glass pg-cta">
+              <h2 className="pg-h2">Guarantee your next job.</h2>
+              <p className="pg-sub">Five minutes to set up. Settle in USD, PKR or USDC.</p>
+              <div className="pg-cta-actions">
+                <button className="pg-btn pg-btn-primary pg-btn-lg" onClick={() => navigate('/signup?module=contact')}>Start free pilot</button>
+                <button className="pg-btn pg-btn-ghost pg-btn-lg" onClick={() => navigate('/sandbox')}>Try the sandbox</button>
+              </div>
+              <div className="pg-term"><b>$</b> connect https://api.pabandi.com/mcp</div>
+            </div>
+          </Reveal>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="footer">
-        <div className="container" style={{ textAlign: 'center' }}>
-          <div className="footer-brand">
-            <span className="logo-mark">◈</span>
-            <span>PabandiOS</span>
+      {/* ── Footer ──────────────────────────────────────────────────────── */}
+      <footer className="pg-footer">
+        <div className="pg-container">
+          <div className="pg-footer-grid">
+            <div className="pg-footer-brand">
+              <Link to="/" className="pg-logo"><span className="pg-logo-mark">◈</span><span>Pabandi</span></Link>
+              <p>The settlement &amp; trust layer for service businesses and AI agents.</p>
+            </div>
+            <div>
+              <h6>Product</h6>
+              <ul>
+                <li><Link to="/guarantee">The Guarantee</Link></li>
+                <li><Link to="/pricing">Pricing</Link></li>
+                <li><Link to="/p/estimate/demo">Live proposal demo</Link></li>
+                <li><Link to="/sandbox">Sandbox</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h6>Developers</h6>
+              <ul>
+                <li><Link to="/developers">API docs</Link></li>
+                <li><Link to="/agents">For AI developers</Link></li>
+                <li><a href={`${API_HOST}/.well-known/agent.json`} target="_blank" rel="noopener noreferrer">Agent card</a></li>
+                <li><a href={`${API_HOST}/.well-known/openapi.json`} target="_blank" rel="noopener noreferrer">OpenAPI</a></li>
+              </ul>
+            </div>
+            <div>
+              <h6>Trust</h6>
+              <ul>
+                <li><Link to="/verify-trust">Verify a passport</Link></li>
+                <li><Link to="/compliance">Compliance &amp; refunds</Link></li>
+                <li><Link to="/privacy">Privacy</Link></li>
+                <li><Link to="/terms">Terms</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h6>Company</h6>
+              <ul>
+                <li><Link to="/about">About</Link></li>
+                <li><Link to="/contact">For businesses</Link></li>
+              </ul>
+            </div>
           </div>
-          <p className="footer-tagline">The Settlement & Trust Layer for Service Businesses & AI Agents</p>
-          
-          <div style={{ margin: '0.75rem 0' }}>
-            <Link
-              to="/sharia-compliance"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '5px 14px',
-                borderRadius: '999px',
-                background: 'rgba(52, 211, 153, 0.12)',
-                border: '1px solid rgba(52, 211, 153, 0.3)',
-                color: '#34d399',
-                fontSize: '11px',
-                fontWeight: 600,
-                textDecoration: 'none',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <span style={{ fontSize: '9px' }}>●</span>
-              <span>Sharia Compliant · Audited by AAOIFI Standards</span>
-            </Link>
+          <div className="pg-footer-bottom">
+            <span>© 2026 Pabandi. All rights reserved.</span>
+            <span>Lahore · Chicago</span>
           </div>
-
-          <nav className="footer-nav" aria-label="Footer">
-            <Link to="/transparency">Transparency (Live TVL)</Link>
-            <Link to="/guarantee">The Guarantee</Link>
-            <Link to="/impact">Financial Inclusion</Link>
-            <Link to="/sharia-compliance">Sharia Compliance</Link>
-            <Link to="/pricing">Pricing</Link>
-            <Link to="/compliance">Compliance & Refunds</Link>
-            <Link to="/p/estimate/demo">Live Proposal Demo</Link>
-            <Link to="/sandbox">See How Trust Works</Link>
-            <Link to="/verify-trust">Verify Trust Passport</Link>
-            <Link to="/developers">Developers & MCP</Link>
-            <Link to="/agents">For AI Developers</Link>
-            <Link to="/about">About</Link>
-            <Link to="/privacy">Privacy</Link>
-            <Link to="/terms">Terms</Link>
-          </nav>
-          <p className="footer-copy">© 2026 Pabandi. The Settlement & Trust Layer for Hybrid Commerce. All rights reserved.</p>
         </div>
       </footer>
     </div>

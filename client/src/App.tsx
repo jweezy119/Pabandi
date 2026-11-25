@@ -453,6 +453,10 @@ function AnimatedAppRoutes() {
               thing removes. It is deliberately NOT inside <Layout> or behind
               BusinessGuard: no chrome, no nav, nothing that implies a product tour. */}
           <Route path="/verify-trust" element={<TrustVerifyPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/signup" element={<RegisterPage />} />
+          <Route path="/developers" element={<DeveloperPortalPage />} />
+          <Route path="/agents" element={<AgentsLandingPage />} />
 
           {/* Customer-facing magic links: /invoice/:id, /pay/:invoiceId, /b/:id.
               These MUST stay outside AppShellLayout and Layout. An earlier version
@@ -498,8 +502,6 @@ function AnimatedAppRoutes() {
 
             <Route path="auth/callback" element={<AuthCallbackPage />} />
             <Route path="login" element={<LoginPage />} />
-            <Route path="register" element={<LoginPage />} />
-            <Route path="signup" element={<LoginPage />} />
             <Route path="onboarding" element={<OnboardingPage />} />
             <Route path="property-manager" element={<PlaceholderPage />} />
             <Route path="sales-crm" element={<PlaceholderPage />} />

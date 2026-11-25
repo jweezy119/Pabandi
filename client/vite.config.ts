@@ -144,6 +144,8 @@ export default defineConfig(({ mode }) => {
   server: {
     port: 3000,
     watch: {
+      usePolling: Boolean(process.env.WSL_DISTRO_NAME),
+      interval: 500,
       ignored: ['**/node_modules/**', '**/dist/**', '**/.git/**']
     },
     proxy: {

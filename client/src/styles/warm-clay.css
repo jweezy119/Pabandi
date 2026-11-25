@@ -69,9 +69,9 @@
       #EBE1D2 100%
     );
 
-  /* ── Typography ──────────────────────────────────────────────── */
-  --font-headline: 'Fraunces', serif;
-  --font-body:     'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* ── Typography (matched to translucent glass landing page) ──── */
+  --font-headline: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-body:     'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-label:    'Space Grotesk', sans-serif;
 
   /* ── Spacing ─────────────────────────────────────────────────── */
