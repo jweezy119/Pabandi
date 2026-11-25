@@ -318,16 +318,8 @@ function AnimatedAppRoutes() {
           {/* <Route path="freight/carriers" element={<FreightCarriersPage />} /> */}
           {/* <Route path="freight/rates" element={<FreightRateCalculatorPage />} /> */}
 
-          {/* BookingOS (formerly Sitara) - Booking & Discovery.
-              Moved to the public <Layout> group below: inside AppShellLayout an
-              anonymous visitor is redirected to /login, so the directory was
-              unreachable to exactly the people it is for. These pages carry their
-              own DashboardLayout and only READ auth state, so nothing in them
-              requires a session. */}
+          {/* BookingOS (formerly Sitara) - Booking & Discovery. */}
           <Route path="simulator" element={<SimulatorPage />} />
-          <Route path="b/:id" element={<MagicLinkPage />} />
-          <Route path="pay/:invoiceId" element={<MagicLinkPage />} />
-          <Route path="invoice/:id" element={<MagicLinkPage />} />
 
           <Route path="coordinator" element={<BusinessGuard><CoordinatorCommandSurface /></BusinessGuard>} />
           <Route path="coordinator/dispatch" element={<CoordinatorCommandSurface />} />
@@ -461,6 +453,25 @@ function AnimatedAppRoutes() {
               thing removes. It is deliberately NOT inside <Layout> or behind
               BusinessGuard: no chrome, no nav, nothing that implies a product tour. */}
           <Route path="/verify-trust" element={<TrustVerifyPage />} />
+
+          {/* Customer-facing magic links: /invoice/:id, /pay/:invoiceId, /b/:id.
+              These MUST stay outside AppShellLayout and Layout. An earlier version
+              sat inside AppShellLayout, whose first line is
+              `if (!isAuthenticated) return <Navigate to="/login">` — so a customer
+              who clicked an invoice link from a business hit a sign-in wall, on a
+              page that was built to be public: MagicLinkPage lives in pages/public,
+              renders its own full-screen shell (no chrome needed), and reads only
+              unauthenticated endpoints (/api/v1/public/magic/:id and
+              /api/v1/public/invoices/:id). Verified live: both return 200 JSON with
+              no Authorization header.
+
+              The comment that used to sit here claimed these had been "moved to the
+              public <Layout> group"; they had not. Top level, beside /verify-trust,
+              is where this app already puts standalone public pages. Moving them INTO
+              <Layout> would wrap a self-contained screen in marketing chrome. */}
+          <Route path="b/:id" element={<MagicLinkPage />} />
+          <Route path="pay/:invoiceId" element={<MagicLinkPage />} />
+          <Route path="invoice/:id" element={<MagicLinkPage />} />
 
           {/* ALL other routes inside Layout */}
           <Route element={<Layout />}>
