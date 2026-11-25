@@ -263,6 +263,12 @@ app.get('/health', (_req, res) => {
       missing: lastSchemaCheck.missing,
       notNullable: lastSchemaCheck.notNullable,
       wrongType: lastSchemaCheck.wrongType,
+      // Derived from Prisma.dmmf rather than the hand-maintained list above, so a
+      // column added to schema.prisma cannot be forgotten here again. drift is
+      // capped at 50 entries; driftTruncated says when it was.
+      drift: lastSchemaCheck.drift ?? [],
+      driftTruncated: lastSchemaCheck.driftTruncated ?? false,
+      absentTables: lastSchemaCheck.absentTables ?? 0,
     },
     // The bootstrap is the ONLY thing that creates these tables in production,
     // so "did it run, and did it work?" is the first question whenever the schema

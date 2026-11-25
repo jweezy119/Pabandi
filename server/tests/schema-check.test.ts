@@ -33,19 +33,44 @@ vi.mock('../src/utils/logger', () => ({
 
 let checkSchema: typeof import('../src/services/schema-check.service')['checkSchema'];
 let EXPECTED_COLUMNS: typeof import('../src/services/schema-check.service')['EXPECTED_COLUMNS'];
+let datamodelColumns: typeof import('../src/services/schema-check.service')['datamodelColumns'];
 
 beforeAll(async () => {
-  ({ checkSchema, EXPECTED_COLUMNS } = await import('../src/services/schema-check.service'));
+  ({ checkSchema, EXPECTED_COLUMNS, datamodelColumns } = await import(
+    '../src/services/schema-check.service'
+  ));
 });
 
-/** Every expected column present, nullable where required, correctly typed. */
+/**
+ * Every expected column present, nullable where required, correctly typed.
+ *
+ * Includes everything the DATAMODEL declares, not just the curated list: the
+ * derived presence check compares against Prisma.dmmf, so a fixture that only
+ * returned EXPECTED_COLUMNS would report every other model as drifted and the
+ * passing-case assertions below would be testing nothing.
+ */
 function allPresent(): ColumnRow[] {
-  return EXPECTED_COLUMNS.map((c) => ({
-    table_name: c.table,
-    column_name: c.column,
-    is_nullable: (c.nullable ? 'YES' : 'NO') as 'YES' | 'NO',
-    data_type: c.dataType ?? 'text',
-  }));
+  const byKey = new Map<string, ColumnRow>();
+
+  for (const c of datamodelColumns()) {
+    byKey.set(`${c.table}.${c.column}`, {
+      table_name: c.table,
+      column_name: c.column,
+      is_nullable: 'YES',
+      data_type: 'text',
+    });
+  }
+  // Curated entries win where they overlap, because they assert real nullability
+  // and type expectations rather than placeholders.
+  for (const c of EXPECTED_COLUMNS) {
+    byKey.set(`${c.table}.${c.column}`, {
+      table_name: c.table,
+      column_name: c.column,
+      is_nullable: (c.nullable ? 'YES' : 'NO') as 'YES' | 'NO',
+      data_type: c.dataType ?? 'text',
+    });
+  }
+  return [...byKey.values()];
 }
 
 beforeEach(() => {
@@ -322,5 +347,92 @@ describe('the columns being checked are the ones that matter', () => {
     ]) {
       expect(src, `${name} must run crm-outreach-tenant.sql`).toContain('crm-outreach-tenant.sql');
     }
+  });
+});
+
+describe('schema check — drift derived from the datamodel', () => {
+  /** A datamodel column the hand-maintained list does NOT cover. */
+  function unlistedColumn(): { table: string; column: string } {
+    const listed = new Set(EXPECTED_COLUMNS.map((c) => `${c.table}.${c.column}`));
+    const pick = datamodelColumns().find((c) => !listed.has(`${c.table}.${c.column}`));
+    expect(pick, 'the datamodel should declare more columns than the curated list').toBeTruthy();
+    return pick!;
+  }
+
+  it('flags a declared column missing from a table that DOES exist', async () => {
+    // This is the shape of the production failure the curated list missed three
+    // times: the table is there, the column is not, and no request-path code had
+    // been traced back into EXPECTED_COLUMNS.
+    const victim = unlistedColumn();
+
+    queryRaw.mockResolvedValue(
+      allPresent().filter(
+        (r) => !(r.table_name === victim.table && r.column_name === victim.column),
+      ),
+    );
+
+    const result = await checkSchema();
+    expect(result.ok).toBe(false);
+    expect(result.drift).toHaveLength(1);
+    expect(result.drift![0]).toContain(victim.column);
+    expect(result.missing.join('\n')).toContain(victim.column);
+  });
+
+  it('counts a wholly absent table once instead of reporting each of its columns', async () => {
+    const victim = unlistedColumn();
+    // Drop every column of that table, simulating a model with no table at all.
+    queryRaw.mockResolvedValue(allPresent().filter((r) => r.table_name !== victim.table));
+
+    const result = await checkSchema();
+    expect(result.absentTables).toBeGreaterThanOrEqual(1);
+    expect(result.drift ?? []).not.toContain(expect.stringContaining(victim.table));
+  });
+
+  it('does not report a column twice when the curated list already covers it', async () => {
+    queryRaw.mockResolvedValue(
+      allPresent().filter((r) => !(r.table_name === 'crm_clients' && r.column_name === 'marketingOptIn')),
+    );
+    const result = await checkSchema();
+    expect(result.ok).toBe(false);
+    // One finding, not one from each mechanism.
+    expect(result.missing.filter((m) => m.includes('marketingOptIn'))).toHaveLength(1);
+  });
+
+  it('reports ok when the datamodel and the database agree', async () => {
+    queryRaw.mockResolvedValue(allPresent());
+    const result = await checkSchema();
+    expect(result.ok).toBe(true);
+    expect(result.drift).toEqual([]);
+    expect(result.driftTruncated).toBe(false);
+  });
+
+  it('can report drift without failing the check, for observing a live database first', async () => {
+    // SCHEMA_CHECK_ENFORCE_DRIFT=0 is the escape hatch: measure production's true
+    // divergence before deciding it is clean enough to gate on.
+    const victim = unlistedColumn();
+    queryRaw.mockResolvedValue(
+      allPresent().filter(
+        (r) => !(r.table_name === victim.table && r.column_name === victim.column),
+      ),
+    );
+
+    const original = process.env.SCHEMA_CHECK_ENFORCE_DRIFT;
+    process.env.SCHEMA_CHECK_ENFORCE_DRIFT = '0';
+    try {
+      const result = await checkSchema();
+      expect(result.ok).toBe(true);
+      expect(result.drift).toHaveLength(1);
+    } finally {
+      if (original === undefined) delete process.env.SCHEMA_CHECK_ENFORCE_DRIFT;
+      else process.env.SCHEMA_CHECK_ENFORCE_DRIFT = original;
+    }
+  });
+
+  it('derives mapped table names, because information_schema never reports the model name', async () => {
+    // CrmClient is @@map("crm_clients"). Comparing against "CrmClient" would call
+    // every one of its columns missing on every Prisma-built database.
+    const tables = new Set(datamodelColumns().map((c) => c.table));
+    expect(tables.has('crm_clients')).toBe(true);
+    expect(tables.has('CrmClient')).toBe(false);
   });
 });
