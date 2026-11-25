@@ -7,6 +7,9 @@ import path from 'path';
 
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
+// Type-only: app.ts never runs the check itself, it only stores and reports the
+// result that server.ts passes in.
+import type { SchemaCheckResult } from './services/schema-check.service';
 import { rateLimiter } from './middleware/rateLimiter';
 import { requestIdMiddleware } from './middleware/requestId.middleware';
 import { apiRouter } from './routes/index';
@@ -193,28 +196,23 @@ app.use('/api/', (req: any, _res: any, next: any) => {
 });
 
 // Health check endpoints
-let lastSchemaCheck: {
-  ok: boolean;
-  checked: number;
-  missing: string[];
-  notNullable: string[];
-  wrongType: string[];
-} = { ok: true, checked: 6, missing: [], notNullable: [], wrongType: [] };
+// Typed as the real result, not a hand-copied subset: a literal type here is one
+// more list to forget when SchemaCheckResult gains a field, and it fails at
+// compile time in app.ts rather than silently dropping the new field from /health.
+let lastSchemaCheck: SchemaCheckResult = {
+  ok: true,
+  checked: 0,
+  missing: [],
+  notNullable: [],
+  wrongType: [],
+  target: 'not-yet-checked',
+};
 
-export function setSchemaCheckStatus(status: {
-  ok: boolean;
-  checked: number;
-  missing?: string[];
-  notNullable?: string[];
-  wrongType?: string[];
-}) {
-  lastSchemaCheck = {
-    ok: status.ok,
-    checked: status.checked,
-    missing: status.missing ?? [],
-    notNullable: status.notNullable ?? [],
-    wrongType: status.wrongType ?? [],
-  };
+export function setSchemaCheckStatus(status: SchemaCheckResult) {
+  // Assigned whole, not field by field: rebuilding the object from a hand-written
+  // field list would silently drop any field added to SchemaCheckResult later,
+  // which is how /health came to omit the drift report in the first place.
+  lastSchemaCheck = status;
 }
 
 app.get('/health', (_req, res) => {
@@ -263,6 +261,12 @@ app.get('/health', (_req, res) => {
       missing: lastSchemaCheck.missing,
       notNullable: lastSchemaCheck.notNullable,
       wrongType: lastSchemaCheck.wrongType,
+      // Derived from Prisma.dmmf rather than the hand-maintained list above, so a
+      // column added to schema.prisma cannot be forgotten here again. drift is
+      // capped at 50 entries; driftTruncated says when it was.
+      drift: lastSchemaCheck.drift ?? [],
+      driftTruncated: lastSchemaCheck.driftTruncated ?? false,
+      absentTables: lastSchemaCheck.absentTables ?? 0,
     },
     // The bootstrap is the ONLY thing that creates these tables in production,
     // so "did it run, and did it work?" is the first question whenever the schema
