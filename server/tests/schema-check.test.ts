@@ -266,6 +266,10 @@ describe('the columns being checked are the ones that matter', () => {
       '"employeeId"',
       '"checkedInAt"',
       '"checkedOutAt"',
+      // The @unique on Booking.workOrderId is the idempotency mechanism for
+      // booking -> work-order creation; the index and FK ship with the column.
+      'Booking_workOrderId_key',
+      'Booking_workOrderId_fkey',
       'dashboardTheme',
       'SMSLog',
       'ChannelMessage',
