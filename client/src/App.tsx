@@ -42,6 +42,7 @@ const VerifyPayoutPage = lazy(() => import('./pages/VerifyPayoutPage'));
 const MilestoneDetailPage = lazy(() => import('./pages/MilestoneDetailPage'));
 const LPDashboard = lazy(() => import('./pages/Operator/LPDashboard'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'));
 const OAuthConsentPage = lazy(() => import('./pages/OAuthConsentPage'));
