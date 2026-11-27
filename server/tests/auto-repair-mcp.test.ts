@@ -111,7 +111,13 @@ describe('Sprint 1 — Agentic US Auto Repair (MCP + AI Trust Guardrails)', () =
           clientPhone: '+13125550199',
         },
       },
-    });
+    }, {
+      id: 'agent_user_1',
+      email: 'agent@example.com',
+      role: 'USER',
+      agentKeyId: 'key_1',
+      scopes: ['booking', 'directory'],
+    } as any);
 
     expect(rpcRes.result.isError).toBe(false);
     const payload = JSON.parse(rpcRes.result.content[0].text);

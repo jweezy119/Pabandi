@@ -2,6 +2,12 @@ import { AgentToolUser, agentTools } from './agentTools.service';
 import { getPaidProofByPublicId, listPaidProofsForWorker } from './paidProof.service';
 import { webacyRiskService } from './webacyRisk.service';
 import { autoRepairService } from './autoRepair.service';
+import { aiProviderStatus } from './ai/aiProvider.router';
+import { aiNlpService } from './ai.nlp.service';
+import { runConcierge } from './concierge.service';
+import { jevStatus } from './jev.service';
+import { prisma } from '../utils/database';
+import { guardOutput, sanitizeUntrusted } from '../security/aiGuard';
 
 type Handler = (args: any, user?: AgentToolUser) => Promise<any>;
 
@@ -72,4 +78,36 @@ export const agentToolHandlers: Record<string, Handler> = {
     autoRepairService.checkShopTrust({
       shopId: String(args.shopId || ''),
     }),
+  pabandi_ai_status: async () => ({ providers: aiProviderStatus(), jev: jevStatus() }),
+  pabandi_ai_classify: async (args) => {
+    const message = sanitizeUntrusted(String(args.message || ''), { label: 'agent-message' });
+    if (!message) throw new Error('message is required');
+    const result = await aiNlpService.classifyIntentAndLanguage(message);
+    return JSON.parse(guardOutput(JSON.stringify(result)));
+  },
+  pabandi_ai_concierge: async (args) => {
+    const query = sanitizeUntrusted(String(args.query || ''), { label: 'agent-concierge-query' });
+    if (!query) throw new Error('query is required');
+    const result = await runConcierge({
+      query,
+      city: args.city ? String(args.city) : undefined,
+      walletAddress: args.walletAddress ? String(args.walletAddress) : undefined,
+    });
+    return {
+      message: guardOutput(result.message),
+      intent: result.intent,
+      proposal: result.proposal,
+      alternatives: result.alternatives,
+      provider: result.provider,
+    };
+  },
+  pabandi_get_booking_risk: async (args) => {
+    const bookingId = String(args.bookingId || '');
+    if (!bookingId) throw new Error('bookingId is required');
+    return prisma.bookingRisk.findMany({
+      where: { bookingId },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    });
+  },
 };

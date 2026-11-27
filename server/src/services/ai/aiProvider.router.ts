@@ -26,16 +26,27 @@ interface ProviderAttempt {
   run: () => Promise<string>;
 }
 
-function providerChain(): AiProviderName[] {
-  const chain: AiProviderName[] = [];
-  if (process.env.OPENAI_API_KEY) chain.push('openai');
-  if (process.env.DASHSCOPE_API_KEY) chain.push('dashscope');
-  if (process.env.NVIDIA_API_KEY) chain.push('nvidia');
-  if (process.env.POLLINATIONS_ENABLED === 'true') chain.push('pollinations');
-  // Gemini is last: it is unreachable from some Render networks and its 30s
-  // timeout would otherwise delay every request that could be served faster.
-  if (process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY) chain.push('google');
-  return chain;
+export type AiTask = 'default' | 'classification' | 'copy';
+
+// High-volume, low-stakes jobs (intent detection, templated copy) should try the
+// cheapest providers first. Triage/vision/concierge keep the default chain.
+const CHEAP_FIRST: AiProviderName[] = ['pollinations', 'dashscope', 'openai', 'nvidia', 'google'];
+
+function providerChain(task: AiTask = 'default'): AiProviderName[] {
+  const configured: Record<AiProviderName, boolean> = {
+    openai: Boolean(process.env.OPENAI_API_KEY),
+    google: Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY),
+    dashscope: Boolean(process.env.DASHSCOPE_API_KEY),
+    nvidia: Boolean(process.env.NVIDIA_API_KEY),
+    pollinations: process.env.POLLINATIONS_ENABLED === 'true',
+  };
+  const order: AiProviderName[] = task === 'default'
+    ? ['openai', 'dashscope', 'nvidia', 'pollinations', 'google']
+    : CHEAP_FIRST;
+  // Gemini is last in both orders: it is unreachable from some Render networks
+  // and its 30s timeout would otherwise delay every request that could be
+  // served faster.
+  return order.filter((name) => configured[name]);
 }
 
 export function aiProviderStatus(): Record<AiProviderName, boolean> {
@@ -223,12 +234,13 @@ async function runText(provider: AiProviderName, prompt: string, system?: string
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms),
-    ),
-  ]);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<T>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
 }
 
 async function googleJson(prompt: string, schema: JsonSchema, system?: string): Promise<string> {
@@ -328,8 +340,19 @@ async function dashscopeText(prompt: string, system?: string): Promise<string> {
   return response.data?.output?.choices?.[0]?.message?.content ?? '';
 }
 
+const PROVIDER_COOLDOWN_MS = 60_000;
+const MAX_PROVIDER_ATTEMPT_MS = 20_000;
+
+function routerDeadline(): number {
+  const configured = Number(process.env.AI_ROUTER_TIMEOUT_MS);
+  return Date.now() + (Number.isFinite(configured) && configured > 0 ? configured : 30_000);
+}
+
 export class AiProviderRouter {
   private lastErrors: Partial<Record<AiProviderName, string>> = {};
+  /** Failed providers sit out a minute so a dead provider cannot add latency
+   *  to every request in the fallback chain. */
+  private cooldownUntil: Partial<Record<AiProviderName, number>> = {};
 
   getStatus() {
     return aiProviderStatus();
@@ -339,24 +362,44 @@ export class AiProviderRouter {
     return { ...this.lastErrors };
   }
 
+  private recordFailure(provider: AiProviderName, message: string) {
+    this.lastErrors[provider] = message;
+    this.cooldownUntil[provider] = Date.now() + PROVIDER_COOLDOWN_MS;
+    logger.warn(`[AiRouter] ${provider} failed: ${message}`);
+  }
+
+  private chainFor(options: { provider?: AiProviderName; task?: AiTask }): AiProviderName[] {
+    return options.provider ? [options.provider] : providerChain(options.task);
+  }
+
   async generateJson<T>(
     prompt: string,
     schema: JsonSchema,
-    options: { system?: string; provider?: AiProviderName } = {},
+    options: { system?: string; provider?: AiProviderName; task?: AiTask } = {},
   ): Promise<AiRouterJsonResult<T> | null> {
-    const chain = options.provider ? [options.provider] : providerChain();
-    for (const provider of chain) {
+    const deadline = routerDeadline();
+    for (const provider of this.chainFor(options)) {
+      if (!options.provider && (this.cooldownUntil[provider] ?? 0) > Date.now()) continue;
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) {
+        this.lastErrors[provider] = 'router deadline exceeded';
+        break;
+      }
       try {
-        const raw = await runJson(provider, prompt, schema, options.system);
+        const raw = await withTimeout(
+          runJson(provider, prompt, schema, options.system),
+          Math.min(remaining, MAX_PROVIDER_ATTEMPT_MS),
+          `ai:${provider}`,
+        );
         if (!raw) {
           this.lastErrors[provider] = 'provider returned an empty response';
           continue;
         }
         const parsed = JSON.parse(extractJson(raw)) as T;
+        delete this.cooldownUntil[provider];
         return { data: parsed, provider, raw };
       } catch (error) {
-        this.lastErrors[provider] = error instanceof Error ? error.message : String(error);
-        logger.warn(`[AiRouter] ${provider} JSON generation failed:`, this.lastErrors[provider]);
+        this.recordFailure(provider, error instanceof Error ? error.message : String(error));
       }
     }
     return null;
@@ -364,17 +407,29 @@ export class AiProviderRouter {
 
   async generateText(
     prompt: string,
-    options: { system?: string; provider?: AiProviderName } = {},
+    options: { system?: string; provider?: AiProviderName; task?: AiTask } = {},
   ): Promise<AiRouterTextResult | null> {
-    const chain = options.provider ? [options.provider] : providerChain();
-    for (const provider of chain) {
+    const deadline = routerDeadline();
+    for (const provider of this.chainFor(options)) {
+      if (!options.provider && (this.cooldownUntil[provider] ?? 0) > Date.now()) continue;
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) {
+        this.lastErrors[provider] = 'router deadline exceeded';
+        break;
+      }
       try {
-        const text = await runText(provider, prompt, options.system);
-        if (text) return { text, provider };
+        const text = await withTimeout(
+          runText(provider, prompt, options.system),
+          Math.min(remaining, MAX_PROVIDER_ATTEMPT_MS),
+          `ai:${provider}`,
+        );
+        if (text) {
+          delete this.cooldownUntil[provider];
+          return { text, provider };
+        }
         this.lastErrors[provider] = 'provider returned an empty response';
       } catch (error) {
-        this.lastErrors[provider] = error instanceof Error ? error.message : String(error);
-        logger.warn(`[AiRouter] ${provider} text generation failed:`, this.lastErrors[provider]);
+        this.recordFailure(provider, error instanceof Error ? error.message : String(error));
       }
     }
     return null;

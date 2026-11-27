@@ -183,7 +183,7 @@ class AiNlpService {
     const routed = await aiProviderRouter.generateJson<ClassificationResult>(
       cleanMessage,
       CLASSIFICATION_SCHEMA as any,
-      { system },
+      { system, task: 'classification' },
     );
 
     if (routed && validateClassificationOutput(routed.data)) {
@@ -232,7 +232,7 @@ class AiNlpService {
     ].join(' ');
 
     const prompt = `Template/Instruction: ${template}\n\n${contextStr}`;
-    const routed = await aiProviderRouter.generateText(prompt, { system });
+    const routed = await aiProviderRouter.generateText(prompt, { system, task: 'copy' });
     if (routed?.text) return routed.text;
 
     // No provider answered. Still honour simple {{variable}} templates so a

@@ -18,6 +18,10 @@ export const TOOL_SCOPES: Record<string, string[]> = {
   pabandi_search_auto_repair: ['directory'],
   pabandi_book_auto_repair: ['booking'],
   pabandi_check_shop_trust: ['trust'],
+  pabandi_ai_status: ['directory'],
+  pabandi_ai_classify: ['directory'],
+  pabandi_ai_concierge: ['directory'],
+  pabandi_get_booking_risk: ['trust'],
 };
 
 export function userHasScope(user: AgentToolUser | undefined, toolName: string): boolean {

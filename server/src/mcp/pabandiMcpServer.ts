@@ -197,8 +197,8 @@ export const TOOLS: McpTool[] = [
   },
   {
     name: 'pabandi_book_auto_repair',
-    description: 'Book an auto repair order on behalf of a car owner. Decodes the vehicle VIN via NHTSA, creates a RepairOrder (isBookedByAgent: true), runs the AI Fair-Price Guardrail, and triggers an SMS Magic Link for the owner to approve & fund the deposit.',
-    requiresAuth: false,
+    description: 'Book an auto repair order on behalf of a car owner. Decodes the vehicle VIN via NHTSA, creates a RepairOrder (isBookedByAgent: true), runs the AI Fair-Price Guardrail, and triggers an SMS Magic Link for the owner to approve & fund the deposit. Requires an agent API key with booking scope.',
+    requiresAuth: true,
     inputSchema: {
       type: 'object',
       properties: {
@@ -224,6 +224,46 @@ export const TOOLS: McpTool[] = [
       required: ['shopId'],
     },
   },
+  {
+    name: 'pabandi_ai_status',
+    description: 'Report which AI providers and the Jev decision engine are configured. Booleans only, never credentials — useful for agents deciding whether to request AI-backed work.',
+    requiresAuth: false,
+    inputSchema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'pabandi_ai_classify',
+    description: 'Classify a customer message into intent, language and confidence using the internal NLP model chain (with deterministic fallback).',
+    requiresAuth: true,
+    inputSchema: {
+      type: 'object',
+      properties: { message: { type: 'string' } },
+      required: ['message'],
+    },
+  },
+  {
+    name: 'pabandi_ai_concierge',
+    description: 'Natural-language business discovery: returns a ranked proposal with trust/escrow framing and alternatives. Read-only — it never books or moves funds.',
+    requiresAuth: true,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string' },
+        city: { type: 'string' },
+        walletAddress: { type: 'string' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'pabandi_get_booking_risk',
+    description: 'Read the latest learned risk assessment (score, band, policy, factors) for a booking.',
+    requiresAuth: true,
+    inputSchema: {
+      type: 'object',
+      properties: { bookingId: { type: 'string' } },
+      required: ['bookingId'],
+    },
+  },
 ];
 
 export function initializeResult(clientProtocolVersion?: string) {
@@ -247,6 +287,16 @@ export function initializeResult(clientProtocolVersion?: string) {
   };
 }
 
+/** Tools that move money or send customer-facing SMS must use a scoped key. */
+const KEY_REQUIRED_TOOLS = new Set([
+  'pabandi_create_booking',
+  'pabandi_mark_checkin',
+  'pabandi_release_escrow',
+  'pabandi_refund_booking',
+  'pabandi_request_payout',
+  'pabandi_book_auto_repair',
+]);
+
 export async function callTool(name: string, args: Record<string, unknown>, user?: AgentToolUser) {
   const tool = TOOLS.find((t) => t.name === name);
   if (!tool) {
@@ -255,6 +305,13 @@ export async function callTool(name: string, args: Record<string, unknown>, user
   if (tool.requiresAuth && !user) {
     return {
       content: [{ type: 'text', text: JSON.stringify({ error: 'Authentication required. Send Authorization: Bearer <JWT> or x-api-key.' }) }],
+      isError: true,
+    };
+  }
+  // A bare JWT previously passed userHasScope() without any scope or spend cap.
+  if (KEY_REQUIRED_TOOLS.has(name) && !user?.agentKeyId) {
+    return {
+      content: [{ type: 'text', text: JSON.stringify({ error: 'An agent API key is required for this tool.' }) }],
       isError: true,
     };
   }
