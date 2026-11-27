@@ -92,6 +92,11 @@ services:
       # this file cannot set it for you).
       - key: DATABASE_URL
         sync: false
+      # Optional but recommended for production sessions: when set, express-session
+      # stores sessions in Redis so logins survive restarts and scale across
+      # instances. Without it the API falls back to in-memory sessions.
+      - key: REDIS_URL
+        sync: false
       # DIRECT_URL is not needed for Supabase (it's not a Render-managed DB).
       # Remove the fromDatabase block — Supabase is external to Render.
       - key: COURTLISTENER_API_KEY

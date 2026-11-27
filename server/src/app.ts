@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import compression from 'compression';
 import path from 'path';
 import session from 'express-session';
+import { createSessionStore } from './lib/redisSessionStore';
 import crypto from 'crypto';
 
 import { errorHandler } from './middleware/errorHandler';
@@ -177,6 +178,9 @@ app.use(
 // express-session's res.end hook ("req.session.touch is not a function"),
 // including /health — which made every deploy look unhealthy.
 const sessionSecret = process.env.SESSION_SECRET || process.env.JWT_SECRET;
+// Optional Redis store: present only when REDIS_URL is configured. With no
+// Redis, express-session keeps its default MemoryStore (and its warning).
+const sessionStore = createSessionStore();
 
 if (!sessionSecret) {
   logger.error('🚨 FATAL: no session secret available (set SESSION_SECRET or JWT_SECRET)');
@@ -195,6 +199,7 @@ app.use(
   session({
     name: 'pabandi.sid',
     secret: sessionSecret!,
+    store: sessionStore,
     resave: false,
     saveUninitialized: false,
     rolling: true,
