@@ -245,10 +245,10 @@ export const autoRepairService = {
     // 5. Trigger SMS Magic Link (non-fatal if SMS provider not configured in dev)
     let smsDispatched = false;
     try {
-      const { sendBusinessSms } = await import('./smsProvider.service');
-      if (typeof sendBusinessSms === 'function') {
-        await sendBusinessSms(shop.id, clientPhone.trim(), smsText);
-        smsDispatched = true;
+      const { smsService } = await import('./sms.service');
+      if (smsService && typeof (smsService as any).sendSMS === 'function') {
+        const res = await (smsService as any).sendSMS(clientPhone.trim(), smsText, shop.id);
+        smsDispatched = Boolean(res?.success);
       }
     } catch (e: any) {
       logger.info(`[AutoRepair] SMS magic link queued/simulated for ${clientPhone}: ${e?.message || 'no SMS provider'}`);
