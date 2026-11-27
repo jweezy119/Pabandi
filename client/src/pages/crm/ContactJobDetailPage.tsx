@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card } from '../../components/primitives/Card';
 import { Button } from '../../components/primitives/Button';
 import { JobCheckinPanel } from './components/JobCheckinPanel';
 import { getAuthToken } from '../../utils/authToken';
+import { useAuthStore } from '../../store/authStore';
 const API_BASE = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
 const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() || ''}` });
 const api = {
@@ -25,15 +26,19 @@ type JobData = {
 };
 
 export function ContactJobDetailPage() {
-  const { jobId } = useParams<{ jobId: string }>();
+  const { id: jobId } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const [job, setJob] = useState<JobData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<JobData>>({});
   
-  // Need businessId. Hardcode for now or assume it's in context/local storage.
-  const businessId = 'default';
+  // The CRM router resolves the business from the caller when no id is given;
+  // sending the literal 'default' made every job detail request 403.
+  const businessId =
+    localStorage.getItem('businessId') ||
+    (useAuthStore.getState().user as any)?.business?.id ||
+    '';
 
   useEffect(() => {
     if (jobId) loadJob();
@@ -118,7 +123,7 @@ export function ContactJobDetailPage() {
               <label className="text-sm text-gray-400">Date & Time</label>
               {isEditing ? (
                 <div className="flex gap-2">
-                  <Input type="date" value={new Date(editForm.scheduledDate).toISOString().split('T')[0]} onChange={e => setEditForm({...editForm, scheduledDate: e.target.value})} />
+                  <Input type="date" value={editForm.scheduledDate ? new Date(editForm.scheduledDate).toISOString().split('T')[0] : ''} onChange={e => setEditForm({...editForm, scheduledDate: e.target.value})} />
                   <Input type="time" value={editForm.scheduledTime} onChange={e => setEditForm({...editForm, scheduledTime: e.target.value})} />
                 </div>
               ) : (

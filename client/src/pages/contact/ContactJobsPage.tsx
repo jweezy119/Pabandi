@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { Button } from '../../components/primitives';
@@ -166,9 +166,19 @@ export default function ContactJobsPage() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [filteredClients, setFilteredClients] = useState<any[]>([]);
 
+  const firstFetch = useRef(true);
   useEffect(() => {
     fetchInitialData();
   }, []);
+
+  // Filters/search/sort used to change the request builder but never re-run it.
+  useEffect(() => {
+    if (firstFetch.current) {
+      firstFetch.current = false;
+      return;
+    }
+    void fetchJobs();
+  }, [filters.filter, filters.search, filters.sort]);
 
   const fetchInitialData = async () => {
     setLoading(true);

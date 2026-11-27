@@ -166,7 +166,7 @@ router.post('/clients', async (req: AuthRequest, res: Response, next: NextFuncti
   try {
     const crm = requireCrmContext(req);
     const businessId = crm.businessId!;
-    const { name, email, phone, address, company, notes, status } = req.body ?? {};
+    const { name, email, phone, address, company, notes, status, customData } = req.body ?? {};
     if (!name || !String(name).trim()) throw new CustomError('name is required', 400);
 
     const client = await prisma.crmClient.create({
@@ -180,6 +180,7 @@ router.post('/clients', async (req: AuthRequest, res: Response, next: NextFuncti
         company: company ? String(company) : null,
         notes: notes ? String(notes) : null,
         status: status ? String(status) : 'ACTIVE',
+        ...(customData && typeof customData === 'object' ? { customData: customData as any } : {}),
       },
     });
     // 201: this creates a client. Callers do not branch on the code, but the
@@ -215,7 +216,7 @@ router.put('/clients/:id', async (req: AuthRequest, res: Response, next: NextFun
     if (!existing) throw new CustomError('Client not found', 404);
 
     const patch: any = {};
-    const { name, email, phone, address, company, notes, status } = req.body ?? {};
+    const { name, email, phone, address, company, notes, status, customData } = req.body ?? {};
     if (name !== undefined) patch.name = String(name).trim();
     if (email !== undefined) patch.email = email ? String(email).trim().toLowerCase() : '';
     if (phone !== undefined) patch.phone = phone ? String(phone) : '';
@@ -223,6 +224,7 @@ router.put('/clients/:id', async (req: AuthRequest, res: Response, next: NextFun
     if (company !== undefined) patch.company = company ? String(company) : null;
     if (notes !== undefined) patch.notes = notes ? String(notes) : null;
     if (status !== undefined) patch.status = String(status);
+    if (customData !== undefined && typeof customData === 'object') patch.customData = customData;
 
     const client = await prisma.crmClient.update({ where: { id: existing.id }, data: patch });
     ok(res, client);
@@ -813,23 +815,65 @@ router.get('/search', async (req: AuthRequest, res: Response, next: NextFunction
     const crm = requireCrmContext(req);
     const businessId = crm.businessId!;
     const q = String(req.query.q ?? '').trim();
-    if (!q) return ok(res, []);
-    const clients = await prisma.crmClient.findMany({
-      where: {
-        OR: [{ businessId }, { serviceBusinessId: businessId }],
-        AND: [
-          {
-            OR: [
-              { name: { contains: q, mode: 'insensitive' } },
-              { email: { contains: q, mode: 'insensitive' } },
-              { phone: { contains: q, mode: 'insensitive' } },
-            ],
-          },
-        ],
-      },
-      take: 20,
-    });
-    ok(res, clients);
+    // CommandPalette reads data.results and refuses to search below 2 chars.
+    // Returning a bare array here made every search look like "no matches".
+    if (q.length < 2) return ok(res, { results: [] });
+
+    const like = { contains: q, mode: 'insensitive' } as any;
+    const crmScope = { OR: [{ businessId }, { serviceBusinessId: businessId }] };
+
+    const [clients, deals, jobs, invoices, activities] = await Promise.all([
+      prisma.crmClient.findMany({
+        where: { AND: [crmScope, { OR: [{ name: like }, { email: like }, { phone: like }] }] },
+        take: 10,
+        select: { id: true, name: true, email: true },
+      }),
+      prisma.crmDeal.findMany({
+        where: { AND: [crmScope, { title: like }] },
+        take: 10,
+        select: { id: true, title: true, value: true },
+      }),
+      prisma.booking.findMany({
+        where: { businessId, OR: [{ serviceType: like }, { clientAddress: like }] },
+        take: 10,
+        select: { id: true, serviceType: true, status: true, slotStart: true },
+      }),
+      prisma.invoice.findMany({
+        where: { businessId, OR: [{ number: like }, { notes: like }] },
+        take: 10,
+        select: { id: true, number: true, status: true },
+      }),
+      prisma.crmActivity.findMany({
+        where: { AND: [crmScope, { description: like }] },
+        take: 10,
+        select: { id: true, type: true, description: true },
+      }),
+    ]);
+
+    const results = [
+      ...clients.map((c) => ({
+        type: 'client' as const, id: c.id, title: c.name,
+        subtitle: c.email ?? undefined, href: `/contact/clients/${c.id}`,
+      })),
+      ...deals.map((d) => ({
+        type: 'deal' as const, id: d.id, title: d.title,
+        meta: `$${Number(d.value || 0).toLocaleString()}`, href: `/contact/deals/${d.id}`,
+      })),
+      ...jobs.map((j) => ({
+        type: 'job' as const, id: j.id, title: j.serviceType || 'Job',
+        subtitle: new Date(j.slotStart).toLocaleDateString(), href: `/contact/jobs/${j.id}`,
+      })),
+      ...invoices.map((i) => ({
+        type: 'invoice' as const, id: i.id, title: i.number, meta: i.status,
+        href: `/contact/invoices/${i.id}`,
+      })),
+      ...activities.map((a) => ({
+        type: 'activity' as const, id: a.id, title: a.description || a.type,
+        subtitle: a.type, href: '/contact/activities',
+      })),
+    ].slice(0, 30);
+
+    ok(res, { results });
   } catch (e) {
     next(e);
   }
@@ -892,7 +936,7 @@ router.post('/deals', async (req: AuthRequest, res: Response, next: NextFunction
   try {
     const crm = requireCrmContext(req);
     const businessId = crm.businessId!;
-    const { title, value, stage, probability, expectedCloseDate, notes, clientId, ownerName, lostReason } = req.body ?? {};
+    const { title, value, stage, probability, expectedCloseDate, notes, clientId, ownerName, lostReason, customData } = req.body ?? {};
     if (!title || !String(title).trim()) throw new CustomError('title is required', 400);
 
     // Stage is validated against DEAL_STAGES: lowercase 'won' is what the legacy
@@ -938,6 +982,7 @@ router.post('/deals', async (req: AuthRequest, res: Response, next: NextFunction
         clientId: clientId ? String(clientId) : null,
         ownerName: ownerName ? String(ownerName) : null,
         lostReason: lostReason ? String(lostReason) : null,
+        ...(customData && typeof customData === 'object' ? { customData: customData as any } : {}),
         serviceBusinessId: businessId,
         ...(stage === 'WON' || stage === 'LOST' ? { closedAt: new Date() } : {}),
       },
@@ -972,7 +1017,7 @@ router.patch('/deals/:id', async (req: AuthRequest, res: Response, next: NextFun
       select: { id: true },
     });
     if (!existing) throw new CustomError('Deal not found', 404);
-    const { title, value, stage, probability, expectedCloseDate, notes, clientId, ownerName, lostReason } = req.body ?? {};
+    const { title, value, stage, probability, expectedCloseDate, notes, clientId, ownerName, lostReason, customData } = req.body ?? {};
     const patch: any = {};
     if (title !== undefined) patch.title = String(title).trim();
     if (value !== undefined) {
@@ -1005,6 +1050,7 @@ router.patch('/deals/:id', async (req: AuthRequest, res: Response, next: NextFun
     }
     if (expectedCloseDate !== undefined) patch.expectedCloseDate = expectedCloseDate ? new Date(expectedCloseDate) : null;
     if (notes !== undefined) patch.notes = notes ? String(notes) : null;
+    if (customData !== undefined && typeof customData === 'object') patch.customData = customData;
     if (clientId !== undefined) {
       if (clientId) {
         const client = await prisma.crmClient.findFirst({
@@ -1226,7 +1272,7 @@ router.post('/tasks', async (req: AuthRequest, res: Response, next: NextFunction
   try {
     const crm = requireCrmContext(req);
     const businessId = crm.businessId!;
-    const { title, description, status, priority, dueDate, clientId, dealId, assignedTo } = req.body ?? {};
+    const { title, description, status, priority, dueDate, clientId, dealId, assignedTo, customData } = req.body ?? {};
     if (!title || !String(title).trim()) throw new CustomError('title is required', 400);
     const task = await prisma.crmTask.create({
       data: {
@@ -1238,6 +1284,7 @@ router.post('/tasks', async (req: AuthRequest, res: Response, next: NextFunction
         clientId: clientId ? String(clientId) : null,
         dealId: dealId ? String(dealId) : null,
         assignedTo: assignedTo ? String(assignedTo) : null,
+        ...(customData && typeof customData === 'object' ? { customData: customData as any } : {}),
         serviceBusinessId: businessId,
       },
     });
@@ -1270,7 +1317,7 @@ router.patch('/tasks/:id', async (req: AuthRequest, res: Response, next: NextFun
       select: { id: true },
     });
     if (!existing) throw new CustomError('Task not found', 404);
-    const { title, description, status, priority, dueDate, clientId, dealId, assignedTo } = req.body ?? {};
+    const { title, description, status, priority, dueDate, clientId, dealId, assignedTo, customData } = req.body ?? {};
     const patch: any = {};
     if (title !== undefined) patch.title = String(title).trim();
     if (description !== undefined) patch.description = description ? String(description) : null;
@@ -1280,6 +1327,7 @@ router.patch('/tasks/:id', async (req: AuthRequest, res: Response, next: NextFun
     if (clientId !== undefined) patch.clientId = clientId ? String(clientId) : null;
     if (dealId !== undefined) patch.dealId = dealId ? String(dealId) : null;
     if (assignedTo !== undefined) patch.assignedTo = assignedTo ? String(assignedTo) : null;
+    if (customData !== undefined && typeof customData === 'object') patch.customData = customData;
     const task = await prisma.crmTask.update({ where: { id: existing.id }, data: patch });
     ok(res, task);
   } catch (e) {

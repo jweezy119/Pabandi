@@ -1008,6 +1008,9 @@ model CrmClient {
   // sourced; the unsubscribe endpoint clears it.
   marketingOptIn    Boolean   @default(true)
   marketingOptInAt  DateTime?
+  // Business-defined fields from Settings → Custom Fields. Kept as JSON so
+  // adding a field never requires a migration; the UI validates the keys.
+  customData        Json?
 
   passport TrustPassport? @relation(fields: [passportId], references: [id])
   business Business?      @relation(fields: [businessId], references: [id])
@@ -1464,6 +1467,7 @@ model CrmDeal {
   closedAt          DateTime?
   lostReason        String?
   notes             String?
+  customData        Json?
   clientId          String?
   ownerName         String?
   businessId        String?
@@ -1481,6 +1485,7 @@ model CrmTask {
   id                String    @id @default(cuid())
   title             String
   description       String?
+  customData        Json?
   status            String    @default("TODO")
   priority          String    @default("MEDIUM")
   dueDate           DateTime?

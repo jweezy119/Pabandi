@@ -113,6 +113,9 @@ const domainRoutes: [string, string][] = [
 
   // 8b. Contact OS CRM
   ['/crm', './crm.routes'],
+  // Team and API-key pages previously called endpoints that were never mounted.
+  ['/team', './team.routes'],
+  ['/api-keys', './apiKeys.routes'],
   // Deleted in the 4e5b9e39 purge while the client still called all six
   // endpoints, so the CRM analytics page had been rendering six 404s.
   ['/reports', './reports.routes'],

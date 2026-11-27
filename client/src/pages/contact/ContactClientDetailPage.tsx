@@ -274,8 +274,8 @@ export default function ContactClientDetailPage() {
               <div className="space-y-3">
                 {files.map(f => (
                   <div key={f.id} className="flex justify-between items-center p-4 rounded-xl bg-[var(--warm-sand)]/20">
-                    <div><h4 className="font-bold">{f.fileName}</h4><p className="text-xs text-[var(--soft-stone)]">{new Date(f.createdAt).toLocaleDateString()}</p></div>
-                    <a href={f.fileUrl} target="_blank" className="text-[var(--clay)] font-bold">Download</a>
+                    <div><h4 className="font-bold">{f.name}</h4><p className="text-xs text-[var(--soft-stone)]">{new Date(f.createdAt).toLocaleDateString()}</p></div>
+                    <a href={f.url} target="_blank" className="text-[var(--clay)] font-bold">Download</a>
                   </div>
                 ))}
               </div>
@@ -292,7 +292,6 @@ export default function ContactClientDetailPage() {
                 <option value="CALL">Call</option>
                 <option value="EMAIL">Email</option>
                 <option value="MEETING">Meeting</option>
-                <option value="TASK">Task</option>
               </select>
             </div>
             <Input label="Title" required value={activityForm.title} onChange={(e: any) => setActivityForm({ ...activityForm, title: e.target.value })} />

@@ -69,7 +69,7 @@ export default function ContactJobDetailPage() {
   const [job, setJob] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [client, setClient] = useState<any>(null);
-  const [invoice, setInvoice] = useState<any>(null);
+  const [invoice] = useState<any>(null);
   const [checkedInAt, setCheckedInAt] = useState<Date | null>(null);
   const [checkedOutAt, setCheckedOutAt] = useState<Date | null>(null);
   const [showCheckIn, setShowCheckIn] = useState(false);

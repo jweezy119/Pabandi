@@ -37,7 +37,7 @@ export default function ClientTimeline({ activities, deals, invoices, jobs, note
                     ev.eventType === 'job' ? 'info' : 'neutral'
                   } />
                   <h4 className="font-bold text-sm text-[var(--warm-ink)]">
-                    {ev.title || ev.number || ev.serviceType || ev.fileName || 'Note'}
+                    {ev.title || ev.number || ev.serviceType || ev.name || 'Note'}
                   </h4>
                 </div>
                 <span className="text-xs text-[var(--soft-stone)]">{ev.date.toLocaleDateString()}</span>
@@ -49,7 +49,7 @@ export default function ClientTimeline({ activities, deals, invoices, jobs, note
                 {ev.eventType === 'deal' && <p>Stage: {ev.stage} · Value: ${(ev.value || 0).toLocaleString()}</p>}
                 {ev.eventType === 'invoice' && <p>Status: {ev.status} · Amount: ${(ev.subtotal || 0).toLocaleString()}</p>}
                 {ev.eventType === 'job' && <p>Status: {ev.status} · Date: {new Date(ev.scheduledDate).toLocaleDateString()}</p>}
-                {ev.eventType === 'file' && <p>Attached document: <a href={ev.fileUrl} target="_blank" rel="noopener noreferrer" className="text-[var(--clay)] hover:underline">Download</a></p>}
+                {ev.eventType === 'file' && <p>Attached document: <a href={ev.url} target="_blank" rel="noopener noreferrer" className="text-[var(--clay)] hover:underline">Download</a></p>}
               </div>
             </div>
           </div>

@@ -275,3 +275,9 @@ BEGIN
   END IF;
 END
 $$;
+
+-- 20261127_crm_custom_data — custom-field values stored on CRM records.
+-- Idempotent: this file runs on every deploy and every boot.
+ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "customData" JSONB;
+ALTER TABLE "CrmDeal" ADD COLUMN IF NOT EXISTS "customData" JSONB;
+ALTER TABLE "CrmTask" ADD COLUMN IF NOT EXISTS "customData" JSONB;
