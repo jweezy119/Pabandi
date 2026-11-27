@@ -21,6 +21,7 @@ import {
   getManualReviewQueue,
 } from '../controllers/payment.controller';
 import { handleSquareWebhook } from '../controllers/squareCheckout.controller';
+import { webhookVerifierMiddleware } from '../utils/webhookVerifier';
 
 const router = Router();
 
@@ -138,11 +139,11 @@ router.get('/recommend-rail', (req: Request, res: Response) => {
 // POST /api/v1/payments/create — create payment request (USDC/BTCPay/Manual)
 router.post('/create', requireIdempotency, optionalAuthenticate, createPaymentRequest);
 
-// GET /api/v1/payments/:id/status — check payment status
-router.get('/:id/status', optionalAuthenticate, getPaymentStatus);
+// GET /api/v1/payments/:id/status — check payment status (owner/admin only)
+router.get('/:id/status', authenticate, getPaymentStatus);
 
-// POST /api/v1/payments/:id/verify — verify payment on-chain
-router.post('/:id/verify', optionalAuthenticate, verifyPayment);
+// POST /api/v1/payments/:id/verify — verify payment on-chain (owner/admin only)
+router.post('/:id/verify', authenticate, verifyPayment);
 
 // POST /api/v1/payments/manual-approve — Coordinator/Admin manual receipt approval & ledger release
 router.post('/manual-approve', authenticate, authorize('ADMIN', 'COORDINATOR'), manualApprovePayment);
@@ -150,17 +151,19 @@ router.post('/manual-approve', authenticate, authorize('ADMIN', 'COORDINATOR'), 
 // GET /api/v1/payments/manual-review-queue — Coordinator/Admin review queue for low-confidence receipts
 router.get('/manual-review-queue', authenticate, authorize('ADMIN', 'COORDINATOR'), getManualReviewQueue);
 
-// GET /api/v1/payments/:id — get payment details
-router.get('/:id', optionalAuthenticate, getPaymentById);
+// GET /api/v1/payments/:id — get payment details (owner/admin only)
+router.get('/:id', authenticate, getPaymentById);
 
 // POST /api/v1/payments/paylio/create — create PayLio fiat payment
 router.post('/paylio/create', optionalAuthenticate, createPayLio);
 
-// GET /api/v1/payments/paylio/:id/status — check PayLio payment status
-router.get('/paylio/:id/status', optionalAuthenticate, getPayLioPaymentStatus);
+// GET /api/v1/payments/paylio/:id/status — check PayLio payment status (owner/admin only)
+router.get('/paylio/:id/status', authenticate, getPayLioPaymentStatus);
 
-// POST /api/v1/payments/webhook/paylio — PayLio webhook
-router.post('/webhook/paylio', processPayLioWebhook);
+// POST /api/v1/payments/webhook/paylio — PayLio webhook.
+// Signature check is mandatory: an unset secret rejects the event rather than
+// letting an anonymous caller create escrow. See .env.example.
+router.post('/webhook/paylio', webhookVerifierMiddleware('paylio'), processPayLioWebhook);
 
 // ── Escrow Routes ───────────────────────────────────────────────────────────
 
@@ -178,7 +181,8 @@ router.post('/escrow/:id/refund', requireIdempotency, authenticate, refundEscrow
 
 // ── Webhook Routes ──────────────────────────────────────────────────────────
 
-// POST /api/v1/payments/webhook/btcpay — BTCPay webhook
-router.post('/webhook/btcpay', processBTCPayWebhook);
+// POST /api/v1/payments/webhook/btcpay — BTCPay webhook.
+// HMAC over the raw body with BTCPAY_WEBHOOK_SECRET, fail closed when unset.
+router.post('/webhook/btcpay', webhookVerifierMiddleware('btcpay'), processBTCPayWebhook);
 
 export default router;

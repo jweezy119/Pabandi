@@ -17,6 +17,30 @@ import { markInvoicePaid } from '../services/invoice.service';
 import { paymentOrchestrator } from '../services/payment-orchestration/orchestrator.service';
 import crypto from 'crypto';
 
+interface OwnablePayment {
+  payerId?: string | null;
+  payeeId?: string | null;
+  payer?: { id?: string } | null;
+  payee?: { id?: string } | null;
+}
+
+/**
+ * Payment detail/status/verify routes must never be answerable by ID alone.
+ * Both stored CryptoPayment rows and in-memory orchestration intents are checked,
+ * because either can be the source of the response.
+ */
+function canAccessPayment(req: AuthRequest, payment: OwnablePayment | undefined): boolean {
+  if (!payment || !req.user) return false;
+  if (req.user.role === UserRole.ADMIN) return true;
+  const userId = req.user.id;
+  return (
+    payment.payerId === userId ||
+    payment.payeeId === userId ||
+    payment.payer?.id === userId ||
+    payment.payee?.id === userId
+  );
+}
+
 // Create a new crypto payment request
 export const createPaymentRequest = async (
   req: AuthRequest,
@@ -131,6 +155,7 @@ export const getPaymentById = async (
     if (!payment) {
       const orchestrated = paymentOrchestrator.getPayment(id);
       if (orchestrated) {
+        if (!canAccessPayment(req, orchestrated)) throw new CustomError('Unauthorized', 403);
         return res.json({
           success: true,
           data: orchestrated,
@@ -139,14 +164,7 @@ export const getPaymentById = async (
       throw new CustomError('Payment not found', 404);
     }
 
-    // Check authorization
-    if (
-      req.user!.role !== UserRole.ADMIN &&
-      payment.payerId !== req.user?.id &&
-      payment.payeeId !== req.user?.id
-    ) {
-      throw new CustomError('Unauthorized', 403);
-    }
+    if (!canAccessPayment(req, payment)) throw new CustomError('Unauthorized', 403);
 
     res.json({
       success: true,
@@ -174,6 +192,7 @@ export const verifyPayment = async (
     if (!payment) {
       const orchestrated = paymentOrchestrator.getPayment(id);
       if (orchestrated) {
+        if (!canAccessPayment(req, orchestrated)) throw new CustomError('Unauthorized', 403);
         return res.json({
           success: true,
           data: orchestrated,
@@ -181,6 +200,8 @@ export const verifyPayment = async (
       }
       throw new CustomError('Payment not found', 404);
     }
+
+    if (!canAccessPayment(req, payment)) throw new CustomError('Unauthorized', 403);
 
     let verificationResult: any = { verified: false };
 
@@ -488,6 +509,7 @@ export const getPaymentStatus = async (
     if (!payment) {
       const orchestrated = paymentOrchestrator.getPayment(id);
       if (orchestrated) {
+        if (!canAccessPayment(req, orchestrated)) throw new CustomError('Unauthorized', 403);
         return res.json({
           success: true,
           data: orchestrated,
@@ -495,6 +517,8 @@ export const getPaymentStatus = async (
       }
       throw new CustomError('Payment not found', 404);
     }
+
+    if (!canAccessPayment(req, payment)) throw new CustomError('Unauthorized', 403);
 
     res.json({
       success: true,
@@ -551,6 +575,17 @@ export const getPayLioPaymentStatus = async (
 ) => {
   try {
     const { id } = req.params;
+
+    // A provider payment id on its own is not authorization. Resolve it to a
+    // local payment/orchestration record and check ownership before querying
+    // the provider (which also avoids using our API key as a free status oracle).
+    const local = await prisma.cryptoPayment.findFirst({
+      where: { OR: [{ id }, { reference: id }] },
+    });
+    const orchestrated = paymentOrchestrator.getPayment(id);
+    if (!local && !orchestrated) throw new CustomError('Payment not found', 404);
+    if (!canAccessPayment(req, local ?? orchestrated)) throw new CustomError('Unauthorized', 403);
+
     const status = await verifyPayLioPayment(id);
     res.json({ success: true, data: status });
   } catch (error) {
@@ -564,25 +599,9 @@ export const processPayLioWebhook = async (
   next: NextFunction
 ) => {
   try {
-    // ── Signature verification ─────────────────────────────────────────────
-    const PAYLIO_WEBHOOK_SECRET = process.env.PAYLIO_WEBHOOK_SECRET;
-    if (PAYLIO_WEBHOOK_SECRET) {
-      const signature = String(req.headers['x-paylio-signature'] || req.headers['x-webhook-signature'] || '');
-      if (!signature) {
-        logger.warn('[PayLio Webhook] Missing signature header');
-        return res.status(401).json({ success: false, error: 'Missing signature' });
-      }
-
-      const crypto = await import('crypto');
-      const rawBody = JSON.stringify(req.body);
-      const expected = crypto.createHmac('sha256', PAYLIO_WEBHOOK_SECRET).update(rawBody).digest('hex');
-
-      if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
-        logger.warn('[PayLio Webhook] Invalid signature');
-        return res.status(401).json({ success: false, error: 'Invalid signature' });
-      }
-    }
-
+    // Signature verification is enforced by webhookVerifierMiddleware('paylio')
+    // on the route: it fails closed, verifies the raw body bytes, and avoids the
+    // timingSafeEqual length crash of the old inline check.
     const { event, data } = req.body;
     logger.info(`[PayLio Webhook] Event: ${event}`, data);
     

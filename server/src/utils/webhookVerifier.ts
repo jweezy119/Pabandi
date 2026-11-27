@@ -32,20 +32,28 @@ export async function verifyWebhook(provider: string, req: Request): Promise<Web
   return verifier(req);
 }
 
+/**
+ * timingSafeEqual throws on unequal buffer lengths. An attacker-controlled
+ * signature header could therefore turn a rejected webhook into a 500 — and a
+ * 500 retries (or is mistaken for a provider outage) while a 401 is definitive.
+ * Compare only after checking both shape and length.
+ */
+function safeHexCompare(provided: string, expected: string): boolean {
+  if (!/^[0-9a-f]+$/i.test(provided)) return false;
+  const providedBuf = Buffer.from(provided, 'hex');
+  const expectedBuf = Buffer.from(expected, 'hex');
+  if (providedBuf.length !== expectedBuf.length) return false;
+  return crypto.timingSafeEqual(providedBuf, expectedBuf);
+}
+
 export function verifyHmacSha256(payload: string | Buffer, secret: string, providedSignature: string): boolean {
   const expectedSignature = crypto.createHmac('sha256', secret).update(payload).digest('hex');
-  return crypto.timingSafeEqual(
-    Buffer.from(providedSignature, 'hex'),
-    Buffer.from(expectedSignature, 'hex')
-  );
+  return safeHexCompare(providedSignature, expectedSignature);
 }
 
 export function verifyHmacSha1(payload: string | Buffer, secret: string, providedSignature: string): boolean {
   const expectedSignature = crypto.createHmac('sha1', secret).update(payload).digest('hex');
-  return crypto.timingSafeEqual(
-    Buffer.from(providedSignature, 'hex'),
-    Buffer.from(expectedSignature, 'hex')
-  );
+  return safeHexCompare(providedSignature, expectedSignature);
 }
 
 export function parseStripeSignature(header: string): { timestamp: number; signatures: string[] } | null {
@@ -134,7 +142,9 @@ export function verifySquareWebhook(req: Request, secret: string): WebhookVerifi
 }
 
 export function verifyPayLioWebhook(req: Request, secret: string): WebhookVerificationResult {
-  const signature = req.headers['x-paylio-signature'] as string;
+  // Accept both header spellings the old inline verifier accepted, so enabling
+  // mandatory verification does not silently break an existing integration.
+  const signature = (req.headers['x-paylio-signature'] || req.headers['x-webhook-signature']) as string;
   if (!signature) {
     return { verified: false, provider: 'paylio', error: 'Missing x-paylio-signature header' };
   }

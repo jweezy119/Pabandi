@@ -1,14 +1,50 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import { offrampService } from '../services/offramp.service';
 import { logger } from '../utils/logger';
 
 const router = Router();
 
 /**
+ * The EMI receiver is still a mock ("Stage A"), but it settles real intents.
+ * Without a signature, anyone who knows/guesses an intentId can settle one.
+ * Require HMAC over the raw body wherever the mock is enabled; in production
+ * an unconfigured secret disables the endpoint instead of accepting unsigned
+ * settlement events.
+ */
+function verifyOfframpWebhook(req: Request, res: Response, next: NextFunction) {
+  const secret = process.env.OFFRAMP_WEBHOOK_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      logger.error('[OfframpWebhook] OFFRAMP_WEBHOOK_SECRET missing; rejecting settlement webhook');
+      return res.status(503).json({ error: 'Off-ramp webhook is not configured' });
+    }
+    logger.warn('[OfframpWebhook] unsigned mock webhook accepted (non-production only)');
+    return next();
+  }
+
+  const signature = String(req.headers['x-offramp-signature'] || '');
+  const raw = Buffer.isBuffer(req.body) ? req.body : (req as any).rawBody;
+  if (!signature || !raw) return res.status(401).json({ error: 'Missing signature or raw body' });
+
+  const expected = crypto.createHmac('sha256', secret).update(raw).digest('hex');
+  const providedBuf = Buffer.from(signature, 'hex');
+  const expectedBuf = Buffer.from(expected, 'hex');
+  if (
+    providedBuf.length !== expectedBuf.length ||
+    !/^[0-9a-f]+$/i.test(signature) ||
+    !crypto.timingSafeEqual(providedBuf, expectedBuf)
+  ) {
+    return res.status(401).json({ error: 'Invalid webhook signature' });
+  }
+  return next();
+}
+
+/**
  * Stage A: Mock EMI Webhook receiver
  * In production, this would verify HMAC signatures from JazzCash/NayaPay.
  */
-router.post('/emi', async (req: Request, res: Response) => {
+router.post('/emi', verifyOfframpWebhook, async (req: Request, res: Response) => {
   try {
     const payload = req.body;
     logger.info(`[Webhook] Received EMI webhook payload`, payload);

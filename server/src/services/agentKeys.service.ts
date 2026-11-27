@@ -31,16 +31,27 @@ export async function createAgentKey(
     throw new Error(`Invalid scope: ${invalidScope}. Allowed: ${ALLOWED_SCOPES.join(', ')}`);
   }
 
-  const hasMoneyScope = scopes.some((s) => MONEY_SCOPES.includes(s));
-  const spendLimitUsd = input.spendLimitUsd ?? (hasMoneyScope ? DEFAULT_SPEND_LIMIT_USD : null);
-  
-  if (spendLimitUsd != null && Number(spendLimitUsd) < 0) {
-    throw new Error('spendLimitUsd must be zero or greater');
+  // `*` implies every money scope. Previously it bypassed the spend-limit check
+  // entirely, so any user could mint an unlimited key and drive payout tools.
+  const owner = await prisma.user.findUnique({
+    where: { id: ownerUserId },
+    select: { role: true },
+  });
+  if (!owner) throw new Error('Agent key owner not found');
+  if (scopes.includes('*') && owner.role !== 'ADMIN') {
+    throw new Error('The * scope is restricted to ADMIN accounts');
   }
 
-  // If key has money-moving scopes but no explicit limit, enforce default
-  if (hasMoneyScope && spendLimitUsd === null) {
-    throw new Error('spendLimitUsd is required for keys with booking or payout scopes');
+  const hasMoneyScope = scopes.some((s) => MONEY_SCOPES.includes(s) || s === '*');
+  const spendLimitUsd = input.spendLimitUsd ?? (hasMoneyScope ? DEFAULT_SPEND_LIMIT_USD : null);
+
+  if (spendLimitUsd != null && (!Number.isFinite(Number(spendLimitUsd)) || Number(spendLimitUsd) < 0)) {
+    throw new Error('spendLimitUsd must be a finite number, zero or greater');
+  }
+
+  // Money-moving keys must carry a bounded cap — no unlimited payout keys.
+  if (hasMoneyScope && (spendLimitUsd === null || !Number.isFinite(Number(spendLimitUsd)))) {
+    throw new Error('A finite spendLimitUsd is required for keys with booking, payout or * scopes');
   }
 
   const rawKey = generateAgentKey();

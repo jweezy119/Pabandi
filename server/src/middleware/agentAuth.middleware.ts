@@ -71,6 +71,18 @@ export const authenticateAgent = async (req: Request, res: Response, next: NextF
   }
 };
 
+/**
+ * Gates money-moving agent routes. `authenticateAgent` falls back to a normal
+ * user JWT when no x-api-key is present; without this guard that JWT could call
+ * payout/escrow tools with no key, no scopes, no spend cap and no rate limit.
+ */
+export const requireAgentKey = (req: Request, _res: Response, next: NextFunction) => {
+  if (!(req as any).user?.agentKeyId) {
+    return next(new CustomError('An agent API key is required for this operation', 403));
+  }
+  return next();
+};
+
 export const optionalAgentAuth = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (req.header('x-api-key')) {

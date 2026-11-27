@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { rateLimit } from 'express-rate-limit';
-import { authenticate, optionalAuthenticate, AuthRequest } from '../middleware/auth.middleware';
-import { authenticateAgent, optionalAgentAuth, agentRateLimiter, agentMoneyRateLimiter } from '../middleware/agentAuth.middleware';
+import { authenticate, AuthRequest } from '../middleware/auth.middleware';
+import { authenticateAgent, optionalAgentAuth, requireAgentKey, agentRateLimiter, agentMoneyRateLimiter } from '../middleware/agentAuth.middleware';
 import { optionalAgentHmac } from '../middleware/agentHmac.middleware';
 import { requireIdempotency } from '../middleware/idempotency.middleware';
 import { requireScopes } from '../services/agentScopes.service';
@@ -87,7 +87,7 @@ router.get('/businesses/:id', optionalAgentAuth, requireScopes('directory'), asy
   }
 });
 
-router.post('/bookings', authenticateAgent, optionalAgentHmac, agentMoneyRateLimiter, requireScopes('booking'), requireIdempotency, async (req: AuthRequest, res: Response) => {
+router.post('/bookings', authenticateAgent, requireAgentKey, optionalAgentHmac, agentMoneyRateLimiter, requireScopes('booking'), requireIdempotency, async (req: AuthRequest, res: Response) => {
   try {
     const booking = await agentTools.createBookingForAgent(req.user!, req.body || {});
     res.status(201).json({ success: true, data: booking });
@@ -96,7 +96,7 @@ router.post('/bookings', authenticateAgent, optionalAgentHmac, agentMoneyRateLim
   }
 });
 
-router.get('/bookings/:id', optionalAuthenticate, async (req: Request, res: Response) => {
+router.get('/bookings/:id', authenticateAgent, requireAgentKey, requireScopes('booking'), async (req: Request, res: Response) => {
   try {
     res.json({ success: true, data: await agentTools.getBookingForAgent(req.params.id) });
   } catch (error: any) {
@@ -104,7 +104,7 @@ router.get('/bookings/:id', optionalAuthenticate, async (req: Request, res: Resp
   }
 });
 
-router.post('/bookings/:id/checkin', authenticateAgent, optionalAgentHmac, agentMoneyRateLimiter, requireScopes('booking'), async (req: AuthRequest, res: Response) => {
+router.post('/bookings/:id/checkin', authenticateAgent, requireAgentKey, optionalAgentHmac, agentMoneyRateLimiter, requireScopes('booking'), async (req: AuthRequest, res: Response) => {
   try {
     const result = await agentTools.markBookingCheckin(req.user!, req.params.id, req.body || {});
     res.json({ success: true, data: result });
@@ -113,7 +113,7 @@ router.post('/bookings/:id/checkin', authenticateAgent, optionalAgentHmac, agent
   }
 });
 
-router.post('/bookings/:id/release', authenticateAgent, optionalAgentHmac, agentMoneyRateLimiter, requireScopes('booking'), async (req: AuthRequest, res: Response) => {
+router.post('/bookings/:id/release', authenticateAgent, requireAgentKey, optionalAgentHmac, agentMoneyRateLimiter, requireScopes('booking'), async (req: AuthRequest, res: Response) => {
   try {
     const result = await agentTools.releaseBookingEscrow(req.user!, req.params.id, req.body || {});
     res.json({ success: true, data: result });
@@ -122,7 +122,7 @@ router.post('/bookings/:id/release', authenticateAgent, optionalAgentHmac, agent
   }
 });
 
-router.post('/bookings/:id/refund', authenticateAgent, optionalAgentHmac, agentMoneyRateLimiter, requireScopes('booking'), async (req: AuthRequest, res: Response) => {
+router.post('/bookings/:id/refund', authenticateAgent, requireAgentKey, optionalAgentHmac, agentMoneyRateLimiter, requireScopes('booking'), async (req: AuthRequest, res: Response) => {
   try {
     const result = await agentTools.refundBookingForAgent(req.user!, req.params.id, String(req.body?.reason || ''));
     res.json({ success: true, data: result });
@@ -159,7 +159,7 @@ router.get('/wallet/screen/:walletAddress', walletScreenRateLimiter, async (req:
   }
 });
 
-router.post('/payouts', authenticateAgent, optionalAgentHmac, agentMoneyRateLimiter, requireScopes('payout'), async (req: AuthRequest, res: Response) => {
+router.post('/payouts', authenticateAgent, requireAgentKey, optionalAgentHmac, agentMoneyRateLimiter, requireScopes('payout'), async (req: AuthRequest, res: Response) => {
   try {
     const payout = await agentTools.requestPayoutForAgent(req.user!, req.body || {});
     res.status(201).json({ success: true, data: payout });
@@ -168,7 +168,7 @@ router.post('/payouts', authenticateAgent, optionalAgentHmac, agentMoneyRateLimi
   }
 });
 
-router.get('/payouts/history', authenticateAgent, requireScopes('payout'), async (req: AuthRequest, res: Response) => {
+router.get('/payouts/history', authenticateAgent, requireAgentKey, requireScopes('payout'), async (req: AuthRequest, res: Response) => {
   try {
     res.json({ success: true, data: await agentTools.getPayoutHistoryForAgent(req.user!) });
   } catch (error: any) {

@@ -101,10 +101,15 @@ export const verifyAgentHmac = async (
     .update(canonicalRequest)
     .digest('hex');
 
-  if (!crypto.timingSafeEqual(
-    Buffer.from(providedSignature, 'hex'),
-    Buffer.from(expectedSignature, 'hex')
-  )) {
+  // timingSafeEqual throws for unequal lengths; a malformed signature header
+  // must be a 401, never a 500.
+  const provided = Buffer.from(providedSignature, 'hex');
+  const expected = Buffer.from(expectedSignature, 'hex');
+  if (
+    provided.length !== expected.length ||
+    !/^[0-9a-f]+$/i.test(providedSignature) ||
+    !crypto.timingSafeEqual(provided, expected)
+  ) {
     logger.warn(`[AgentHmac] Invalid signature from agent ${agentKeyId} (ip: ${req.ip})`);
     return next(new CustomError('Invalid request signature', 401));
   }

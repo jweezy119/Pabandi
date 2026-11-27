@@ -35,6 +35,11 @@ function resolveBusinessId(req: ApiKeyRequest): { businessId?: string; error?: s
   if (!requested) {
     return { error: 'businessId is required for agent API keys' };
   }
+  // A key with no owning business may not pick an arbitrary tenant. Only the
+  // admin-only '*' scope (restricted to ADMIN by createAgentKey) may do that.
+  if (!req.apiClient?.scopes?.includes('*')) {
+    return { error: 'API key is not permitted to manage webhooks for another business' };
+  }
   return { businessId: requested };
 }
 
@@ -79,6 +84,10 @@ router.delete('/:id', apiKeyAuth, async (req: ApiKeyRequest, res) => {
       if (!rows.some((w: any) => w?.id === req.params.id)) {
         return res.status(404).json({ error: 'Webhook not found for this business' });
       }
+    } else if (!req.apiClient?.scopes?.includes('*')) {
+      // Otherwise an agent key with no business could delete any tenant's
+      // webhook by guessing its id.
+      return res.status(403).json({ error: 'API key is not permitted to delete this webhook' });
     }
     const data = await SettingsService.deleteWebhook(req.params.id);
     res.json({ success: true, data });
