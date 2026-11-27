@@ -1,14 +1,8 @@
 import { useState } from 'react';
-import {
-  Chip,
-  Surface,
-  Section,
-  Stack,
-  Callout,
-  CodeBlock,
-  Button,
-  tokens,
-} from '../design-system';
+import { Link } from 'react-router-dom';
+import { Terminal, Copy, Check, Play, Cpu, ShieldCheck, Layers } from 'lucide-react';
+import GlassNavHeader from '../components/GlassNavHeader';
+import { API_HOST } from '../services/api';
 
 const SESSION_OPEN_CODE = `// 1. Your agent opens a tab — the Trust Score sets the ceiling, server-side.
 const session = await fetch('https://api.pabandi.com/api/v1/engine/session/open', {
@@ -23,8 +17,7 @@ const session = await fetch('https://api.pabandi.com/api/v1/engine/session/open'
 }).then(r => r.json());
 // → 201 { success: true, data: { sessionId, totalLimit: 500, remaining, ... } }
 
-// 2. Settle against the tab — bookings cost the service value, deposits are
-//    the engine's decision, not yours to compute.
+// 2. Settle against the tab — deposits are the engine's decision.
 const action = await fetch('https://api.pabandi.com/api/v1/engine/action', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -35,8 +28,6 @@ const action = await fetch('https://api.pabandi.com/api/v1/engine/action', {
     payload: { businessId, serviceId, date, time },
   })
 }).then(r => r.json());
-// → { success: true, actionRequired: 'deposit_required'|'none', deposit?: {
-//      amount, currency, explanation, checkoutUrl } }
 
 // 3. Settle once on Solana when the tab is done.
 await fetch('https://api.pabandi.com/api/v1/engine/session/close', {
@@ -45,12 +36,29 @@ await fetch('https://api.pabandi.com/api/v1/engine/session/close', {
   body: JSON.stringify({ sessionId: session.data.sessionId, settle: true })
 });`;
 
+const PREDICTIVE_CODE = `// Forward-predict task fulfillment & Human-in-the-Loop policy
+const risk = await fetch('https://api.pabandi.com/api/v1/predictive/task-risk', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer ' + process.env.PABANDI_API_KEY,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    scopeComplexity: 'high',
+    budgetUsd: 850,
+    leadTimeHours: 12,
+    requiresVcapProof: true
+  })
+}).then(r => r.json());
+// → { completionProbability: 0.91, riskTier: 'LOW', hitlPolicy: 'ASSISTED', factors: [...] }`;
+
 const LIVE_SALE_CODE = `app.post('/live-sale/checkout', async (req, res) => {
-  const { buyer_wallet, amount, seller_id, currency } = req.body;
+  const { amount, seller_id, currency } = req.body;
 
   const result = await fetch(
-        'https://pabandi-backend-97129395003.asia-south1.run.app/api/v1/checkout/embed-checkout',
+    'https://api.pabandi.com/api/v1/checkout/embed-checkout',
     {
+      method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + process.env.PABANDI_API_KEY,
         'Content-Type': 'application/json'
@@ -62,22 +70,16 @@ const LIVE_SALE_CODE = `app.post('/live-sale/checkout', async (req, res) => {
         successUrl: 'https://your-site.com/order/success',
         cancelUrl: 'https://your-site.com/order/cancel',
         source: 'LIVE_SELLER'
-      }),
-      method: 'POST'
+      })
     }
   );
 
   const data = await result.json();
-
   if (data.success && data.data?.checkoutUrl) {
     return res.json({ checkout_allowed: true, checkoutUrl: data.data.checkoutUrl });
-  } else {
-    return res.json({
-      checkout_allowed: false,
-      reason: data.error || 'Checkout session creation failed'
-    });
   }
-})`;
+  return res.json({ checkout_allowed: false, reason: data.error || 'Checkout failed' });
+});`;
 
 const TRUST_API_CODE = `// Quickstart: Resolve a trust score by email or wallet
 const response = await fetch('https://api.pabandi.com/api/v1/trust/resolve/user@example.com', {
@@ -96,7 +98,7 @@ client = TrustClient(api_key="YOUR_KEY")
 score = client.trust.resolve("user@example.com")
 print(score.payment, score.show_up)
 
-# Create escrow
+# Create milestone escrow
 escrow = client.escrow.create(
     reference_id="order-123",
     template="freelance",
@@ -107,314 +109,213 @@ escrow = client.escrow.create(
     deadline="2026-12-31"
 )`;
 
-const PLAYGROUND_CODE = `// Try it right here — no auth needed for public endpoints
-const identifier = prompt('Enter email, wallet, or handle:');
-if (!identifier) throw new Error('identifier required');
-
-const res = await fetch(\`/api/v1/trust/resolve/\${encodeURIComponent(identifier)}\`);
-const json = await res.json();
-console.log(json);`;
+function GlassCode({ title, code }: { title: string; code: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      /* ignore */
+    }
+  };
+  return (
+    <div className="pg-glass overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b" style={{ borderColor: 'var(--pg-line)', background: 'rgba(0,0,0,0.25)' }}>
+        <span className="text-xs font-mono flex items-center gap-2" style={{ color: 'var(--pg-muted)' }}>
+          <Terminal className="w-3.5 h-3.5" style={{ color: 'var(--pg-clay)' }} />
+          {title}
+        </span>
+        <button
+          onClick={copy}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono"
+          style={{ background: 'var(--pg-glass-2)', border: '1px solid var(--pg-line)', color: 'var(--pg-muted)' }}
+        >
+          {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+          {copied ? 'copied' : 'copy'}
+        </button>
+      </div>
+      <pre className="p-5 overflow-x-auto text-xs sm:text-sm leading-relaxed m-0" style={{ fontFamily: 'var(--pg-mono)', color: '#d7dbe6' }}>
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+}
 
 export default function DeveloperPortalPage() {
-  const [copied, setCopied] = useState(false);
+  const [playgroundInput, setPlaygroundInput] = useState('apex-design');
   const [playgroundOutput, setPlaygroundOutput] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'engine' | 'overview' | 'quickstart' | 'sdks' | 'playground'>('engine');
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(LIVE_SALE_CODE);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const [playgroundLoading, setPlaygroundLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'engine' | 'predictive' | 'quickstart' | 'sdks' | 'playground'>('engine');
 
   const runPlayground = async () => {
-    const identifier = prompt('Enter email, wallet, or handle:');
-    if (!identifier) return;
+    if (!playgroundInput.trim()) return;
+    setPlaygroundLoading(true);
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
-      const res = await fetch(`${baseUrl}/api/v1/trust/resolve/${encodeURIComponent(identifier)}`);
+      const res = await fetch(`${API_HOST}/api/v1/trust/resolve/${encodeURIComponent(playgroundInput.trim())}`);
       const json = await res.json();
       setPlaygroundOutput(JSON.stringify(json, null, 2));
     } catch (e: any) {
       setPlaygroundOutput(`Error: ${e.message}`);
+    } finally {
+      setPlaygroundLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen antialiased" style={{ background: tokens.color.background, color: tokens.color.text, fontFamily: tokens.font.body }}>
-      <section
-        className="relative overflow-hidden px-4 pt-20 pb-16 sm:px-6 lg:px-8"
-        style={{ background: 'linear-gradient(180deg, rgba(42,37,32,0.92) 0%, rgba(42,37,32,0.97) 100%)' }}
-      >
-        <div
-          className="pointer-events-none absolute inset-0"
-          aria-hidden="true"
-          style={{
-            background:
-              'radial-gradient(ellipse 60% 40% at 20% 0%, rgba(201,123,90,0.18), transparent), radial-gradient(ellipse 40% 30% at 80% 10%, rgba(217,168,84,0.10), transparent)',
-          }}
-        />
-        <div className="relative mx-auto max-w-3xl text-center">
-          <Chip tone="info">PABANDI API · MCP READY</Chip>
+    <div className="pg-root">
+      <div className="pg-grid-bg" aria-hidden="true" />
+      <div className="pg-aurora a1" aria-hidden="true" />
+      <div className="pg-aurora a2" aria-hidden="true" />
 
-          <h1 className="mt-6 text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl" style={{ fontFamily: 'var(--font-headline)' }}>
-            <span className="bg-gradient-to-br from-[var(--warm-sand)] via-[var(--clay)] to-[var(--muted-ochre)] bg-clip-text text-transparent">
-              The Settlement Layer for the Agent Economy.
-            </span>
+      <GlassNavHeader />
+
+      <main className="pg-container" style={{ paddingTop: 52, paddingBottom: 96 }}>
+        {/* Hero */}
+        <section className="text-center max-w-3xl mx-auto mb-12">
+          <span className="pg-eyebrow">PABANDI API · MCP · OPENAPI 3.0</span>
+          <h1 style={{ fontFamily: 'var(--pg-display)', fontSize: 'clamp(34px, 4.8vw, 56px)', lineHeight: 1.05, letterSpacing: '-0.03em', fontWeight: 700, margin: '14px 0 16px' }}>
+            The settlement layer for <span className="pg-grad">the agent economy.</span>
           </h1>
-
-          <p className="mx-auto mt-4 max-w-2xl text-lg font-medium text-[var(--warm-sand)]/80">
-            Your agent opens a session with $100. Makes 50 API calls. Settles once on Solana.
-            Bookings, escrow and no-show guarantees — priced by the Trust Score, enforced
-            server-side, settled in a single transaction.
+          <p style={{ color: 'var(--pg-muted)', fontSize: 17, lineHeight: 1.6, margin: '0 auto 26px', maxWidth: 620 }}>
+            Open a session with $100, execute 50 API or MCP calls, predict risk before funds move, and settle once on Solana or fiat rails.
           </p>
-
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <a href="mailto:jay@pabandi.com" className="no-underline">
-              <Button variant="primary">Get API Key →</Button>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <a href="mailto:jay@pabandi.com" className="pg-btn pg-btn-primary">
+              Request API Key →
             </a>
-            <Chip tone="success">v0.1 Beta · Free for partners</Chip>
+            <a href={`${API_HOST}/.well-known/openapi.json`} target="_blank" rel="noopener noreferrer" className="pg-btn pg-btn-ghost">
+              OpenAPI Spec
+            </a>
+            <Link to="/agents" className="pg-btn pg-btn-ghost">
+              MCP &amp; Agent SDK
+            </Link>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Tabs */}
-      <section className="mx-auto max-w-5xl px-4 pb-4 sm:px-6 lg:px-8">
-        <div className="flex gap-2 overflow-x-auto">
-          {(['engine', 'overview', 'quickstart', 'sdks', 'playground'] as const).map(tab => (
+        {/* Tabs */}
+        <div className="flex flex-wrap gap-2 justify-center mb-10" role="tablist">
+          {([
+            ['engine', 'Session Engine'],
+            ['predictive', 'Predictive ML'],
+            ['quickstart', 'Quickstart'],
+            ['sdks', 'SDKs'],
+            ['playground', 'Live Playground'],
+          ] as const).map(([key, label]) => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold capitalize whitespace-nowrap ${activeTab === tab ? 'bg-[var(--clay)]/20 text-[var(--clay)] border border-[var(--clay)]/30' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] border border-[rgba(191,179,163,0.2)]'}`}
+              key={key}
+              role="tab"
+              aria-selected={activeTab === key}
+              onClick={() => setActiveTab(key)}
+              className={`pg-tab ${activeTab === key ? 'active' : ''}`}
             >
-              {tab}
+              {label}
             </button>
           ))}
         </div>
-      </section>
 
-      {/* Engine Tab — the open-tab settlement concept */}
-      {activeTab === 'engine' && (
-        <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-6 lg:px-8">
-          {/*
-            One section, one idea: the tab is the unit of integration. The
-            three surfaces below (concept strip, code, safety callout) all
-            explain the same lifecycle so a reader who skips the words can
-            still read the flow in any order.
-          */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
-            {[
-              { n: '01', title: 'Open a tab', body: 'One call. The Trust Score sets the ceiling server-side — an agent can declare itself unproven, never proven.', icon: 'tab' },
-              { n: '02', title: 'Spend against it', body: 'Bookings, invoice payments, escrow. The engine decides deposits; nobody signs per payment.', icon: 'credit_score' },
-              { n: '03', title: 'Settle once', body: 'Fifty calls, one Solana settlement. Receipts hash what was authorised against what shipped.', icon: 'receipt_long' },
-            ].map(step => (
-              <Surface key={step.n} className="p-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="material-symbols-outlined" style={{ color: 'var(--terracotta)' }}>{step.icon}</span>
-                  <span className="text-xs font-bold tracking-widest" style={{ color: 'var(--soft-stone)' }}>{step.n}</span>
+        {/* Tab: Engine */}
+        {activeTab === 'engine' && (
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { n: '01', icon: <Layers className="w-4 h-4" style={{ color: 'var(--pg-clay)' }} />, title: 'Open a tab', body: 'One call. The Trust Score sets the ceiling server-side — an agent can declare itself unproven, never proven.' },
+                { n: '02', icon: <Cpu className="w-4 h-4" style={{ color: 'var(--pg-indigo)' }} />, title: 'Spend against it', body: 'Bookings, invoice payments, escrow. The engine decides deposits; nobody signs per payment.' },
+                { n: '03', icon: <ShieldCheck className="w-4 h-4" style={{ color: 'var(--pg-green)' }} />, title: 'Settle once', body: 'Fifty calls, one Solana settlement. Receipts hash what was authorised against what shipped.' },
+              ].map((step) => (
+                <div key={step.n} className="pg-glass p-5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    {step.icon}
+                    <span className="text-xs font-mono" style={{ color: 'var(--pg-dim)' }}>{step.n}</span>
+                  </div>
+                  <h3 style={{ fontFamily: 'var(--pg-display)', fontSize: 17, fontWeight: 700, margin: 0 }}>{step.title}</h3>
+                  <p style={{ color: 'var(--pg-muted)', fontSize: 13.5, lineHeight: 1.55, margin: 0 }}>{step.body}</p>
                 </div>
-                <h3 className="text-lg font-bold" style={{ fontFamily: 'var(--font-headline)', color: 'var(--warm-ink)' }}>{step.title}</h3>
-                <p className="mt-1 text-sm leading-relaxed" style={{ color: 'var(--soft-stone)' }}>{step.body}</p>
-              </Surface>
-            ))}
+              ))}
+            </div>
+
+            <GlassCode title="session_lifecycle.js" code={SESSION_OPEN_CODE} />
           </div>
+        )}
 
-          <Surface className="p-6">
-            <h3 className="text-xl font-bold mb-2" style={{ fontFamily: 'var(--font-headline)', color: 'var(--warm-ink)' }}>
-              The whole lifecycle in three calls
-            </h3>
-            <p className="text-sm mb-4" style={{ color: 'var(--soft-stone)' }}>
-              Sessions are quoted in USDC by default and every response carries the remaining
-              balance. Malformed payloads are rejected with field-level Zod errors, not a 500.
-            </p>
-            <CodeBlock code={SESSION_OPEN_CODE} language="javascript" />
-          </Surface>
-
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Callout accent="var(--terracotta)">
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--warm-ink)' }}>
-                <strong>MCP native.</strong> The same surface is exposed as Model Context
-                Protocol tools at <code>POST /mcp</code> — <code>pabandi_open_session</code>,{' '}
-                <code>pabandi_execute_transaction</code>, <code>pabandi_discover</code>. Any MCP
-                client can drive the engine without custom glue code. Tools that move money
-                require a <code>sessionId</code> and will tell the agent to open one first.
+        {/* Tab: Predictive ML */}
+        {activeTab === 'predictive' && (
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="pg-glass p-6 space-y-2">
+              <span className="pg-badge new">BAYESIAN ENGINE V2</span>
+              <h2 style={{ fontFamily: 'var(--pg-display)', fontSize: 22, fontWeight: 700, margin: '8px 0 4px' }}>
+                Forward-predict completion &amp; dispute risk
+              </h2>
+              <p style={{ color: 'var(--pg-muted)', fontSize: 14.5, lineHeight: 1.6, margin: 0 }}>
+                Call <code className="font-mono text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.08)' }}>POST /api/v1/predictive/task-risk</code>,{' '}
+                <code className="font-mono text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.08)' }}>/deal-risk</code>, or{' '}
+                <code className="font-mono text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.08)' }}>/simulate</code> to receive calibrated probabilities, recommended collateral ratios, and explainable factor attribution.
               </p>
-            </Callout>
-            <Callout accent="var(--sage)">
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--warm-ink)' }}>
-                <strong>Deposits are the engine's decision.</strong> The booking response{' '}
-                <code>actionRequired</code> field is the whole contract: <code>none</code> means
-                the guarantee was satisfied, <code>deposit_required</code> means fund{' '}
-                <code>deposit.checkoutUrl</code>. A decision priced in a browser can be relabel;
-                a decision priced by the session's owner principal cannot.
-              </p>
-            </Callout>
+            </div>
+            <GlassCode title="predictive_risk.js" code={PREDICTIVE_CODE} />
           </div>
-        </section>
-      )}
+        )}
 
-      {/* Overview Tab */}
-      {activeTab === 'overview' && (
-        <section className="mx-auto max-w-3xl px-4 pb-16 sm:px-6 lg:px-8">
-          <Stack>
-            <p className="text-lg leading-relaxed text-[var(--warm-ink)]/90">
-              Pabandi is the WhatsApp-native commerce escrow layer with a portable reliability API.
-              Integrate escrow-backed bookings, trust verification, and checkout into live selling,
-              marketplaces, rentals, clinic bookings, and hospitality—without rebuilding trust from
-              scratch.
-            </p>
-
-            <Callout accent="#334155">
-              <p className="text-base leading-relaxed text-[var(--warm-ink)]/80">
-                <strong className="text-[var(--warm-ink)]">The problem today:</strong> Manual deposits, late
-                cash, and informal trust still dominate local commerce. WhatsApp is where the
-                conversation happens—commitment, protection, and verification should happen there too.
-              </p>
-            </Callout>
-
-            <Callout accent="#818cf8">
-              <p className="text-base leading-relaxed text-[var(--warm-ink)]/80">
-                <strong className="text-[var(--warm-ink)]">The Pabandi answer:</strong> The Passport is the
-                portable trust ID; the escrow layer is the guarantee. Buyers and sellers transact on
-                WhatsApp with verified commitment, deposit protection, and $PAB rewards.
-              </p>
-            </Callout>
-          </Stack>
-        </section>
-      )}
-
-      {/* Quickstart Tab */}
-      {activeTab === 'quickstart' && (
-        <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-3xl">
-            <h2 className="text-center text-3xl font-bold tracking-tight text-[var(--warm-ink)]">
-              Quickstart
-            </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-center text-[var(--warm-ink)]/80">
-              Get started in 5 minutes. Sign up for an API key, install the SDK, and make your first trust lookup.
-            </p>
+        {/* Tab: Quickstart */}
+        {activeTab === 'quickstart' && (
+          <div className="max-w-4xl mx-auto space-y-5">
+            <GlassCode title="1. Export your API key" code={`export PABANDI_API_KEY="pab_live_..."`} />
+            <GlassCode title="2. Resolve a trust score" code={TRUST_API_CODE} />
+            <GlassCode title="3. Live-Sale embed checkout (Node/Express)" code={LIVE_SALE_CODE} />
           </div>
+        )}
 
-          <div className="mx-auto mt-10 max-w-3xl space-y-4">
-            <Surface className="p-6">
-              <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-2">1. Get your API key</h3>
-              <p className="text-sm text-[var(--soft-stone)] mb-3">Email jay@pabandi.com to request a free API key for beta partners.</p>
-              <CodeBlock code={`export PABANDI_API_KEY="pab_live_..."`} language="bash" />
-            </Surface>
-
-            <Surface className="p-6">
-              <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-2">2. Resolve a trust score</h3>
-              <p className="text-sm text-[var(--soft-stone)] mb-3">Call the trust resolver with any identifier: email, wallet, or GitHub handle.</p>
-              <CodeBlock code={TRUST_API_CODE} language="javascript" />
-            </Surface>
-
-            <Surface className="p-6">
-              <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-2">3. Create an escrow</h3>
-              <p className="text-sm text-[var(--soft-stone)] mb-3">Generalize escrow for any transaction type.</p>
-              <CodeBlock code={`POST /api/v1/escrow
-{
-  "referenceId": "order-123",
-  "template": "freelance",
-  "parties": [{"partyId": "buyer-1", "role": "buyer"}],
-  "amount": 500,
-  "currency": "USDC",
-  "conditions": [{"type": "milestone", "verify": {"milestoneId": "m1"}}]
-}`} language="json" />
-            </Surface>
-          </div>
-        </section>
-      )}
-
-      {/* SDKs Tab */}
-      {activeTab === 'sdks' && (
-        <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-3xl">
-            <h2 className="text-center text-3xl font-bold tracking-tight text-[var(--warm-ink)]">
-              SDKs
-            </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-center text-[var(--warm-ink)]/80">
-              Official libraries for JavaScript and Python. Go SDK coming soon.
-            </p>
-          </div>
-
-          <div className="mx-auto mt-10 max-w-3xl space-y-4">
-            <Surface className="p-6">
-              <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-2">JavaScript / TypeScript</h3>
-              <CodeBlock code={`npm install @pabandi/trust
+        {/* Tab: SDKs */}
+        {activeTab === 'sdks' && (
+          <div className="max-w-4xl mx-auto space-y-5">
+            <GlassCode
+              title="JavaScript / TypeScript"
+              code={`npm install @pabandi/trust
 
 import { TrustClient } from '@pabandi/trust';
 
 const client = new TrustClient({ apiKey: process.env.PABANDI_API_KEY });
-const score = await client.trust.resolve('user@example.com');`} language="javascript" />
-            </Surface>
-
-            <Surface className="p-6">
-              <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-2">Python</h3>
-              <CodeBlock code={PYTHON_SDK} language="python" />
-            </Surface>
-
-            <Surface className="p-6">
-              <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-2">cURL</h3>
-              <CodeBlock code={`curl -H "Authorization: Bearer YOUR_KEY" \\
-  https://api.pabandi.com/api/v1/trust/resolve/user@example.com`} language="bash" />
-            </Surface>
+const score = await client.trust.resolve('user@example.com');`}
+            />
+            <GlassCode title="Python" code={PYTHON_SDK} />
           </div>
-        </section>
-      )}
+        )}
 
-      {/* Playground Tab */}
-      {activeTab === 'playground' && (
-        <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-3xl">
-            <h2 className="text-center text-3xl font-bold tracking-tight text-[var(--warm-ink)]">
-              Playground
-            </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-center text-[var(--warm-ink)]/80">
-              Test the Trust API without authentication. Try resolving a public profile.
-            </p>
-          </div>
-
-          <div className="mx-auto mt-10 max-w-3xl">
-            <Surface className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <Button onClick={runPlayground}>Run Example</Button>
-                <span className="text-xs text-[var(--soft-stone)]">No API key required for public endpoints</span>
+        {/* Tab: Live Playground */}
+        {activeTab === 'playground' && (
+          <div className="max-w-3xl mx-auto">
+            <div className="pg-glass p-6 space-y-4">
+              <div>
+                <h2 style={{ fontFamily: 'var(--pg-display)', fontSize: 20, fontWeight: 700, margin: '0 0 4px' }}>
+                  Live Trust API Playground
+                </h2>
+                <p style={{ color: 'var(--pg-muted)', fontSize: 14, margin: 0 }}>
+                  Test the public trust resolver right here — no API key required.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  value={playgroundInput}
+                  onChange={(e) => setPlaygroundInput(e.target.value)}
+                  placeholder="Enter handle, email, or wallet address..."
+                  className="pg-input font-mono text-sm flex-1"
+                />
+                <button onClick={runPlayground} disabled={playgroundLoading} className="pg-btn pg-btn-primary">
+                  <Play className="w-4 h-4" />
+                  {playgroundLoading ? 'Running…' : 'Run Request'}
+                </button>
               </div>
               {playgroundOutput && (
-                <div className="rounded-xl bg-[var(--warm-sand)] p-4">
-                  <pre className="text-xs text-[var(--warm-ink)] whitespace-pre-wrap">{playgroundOutput}</pre>
-                </div>
+                <pre className="p-4 rounded-xl overflow-x-auto text-xs m-0" style={{ background: 'rgba(0,0,0,0.45)', border: '1px solid var(--pg-line)', fontFamily: 'var(--pg-mono)', color: 'var(--pg-green)' }}>
+                  {playgroundOutput}
+                </pre>
               )}
-            </Surface>
+            </div>
           </div>
-        </section>
-      )}
-
-      {/* Live Sale Integration Example */}
-      <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-3xl">
-          <h2 className="text-center text-3xl font-bold tracking-tight text-[var(--warm-ink)]">
-            Live-Sale Integration Example
-          </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-center text-[var(--warm-ink)]/80">
-            Integrate checkout into live selling by calling the embed endpoint from your seller backend.
-            For multi-region or mirror deployments, set <code className="rounded-md bg-[var(--warm-sand)] px-1.5 py-0.5 text-[var(--terracotta)]">window.PABANDI_API_BASE</code> before loading the embed,
-            or use <code className="rounded-md bg-[var(--warm-sand)] px-1.5 py-0.5 text-[var(--terracotta)]">PabandiEmbedConfig.setApiBase(...)</code> to redirect requests
-            without changing the copied snippet.
-          </p>
-        </div>
-
-        <div className="mx-auto mt-10 max-w-3xl overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02]">
-          <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
-            <span className="text-xs font-semibold text-[var(--warm-ink)]/70">checkout.js</span>
-            <button onClick={handleCopy} className="rounded-lg border border-[var(--soft-stone)]/30 bg-[var(--cream)] px-3 py-1 text-xs font-bold text-[var(--warm-ink)]/80 hover:bg-[var(--warm-sand)] transition-colors">
-              {copied ? '✓ Copied' : 'Copy'}
-            </button>
-          </div>
-          <div className="p-4">
-            <CodeBlock code={LIVE_SALE_CODE} language="javascript" />
-          </div>
-        </div>
-      </section>
+        )}
+      </main>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 @import "./styles/warm-clay.css";
 @import "./styles/mode-themes.css";
 @import "./styles/dark-theme.css";
+@import "./styles/glass-theme.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

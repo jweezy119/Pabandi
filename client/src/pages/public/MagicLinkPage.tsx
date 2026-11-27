@@ -3,31 +3,50 @@ import { useParams, Link } from 'react-router-dom';
 import {
   ShieldCheck,
   CheckCircle2,
-  Share2,
   Copy,
   Check,
   CreditCard,
-  Building2,
-  Zap,
   ArrowRight,
   ExternalLink,
   Lock,
-  Clock,
-  Sparkles,
   Smartphone,
+  Wrench,
+  Camera,
+  Bot,
+  Sparkles,
+  AlertTriangle,
+  X,
 } from 'lucide-react';
 import { PabandiCheckoutModal } from '../../components/PabandiCheckoutModal';
 import { ZkTrustBadge } from '../../components/ZkTrustBadge';
 import { API_HOST } from '../../utils/apiHost';
 import '../../styles/pbn-tokens.css';
 
+interface DviPhoto {
+  kind: 'before' | 'after' | 'inspection';
+  url: string;
+  label?: string;
+  uploadedAt?: string;
+}
+
+interface EstimateItem {
+  description: string;
+  partName?: string;
+  partCost: number;
+  laborHours: number;
+  laborRate: number;
+  total?: number;
+}
+
 interface MagicLinkData {
-  type: 'invoice' | 'booking' | 'business_direct';
+  type: 'invoice' | 'booking' | 'business_direct' | 'repair_order';
   id: string;
   number?: string;
   title: string;
   description: string;
   amount: number;
+  totalAmount?: number;
+  depositAmount?: number;
   currency: string;
   usdAmount: number;
   pkrAmount: number;
@@ -38,12 +57,42 @@ interface MagicLinkData {
   lpDispatched?: boolean;
   platformFeeUsd?: number;
   netUsdc?: number;
+  isBookedByAgent?: boolean;
+  fairPriceVerified?: boolean;
+  fairPriceReport?: {
+    passed?: boolean;
+    badge?: string;
+    summary?: string;
+    maxVariancePct?: number;
+  } | null;
+  itemizedEstimate?: {
+    items?: EstimateItem[];
+    subtotal?: number;
+    depositAmount?: number;
+  } | null;
+  dviPhotos?: DviPhoto[];
+  visionProofHash?: string | null;
+  visionProofReport?: {
+    verified?: boolean;
+    summary?: string;
+    provider?: string;
+  } | null;
+  vehicle?: {
+    id: string;
+    vin: string;
+    year?: number | null;
+    make?: string | null;
+    model?: string | null;
+    licensePlate?: string | null;
+  } | null;
   business: {
     id: string;
     name: string;
     logoUrl?: string | null;
-    slug?: string;
+    slug?: string | null;
     trustScore: number;
+    fairPriceScore?: number;
+    communicationScore?: number;
     isVerified: boolean;
   };
   client?: {
@@ -56,6 +105,20 @@ interface MagicLinkData {
   whatsappShareUrl: string;
 }
 
+const REPAIR_STEPS = [
+  { key: 'CHECKED_IN', label: 'Checked In' },
+  { key: 'INSPECTING', label: 'Inspecting' },
+  { key: 'NEEDS_APPROVAL', label: 'Needs Approval' },
+  { key: 'IN_PROGRESS', label: 'In Progress' },
+  { key: 'READY', label: 'Ready' },
+] as const;
+
+function stepIndexFor(status: string): number {
+  const normalized = status === 'PENDING_MANUAL_REVIEW' ? 'NEEDS_APPROVAL' : status;
+  const idx = REPAIR_STEPS.findIndex((s) => s.key === normalized);
+  return idx >= 0 ? idx : 0;
+}
+
 export default function MagicLinkPage() {
   const params = useParams();
   const id = params.id || params.bookingId || params.invoiceId;
@@ -65,6 +128,7 @@ export default function MagicLinkPage() {
   const [error, setError] = useState<string | null>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) {
@@ -72,7 +136,6 @@ export default function MagicLinkPage() {
       setLoading(false);
       return;
     }
-
     fetchMagicData(id);
   }, [id]);
 
@@ -80,7 +143,6 @@ export default function MagicLinkPage() {
     setLoading(true);
     setError(null);
     try {
-      // 1. Try unified public magic link endpoint
       const res = await fetch(`${API_HOST}/api/v1/public/magic/${targetId}`);
       if (res.ok) {
         const json = await res.json();
@@ -91,7 +153,6 @@ export default function MagicLinkPage() {
         }
       }
 
-      // 2. Fallback to direct invoice public endpoint if needed
       const invRes = await fetch(`${API_HOST}/api/v1/public/invoices/${targetId}`);
       if (invRes.ok) {
         const inv = await invRes.json();
@@ -105,8 +166,8 @@ export default function MagicLinkPage() {
           amount: usd,
           currency: inv.currency || 'USD',
           usdAmount: usd,
-          pkrAmount: Math.round(usd * 279.50),
-          rate: 279.50,
+          pkrAmount: Math.round(usd * 279.5),
+          rate: 279.5,
           status: inv.status,
           isPaid: inv.status.toLowerCase() === 'paid',
           paidAt: inv.paidAt,
@@ -117,9 +178,7 @@ export default function MagicLinkPage() {
             trustScore: inv.business?.trustScore ?? 70,
             isVerified: Boolean(inv.business?.isVerified),
           },
-          client: {
-            name: inv.clientName || 'Client',
-          },
+          client: { name: inv.clientName || 'Client' },
           whatsappShareText: `Hi ${inv.clientName || 'there'}, here is your secure payment link: https://pabandi.com/pay/${inv.id}`,
           whatsappShareUrl: `https://wa.me/?text=${encodeURIComponent(`Hi ${inv.clientName || 'there'}, here is your secure payment link: https://pabandi.com/pay/${inv.id}`)}`,
         });
@@ -127,7 +186,7 @@ export default function MagicLinkPage() {
         return;
       }
 
-      setError(`Could not find an invoice or booking for reference "${targetId}".`);
+      setError(`Could not find a repair order, invoice, or booking for reference "${targetId}".`);
     } catch (e: any) {
       setError(e.message || 'Failed to load secure link.');
     } finally {
@@ -140,15 +199,19 @@ export default function MagicLinkPage() {
       await navigator.clipboard.writeText(window.location.href);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2500);
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#070b12] text-[#e8eef4] flex items-center justify-center p-4">
+      <div className="pg-root flex items-center justify-center p-4">
         <div className="text-center space-y-4">
-          <div className="w-12 h-12 rounded-full border-2 border-[var(--pbn-accent,#4fd1c5)] border-t-transparent animate-spin mx-auto" />
-          <p className="text-xs font-mono text-[#8a9aa8]">Loading secure payment link...</p>
+          <div className="w-12 h-12 rounded-full border-2 border-[#e08a63] border-t-transparent animate-spin mx-auto" />
+          <p className="text-xs font-mono" style={{ color: 'var(--pg-muted)' }}>
+            Loading Pabandi secure tracker…
+          </p>
         </div>
       </div>
     );
@@ -156,204 +219,502 @@ export default function MagicLinkPage() {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-[#070b12] text-[#e8eef4] flex items-center justify-center p-4 font-['Space_Grotesk',sans-serif]">
-        <div className="max-w-md w-full p-8 rounded-3xl bg-[#0f172a] border border-[#334155] text-center space-y-4 shadow-2xl">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto border border-amber-500/20">
+      <div className="pg-root flex items-center justify-center p-4">
+        <div className="pg-glass max-w-md w-full p-8 text-center space-y-4">
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto"
+            style={{ background: 'rgba(240,180,106,0.12)', border: '1px solid rgba(240,180,106,0.3)', color: 'var(--pg-amber)' }}
+          >
             <ShieldCheck size={28} />
           </div>
-          <h2 className="text-xl font-bold">Link Not Found</h2>
-          <p className="text-xs text-[#94a3b8]">{error || 'This payment link is invalid or has expired.'}</p>
-          <Link
-            to="/booking"
-            className="inline-block mt-4 px-6 py-2.5 rounded-xl bg-[var(--pbn-accent,#4fd1c5)] text-[#070b12] font-bold text-xs font-mono hover:brightness-110 transition-all"
-          >
-            Explore Verified Businesses →
+          <h2 className="text-xl font-bold" style={{ fontFamily: 'var(--pg-display)' }}>
+            Link Not Found
+          </h2>
+          <p className="text-xs" style={{ color: 'var(--pg-muted)' }}>
+            {error || 'This link is invalid or has expired.'}
+          </p>
+          <Link to="/" className="pg-btn pg-btn-primary inline-flex">
+            Back to Pabandi →
           </Link>
         </div>
       </div>
     );
   }
 
+  const isRepairOrder = data.type === 'repair_order';
+  const activeStepIdx = isRepairOrder ? stepIndexFor(data.status) : 0;
+  const estimateItems = data.itemizedEstimate?.items ?? [];
+  const dviPhotos = data.dviPhotos ?? [];
+  const overallTrust = Math.round(data.business.trustScore ?? 85);
+  const fairPriceScore = Math.round(data.business.fairPriceScore ?? 88);
+  const commScore = Math.round(data.business.communicationScore ?? 90);
+  const needsApproval = isRepairOrder && data.status === 'NEEDS_APPROVAL' && !data.isPaid;
+  const pendingReview = isRepairOrder && data.status === 'PENDING_MANUAL_REVIEW';
+
   return (
-    <div className="min-h-screen bg-[#070b12] text-[#e8eef4] font-['Space_Grotesk',sans-serif] selection:bg-[var(--pbn-accent,#4fd1c5)]/20 pb-16">
-      {/* Top Ambient Light */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-xl h-64 bg-gradient-to-b from-[var(--pbn-accent,#4fd1c5)]/10 to-transparent blur-3xl pointer-events-none" />
+    <div className="pg-root pb-16">
+      <div className="pg-grid-bg" aria-hidden="true" />
+      <div className="pg-aurora a1" aria-hidden="true" />
+      <div className="pg-aurora a2" aria-hidden="true" />
 
-      {/* Main Container */}
-      <div className="max-w-md mx-auto px-4 pt-6 space-y-5 relative z-10">
-        
-        {/* Brand Bar */}
-        <div className="flex items-center justify-between pb-2">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-[var(--pbn-accent,#4fd1c5)]/20 border border-[var(--pbn-accent,#4fd1c5)]/40 flex items-center justify-center text-[var(--pbn-accent,#4fd1c5)] font-black text-sm">
-              P
-            </div>
-            <span className="font-bold tracking-tight text-sm text-white">Pabandi<span className="text-[var(--pbn-accent,#4fd1c5)]">Pay</span></span>
-          </div>
+      <div className="max-w-lg mx-auto px-4 pt-5 space-y-4 relative z-10">
+        {/* Top Brand Bar */}
+        <div className="flex items-center justify-between pb-1">
+          <Link to="/" className="pg-logo">
+            <span className="pg-logo-mark">◈</span>
+            <span className="text-sm font-bold">Pabandi</span>
+          </Link>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-mono font-semibold">
+          <div
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-semibold"
+            style={{
+              background: 'rgba(94, 227, 154, 0.12)',
+              border: '1px solid rgba(94, 227, 154, 0.35)',
+              color: 'var(--pg-green)',
+            }}
+          >
             <Lock size={11} />
-            <span>Escrow Guaranteed</span>
+            <span>Escrow Protected</span>
           </div>
         </div>
 
-        {/* Card Surface */}
-        <div className="rounded-3xl bg-[#0f172a] border border-[#334155] p-6 shadow-2xl space-y-6">
-          
-          {/* Business Profile Header */}
-          <div className="flex items-start justify-between gap-3 border-b border-[#334155]/60 pb-5">
+        {/* PROMINENT TOP TRUST BADGE: Pabandi Verified Trust Score */}
+        <div
+          className="pg-glass p-4 sm:p-5 space-y-3"
+          style={{
+            borderColor: 'rgba(94, 227, 154, 0.3)',
+            background: 'linear-gradient(135deg, rgba(94,227,154,0.08), rgba(255,255,255,0.03))',
+          }}
+        >
+          <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               {data.business.logoUrl ? (
                 <img
                   src={data.business.logoUrl}
                   alt={data.business.name}
-                  className="w-12 h-12 rounded-2xl object-cover border border-[#334155]"
+                  className="w-12 h-12 rounded-2xl object-cover border border-white/15 shrink-0"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#1e293b] to-[#0f172a] border border-[#334155] flex items-center justify-center text-lg font-bold text-[var(--pbn-accent,#4fd1c5)]">
-                  {data.business.name.charAt(0)}
+                <div
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-bold shrink-0"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(224,138,99,0.3), rgba(124,140,255,0.25))',
+                    border: '1px solid rgba(255,255,255,0.14)',
+                    color: '#fff',
+                  }}
+                >
+                  {isRepairOrder ? <Wrench size={20} /> : data.business.name.charAt(0)}
                 </div>
               )}
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <h1 className="font-bold text-base text-white truncate">{data.business.name}</h1>
-                  {data.business.isVerified && (
-                    <CheckCircle2 size={15} className="text-[var(--pbn-accent,#4fd1c5)] shrink-0" />
-                  )}
+                  <h1 className="font-bold text-base text-white truncate" style={{ fontFamily: 'var(--pg-display)' }}>
+                    {data.business.name}
+                  </h1>
+                  {data.business.isVerified && <CheckCircle2 size={15} style={{ color: 'var(--pg-green)' }} className="shrink-0" />}
                 </div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <ZkTrustBadge
-                    score={data.business.trustScore}
-                    disputeRate={0.0}
-                    subjectName={data.business.name}
-                    subjectId={data.business.id}
-                    variant="compact"
-                  />
-                  <span className="text-[10px] font-mono text-[#8a9aa8]">ZK Verified</span>
+                <div className="flex flex-wrap items-center gap-2 mt-1">
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono font-bold"
+                    style={{
+                      background: 'rgba(94, 227, 154, 0.16)',
+                      color: 'var(--pg-green)',
+                      border: '1px solid rgba(94, 227, 154, 0.35)',
+                    }}
+                  >
+                    <ShieldCheck size={12} />
+                    Pabandi Verified Trust Score · {overallTrust}/100
+                  </span>
                 </div>
               </div>
             </div>
 
             <button
               onClick={handleCopy}
-              title="Copy Link"
-              className="p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-[#8a9aa8] hover:text-white transition-colors border border-[#334155]"
+              title="Copy Magic Link"
+              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--pg-line-strong)', color: 'var(--pg-muted)' }}
             >
-              {copiedLink ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
+              {copiedLink ? <Check size={16} style={{ color: 'var(--pg-green)' }} /> : <Copy size={16} />}
             </button>
           </div>
 
-          {/* Item Description */}
-          <div className="space-y-1.5">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-[#8a9aa8]">
-              {data.type === 'invoice' ? 'Invoice Item' : 'Service Booking'}
-            </span>
-            <h2 className="text-lg font-black text-white">{data.title}</h2>
-            <p className="text-xs text-[#94a3b8] leading-relaxed">{data.description}</p>
+          {/* Sub-scores: Fair Price + Communication + FairPriceVerified stamp */}
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <div className="px-3 py-2 rounded-xl" style={{ background: 'rgba(7,9,18,0.45)', border: '1px solid var(--pg-line)' }}>
+              <span className="block text-[10px] font-mono uppercase" style={{ color: 'var(--pg-dim)' }}>
+                Fair Price Score
+              </span>
+              <span className="text-sm font-bold" style={{ color: 'var(--pg-green)' }}>
+                {fairPriceScore} / 100
+              </span>
+            </div>
+            <div className="px-3 py-2 rounded-xl" style={{ background: 'rgba(7,9,18,0.45)', border: '1px solid var(--pg-line)' }}>
+              <span className="block text-[10px] font-mono uppercase" style={{ color: 'var(--pg-dim)' }}>
+                Communication Score
+              </span>
+              <span className="text-sm font-bold" style={{ color: 'var(--pg-teal)' }}>
+                {commScore} / 100
+              </span>
+            </div>
           </div>
 
-          {/* Dual Currency Price Display */}
-          <div className="p-4 rounded-2xl bg-[#070b12]/80 border border-[#334155] flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-mono text-[#8a9aa8] uppercase block">Total Due</span>
-              <div className="flex items-baseline gap-1 mt-0.5">
-                <span className="text-2xl font-black text-white tracking-tight">
-                  Rs. {data.pkrAmount.toLocaleString()}
+          {!isRepairOrder && (
+            <div className="pt-1">
+              <ZkTrustBadge
+                score={data.business.trustScore}
+                disputeRate={0.0}
+                subjectName={data.business.name}
+                subjectId={data.business.id}
+                variant="compact"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* LIVE 5-STEP AUTO REPAIR TRACKER */}
+        {isRepairOrder && (
+          <div className="pg-glass p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[11px] font-mono uppercase tracking-wider" style={{ color: 'var(--pg-muted)' }}>
+                Live Bay Progress
+              </span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {data.isBookedByAgent && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold"
+                    style={{ background: 'rgba(124,140,255,0.16)', color: '#c4cbff', border: '1px solid rgba(124,140,255,0.35)' }}
+                  >
+                    <Bot size={11} />
+                    Booked by AI Agent
+                  </span>
+                )}
+                {data.fairPriceVerified && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold"
+                    style={{ background: 'rgba(94,227,154,0.15)', color: 'var(--pg-green)', border: '1px solid rgba(94,227,154,0.35)' }}
+                  >
+                    <Sparkles size={11} />
+                    FairPriceVerified
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* 5-step horizontal tracker */}
+            <div className="grid grid-cols-5 gap-1.5">
+              {REPAIR_STEPS.map((step, i) => {
+                const isCompleted = i < activeStepIdx;
+                const isCurrent = i === activeStepIdx;
+                return (
+                  <div key={step.key} className="flex flex-col items-center text-center gap-1.5">
+                    <div
+                      className="w-full h-1.5 rounded-full transition-all"
+                      style={{
+                        background: isCompleted
+                          ? 'var(--pg-green)'
+                          : isCurrent
+                          ? 'var(--pg-clay)'
+                          : 'rgba(255,255,255,0.1)',
+                        boxShadow: isCurrent ? '0 0 12px rgba(224,138,99,0.75)' : 'none',
+                      }}
+                    />
+                    <span
+                      className="text-[10px] leading-tight font-medium"
+                      style={{
+                        color: isCurrent ? '#fff' : isCompleted ? 'var(--pg-green)' : 'var(--pg-dim)',
+                        fontWeight: isCurrent ? 700 : 500,
+                      }}
+                    >
+                      {step.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {pendingReview && (
+              <div
+                className="p-3 rounded-xl flex items-start gap-2.5 text-xs"
+                style={{ background: 'rgba(240,180,106,0.12)', border: '1px solid rgba(240,180,106,0.35)', color: '#fde68a' }}
+              >
+                <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block">Estimate Under Pabandi Fair-Price Review</strong>
+                  <span style={{ color: 'var(--pg-muted)' }}>
+                    Labor hours exceeded regional averages by &gt;20%. A Pabandi Coordinator is verifying this quote to protect you before deposit approval.
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Vehicle Card */}
+            {data.vehicle && (
+              <div
+                className="p-3.5 rounded-xl flex items-center justify-between gap-2"
+                style={{ background: 'rgba(7,9,18,0.5)', border: '1px solid var(--pg-line)' }}
+              >
+                <div>
+                  <span className="block text-[10px] font-mono uppercase" style={{ color: 'var(--pg-dim)' }}>
+                    Vehicle
+                  </span>
+                  <span className="font-bold text-sm text-white">
+                    {[data.vehicle.year, data.vehicle.make, data.vehicle.model].filter(Boolean).join(' ') || 'Vehicle on Lift'}
+                  </span>
+                  <span className="block text-[11px] font-mono mt-0.5" style={{ color: 'var(--pg-muted)' }}>
+                    VIN: {data.vehicle.vin}
+                    {data.vehicle.licensePlate ? ` · Plate ${data.vehicle.licensePlate}` : ''}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* DVI PHOTOS & VISION PROOF-OF-WORK */}
+        {isRepairOrder && (
+          <div className="pg-glass p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Camera size={15} style={{ color: 'var(--pg-clay)' }} />
+                <span className="text-xs font-bold text-white">Digital Vehicle Inspection (DVI) Photos</span>
+              </div>
+              {data.visionProofHash && (
+                <span
+                  className="text-[10px] font-mono px-2 py-0.5 rounded-md"
+                  style={{ background: 'rgba(94,227,154,0.14)', color: 'var(--pg-green)', border: '1px solid rgba(94,227,154,0.3)' }}
+                >
+                  AI Proof #{data.visionProofHash.slice(0, 8)}
                 </span>
-                <span className="text-xs font-mono font-bold text-[var(--pbn-accent,#4fd1c5)]">PKR</span>
+              )}
+            </div>
+
+            {dviPhotos.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2.5">
+                {dviPhotos.map((photo, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setLightboxUrl(photo.url)}
+                    className="group relative rounded-xl overflow-hidden text-left border border-white/10 bg-black/30 aspect-[4/3]"
+                  >
+                    <img src={photo.url} alt={photo.label || photo.kind} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase bg-black/75 text-white">
+                      {photo.label || photo.kind}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div
+                className="p-4 rounded-xl text-center text-xs"
+                style={{ background: 'rgba(7,9,18,0.45)', border: '1px dashed var(--pg-line-strong)', color: 'var(--pg-muted)' }}
+              >
+                Mechanic inspection &amp; Before/After photos will appear here live as soon as uploaded.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* MAIN ESTIMATE / PAYMENT CARD */}
+        <div className="pg-glass p-5 sm:p-6 space-y-5">
+          <div className="space-y-1">
+            <span className="text-[10px] font-mono uppercase tracking-wider" style={{ color: 'var(--pg-dim)' }}>
+              {isRepairOrder ? 'Repair Order & Estimate' : data.type === 'invoice' ? 'Invoice Item' : 'Service Booking'}
+            </span>
+            <h2 className="text-lg font-bold text-white" style={{ fontFamily: 'var(--pg-display)' }}>
+              {data.title}
+            </h2>
+            <p className="text-xs m-0" style={{ color: 'var(--pg-muted)' }}>
+              {data.description}
+            </p>
+          </div>
+
+          {/* Itemized Repair Estimate Breakdown */}
+          {isRepairOrder && estimateItems.length > 0 && (
+            <div className="space-y-2 pt-1">
+              {estimateItems.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="p-3 rounded-xl flex items-center justify-between gap-3 text-xs"
+                  style={{ background: 'rgba(7,9,18,0.45)', border: '1px solid var(--pg-line)' }}
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold text-white m-0 truncate">{item.description}</p>
+                    <p className="text-[11px] font-mono m-0 mt-0.5" style={{ color: 'var(--pg-dim)' }}>
+                      Parts ${Number(item.partCost || 0).toFixed(2)} · Labor {item.laborHours}h @ ${item.laborRate}/hr
+                    </p>
+                  </div>
+                  <span className="font-mono font-bold text-white shrink-0">
+                    ${Number(item.total ?? item.partCost + item.laborHours * item.laborRate).toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Price Box */}
+          <div
+            className="p-4 rounded-2xl flex items-center justify-between"
+            style={{ background: 'rgba(7,9,18,0.65)', border: '1px solid var(--pg-line-strong)' }}
+          >
+            <div>
+              <span className="text-[10px] font-mono uppercase block" style={{ color: 'var(--pg-dim)' }}>
+                {isRepairOrder ? 'Escrow Deposit Due Now' : 'Total Due'}
+              </span>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <span className="text-2xl font-black text-white tracking-tight" style={{ fontFamily: 'var(--pg-display)' }}>
+                  {isRepairOrder || data.currency === 'USD'
+                    ? `$${data.usdAmount.toFixed(2)}`
+                    : `Rs. ${data.pkrAmount.toLocaleString()}`}
+                </span>
+                <span className="text-xs font-mono font-bold" style={{ color: 'var(--pg-clay)' }}>
+                  {isRepairOrder ? 'USD' : data.currency}
+                </span>
               </div>
             </div>
 
             <div className="text-right">
-              <span className="text-[10px] font-mono text-[#8a9aa8] block">Guaranteed Rate</span>
-              <span className="text-sm font-bold text-[#cbd5e1] font-mono">
-                ${data.usdAmount.toFixed(2)} USD
-              </span>
-              <span className="block text-[9px] font-mono text-[#64748b]">1 USD = 279.50 PKR</span>
+              {isRepairOrder && data.totalAmount ? (
+                <>
+                  <span className="text-[10px] font-mono block" style={{ color: 'var(--pg-dim)' }}>
+                    Full Estimate
+                  </span>
+                  <span className="text-sm font-bold font-mono text-white">
+                    ${Number(data.totalAmount).toFixed(2)} USD
+                  </span>
+                  <span className="block text-[10px] font-mono" style={{ color: 'var(--pg-green)' }}>
+                    Balance on pickup
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-[10px] font-mono block" style={{ color: 'var(--pg-dim)' }}>
+                    Guaranteed Rate
+                  </span>
+                  <span className="text-sm font-bold font-mono text-white">${data.usdAmount.toFixed(2)} USD</span>
+                </>
+              )}
             </div>
           </div>
 
-          {/* Paid Status Banner OR Payment Buttons */}
+          {/* Paid Banner OR 1-Tap Approval CTA */}
           {data.isPaid ? (
-            <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-2">
-              <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
-                <CheckCircle2 size={24} />
-              </div>
-              <h3 className="font-bold text-sm text-emerald-300">Payment Completed</h3>
-              <p className="text-xs text-[#94a3b8]">
-                Funds are secured in escrow. Digital receipt generated.
+            <div
+              className="p-4 rounded-2xl text-center space-y-2"
+              style={{ background: 'rgba(94,227,154,0.1)', border: '1px solid rgba(94,227,154,0.35)' }}
+            >
+              <CheckCircle2 size={28} style={{ color: 'var(--pg-green)' }} className="mx-auto" />
+              <h3 className="font-bold text-sm text-white m-0">Deposit Funded &amp; Approved</h3>
+              <p className="text-xs m-0" style={{ color: 'var(--pg-muted)' }}>
+                Funds are held safely in Pabandi Escrow and release only when your repair is verified complete.
               </p>
-              {data.lpDispatched && (
-                <p className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 py-1 px-2 rounded-lg">
-                  ⚡ Converted to PKR at 279.50. Raast transfer in progress.
-                </p>
-              )}
             </div>
           ) : (
-            <div className="space-y-3 pt-2">
-              {/* Primary 48px Pay Button */}
+            <div className="space-y-2.5 pt-1">
               <button
                 type="button"
+                disabled={pendingReview}
                 onClick={() => setCheckoutOpen(true)}
-                className="w-full min-h-[48px] py-3.5 px-6 rounded-2xl bg-[var(--pbn-accent,#4fd1c5)] hover:brightness-110 active:scale-[0.98] text-[#070b12] font-black text-sm tracking-wide shadow-lg shadow-[var(--pbn-accent,#4fd1c5)]/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="pg-btn pg-btn-primary pg-btn-lg w-full"
               >
-                <span>Pay Now • Rs. {data.pkrAmount.toLocaleString()}</span>
-                <ArrowRight size={18} />
+                <CreditCard size={18} />
+                <span>
+                  {needsApproval || isRepairOrder
+                    ? `Approve & Pay Deposit via Apple Pay / Card ($${data.usdAmount.toFixed(2)})`
+                    : `Pay Now • $${data.usdAmount.toFixed(2)} USD`}
+                </span>
+                <ArrowRight size={17} />
               </button>
 
-              {/* Share to WhatsApp Button */}
               <a
                 href={data.whatsappShareUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full min-h-[44px] py-2.5 px-4 rounded-2xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-[#25D366] font-bold text-xs flex items-center justify-center gap-2 transition-all"
+                className="pg-btn pg-btn-ghost w-full text-xs"
               >
-                <Smartphone size={16} />
-                <span>Share to WhatsApp</span>
+                <Smartphone size={15} />
+                <span>Share Tracking Link</span>
               </a>
             </div>
           )}
 
           {/* Security Micro-Copy */}
-          <div className="pt-2 border-t border-[#334155]/60 flex items-center justify-between text-[10px] font-mono text-[#64748b]">
+          <div
+            className="pt-3 border-t flex items-center justify-between text-[10px] font-mono"
+            style={{ borderColor: 'var(--pg-line)', color: 'var(--pg-dim)' }}
+          >
             <div className="flex items-center gap-1.5">
-              <ShieldCheck size={13} className="text-[var(--pbn-accent,#4fd1c5)]" />
-              <span>No account required to pay</span>
+              <ShieldCheck size={13} style={{ color: 'var(--pg-green)' }} />
+              <span>Zero login required</span>
             </div>
-            <span>Square • Raast • Solana</span>
+            <span>Apple Pay · Square · Escrow</span>
           </div>
-
         </div>
 
-        {/* Trust Passport Teaser */}
-        <div className="p-4 rounded-2xl bg-white/[0.02] border border-[#334155]/60 text-center space-y-1">
-          <p className="text-xs text-[#94a3b8]">Want to verify this business reputation?</p>
+        {/* Public Trust Passport Footer Link */}
+        <div className="pg-glass-subtle p-4 text-center space-y-1">
+          <p className="text-xs m-0" style={{ color: 'var(--pg-muted)' }}>
+            Verify this shop&apos;s on-chain reputation &amp; history
+          </p>
           <Link
             to={data.business.slug ? `/trust/${data.business.slug}` : `/trust/${data.business.id}`}
-            className="inline-flex items-center gap-1 text-xs font-bold text-[var(--pbn-accent,#4fd1c5)] hover:underline font-mono"
+            className="inline-flex items-center gap-1 text-xs font-bold font-mono hover:underline"
+            style={{ color: 'var(--pg-clay)' }}
           >
             <span>View Public Trust Passport</span>
             <ExternalLink size={12} />
           </Link>
         </div>
-
       </div>
 
-      {/* Checkout Modal */}
+      {/* Photo Lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxUrl(null)}
+            className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 text-white flex items-center justify-center"
+            aria-label="Close photo"
+          >
+            <X size={20} />
+          </button>
+          <img src={lightboxUrl} alt="DVI inspection" className="max-w-full max-h-[85dvh] rounded-2xl border border-white/15" />
+        </div>
+      )}
+
+      {/* Square / Apple Pay Checkout Modal */}
       <PabandiCheckoutModal
         open={checkoutOpen}
         onClose={() => setCheckoutOpen(false)}
         title={data.title}
         subtitle={`To: ${data.business.name}`}
         amount={data.usdAmount}
-        currency={data.currency}
+        currency={isRepairOrder ? 'USD' : data.currency}
         referenceId={data.id}
-        squareNote={data.type === 'invoice' ? `pabandi:invoice:${data.id}:${data.number || '1'}` : `pabandi:booking:${data.id}`}
+        squareNote={
+          isRepairOrder
+            ? `pabandi:repair_order:${data.id}`
+            : data.type === 'invoice'
+            ? `pabandi:invoice:${data.id}:${data.number || '1'}`
+            : `pabandi:booking:${data.id}`
+        }
         customerEmail={data.client?.email || ''}
         initialRail="square"
         onSuccess={() => {
           setCheckoutOpen(false);
-          setData((prev) => (prev ? { ...prev, isPaid: true } : null));
+          setData((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  isPaid: true,
+                  status: prev.type === 'repair_order' ? 'IN_PROGRESS' : prev.status,
+                }
+              : null
+          );
         }}
       />
     </div>

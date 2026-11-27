@@ -33,6 +33,51 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 
+/**
+ * Columns the DATAMODEL declares, derived rather than hand-listed.
+ *
+ * WHY THIS EXISTS
+ * EXPECTED_COLUMNS below is maintained by hand, and it has now missed the same
+ * class of bug three times: a column added to schema.prisma and to a migration
+ * reaches production missing, because nothing in the deploy path runs migrations
+ * and nobody remembered to add the column here. The third time it surfaced as a
+ * 500 on `POST /api/v1/crm/clients` — "The column `marketingOptIn` does not
+ * exist" — while `/health` reported `ok: true`.
+ *
+ * The datamodel is available at runtime (`Prisma.dmmf`), including `@@map`
+ * names, so the expectation can be computed instead of remembered. `dbName` is
+ * what information_schema reports; using the model name would compare against a
+ * table that does not exist anywhere Prisma built the schema.
+ */
+interface DatamodelColumn {
+  table: string;
+  column: string;
+}
+
+let cachedDatamodelColumns: DatamodelColumn[] | null = null;
+
+export function datamodelColumns(): DatamodelColumn[] {
+  if (cachedDatamodelColumns) return cachedDatamodelColumns;
+
+  const models = (((Prisma as any).dmmf?.datamodel?.models ?? []) as Array<{
+    name: string;
+    dbName?: string | null;
+    fields: Array<{ name: string; dbName?: string | null; kind: string }>;
+  }>);
+
+  const out: DatamodelColumn[] = [];
+  for (const model of models) {
+    const table = model.dbName ?? model.name;
+    for (const field of model.fields) {
+      // Relations and enums are not columns. `kind` is 'scalar' | 'object' | 'enum'.
+      if (field.kind !== 'scalar') continue;
+      out.push({ table, column: field.dbName ?? field.name });
+    }
+  }
+  cachedDatamodelColumns = out;
+  return out;
+}
+
 /** A column the running code expects, and how it expects to find it. */
 export interface ExpectedColumn {
   table: string;
@@ -161,9 +206,17 @@ export const EXPECTED_COLUMNS: ExpectedColumn[] = [
   // 20261121_outreach + 20261121_booking_work_order + BusinessPaymentMethod.
   // Without these, GET /crm/clients, GET /business/stats, and /payment-methods fail.
   {
+    // The mapped name, not the model name: information_schema reports what
+    // @@map produced, so "CrmClient" here would read as missing on every database.
     table: 'crm_clients',
     column: 'marketingOptIn',
-    purpose: 'outreach opt-in flag selected by every CrmClient query',
+    purpose: 'outreach consent: POST /crm/clients writes it on every create',
+  },
+  {
+    table: 'crm_clients',
+    column: 'marketingOptInAt',
+    nullable: true,
+    purpose: 'outreach consent timestamp: when consent was recorded',
   },
   {
     table: 'Booking',
@@ -186,9 +239,33 @@ export interface SchemaCheckResult {
   notNullable: string[];
   /** Present only when ok is false. Columns whose type is not what code expects. */
   wrongType: string[];
+  /**
+   * Columns schema.prisma declares on tables that DO exist, but the database
+   * lacks. Derived from Prisma.dmmf rather than hand-listed, so a column added
+   * to the datamodel cannot be forgotten here again.
+   */
+  drift?: string[];
+  /** True when `drift` was capped at MAX_REPORTED and more entries exist. */
+  driftTruncated?: boolean;
+  /** Models in schema.prisma with no table in this database at all. Informational:
+   *  an absent table is a different problem from a column missing off a live one,
+   *  and reporting every column of every absent model would bury the signal. */
+  absentTables?: number;
   /** Host and database name. No password — this is reported, not logged. */
   target: string;
   checked: number;
+}
+
+/** Cap on reported drift, so a wide divergence cannot produce an unusable payload. */
+const MAX_REPORTED_DRIFT = 50;
+
+/**
+ * Set SCHEMA_CHECK_ENFORCE_DRIFT=0 to report derived drift without failing the
+ * check. For observing a production database's true divergence before deciding
+ * whether it is clean enough to gate on.
+ */
+function enforceDrift(): boolean {
+  return process.env.SCHEMA_CHECK_ENFORCE_DRIFT !== '0';
 }
 
 /**
@@ -215,21 +292,20 @@ export async function checkSchema(): Promise<SchemaCheckResult> {
   const wrongType: string[] = [];
 
   try {
-    // One round trip for every column, rather than one query per column: this
-    // runs on a request path and 6 queries to information_schema on a remote
-    // database is 6 round trips.
+    // ONE round trip, and deliberately not a filtered one: the datamodel-derived
+    // comparison needs to know which tables exist as well as which columns do,
+    // and a table with no rows in information_schema.columns cannot exist. This
+    // runs on a request path, so a second query purely to ask that is not worth it.
     const rows = await prisma.$queryRaw<
       Array<{ table_name: string; column_name: string; is_nullable: string; data_type: string }>
     >`
       SELECT table_name, column_name, is_nullable, data_type
       FROM information_schema.columns
       WHERE table_schema = current_schema()
-        AND (table_name, column_name) IN (
-          ${Prisma.join(EXPECTED_COLUMNS.map((c) => Prisma.sql`(${c.table}, ${c.column})`))}
-        )
     `;
 
     const found = new Map(rows.map((r) => [`${r.table_name}.${r.column_name}`, r]));
+    const tablesPresent = new Set(rows.map((r) => r.table_name));
 
     for (const expected of EXPECTED_COLUMNS) {
       const key = `${expected.table}.${expected.column}`;
@@ -247,6 +323,54 @@ export async function checkSchema(): Promise<SchemaCheckResult> {
         );
       }
     }
+
+    // Derived presence check. Skips tables that do not exist at all: an absent
+    // table is counted in `absentTables`, because reporting all ten of its
+    // columns individually would bury the handful of real findings.
+    const alreadyReported = new Set(EXPECTED_COLUMNS.map((c) => `${c.table}.${c.column}`));
+    const drift: string[] = [];
+    let driftTotal = 0;
+    let absentTables = 0;
+    const seenAbsent = new Set<string>();
+
+    for (const { table, column } of datamodelColumns()) {
+      const key = `${table}.${column}`;
+      if (found.has(key)) continue;
+
+      if (!tablesPresent.has(table)) {
+        if (!seenAbsent.has(table)) {
+          seenAbsent.add(table);
+          absentTables += 1;
+        }
+        continue;
+      }
+      if (alreadyReported.has(key)) continue; // already reported by the curated list
+
+      driftTotal += 1;
+      if (drift.length < MAX_REPORTED_DRIFT) {
+        drift.push(
+          `${key} — declared in schema.prisma and used by the code, but absent from an existing table`,
+        );
+      }
+    }
+
+    const enforce = enforceDrift();
+    const driftFailures = enforce ? drift : [];
+    if (enforce && driftTotal > drift.length) {
+      driftFailures.push(`${driftTotal - drift.length} further drifted columns not listed`);
+    }
+
+    return {
+      ok: missing.length === 0 && notNullable.length === 0 && wrongType.length === 0 && driftFailures.length === 0,
+      missing: [...missing, ...driftFailures],
+      notNullable,
+      wrongType,
+      drift,
+      driftTruncated: driftTotal > drift.length,
+      absentTables,
+      target,
+      checked: EXPECTED_COLUMNS.length,
+    };
   } catch (err) {
     // A database we cannot query is itself the finding. Reported as missing
     // rather than as a distinct state, because from the caller's point of view

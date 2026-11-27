@@ -123,6 +123,27 @@ jobs:
         # at a real database it fails loudly instead of dropping tables.
         run: npx prisma db push
 
+      - name: Apply the raw-SQL deploy path
+        working-directory: server
+        # Production does NOT run `prisma migrate deploy`. Render's preDeployCommand
+        # runs this script, and src/utils/tableBootstrap.ts runs the same files at
+        # boot — so server/sql/*.sql is the ONLY path by which most of these tables
+        # reach production. Nothing ran them in CI, and render.yaml swallows a
+        # failure with `|| echo "WARN: ..."`, so a broken file degrades production
+        # silently. This runs it strictly: the script exits non-zero if any single
+        # file fails to apply.
+        #
+        # Run TWICE on purpose. Production runs it on every boot, so a file that
+        # only works once is a file that breaks the next deploy. The second run is
+        # the idempotency assertion, and it costs one extra round trip.
+        #
+        # What this does NOT prove: that production's schema matches schema.prisma.
+        # `db push` above builds the correct schema first, so an object missing
+        # from a deploy path is invisible here. That is what the runtime schema
+        # check (/health -> schema) is for, and it cannot run in CI because CI has
+        # no production database.
+        run: node scripts/ensure-agent-tables.cjs && node scripts/ensure-agent-tables.cjs
+
       - name: Run tests
         working-directory: server
         # The open intermittent Prisma flake is tracked in docs/build-plan.md as

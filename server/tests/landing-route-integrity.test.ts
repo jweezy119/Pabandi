@@ -37,7 +37,7 @@ describe('Landing Page Route & Integrity Audit', () => {
     const appContent = fs.readFileSync(appRoutesPath, 'utf8');
 
     // Extract all `to="..."` and `navigate('...')` target paths
-    const linkMatches = Array.from(landingContent.matchAll(/(?:to=|navigate\(['"])([^'"?#\s]+)/g)).map((m) => m[1]);
+    const linkMatches = Array.from(landingContent.matchAll(/(?:to=['"]|navigate\(['"])([^'"?#\s]+)/g)).map((m) => m[1]);
     expect(linkMatches.length).toBeGreaterThan(5);
 
     const uniqueLinks = Array.from(new Set(linkMatches));
@@ -61,13 +61,13 @@ describe('Landing Page Route & Integrity Audit', () => {
     }
   });
 
-  it('confirms the outcome-first H1 heading and Warm Clay palette alignment', () => {
+  it('confirms the outcome-first H1 heading and glass landing alignment', () => {
     const landingContent = fs.readFileSync(landingPagePath, 'utf8');
     expect(landingContent).toContain('Guarantee Your');
     expect(landingContent).toContain('Next Project');
     expect(landingContent).toContain("Pay Only When");
     expect(landingContent).toContain("It's Done");
-    expect(landingContent).toContain('THE SETTLEMENT & TRUST LAYER FOR HYBRID COMMERCE');
+    expect(landingContent).toContain('The Settlement & Trust Layer for Hybrid Commerce');
     expect(landingContent).toContain('LiveEscrowPreview');
   });
 });

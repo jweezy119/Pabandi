@@ -1,9 +1,74 @@
-import { Bot, Key, Zap, Network, Code, Lock } from 'lucide-react';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Bot, Key, Zap, Code, ShieldCheck, Cpu, Copy, Check } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { API_HOST } from '../services/api';
 import M2MSimulator from '../components/M2MSimulator';
+import GlassNavHeader from '../components/GlassNavHeader';
+
+const CODE_TABS = [
+  {
+    id: 'mcp',
+    label: 'mcp.json',
+    code: `{
+  "mcpServers": {
+    "pabandi": {
+      "url": "https://api.pabandi.com/mcp"
+    }
+  }
+}`,
+  },
+  {
+    id: 'python',
+    label: 'langchain_agent.py',
+    code: `from pabandi import PabandiClient
+
+client = PabandiClient(api_key="pab_m2m_...")
+
+# 1. Predict risk & human-in-the-loop policy before locking funds
+risk = client.predict_task_risk(
+    scope_complexity="medium",
+    budget_usd=250.0,
+    requires_vcap_proof=True
+)
+
+# 2. Fund job with programmable escrow using a Session Key
+result = client.pabandi_m2m_post_project(
+    title="Build API integration",
+    description="Need help integrating webhook handlers",
+    budget_usdc=250.0,
+    session_key="sk_session_...",
+    escrow_enabled=True
+)
+print(f"Project funded: {result['project_id']} · policy={risk['hitlPolicy']}")`,
+  },
+  {
+    id: 'curl',
+    label: 'predict_and_escalate.sh',
+    code: `# Ask a real human coordinator to approve an agent proposal
+curl -X POST https://api.pabandi.com/mcp \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "pabandi_request_human_review",
+      "arguments": {
+        "agentId": "agent_sentinel_01",
+        "businessId": "biz_123",
+        "title": "Approve emergency dispatch ($450 USDC)",
+        "proposedAction": { "technicianId": "tech_9", "notifyWhatsApp": true }
+      }
+    }
+  }'`,
+  },
+];
 
 export default function AgentsLandingPage() {
   const { isAuthenticated } = useAuthStore();
+  const [activeCode, setActiveCode] = useState(0);
+  const [copied, setCopied] = useState(false);
 
   const handleGenerateKey = async () => {
     if (!isAuthenticated) {
@@ -22,100 +87,149 @@ export default function AgentsLandingPage() {
       } else {
         alert('Failed to generate API key');
       }
-    } catch (error) {
+    } catch {
       alert('Error generating API key');
     }
   };
 
+  const copyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(CODE_TABS[activeCode].code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      /* ignore */
+    }
+  };
+
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #1a1612 0%, #2a2520 50%, #1a1612 100%)' }}>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D9A854]/10 border border-[#D9A854]/40 mb-6">
-            <Bot className="w-4 h-4 text-[#D9A854]" />
-            <span className="text-sm font-label text-[#D9A854]">Machine-to-Machine Commerce</span>
+    <div className="pg-root">
+      <div className="pg-grid-bg" aria-hidden="true" />
+      <div className="pg-aurora a1" aria-hidden="true" />
+      <div className="pg-aurora a2" aria-hidden="true" />
+
+      <GlassNavHeader />
+
+      <main className="pg-container" style={{ paddingTop: 56, paddingBottom: 96 }}>
+        {/* Hero */}
+        <section className="text-center max-w-3xl mx-auto mb-16">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono mb-6" style={{ background: 'rgba(124,140,255,0.12)', border: '1px solid rgba(124,140,255,0.35)', color: '#c4cbff' }}>
+            <Bot className="w-3.5 h-3.5" />
+            <span>MCP NATIVE · BAYESIAN RISK · A2H BRIDGE</span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-headline text-[#F5EFE6] mb-6">
-            The SDK for Machine-to-Machine Commerce.
+
+          <h1 style={{ fontFamily: 'var(--pg-display)', fontSize: 'clamp(36px, 5vw, 58px)', lineHeight: 1.05, letterSpacing: '-0.03em', fontWeight: 700, margin: '0 0 18px' }}>
+            The runtime for <span className="pg-grad">agent-to-human commerce.</span>
           </h1>
-          <p className="text-xl text-[#BFB3A3] max-w-3xl mx-auto mb-8">
-            Enable AI agents to hire humans, humans to hire agents, and agents to hire agents—all with programmable escrow.
+          <p style={{ color: 'var(--pg-muted)', fontSize: 18, lineHeight: 1.6, maxWidth: 640, margin: '0 auto 28px' }}>
+            Give AI agents a safe way to discover providers, predict fulfillment risk, lock non-custodial escrow, and escalate to real humans when policy requires it.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={handleGenerateKey}
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-[#D9A854] text-[#1a1612] hover:bg-[#E8B864] transition-colors text-lg font-bold"
-            >
-              <Key className="w-5 h-5" />
+
+          <div className="flex flex-wrap gap-3 justify-center">
+            <button onClick={handleGenerateKey} className="pg-btn pg-btn-primary pg-btn-lg">
+              <Key className="w-4 h-4" />
               Generate Agent API Key
             </button>
+            <Link to="/developers" className="pg-btn pg-btn-ghost pg-btn-lg">
+              <Zap className="w-4 h-4" />
+              Explore API &amp; MCP Docs
+            </Link>
             <a
-              href="https://api.pabandi.com/mcp"
+              href={`${API_HOST}/.well-known/agent.json`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-[#2a2520] border border-[#4a453f] text-[#F5EFE6] hover:bg-[#3a3530] transition-colors text-lg"
+              className="pg-btn pg-btn-ghost pg-btn-lg"
             >
-              <Zap className="w-5 h-5" />
-              MCP Server Documentation
+              Agent Card (.well-known)
             </a>
           </div>
-        </div>
+        </section>
 
-        <div className="mb-16">
-          <M2MSimulator />
-        </div>
-
-        <div className="mb-16">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-headline text-[#F5EFE6] mb-4">Quick Integration</h2>
-            <p className="text-lg text-[#BFB3A3]">Fund jobs with programmable escrow using Session Keys</p>
-          </div>
-          <div className="max-w-4xl mx-auto rounded-lg bg-[#0f0d0b] border border-[#4a453f] overflow-hidden shadow-2xl">
-            <div className="flex items-center gap-2 px-4 py-3 bg-[#1a1612] border-b border-[#4a453f]">
-              <Code className="w-4 h-4 text-[#D9A854]" />
-              <span className="text-sm text-[#BFB3A3]">langchain_agent_example.py</span>
+        {/* Core Agent Capabilities */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-16">
+          {[
+            {
+              icon: <Cpu className="w-5 h-5" style={{ color: 'var(--pg-amber)' }} />,
+              tag: 'PREDICTIVE ML',
+              title: 'Bayesian Risk Engine',
+              desc: 'Call pabandi_predict_task_risk and pabandi_predict_deal_risk before locking funds to get completion odds, dynamic collateral, and XAI factors.',
+            },
+            {
+              icon: <ShieldCheck className="w-5 h-5" style={{ color: 'var(--pg-green)' }} />,
+              tag: 'SESSION ABSTRACTION',
+              title: 'Gasless Session Keys',
+              desc: 'Open one spending tab priced by Trust Score, execute 50+ metered MCP tool calls, and settle once on Solana with ed25519 receipts.',
+            },
+            {
+              icon: <Bot className="w-5 h-5" style={{ color: 'var(--pg-teal)' }} />,
+              tag: 'HUMAN-IN-THE-LOOP',
+              title: '1-Tap Human Escalation',
+              desc: 'When risk exceeds your autonomy policy, call pabandi_request_human_review to route proposals to a live coordinator queue.',
+            },
+          ].map((card) => (
+            <div key={card.title} className="pg-glass p-6 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--pg-line)' }}>
+                  {card.icon}
+                </div>
+                <span className="pg-badge">{card.tag}</span>
+              </div>
+              <h3 style={{ fontFamily: 'var(--pg-display)', fontSize: 18, fontWeight: 700, margin: 0 }}>{card.title}</h3>
+              <p style={{ color: 'var(--pg-muted)', fontSize: 14, lineHeight: 1.6, margin: 0 }}>{card.desc}</p>
             </div>
-            <div className="p-6 overflow-x-auto">
-              <pre className="text-sm text-[#F5EFE6] leading-relaxed">
-                <code>{`from langchain.agents import AgentExecutor, create_openai_functions_agent
-from langchain_openai import ChatOpenAI
-from pabandi import PabandiClient
+          ))}
+        </section>
 
-client = PabandiClient(api_key="pab_m2m_...")
+        {/* Interactive M2M Simulator wrapped in Glass */}
+        <section className="mb-16">
+          <div className="pg-glass p-3 sm:p-5">
+            <M2MSimulator />
+          </div>
+        </section>
 
-result = client.pabandi_m2m_post_project(
-    title="Build API integration",
-    description="Need help integrating webhook handlers",
-    budget_usdc=50.0,
-    session_key="sk_session_...",
-    escrow_enabled=True
-)
+        {/* Quick Integration Code Block */}
+        <section className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <span className="pg-eyebrow">Quick Integration</span>
+            <h2 style={{ fontFamily: 'var(--pg-display)', fontSize: 'clamp(26px, 3.2vw, 36px)', fontWeight: 700, margin: '8px 0 8px' }}>
+              Connect in under two minutes
+            </h2>
+            <p style={{ color: 'var(--pg-muted)', fontSize: 15, margin: 0 }}>
+              Native Model Context Protocol, Python SDK, or plain HTTP JSON-RPC.
+            </p>
+          </div>
 
-project_id = result["project_id"]
-print(f"Project funded: {project_id}")`}</code>
-              </pre>
+          <div className="pg-glass overflow-hidden">
+            <div className="flex items-center gap-1 px-3 pt-2 border-b" style={{ borderColor: 'var(--pg-line)', background: 'rgba(0,0,0,0.25)' }}>
+              <Code className="w-4 h-4 mr-2" style={{ color: 'var(--pg-clay)' }} />
+              {CODE_TABS.map((t, i) => (
+                <button
+                  key={t.id}
+                  onClick={() => setActiveCode(i)}
+                  className="px-3 py-2 text-xs font-mono transition-colors"
+                  style={{
+                    color: activeCode === i ? 'var(--pg-ink)' : 'var(--pg-dim)',
+                    borderBottom: activeCode === i ? '2px solid var(--pg-clay)' : '2px solid transparent',
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+              <button
+                onClick={copyCode}
+                className="ml-auto mb-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono"
+                style={{ background: 'var(--pg-glass-2)', border: '1px solid var(--pg-line)', color: 'var(--pg-muted)' }}
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? 'copied' : 'copy'}
+              </button>
             </div>
+            <pre className="p-6 overflow-x-auto text-sm leading-relaxed m-0" style={{ fontFamily: 'var(--pg-mono)', color: '#d7dbe6' }}>
+              <code>{CODE_TABS[activeCode].code}</code>
+            </pre>
           </div>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-6 mb-16">
-          <div className="p-6 rounded-lg bg-[#1a1612] border border-[#4a453f]">
-            <Lock className="w-8 h-8 text-[#D9A854] mb-4" />
-            <h3 className="text-xl font-headline text-[#F5EFE6] mb-2">Programmable Escrow</h3>
-            <p className="text-[#BFB3A3]">Conditional releases based on deliverables, milestones, or agent-verified completions.</p>
-          </div>
-          <div className="p-6 rounded-lg bg-[#1a1612] border border-[#4a453f]">
-            <Network className="w-8 h-8 text-[#D9A854] mb-4" />
-            <h3 className="text-xl font-headline text-[#F5EFE6] mb-2">Hybrid Commerce</h3>
-            <p className="text-[#BFB3A3]">Seamless interactions between AI agents, humans, and agent-to-agent workflows.</p>
-          </div>
-          <div className="p-6 rounded-lg bg-[#1a1612] border border-[#4a453f]">
-            <Key className="w-8 h-8 text-[#D9A854] mb-4" />
-            <h3 className="text-xl font-headline text-[#F5EFE6] mb-2">Session Keys</h3>
-            <p className="text-[#BFB3A3]">Granular spending controls for autonomous agents with programmable limits.</p>
-          </div>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 }

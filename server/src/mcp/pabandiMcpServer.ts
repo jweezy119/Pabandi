@@ -182,6 +182,48 @@ export const TOOLS: McpTool[] = [
     requiresAuth: true,
     inputSchema: { type: 'object', properties: {} },
   },
+  {
+    name: 'pabandi_search_auto_repair',
+    description: 'Search US auto repair shops by zip code / location and service type (e.g. "brakes"). Returns shops, ML Trust Scores (Fair Price & Communication), and next available bay.',
+    requiresAuth: false,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        location: { type: 'string', description: 'US zip code, city, or address' },
+        serviceType: { type: 'string', description: 'Requested repair service (e.g. "brakes", "oil change", "diagnostic")' },
+      },
+      required: ['location', 'serviceType'],
+    },
+  },
+  {
+    name: 'pabandi_book_auto_repair',
+    description: 'Book an auto repair order on behalf of a car owner. Decodes the vehicle VIN via NHTSA, creates a RepairOrder (isBookedByAgent: true), runs the AI Fair-Price Guardrail, and triggers an SMS Magic Link for the owner to approve & fund the deposit.',
+    requiresAuth: false,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        shopId: { type: 'string', description: 'Target auto repair shop Business ID' },
+        vehicleVin: { type: 'string', description: 'Vehicle Identification Number (VIN)' },
+        serviceType: { type: 'string', description: 'Repair service requested (e.g. "brakes")' },
+        clientPhone: { type: 'string', description: 'Car owner US phone number for SMS Magic Link' },
+        clientName: { type: 'string', description: 'Optional car owner name' },
+        licensePlate: { type: 'string', description: 'Optional license plate' },
+      },
+      required: ['shopId', 'vehicleVin', 'serviceType', 'clientPhone'],
+    },
+  },
+  {
+    name: 'pabandi_check_shop_trust',
+    description: 'Check an auto repair shop\'s ML-calculated Pabandi Trust Score including Fair Price Score, Communication Score, and verified inspection proof metrics.',
+    requiresAuth: false,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        shopId: { type: 'string', description: 'Auto repair shop Business ID' },
+      },
+      required: ['shopId'],
+    },
+  },
 ];
 
 export function initializeResult(clientProtocolVersion?: string) {

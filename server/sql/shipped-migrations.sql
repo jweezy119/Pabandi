@@ -240,3 +240,38 @@ BEGIN
   END IF;
 END
 $$;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Booking.workOrderId — added by prisma/migrations/20261121_booking_work_order.
+--
+-- Found by the datamodel-derived drift check on its first production run:
+--   Booking.workOrderId — declared in schema.prisma and used by the code, but
+--   absent from an existing table
+-- The column carries the @unique that makes booking -> work-order creation
+-- idempotent (see services/bookingWorkOrder.service.ts): at most one work order
+-- per booking, so a retry cannot create a second. The index and the FK are part
+-- of the same object, so all three ship together or not at all.
+--
+-- Nullable, no backfill: existing bookings simply have no work order yet.
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "workOrderId" TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS "Booking_workOrderId_key" ON "Booking"("workOrderId");
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables WHERE table_name = 'WorkOrder'
+  ) THEN
+    IF EXISTS (
+      SELECT 1 FROM information_schema.table_constraints
+      WHERE constraint_name = 'Booking_workOrderId_fkey'
+    ) THEN
+      ALTER TABLE "Booking" DROP CONSTRAINT "Booking_workOrderId_fkey";
+    END IF;
+
+    ALTER TABLE "Booking"
+      ADD CONSTRAINT "Booking_workOrderId_fkey"
+      FOREIGN KEY ("workOrderId") REFERENCES "WorkOrder"("id")
+      ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+END
+$$;

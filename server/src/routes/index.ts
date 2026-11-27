@@ -138,6 +138,10 @@ const domainRoutes: [string, string][] = [
   // 10. AI agent surface: REST tools + machine-readable manifest
   ['/agents', './agent.routes'],
   ['/pabandi', './agent.routes'],
+
+  // 11. Agentic Auto Repair vertical (NHTSA VIN decoder + RepairOrders + Trust Guardrails)
+  ['/vehicles', './vehicles.routes'],
+  ['/auto-repair', './autoRepair.routes'],
 ];
 
 for (const [subPath, target] of domainRoutes) {

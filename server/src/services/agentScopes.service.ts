@@ -15,6 +15,9 @@ export const TOOL_SCOPES: Record<string, string[]> = {
   pabandi_get_paid_proof: ['proof'],
   pabandi_get_my_paid_proofs: ['proof'],
   pabandi_get_identity: ['identity'],
+  pabandi_search_auto_repair: ['directory'],
+  pabandi_book_auto_repair: ['booking'],
+  pabandi_check_shop_trust: ['trust'],
 };
 
 export function userHasScope(user: AgentToolUser | undefined, toolName: string): boolean {
