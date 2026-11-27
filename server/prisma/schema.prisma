@@ -1597,6 +1597,70 @@ model CrmAlert {
   @@map("crm_alerts")
 }
 
+/// A business-defined object (e.g. "Property", "Policy", "Job Site"). Together
+/// with CrmFieldDefinition and CrmCustomRecord this is the metadata layer that
+/// lets owners extend the CRM without a developer or a migration.
+model CrmObjectDefinition {
+  id                String               @id @default(cuid())
+  businessId        String?
+  serviceBusinessId String?
+  name              String
+  pluralName        String?
+  icon              String               @default("pentagon")
+  color             String               @default("#C97B5A")
+  description       String?
+  position          Int                  @default(0)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  fields            CrmFieldDefinition[]
+  records           CrmCustomRecord[]
+
+  @@index([serviceBusinessId])
+  @@map("CrmObjectDefinition")
+}
+
+model CrmFieldDefinition {
+  id         String             @id @default(cuid())
+  objectId   String
+  name       String
+  label      String
+  type       String             @default("text")
+  options    Json?
+  required   Boolean            @default(false)
+  position   Int                @default(0)
+  createdAt  DateTime           @default(now())
+  object     CrmObjectDefinition @relation(fields: [objectId], references: [id], onDelete: Cascade)
+
+  @@index([objectId])
+  @@map("CrmFieldDefinition")
+}
+
+model CrmCustomRecord {
+  id                String              @id @default(cuid())
+  objectId          String
+  businessId        String?
+  serviceBusinessId String?
+  data              Json
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  object            CrmObjectDefinition @relation(fields: [objectId], references: [id], onDelete: Cascade)
+
+  @@index([objectId, serviceBusinessId])
+  @@map("CrmCustomRecord")
+}
+
+/// Game layer for the guided builder: points, badges and completed steps.
+model CrmBuilderProgress {
+  id         String   @id @default(cuid())
+  businessId String   @unique
+  xp         Int      @default(0)
+  badges     Json?
+  milestones Json?
+  updatedAt  DateTime @updatedAt
+
+  @@map("CrmBuilderProgress")
+}
+
 /// A simple CRM automation: when an object matches an event and optional
 /// conditions, run actions (set a field, create a task, notify the owner).
 model CrmAutomationRule {

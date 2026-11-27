@@ -109,6 +109,7 @@ const ContactBookingsPage = lazy(() => import('./pages/contact/BookingsPage'));
 const ContactClientsPage = lazy(() => import('./pages/contact/ContactClientsPage'));
 const CompaniesPage = lazy(() => import('./pages/crm/CompaniesPage').then((m) => ({ default: m.CompaniesPage })));
 const AutomationPage = lazy(() => import('./pages/crm/settings/AutomationPage').then((m) => ({ default: m.AutomationPage })));
+const CrmBuilderPage = lazy(() => import('./pages/crm/CrmBuilderPage').then((m) => ({ default: m.CrmBuilderPage })));
 const ContactClientDetailPage = lazy(() => import('./pages/contact/ContactClientDetailPage'));
 const ContactDealsPage = lazy(() => import('./pages/contact/ContactDealsPage'));
 const ContactArbitrationPage = lazy(() => import('./pages/contact/ContactArbitrationPage'));
@@ -333,6 +334,7 @@ function AnimatedAppRoutes() {
           <Route path="contact/bookings" element={<BusinessGuard><ContactBookingsPage /></BusinessGuard>} />
            <Route path="contact/clients" element={<BusinessGuard><FeatureGate feature="clients"><ContactClientsPage /></FeatureGate></BusinessGuard>} />
            <Route path="contact/companies" element={<BusinessGuard><FeatureGate feature="clients"><CompaniesPage /></FeatureGate></BusinessGuard>} />
+           <Route path="contact/builder" element={<BusinessGuard><FeatureGate feature="clients"><CrmBuilderPage /></FeatureGate></BusinessGuard>} />
            <Route path="contact/clients/:id" element={<BusinessGuard><FeatureGate feature="clients"><ContactClientDetailPage /></FeatureGate></BusinessGuard>} />
            <Route path="contact/jobs" element={<BusinessGuard><FeatureGate feature="jobs"><ContactJobsPage /></FeatureGate></BusinessGuard>} />
            <Route path="contact/jobs/:id" element={<BusinessGuard><FeatureGate feature="jobs"><ContactJobDetailPage /></FeatureGate></BusinessGuard>} />

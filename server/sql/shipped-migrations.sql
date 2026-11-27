@@ -361,3 +361,56 @@ CREATE TABLE IF NOT EXISTS "CrmAutomationRule" (
   CONSTRAINT "CrmAutomationRule_pkey" PRIMARY KEY ("id")
 );
 CREATE INDEX IF NOT EXISTS "CrmAutomationRule_serviceBusinessId_triggerObject_idx" ON "CrmAutomationRule"("serviceBusinessId", "triggerObject");
+
+CREATE TABLE IF NOT EXISTS "CrmObjectDefinition" (
+  "id" TEXT NOT NULL,
+  "businessId" TEXT,
+  "serviceBusinessId" TEXT,
+  "name" TEXT NOT NULL,
+  "pluralName" TEXT,
+  "icon" TEXT NOT NULL DEFAULT 'pentagon',
+  "color" TEXT NOT NULL DEFAULT '#C97B5A',
+  "description" TEXT,
+  "position" INTEGER NOT NULL DEFAULT 0,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "CrmObjectDefinition_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX IF NOT EXISTS "CrmObjectDefinition_serviceBusinessId_idx" ON "CrmObjectDefinition"("serviceBusinessId");
+
+CREATE TABLE IF NOT EXISTS "CrmFieldDefinition" (
+  "id" TEXT NOT NULL,
+  "objectId" TEXT NOT NULL,
+  "name" TEXT NOT NULL,
+  "label" TEXT NOT NULL,
+  "type" TEXT NOT NULL DEFAULT 'text',
+  "options" JSONB,
+  "required" BOOLEAN NOT NULL DEFAULT false,
+  "position" INTEGER NOT NULL DEFAULT 0,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "CrmFieldDefinition_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX IF NOT EXISTS "CrmFieldDefinition_objectId_idx" ON "CrmFieldDefinition"("objectId");
+
+CREATE TABLE IF NOT EXISTS "CrmCustomRecord" (
+  "id" TEXT NOT NULL,
+  "objectId" TEXT NOT NULL,
+  "businessId" TEXT,
+  "serviceBusinessId" TEXT,
+  "data" JSONB NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "CrmCustomRecord_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX IF NOT EXISTS "CrmCustomRecord_objectId_serviceBusinessId_idx" ON "CrmCustomRecord"("objectId", "serviceBusinessId");
+
+CREATE TABLE IF NOT EXISTS "CrmBuilderProgress" (
+  "id" TEXT NOT NULL,
+  "businessId" TEXT NOT NULL,
+  "xp" INTEGER NOT NULL DEFAULT 0,
+  "badges" JSONB,
+  "milestones" JSONB,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "CrmBuilderProgress_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "CrmBuilderProgress_businessId_key" ON "CrmBuilderProgress"("businessId");

@@ -169,6 +169,30 @@ describe('CRM inline editing, preview and API docs', () => {
     }
   });
 
+  it('provides a metadata layer for custom objects, fields and records', () => {
+    const schema = readFileSync(resolve(__dirname, '../prisma/schema.prisma'), 'utf8');
+    for (const model of ['CrmObjectDefinition', 'CrmFieldDefinition', 'CrmCustomRecord', 'CrmBuilderProgress']) {
+      expect(schema).toContain(`model ${model}`);
+    }
+    const routes = src('routes/crmBuilder.routes.ts');
+    for (const endpoint of ['/objects', '/objects/:id/fields', '/objects/:id/records', '/progress']) {
+      expect(routes).toContain(`'${endpoint}'`);
+    }
+    expect(routes).toMatch(/createHmac|award\(/);
+  });
+
+  it('ships an animated guided builder with blueprints and a game HUD', () => {
+    const page = readFileSync(
+      resolve(__dirname, '../../client/src/pages/crm/CrmBuilderPage.tsx'),
+      'utf8',
+    );
+    for (const marker of ['BLUEPRINTS', 'FIELD_CARDS', 'motion.button', 'confetti', 'Level {level}', '+50 XP']) {
+      expect(page).toContain(marker);
+    }
+    const app = readFileSync(resolve(__dirname, '../../client/src/App.tsx'), 'utf8');
+    expect(app).toMatch(/path="contact\/builder"/);
+  });
+
   it('wires inline editing and the side-panel preview into the clients list', () => {
     const table = readFileSync(
       resolve(__dirname, '../../client/src/pages/crm/components/ClientListTable.tsx'),

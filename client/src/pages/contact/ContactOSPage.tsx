@@ -421,7 +421,7 @@ export default function ContactOSPage() {
           </div>
 
           {/* ── Quick Actions — the phone's home screen for running the business ── */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
             <ClayButton className="flex w-full flex-col items-center justify-center gap-1.5 min-h-[64px] py-3" onClick={() => navigate('/contact/invoices?new=1')}>
               <ClipboardPlus className="h-5 w-5" /> <span className="text-xs">New Invoice</span>
             </ClayButton>
@@ -435,6 +435,9 @@ export default function ContactOSPage() {
             </ClayButton>
             <ClayButton className="flex w-full flex-col items-center justify-center gap-1.5 min-h-[64px] py-3" onClick={() => navigate('/contact/clients?new=1')}>
               <Handshake className="h-5 w-5" /> <span className="text-xs">Add Client</span>
+            </ClayButton>
+            <ClayButton className="flex w-full flex-col items-center justify-center gap-1.5 min-h-[64px] py-3" onClick={() => navigate('/contact/builder')}>
+              <span className="text-lg">✨</span> <span className="text-xs">Build your CRM</span>
             </ClayButton>
             <ClayButton className="flex w-full flex-col items-center justify-center gap-1.5 min-h-[64px] py-3" onClick={() => navigate('/wallet')}>
               <Wallet className="h-5 w-5" /> <span className="text-xs">Wallet</span>

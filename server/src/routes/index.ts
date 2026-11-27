@@ -116,6 +116,8 @@ const domainRoutes: [string, string][] = [
 
   // 8b. Contact OS CRM
   ['/crm', './crm.routes'],
+  // Guided metadata builder: custom objects, fields, records and the game layer.
+  ['/crm/builder', './crmBuilder.routes'],
   // Team and API-key pages previously called endpoints that were never mounted.
   ['/team', './team.routes'],
   ['/api-keys', './apiKeys.routes'],

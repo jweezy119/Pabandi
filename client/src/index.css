@@ -560,6 +560,24 @@ a, button, [role="button"], input, select, textarea {
   }
 }
 
+/* ── Builder celebration ────────────────────────────────────────── */
+.confetti-piece {
+  position: absolute;
+  top: -24px;
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0.9;
+  animation: confetti-fall 2.6s ease-in forwards;
+}
+@keyframes confetti-fall {
+  0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(105vh) rotate(540deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .confetti-piece { display: none; }
+}
+
 /* ── Theme switch: animate paint only, never layout ────────────── */
 .theme-transition,
 .theme-transition *,
