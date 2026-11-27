@@ -1,6 +1,7 @@
 import { useBusinessSettings } from '../hooks/useBusinessSettings';
 
 export type VerticalId =
+  | 'auto_repair'
   | 'salon'
   | 'trades'
   | 'cleaning'
@@ -72,6 +73,83 @@ export interface VerticalPersona {
 }
 
 export const VERTICAL_PERSONAS: Record<VerticalId, VerticalPersona> = {
+  auto_repair: {
+    id: 'auto_repair',
+    label: 'Auto Repair & Mechanic Shop',
+    shortLabel: 'Auto Repair',
+    emoji: '🔧',
+    description: 'Independent auto repair shops, brake & tire centers, diagnostics, and mobile mechanics',
+    exampleBusiness: 'Precision Auto Care (Chicago)',
+    accentColor: '#E08A63',
+    bgLight: '#FDF2EC',
+    highlights: [
+      'VIN decoding & vehicle service history',
+      'Digital Vehicle Inspection (DVI) photos',
+      'AI Fair-Price Verified estimates',
+      '1-tap SMS Magic Link deposit approval',
+    ],
+    navLabels: {
+      clients: 'Vehicle Owners',
+      deals: 'Estimates',
+      jobs: 'Repair Orders',
+      activities: 'Shop Log & SMS',
+      tasks: 'Bay Follow-ups',
+      invoices: 'Escrow & Deposits',
+      team: 'Technicians & Bays',
+    },
+    singular: { client: 'vehicle owner', deal: 'estimate', job: 'repair order', member: 'technician' },
+    dashboardGreeting: 'Your bays, VIN-decoded repair orders, fair-price estimates, and protected deposits — all in one place.',
+    quickActions: {
+      addClient: 'Add Vehicle Owner',
+      scheduleWork: 'New Repair Order',
+      sendInvoice: 'Send SMS Approval Link',
+    },
+    notePlaceholder: 'Log OBD-II codes, technician findings, parts ETA, or customer call notes...',
+    checklist: {
+      clients: { title: 'Add your first vehicle owner', detail: 'Save a customer with their VIN so every repair order tracks mileage and history.', cta: 'Add Vehicle Owner' },
+      jobs: { title: 'Open a repair order', detail: 'Check a vehicle into a bay, snap DVI photos, and track progress.', cta: 'New Repair Order' },
+      sentInvoices: { title: 'Send an SMS Magic Link estimate', detail: 'Let the car owner review DVI photos and approve the deposit in 1 tap.', cta: 'Send Approval Link' },
+      deals: { title: 'Create a Fair-Price Verified estimate', detail: 'Itemize parts & labor — Pabandi stamps fair quotes automatically.', cta: 'New Estimate' },
+      openTasks: { title: 'Set a parts or pickup reminder', detail: 'Keep bays moving and notify customers before pickup.', cta: 'Add Follow-up' },
+    },
+    starterServices: [
+      { name: 'Brake Pad & Rotor Service', description: 'Front or rear pad & rotor replacement with DVI before/after photo proof.', price: 380, duration: 90, category: 'auto_repair', locationType: 'on-site' },
+      { name: 'Check Engine OBD-II Diagnostic', description: 'Full computer scan, live sensor check, and plain-English inspection report.', price: 115, duration: 60, category: 'auto_repair', locationType: 'on-site' },
+      { name: 'Full Synthetic Oil & Multi-Point DVI', description: 'Up to 5 qts full synthetic oil, OEM filter, fluid top-off, and 25-point photo inspection.', price: 95, duration: 45, category: 'auto_repair', locationType: 'on-site' },
+      { name: 'Alternator & Battery Replacement', description: 'Charging system load test and OEM-grade replacement with warranty.', price: 420, duration: 120, category: 'auto_repair', locationType: 'on-site' },
+      { name: 'A/C Evacuation & Recharge', description: 'Leak dye test, vacuum check, and R-134a / R-1234yf recharge.', price: 185, duration: 75, category: 'auto_repair', locationType: 'on-site' },
+    ],
+    outreachTemplates: [
+      {
+        id: 'deposit',
+        label: 'SMS Estimate & Deposit Magic Link',
+        emoji: '🔧',
+        subject: 'Your Fair-Price Verified estimate from {businessName}',
+        body: "Hi {clientName}, {businessName} finished inspecting your vehicle. Tap your secure Pabandi Magic Link to view inspection photos, see our Fair-Price Verified estimate, and approve your deposit via Apple Pay or Card (held safely in escrow until pickup).",
+      },
+      {
+        id: 'reminder',
+        label: 'Bay Drop-Off Reminder (SMS)',
+        emoji: '🚗',
+        subject: 'Reminder: Your service bay at {businessName} tomorrow',
+        body: "Hi {clientName}, friendly reminder that your bay is reserved at {businessName} tomorrow. Reply 'Y' to confirm drop-off or tap your Magic Link if you need to reschedule.",
+      },
+      {
+        id: 'thank_you',
+        label: 'Vehicle Ready for Pickup (SMS)',
+        emoji: '✅',
+        subject: 'Your vehicle is ready at {businessName}!',
+        body: "Great news {clientName} — your vehicle is ready for pickup at {businessName}! View your Before & After proof photos and complete checkout on your Pabandi Magic Link.",
+      },
+      {
+        id: 'checkin',
+        label: '30-Day Service Check-In',
+        emoji: '🛡️',
+        subject: 'How is your car running? — {businessName}',
+        body: "Hey {clientName}, checking in from {businessName} to make sure your vehicle is running smoothly after your recent repair. Everything stays logged on your Pabandi Vehicle Passport!",
+      },
+    ],
+  },
   salon: {
     id: 'salon',
     label: 'Salon & Beauty',
@@ -714,6 +792,7 @@ export const VERTICAL_PERSONAS: Record<VerticalId, VerticalPersona> = {
 };
 
 export const VERTICAL_LIST: VerticalPersona[] = [
+  VERTICAL_PERSONAS.auto_repair,
   VERTICAL_PERSONAS.salon,
   VERTICAL_PERSONAS.trades,
   VERTICAL_PERSONAS.cleaning,

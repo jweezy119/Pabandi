@@ -257,6 +257,8 @@ model Business {
   reviewCount           Int              @default(0)
   reliabilityScore      Float?           @default(50.0)
   trustScore            Float            @default(70.0)
+  fairPriceScore        Float            @default(85.0)
+  communicationScore    Float            @default(85.0)
   state                 String           @default("")
   isClaimed             Boolean          @default(true)
   raastId               String?
@@ -293,6 +295,8 @@ model Business {
   expenses             CrmExpense[]
   paymentMethods       BusinessPaymentMethod[]
   feeAssessments       FeeAssessment[]
+  vehicles             Vehicle[]
+  repairOrders         RepairOrder[]
 
   @@index([ownerId])
   @@index([slug])
@@ -1616,5 +1620,68 @@ model MerchantSubscription {
 
   @@index([businessId, status])
   @@index([whopMembershipId])
+  @@index([status])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 11. AGENTIC AUTO REPAIR DOMAIN (Vehicle, RepairOrder)
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum RepairOrderStatus {
+  CHECKED_IN
+  INSPECTING
+  NEEDS_APPROVAL
+  PENDING_MANUAL_REVIEW
+  IN_PROGRESS
+  READY
+}
+
+model Vehicle {
+  id           String        @id @default(cuid())
+  businessId   String?
+  clientId     String?
+  vin          String
+  year         Int?
+  make         String?
+  model        String?
+  licensePlate String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  business     Business?     @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  repairOrders RepairOrder[]
+
+  @@index([vin])
+  @@index([clientId])
+  @@index([businessId])
+}
+
+model RepairOrder {
+  id                String            @id @default(cuid())
+  businessId        String
+  vehicleId         String
+  clientPhone       String?
+  clientName        String?
+  serviceType       String?
+  status            RepairOrderStatus @default(CHECKED_IN)
+  itemizedEstimate  Json?
+  totalAmount       Float             @default(0)
+  depositAmount     Float             @default(0)
+  depositPaid       Boolean           @default(false)
+  isBookedByAgent   Boolean           @default(false)
+  fairPriceVerified Boolean           @default(false)
+  fairPriceReport   Json?
+  dviPhotos         Json?
+  visionProofHash   String?
+  visionProofReport Json?
+  auditLog          Json?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  business          Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  vehicle           Vehicle           @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([vehicleId])
   @@index([status])
 }

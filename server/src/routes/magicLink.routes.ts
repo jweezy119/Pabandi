@@ -24,6 +24,94 @@ router.get('/:id', async (req: Request, res: Response) => {
       });
     }
 
+    // 0. Check RepairOrder (Agentic US Auto Repair Magic Link Tracker)
+    const repairOrder = await prisma.repairOrder
+      .findUnique({
+        where: { id: rawId },
+        include: {
+          vehicle: true,
+          business: {
+            select: {
+              id: true,
+              name: true,
+              logoUrl: true,
+              slug: true,
+              currency: true,
+              trustScore: true,
+              fairPriceScore: true,
+              communicationScore: true,
+              isVerified: true,
+            },
+          },
+        },
+      })
+      .catch(() => null);
+
+    if (repairOrder) {
+      const depositUsd = Number(repairOrder.depositAmount) || Math.max(25, +(Number(repairOrder.totalAmount) * 0.25).toFixed(2));
+      const totalUsd = Number(repairOrder.totalAmount) || depositUsd;
+      const pkrAmount = Math.round(depositUsd * GUARANTEED_RATE);
+      const clientName = repairOrder.clientName || 'Vehicle Owner';
+      const bizName = repairOrder.business?.name || 'Pabandi Verified Auto Shop';
+      const vehicleLabel = [repairOrder.vehicle?.year, repairOrder.vehicle?.make, repairOrder.vehicle?.model]
+        .filter(Boolean)
+        .join(' ') || `VIN ${repairOrder.vehicle?.vin || ''}`;
+      const shareUrl = `https://pabandi.com/b/${repairOrder.id}`;
+      const shareText = `Hi ${clientName}, track your ${vehicleLabel} repair at ${bizName} & approve your Fair-Price Verified estimate: ${shareUrl}`;
+
+      return res.json({
+        success: true,
+        data: {
+          type: 'repair_order',
+          id: repairOrder.id,
+          title: repairOrder.serviceType || 'Auto Repair Service',
+          description: `${vehicleLabel}${repairOrder.vehicle?.vin ? ` · VIN ${repairOrder.vehicle.vin}` : ''}`,
+          amount: depositUsd,
+          totalAmount: totalUsd,
+          depositAmount: depositUsd,
+          currency: repairOrder.business?.currency || 'USD',
+          usdAmount: depositUsd,
+          pkrAmount,
+          rate: GUARANTEED_RATE,
+          status: repairOrder.status,
+          isPaid: repairOrder.depositPaid || repairOrder.status === 'IN_PROGRESS' || repairOrder.status === 'READY',
+          isBookedByAgent: repairOrder.isBookedByAgent,
+          fairPriceVerified: repairOrder.fairPriceVerified,
+          fairPriceReport: repairOrder.fairPriceReport ?? null,
+          itemizedEstimate: repairOrder.itemizedEstimate ?? null,
+          dviPhotos: Array.isArray(repairOrder.dviPhotos) ? repairOrder.dviPhotos : [],
+          visionProofHash: repairOrder.visionProofHash ?? null,
+          visionProofReport: repairOrder.visionProofReport ?? null,
+          vehicle: repairOrder.vehicle
+            ? {
+                id: repairOrder.vehicle.id,
+                vin: repairOrder.vehicle.vin,
+                year: repairOrder.vehicle.year,
+                make: repairOrder.vehicle.make,
+                model: repairOrder.vehicle.model,
+                licensePlate: repairOrder.vehicle.licensePlate,
+              }
+            : null,
+          business: {
+            id: repairOrder.business?.id,
+            name: bizName,
+            logoUrl: repairOrder.business?.logoUrl ?? null,
+            slug: repairOrder.business?.slug ?? null,
+            trustScore: repairOrder.business?.trustScore ?? 85,
+            fairPriceScore: repairOrder.business?.fairPriceScore ?? 85,
+            communicationScore: repairOrder.business?.communicationScore ?? 85,
+            isVerified: Boolean(repairOrder.business?.isVerified),
+          },
+          client: {
+            name: clientName,
+            phone: repairOrder.clientPhone ?? null,
+          },
+          whatsappShareText: shareText,
+          whatsappShareUrl: `https://wa.me/?text=${encodeURIComponent(shareText)}`,
+        },
+      });
+    }
+
     // 1. Check Invoice by unguessable CUID
     let invoice = await prisma.invoice.findUnique({
       where: { id: rawId },

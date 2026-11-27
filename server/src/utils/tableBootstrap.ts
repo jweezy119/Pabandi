@@ -36,6 +36,7 @@ const SQL_FILES = [
   'customfields-canonical.sql',
   'crm-file-tenant.sql',
   'service-coordinator.sql',
+  'auto-repair-tables.sql',
   'crm-task-tenant.sql',
   'crm-outreach-tenant.sql',
   'shipped-migrations.sql',

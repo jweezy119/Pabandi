@@ -1,6 +1,7 @@
 import { AgentToolUser, agentTools } from './agentTools.service';
 import { getPaidProofByPublicId, listPaidProofsForWorker } from './paidProof.service';
 import { webacyRiskService } from './webacyRisk.service';
+import { autoRepairService } from './autoRepair.service';
 
 type Handler = (args: any, user?: AgentToolUser) => Promise<any>;
 
@@ -53,4 +54,22 @@ export const agentToolHandlers: Record<string, Handler> = {
           phone: user.phone ?? null,
         }
       : { error: 'Not authenticated' },
+  pabandi_search_auto_repair: (args) =>
+    autoRepairService.searchAutoRepair({
+      location: args.location ? String(args.location) : undefined,
+      serviceType: args.serviceType ? String(args.serviceType) : undefined,
+    }),
+  pabandi_book_auto_repair: (args) =>
+    autoRepairService.bookAutoRepair({
+      shopId: String(args.shopId || ''),
+      vehicleVin: String(args.vehicleVin || ''),
+      serviceType: String(args.serviceType || ''),
+      clientPhone: String(args.clientPhone || ''),
+      clientName: args.clientName ? String(args.clientName) : undefined,
+      licensePlate: args.licensePlate ? String(args.licensePlate) : undefined,
+    }),
+  pabandi_check_shop_trust: (args) =>
+    autoRepairService.checkShopTrust({
+      shopId: String(args.shopId || ''),
+    }),
 };
