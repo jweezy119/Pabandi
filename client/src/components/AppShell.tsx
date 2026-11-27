@@ -12,8 +12,12 @@ import { useWalletModal } from '../hooks/useWalletModal';
 import { ModeTransitionOverlay } from './ModeTransitionOverlay';
 import { PageTransition } from './PageTransition';
 
+// Business users manage the whole operation from their phone: the two-item bar
+// used to hide the workspace and the day's jobs behind a desktop-only switcher.
 const BUSINESS_MOBILE_MODULES = [
   { id: 'contact', label: 'Contact', path: '/contact', icon: 'contacts', color: 'var(--clay)', end: false },
+  { id: 'jobs', label: 'Jobs', path: '/contact/jobs', icon: 'work', color: 'var(--muted-ochre)', end: false },
+  { id: 'workspace', label: 'Workspace', path: '/business-os', icon: 'grid_view', color: 'var(--sage)', end: false },
   { id: 'booking', label: 'Book', path: '/booking', icon: 'book_online', color: 'var(--sage)', end: false },
 ];
 
@@ -62,7 +66,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
         </div>
 
-        <div className="hidden md:flex items-center justify-center flex-1 mx-4">
+        <div className="flex items-center justify-center flex-1 mx-1 sm:mx-4">
           <ModuleSwitcher />
         </div>
 

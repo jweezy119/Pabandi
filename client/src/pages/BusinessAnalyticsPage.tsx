@@ -154,8 +154,8 @@ function Section({ title, subtitle, icon, action, children, className = '' }: {
 
 export default function BusinessAnalyticsPage() {
 
-  const { data: baseData } = useQuery('dashboard-analytics', () => analyticsService.getDashboardAnalytics(), { refetchInterval: 60000 });
-  const { data: detailedData, isLoading } = useQuery('detailed-analytics', () => analyticsService.getDetailedAnalytics(), { refetchInterval: 60000 });
+  const { data: baseData } = useQuery('dashboard-analytics', () => analyticsService.getDashboardAnalytics(), { refetchInterval: 60000, refetchIntervalInBackground: false });
+  const { data: detailedData, isLoading } = useQuery('detailed-analytics', () => analyticsService.getDetailedAnalytics(), { refetchInterval: 60000, refetchIntervalInBackground: false });
 
   const base = baseData?.data?.data?.analytics || {};
   const detail = detailedData?.data?.data?.analytics || {};

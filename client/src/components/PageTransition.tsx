@@ -31,7 +31,6 @@ export function PageTransition({
         ease: [0.22, 1.0, 0.36, 1],
       }}
       className={className}
-      style={{ willChange: 'transform, opacity' }}
     >
       {children}
     </motion.div>

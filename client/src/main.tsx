@@ -13,7 +13,8 @@ import { PrivyProvider } from './components/PrivyProvider';
 // nothing clickable and no way back.
 import { AppErrorBoundary } from './components/AppErrorBoundary';
 import './index.css';
-import './styles/mode-themes.css';
+// mode-themes.css is already imported by index.css; importing it here doubled
+// the rules during every initial paint.
 // Design tokens for the Service Coordinator command surface. Imported here
 // rather than in the page so every coordinator component shares one palette
 // without each file re-importing it.
@@ -41,6 +42,9 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
+      // Background tabs are the main cause of mobile battery drain and of
+      // duplicate request bursts when a user returns to a CRM screen.
+      refetchIntervalInBackground: false,
       retry: 1,
     },
   },

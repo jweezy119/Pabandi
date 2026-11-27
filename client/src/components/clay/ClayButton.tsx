@@ -42,7 +42,6 @@ export function ClayButton({
       whileTap={reduced ? undefined : { scale: 0.95 }}
       whileHover={reduced ? undefined : { scale: 1.03 }}
       transition={reduced ? CLAY_FADE : CLAY_SPRING}
-      style={{ willChange: 'transform' }}
     >
       {children}
     </motion.button>

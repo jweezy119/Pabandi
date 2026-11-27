@@ -483,9 +483,15 @@ a, button, [role="button"], input, select, textarea {
   }
 
   button:not(.compact-touch) {
-    min-height: 40px;
+    min-height: 44px;
+    min-width: 44px;
   }
-  
+
+  .clay-checkbox {
+    width: 20px;
+    height: 20px;
+  }
+
   body {
     font-size: 14px;
   }

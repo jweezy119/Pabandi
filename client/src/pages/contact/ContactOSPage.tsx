@@ -25,6 +25,10 @@ import { AssistiveBanner } from '../../components/AssistiveBanner';
 import { statsService, type BusinessStats } from '../../services/statsService';
 import { apiClient } from '../../services/api';
 
+// A stable reference: passing a fresh [] on every render made the 30s stats
+// poll re-run the whole eight-request dashboard burst.
+const EMPTY_CLIENTS: never[] = [];
+
 export default function ContactOSPage() {
   const [businessName, setBusinessName] = useState<string>('Your Business');
   const [loading, setLoading] = useState(true);
@@ -70,7 +74,7 @@ export default function ContactOSPage() {
   const { data: stats, isLoading: statsLoading } = useQuery<BusinessStats>(
     'businessDashboardStats',
     statsService.business,
-    { refetchInterval: 30_000, retry: 1 },
+    { refetchInterval: 30_000, refetchIntervalInBackground: false, retry: 1 },
   );
 
   const todayRevenue = stats?.todayRevenue ?? 0;
@@ -451,7 +455,7 @@ export default function ContactOSPage() {
                   Background features: who your high-value clients are and what each could be worth.
                 </p>
                 <div>
-                  <ModularDashboard businessId={businessId} clients={[]} />
+                  <ModularDashboard businessId={businessId} clients={EMPTY_CLIENTS} />
                 </div>
               </div>
             )}

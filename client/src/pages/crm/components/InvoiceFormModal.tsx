@@ -48,6 +48,14 @@ export function InvoiceFormModal({ onClose, onSave, clients: initialClients = []
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  // Scheduling a setTimeout during render fired a new timer on every re-render
+  // while an error was visible; one effect owns the dismissal.
+  useEffect(() => {
+    if (!saveError) return;
+    const timer = setTimeout(() => setSaveError(null), 5000);
+    return () => clearTimeout(timer);
+  }, [saveError]);
+
   const today = new Date().toISOString().split('T')[0];
   const thirtyDaysLater = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
@@ -167,14 +175,9 @@ export function InvoiceFormModal({ onClose, onSave, clients: initialClients = []
     }
   };
 
-  if (saveError) {
-    // Auto-dismiss error after 5 seconds
-    setTimeout(() => setSaveError(null), 5000);
-  }
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--cream)]/30 p-4 md:p-6" onClick={onClose}>
-      <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl border border-[var(--soft-stone)]/30 max-h-[95vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div className="w-full max-w-2xl rounded-2xl bg-white p-4 sm:p-6 shadow-2xl border border-[var(--soft-stone)]/30 max-h-[90dvh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-6 clay-heading">
           <h3 className="text-lg font-bold" style={{ color: 'var(--warm-ink)' }}>Create Invoice</h3>
           <button onClick={onClose} className="p-2 rounded-lg clay-card--interactive" style={{ backgroundColor: 'rgba(232, 217, 197, 0.3)', color: 'var(--soft-stone)' }}>
@@ -263,8 +266,8 @@ export function InvoiceFormModal({ onClose, onSave, clients: initialClients = []
             </div>
             <div className="space-y-2">
               {lineItems.map((item, index) => (
-                <div key={item.id} className="grid grid-cols-12 gap-2 items-end p-3 rounded-xl border border-[var(--soft-stone)]/30 bg-white">
-                  <div className="col-span-4">
+                <div key={item.id} className="grid grid-cols-2 sm:grid-cols-12 gap-2 items-end p-3 rounded-xl border border-[var(--soft-stone)]/30 bg-white">
+                  <div className="col-span-2 sm:col-span-4">
                     <label className="text-xs text-[var(--soft-stone)] block mb-1">Description</label>
                     <input
                       value={item.description}
@@ -273,7 +276,7 @@ export function InvoiceFormModal({ onClose, onSave, clients: initialClients = []
                       className="w-full px-2.5 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm focus:outline-none focus:border-[var(--clay)]"
                     />
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-1 sm:col-span-2">
                     <label className="text-xs text-[var(--soft-stone)] block mb-1">Qty</label>
                     <input
                       type="number"
@@ -284,7 +287,7 @@ export function InvoiceFormModal({ onClose, onSave, clients: initialClients = []
                       className="w-full px-2.5 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm focus:outline-none focus:border-[var(--clay)]"
                     />
                   </div>
-                  <div className="col-span-3">
+                  <div className="col-span-1 sm:col-span-3">
                     <label className="text-xs text-[var(--soft-stone)] block mb-1">Rate</label>
                     <input
                       type="number"
@@ -296,7 +299,7 @@ export function InvoiceFormModal({ onClose, onSave, clients: initialClients = []
                       className="w-full px-2.5 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-white text-sm focus:outline-none focus:border-[var(--clay)]"
                     />
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-1 sm:col-span-2">
                     <label className="text-xs text-[var(--soft-stone)] block mb-1">Amount</label>
                     <div className="w-full px-2.5 py-2 rounded-lg border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/20 text-sm font-medium text-[var(--warm-ink)] flex items-center">
                       ${item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -318,7 +321,7 @@ export function InvoiceFormModal({ onClose, onSave, clients: initialClients = []
 
           {/* ── Totals ── */}
           <div className="rounded-xl border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/20 p-4">
-            <div className="grid grid-cols-4 gap-4 mb-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
               <div>
                 <div className="text-xs text-[var(--soft-stone)] uppercase tracking-wider font-bold">Subtotal</div>
                 <div className="text-lg font-bold text-[var(--warm-ink)]">${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>

@@ -23,7 +23,7 @@ or an agent API key:
 x-api-key: <pab_live_...>
 ```
 
-Obtain a JWT from `POST /api/v1/auth/login`. Create an agent API key from `POST /api/v1/agents/keys`. Money-moving tools require an authenticated user with the right role or ownership.
+Obtain a JWT from `POST /api/v1/auth/login`. Create an agent API key from `POST /api/v1/agents/keys`. Money-moving tools require a scoped agent API key with an explicit spend limit — a plain JWT is not sufficient.
 
 ## MCP Endpoint
 
@@ -59,6 +59,13 @@ curl -X POST https://pabandi.onrender.com/mcp \
 | `pabandi_get_paid_proof` | Get a public payment proof by its public ID | public |
 | `pabandi_get_my_paid_proofs` | Get the authenticated worker's payment proofs | user |
 | `pabandi_get_identity` | Return the authenticated identity | user |
+| `pabandi_search_auto_repair` | Search US auto repair shops by location and service, with trust scores | public |
+| `pabandi_book_auto_repair` | Create an agent-booked repair order and send the owner an approval link | agent key, `booking` scope |
+| `pabandi_check_shop_trust` | Read a repair shop's fair-price, communication and trust metrics | public |
+| `pabandi_ai_status` | Which AI providers and the Jev decision engine are configured | public |
+| `pabandi_ai_classify` | Classify a customer message into intent, language and confidence | agent key, `directory` scope |
+| `pabandi_ai_concierge` | Natural-language business discovery with trust/escrow framing (read-only) | agent key, `directory` scope |
+| `pabandi_get_booking_risk` | Latest learned risk score, band and factors for a booking | agent key, `trust` scope |
 
 ## Agent REST API
 

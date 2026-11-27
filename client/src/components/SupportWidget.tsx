@@ -39,7 +39,7 @@ export function SupportWidget() {
     return (
       <button 
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 p-4 bg-emerald-500 hover:bg-emerald-400 text-slate-900 rounded-full shadow-lg shadow-emerald-500/20 transition-all z-50 hover:scale-105"
+        className="fixed bottom-[calc(var(--pab-mobile-nav-height)+1rem)] right-4 sm:bottom-6 sm:right-6 p-4 bg-emerald-500 hover:bg-emerald-400 text-slate-900 rounded-full shadow-lg shadow-emerald-500/20 transition-all z-50 hover:scale-105"
       >
         <MessageCircle className="w-6 h-6" />
       </button>
@@ -47,7 +47,7 @@ export function SupportWidget() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-80 sm:w-96 flex flex-col z-50">
+    <div className="fixed bottom-[calc(var(--pab-mobile-nav-height)+1rem)] right-4 sm:bottom-6 sm:right-6 w-[calc(100vw-2rem)] sm:w-96 max-w-96 flex flex-col z-50">
       <ClayCard className="flex flex-col h-[500px] max-h-[80vh] p-0 overflow-hidden shadow-2xl">
         <div className="p-4 border-b border-slate-800 bg-slate-900 flex justify-between items-center">
           <div className="font-semibold text-[var(--warm-ink)]">Help & Support</div>

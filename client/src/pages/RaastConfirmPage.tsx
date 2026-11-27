@@ -28,7 +28,7 @@ export default function RaastConfirmPage() {
       const res = await apiClient.get('/payments/raast/pending');
       return res.data?.data || [];
     },
-    { refetchInterval: 10000 }
+    { refetchInterval: 10000, refetchIntervalInBackground: false }
   );
 
   const confirmMutation = useMutation(

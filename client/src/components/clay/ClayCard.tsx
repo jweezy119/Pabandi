@@ -69,7 +69,7 @@ export function ClayCard({
       ref={ref}
       className={`rounded-3xl ${className}`}
       onClick={onClick}
-      style={{ transformPerspective: 800, willChange: 'transform' }}
+      style={{ transformPerspective: 800 }}
       onMouseMove={onPointerMove}
       onMouseLeave={() => setTilt(TILT_REST)}
       // Tilt follows the pointer; the hover lift composes on top because the

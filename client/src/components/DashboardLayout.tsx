@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { CommandPalette } from './CommandPalette';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { PageTransition } from './PageTransition';
 import { ThemeToggle } from './ThemeToggle';
+import { useOfflineMode } from '../hooks/useOfflineMode';
 
 const MotionLink = motion(Link);
 
@@ -178,6 +179,25 @@ export default function DashboardLayout({
 }: DashboardLayoutProps) {
   const { settings } = useBusinessSettings();
   const navItems = buildNavFromSettings(settings, osName, defaultNavItems);
+  // The bottom bar is the primary CRM navigation on a phone. The sidebar's
+  // first five entries were alphabetical-ish and buried Tasks and Invoices
+  // behind the hamburger on every screen. Keep the four daily-driver actions
+  // visible; everything else lives behind the "More" tile / drawer.
+  const mobileNav = useMemo(() => {
+    const isCRM = osName === 'Contact OS' || osName === 'ContactOS';
+    const priority = isCRM
+      ? ['/contact', '/contact/clients', '/contact/tasks', '/contact/invoices']
+      : [];
+    const chosen = priority
+      .map((path) => navItems.find((item) => item.path === path))
+      .filter((item): item is NavItem => Boolean(item));
+    for (const item of navItems) {
+      if (chosen.length >= 4) break;
+      if (!chosen.some((c) => c.path === item.path)) chosen.push(item);
+    }
+    return chosen.slice(0, 4);
+  }, [navItems, osName]);
+  const { isOnline } = useOfflineMode();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -193,7 +213,7 @@ export default function DashboardLayout({
   const colorKey = colorKeys[osColor] || 'clay';
   const colors = colorMap[colorKey] || colorMap.clay;
   const osRoot = OS_ROOT[osName] || '/';
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reducedMotion = Boolean(useReducedMotion());
 
   const isActive = (item: NavItem) =>
     item.end
@@ -221,6 +241,11 @@ export default function DashboardLayout({
   return (
     <div className="pg-dashboard h-dashboard-shell flex overflow-hidden relative" style={{ background: 'var(--atmosphere)' }}>
       <div className="pg-grid-bg" style={{ opacity: 0.45 }} aria-hidden="true" />
+      {!isOnline && (
+        <div className="fixed top-0 inset-x-0 z-[60] bg-amber-500 text-[var(--warm-ink)] text-center text-xs font-bold py-1.5 px-4">
+          You are offline — some features may be limited
+        </div>
+      )}
       {/* Mobile overlay */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -537,7 +562,7 @@ export default function DashboardLayout({
           }}
         >
           <div className="flex h-full items-center overflow-x-auto no-scrollbar px-1">
-            {navItems.slice(0, 5).map((item) => {
+            {mobileNav.map((item) => {
               const active = isActive(item);
               return (
                 <Link
@@ -551,8 +576,8 @@ export default function DashboardLayout({
                   }}
                 >
                   <motion.div
-                    whileTap={{ scale: 0.9 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+                    whileTap={reducedMotion ? undefined : { scale: 0.9 }}
+                    transition={reducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 500, damping: 28 }}
                     className="flex flex-col items-center gap-0.5 max-w-full"
                   >
                     <span
@@ -569,12 +594,22 @@ export default function DashboardLayout({
                       layoutId="mobile-tab-indicator"
                       className="w-8 h-0.5 rounded-full mt-0.5"
                       style={{ background: 'var(--clay)' }}
-                      transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                      transition={reducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 32 }}
                     />
                   )}
                 </Link>
               );
             })}
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="relative flex-1 flex flex-col items-center justify-center gap-0.5 px-1.5 py-2 min-w-[60px] touch-target transition-colors duration-200"
+              style={{ color: 'var(--soft-stone)', fontSize: '11px', fontWeight: 500 }}
+              aria-label="More navigation"
+            >
+              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">menu</span>
+              <span className="truncate max-w-full">More</span>
+            </button>
           </div>
         </nav>
       </main>

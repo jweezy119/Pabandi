@@ -203,7 +203,9 @@ export function useDashboardData(clients?: any[] | null) {
       team: stats?.topEmployees ?? [],
       jobs,
     });
-  }, [clients]);
+    // Depend on the size, not the identity: callers often pass a literal [] and
+    // a parent re-render (e.g. the 30s stats poll) must not refetch 8 endpoints.
+  }, [clients?.length]);
 
   useEffect(() => {
     void load();

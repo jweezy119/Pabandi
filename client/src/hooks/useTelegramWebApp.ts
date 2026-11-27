@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { authService } from '../services/api';
 
@@ -13,9 +14,11 @@ export interface TelegramUser {
 
 export function useTelegramWebApp() {
   const { isAuthenticated, setAuth } = useAuthStore();
+  const navigate = useNavigate();
   const [isInsideTelegram, setIsInsideTelegram] = useState(false);
   const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(null);
   const authAttempted = useRef(false);
+  const mainButtonHandler = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const tg = (window as any).Telegram?.WebApp;
@@ -41,6 +44,8 @@ export function useTelegramWebApp() {
     const supports = (version: string) =>
       typeof tg.isVersionAtLeast === 'function' ? Boolean(tg.isVersionAtLeast(version)) : false;
 
+    let onBack: (() => void) | undefined;
+
     try {
       // 1. Tell Telegram the Mini App is ready to display
       tg.ready();
@@ -61,6 +66,14 @@ export function useTelegramWebApp() {
         tg.enableClosingConfirmation();
       }
 
+      // 4b. Telegram's native Back button — Android hardware/nav works without
+      // requiring the app's own hamburger to be reachable behind a form.
+      if (supports('5.1') && tg.BackButton && typeof tg.BackButton.onClick === 'function') {
+        onBack = () => navigate(-1);
+        tg.BackButton.onClick(onBack);
+        tg.BackButton.show();
+      }
+
       // 5. Zero-Click Silent Authentication for Mini App visitors
       if (!isAuthenticated && hasInitData && !authAttempted.current) {
         authAttempted.current = true;
@@ -79,7 +92,14 @@ export function useTelegramWebApp() {
     } catch (e) {
       console.warn('[TelegramMiniApp] Initialization error:', e);
     }
-  }, [isAuthenticated, setAuth]);
+
+    return () => {
+      if (onBack && tg.BackButton) {
+        tg.BackButton.offClick(onBack);
+        tg.BackButton.hide();
+      }
+    };
+  }, [isAuthenticated, setAuth, navigate]);
 
   const closeWebApp = () => {
     const tg = (window as any).Telegram?.WebApp;
@@ -88,10 +108,36 @@ export function useTelegramWebApp() {
     }
   };
 
+  // Contextual primary action (e.g. "Create Invoice") in Telegram's native
+  // sticky MainButton, so phone users never have to scroll a long form to save.
+  const showMainButton = useCallback((text: string, onClick: () => void) => {
+    const tg = (window as any).Telegram?.WebApp;
+    if (!tg?.MainButton) return;
+    if (mainButtonHandler.current && typeof tg.MainButton.offClick === 'function') {
+      tg.MainButton.offClick(mainButtonHandler.current);
+    }
+    mainButtonHandler.current = onClick;
+    tg.MainButton.setText(text);
+    tg.MainButton.onClick(onClick);
+    tg.MainButton.show();
+  }, []);
+
+  const hideMainButton = useCallback(() => {
+    const tg = (window as any).Telegram?.WebApp;
+    if (!tg?.MainButton) return;
+    if (mainButtonHandler.current && typeof tg.MainButton.offClick === 'function') {
+      tg.MainButton.offClick(mainButtonHandler.current);
+    }
+    mainButtonHandler.current = null;
+    tg.MainButton.hide();
+  }, []);
+
   return {
     isInsideTelegram,
     telegramUser,
     closeWebApp,
+    showMainButton,
+    hideMainButton,
   };
 }
 
