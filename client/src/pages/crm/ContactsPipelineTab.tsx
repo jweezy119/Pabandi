@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getAuthToken } from '../../utils/authToken';
+import { ClaySkeletonCard } from '../../components/primitives/ClaySkeleton';
 
 interface ImportMeta {
   env: Record<string, string | undefined>;
@@ -768,7 +769,7 @@ export default function ContactsPipelineTab() {
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px' }}>
-        <div style={{ color: 'var(--soft-stone)', fontSize: '16px' }}>Loading...</div>
+        <div className="space-y-3 p-4">{[0, 1, 2].map((i) => <ClaySkeletonCard key={i} />)}</div>
       </div>
     );
   }

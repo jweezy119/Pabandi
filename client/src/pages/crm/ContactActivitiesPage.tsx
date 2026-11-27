@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import { Button } from '../../components/primitives/Button';
 import { EmptyState } from '../../components/primitives/EmptyState';
+import { ClaySkeletonCard } from '../../components/primitives/ClaySkeleton';
 import { ActivityFeed } from './components/ActivityFeed';
 import { ActivityFormModal } from './components/ActivityFormModal';
 import { TaskFormModal } from './components/TaskFormModal';
@@ -172,7 +173,7 @@ export function ContactActivitiesPage() {
         </div>
 
         {loading ? (
-          <div className="p-12 text-center text-[var(--soft-stone)]">Loading...</div>
+          <div className="space-y-3 p-4">{[0, 1, 2].map((i) => <ClaySkeletonCard key={i} />)}</div>
         ) : loadFailed ? (
           // Distinct from the empty state, and it does not offer to create one:
           // adding an activity will not fix a request that failed.

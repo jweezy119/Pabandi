@@ -86,7 +86,7 @@ export function Button({ children, onClick, variant = 'default', size = 'md', cl
   };
 
   const variants: Record<Variant, string> = {
-    default: 'bg-[var(--clay)] text-white shadow-[var(--shadow-btn)] hover:bg-[var(--terracotta)] hover:shadow-[var(--shadow-btn-hover)] active:scale-[0.98]',
+    default: 'bg-[var(--clay)] text-[var(--pab-on-accent)] shadow-[var(--shadow-btn)] hover:bg-[var(--terracotta)] hover:shadow-[var(--shadow-btn-hover)] active:scale-[0.98]',
     ghost: 'bg-transparent text-[var(--warm-ink)] border border-[rgba(191,179,163,0.4)] hover:bg-[var(--warm-sand)]/50',
     outline: 'bg-transparent text-[var(--warm-ink)] border border-[var(--clay)]/50 hover:border-[var(--clay)] hover:bg-[var(--clay)]/10',
     primary: 'bg-gradient-to-r from-[var(--clay)] to-[var(--terracotta)] text-white shadow-[var(--shadow-btn)] hover:shadow-[var(--shadow-btn-hover)] active:scale-[0.98]',

@@ -33,7 +33,8 @@ export default function ContactClientsPage() {
   /** True while a search box is in use, which is the only debounced input. */
   const searchTimer = useRef(true);
   const [loading, setLoading] = useState(true);
-  const [showFormModal, setShowFormModal] = useState(false);
+  // Quick action from the CRM home deep-links here with ?new=1.
+  const [showFormModal, setShowFormModal] = useState(() => new URLSearchParams(window.location.search).get('new') === '1');
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [customFields, setCustomFields] = useState<any[]>([]);

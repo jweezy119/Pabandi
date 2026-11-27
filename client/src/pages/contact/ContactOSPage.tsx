@@ -82,6 +82,7 @@ export default function ContactOSPage() {
   const pendingEscrowUsd = stats?.pendingEscrows?.totalUsd ?? 0;
   const saasCreditReal = stats?.saasCredit ?? null;
   const todaysRealJobs = stats?.todayJobs ?? [];
+  const firstPendingJob = todaysRealJobs.find((job: any) => job.status !== 'attended');
   const deals: Array<{ stage?: string }> = [];
   const activeDeals = deals.filter((d) => d.stage !== 'WON' && d.stage !== 'LOST').length;
   const recentClients = ([] as Array<{ createdAt?: string }>)
@@ -419,16 +420,24 @@ export default function ContactOSPage() {
             </div>
           </div>
 
-          {/* ── Quick Actions ─────────────────────────────────────── */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <ClayButton className="flex w-full items-center justify-center gap-2 py-4" onClick={() => navigate('/contact/invoices')}>
-              <ClipboardPlus className="h-5 w-5" /> New Invoice
+          {/* ── Quick Actions — the phone's home screen for running the business ── */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+            <ClayButton className="flex w-full flex-col items-center justify-center gap-1.5 min-h-[64px] py-3" onClick={() => navigate('/contact/invoices?new=1')}>
+              <ClipboardPlus className="h-5 w-5" /> <span className="text-xs">New Invoice</span>
             </ClayButton>
-            <ClayButton className="flex w-full items-center justify-center gap-2 py-4" onClick={() => navigate('/gig')}>
-              <Handshake className="h-5 w-5" /> Post Gig
+            <ClayButton
+              className="flex w-full flex-col items-center justify-center gap-1.5 min-h-[64px] py-3"
+              disabled={!firstPendingJob || Boolean(checkingInId)}
+              onClick={() => firstPendingJob && checkIn(firstPendingJob.id)}
+            >
+              <CheckCircle2 className="h-5 w-5" />
+              <span className="text-xs">{checkingInId ? 'Checking in…' : 'Check-in'}</span>
             </ClayButton>
-            <ClayButton className="flex w-full items-center justify-center gap-2 py-4" onClick={() => navigate('/wallet')}>
-              <Wallet className="h-5 w-5" /> View Wallet
+            <ClayButton className="flex w-full flex-col items-center justify-center gap-1.5 min-h-[64px] py-3" onClick={() => navigate('/contact/clients?new=1')}>
+              <Handshake className="h-5 w-5" /> <span className="text-xs">Add Client</span>
+            </ClayButton>
+            <ClayButton className="flex w-full flex-col items-center justify-center gap-1.5 min-h-[64px] py-3" onClick={() => navigate('/wallet')}>
+              <Wallet className="h-5 w-5" /> <span className="text-xs">Wallet</span>
             </ClayButton>
           </div>
 
@@ -455,7 +464,7 @@ export default function ContactOSPage() {
                   Background features: who your high-value clients are and what each could be worth.
                 </p>
                 <div>
-                  <ModularDashboard businessId={businessId} clients={EMPTY_CLIENTS} />
+                  <ModularDashboard businessId={businessId || ''} clients={EMPTY_CLIENTS} />
                 </div>
               </div>
             )}

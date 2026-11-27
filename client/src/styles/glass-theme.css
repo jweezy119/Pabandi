@@ -14,7 +14,7 @@
   --pg-line-strong: rgba(255, 255, 255, 0.16);
   --pg-glass: rgba(255, 255, 255, 0.035);
   --pg-glass-2: rgba(255, 255, 255, 0.065);
-  --pg-clay: #e08a63;
+  --pg-clay: var(--pab-accent);
   --pg-amber: #f0b46a;
   --pg-indigo: #7c8cff;
   --pg-teal: #4fd1c5;
@@ -208,8 +208,8 @@
   --soft-stone: #9aa3b8;
   --cream: rgba(255, 255, 255, 0.045);
   --warm-sand: rgba(255, 255, 255, 0.07);
-  --clay: #e08a63;
-  --terracotta: #f0956b;
+  --clay: var(--pab-accent);
+  --terracotta: var(--pab-accent-hover);
   --sage: #5ee39a;
   --muted-ochre: #f0b46a;
   --dusty-rose: #ff7a90;
@@ -228,6 +228,12 @@
   background: var(--atmosphere);
 }
 
+/* Tailwind opacity variants like bg-white/40 bypass the plain .bg-white rule
+ * and stayed opaque white on the dark CRM surface. */
+.pg-dashboard [class*="bg-white/"] {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.09) !important;
+}
 .pg-dashboard .bg-white {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.025)) !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
@@ -269,6 +275,8 @@
 .pg-dashboard .text-gray-700,
 .pg-dashboard .text-gray-600,
 .pg-dashboard .text-gray-500,
+.pg-dashboard .text-gray-400,
+.pg-dashboard .text-slate-400,
 .pg-dashboard .text-slate-600,
 .pg-dashboard .text-slate-500 { color: #9aa3b8 !important; }
 .pg-dashboard .bg-gray-50,

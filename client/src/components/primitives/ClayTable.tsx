@@ -71,8 +71,8 @@ export function ClayTable<T extends Record<string, any>>({
   }
 
   return (
-    <div className={`rounded-[24px] bg-white overflow-hidden ${className}`} style={{ boxShadow: 'var(--shadow-soft)' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+    <div className={`rounded-[24px] bg-white overflow-x-auto ${className}`} style={{ boxShadow: 'var(--shadow-soft)' }}>
+      <table className="mobile-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
         <thead>
           <tr style={{ borderBottom: '1px solid rgba(191,179,163,0.2)' }}>
             {selectable && (
@@ -131,7 +131,7 @@ export function ClayTable<T extends Record<string, any>>({
                   cursor: onRowClick ? 'pointer' : 'default',
                   transition: 'background-color 150ms ease',
                   animation: `clay-rise 400ms var(--ease-entrance) both`,
-                  animationDelay: `${i * 40}ms`,
+                  animationDelay: `${Math.min(i, 8) * 40}ms`,
                 }}
               >
                 {selectable && (

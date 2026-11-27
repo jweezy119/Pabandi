@@ -1,5 +1,8 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../../../components/primitives';
+
+const PAGE_SIZE = 25;
 
 export interface InvoiceListRow {
   id: string;
@@ -28,20 +31,25 @@ export function InvoiceList({
   onDelete?: (invoice: InvoiceListRow) => void;
   deletingId?: string | null;
 }) {
+  const [visible, setVisible] = useState(PAGE_SIZE);
+  useEffect(() => setVisible(PAGE_SIZE), [invoices.length]);
+
   if (invoices.length === 0) {
     return null;
   }
 
+  const shown = invoices.slice(0, visible);
+
   return (
     <div className="space-y-3">
-      {invoices.map((inv) => {
+      {shown.map((inv) => {
         // Only drafts are deletable. DELETE /crm/invoices/:id enforces this
         // server-side too, but offering the button on a sent invoice would just
         // produce a 400 the user cannot act on.
         const canDelete = Boolean(onDelete) && inv.status?.toLowerCase() === 'draft';
 
         return (
-          <div key={inv.id} className="flex items-stretch gap-2">
+          <div key={inv.id} className="flex flex-col sm:flex-row sm:items-stretch gap-2">
             <Link
               to={`/contact/invoices/${inv.id}`}
               className="flex-1 flex items-center justify-between p-4 rounded-xl border border-[var(--soft-stone)]/30 bg-white hover:border-[var(--clay)]/30 transition clay-card--interactive clay-table-row"
@@ -77,6 +85,7 @@ export function InvoiceList({
               </div>
             </Link>
 
+            <div className="flex items-center justify-end gap-2 sm:contents">
             <a
               href={`https://wa.me/?text=${encodeURIComponent(`Hi ${inv.client?.name || 'there'}, here is your secure invoice link: ${typeof window !== 'undefined' ? window.location.origin : 'https://pabandi.com'}/pay/${inv.id}`)}`}
               target="_blank"
@@ -98,9 +107,20 @@ export function InvoiceList({
                 className="shrink-0 self-center"
               />
             )}
+            </div>
           </div>
         );
       })}
+
+      {visible < invoices.length && (
+        <button
+          type="button"
+          onClick={() => setVisible((v) => v + PAGE_SIZE)}
+          className="w-full min-h-[44px] rounded-xl border border-[var(--warm-sand)] text-[var(--soft-stone)] touch-target"
+        >
+          Load {Math.min(PAGE_SIZE, invoices.length - visible)} more ({invoices.length - visible} remaining)
+        </button>
+      )}
     </div>
   );
 }

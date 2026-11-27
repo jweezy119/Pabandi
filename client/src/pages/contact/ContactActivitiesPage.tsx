@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
+import { ClaySkeletonCard } from '../../components/primitives/ClaySkeleton';
 import { getAuthToken } from '../../utils/authToken';
 
 const navItems = [
@@ -42,7 +43,7 @@ export default function ContactActivitiesPage() {
       <div className="space-y-6">
         <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Activities</h1>
         {loading ? (
-          <div className="p-8 text-center" style={{ color: 'var(--soft-stone)' }}>Loading...</div>
+          <div className="space-y-3 p-4">{[0, 1, 2].map((i) => <ClaySkeletonCard key={i} />)}</div>
         ) : activities.length === 0 ? (
           <div className="p-8 text-center rounded-[var(--radius-card)]" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
             <p style={{ color: 'var(--soft-stone)' }}>No activities yet.</p>

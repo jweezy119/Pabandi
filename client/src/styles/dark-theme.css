@@ -3,8 +3,22 @@
    Deep Ocean Navy (#0a1118) · Raised Slate (#101a24) · Teal (#4fd1c5)
    ═══════════════════════════════════════════════════════════════════ */
 
-[data-theme="dark"] {
+/* Specificity > :root so glass-theme.css (imported later) cannot silently
+ * restore the light accent when dark mode is active. */
+html[data-theme="dark"] {
   color-scheme: dark;
+
+  --pab-accent:       #4fd1c5;
+  --pab-accent-hover: #38b2ac;
+  --pab-on-accent:    #070912;
+  --pab-bg:           #0a1118;
+  --pab-surface:      #101a24;
+  --pab-text:         #e8eef4;
+  --pab-muted:        #8a9aa8;
+  --pab-border:       rgba(255, 255, 255, 0.1);
+  --pab-success:      #34d399;
+  --pab-warning:      #fbbf24;
+  --pab-danger:       #f472b6;
 
   /* ── Core palette mapped to Login/Signup obsidian tokens ─────── */
   --cream:       #0a1118;

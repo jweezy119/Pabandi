@@ -191,7 +191,7 @@ const EmailCodeLogin = ({ email, onEmailChange, onVerified, onError }: {
           type="button"
           onClick={handleSendCode}
           disabled={loading}
-          className="px-4 py-3 rounded-lg bg-[var(--clay)] text-[var(--warm-ink)] text-sm font-bold touch-target disabled:opacity-50"
+          className="px-4 py-3 rounded-lg bg-[var(--clay)] text-[var(--pab-on-accent)] text-sm font-bold touch-target disabled:opacity-50"
         >
           {loading ? '...' : 'Send Code'}
         </button>
@@ -417,7 +417,7 @@ export default function AuthPage() {
     <div className="flex min-h-screen items-center justify-center relative overflow-hidden px-4 py-12" style={{ background: 'var(--cream)' }}>
       {/* Background shapes */}
       <div className="pointer-events-none absolute -top-[15%] -left-[10%] h-[500px] w-[500px] rounded-full bg-[var(--clay)]/5 blur-3xl mix-blend-multiply" />
-      <div className="pointer-events-none absolute -bottom-[10%] -right-[5%] h-[400px] w-[400px] rounded-full bg-[rgba(var(--clay),0.1)] blur-3xl mix-blend-multiply" />
+      <div className="pointer-events-none absolute -bottom-[10%] -right-[5%] h-[400px] w-[400px] rounded-full bg-primary/10 blur-3xl mix-blend-multiply" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(0,0,0,0.25)_1px,transparent_1px)] [background-size:40px_40px]" />
 
       <div className={`relative z-10 w-full ${isBusiness && isSignup ? 'max-w-xl' : 'max-w-md'} transition-all duration-200 reveal`}>
@@ -433,11 +433,11 @@ export default function AuthPage() {
           {/* Mode tabs */}
           <div className="mb-6 flex gap-2 bg-[var(--warm-sand)] p-1.5 rounded-xl">
             <button onClick={() => { setMode('login'); clearErrors(); }}
-              className={`flex-1 rounded-lg py-3 text-sm font-bold transition-all touch-target sm:py-2 ${mode === 'login' ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-sm' : 'text-[var(--warm-ink)]/70 hover:text-[var(--warm-ink)]'}`}>
+              className={`flex-1 rounded-lg py-3 text-sm font-bold transition-all touch-target sm:py-2 ${mode === 'login' ? 'bg-[var(--clay)] text-[var(--pab-on-accent)] shadow-sm' : 'text-[var(--warm-ink)]/70 hover:text-[var(--warm-ink)]'}`}>
               Sign In
             </button>
             <button onClick={() => { setMode('signup'); clearErrors(); }}
-              className={`flex-1 rounded-lg py-3 text-sm font-bold transition-all touch-target sm:py-2 ${mode === 'signup' ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-sm' : 'text-[var(--warm-ink)]/70 hover:text-[var(--warm-ink)]'}`}>
+              className={`flex-1 rounded-lg py-3 text-sm font-bold transition-all touch-target sm:py-2 ${mode === 'signup' ? 'bg-[var(--clay)] text-[var(--pab-on-accent)] shadow-sm' : 'text-[var(--warm-ink)]/70 hover:text-[var(--warm-ink)]'}`}>
               Create Account
             </button>
           </div>
@@ -449,7 +449,7 @@ export default function AuthPage() {
                 onClick={() => setRole('customer')}
                 className={`flex-1 flex items-center justify-center gap-2 rounded-xl border py-3 text-sm font-semibold transition-all duration-200 touch-target sm:py-2.5 ${
                   role === 'customer'
-                    ? 'border-[var(--clay)]/60 bg-[rgba(var(--clay),0.1)] text-[var(--warm-ink)]'
+                    ? 'border-[var(--clay)]/60 bg-primary/10 text-[var(--warm-ink)]'
                     : 'border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]/70 hover:bg-[var(--warm-sand)]'
                 }`}>
                 <UserIcon />
@@ -459,7 +459,7 @@ export default function AuthPage() {
                 onClick={() => setRole('business')}
                 className={`flex-1 flex items-center justify-center gap-2 rounded-xl border py-3 text-sm font-semibold transition-all duration-200 touch-target sm:py-2.5 ${
                   role === 'business'
-                    ? 'border-[var(--clay)]/60 bg-[rgba(var(--clay),0.1)] text-[var(--warm-ink)]'
+                    ? 'border-[var(--clay)]/60 bg-primary/10 text-[var(--warm-ink)]'
                     : 'border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]/70 hover:bg-[var(--warm-sand)]'
                 }`}>
                 <BuildingIcon />
@@ -502,7 +502,7 @@ export default function AuthPage() {
                 <button key={login.id} onClick={login.onClick} title={`Continue with ${login.name}`}
                   className="flex items-center justify-center rounded-xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] py-3.5 text-[var(--warm-ink)] transition-colors shadow-sm touch-target sm:py-2.5" disabled={!!oauthLoading}>
                   {oauthLoading === login.id ? (
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-[rgba(var(--clay),0.3)] border-t-indigo-400" />
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary/30 border-t-indigo-400" />
                   ) : (
                     login.icon
                   )}
@@ -539,7 +539,7 @@ export default function AuthPage() {
 
           {/* Error */}
           {error && (
-            <div className="mb-5 rounded-lg border border-[rgba(var(--terracotta),0.2)] bg-[rgba(var(--terracotta),0.1)] px-4 py-3 text-sm font-medium text-[var(--warm-ink)]">
+            <div className="mb-5 rounded-lg border border-secondary/20 bg-secondary/10 px-4 py-3 text-sm font-medium text-[var(--warm-ink)]">
               {error}
             </div>
           )}
@@ -703,7 +703,7 @@ export default function AuthPage() {
             )}
 
             <button type="submit" disabled={loading}
-              className="w-full rounded-xl py-4 text-sm font-bold shadow-sm transition-opacity touch-target sm:py-3 hover:opacity-90 disabled:opacity-70 mt-2 bg-[var(--clay)] text-[var(--warm-ink)]">
+              className="w-full rounded-xl py-4 text-sm font-bold shadow-sm transition-opacity touch-target sm:py-3 hover:opacity-90 disabled:opacity-70 mt-2 bg-[var(--clay)] text-[var(--pab-on-accent)]">
               {loading
                 ? (isSignup ? 'Creating account…' : 'Signing in…')
                 : (isSignup

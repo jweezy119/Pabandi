@@ -92,8 +92,10 @@ export interface DashboardTheme {
 }
 
 export const DEFAULT_THEME: DashboardTheme = {
-  accentColor: '#C97B5A',
-  bannerColor: '#C97B5A',
+  // Follow the active global theme instead of pinning a warm-clay hex that
+  // looked wrong in dark/glass shells.
+  accentColor: 'var(--pab-accent)',
+  bannerColor: 'var(--pab-accent)',
   density: 'comfortable',
   borderRadius: 'rounded',
 };

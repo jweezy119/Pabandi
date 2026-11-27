@@ -268,7 +268,7 @@ export function EmbeddedCheckoutModal({ prompt, onClose, onFunded }: Props) {
               onClick={() => setMode('hosted')}
               className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 border transition-colors ${
                 mode === 'hosted'
-                  ? 'bg-[var(--clay)] text-white border-[var(--clay)]'
+                  ? 'bg-[var(--clay)] text-[var(--pab-on-accent)] border-[var(--clay)]'
                   : 'bg-[var(--warm-sand)]/60 text-[var(--warm-ink)] border-[rgba(191,179,163,0.3)]'
               }`}
             >
@@ -280,7 +280,7 @@ export function EmbeddedCheckoutModal({ prompt, onClose, onFunded }: Props) {
               onClick={() => setMode('solana')}
               className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 border transition-colors ${
                 mode === 'solana'
-                  ? 'bg-[var(--clay)] text-white border-[var(--clay)]'
+                  ? 'bg-[var(--clay)] text-[var(--pab-on-accent)] border-[var(--clay)]'
                   : 'bg-[var(--warm-sand)]/60 text-[var(--warm-ink)] border-[rgba(191,179,163,0.3)]'
               }`}
             >
@@ -393,7 +393,7 @@ export function EmbeddedCheckoutModal({ prompt, onClose, onFunded }: Props) {
                 type="button"
                 disabled={signing}
                 onClick={handlePrivySignAndFund}
-                className="w-full py-3 rounded-xl bg-[var(--clay)] text-white text-sm font-semibold hover:opacity-95 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-[var(--clay)] text-[var(--pab-on-accent)] text-sm font-semibold hover:opacity-95 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 <Wallet size={15} />
                 {signing ? 'Signing USDC Escrow…' : `Sign & Lock ${amountVal.toFixed(2)} USDC with Privy`}
@@ -429,7 +429,7 @@ export function EmbeddedCheckoutModal({ prompt, onClose, onFunded }: Props) {
           </div>
           <button
             onClick={() => onFunded(txHash || `manual_${Date.now().toString(36)}`, walletAddress || undefined)}
-            className="w-full py-3 rounded-xl bg-[var(--clay)] text-[var(--warm-ink)] font-semibold hover:bg-[var(--terracotta)] transition-colors"
+            className="w-full py-3 rounded-xl bg-[var(--clay)] text-[var(--pab-on-accent)] font-semibold hover:bg-[var(--terracotta)] transition-colors"
           >
             I&apos;ve funded it
           </button>

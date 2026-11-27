@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Chip, Button, Input } from '../../../components/primitives';
+import { Input } from '../../../components/primitives';
 
 export default function DealListTable({ STAGES, deals, onUpdateStage }: any) {
   const [search, setSearch] = useState('');
@@ -9,6 +9,8 @@ export default function DealListTable({ STAGES, deals, onUpdateStage }: any) {
     d.title.toLowerCase().includes(search.toLowerCase()) ||
     (d.client && d.client.name.toLowerCase().includes(search.toLowerCase()))
   );
+  // Unbounded deal arrays make long lists unusable on a phone; cap per view.
+  const shownDeals = filteredDeals.slice(0, 50);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-[rgba(191,179,163,0.3)] overflow-hidden">
@@ -18,7 +20,7 @@ export default function DealListTable({ STAGES, deals, onUpdateStage }: any) {
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="mobile-table w-full text-left border-collapse">
           <thead>
             <tr className="bg-[var(--warm-sand)]">
               <th className="p-4 text-sm font-semibold text-[var(--warm-ink)]">Deal Title</th>
@@ -29,7 +31,7 @@ export default function DealListTable({ STAGES, deals, onUpdateStage }: any) {
             </tr>
           </thead>
           <tbody>
-            {filteredDeals.map((deal: any) => (
+            {shownDeals.map((deal: any) => (
               <tr key={deal.id} className="border-t border-[rgba(191,179,163,0.2)] hover:bg-[var(--warm-sand)]/20">
                 <td className="p-4 font-medium text-[var(--warm-ink)]">
                   <Link to={`/contact/deals/${deal.id}`} className="hover:text-[var(--clay)] transition">
@@ -46,7 +48,7 @@ export default function DealListTable({ STAGES, deals, onUpdateStage }: any) {
                   <select
                     value={deal.stage}
                     onChange={(e) => onUpdateStage(deal.id, e.target.value)}
-                    className="text-xs bg-white text-[var(--warm-ink)] border border-[var(--warm-sand)] rounded-lg px-2 py-1"
+                    className="w-full sm:w-auto min-h-[44px] text-base sm:text-xs bg-white text-[var(--warm-ink)] border border-[var(--warm-sand)] rounded-lg px-2 py-1 touch-target"
                   >
                     {STAGES.map((s: any) => <option key={s.id} value={s.id}>{s.label}</option>)}
                   </select>
@@ -65,6 +67,11 @@ export default function DealListTable({ STAGES, deals, onUpdateStage }: any) {
           </tbody>
         </table>
       </div>
+      {filteredDeals.length > shownDeals.length && (
+        <p className="px-4 py-2 text-sm text-[var(--soft-stone)]">
+          Showing 50 of {filteredDeals.length} deals — refine your search to see more.
+        </p>
+      )}
     </div>
   );
 }

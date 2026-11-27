@@ -5,28 +5,10 @@
  * and agent-harness aesthetics (trajectory console, terminal blocks).
  * ────────────────────────────────────────────────────────────────────────── */
 
+/* Token definitions live once in styles/glass-theme.css (:root). Duplicating
+ * them here had drifted (--pg-glass-2 .06 vs .065) and made the palette depend
+ * on stylesheet import order. Keep only the page-specific layout below. */
 .pg-root {
-  --pg-bg: #070912;
-  --pg-bg-2: #0c1020;
-  --pg-ink: #eef0f6;
-  --pg-muted: #9aa3b8;
-  --pg-dim: #6b7389;
-  --pg-line: rgba(255, 255, 255, 0.08);
-  --pg-line-strong: rgba(255, 255, 255, 0.16);
-  --pg-glass: rgba(255, 255, 255, 0.035);
-  --pg-glass-2: rgba(255, 255, 255, 0.06);
-  --pg-clay: #e08a63;
-  --pg-amber: #f0b46a;
-  --pg-indigo: #7c8cff;
-  --pg-teal: #4fd1c5;
-  --pg-green: #5ee39a;
-  --pg-rose: #ff7a90;
-  --pg-radius: 18px;
-  --pg-radius-sm: 12px;
-  --pg-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
-  --pg-sans: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
-  --pg-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
-
   position: relative;
   min-height: 100vh;
   background:

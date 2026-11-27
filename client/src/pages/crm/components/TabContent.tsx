@@ -151,7 +151,7 @@ function AlertsFeed({ alerts, onDismiss }: { alerts: Alert[]; onDismiss: (id: st
             const config = typeConfig[alert.type] || typeConfig.info;
             const Icon = config.icon;
             return (
-              <div key={alert.id} className={`clay-alert clay-alert--${config.alertVariant} flex items-start gap-3 clay-rise`} style={{ animationDelay: `${i * 60}ms` }}>
+              <div key={alert.id} className={`clay-alert clay-alert--${config.alertVariant} flex items-start gap-3 clay-rise`} style={{ animationDelay: `${Math.min(i, 6) * 60}ms` }}>
                 <Icon className="w-5 h-5 mt-0.5 shrink-0" style={{ color: 'var(--clay)' }} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[var(--warm-ink)]">{alert.title}</p>
@@ -216,7 +216,7 @@ export default function TabContent({ activeTab, clients, alerts, onStageChange, 
             ) : (
               <div className="space-y-2.5">
                 {clients.map((client, i) => (
-                  <div key={client.id} className="flex items-center gap-4 p-4 rounded-xl bg-white border border-[rgba(191,179,163,0.2)] clay-card--interactive clay-table-row clay-rise" style={{ animationDelay: `${i * 60}ms`, boxShadow: 'var(--shadow-soft)', cursor: 'pointer' }}
+                  <div key={client.id} className="flex items-center gap-4 p-4 rounded-xl bg-white border border-[rgba(191,179,163,0.2)] clay-card--interactive clay-table-row clay-rise" style={{ animationDelay: `${Math.min(i, 6) * 60}ms`, boxShadow: 'var(--shadow-soft)', cursor: 'pointer' }}
                     onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-1px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-lift)'; (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(201, 123, 90, 0.3)'; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = ''; (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-soft)'; (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(191, 179, 163, 0.2)'; }}
                   >

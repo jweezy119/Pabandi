@@ -48,9 +48,15 @@ export default function ManualReviewAlerts() {
   }, []);
 
   useEffect(() => {
-    load();
-    const t = setInterval(load, 30000);
-    return () => clearInterval(t);
+    const run = () => { if (!document.hidden) void load(); };
+    run();
+    const t = setInterval(run, 30000);
+    const onVisible = () => { if (!document.hidden) run(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [load]);
 
   if (!allowed) return null;

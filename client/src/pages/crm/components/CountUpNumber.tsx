@@ -13,6 +13,15 @@ export default function CountUpNumber({
   const startTime = useRef<number>(0);
 
   useEffect(() => {
+    // Counting up is decoration: skip the rAF loop when motion is reduced or
+    // the tab is hidden (a hidden tab would otherwise burn frames for nothing).
+    if (
+      (typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ||
+      document.hidden
+    ) {
+      setValue(numericEnd);
+      return;
+    }
     startTime.current = performance.now();
     const tick = () => {
       const elapsed = performance.now() - startTime.current;

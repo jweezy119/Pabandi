@@ -490,7 +490,7 @@ export default function Layout() {
       </main>
 
       {!isAuthPage && !isStandalone && (
-        <nav className="fixed bottom-0 inset-x-0 z-50 bg-[#FAF6F0]/92 backdrop-blur-xl border-t border-[rgba(191,179,163,0.4)] md:hidden safe-area-pb" style={{ height: 'var(--pab-mobile-nav-height)', boxShadow: '0 -4px 20px rgba(180, 130, 90, 0.08)' }} aria-label="Mobile navigation">
+        <nav className="fixed bottom-0 inset-x-0 z-50 backdrop-blur-xl border-t border-[var(--pab-border)] md:hidden safe-area-pb" style={{ height: 'var(--pab-mobile-nav-height)', backgroundColor: 'var(--bg-surface)', boxShadow: '0 -4px 20px rgba(180, 130, 90, 0.08)' }} aria-label="Mobile navigation">
           <div className="flex justify-around items-center h-full px-2 py-1 max-w-md mx-auto">
             <MobileTab to="/" icon="explore" label="Home" current={location.pathname === '/'} />
             <MobileTab to="/contact" icon="contacts" label="Contact" current={location.pathname.startsWith('/contact')} />

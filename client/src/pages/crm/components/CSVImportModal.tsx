@@ -217,7 +217,7 @@ export default function CSVImportModal({
           <div className="space-y-4">
             <p className="text-sm text-[var(--soft-stone)]">Preview of first 5 rows:</p>
             <div className="overflow-x-auto rounded-xl border border-[rgba(191,179,163,0.2)]">
-              <table className="w-full text-xs">
+              <table className="mobile-table w-full text-xs">
                 <thead>
                   <tr className="bg-[var(--warm-sand)]/30">
                     {headers.map((h, i) => (

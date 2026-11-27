@@ -38,7 +38,8 @@ export default function InvoicesPage() {
   const [loading, setLoading] = useState(true);
   const [loadingQuotes, setLoadingQuotes] = useState(false);
   const [search, setSearch] = useState('');
-  const [showCreate, setShowCreate] = useState(false);
+  // Quick action from the CRM home deep-links here with ?new=1.
+  const [showCreate, setShowCreate] = useState(() => new URLSearchParams(window.location.search).get('new') === '1');
   const [showCreateQuote, setShowCreateQuote] = useState(false);
   const [copiedQuoteId, setCopiedQuoteId] = useState<string | null>(null);
 

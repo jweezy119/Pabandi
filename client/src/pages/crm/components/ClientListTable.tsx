@@ -201,7 +201,7 @@ export default function ClientListTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="mobile-table w-full text-left border-collapse">
           <thead>
             <tr className="bg-[var(--warm-sand)]">
               <th className="p-4 w-10">

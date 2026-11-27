@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { FiX, FiSearch, FiTrash2 } from 'react-icons/fi';
 import { Button } from '../../../components/primitives';
 import { ClayBadge } from '../../../components/primitives/ClayBadge';
 import { getAuthToken } from '../../../utils/authToken';
+import { useTelegramWebApp } from '../../../hooks/useTelegramWebApp';
 
 const CRM_API = `${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm`;
 
@@ -47,6 +48,16 @@ export function InvoiceFormModal({ onClose, onSave, clients: initialClients = []
   const [depositPercent, setDepositPercent] = useState(20);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const { isInsideTelegram, showMainButton, hideMainButton } = useTelegramWebApp();
+  const saveRef = useRef<() => void>(() => {});
+
+  // Telegram Mini App users get the native sticky primary button instead of
+  // having to scroll to the bottom of a long invoice form.
+  useEffect(() => {
+    if (!isInsideTelegram) return;
+    showMainButton(saving ? 'Creating…' : 'Save Invoice', () => saveRef.current());
+    return () => hideMainButton();
+  }, [isInsideTelegram, saving, showMainButton, hideMainButton]);
 
   // Scheduling a setTimeout during render fired a new timer on every re-render
   // while an error was visible; one effect owns the dismissal.
@@ -64,30 +75,47 @@ export function InvoiceFormModal({ onClose, onSave, clients: initialClients = []
     setDateDue(thirtyDaysLater);
   }, []);
 
-  // Fetch real clients from the API (searchable)
-  const fetchClients = useCallback(async () => {
+  // Fetch real clients from the API (searchable). Opening the modal used to
+  // fetch the entire client list even though the UI says "start typing"; only
+  // hit the server once there is a query, and cap the result set.
+  const fetchClients = useCallback(async (signal?: AbortSignal) => {
+    const query = clientSearch.trim();
+    if (!query) {
+      setClients(initialClients);
+      setClientsLoading(false);
+      return;
+    }
     setClientsLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (clientSearch.trim()) params.set('search', clientSearch.trim());
+      const params = new URLSearchParams({ search: query, limit: '20' });
       if (businessId) params.set('businessId', businessId);
       const res = await fetch(`${CRM_API}/clients?${params.toString()}`, {
         headers: { Authorization: `Bearer ${getAuthToken() || ''}` },
+        signal,
       });
       if (!res.ok) throw new Error('Failed to load clients');
       const d = await res.json();
       setClients(d.data || d || []);
-    } catch {
-      setClients(initialClients);
+    } catch (err) {
+      if ((err as Error)?.name !== 'AbortError') setClients(initialClients);
     } finally {
-      setClientsLoading(false);
+      if (!signal?.aborted) setClientsLoading(false);
     }
   }, [clientSearch, businessId, initialClients]);
 
   useEffect(() => {
-    const t = setTimeout(fetchClients, 300);
-    return () => clearTimeout(t);
-  }, [fetchClients]);
+    if (!clientSearch.trim()) {
+      setClients(initialClients);
+      setClientsLoading(false);
+      return;
+    }
+    const controller = new AbortController();
+    const t = setTimeout(() => void fetchClients(controller.signal), 300);
+    return () => {
+      clearTimeout(t);
+      controller.abort();
+    };
+  }, [clientSearch, fetchClients, initialClients]);
 
   // Line item amount auto-calculation
   const handleLineItemChange = (index: number, field: keyof LineItem, value: string | number) => {
@@ -174,6 +202,8 @@ export function InvoiceFormModal({ onClose, onSave, clients: initialClients = []
       setSaving(false);
     }
   };
+
+  saveRef.current = handleSave;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--cream)]/30 p-4 md:p-6" onClick={onClose}>

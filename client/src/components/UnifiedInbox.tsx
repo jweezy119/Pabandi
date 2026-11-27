@@ -61,9 +61,15 @@ export const UnifiedInbox: React.FC<UnifiedInboxProps> = ({ businessId }) => {
   }, [businessId, filterChannel]);
 
   useEffect(() => {
-    fetchMessages();
-    const interval = setInterval(fetchMessages, 10000); // Poll every 10s
-    return () => clearInterval(interval);
+    const run = () => { if (!document.hidden) void fetchMessages(); };
+    run();
+    const interval = setInterval(run, 10000); // Poll every 10s while visible
+    const onVisible = () => { if (!document.hidden) run(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [fetchMessages]);
 
   const sendReply = async (message: ChannelMessage) => {

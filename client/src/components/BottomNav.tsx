@@ -14,8 +14,8 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-50 bg-[#FAF6F0]/92 backdrop-blur-xl border-t border-[rgba(191,179,163,0.35)] safe-area-bottom"
-      style={{ height: 'var(--pab-mobile-nav-height)', boxShadow: '0 -4px 20px rgba(180, 130, 90, 0.08)' }}
+      className="fixed bottom-0 inset-x-0 z-50 backdrop-blur-xl border-t border-[var(--pab-border)] safe-area-bottom"
+      style={{ backgroundColor: 'var(--bg-surface)', height: 'var(--pab-mobile-nav-height)', boxShadow: '0 -4px 20px rgba(180, 130, 90, 0.08)' }}
       aria-label="Consumer navigation"
     >
       <div className="flex justify-around items-center h-full px-3 max-w-md mx-auto">

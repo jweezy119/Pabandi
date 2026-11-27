@@ -26,6 +26,22 @@
   --soft-stone:  #5A5348;
   --sky-wash:    #B8C9D4;
 
+  /* ── Canonical semantic layer ───────────────────────────────────
+   * One accent per theme. Glass/dashboard shells alias --clay to this so the
+   * theme toggle changes the accent everywhere instead of being overwritten.
+   */
+  --pab-accent:       #C97B5A;
+  --pab-accent-hover: #A85A3C;
+  --pab-on-accent:    #2A2520;
+  --pab-bg:           var(--cream);
+  --pab-surface:      #ffffff;
+  --pab-text:         var(--warm-ink);
+  --pab-muted:        var(--soft-stone);
+  --pab-border:       rgba(191, 179, 163, 0.35);
+  --pab-success:      var(--sage);
+  --pab-warning:      var(--muted-ochre);
+  --pab-danger:       var(--dusty-rose);
+
   /* ── Shadows — warm-tinted, layered, never black ─────────────── */
   --shadow-soft:
     0 1px 2px rgba(180, 130, 90, 0.06),

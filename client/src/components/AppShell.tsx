@@ -107,8 +107,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Mobile Bottom Navigation (only on shell/hub pages; OS dashboards have their own navigation) */}
       {!isDashboardLayoutPage && (
         <nav
-          className="md:hidden fixed bottom-0 inset-x-0 bg-[#FAF6F0]/92 backdrop-blur-xl border-t border-[rgba(191,179,163,0.35)] flex items-center justify-around z-50 safe-area-bottom"
-          style={{ height: 'var(--pab-mobile-nav-height)', boxShadow: '0 -4px 20px rgba(180, 130, 90, 0.08)' }}
+          className="md:hidden fixed bottom-0 inset-x-0 backdrop-blur-xl border-t border-[var(--pab-border)] flex items-center justify-around z-50 safe-area-bottom"
+          style={{ height: 'var(--pab-mobile-nav-height)', backgroundColor: 'var(--bg-surface)', boxShadow: '0 -4px 20px rgba(180, 130, 90, 0.08)' }}
           aria-label="Mobile navigation"
         >
           {visibleModules.map(module => {

@@ -16,12 +16,14 @@
       (function () {
         try {
           var t = localStorage.getItem('pabandi-theme');
-          if (t === 'dark') {
-            document.documentElement.setAttribute('data-theme', 'dark');
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.setAttribute('data-theme', 'light');
+          if (t !== 'dark' && t !== 'light') {
+            t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
           }
+          document.documentElement.setAttribute('data-theme', t);
+          document.documentElement.style.colorScheme = t;
+          document.documentElement.classList.toggle('dark', t === 'dark');
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', t === 'dark' ? '#0a1118' : '#F5EFE6');
         } catch (e) {}
       })();
     </script>

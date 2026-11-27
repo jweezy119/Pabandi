@@ -40,9 +40,15 @@ export function LiveNetworkWidget({ className = '', style }: LiveNetworkWidgetPr
   }, []);
 
   useEffect(() => {
-    fetchRecent();
-    const interval = setInterval(fetchRecent, 30_000);
-    return () => clearInterval(interval);
+    const run = () => { if (!document.hidden) void fetchRecent(); };
+    run();
+    const interval = setInterval(run, 30_000);
+    const onVisible = () => { if (!document.hidden) run(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [fetchRecent]);
 
   if (loading) {

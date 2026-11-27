@@ -132,6 +132,18 @@ export default function ModularDashboard({ businessId, clients }: ModularDashboa
     saveLayout(layout, theme);
   };
 
+  // HTML5 drag-and-drop never fires on touch screens. Up/down buttons use the
+  // same reorder logic so phone users can arrange their workspace too.
+  const moveWidget = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= layout.length) return;
+    const newLayout = [...layout];
+    const [moved] = newLayout.splice(index, 1);
+    newLayout.splice(target, 0, moved);
+    setLayout(newLayout);
+    saveLayout(newLayout, theme);
+  };
+
   const handleReset = () => {
     setLayout(getDefaultLayout());
     setTheme(DEFAULT_THEME);
@@ -205,7 +217,7 @@ export default function ModularDashboard({ businessId, clients }: ModularDashboa
             <div>
               <label className="text-xs font-medium text-[var(--warm-ink)] block mb-2">Accent Color</label>
               <div className="flex items-center gap-2">
-                {['#C97B5A', '#8A9A7B', '#D9A854', '#B8C9D4', '#D4A5A5'].map(c => (
+                {['var(--pab-accent)', '#8A9A7B', '#D9A854', '#B8C9D4', '#D4A5A5'].map(c => (
                   <button
                     key={c}
                     onClick={() => { const t = { ...theme, accentColor: c }; setTheme(t); saveLayout(layout, t); }}
@@ -271,7 +283,27 @@ export default function ModularDashboard({ businessId, clients }: ModularDashboa
                   onDragEnd={handleDragEnd}
                   className="flex items-center gap-2 p-2 rounded-lg bg-white/40 cursor-grab active:cursor-grabbing"
                 >
-                  <GripVertical size={14} className="text-[var(--soft-stone)]" />
+                  <GripVertical size={14} className="text-[var(--soft-stone)] hidden sm:block" />
+                  <div className="flex flex-col sm:hidden">
+                    <button
+                      type="button"
+                      onClick={() => moveWidget(index, -1)}
+                      disabled={index === 0}
+                      aria-label={`Move ${def.title} up`}
+                      className="touch-target disabled:opacity-30 text-[var(--soft-stone)]"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">keyboard_arrow_up</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveWidget(index, 1)}
+                      disabled={index === layout.length - 1}
+                      aria-label={`Move ${def.title} down`}
+                      className="touch-target disabled:opacity-30 text-[var(--soft-stone)]"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">keyboard_arrow_down</span>
+                    </button>
+                  </div>
                   <def.icon size={14} className="text-[var(--clay)]" />
                   <span className="flex-1 text-sm text-[var(--warm-ink)]">{def.title}</span>
                   <button onClick={() => handleToggleWidth(widget.id)} className="p-1 hover:bg-[var(--warm-sand)] rounded">

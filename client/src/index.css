@@ -377,17 +377,14 @@ a[role="button"]:not(:disabled):active {
   }
 }
 
-/* ── Tables become swipeable on small screens ─────────────────── */
+/* ── Tables become swipeable on small screens ───────────────────
+ * Scoped to .mobile-table: a global `table { display:block }` turned the
+ * table itself into a scroll container, fighting every component that already
+ * wraps it in overflow-x-auto (and clipping ClayTable).
+ */
 @media (max-width: 767px) {
-  table {
-    display: block;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  table thead, table tbody {
+  .mobile-table {
     min-width: 560px;
-    display: table;
-    width: 100%;
   }
 }
 
@@ -563,10 +560,29 @@ a, button, [role="button"], input, select, textarea {
   }
 }
 
+/* ── Theme switch: animate paint only, never layout ────────────── */
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    fill 200ms ease !important;
+}
+
 /* ── Respect users who prefer no motion ────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
+  .theme-transition,
+  .theme-transition *,
+  .theme-transition *::before,
+  .theme-transition *::after { transition: none !important; }
+
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }

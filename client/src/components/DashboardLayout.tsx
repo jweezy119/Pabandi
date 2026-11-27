@@ -264,7 +264,7 @@ export default function DashboardLayout({
 
       {/* ─── Sidebar — frosted translucent dark glass ─────────────── */}
       <aside
-        className={`fixed inset-y-0 left-0 lg:static z-50 w-[82vw] max-w-[300px] lg:w-64 h-full flex flex-col safe-area-top safe-area-bottom transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${
+        className={`fixed inset-y-0 left-0 lg:static z-50 w-[82vw] max-w-[300px] lg:w-64 h-full flex flex-col safe-area-top safe-area-bottom transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
         style={{
@@ -294,7 +294,7 @@ export default function DashboardLayout({
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-2 rounded-lg transition-colors duration-150"
+            className="lg:hidden p-3 rounded-lg transition-colors duration-150 touch-target"
             style={{ color: 'var(--soft-stone)' }}
             aria-label="Close sidebar"
           >

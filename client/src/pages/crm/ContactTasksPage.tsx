@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import { Button } from '../../components/primitives/Button';
 import { EmptyState } from '../../components/primitives/EmptyState';
+import { ClaySkeletonCard } from '../../components/primitives/ClaySkeleton';
 import { TaskList } from './components/TaskList';
 import { TASK_STATUSES, TASK_PRIORITIES, TASK_STATUS_LABELS } from '@shared/crm';
 import { TaskBoard } from './components/TaskBoard';
@@ -163,7 +164,7 @@ export function ContactTasksPage() {
         </div>
 
         {loading ? (
-          <div className="p-12 text-center text-[var(--soft-stone)]">Loading...</div>
+          <div className="space-y-3 p-4">{[0, 1, 2].map((i) => <ClaySkeletonCard key={i} />)}</div>
         ) : tasks.length === 0 ? (
           <EmptyState
             icon="check_box"
