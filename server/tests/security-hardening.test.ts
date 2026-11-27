@@ -76,6 +76,12 @@ describe('production session configuration', () => {
     expect(app).not.toMatch(/SESSION_SECRET and COOKIE_SESSION_SECRET must be set/);
   });
 
+  it('does not let a second session middleware overwrite req.session', () => {
+    const app = src('app.ts');
+    expect(app).not.toMatch(/cookieSession\(/);
+    expect(app).not.toMatch(/from 'cookie-session'/);
+  });
+
   it('does not let a missing PTP secret take down every route', () => {
     const server = src('server.ts');
     expect(server).not.toMatch(/missing\.push\('PTP_SIGNING_SECRET'\)/);

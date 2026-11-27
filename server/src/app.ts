@@ -5,7 +5,6 @@ import dotenv from 'dotenv';
 import compression from 'compression';
 import path from 'path';
 import session from 'express-session';
-import cookieSession from 'cookie-session';
 import crypto from 'crypto';
 
 import { errorHandler } from './middleware/errorHandler';
@@ -172,23 +171,22 @@ app.use(
   })
 );
 
-// Session configuration (express-session for server-side, cookie-session for client-side)
-// Uses separate secrets; both required in production
+// Session configuration. One middleware owns req.session: express-session.
+// cookie-session used to run immediately after this and replace req.session with
+// an object that has no touch()/save(), so every response crashed in
+// express-session's res.end hook ("req.session.touch is not a function"),
+// including /health — which made every deploy look unhealthy.
 const sessionSecret = process.env.SESSION_SECRET || process.env.JWT_SECRET;
-const cookieSessionSecret = process.env.COOKIE_SESSION_SECRET || process.env.JWT_SECRET;
 
-// Both session middlewares already fall back to JWT_SECRET. Only fail when
-// there is no secret at all — requiring two *extra* variables that Render's
-// blueprint never provisioned took the whole API down on every deploy.
-if (!sessionSecret || !cookieSessionSecret) {
-  logger.error('🚨 FATAL: no session secret available (set SESSION_SECRET, COOKIE_SESSION_SECRET, or JWT_SECRET)');
+if (!sessionSecret) {
+  logger.error('🚨 FATAL: no session secret available (set SESSION_SECRET or JWT_SECRET)');
   process.exit(1);
 }
 
-if (isProductionEnv && (!process.env.SESSION_SECRET || !process.env.COOKIE_SESSION_SECRET)) {
+if (isProductionEnv && !process.env.SESSION_SECRET) {
   logger.warn(
-    'SESSION_SECRET/COOKIE_SESSION_SECRET not set; sessions are signed with JWT_SECRET. ' +
-      'Set distinct 32+ character values to separate session signing from JWT signing.',
+    'SESSION_SECRET not set; sessions are signed with JWT_SECRET. ' +
+      'Set a distinct 32+ character value to separate session signing from JWT signing.',
   );
 }
 
@@ -211,20 +209,8 @@ app.use(
   })
 );
 
-// cookie-session for lightweight client-side session (CSRF token, flash messages)
-app.use(
-  cookieSession({
-    name: 'pabandi.csrf',
-    keys: [cookieSessionSecret!],
-    maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
-    secure: isProductionEnv,
-    httpOnly: true,
-    sameSite: 'lax',
-    domain: isProductionEnv ? '.pabandi.com' : undefined,
-  })
-);
-
-// CSRF token generation middleware (runs after sessions are initialized)
+// CSRF token generation middleware (the token lives in the express-session
+// above; no second session middleware must be layered on top of it).
 app.use((req: any, _res: Response, next: NextFunction) => {
   if (req.session && !req.session.csrfToken) {
     req.session.csrfToken = crypto.randomBytes(32).toString('hex');
