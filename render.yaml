@@ -73,6 +73,12 @@ services:
         generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
+      # Session cookies are signed with their own secrets (app.ts falls back to
+      # JWT_SECRET when these are absent, but distinct values are recommended).
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: COOKIE_SESSION_SECRET
+        generateValue: true
       # THE LIVE SERVICE USES SUPABASE (free tier, 500 MB DB).
       #
       # Set DATABASE_URL in the Render dashboard to your Supabase connection string:

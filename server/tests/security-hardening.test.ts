@@ -69,6 +69,14 @@ describe('agent money routes require a scoped API key', () => {
   });
 });
 
+describe('production session configuration', () => {
+  it('accepts the JWT_SECRET fallback instead of hard-failing on two extra vars', () => {
+    const app = src('app.ts');
+    expect(app).toMatch(/no session secret available/);
+    expect(app).not.toMatch(/SESSION_SECRET and COOKIE_SESSION_SECRET must be set/);
+  });
+});
+
 describe('payment detail endpoints are owner-checked', () => {
   const routes = src('routes/payment.routes.ts');
 

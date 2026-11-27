@@ -177,13 +177,19 @@ app.use(
 const sessionSecret = process.env.SESSION_SECRET || process.env.JWT_SECRET;
 const cookieSessionSecret = process.env.COOKIE_SESSION_SECRET || process.env.JWT_SECRET;
 
+// Both session middlewares already fall back to JWT_SECRET. Only fail when
+// there is no secret at all — requiring two *extra* variables that Render's
+// blueprint never provisioned took the whole API down on every deploy.
 if (!sessionSecret || !cookieSessionSecret) {
-  logger.warn('SESSION_SECRET or COOKIE_SESSION_SECRET not set; using JWT_SECRET fallback');
+  logger.error('🚨 FATAL: no session secret available (set SESSION_SECRET, COOKIE_SESSION_SECRET, or JWT_SECRET)');
+  process.exit(1);
 }
 
 if (isProductionEnv && (!process.env.SESSION_SECRET || !process.env.COOKIE_SESSION_SECRET)) {
-  logger.error('🚨 FATAL: SESSION_SECRET and COOKIE_SESSION_SECRET must be set in production');
-  process.exit(1);
+  logger.warn(
+    'SESSION_SECRET/COOKIE_SESSION_SECRET not set; sessions are signed with JWT_SECRET. ' +
+      'Set distinct 32+ character values to separate session signing from JWT signing.',
+  );
 }
 
 // express-session for server-side session store (used by passport, OAuth callbacks)
