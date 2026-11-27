@@ -1649,6 +1649,25 @@ model CrmCustomRecord {
   @@map("CrmCustomRecord")
 }
 
+/// A reusable object blueprint. Built-ins have businessId = null; owners can
+/// publish their own setup for other businesses to use in one tap.
+model CrmBlueprintTemplate {
+  id          String   @id @default(cuid())
+  businessId  String?
+  name        String
+  description String?
+  icon        String   @default("✨")
+  color       String   @default("#C97B5A")
+  data        Json
+  isPublic    Boolean  @default(false)
+  usageCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([isPublic])
+  @@index([businessId])
+  @@map("CrmBlueprintTemplate")
+}
+
 /// Game layer for the guided builder: points, badges and completed steps.
 model CrmBuilderProgress {
   id         String   @id @default(cuid())

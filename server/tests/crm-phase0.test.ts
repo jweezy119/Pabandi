@@ -181,6 +181,38 @@ describe('CRM inline editing, preview and API docs', () => {
     expect(routes).toMatch(/createHmac|award\(/);
   });
 
+  it('supports shareable blueprint templates', () => {
+    const schema = readFileSync(resolve(__dirname, '../prisma/schema.prisma'), 'utf8');
+    expect(schema).toContain('model CrmBlueprintTemplate');
+    const routes = src('routes/crmBuilder.routes.ts');
+    for (const endpoint of ['/templates', '/templates/:id/use']) {
+      expect(routes).toContain(`'${endpoint}'`);
+    }
+    expect(routes).toMatch(/BUILTIN_TEMPLATES/);
+  });
+
+  it('makes custom objects first-class navigation with their own views', () => {
+    const hook = readFileSync(
+      resolve(__dirname, '../../client/src/hooks/useCustomObjects.ts'),
+      'utf8',
+    );
+    expect(hook).toMatch(/crm\/builder\/objects/);
+    const nav = readFileSync(
+      resolve(__dirname, '../../client/src/components/DashboardLayout.tsx'),
+      'utf8',
+    );
+    expect(nav).toMatch(/useCustomObjects/);
+    expect(nav).toMatch(/\/contact\/objects\//);
+    const page = readFileSync(
+      resolve(__dirname, '../../client/src/pages/crm/CustomObjectPage.tsx'),
+      'utf8',
+    );
+    expect(page).toMatch(/'table' \| 'kanban'/);
+    expect(page).toMatch(/onDragStart/);
+    const app = readFileSync(resolve(__dirname, '../../client/src/App.tsx'), 'utf8');
+    expect(app).toMatch(/path="contact\/objects\/:objectId"/);
+  });
+
   it('ships an animated guided builder with blueprints and a game HUD', () => {
     const page = readFileSync(
       resolve(__dirname, '../../client/src/pages/crm/CrmBuilderPage.tsx'),

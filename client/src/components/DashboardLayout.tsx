@@ -6,6 +6,7 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { PageTransition } from './PageTransition';
 import { ThemeToggle } from './ThemeToggle';
 import { useOfflineMode } from '../hooks/useOfflineMode';
+import { useCustomObjects } from '../hooks/useCustomObjects';
 
 const MotionLink = motion(Link);
 
@@ -181,7 +182,19 @@ export default function DashboardLayout({
   children,
 }: DashboardLayoutProps) {
   const { settings } = useBusinessSettings();
-  const navItems = buildNavFromSettings(settings, osName, defaultNavItems);
+  // Owner-built objects become first-class CRM navigation items, just like
+  // clients or deals. The More drawer and mobile bar pick them up automatically.
+  const customObjects = useCustomObjects();
+  const navItems = useMemo(() => {
+    const base = buildNavFromSettings(settings, osName, defaultNavItems);
+    if (osName !== 'Contact OS' && osName !== 'ContactOS') return base;
+    const custom = customObjects.map((object) => ({
+      path: `/contact/objects/${object.id}`,
+      label: object.pluralName || object.name,
+      icon: 'deployed_code',
+    }));
+    return [...base, ...custom];
+  }, [settings, osName, defaultNavItems, customObjects]);
   // The bottom bar is the primary CRM navigation on a phone. The sidebar's
   // first five entries were alphabetical-ish and buried Tasks and Invoices
   // behind the hamburger on every screen. Keep the four daily-driver actions

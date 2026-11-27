@@ -136,3 +136,19 @@ CREATE TABLE IF NOT EXISTS "CrmBuilderProgress" (
   CONSTRAINT "CrmBuilderProgress_pkey" PRIMARY KEY ("id")
 );
 CREATE UNIQUE INDEX IF NOT EXISTS "CrmBuilderProgress_businessId_key" ON "CrmBuilderProgress"("businessId");
+
+CREATE TABLE IF NOT EXISTS "CrmBlueprintTemplate" (
+  "id" TEXT NOT NULL,
+  "businessId" TEXT,
+  "name" TEXT NOT NULL,
+  "description" TEXT,
+  "icon" TEXT NOT NULL DEFAULT '✨',
+  "color" TEXT NOT NULL DEFAULT '#C97B5A',
+  "data" JSONB NOT NULL,
+  "isPublic" BOOLEAN NOT NULL DEFAULT false,
+  "usageCount" INTEGER NOT NULL DEFAULT 0,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "CrmBlueprintTemplate_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX IF NOT EXISTS "CrmBlueprintTemplate_isPublic_idx" ON "CrmBlueprintTemplate"("isPublic");
+CREATE INDEX IF NOT EXISTS "CrmBlueprintTemplate_businessId_idx" ON "CrmBlueprintTemplate"("businessId");

@@ -41,45 +41,61 @@ router.get('/objects', async (req: AuthRequest, res: Response, next: NextFunctio
   }
 });
 
+async function createObjectForBusiness(businessId: string, input: any) {
+  const name = String(input?.name || '').trim();
+  if (!name) throw new CustomError('name is required', 400);
+  const rawFields = Array.isArray(input?.fields) ? input.fields : [];
+  if (rawFields.length > 30) throw new CustomError('maximum 30 fields per object', 400);
+  for (const field of rawFields) {
+    if (!String(field?.label || '').trim()) throw new CustomError('every field needs a label', 400);
+    if (!(FIELD_TYPES as readonly string[]).includes(String(field?.type || 'text'))) {
+      throw new CustomError(`field type must be one of ${FIELD_TYPES.join(', ')}`, 400);
+    }
+  }
+
+  const object = await prisma.crmObjectDefinition.create({
+    data: {
+      name,
+      pluralName: input?.pluralName ? String(input.pluralName) : null,
+      icon: String(input?.icon || 'pentagon'),
+      color: String(input?.color || '#C97B5A'),
+      description: input?.description ? String(input.description) : null,
+      position: Number(input?.position || 0),
+      businessId,
+      serviceBusinessId: businessId,
+      fields: {
+        create: rawFields.map((field: any, index: number) => ({
+          name: field.name ? String(field.name) : slug(String(field.label)),
+          label: String(field.label),
+          type: String(field.type || 'text'),
+          options: Array.isArray(field.options) ? (field.options as any) : undefined,
+          required: Boolean(field.required),
+          position: index,
+        })),
+      },
+    },
+    include: { fields: { orderBy: { position: 'asc' } } },
+  });
+  await award(businessId, 50, ['first_object']);
+  return object;
+}
+
 router.post('/objects', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const crm = requireCrmContext(req);
-    const name = String(req.body?.name || '').trim();
-    if (!name) throw new CustomError('name is required', 400);
-    const rawFields = Array.isArray(req.body?.fields) ? req.body.fields : [];
-    if (rawFields.length > 30) throw new CustomError('maximum 30 fields per object', 400);
-    for (const field of rawFields) {
-      if (!String(field?.label || '').trim()) throw new CustomError('every field needs a label', 400);
-      if (!(FIELD_TYPES as readonly string[]).includes(String(field?.type || 'text'))) {
-        throw new CustomError(`field type must be one of ${FIELD_TYPES.join(', ')}`, 400);
-      }
-    }
-
-    const object = await prisma.crmObjectDefinition.create({
-      data: {
-        name,
-        pluralName: req.body?.pluralName ? String(req.body.pluralName) : null,
-        icon: String(req.body?.icon || 'pentagon'),
-        color: String(req.body?.color || '#C97B5A'),
-        description: req.body?.description ? String(req.body.description) : null,
-        position: Number(req.body?.position || 0),
-        businessId: crm.businessId,
-        serviceBusinessId: crm.businessId,
-        fields: {
-          create: rawFields.map((field: any, index: number) => ({
-            name: field.name ? String(field.name) : slug(String(field.label)),
-            label: String(field.label),
-            type: String(field.type || 'text'),
-            options: Array.isArray(field.options) ? (field.options as any) : undefined,
-            required: Boolean(field.required),
-            position: index,
-          })),
-        },
-      },
-      include: { fields: { orderBy: { position: 'asc' } } },
-    });
-    await award(crm.businessId!, 50, ['first_object']);
+    const object = await createObjectForBusiness(crm.businessId!, req.body);
     res.status(201).json({ success: true, data: object });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.get('/objects/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    const object = await ownedObject(crm.businessId!, req.params.id);
+    if (!object) throw new CustomError('Object not found', 404);
+    ok(res, object);
   } catch (e) {
     next(e);
   }
@@ -216,6 +232,106 @@ router.delete('/objects/:id/records/:recordId', async (req: AuthRequest, res: Re
       where: { id: req.params.recordId, objectId: object.id, ...objectScope(crm.businessId!) },
     });
     ok(res, { deleted: true });
+  } catch (e) {
+    next(e);
+  }
+});
+
+const BUILTIN_TEMPLATES = [
+  {
+    id: 'builtin:property', name: 'Rental Property', description: 'Track addresses, rent and lease dates.', icon: '🏠', color: '#C97B5A',
+    data: { name: 'Property', pluralName: 'Properties', icon: '🏠', color: '#C97B5A', fields: [
+      { label: 'Address', type: 'text' }, { label: 'Monthly rent', type: 'currency' },
+      { label: 'Lease ends', type: 'date' }, { label: 'Tenant', type: 'text' },
+      { label: 'Status', type: 'select', options: ['Available', 'Occupied', 'Maintenance'] },
+    ] },
+  },
+  {
+    id: 'builtin:job', name: 'Field Job', description: 'Crew, site, value and completion.', icon: '🧰', color: '#D9A854',
+    data: { name: 'Job Site', pluralName: 'Job Sites', icon: '🧰', color: '#D9A854', fields: [
+      { label: 'Site address', type: 'text' }, { label: 'Job value', type: 'currency' },
+      { label: 'Start date', type: 'date' }, { label: 'Crew lead', type: 'text' },
+      { label: 'Status', type: 'select', options: ['New', 'In progress', 'Done'] },
+    ] },
+  },
+  {
+    id: 'builtin:product', name: 'Product Catalogue', description: 'SKU, price and stock.', icon: '📦', color: '#8A9A7B',
+    data: { name: 'Product', pluralName: 'Products', icon: '📦', color: '#8A9A7B', fields: [
+      { label: 'SKU', type: 'text' }, { label: 'Price', type: 'currency' },
+      { label: 'In stock', type: 'number' }, { label: 'Available', type: 'boolean' },
+    ] },
+  },
+];
+
+/** Built-ins plus templates published by this or other businesses. */
+router.get('/templates', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    const shared = await prisma.crmBlueprintTemplate.findMany({
+      where: { OR: [{ isPublic: true }, { businessId: crm.businessId }] },
+      orderBy: [{ isPublic: 'desc' }, { usageCount: 'desc' }],
+    });
+    ok(res, [
+      ...BUILTIN_TEMPLATES.map((t) => ({ ...t, isPublic: true, builtin: true, usageCount: 0 })),
+      ...shared,
+    ]);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/** Turn one of the owner's objects into a reusable template. */
+router.post('/templates', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    const object = await ownedObject(crm.businessId!, String(req.body?.objectId || ''));
+    if (!object) throw new CustomError('Object not found', 404);
+    const template = await prisma.crmBlueprintTemplate.create({
+      data: {
+        businessId: crm.businessId,
+        name: String(req.body?.name || object.pluralName || object.name),
+        description: object.description,
+        icon: object.icon,
+        color: object.color,
+        data: {
+          name: object.name,
+          pluralName: object.pluralName,
+          icon: object.icon,
+          color: object.color,
+          fields: object.fields.map((f) => ({ label: f.label, name: f.name, type: f.type, options: f.options, required: f.required })),
+        } as any,
+        isPublic: Boolean(req.body?.isPublic),
+      },
+    });
+    await award(crm.businessId!, 30, ['template_sharer']);
+    res.status(201).json({ success: true, data: template });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/** One-tap install: copy a template's fields into a new object. */
+router.post('/templates/:id/use', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    let template: any = null;
+    if (req.params.id.startsWith('builtin:')) {
+      template = BUILTIN_TEMPLATES.find((t) => t.id === req.params.id);
+    } else {
+      template = await prisma.crmBlueprintTemplate.findFirst({
+        where: {
+          id: req.params.id,
+          OR: [{ isPublic: true }, { businessId: crm.businessId }],
+        },
+      });
+      if (template) {
+        await prisma.crmBlueprintTemplate.update({ where: { id: template.id }, data: { usageCount: { increment: 1 } } });
+      }
+    }
+    if (!template) throw new CustomError('Template not found', 404);
+    const data = template.data as any;
+    const object = await createObjectForBusiness(crm.businessId!, data);
+    res.status(201).json({ success: true, data: object });
   } catch (e) {
     next(e);
   }

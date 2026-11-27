@@ -106,6 +106,7 @@ const BADGE_LABELS: Record<string, string> = {
   first_object: 'First build',
   field_collector: 'Detail oriented',
   first_record: 'First entry',
+  template_sharer: 'Good neighbour',
 };
 
 function fieldKey(field: Field) {
@@ -122,6 +123,7 @@ function badgeForXp(xp: number) {
 export function CrmBuilderPage() {
   const reduced = Boolean(useReducedMotion());
   const [objects, setObjects] = useState<ObjectDef[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
   const [progress, setProgress] = useState<Progress>({ xp: 0, badges: [] });
   const [step, setStep] = useState(0);
   const [blueprint, setBlueprint] = useState<(typeof BLUEPRINTS)[number] | null>(null);
@@ -137,12 +139,14 @@ export function CrmBuilderPage() {
 
   const load = useCallback(async () => {
     try {
-      const [o, p] = await Promise.all([
+      const [o, p, t] = await Promise.all([
         fetch(`${API_BASE}/api/v1/crm/builder/objects`, { headers: headers() }),
         fetch(`${API_BASE}/api/v1/crm/builder/progress`, { headers: headers() }),
+        fetch(`${API_BASE}/api/v1/crm/builder/templates`, { headers: headers() }),
       ]);
       if (o.ok) setObjects((await o.json()).data || []);
       if (p.ok) setProgress(await p.json().then((b) => b.data || b));
+      if (t.ok) setTemplates((await t.json()).data || []);
     } catch {
       setError('Could not load your builder. Refresh to try again.');
     }
@@ -171,6 +175,44 @@ export function CrmBuilderPage() {
       ...(f.type === 'select' ? { options: ['New', 'In progress', 'Done'] } : {}),
     })));
     setStep(1);
+  };
+
+  const useTemplate = async (templateId: string) => {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/crm/builder/templates/${encodeURIComponent(templateId)}/use`, {
+        method: 'POST',
+        headers: headers(),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      await load();
+      setStep(4);
+      setCelebrating(true);
+      window.setTimeout(() => setCelebrating(false), 2600);
+    } catch {
+      setError('Could not use that template.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const shareTemplate = async (object: ObjectDef) => {
+    const name = window.prompt('Name your template', object.pluralName || object.name);
+    if (!name?.trim()) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/crm/builder/templates`, {
+        method: 'POST',
+        headers: headers(),
+        body: JSON.stringify({ objectId: object.id, name: name.trim(), isPublic: true }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      await load();
+      setCelebrating(true);
+      window.setTimeout(() => setCelebrating(false), 2200);
+    } catch {
+      setError('Could not share that template.');
+    }
   };
 
   const addField = (type: FieldType) => {
@@ -347,6 +389,32 @@ export function CrmBuilderPage() {
                       <p className="text-xs text-[var(--soft-stone)] mt-1">{bp.hint}</p>
                     </motion.button>
                   ))}
+                </div>
+              )}
+
+              {templates.length > 0 && (
+                <div className="rounded-2xl border border-[var(--warm-sand)] bg-white p-4">
+                  <p className="text-xs font-bold uppercase tracking-wider text-[var(--soft-stone)] mb-3">
+                    Or start from a shared setup
+                  </p>
+                  <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                    {templates.map((template) => (
+                      <motion.button
+                        key={template.id}
+                        type="button"
+                        onClick={() => useTemplate(template.id)}
+                        whileHover={reduced ? undefined : { y: -3 }}
+                        whileTap={reduced ? undefined : { scale: 0.97 }}
+                        disabled={saving}
+                        className="min-w-[170px] rounded-xl border border-[var(--warm-sand)] bg-[var(--cream)] p-3 text-left"
+                      >
+                        <span className="text-2xl">{template.icon}</span>
+                        <p className="mt-1 text-sm font-bold text-[var(--warm-ink)]">{template.name}</p>
+                        <p className="text-[11px] text-[var(--soft-stone)]">{template.description || 'One tap to install'}</p>
+                        <p className="mt-1 text-[11px] font-bold text-[var(--clay)]">Use →</p>
+                      </motion.button>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -543,7 +611,19 @@ export function CrmBuilderPage() {
                     className="rounded-2xl border border-[var(--warm-sand)] bg-white p-4 text-left"
                     style={{ borderTop: `4px solid ${object.color}` }}
                   >
-                    <div className="text-3xl">{object.icon}</div>
+                    <div className="flex items-start justify-between">
+                      <div className="text-3xl">{object.icon}</div>
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => { e.stopPropagation(); void shareTemplate(object); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); void shareTemplate(object); } }}
+                        className="rounded-full bg-[var(--clay)]/10 px-2 py-1 text-[10px] font-bold text-[var(--clay)]"
+                        title="Share this setup as a template"
+                      >
+                        Share template
+                      </span>
+                    </div>
                     <p className="mt-2 font-bold text-[var(--warm-ink)]">{object.pluralName || object.name}</p>
                     <p className="text-xs text-[var(--soft-stone)]">
                       {object._count?.records ?? 0} entries · {object.fields.length} details
