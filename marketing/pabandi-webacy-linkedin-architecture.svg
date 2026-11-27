@@ -1,0 +1,251 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" width="1200" height="1500">
+  <defs>
+    <!-- Subtle dot grid pattern -->
+    <pattern id="dotGrid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <circle cx="16" cy="16" r="1.2" fill="#233344" opacity="0.7"/>
+    </pattern>
+
+    <!-- Background radial glows -->
+    <radialGradient id="glowClay" cx="22%" cy="38%" r="42%">
+      <stop offset="0%" stop-color="#C97B5A" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#0A1118" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowTeal" cx="78%" cy="38%" r="42%">
+      <stop offset="0%" stop-color="#4FD1C5" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#0A1118" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowSolana" cx="75%" cy="82%" r="36%">
+      <stop offset="0%" stop-color="#9945FF" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#0A1118" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Gradients for strokes & pills -->
+    <linearGradient id="solanaGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#9945FF"/>
+      <stop offset="100%" stop-color="#14F195"/>
+    </linearGradient>
+    <linearGradient id="headerAccent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#C97B5A"/>
+      <stop offset="50%" stop-color="#4FD1C5"/>
+      <stop offset="100%" stop-color="#9945FF"/>
+    </linearGradient>
+
+    <!-- Arrowhead markers -->
+    <marker id="arrowSlate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748B"/>
+    </marker>
+    <marker id="arrowClay" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#C97B5A"/>
+    </marker>
+    <marker id="arrowTeal" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#4FD1C5"/>
+    </marker>
+    <marker id="arrowRed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#EF4444"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#22C55E"/>
+    </marker>
+
+    <!-- Soft drop shadow -->
+    <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="1200" height="1500" fill="#0A1118"/>
+  <rect width="1200" height="1500" fill="url(#dotGrid)"/>
+  <rect width="1200" height="1500" fill="url(#glowClay)"/>
+  <rect width="1200" height="1500" fill="url(#glowTeal)"/>
+  <rect width="1200" height="1500" fill="url(#glowSolana)"/>
+
+  <!-- Top accent bar -->
+  <rect x="0" y="0" width="1200" height="6" fill="url(#headerAccent)"/>
+
+  <!-- ═══════════════════ HEADER ═══════════════════ -->
+  <g transform="translate(600, 68)" text-anchor="middle">
+    <!-- Eyebrow Pill -->
+    <rect x="-252" y="-18" width="504" height="36" rx="18" fill="#101A24" stroke="#2A3E52" stroke-width="1.2"/>
+    <circle cx="-226" cy="0" r="4.5" fill="#22C55E"/>
+    <text x="10" y="5" font-family="DejaVu Sans, Inter, system-ui, sans-serif" font-size="13.5" font-weight="700" letter-spacing="1.6" fill="#94A3B8">LIVE ON SOLANA  •  MCP + ANCHOR ESCROW</text>
+
+    <!-- Main Title -->
+    <text x="0" y="76" font-family="DejaVu Sans, Inter, system-ui, sans-serif" font-size="54" font-weight="800" letter-spacing="2" fill="#F8FAFC">
+      PABANDI <tspan fill="#C97B5A">×</tspan> <tspan fill="#4FD1C5">WEBACY</tspan>
+    </text>
+
+    <!-- Subtitle -->
+    <text x="0" y="114" font-family="DejaVu Sans, Inter, system-ui, sans-serif" font-size="22" font-weight="500" fill="#CBD5E1">
+      Full-Stack Trust &amp; Settlement Layer for Autonomous AI Agents
+    </text>
+  </g>
+
+  <!-- ═══════════════════ STEP 1: ENTRY LAYER ═══════════════════ -->
+  <g filter="url(#cardShadow)">
+    <rect x="90" y="226" width="1020" height="148" rx="18" fill="#101A24" stroke="#2D4258" stroke-width="1.5"/>
+    <rect x="90" y="226" width="1020" height="4" rx="2" fill="url(#headerAccent)"/>
+
+    <text x="128" y="266" font-family="DejaVu Sans Mono, monospace" font-size="13" font-weight="700" letter-spacing="1.5" fill="#4FD1C5">01 / ENTRY SURFACE</text>
+    <text x="128" y="298" font-family="DejaVu Sans, Inter, system-ui, sans-serif" font-size="25" font-weight="700" fill="#F8FAFC">Autonomous AI Agent  /  MCP Client  /  Service Business</text>
+
+    <!-- Tool Pills -->
+    <g transform="translate(128, 318)">
+      <rect x="0" y="0" width="246" height="36" rx="8" fill="#0A1118" stroke="#4FD1C5" stroke-width="1.2"/>
+      <text x="123" y="23" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="14" font-weight="700" fill="#4FD1C5">pabandi_screen_wallet</text>
+
+      <rect x="262" y="0" width="256" height="36" rx="8" fill="#0A1118" stroke="#C97B5A" stroke-width="1.2"/>
+      <text x="390" y="23" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="14" font-weight="700" fill="#E6A084">pabandi_verify_passport</text>
+
+      <rect x="534" y="0" width="246" height="36" rx="8" fill="#0A1118" stroke="#9945FF" stroke-width="1.2"/>
+      <text x="657" y="23" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="14" font-weight="700" fill="#C49BFF">pabandi_create_booking</text>
+
+      <rect x="796" y="0" width="148" height="36" rx="8" fill="#0A1118" stroke="#334155" stroke-width="1.2"/>
+      <text x="870" y="23" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="13.5" font-weight="700" fill="#94A3B8">POST /mcp</text>
+    </g>
+  </g>
+
+  <!-- Connector Arrows: Entry -> Dual Trust Layers -->
+  <path d="M 350 374 L 350 436" stroke="#C97B5A" stroke-width="2.5" fill="none" marker-end="url(#arrowClay)"/>
+  <path d="M 850 374 L 850 436" stroke="#4FD1C5" stroke-width="2.5" fill="none" marker-end="url(#arrowTeal)"/>
+
+  <!-- ═══════════════════ STEP 2: DUAL-LAYER TRUST STACK ═══════════════════ -->
+  <!-- Left Card: Behavioral Trust (Pabandi PTP) -->
+  <g filter="url(#cardShadow)">
+    <rect x="90" y="448" width="484" height="310" rx="18" fill="#101A24" stroke="#C97B5A" stroke-width="2"/>
+    <rect x="90" y="448" width="484" height="46" rx="18" fill="#C97B5A" opacity="0.16"/>
+    <rect x="90" y="476" width="484" height="18" fill="#101A24"/>
+    <line x1="90" y1="494" x2="574" y2="494" stroke="#C97B5A" stroke-opacity="0.35" stroke-width="1"/>
+
+    <text x="122" y="478" font-family="DejaVu Sans Mono, monospace" font-size="13.5" font-weight="700" letter-spacing="1.4" fill="#E6A084">LAYER 1  •  OFF-CHAIN BEHAVIORAL TRUST</text>
+    <text x="122" y="534" font-family="DejaVu Sans, Inter, system-ui, sans-serif" font-size="26" font-weight="800" fill="#F8FAFC">Pabandi Trust Protocol</text>
+    <text x="122" y="560" font-family="DejaVu Sans, Inter, system-ui, sans-serif" font-size="15.5" font-style="italic" fill="#94A3B8">"Will this counterparty show up &amp; deliver?"</text>
+
+    <!-- Bullets -->
+    <g font-family="DejaVu Sans, Inter, system-ui, sans-serif" font-size="16.5" fill="#E2E8F0">
+      <circle cx="130" cy="602" r="4" fill="#C97B5A"/>
+      <text x="148" y="608">Cryptographically signed Trust Passports</text>
+
+      <circle cx="130" cy="640" r="4" fill="#C97B5A"/>
+      <text x="148" y="646">Verified attendance &amp; escrow track record</text>
+
+      <circle cx="130" cy="678" r="4" fill="#C97B5A"/>
+      <text x="148" y="684">Predictive no-show &amp; deposit risk scoring</text>
+    </g>
+
+    <!-- Footer Pill -->
+    <rect x="122" y="706" width="420" height="32" rx="8" fill="#0A1118" stroke="#3B2B24" stroke-width="1"/>
+    <text x="332" y="727" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="13" fill="#E6A084">trustPassport.service.ts  +  Ed25519 / PTP</text>
+  </g>
+
+  <!-- Center "+" Badge between Left and Right Cards -->
+  <g transform="translate(600, 603)">
+    <circle cx="0" cy="0" r="24" fill="#0A1118" stroke="#475569" stroke-width="2"/>
+    <text x="0" y="9" text-anchor="middle" font-family="DejaVu Sans, Inter, sans-serif" font-size="28" font-weight="800" fill="#F8FAFC">+</text>
+  </g>
+
+  <!-- Right Card: On-Chain Safety (Webacy) -->
+  <g filter="url(#cardShadow)">
+    <rect x="626" y="448" width="484" height="310" rx="18" fill="#101A24" stroke="#4FD1C5" stroke-width="2"/>
+    <rect x="626" y="448" width="484" height="46" rx="18" fill="#4FD1C5" opacity="0.16"/>
+    <rect x="626" y="476" width="484" height="18" fill="#101A24"/>
+    <line x1="626" y1="494" x2="1110" y2="494" stroke="#4FD1C5" stroke-opacity="0.35" stroke-width="1"/>
+
+    <text x="658" y="478" font-family="DejaVu Sans Mono, monospace" font-size="13.5" font-weight="700" letter-spacing="1.4" fill="#4FD1C5">LAYER 2  •  ON-CHAIN RISK INTELLIGENCE</text>
+    <text x="658" y="534" font-family="DejaVu Sans, Inter, system-ui, sans-serif" font-size="26" font-weight="800" fill="#F8FAFC">Webacy Solana API</text>
+    <text x="658" y="560" font-family="DejaVu Sans, Inter, system-ui, sans-serif" font-size="15.5" font-style="italic" fill="#94A3B8">"Is this wallet a drainer or sanctioned?"</text>
+
+    <!-- Bullets -->
+    <g font-family="DejaVu Sans, Inter, system-ui, sans-serif" font-size="16.5" fill="#E2E8F0">
+      <circle cx="666" cy="602" r="4" fill="#4FD1C5"/>
+      <text x="684" y="608">Real-time Solana threat score (0–100)</text>
+
+      <circle cx="666" cy="640" r="4" fill="#4FD1C5"/>
+      <text x="684" y="646">OFAC sanctions, drainer &amp; KYW flags</text>
+
+      <circle cx="666" cy="678" r="4" fill="#4FD1C5"/>
+      <text x="684" y="684">15-min LRU cache + 30 req/min limiter</text>
+    </g>
+
+    <!-- Footer Pill -->
+    <rect x="658" y="706" width="420" height="32" rx="8" fill="#0A1118" stroke="#1E3A3D" stroke-width="1"/>
+    <text x="868" y="727" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="13" fill="#4FD1C5">GET api.webacy.com/addresses/:w?chain=sol</text>
+  </g>
+
+  <!-- Converging Arrows -> Decision Gate -->
+  <path d="M 332 758 L 332 802 Q 332 820 350 820 L 535 820 Q 550 820 550 838 L 550 854" stroke="#C97B5A" stroke-width="2.5" fill="none" marker-end="url(#arrowClay)"/>
+  <path d="M 868 758 L 868 802 Q 868 820 850 820 L 665 820 Q 650 820 650 838 L 650 854" stroke="#4FD1C5" stroke-width="2.5" fill="none" marker-end="url(#arrowTeal)"/>
+
+  <!-- ═══════════════════ STEP 3: ORACLE GATE ═══════════════════ -->
+  <g filter="url(#cardShadow)">
+    <rect x="90" y="866" width="1020" height="142" rx="20" fill="#13202E" stroke="#64748B" stroke-width="2"/>
+    <text x="600" y="902" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="13.5" font-weight="700" letter-spacing="1.6" fill="#94A3B8">02 / PRE-ESCROW TIER-1 ATTESTATION ORACLE GATE</text>
+    <text x="600" y="938" text-anchor="middle" font-family="DejaVu Sans, Inter, system-ui, sans-serif" font-size="22.5" font-weight="800" fill="#F8FAFC">signInitializeEscrowTx()  →  assertSolanaWalletSafeForEscrow()</text>
+
+    <rect x="285" y="954" width="630" height="36" rx="9" fill="#0A1118" stroke="#334155" stroke-width="1.2"/>
+    <text x="600" y="977" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="15.5" font-weight="700" fill="#FDE68A">
+      isSanctioned === true  ||  overallRisk &gt;= 75 ?
+    </text>
+  </g>
+
+  <!-- Branching Arrows: Gate -> Blocked (Red) & Approved (Green) -->
+  <path d="M 430 1008 L 430 1044 Q 430 1060 412 1060 L 350 1060 Q 332 1060 332 1078 L 332 1104" stroke="#EF4444" stroke-width="3" fill="none" marker-end="url(#arrowRed)"/>
+  <path d="M 770 1008 L 770 1044 Q 770 1060 788 1060 L 850 1060 Q 868 1060 868 1078 L 868 1104" stroke="#22C55E" stroke-width="3" fill="none" marker-end="url(#arrowGreen)"/>
+
+  <!-- Branch Labels -->
+  <rect x="220" y="1044" width="212" height="30" rx="15" fill="#2A1215" stroke="#EF4444" stroke-width="1.2"/>
+  <text x="326" y="1064" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="13" font-weight="700" fill="#FCA5A5">YES  •  HIGH RISK / OFAC</text>
+
+  <rect x="768" y="1044" width="212" height="30" rx="15" fill="#0F291E" stroke="#22C55E" stroke-width="1.2"/>
+  <text x="874" y="1064" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="13" font-weight="700" fill="#86EFAC">NO  •  VERIFIED SAFE</text>
+
+  <!-- ═══════════════════ STEP 4: OUTCOMES ═══════════════════ -->
+  <!-- Left Outcome: Hard-Blocked -->
+  <g filter="url(#cardShadow)">
+    <rect x="90" y="1118" width="484" height="236" rx="18" fill="#181116" stroke="#EF4444" stroke-width="2"/>
+
+    <!-- Icon Badge -->
+    <circle cx="144" cy="1172" r="22" fill="#EF4444" opacity="0.18"/>
+    <text x="144" y="1180" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="800" fill="#EF4444">✕</text>
+
+    <text x="180" y="1166" font-family="DejaVu Sans Mono, monospace" font-size="12.5" font-weight="700" letter-spacing="1.4" fill="#FCA5A5">ORACLE REJECTED</text>
+    <text x="180" y="1194" font-family="DejaVu Sans, Inter, system-ui, sans-serif" font-size="23" font-weight="800" fill="#F8FAFC">HARD-BLOCKED</text>
+
+    <g font-family="DejaVu Sans, Inter, system-ui, sans-serif" font-size="16" fill="#E2E8F0">
+      <text x="122" y="1236">• Refuses Anchor oracle co-signature</text>
+      <text x="122" y="1266">• Zero funds locked in escrow vault</text>
+      <text x="122" y="1296">• Protects SMEs &amp; autonomous agents</text>
+    </g>
+
+    <rect x="122" y="1312" width="420" height="26" rx="6" fill="#0A1118"/>
+    <text x="332" y="1330" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="12.5" fill="#FCA5A5">throws WebacyRiskBlockedError</text>
+  </g>
+
+  <!-- Right Outcome: Solana Anchor Escrow -->
+  <g filter="url(#cardShadow)">
+    <rect x="626" y="1118" width="484" height="236" rx="18" fill="#101C22" stroke="url(#solanaGrad)" stroke-width="2.2"/>
+
+    <!-- Icon Badge -->
+    <circle cx="680" cy="1172" r="22" fill="#22C55E" opacity="0.18"/>
+    <text x="680" y="1180" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="800" fill="#22C55E">✓</text>
+
+    <text x="716" y="1166" font-family="DejaVu Sans Mono, monospace" font-size="12.5" font-weight="700" letter-spacing="1.4" fill="#86EFAC">NON-CUSTODIAL SETTLEMENT</text>
+    <text x="716" y="1194" font-family="DejaVu Sans, Inter, system-ui, sans-serif" font-size="23" font-weight="800" fill="#F8FAFC">SOLANA ANCHOR ESCROW</text>
+
+    <g font-family="DejaVu Sans, Inter, system-ui, sans-serif" font-size="16" fill="#E2E8F0">
+      <text x="658" y="1236">• Oracle co-signs USDC / CASH deposit</text>
+      <text x="658" y="1266">• Releases on verified completion</text>
+      <text x="658" y="1296">• Mints Paid Proof &amp; boosts Trust Passport</text>
+    </g>
+
+    <rect x="658" y="1312" width="420" height="26" rx="6" fill="#0A1118"/>
+    <text x="868" y="1330" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="12.5" fill="#86EFAC">Solana Anchor + x402 USDC Settlement</text>
+  </g>
+
+  <!-- ═══════════════════ FOOTER ═══════════════════ -->
+  <line x1="90" y1="1406" x2="1110" y2="1406" stroke="#1E293B" stroke-width="1.5"/>
+
+  <text x="90" y="1446" font-family="DejaVu Sans, Inter, system-ui, sans-serif" font-size="18" font-weight="800" fill="#F8FAFC">pabandi.com</text>
+  <text x="530" y="1446" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="13.5" fill="#94A3B8">GET /api/v1/agents/wallet/screen/:wallet</text>
+  <text x="1110" y="1446" text-anchor="end" font-family="DejaVu Sans, Inter, system-ui, sans-serif" font-size="15" font-weight="600" fill="#4FD1C5">Pabandi (پابندی) × Webacy × Solana</text>
+</svg>

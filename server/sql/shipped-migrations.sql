@@ -105,6 +105,116 @@ BEGIN
 END
 $$;
 
+-- ── 20261121_outreach ─────────────────────────────────────────────────────────
+-- CrmClient outreach opt-in columns and campaign/recipient tables. Without
+-- marketingOptIn on crm_clients, every Prisma read of CrmClient (including
+-- GET /api/v1/crm/clients and GET /api/v1/business/stats) fails with 500.
+
+ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "marketingOptIn" BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "marketingOptInAt" TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS "outreach_campaigns" (
+  "id"             TEXT        NOT NULL,
+  "businessId"     TEXT        NOT NULL,
+  "name"           TEXT        NOT NULL,
+  "channel"        TEXT        NOT NULL DEFAULT 'EMAIL',
+  "subject"        TEXT,
+  "body"           TEXT        NOT NULL,
+  "status"         TEXT        NOT NULL DEFAULT 'DRAFT',
+  "segment"        TEXT,
+  "totalCount"     INTEGER     NOT NULL DEFAULT 0,
+  "sentCount"      INTEGER     NOT NULL DEFAULT 0,
+  "failedCount"    INTEGER     NOT NULL DEFAULT 0,
+  "createdById"    TEXT        NOT NULL,
+  "idempotencyKey" TEXT,
+  "sentAt"         TIMESTAMPTZ,
+  "createdAt"      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT "outreach_campaigns_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "outreach_campaigns_idempotencyKey_key" ON "outreach_campaigns"("idempotencyKey");
+CREATE INDEX IF NOT EXISTS "outreach_campaigns_businessId_createdAt_idx" ON "outreach_campaigns"("businessId", "createdAt");
+
+CREATE TABLE IF NOT EXISTS "outreach_recipients" (
+  "id"         TEXT        NOT NULL,
+  "campaignId" TEXT        NOT NULL,
+  "clientId"   TEXT,
+  "to"         TEXT        NOT NULL,
+  "status"     TEXT        NOT NULL DEFAULT 'PENDING',
+  "error"      TEXT,
+  "sentAt"     TIMESTAMPTZ,
+  CONSTRAINT "outreach_recipients_pkey" PRIMARY KEY ("id")
+);
+
+CREATE INDEX IF NOT EXISTS "outreach_recipients_campaignId_idx" ON "outreach_recipients"("campaignId");
+
+-- ── 20261121_booking_work_order ───────────────────────────────────────────────
+-- Booking.workOrderId link to coordinator WorkOrder. Without this column,
+-- GET /api/v1/business/stats and Booking queries fail with 500.
+
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "workOrderId" TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS "Booking_workOrderId_key" ON "Booking"("workOrderId");
+
+-- ── 20261121_simulator_tables ─────────────────────────────────────────────────
+-- ProjectSimulation & SimulationAgentRun tables for the Project Simulator.
+
+CREATE TABLE IF NOT EXISTS "ProjectSimulation" (
+  "id"             TEXT        NOT NULL,
+  "userId"         TEXT        NOT NULL,
+  "projectType"    TEXT        NOT NULL,
+  "initialFactors" JSONB       NOT NULL,
+  "status"         TEXT        NOT NULL DEFAULT 'draft',
+  "finalEstimate"  JSONB,
+  "createdAt"      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt"      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT "ProjectSimulation_pkey" PRIMARY KEY ("id")
+);
+
+CREATE INDEX IF NOT EXISTS "ProjectSimulation_userId_idx" ON "ProjectSimulation"("userId");
+CREATE INDEX IF NOT EXISTS "ProjectSimulation_status_idx" ON "ProjectSimulation"("status");
+
+CREATE TABLE IF NOT EXISTS "SimulationAgentRun" (
+  "id"              TEXT        NOT NULL,
+  "simulationId"    TEXT        NOT NULL,
+  "agentRole"       TEXT        NOT NULL,
+  "inputPayload"    JSONB       NOT NULL,
+  "outputPayload"   JSONB,
+  "status"          TEXT        NOT NULL DEFAULT 'pending',
+  "executionTimeMs" INTEGER,
+  "createdAt"       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT "SimulationAgentRun_pkey" PRIMARY KEY ("id")
+);
+
+CREATE INDEX IF NOT EXISTS "SimulationAgentRun_simulationId_idx" ON "SimulationAgentRun"("simulationId");
+CREATE INDEX IF NOT EXISTS "SimulationAgentRun_agentRole_idx" ON "SimulationAgentRun"("agentRole");
+CREATE INDEX IF NOT EXISTS "SimulationAgentRun_status_idx" ON "SimulationAgentRun"("status");
+
+-- ── BusinessPaymentMethod ─────────────────────────────────────────────────────
+-- Saved payout rails per business (Solana USDC, Square, Bank ACH/Wire, PayPal).
+
+CREATE TABLE IF NOT EXISTS "BusinessPaymentMethod" (
+  "id"          TEXT         NOT NULL,
+  "businessId"  TEXT         NOT NULL,
+  "railId"      TEXT         NOT NULL,
+  "displayName" TEXT         NOT NULL,
+  "target"      TEXT         NOT NULL,
+  "isDefault"   BOOLEAN      NOT NULL DEFAULT false,
+  "createdAt"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "BusinessPaymentMethod_pkey" PRIMARY KEY ("id")
+);
+
+CREATE INDEX IF NOT EXISTS "BusinessPaymentMethod_businessId_railId_idx" ON "BusinessPaymentMethod"("businessId", "railId");
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'BusinessPaymentMethod_businessId_fkey') THEN
+    ALTER TABLE "BusinessPaymentMethod" ADD CONSTRAINT "BusinessPaymentMethod_businessId_fkey"
+      FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END
+$$;
+
 DO $$
 BEGIN
   IF EXISTS (

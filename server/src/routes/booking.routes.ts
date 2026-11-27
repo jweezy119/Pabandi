@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { z } from 'zod';
 import { prisma } from '../utils/database';
 import { authenticate, optionalAuthenticate, AuthRequest } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
@@ -23,6 +24,33 @@ import {
 } from '../services/booking-escrow.service';
 
 const router = Router();
+
+// Zod schema for booking creation
+const CreateBookingSchema = z.object({
+  businessId: z.string().min(1, 'businessId is required'),
+  slotStart: z.string().datetime().optional(),
+  slotEnd: z.string().datetime().optional(),
+  reservationDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  reservationTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  durationMinutes: z.number().int().positive().max(480).optional(),
+  serviceType: z.string().max(100).optional(),
+  serviceId: z.string().optional(),
+  serviceName: z.string().max(100).optional(),
+  serviceValue: z.number().nonnegative().optional(),
+  numberOfGuests: z.number().int().positive().max(50).optional(),
+  customerName: z.string().max(200).optional(),
+  customerEmail: z.string().email().optional(),
+  customerPhone: z.string().max(50).optional(),
+  clientAddress: z.string().max(500).optional(),
+  serviceAddress: z.string().max(500).optional(),
+  specialRequests: z.string().max(2000).optional(),
+  projectDescription: z.string().max(5000).optional(),
+  paymentMethod: z.string().max(50).optional(),
+  dryRun: z.boolean().optional(),
+}).refine(
+  (data) => data.slotStart || (data.reservationDate && data.reservationTime),
+  { message: 'Either slotStart or reservationDate+reservationTime is required' }
+);
 
 const OSM_CATEGORY_MAP: Record<string, string> = {
   restaurant: 'RESTAURANT',
@@ -558,6 +586,16 @@ router.post('/risk-quote', optionalAuthenticate, async (req: AuthRequest, res: R
 // POST /api/v1/booking - Create a booking + escrow (supports authenticated & guest bookings)
 router.post('/', optionalAuthenticate, async (req: AuthRequest, res: Response) => {
   try {
+    // Validate request body with Zod
+    const parseResult = CreateBookingSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: parseResult.error.flatten().fieldErrors,
+      });
+    }
+
     const {
       businessId,
       slotStart: rawSlotStart,
@@ -580,10 +618,24 @@ router.post('/', optionalAuthenticate, async (req: AuthRequest, res: Response) =
       specialRequests,
       projectDescription,
       paymentMethod,
-    } = req.body ?? {};
+      dryRun,
+    } = parseResult.data;
 
-    if (!businessId) {
-      return res.status(400).json({ success: false, error: 'businessId is required' });
+    // Dry-run mode: validate everything but don't persist
+    if (dryRun) {
+      return res.json({
+        success: true,
+        dryRun: true,
+        message: 'Dry run completed - no booking created',
+        data: {
+          wouldCreateBooking: true,
+          businessId,
+          slotStart: rawSlotStart,
+          slotEnd: rawSlotEnd,
+          serviceType,
+          depositAmount: 0, // Would be calculated
+        },
+      });
     }
 
     // Resolve business by id or slug

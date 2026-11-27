@@ -13,6 +13,7 @@ import { verifyTrustDisclosure } from '../trust/disclosure.service';
 import { payoutService } from './payout.service';
 import { issuePaidProof } from './paidProof.service';
 import { assertAgentSpendAllowed, recordAgentSpend } from './agentKeys.service';
+import { logAgentAction } from './agentAudit.service';
 
 export interface AgentToolUser {
   id: string;
@@ -152,6 +153,18 @@ export async function createBookingForAgent(
     },
   });
 
+  await logAgentAction({
+    agentKeyId: user.agentKeyId!,
+    agentId: user.agentId ?? null,
+    userId: user.id,
+    action: 'booking.create',
+    resourceType: 'booking',
+    resourceId: booking.id,
+    amountUsd: input.depositAmount ?? 0,
+    currency: 'USD',
+    status: 'success',
+  });
+
   if (depositAmount > 0) {
     await recordAgentSpend(user, depositAmount);
   }
@@ -218,6 +231,19 @@ export async function markBookingCheckin(
     distanceMeters: input.distanceMeters ?? null,
     overrideReason: input.overrideReason ?? null,
   });
+
+  await logAgentAction({
+    agentKeyId: user.agentKeyId!,
+    agentId: user.agentId ?? null,
+    userId: user.id,
+    action: 'booking.checkin',
+    resourceType: 'booking',
+    resourceId: bookingId,
+    amountUsd: ok ? (booking.depositAmount ?? 0) : 0,
+    currency: 'USD',
+    status: ok ? 'success' : 'pending',
+  });
+
   return { bookingId, advanced: ok, status: ok ? 'conditions_met' : 'unchanged' };
 }
 
@@ -249,6 +275,19 @@ export async function releaseBookingEscrow(
     await recordAgentSpend(user, releaseAmount);
   }
 
+  await logAgentAction({
+    agentKeyId: user.agentKeyId!,
+    agentId: user.agentId ?? null,
+    userId: user.id,
+    action: 'escrow.release',
+    resourceType: 'escrow',
+    resourceId: bookingId,
+    amountUsd: releaseAmount,
+    currency: 'USD',
+    status: ok ? 'success' : 'failed',
+    metadata: { rail: input.rail, txHash: input.txHash, receiptRef: input.receiptRef },
+  });
+
   const escrow = await getBookingEscrow(bookingId);
   const workerId = booking.business?.ownerId || user.id;
   const amount = escrow?.amount ?? booking.depositAmount ?? 0;
@@ -273,6 +312,20 @@ export async function refundBookingForAgent(user: AgentToolUser, bookingId: stri
     throw new Error('Not authorized to refund this booking');
   }
   const ok = await refundBookingDeposit(bookingId, reason || 'Refunded by agent');
+
+  await logAgentAction({
+    agentKeyId: user.agentKeyId!,
+    agentId: user.agentId ?? null,
+    userId: user.id,
+    action: 'booking.refund',
+    resourceType: 'booking',
+    resourceId: bookingId,
+    amountUsd: booking.depositAmount ?? 0,
+    currency: 'USD',
+    status: ok ? 'success' : 'failed',
+    metadata: { reason },
+  });
+
   return { bookingId, refunded: ok };
 }
 
@@ -320,6 +373,20 @@ export async function requestPayoutForAgent(
   if (amount > 0) {
     await recordAgentSpend(user, amount);
   }
+
+  await logAgentAction({
+    agentKeyId: user.agentKeyId!,
+    agentId: user.agentId ?? null,
+    userId: user.id,
+    action: 'payout.request',
+    resourceType: 'payout',
+    resourceId: payout.id,
+    amountUsd: amount,
+    currency: 'USD',
+    status: 'success',
+    metadata: { method: input.method, destinationRef: input.destinationRef },
+  });
+
   return payout;
 }
 

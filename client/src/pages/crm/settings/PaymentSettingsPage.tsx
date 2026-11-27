@@ -88,7 +88,7 @@ export function PaymentSettingsPage() {
       headers: getHeaders(),
       body: JSON.stringify({ businessId, railId: 'solana', target: solanaAddress }),
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (!res.ok || !data.success) {
       throw new Error(data.error || 'Could not save digital dollar payout method');
     }
@@ -109,7 +109,7 @@ export function PaymentSettingsPage() {
         headers: getHeaders(),
         body: JSON.stringify({ businessId, railId, target: target.trim() }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) {
         toast.error(data.error || 'Could not save payment method');
         return;

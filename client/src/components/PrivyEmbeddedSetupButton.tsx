@@ -87,7 +87,13 @@ const PrivyEmbeddedSetupButtonActive: React.FC<PrivyEmbeddedSetupButtonProps> = 
       await login();
     } catch (err: any) {
       setWaitingForWallet(false);
-      onError?.(err?.message || 'Sign-in was cancelled. You can try again anytime.');
+      const raw = typeof err?.message === 'string' ? err.message : '';
+      const isOauth403 = /403|oauth|forbidden|origin/i.test(raw);
+      onError?.(
+        isOauth403
+          ? 'Social sign-in is not yet enabled for this domain. Continue with Email inside the modal, connect Phantom Wallet, or paste a Solana address below.'
+          : raw || 'Sign-in was cancelled. You can try again anytime.'
+      );
     }
   };
 

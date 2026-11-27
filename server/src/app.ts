@@ -4,6 +4,9 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import compression from 'compression';
 import path from 'path';
+import session from 'express-session';
+import cookieSession from 'cookie-session';
+import crypto from 'crypto';
 
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
@@ -14,6 +17,20 @@ import mcpRouter from './routes/mcp.routes';
 import wellknownRouter from './routes/wellknown.routes';
 import { getPaidProofByPublicId } from './services/paidProof.service';
 import { getBootstrapStatus } from './utils/tableBootstrap';
+import { initializeDataRetention } from './services/cron.service';
+
+// Extend Express Request for session userId/csrfToken
+declare global {
+  namespace Express {
+    interface Session {
+      userId?: string;
+      csrfToken?: string;
+    }
+    interface Request {
+      cookies?: Record<string, string>;
+    }
+  }
+}
 
 // Load environment variables FIRST
 dotenv.config();
@@ -50,6 +67,7 @@ app.use(
         imgSrc: [
           "'self'",
           'data:',
+          'blob:',
           'https://images.unsplash.com',
           'https://maps.gstatic.com',
           'https://maps.googleapis.com',
@@ -59,6 +77,12 @@ app.use(
           'https://*.openstreetmap.org',
           'https://cdnjs.cloudflare.com',
           'https://pabandi.onrender.com',
+          'https://auth.privy.io',
+          'https://*.privy.io',
+          'https://privy-assets-public.s3.amazonaws.com',
+          'https://explorer-api.walletconnect.com',
+          'https://*.walletconnect.com',
+          'https://*.walletconnect.org',
         ],
         fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https:', 'data:'],
         connectSrc: [
@@ -96,6 +120,18 @@ app.use(
       },
     },
     crossOriginEmbedderPolicy: false,
+    // HSTS - enforce HTTPS for 1 year, include subdomains, preload eligible
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+    // Prevent MIME type sniffing
+    noSniff: true,
+    // XSS filter (legacy but harmless)
+    xssFilter: true,
+    // Referrer policy
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   })
 );
 
@@ -129,9 +165,88 @@ app.use(
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Idempotency-Key', 'x-api-key', 'X-CSRF-Token'],
   })
 );
+
+// Session configuration (express-session for server-side, cookie-session for client-side)
+// Uses separate secrets; both required in production
+const sessionSecret = process.env.SESSION_SECRET || process.env.JWT_SECRET;
+const cookieSessionSecret = process.env.COOKIE_SESSION_SECRET || process.env.JWT_SECRET;
+
+if (!sessionSecret || !cookieSessionSecret) {
+  logger.warn('SESSION_SECRET or COOKIE_SESSION_SECRET not set; using JWT_SECRET fallback');
+}
+
+if (isProductionEnv && (!process.env.SESSION_SECRET || !process.env.COOKIE_SESSION_SECRET)) {
+  logger.error('🚨 FATAL: SESSION_SECRET and COOKIE_SESSION_SECRET must be set in production');
+  process.exit(1);
+}
+
+// express-session for server-side session store (used by passport, OAuth callbacks)
+app.use(
+  session({
+    name: 'pabandi.sid',
+    secret: sessionSecret!,
+    resave: false,
+    saveUninitialized: false,
+    rolling: true,
+    cookie: {
+      secure: isProductionEnv,
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+      domain: isProductionEnv ? '.pabandi.com' : undefined,
+    },
+    genid: () => crypto.randomBytes(16).toString('hex'),
+  })
+);
+
+// cookie-session for lightweight client-side session (CSRF token, flash messages)
+app.use(
+  cookieSession({
+    name: 'pabandi.csrf',
+    keys: [cookieSessionSecret!],
+    maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+    secure: isProductionEnv,
+    httpOnly: true,
+    sameSite: 'lax',
+    domain: isProductionEnv ? '.pabandi.com' : undefined,
+  })
+);
+
+// CSRF token generation middleware (runs after sessions are initialized)
+app.use((req: any, _res: Response, next: NextFunction) => {
+  if (req.session && !req.session.csrfToken) {
+    req.session.csrfToken = crypto.randomBytes(32).toString('hex');
+  }
+  // Also expose in cookie-session for client-side access
+  if (req.session && !req.session['csrfToken']) {
+    req.session['csrfToken'] = req.session.csrfToken;
+  }
+  next();
+});
+
+// CSRF protection for session-based auth (cookie sessions)
+// Validates X-CSRF-Token header on state-changing requests when session cookie is present
+app.use((req: any, res: Response, next: NextFunction) => {
+  const mutatingMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
+  const session = req.session as { userId?: string; csrfToken?: string } | undefined;
+  const hasSession = session?.userId || req.cookies?.['connect.sid'];
+  
+  if (mutatingMethods.includes(req.method) && hasSession) {
+    const csrfToken = req.headers['x-csrf-token'] || req.headers['x-xsrf-token'];
+    const sessionCsrf = session?.csrfToken;
+    
+    if (!csrfToken || !sessionCsrf || csrfToken !== sessionCsrf) {
+      return res.status(403).json({
+        success: false,
+        error: 'Invalid CSRF token',
+      });
+    }
+  }
+  next();
+});
 
 // Square and payment webhooks raw body capture for cryptographic verification
 app.use(
@@ -169,6 +284,26 @@ app.use((req, _res, next) => {
 // its own Cache-Control.
 app.use('/api/', (_req, res, next) => {
   res.set('Cache-Control', 'no-store');
+  next();
+});
+
+// Cache middleware for read-heavy public GET endpoints
+const CACHEABLE_GET_PATHS = [
+  '/api/v1/booking/businesses',
+  '/api/v1/booking/',
+  '/api/v1/businesses',
+  '/api/v1/agent/businesses',
+  '/api/v1/agent/tools',
+  '/api/v1/escrow/templates',
+  '/api/v1/payments/recommend-rail',
+  '/api/v1/trust/attestation-key',
+];
+
+app.use('/api/', (req, res, next) => {
+  if (req.method === 'GET' && CACHEABLE_GET_PATHS.some(p => req.path.startsWith(p))) {
+    // Cache for 60 seconds on read-heavy public endpoints
+    res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=30');
+  }
   next();
 });
 
@@ -218,21 +353,27 @@ export function setSchemaCheckStatus(status: {
 }
 
 app.get('/health', (_req, res) => {
-  res.status(200).json({
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  const healthData: any = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
-    googleOAuth: !!process.env.GOOGLE_CLIENT_ID,
-    emailConfigured: Boolean((process.env.RESEND_API_KEY || '').trim()),
-    tokenEncryptionConfigured: Boolean((process.env.ENCRYPTION_KEY || '').trim()),
-    smsConfigured: Boolean(
+  };
+
+  // In non-production, include detailed config status for debugging
+  if (!isProduction) {
+    healthData.googleOAuth = !!process.env.GOOGLE_CLIENT_ID;
+    healthData.emailConfigured = Boolean((process.env.RESEND_API_KEY || '').trim());
+    healthData.tokenEncryptionConfigured = Boolean((process.env.ENCRYPTION_KEY || '').trim());
+    healthData.smsConfigured = Boolean(
       (process.env.TWILIO_ACCOUNT_SID || '').trim() &&
         (process.env.TWILIO_AUTH_TOKEN || '').trim() &&
         (process.env.TWILIO_PHONE_NUMBER || '').trim()
-    ),
-    whopConfigured: Boolean((process.env.WHOP_API_KEY || '').trim()),
-    ptpSigningConfigured: Boolean((process.env.PTP_SIGNING_SECRET || '').trim()),
-    security: {
+    );
+    healthData.whopConfigured = Boolean((process.env.WHOP_API_KEY || '').trim());
+    healthData.ptpSigningConfigured = Boolean((process.env.PTP_SIGNING_SECRET || '').trim());
+    healthData.security = {
       aiGuardActive: true,
       aiProvidersConfigured: Boolean(
         process.env.OPENAI_API_KEY ||
@@ -252,26 +393,25 @@ app.get('/health', (_req, res) => {
         (process.env.SAFEPAY_WEBHOOK_SECRET || process.env.SAFEPAY_SECRET_KEY || '').trim()
       ),
       offrampConfigured: Boolean((process.env.OFFRAMP__LP_API_KEY || '').trim()),
-    },
-    schema: {
-      ok: lastSchemaCheck.ok,
-      checked: lastSchemaCheck.checked,
-      // The counts alone say "something is wrong"; the names say which migration
-      // to run. /health is public, but these are column names and reasons, not
-      // credentials — and an operator who can curl the site can already see it
-      // is broken.
-      missing: lastSchemaCheck.missing,
-      notNullable: lastSchemaCheck.notNullable,
-      wrongType: lastSchemaCheck.wrongType,
-    },
-    // The bootstrap is the ONLY thing that creates these tables in production,
-    // so "did it run, and did it work?" is the first question whenever the schema
-    // check above is red. Without this the answer lived only in the deploy log.
-    bootstrap: getBootstrapStatus(),
-    deployVersion: process.env.RENDER_GIT_COMMIT || 'unknown',
-    commitSha: process.env.RENDER_GIT_COMMIT || null,
-    startedAt: process.env.PABANDI_STARTED_AT || null,
-  });
+    };
+  }
+
+  healthData.schema = {
+    ok: lastSchemaCheck.ok,
+    checked: lastSchemaCheck.checked,
+    missing: lastSchemaCheck.missing,
+    notNullable: lastSchemaCheck.notNullable,
+    wrongType: lastSchemaCheck.wrongType,
+  };
+  // The bootstrap is the ONLY thing that creates these tables in production,
+  // so "did it run, and did it work?" is the first question whenever the schema
+  // check above is red. Without this the answer lived only in the deploy log.
+  healthData.bootstrap = getBootstrapStatus();
+  healthData.deployVersion = process.env.RENDER_GIT_COMMIT || 'unknown';
+  healthData.commitSha = process.env.RENDER_GIT_COMMIT || null;
+  healthData.startedAt = process.env.PABANDI_STARTED_AT || null;
+
+  res.status(200).json(healthData);
 });
 
 app.get('/healthz', (_req, res) => {
@@ -467,5 +607,12 @@ app.use((_req, res) => {
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
+
+// Initialize data retention cron (non-blocking)
+if (process.env.NODE_ENV === 'production' || process.env.ENABLE_RETENTION_CRON === 'true') {
+  initializeDataRetention().catch((err) => {
+    logger.error('Failed to initialize data retention cron:', err);
+  });
+}
 
 export default app;

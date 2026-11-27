@@ -69,6 +69,7 @@ const domainRoutes: [string, string][] = [
   // 2. User & Profile Domain
   ['/users', './user.routes'],
   ['/profile', './profile.routes'],
+  ['/consent', './consent.routes'],
 
   // 3. Freelance Gigs Domain
   ['/gigs', './gig.routes'],
@@ -79,6 +80,7 @@ const domainRoutes: [string, string][] = [
 
   // 5. Payments & Invoicing Domain
   ['/payments', './payment.routes'],
+  ['/payment-methods', './paymentMethods.routes'],
   ['/payments/raast', './raastPayment.routes'],
   ['/solana-usdc', './solanaUsdc.routes'],
   ['/fiat', './fiatPayment.routes'],

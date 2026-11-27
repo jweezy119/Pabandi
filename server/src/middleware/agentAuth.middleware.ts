@@ -1,8 +1,33 @@
 import { Request, Response, NextFunction } from 'express';
+import rateLimit from 'express-rate-limit';
 import { prisma } from '../utils/database';
 import { findAgentKeyByRaw, touchAgentKey } from '../services/agentKeys.service';
 import { authenticate, optionalAuthenticate, AuthRequest } from './auth.middleware';
 import { CustomError } from './errorHandler';
+
+const AGENT_RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const AGENT_RATE_LIMIT_MAX = 60; // 60 requests per minute per agent key
+const AGENT_MONEY_RATE_LIMIT_MAX = 10; // 10 money-moving requests per minute per agent key
+
+export const agentRateLimiter = rateLimit({
+  windowMs: AGENT_RATE_LIMIT_WINDOW_MS,
+  max: AGENT_RATE_LIMIT_MAX,
+  message: { success: false, error: 'Agent rate limit exceeded (60 req/min)' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: any) => `agent-${req.user?.agentKeyId || req.ip}`,
+  skip: (req: any) => !req.user?.agentKeyId, // Only apply to authenticated agent requests
+});
+
+export const agentMoneyRateLimiter = rateLimit({
+  windowMs: AGENT_RATE_LIMIT_WINDOW_MS,
+  max: AGENT_MONEY_RATE_LIMIT_MAX,
+  message: { success: false, error: 'Agent money-operation rate limit exceeded (10 req/min)' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: any) => `agent-money-${req.user?.agentKeyId || req.ip}`,
+  skip: (req: any) => !req.user?.agentKeyId,
+});
 
 async function resolveAgentKey(req: Request) {
   const rawKey = req.header('x-api-key');

@@ -190,15 +190,7 @@ POST /api/v1/agents/payouts
 GET  /api/v1/agents/payouts/history
 ```
 
-Live Solana settlement & DRPE trust-pricing routes:
-
-```
-GET  /api/v1/solana-usdc/drpe/quote?trustScore=96&amount=100
-POST /api/v1/solana-usdc/transfer/build   (USDC SPL Token & Phantom CASH Token-2022)
-POST /api/v1/solana-usdc/transfer/record  (verified on-chain via Solana RPC)
-```
-
-x402 v2 agent payment challenges (Solana USDC & Phantom CASH) are supported via the Solana payment adapter. Stripe Connect and Circle adapters are not yet enabled in production.
+Not available yet: x402 HTTP 402 micropayments, Stripe Connect, Circle, and Solana Pay adapters.
 
 ## Rate Limits
 
@@ -218,4 +210,4 @@ No SDK package is published. Use the REST API or MCP endpoint with any HTTP clie
 - Agent Guide (this file): https://pabandi.com/llms.txt
 - MCP endpoint: https://pabandi.onrender.com/mcp
 
-Contact: hello@pabandi.com
+Contact: jay@pabandi.com

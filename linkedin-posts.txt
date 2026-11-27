@@ -24,3 +24,30 @@ Your Pabandi Passport is a portable, verified trust score that travels with you.
 Take your trust everywhere. Stop starting from scratch. 
 
 #FutureOfWork #GigEconomy #Web3 #DecentralizedIdentity #Reputation #PabandiPassport #PropTech
+
+--- POST 3: PABANDI x WEBACY (SOLANA AI-AGENT SAFETY & ESCROW) ---
+
+AI agents can already browse, book, and pay.
+What they still lack is a full-stack trust layer before funds leave a wallet.
+
+Today we shipped a live integration between Pabandi (پابندی) and @Webacy on Solana:
+
+• On-chain safety (Webacy): Real-time Solana wallet threat scoring, KYW checks, and sanctions screening.
+• Behavioral trust & settlement (Pabandi): Portable Trust Passports, non-custodial Solana Anchor escrow, and MCP tooling for autonomous agents.
+
+What's live in production:
+🔒 Automatic hard-blocking at our Solana escrow oracle for sanctioned or high-risk wallets (>= 75/100)
+🛂 Live on-chain risk signals surfaced directly inside Pabandi Trust Passports
+🤖 New `pabandi_screen_wallet` MCP tool + rate-limited REST endpoint with 15-min caching
+
+Big thanks to @Maika Isogawa and the @Webacy team for opening up free developer access to on-chain risk intelligence.
+
+Try the live screening endpoint in the comments 👇
+
+#AIAgents #ModelContextProtocol #Solana #Fintech #Escrow #TrustAndSafety #Pabandi
+
+[FIRST COMMENT]
+Test it live right now (swap in any Solana wallet address at the end of the URL):
+👉 Live Webacy x Pabandi risk check: https://pabandi.onrender.com/api/v1/agents/wallet/screen/F5W934e6qJb8z2GZJj3kGjUfN6xLqK4W7CpHbBvRmN3D
+👉 MCP server & agent docs: https://pabandi.com/llms.txt
+👉 Learn more about Pabandi: https://pabandi.com

@@ -244,6 +244,9 @@ describe('the columns being checked are the ones that matter', () => {
       'dashboardTheme',
       'SMSLog',
       'ChannelMessage',
+      '"marketingOptIn"',
+      '"workOrderId"',
+      '"BusinessPaymentMethod"',
     ]) {
       expect(sql, `shipped-migrations.sql must create ${object}`).toContain(object);
     }
@@ -289,6 +292,9 @@ describe('the columns being checked are the ones that matter', () => {
         'BusinessSettings.dashboardTheme',
         'SMSLog.businessId',
         'MerchantSubscription.tier',
+        'crm_clients.marketingOptIn',
+        'Booking.workOrderId',
+        'BusinessPaymentMethod.businessId',
       ]),
     );
   });

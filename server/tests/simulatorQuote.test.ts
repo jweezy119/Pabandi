@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeAll, afterAll } from 'vitest';
+import express from 'express';
+import http from 'http';
 import { computeEstimate } from '../src/services/simulator/swarm.service';
 
 /**
@@ -44,5 +46,58 @@ describe('computeEstimate', () => {
     // would throw here rather than return, which is the point of the assertion.
     const result = await computeEstimate({ projectType: 'app-development' });
     expect(result.estimate.totalCost).toBeGreaterThan(0);
+  });
+});
+
+describe('POST /api/v1/simulator/public/quote route', () => {
+  let server: http.Server;
+  let baseUrl: string;
+
+  beforeAll(async () => {
+    const mod = await import('../src/routes/simulator.routes');
+    const app = express();
+    app.use(express.json());
+    app.use('/api/v1/simulator', mod.default);
+    server = await new Promise<http.Server>((resolve) => {
+      const s = app.listen(0, '127.0.0.1', () => resolve(s));
+    });
+    const addr = server.address();
+    if (!addr || typeof addr === 'string') throw new Error('failed to bind test server');
+    baseUrl = `http://127.0.0.1:${addr.port}/api/v1/simulator/public/quote`;
+  });
+
+  afterAll(async () => {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  });
+
+  it('accepts flat landing-page payloads ({ scale, timelineUrgency, quality })', async () => {
+    const res = await fetch(baseUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scale: 3, timelineUrgency: 3, quality: 'Senior' }),
+    });
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(body.quote.totalUsd).toBeGreaterThan(0);
+    expect(body.data.estimate.totalCost).toBeGreaterThan(0);
+  });
+
+  it('accepts canonical nested payloads ({ projectType, factors })', async () => {
+    const res = await fetch(baseUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        projectType: 'mvp',
+        factors: { scale: 4, timelineUrgency: 2, quality: 'Lead' },
+      }),
+    });
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(body.data.projectType).toBe('mvp');
+    expect(body.quote.depositRequiredUsd).toBeGreaterThan(0);
   });
 });

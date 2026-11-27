@@ -478,10 +478,14 @@ export default function Layout() {
         </header>
       )}
 
-      <main className={`flex-grow mobile-safe-bottom ${isStandalone ? 'pt-0 pb-0' : 'pt-14 sm:pt-16 md:pb-0'}`}>
-        <PageTransition>
+      <main className={`flex-grow mobile-safe-bottom ${isStandalone ? 'pt-0 pb-0 flex flex-col min-h-0' : 'pt-14 sm:pt-16 md:pb-0'}`}>
+        {isStandalone ? (
           <Outlet />
-        </PageTransition>
+        ) : (
+          <PageTransition>
+            <Outlet />
+          </PageTransition>
+        )}
         <GlobalAIConciergeWidget />
       </main>
 

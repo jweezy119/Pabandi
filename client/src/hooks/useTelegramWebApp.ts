@@ -21,13 +21,25 @@ export function useTelegramWebApp() {
     const tg = (window as any).Telegram?.WebApp;
     if (!tg) return;
 
-    // Detect if running inside Telegram
+    // Detect if actually running inside a Telegram WebApp container.
+    // On desktop browsers, telegram-web-app.js still creates a stub object with
+    // empty initData, platform === 'unknown', and version === '6.0'; calling
+    // Mini App APIs on the desktop stub emits noisy console warnings.
     const hasInitData = Boolean(tg.initData && typeof tg.initData === 'string' && tg.initData.length > 0);
+    const hasTelegramPlatform = Boolean(tg.platform && tg.platform !== 'unknown');
+    if (!hasInitData && !hasTelegramPlatform) {
+      setIsInsideTelegram(false);
+      return;
+    }
+
     setIsInsideTelegram(true);
 
     if (tg.initDataUnsafe?.user) {
       setTelegramUser(tg.initDataUnsafe.user);
     }
+
+    const supports = (version: string) =>
+      typeof tg.isVersionAtLeast === 'function' ? Boolean(tg.isVersionAtLeast(version)) : false;
 
     try {
       // 1. Tell Telegram the Mini App is ready to display
@@ -36,16 +48,16 @@ export function useTelegramWebApp() {
       // 2. Expand full-height inside the chat
       tg.expand();
 
-      // 3. Match Pabandi dark command aesthetic
-      if (typeof tg.setHeaderColor === 'function') {
+      // 3. Match Pabandi dark command aesthetic (supported in Bot API 6.1+)
+      if (supports('6.1') && typeof tg.setHeaderColor === 'function') {
         tg.setHeaderColor('#0a1118');
       }
-      if (typeof tg.setBackgroundColor === 'function') {
+      if (supports('6.1') && typeof tg.setBackgroundColor === 'function') {
         tg.setBackgroundColor('#0a1118');
       }
 
-      // 4. Protect against accidental swipe-to-close during active forms
-      if (typeof tg.enableClosingConfirmation === 'function') {
+      // 4. Protect against accidental swipe-to-close during active forms (6.2+)
+      if (supports('6.2') && typeof tg.enableClosingConfirmation === 'function') {
         tg.enableClosingConfirmation();
       }
 

@@ -3,7 +3,7 @@ const bs58=require('bs58');const fs=require('fs');
 const deco=k=>Keypair.fromSecretKey((bs58.default?bs58.default:bs58).decode(k));
 const kp=deco(JSON.parse(fs.readFileSync('/home/peesee/.new_treasury.json','utf8')).secret_b58);
 const FEE=new PublicKey('5AR6fsezB8NTYQWwP1DxysuKPZAEY12yeVt22hL6FvdG');
-const c=new Connection('https://mainnet.helius-rpc.com/?api-key=3caa4d83-82b5-4e35-a377-799a0eb1082c','confirmed');
+const c=new Connection(process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com','confirmed');
 
 (async()=>{
   // Use the treasury wallet AS the "user" (external payer) — no extra funding needed.

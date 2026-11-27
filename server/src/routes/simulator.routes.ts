@@ -38,10 +38,16 @@ const SteerBodySchema = z.object({
   factors: z.record(z.string(), z.unknown()),
 });
 
-const PublicQuoteBodySchema = z.object({
-  projectType: z.string().default('app-development'),
-  factors: z.record(z.string(), z.unknown()),
-});
+const PublicQuoteBodySchema = z
+  .object({
+    projectType: z.string().default('app-development'),
+    factors: z.record(z.string(), z.unknown()).optional(),
+  })
+  .passthrough()
+  .transform(({ projectType, factors, ...rest }) => ({
+    projectType,
+    factors: factors ?? rest,
+  }));
 
 const PublicFundBodySchema = z.object({
   rail: z.enum(['square', 'solana', 'safepay']).default('square'),
@@ -110,8 +116,38 @@ router.post(
     try {
       const { projectType, factors } = PublicQuoteBodySchema.parse(req.body ?? {});
       const result = await computeEstimate(factors);
+      const totalUsd = Math.round(result.estimate.totalCost);
+      const depositRequiredUsd = Math.round(totalUsd * 0.5);
+      const completionPayoutUsd = totalUsd - depositRequiredUsd;
+      const usdToPkr = 279;
+      const estimatedDays = Math.max(1, Math.round(result.timeline.estimatedDays));
+      const estimatedHours = Math.max(8, estimatedDays * 8);
+      const baseLaborUsd = Math.round(result.estimate.breakdown.labor);
+      const urgencyPremiumUsd = Math.round(result.estimate.breakdown.contingency);
+      const agentOrchestrationFeeUsd = Math.round(result.estimate.breakdown.materials);
+      const escrowProtectionFeeUsd = Math.max(
+        0,
+        totalUsd - baseLaborUsd - urgencyPremiumUsd - agentOrchestrationFeeUsd,
+      );
+
       return res.json({
         success: true,
+        quote: {
+          totalUsd,
+          depositRequiredUsd,
+          completionPayoutUsd,
+          totalPkr: totalUsd * usdToPkr,
+          depositRequiredPkr: depositRequiredUsd * usdToPkr,
+          completionPayoutPkr: completionPayoutUsd * usdToPkr,
+          estimatedDays,
+          estimatedHours,
+          breakdown: {
+            baseLaborUsd,
+            urgencyPremiumUsd,
+            agentOrchestrationFeeUsd,
+            escrowProtectionFeeUsd,
+          },
+        },
         data: {
           projectType,
           factors,

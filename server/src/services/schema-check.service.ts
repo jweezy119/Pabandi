@@ -157,6 +157,25 @@ export const EXPECTED_COLUMNS: ExpectedColumn[] = [
     column: 'businessId',
     purpose: 'unified inbox message mirror',
   },
+
+  // 20261121_outreach + 20261121_booking_work_order + BusinessPaymentMethod.
+  // Without these, GET /crm/clients, GET /business/stats, and /payment-methods fail.
+  {
+    table: 'crm_clients',
+    column: 'marketingOptIn',
+    purpose: 'outreach opt-in flag selected by every CrmClient query',
+  },
+  {
+    table: 'Booking',
+    column: 'workOrderId',
+    nullable: true,
+    purpose: 'coordinator work-order link selected by every Booking query',
+  },
+  {
+    table: 'BusinessPaymentMethod',
+    column: 'businessId',
+    purpose: 'saved merchant payout rails (Solana Pay / Square / ACH)',
+  },
 ];
 
 export interface SchemaCheckResult {

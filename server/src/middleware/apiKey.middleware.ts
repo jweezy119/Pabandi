@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
+import { prisma } from '../utils/database';
 import { CustomError } from './errorHandler';
 import { logger } from '../utils/logger';
 
@@ -12,6 +13,11 @@ export interface ApiKeyRequest extends Request {
     callsUsed: number;
     callsLimit: number;
     businessId: string | null;
+    agentKeyId: string | null;
+    agentId: string | null;
+    scopes: string[];
+    spendLimitUsd: number | null;
+    spendUsedUsd: number;
   };
 }
 
@@ -37,14 +43,39 @@ export const apiKeyAuth = async (
     return next(new CustomError('Missing API key. Provide via x-api-key header or Authorization: Bearer <key>', 401));
   }
 
+  const keyHash = hashApiKey(apiKey);
+
+  const key = await prisma.agentApiKey.findUnique({
+    where: { keyHash },
+  });
+
+  if (!key || key.revokedAt) {
+    logger.warn(`[ApiKeyAuth] rejected invalid or revoked API key from ${req.ip}`);
+    return next(new CustomError('Invalid or revoked API key', 401));
+  }
+
+  const owner = await prisma.user.findUnique({
+    where: { id: key.ownerUserId },
+    select: { id: true, email: true, role: true, business: { select: { id: true } } },
+  });
+
+  if (!owner) {
+    return next(new CustomError('API key owner not found', 401));
+  }
+
   req.apiClient = {
-    id: 'api_client_default',
-    name: 'Pabandi Developer',
-    email: 'dev@pabandi.com',
-    tier: 'PRO',
-    callsUsed: 1,
-    callsLimit: 1000000,
-    businessId: null,
+    id: key.id,
+    name: key.name,
+    email: owner.email,
+    tier: key.scopes.includes('*') ? 'ENTERPRISE' : 'PRO',
+    callsUsed: Math.round(key.spendUsedUsd * 100),
+    callsLimit: key.spendLimitUsd != null ? Math.round(key.spendLimitUsd * 100) : 0,
+    businessId: owner.business?.id ?? null,
+    agentKeyId: key.id,
+    agentId: key.agentId ?? null,
+    scopes: key.scopes,
+    spendLimitUsd: key.spendLimitUsd,
+    spendUsedUsd: key.spendUsedUsd,
   };
 
   next();

@@ -219,7 +219,7 @@ export default function DashboardLayout({
   }, [navItems.length, osName, reducedMotion]);
 
   return (
-    <div className="h-dvh-shell flex overflow-hidden" style={{ background: 'var(--atmosphere)' }}>
+    <div className="h-dashboard-shell flex overflow-hidden" style={{ background: 'var(--atmosphere)' }}>
       {/* Mobile overlay */}
       <AnimatePresence>
         {sidebarOpen && (

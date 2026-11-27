@@ -211,6 +211,7 @@ model User {
   cryptoPaymentsReceived CryptoPayment[]   @relation("cryptoPaymentsReceived")
   trustAuditTrails       TrustAuditTrail[]
   notifications          Notification[]
+  consents               Consent[]
 
   @@index([email])
   @@index([role])
@@ -709,6 +710,30 @@ model AgentApiKey {
   @@index([agentId])
 }
 
+model AgentActionAudit {
+  id            String   @id @default(cuid())
+  agentKeyId    String
+  agentId       String?
+  userId        String
+  action        String
+  resourceType  String
+  resourceId    String?
+  amountUsd     Float?
+  currency      String?  @default("USD")
+  status        String
+  ipAddress     String?
+  userAgent     String?
+  requestId     String?
+  metadata      Json?
+  createdAt     DateTime @default(now())
+
+  @@index([agentKeyId])
+  @@index([userId])
+  @@index([action])
+  @@index([resourceType, resourceId])
+  @@index([createdAt])
+}
+
 model PaidProof {
   id         String   @id @default(cuid())
   publicId   String   @unique
@@ -1075,6 +1100,57 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, read, createdAt])
+}
+
+model Consent {
+  id            String    @id @default(cuid())
+  userId        String
+  type          String    // e.g., 'marketing', 'analytics', 'functional', 'necessary', 'third_party_sharing'
+  version       String    // Consent version/policy version
+  granted       Boolean   @default(true)
+  grantedAt     DateTime  @default(now())
+  withdrawnAt   DateTime?
+  ipAddress     String?
+  userAgent     String?
+  metadata      Json?     // Additional context (e.g., specific purposes, channels)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, version])
+  @@index([userId])
+  @@index([type])
+  @@index([granted])
+  @@index([withdrawnAt])
+}
+
+model DataRetentionPolicy {
+  id                String    @id @default(cuid())
+  name              String    @unique // e.g., 'notifications', 'audit_logs', 'sms_logs', 'channel_messages'
+  description       String?
+  retentionDays     Int       // Number of days to retain
+  enabled           Boolean   @default(true)
+  applyToDeletedUsers Boolean   @default(false) // Whether to apply to anonymized/deleted users
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  logs DataRetentionLog[]
+}
+
+model DataRetentionLog {
+  id            String    @id @default(cuid())
+  policyId      String
+  policy        DataRetentionPolicy @relation(fields: [policyId], references: [id])
+  recordsDeleted Int       @default(0)
+  status        String    @default("SUCCESS") // SUCCESS, PARTIAL, FAILED
+  errorMessage  String?
+  startedAt     DateTime  @default(now())
+  completedAt   DateTime?
+  metadata      Json?
+
+  @@index([policyId])
+  @@index([startedAt])
 }
 
 model CheckoutSession {

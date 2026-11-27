@@ -162,4 +162,4 @@ None of the SDK packages once advertised here (`@pabandi/sdk`, `@pabandi/trust`,
 - Agent Guide (this file): https://pabandi.com/llms.txt
 - ARD manifest: https://pabandi.com/.well-known/ard.json
 
-Contact: hello@pabandi.com
+Contact: jay@pabandi.com

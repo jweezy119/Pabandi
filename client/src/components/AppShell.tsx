@@ -78,10 +78,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Main Content Area */}
-      <main className={`flex-1 overflow-y-auto overscroll-y-contain relative ${!isDashboardLayoutPage ? 'mobile-safe-bottom md:pb-0' : ''}`}>
-        <PageTransition>
-          {children}
-        </PageTransition>
+      <main
+        className={`flex-1 min-h-0 relative ${
+          isDashboardLayoutPage
+            ? 'overflow-hidden flex flex-col'
+            : 'overflow-y-auto overscroll-y-contain mobile-safe-bottom md:pb-0'
+        }`}
+        style={
+          isDashboardLayoutPage
+            ? ({ '--pab-dashboard-height': '100%' } as React.CSSProperties)
+            : undefined
+        }
+      >
+        {isDashboardLayoutPage ? (
+          children
+        ) : (
+          <PageTransition>
+            {children}
+          </PageTransition>
+        )}
         <SupportWidget />
       </main>
 

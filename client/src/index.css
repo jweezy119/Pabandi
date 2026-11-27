@@ -455,6 +455,11 @@ a, button, [role="button"], input, select, textarea {
   height: 100dvh;
 }
 
+.h-dashboard-shell {
+  height: var(--pab-dashboard-height, 100vh);
+  height: var(--pab-dashboard-height, 100dvh);
+}
+
 .min-h-dvh-shell {
   min-height: 100vh;
   min-height: 100dvh;

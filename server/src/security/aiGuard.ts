@@ -1,3 +1,5 @@
+import { logger } from '../utils/logger';
+
 /**
  * AI input/output safety guard.
  *
@@ -83,7 +85,7 @@ export function sanitizeUntrusted(raw: string, opts: UntrustedOptions = {}): str
   if (matched.length > 0) {
     // Visible evidence in server logs — a blocked injection attack nobody can
     // see is indistinguishable from no attack at all.
-    console.warn(`[AIGuard] injection markers in ${label}: ${matched.join(', ')}`);
+    logger.warn(`[AIGuard] injection markers in ${label}: ${matched.join(', ')}`);
   }
 
   return [

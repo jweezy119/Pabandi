@@ -89,13 +89,16 @@ export function LiveEscrowPreview() {
     setStage('quote');
   };
 
-  const fetchQuote = useCallback(async (s: number, u: number, q: 'Standard' | 'Senior' | 'Lead') => {
+  const fetchQuote = useCallback(async (pType: string, s: number, u: number, q: 'Standard' | 'Senior' | 'Lead') => {
     setIsLoading(true);
     try {
       const res = await apiClient.post<{ success: boolean; quote: QuoteData }>('/simulator/public/quote', {
-        scale: s,
-        timelineUrgency: u,
-        quality: q,
+        projectType: pType,
+        factors: {
+          scale: s,
+          timelineUrgency: u,
+          quality: q,
+        },
       });
       if (res.data?.success && res.data.quote) {
         setQuote(res.data.quote);
@@ -112,10 +115,10 @@ export function LiveEscrowPreview() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchQuote(scale, urgency, quality);
+      fetchQuote(preset, scale, urgency, quality);
     }, 200);
     return () => clearTimeout(timer);
-  }, [scale, urgency, quality, fetchQuote]);
+  }, [preset, scale, urgency, quality, fetchQuote]);
 
   const displayTotal = useMemo(() => {
     return currency === 'USD'

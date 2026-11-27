@@ -210,4 +210,4 @@ No SDK package is published. Use the REST API or MCP endpoint with any HTTP clie
 - Agent Guide (this file): https://pabandi.com/llms.txt
 - MCP endpoint: https://pabandi.onrender.com/mcp
 
-Contact: hello@pabandi.com
+Contact: jay@pabandi.com

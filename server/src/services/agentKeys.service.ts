@@ -6,6 +6,10 @@ import { AgentToolUser } from './agentTools.service';
 const KEY_PREFIX = 'pab_live_';
 const ALLOWED_SCOPES = ['directory', 'booking', 'trust', 'payout', 'proof', 'identity', '*'];
 
+// Default spend limit for new agent keys (USD) - conservative for security
+const DEFAULT_SPEND_LIMIT_USD = 1000;
+const MONEY_SCOPES = ['booking', 'payout'];
+
 export function hashAgentKey(rawKey: string): string {
   return crypto.createHash('sha256').update(rawKey).digest('hex');
 }
@@ -27,9 +31,16 @@ export async function createAgentKey(
     throw new Error(`Invalid scope: ${invalidScope}. Allowed: ${ALLOWED_SCOPES.join(', ')}`);
   }
 
-  const spendLimitUsd = input.spendLimitUsd ?? null;
+  const hasMoneyScope = scopes.some((s) => MONEY_SCOPES.includes(s));
+  const spendLimitUsd = input.spendLimitUsd ?? (hasMoneyScope ? DEFAULT_SPEND_LIMIT_USD : null);
+  
   if (spendLimitUsd != null && Number(spendLimitUsd) < 0) {
     throw new Error('spendLimitUsd must be zero or greater');
+  }
+
+  // If key has money-moving scopes but no explicit limit, enforce default
+  if (hasMoneyScope && spendLimitUsd === null) {
+    throw new Error('spendLimitUsd is required for keys with booking or payout scopes');
   }
 
   const rawKey = generateAgentKey();
@@ -42,11 +53,11 @@ export async function createAgentKey(
       ownerUserId,
       agentId: input.agentId || null,
       scopes: input.scopes ?? [],
-      spendLimitUsd: input.spendLimitUsd ?? null,
+      spendLimitUsd: spendLimitUsd,
     },
   });
 
-  logger.info(`[AgentKeys] Created key ${row.id} for owner ${ownerUserId}`);
+  logger.info(`[AgentKeys] Created key ${row.id} for owner ${ownerUserId} with spend limit ${spendLimitUsd ?? 'unlimited'}`);
   return {
     id: row.id,
     name: row.name,

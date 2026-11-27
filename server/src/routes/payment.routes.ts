@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
 import { authenticate, optionalAuthenticate, authorize } from '../middleware/auth.middleware';
 import { requireIdempotency } from '../middleware/idempotency.middleware';
 import { paymentRouter } from '../services/payment-router.service';
@@ -23,6 +24,21 @@ import { handleSquareWebhook } from '../controllers/squareCheckout.controller';
 
 const router = Router();
 
+// Zod schema for payment creation
+const CreatePaymentSchema = z.object({
+  amount: z.number().positive('Amount must be greater than 0'),
+  currency: z.string().length(3, 'Currency must be 3-letter ISO code').default('USD'),
+  reference: z.string().max(100).optional(),
+  payer: z.record(z.any()).optional(),
+  payee: z.record(z.any()).optional(),
+  preferredRail: z.string().default('auto'),
+  requireSharia: z.boolean().default(false),
+  isAgent: z.boolean().default(false),
+  webhookUrl: z.string().url().optional().or(z.literal('')),
+  metadata: z.record(z.any()).optional(),
+  dryRun: z.boolean().optional(),
+});
+
 // Square Webhook for Cross-Border & card payments
 router.post('/square-webhook', handleSquareWebhook);
 
@@ -31,6 +47,16 @@ router.post('/square-webhook', handleSquareWebhook);
 // POST /api/v1/payments — Unified Open Payment Orchestration endpoint (Mode A)
 router.post('/', optionalAuthenticate, async (req: Request, res: Response) => {
   try {
+    // Validate request body with Zod
+    const parseResult = CreatePaymentSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: parseResult.error.flatten().fieldErrors,
+      });
+    }
+
     const { 
       amount, 
       currency = 'USD', 
@@ -41,13 +67,23 @@ router.post('/', optionalAuthenticate, async (req: Request, res: Response) => {
       requireSharia = false, 
       isAgent = false,
       webhookUrl, 
-      metadata 
-    } = req.body;
+      metadata,
+      dryRun,
+    } = parseResult.data;
 
-    if (!amount || Number(amount) <= 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid amount. Must be greater than 0.',
+    // Dry-run mode: validate everything but don't persist
+    if (dryRun) {
+      return res.json({
+        success: true,
+        dryRun: true,
+        message: 'Dry run completed - no payment created',
+        data: {
+          wouldCreatePayment: true,
+          amount,
+          currency,
+          preferredRail,
+          estimatedFees: 0, // Would be calculated by payment router
+        },
       });
     }
 
@@ -59,7 +95,7 @@ router.post('/', optionalAuthenticate, async (req: Request, res: Response) => {
       reference: String(reference),
       payer,
       payee,
-      preferredRail,
+      preferredRail: preferredRail as any,
       requireSharia: Boolean(requireSharia),
       isAgent: Boolean(isAgent),
       webhookUrl,
