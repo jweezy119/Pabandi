@@ -54,3 +54,42 @@ describe('CRM broken-surface fixes', () => {
     expect(detail).not.toMatch(/<option value="TASK">/);
   });
 });
+
+describe('CRM saved views and bulk actions', () => {
+  it('persists saved views per object with tenant-scoped reads', () => {
+    const routes = src('routes/crm.routes.ts');
+    expect(routes).toMatch(/router\.get\('\/views'/);
+    expect(routes).toMatch(/router\.post\('\/views'/);
+    expect(routes).toMatch(/router\.delete\('\/views\/:id'/);
+    const schema = readFileSync(resolve(__dirname, '../prisma/schema.prisma'), 'utf8');
+    expect(schema).toMatch(/model CrmSavedView/);
+  });
+
+  it('exposes a validated bulk status endpoint before the /:id route', () => {
+    const routes = src('routes/crm.routes.ts');
+    const bulk = routes.indexOf("router.patch('/clients/bulk'");
+    const byId = routes.indexOf("router.get('/clients/:id'");
+    expect(bulk).toBeGreaterThan(-1);
+    expect(bulk).toBeLessThan(byId);
+    expect(routes).toMatch(/CLIENT_STATUSES as readonly string\[\]/);
+  });
+
+  it('adds creation commands to the palette', () => {
+    const palette = readFileSync(
+      resolve(__dirname, '../../client/src/components/CommandPalette.tsx'),
+      'utf8',
+    );
+    for (const label of ['New Client', 'New Deal', 'New Task', 'New Invoice']) {
+      expect(palette).toContain(label);
+    }
+  });
+
+  it('supports drag and drop on the kanban board', () => {
+    const board = readFileSync(
+      resolve(__dirname, '../../client/src/pages/crm/components/DealKanbanBoard.tsx'),
+      'utf8',
+    );
+    expect(board).toMatch(/draggable/);
+    expect(board).toMatch(/onDrop/);
+  });
+});

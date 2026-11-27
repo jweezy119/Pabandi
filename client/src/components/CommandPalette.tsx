@@ -41,6 +41,12 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
  * the next one cannot rot quietly.
  */
 const COMMANDS = [
+  // Record-creation commands. Target pages open their modal from ?new=1, so a
+  // keyboard user can go from an empty state to a new record without a mouse.
+  { label: 'New Client', category: 'Create', href: '/contact/clients?new=1' },
+  { label: 'New Deal', category: 'Create', href: '/contact/deals?new=1' },
+  { label: 'New Task', category: 'Create', href: '/contact/tasks?new=1' },
+  { label: 'New Invoice', category: 'Create', href: '/contact/invoices?new=1' },
   { label: 'Dashboard', category: 'Go to', href: '/dashboard' },
   { label: 'Verified Clients', category: 'Go to', href: '/contact/clients' },
   { label: 'Guaranteed Bookings', category: 'Go to', href: '/contact/deals' },

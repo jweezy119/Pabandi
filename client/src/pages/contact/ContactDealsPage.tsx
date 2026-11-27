@@ -7,7 +7,6 @@ import DealKanbanBoard from '../crm/components/DealKanbanBoard';
 import DealListTable from '../crm/components/DealListTable';
 import DealFormModal from '../crm/components/DealFormModal';
 import CSVImportModal from '../crm/components/CSVImportModal';
-import { Upload } from 'lucide-react';
 import { getAuthToken } from '../../utils/authToken';
 import { DEAL_STAGES, DEAL_STAGE_LABELS, STAGE_PROBABILITY, type DealStage } from '@shared/crm';
 
@@ -51,7 +50,7 @@ export default function ContactDealsPage() {
   const [deals, setDeals] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(() => new URLSearchParams(window.location.search).get('new') === '1');
   const [isLostModalOpen, setIsLostModalOpen] = useState(false);
   const [selectedDealForLost, setSelectedDealForLost] = useState<any>(null);
   const [lostReason, setLostReason] = useState('');

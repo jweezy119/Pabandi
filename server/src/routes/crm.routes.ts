@@ -9,7 +9,7 @@ import { logger } from '../utils/logger';
 import { checkAvailabilityWindow, assertNoConflict } from '../services/crm.service';
 import * as jobService from '../services/job.service';
 import { createInvoice } from '../services/invoice.service';
-import { DEAL_STAGES, STAGE_PROBABILITY } from '../domain/crm';
+import { CLIENT_STATUSES, DEAL_STAGES, STAGE_PROBABILITY } from '../domain/crm';
 import { parseCsv, csvCell } from '../utils/csv';
 
 /**
@@ -186,6 +186,31 @@ router.post('/clients', async (req: AuthRequest, res: Response, next: NextFuncti
     // 201: this creates a client. Callers do not branch on the code, but the
     // integration suite asserts it and a creation reporting 200 is wrong.
     res.status(201).json({ success: true, data: client });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// Bulk status change. Registered before /clients/:id so "bulk" is not read as an id.
+router.patch('/clients/bulk', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    const businessId = crm.businessId!;
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(String) : [];
+    const status = String(req.body?.status || '');
+    if (ids.length === 0 || !status) throw new CustomError('ids and status are required', 400);
+    if (!(CLIENT_STATUSES as readonly string[]).includes(status)) {
+      throw new CustomError(`status must be one of ${CLIENT_STATUSES.join(', ')}`, 400);
+    }
+    if (ids.length > 200) throw new CustomError('maximum 200 clients per bulk action', 400);
+    const result = await prisma.crmClient.updateMany({
+      where: {
+        id: { in: ids },
+        OR: [{ businessId }, { serviceBusinessId: businessId }],
+      },
+      data: { status },
+    });
+    ok(res, { updated: result.count });
   } catch (e) {
     next(e);
   }
@@ -1698,6 +1723,70 @@ router.post('/alerts/:id/dismiss', async (req: AuthRequest, res: Response, next:
     if (!existing) throw new CustomError('Alert not found', 404);
     await prisma.crmAlert.update({ where: { id: existing.id }, data: { dismissed: true, dismissedAt: new Date() } });
     ok(res, { dismissed: true });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// ── Saved views ─────────────────────────────────────────────────────────────
+
+router.get('/views', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    const objectType = String(req.query.objectType || '');
+    if (!objectType) throw new CustomError('objectType is required', 400);
+    const views = await prisma.crmSavedView.findMany({
+      where: {
+        objectType,
+        OR: [
+          { businessId: crm.businessId },
+          { userId: crm.userId },
+          { isShared: true },
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    ok(res, views);
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.post('/views', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    const objectType = String(req.body?.objectType || '');
+    const name = String(req.body?.name || '').trim();
+    if (!objectType || !name) throw new CustomError('objectType and name are required', 400);
+    const view = await prisma.crmSavedView.create({
+      data: {
+        businessId: crm.businessId,
+        userId: crm.userId,
+        objectType,
+        name,
+        filters: (req.body?.filters ?? {}) as any,
+        isShared: Boolean(req.body?.isShared),
+      },
+    });
+    res.status(201).json({ success: true, data: view });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.delete('/views/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    const view = await prisma.crmSavedView.findFirst({
+      where: {
+        id: req.params.id,
+        OR: [{ businessId: crm.businessId }, { userId: crm.userId }],
+      },
+      select: { id: true },
+    });
+    if (!view) throw new CustomError('Saved view not found', 404);
+    await prisma.crmSavedView.delete({ where: { id: view.id } });
+    ok(res, { deleted: true });
   } catch (e) {
     next(e);
   }

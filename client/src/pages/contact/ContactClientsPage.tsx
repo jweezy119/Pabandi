@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
+import { SavedViewsBar } from '../crm/components/SavedViewsBar';
 import { Button, Modal, EmptyState, ClaySkeletonCard } from '../../components/primitives';
 import ClientListTable from '../crm/components/ClientListTable';
 import ClientFormModal from '../crm/components/ClientFormModal';
@@ -206,6 +207,20 @@ export default function ContactClientsPage() {
     await fetchClients();
   }
 
+  /** Bulk status change from the table's selection bar. */
+  async function handleBulkStatusClients(ids: string[], status: string) {
+    const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/clients/bulk`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
+      body: JSON.stringify({ ids, status }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      throw new Error(body?.error || 'Could not update clients');
+    }
+    await fetchClients();
+  }
+
   /** Bulk delete: sequential, so one failure does not silently skip the rest. */
   async function handleBulkDeleteClients(ids: string[]) {
     const failures: string[] = [];
@@ -230,6 +245,11 @@ export default function ContactClientsPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 clay-heading">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Clients</h1>
           <div className="flex items-center gap-2">
+            <SavedViewsBar
+              objectType="client"
+              current={listQuery}
+              onApply={(filters) => setListQuery((q) => ({ ...q, ...filters, page: 1 }))}
+            />
             <Button onClick={() => setShowImportModal(true)} variant="ghost" icon="upload">
               Import CSV
             </Button>
@@ -268,6 +288,7 @@ export default function ContactClientsPage() {
             onEdit={(client) => { setSelectedClient(clients.find((c) => c.id === client.id) ?? null); setShowFormModal(true); }}
             onDelete={(id: string) => { setDeleteError(null); setShowDeleteConfirm(id); }}
             onBulkDelete={handleBulkDeleteClients}
+            onBulkStatus={handleBulkStatusClients}
             query={listQuery}
             pagination={pagination}
             onQueryChange={(patch) => setListQuery((q) => ({ ...q, ...patch }))}

@@ -23,6 +23,7 @@ export interface ClientListTableProps {
   /** Takes the id, not the row: the confirm dialog is keyed by id. */
   onDelete?: (id: string) => void;
   onBulkDelete?: (ids: string[]) => void | Promise<void>;
+  onBulkStatus?: (ids: string[], status: string) => void | Promise<void>;
 
   /**
    * Search, sort and page are the SERVER's job now.
@@ -43,7 +44,7 @@ export interface ClientListTableProps {
 }
 
 export default function ClientListTable({
-  clients, onEdit, onDelete, onBulkDelete, query, pagination, onQueryChange,
+  clients, onEdit, onDelete, onBulkDelete, onBulkStatus, query, pagination, onQueryChange,
 }: ClientListTableProps) {
   const serverDriven = Boolean(onQueryChange);
   const [search, setSearch] = useState('');
@@ -171,6 +172,26 @@ export default function ClientListTable({
               >
                 Clear
               </Button>
+              {onBulkStatus && (
+                <select
+                  aria-label="Set status for selected clients"
+                  className="min-h-[44px] rounded-lg border border-[var(--warm-sand)] bg-[var(--cream)] px-2 text-sm text-[var(--warm-ink)] touch-target"
+                  defaultValue=""
+                  onChange={async (e) => {
+                    const status = e.target.value;
+                    if (!status) return;
+                    await onBulkStatus(selectedIds, status);
+                    setSelectedIds([]);
+                    e.target.value = '';
+                  }}
+                >
+                  <option value="">Set status…</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="AT_RISK">At risk</option>
+                  <option value="VIP">VIP</option>
+                  <option value="INACTIVE">Inactive</option>
+                </select>
+              )}
               {onBulkDelete && (
                 <Button
                   variant="danger"

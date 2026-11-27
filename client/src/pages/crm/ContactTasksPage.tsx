@@ -29,7 +29,7 @@ export function ContactTasksPage() {
    * which column it sat in, so "show me what is urgent" had no answer.
    */
   const [filters, setFilters] = useState<{ status: string; priority: string }>({ status: '', priority: '' });
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(() => new URLSearchParams(window.location.search).get('new') === '1');
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 

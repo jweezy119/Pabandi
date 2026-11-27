@@ -1597,6 +1597,24 @@ model CrmAlert {
   @@map("crm_alerts")
 }
 
+/// A user's saved table/kanban configuration for a CRM object: filters, sorts,
+/// visible columns and grouping. Mirrors Twenty's saved-view model at a small scale.
+model CrmSavedView {
+  id         String   @id @default(cuid())
+  businessId String?
+  userId     String?
+  objectType String
+  name       String
+  filters    Json?
+  isShared   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([businessId, objectType])
+  @@index([userId, objectType])
+  @@map("CrmSavedView")
+}
+
 model CrmAvailability {
   id                String   @id @default(cuid())
   weekday           Int

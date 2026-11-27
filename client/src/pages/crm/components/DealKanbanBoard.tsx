@@ -1,3 +1,4 @@
+import type React from 'react';
 import { Card } from '../../../components/primitives';
 import { Link } from 'react-router-dom';
 
@@ -27,9 +28,25 @@ export default function DealKanbanBoard({ STAGES, deals, onUpdateStage }: any) {
               </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-3 pr-1 no-scrollbar">
+            <div
+              className="flex-1 overflow-y-auto space-y-3 pr-1 no-scrollbar"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const dealId = e.dataTransfer.getData('text/plain');
+                if (dealId && onUpdateStage) onUpdateStage(dealId, stage.id);
+              }}
+            >
               {shownDeals.map((deal: any) => (
-                <Card key={deal.id} variant="default" padding="sm" hover className="border border-[var(--warm-sand)] hover:border-[var(--clay)] transition-all clay-card--interactive">
+                <Card
+                  key={deal.id}
+                  variant="default"
+                  padding="sm"
+                  hover
+                  draggable
+                  onDragStart={(e: React.DragEvent) => e.dataTransfer.setData('text/plain', deal.id)}
+                  className="border border-[var(--warm-sand)] hover:border-[var(--clay)] transition-all clay-card--interactive cursor-grab active:cursor-grabbing"
+                >
                   <div className="flex justify-between items-start mb-1.5">
                     <Link to={`/contact/deals/${deal.id}`} className="font-semibold text-sm text-[var(--warm-ink)] hover:text-[var(--clay)] line-clamp-1">{deal.title}</Link>
                     <span className="text-xs font-bold text-[var(--clay)]">${(deal.value || 0).toLocaleString()}</span>
