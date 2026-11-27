@@ -163,7 +163,7 @@ export default function TrustVerifyPage() {
             <div className="p-4 rounded-xl flex items-start gap-3 text-sm" style={{ background: 'rgba(240,180,106,0.12)', border: '1px solid rgba(240,180,106,0.35)' }}>
               <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--pg-amber)' }} />
               <div>
-                <p className="font-semibold m-0" style={{ color: 'var(--pg-ink)' }}>This code doesn&apos;t check out</p>
+                <p className="font-semibold m-0" style={{ color: 'var(--pg-ink)' }}>This code doesn't check out</p>
                 <p className="mt-1 m-0" style={{ color: 'var(--pg-muted)' }}>
                   {result.reason} A fresh code is valid for 24 hours, so ask for a new one if they gave it to you a while ago.
                 </p>

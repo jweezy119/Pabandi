@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ArrowRight } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
@@ -7,6 +7,7 @@ export interface GlassNavLink {
   label: string;
   to: string;
   isAnchor?: boolean;
+  icon?: React.ReactNode;
 }
 
 const DEFAULT_LINKS: GlassNavLink[] = [
@@ -64,10 +65,14 @@ export function GlassNavHeader({ links = DEFAULT_LINKS }: { links?: GlassNavLink
           <nav className="pg-nav-links" aria-label="Main">
             {links.map((l) =>
               l.isAnchor ? (
-                <a key={l.label} href={l.to}>{l.label}</a>
+                <a key={l.label} href={l.to} className="inline-flex items-center gap-1.5">
+                  {l.icon}
+                  <span>{l.label}</span>
+                </a>
               ) : (
-                <Link key={l.label} to={l.to} className={isActive(l.to) ? 'active' : ''}>
-                  {l.label}
+                <Link key={l.label} to={l.to} className={`inline-flex items-center gap-1.5 ${isActive(l.to) ? 'active' : ''}`}>
+                  {l.icon}
+                  <span>{l.label}</span>
                 </Link>
               )
             )}

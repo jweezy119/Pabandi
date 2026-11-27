@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { Building2, Users, Bot, Tag } from 'lucide-react';
 import { GUARANTEE_STEPS } from '../components/GuaranteeVisuals';
 import { LiveEscrowPreview } from '../components/landing/LiveEscrowPreview';
 import { apiClient, API_HOST } from '../services/api';
@@ -8,11 +9,10 @@ import GlassNavHeader, { type GlassNavLink } from '../components/GlassNavHeader'
 import './LandingGlass.css';
 
 const LANDING_NAV_LINKS: GlassNavLink[] = [
-  { label: 'Products', to: '#products', isAnchor: true },
-  { label: 'Developers', to: '#quickstart', isAnchor: true },
-  { label: 'Businesses', to: '/contact' },
-  { label: 'Pricing', to: '/pricing' },
-  { label: 'Help', to: '#faq', isAnchor: true },
+  { label: 'For Businesses', to: '/contact', icon: <Building2 className="w-3.5 h-3.5 opacity-80" aria-hidden="true" /> },
+  { label: 'For Customers', to: '/customers', icon: <Users className="w-3.5 h-3.5 opacity-80" aria-hidden="true" /> },
+  { label: 'For AI Developers', to: '/agents', icon: <Bot className="w-3.5 h-3.5 opacity-80" aria-hidden="true" /> },
+  { label: 'Pricing', to: '/pricing', icon: <Tag className="w-3.5 h-3.5 opacity-80" aria-hidden="true" /> },
 ];
 
 interface PublicStats {

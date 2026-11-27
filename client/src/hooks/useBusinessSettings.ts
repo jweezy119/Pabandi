@@ -71,6 +71,15 @@ export const VERTICAL_PRESETS: Record<string, {
   features: Record<string, string[]>;
   pipelineStages: string[];
 }> = {
+  auto_repair: {
+    label: 'Auto Repair & Mechanic Shop',
+    modules: ['contact', 'booking'],
+    features: {
+      contact: ['clients', 'deals', 'jobs', 'activities', 'tasks', 'invoices', 'team'],
+      booking: ['services', 'availability'],
+    },
+    pipelineStages: ['CHECKED_IN', 'INSPECTING', 'NEEDS_APPROVAL', 'IN_PROGRESS', 'READY'],
+  },
   salon: {
     label: 'Salon / Beauty',
     modules: ['contact', 'booking'],

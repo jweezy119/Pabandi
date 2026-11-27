@@ -19,7 +19,7 @@ describe('verticalPersonas — SMB CRM Personalization Engine', () => {
     expect(personaIds).not.toContain('logistics');
     expect(presetIds).not.toContain('logistics');
     expect(personaIds).toEqual(presetIds);
-    expect(VERTICAL_LIST).toHaveLength(7);
+    expect(VERTICAL_LIST).toHaveLength(8);
   });
 
   it('safely falls back unknown or legacy verticals (including logistics) to general', () => {
