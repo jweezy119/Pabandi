@@ -130,3 +130,30 @@ describe('CRM data depth', () => {
     expect(nav).toMatch(/path: '\/contact\/companies'/);
   });
 });
+
+describe('CRM automation and permissions', () => {
+  it('emits signed webhooks and rule actions on record events', () => {
+    const service = src('services/crmAutomation.service.ts');
+    expect(service).toMatch(/createHmac\('sha256'/);
+    expect(service).toMatch(/x-pabandi-signature/);
+    for (const action of ['setStatus', 'createTask', 'notify']) {
+      expect(service).toContain(`case '${action}'`);
+    }
+    const routes = src('routes/crm.routes.ts');
+    expect(routes.match(/emitCrmEvent\(/g)?.length).toBeGreaterThanOrEqual(6);
+    expect(routes).toMatch(/router\.get\('\/automations'/);
+  });
+
+  it('uses the real session role instead of a hardcoded owner', () => {
+    const context = src('middleware/crmContext.middleware.ts');
+    expect(context).toMatch(/isOwner: biz\.ownerId === userId/);
+    expect(context).toMatch(/role: req\.user\?\.role/);
+    const routes = src('routes/crm.routes.ts');
+    expect(routes).toMatch(/function assertManager/);
+  });
+
+  it('wires the automation settings UI', () => {
+    const app = readFileSync(resolve(__dirname, '../../client/src/App.tsx'), 'utf8');
+    expect(app).toMatch(/contact\/settings\/automations/);
+  });
+});

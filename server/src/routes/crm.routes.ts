@@ -11,6 +11,7 @@ import * as jobService from '../services/job.service';
 import { createInvoice } from '../services/invoice.service';
 import { CLIENT_STATUSES, DEAL_STAGES, STAGE_PROBABILITY } from '../domain/crm';
 import { parseCsv, csvCell } from '../utils/csv';
+import { emitCrmEvent } from '../services/crmAutomation.service';
 
 /**
  * Contact OS CRM API.
@@ -112,6 +113,17 @@ router.post('/enroll', authenticate, async (req: AuthRequest, res: Response, nex
 
 router.use(authenticate, resolveCrmBusiness);
 
+/** Destructive CRM writes are owner/admin only; the context now carries the real role. */
+function assertManager(crm: { role?: string; isOwner?: boolean }) {
+  if (
+    !crm.isOwner &&
+    crm.role !== UserRole.BUSINESS_OWNER &&
+    crm.role !== UserRole.ADMIN
+  ) {
+    throw new CustomError('Requires business owner or admin role', 403);
+  }
+}
+
 // ── Clients ─────────────────────────────────────────────────────────────────
 
 router.get('/clients', async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -183,6 +195,7 @@ router.post('/clients', async (req: AuthRequest, res: Response, next: NextFuncti
         ...(customData && typeof customData === 'object' ? { customData: customData as any } : {}),
       },
     });
+    emitCrmEvent(businessId, 'client', 'created', client as unknown as Record<string, any>);
     // 201: this creates a client. Callers do not branch on the code, but the
     // integration suite asserts it and a creation reporting 200 is wrong.
     res.status(201).json({ success: true, data: client });
@@ -195,6 +208,7 @@ router.post('/clients', async (req: AuthRequest, res: Response, next: NextFuncti
 router.patch('/clients/bulk', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const crm = requireCrmContext(req);
+    assertManager(crm);
     const businessId = crm.businessId!;
     const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(String) : [];
     const status = String(req.body?.status || '');
@@ -252,6 +266,7 @@ router.put('/clients/:id', async (req: AuthRequest, res: Response, next: NextFun
     if (customData !== undefined && typeof customData === 'object') patch.customData = customData;
 
     const client = await prisma.crmClient.update({ where: { id: existing.id }, data: patch });
+    emitCrmEvent(businessId, 'client', patch.status !== undefined ? 'status_changed' : 'updated', client as unknown as Record<string, any>);
     ok(res, client);
   } catch (e) {
     next(e);
@@ -261,6 +276,7 @@ router.put('/clients/:id', async (req: AuthRequest, res: Response, next: NextFun
 router.delete('/clients/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const crm = requireCrmContext(req);
+    assertManager(crm);
     const businessId = crm.businessId!;
     const existing = await prisma.crmClient.findFirst({
       where: { id: req.params.id, OR: [{ businessId }, { serviceBusinessId: businessId }] },
@@ -1012,6 +1028,7 @@ router.post('/deals', async (req: AuthRequest, res: Response, next: NextFunction
         ...(stage === 'WON' || stage === 'LOST' ? { closedAt: new Date() } : {}),
       },
     });
+    emitCrmEvent(businessId, 'deal', 'created', deal as unknown as Record<string, any>);
     // 201: this creates a deal.
     res.status(201).json({ success: true, data: deal });
   } catch (e) {
@@ -1089,6 +1106,7 @@ router.patch('/deals/:id', async (req: AuthRequest, res: Response, next: NextFun
     if (ownerName !== undefined) patch.ownerName = ownerName ? String(ownerName) : null;
     if (lostReason !== undefined) patch.lostReason = lostReason ? String(lostReason) : null;
     const deal = await prisma.crmDeal.update({ where: { id: existing.id }, data: patch });
+    emitCrmEvent(businessId, 'deal', patch.stage !== undefined ? 'status_changed' : 'updated', deal as unknown as Record<string, any>);
     ok(res, deal);
   } catch (e) {
     next(e);
@@ -1313,6 +1331,7 @@ router.post('/tasks', async (req: AuthRequest, res: Response, next: NextFunction
         serviceBusinessId: businessId,
       },
     });
+    emitCrmEvent(businessId, 'task', 'created', task as unknown as Record<string, any>);
     ok(res, task);
   } catch (e) {
     next(e);
@@ -1354,6 +1373,7 @@ router.patch('/tasks/:id', async (req: AuthRequest, res: Response, next: NextFun
     if (assignedTo !== undefined) patch.assignedTo = assignedTo ? String(assignedTo) : null;
     if (customData !== undefined && typeof customData === 'object') patch.customData = customData;
     const task = await prisma.crmTask.update({ where: { id: existing.id }, data: patch });
+    emitCrmEvent(businessId, 'task', patch.status !== undefined ? 'status_changed' : 'updated', task as unknown as Record<string, any>);
     ok(res, task);
   } catch (e) {
     next(e);
@@ -1723,6 +1743,69 @@ router.post('/alerts/:id/dismiss', async (req: AuthRequest, res: Response, next:
     if (!existing) throw new CustomError('Alert not found', 404);
     await prisma.crmAlert.update({ where: { id: existing.id }, data: { dismissed: true, dismissedAt: new Date() } });
     ok(res, { dismissed: true });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// ── Automation rules ───────────────────────────────────────────────────────
+
+router.get('/automations', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    ok(res, await prisma.crmAutomationRule.findMany({
+      where: { OR: [{ businessId: crm.businessId }, { serviceBusinessId: crm.businessId }] },
+      orderBy: { createdAt: 'desc' },
+    }));
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.post('/automations', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    const { name, triggerObject, triggerEvent, conditions, actions, enabled } = req.body ?? {};
+    if (!name || !triggerObject || !triggerEvent) {
+      throw new CustomError('name, triggerObject and triggerEvent are required', 400);
+    }
+    if (!['client', 'deal', 'task'].includes(String(triggerObject))) {
+      throw new CustomError('triggerObject must be client, deal or task', 400);
+    }
+    if (!['created', 'updated', 'status_changed'].includes(String(triggerEvent))) {
+      throw new CustomError('triggerEvent must be created, updated or status_changed', 400);
+    }
+    const rule = await prisma.crmAutomationRule.create({
+      data: {
+        name: String(name),
+        triggerObject: String(triggerObject),
+        triggerEvent: String(triggerEvent),
+        conditions: (conditions ?? []) as any,
+        actions: (actions ?? []) as any,
+        enabled: enabled === undefined ? true : Boolean(enabled),
+        businessId: crm.businessId,
+        serviceBusinessId: crm.businessId,
+      },
+    });
+    res.status(201).json({ success: true, data: rule });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.delete('/automations/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    const existing = await prisma.crmAutomationRule.findFirst({
+      where: {
+        id: req.params.id,
+        OR: [{ businessId: crm.businessId }, { serviceBusinessId: crm.businessId }],
+      },
+      select: { id: true },
+    });
+    if (!existing) throw new CustomError('Automation rule not found', 404);
+    await prisma.crmAutomationRule.delete({ where: { id: existing.id } });
+    ok(res, { deleted: true });
   } catch (e) {
     next(e);
   }

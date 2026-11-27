@@ -66,8 +66,10 @@ export const resolveCrmBusiness = async (
       userId,
       serviceBusinessId: biz.id,
       platformBusinessId: biz.id,
-      isOwner: true,
-      role: 'owner',
+      // Real role from the session, not a hardcoded owner flag. Route-level
+      // checks can now distinguish an owner from an employee/agent.
+      isOwner: biz.ownerId === userId,
+      role: req.user?.role ?? 'CUSTOMER',
       businessId: biz.id,
     };
     return next();

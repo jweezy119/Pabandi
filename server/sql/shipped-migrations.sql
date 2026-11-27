@@ -345,3 +345,19 @@ CREATE TABLE IF NOT EXISTS "CrmComment" (
 );
 CREATE INDEX IF NOT EXISTS "CrmComment_entityType_entityId_idx" ON "CrmComment"("entityType", "entityId");
 CREATE INDEX IF NOT EXISTS "CrmComment_serviceBusinessId_idx" ON "CrmComment"("serviceBusinessId");
+
+CREATE TABLE IF NOT EXISTS "CrmAutomationRule" (
+  "id" TEXT NOT NULL,
+  "businessId" TEXT,
+  "serviceBusinessId" TEXT,
+  "name" TEXT NOT NULL,
+  "triggerObject" TEXT NOT NULL,
+  "triggerEvent" TEXT NOT NULL,
+  "conditions" JSONB,
+  "actions" JSONB,
+  "enabled" BOOLEAN NOT NULL DEFAULT true,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "CrmAutomationRule_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX IF NOT EXISTS "CrmAutomationRule_serviceBusinessId_triggerObject_idx" ON "CrmAutomationRule"("serviceBusinessId", "triggerObject");

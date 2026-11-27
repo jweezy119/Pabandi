@@ -1597,6 +1597,25 @@ model CrmAlert {
   @@map("crm_alerts")
 }
 
+/// A simple CRM automation: when an object matches an event and optional
+/// conditions, run actions (set a field, create a task, notify the owner).
+model CrmAutomationRule {
+  id                String    @id @default(cuid())
+  businessId        String?
+  serviceBusinessId String?
+  name              String
+  triggerObject     String
+  triggerEvent      String
+  conditions        Json?
+  actions           Json?
+  enabled           Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([serviceBusinessId, triggerObject])
+  @@map("CrmAutomationRule")
+}
+
 /// Company/account records. CrmClient.company remains a free-text label for
 /// backwards compatibility; this model is the first-class account record.
 model CrmCompany {

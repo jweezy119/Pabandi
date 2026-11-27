@@ -148,6 +148,7 @@ function buildNavFromSettings(settings: any, osName: string, defaultNav?: NavIte
       // reports which modules are installed, so it is how a landlord reaches
       // their properties from inside the CRM rather than by typing a URL.
       { path: '/business-os', label: 'Workspace', icon: 'grid_view', feature: null },
+      { path: '/contact/settings/automations', label: 'Automations', icon: 'bolt', feature: null },
       { path: '/contact/settings/modules', label: 'Settings', icon: 'settings', feature: null },
     ],
     'Trust OS': [
