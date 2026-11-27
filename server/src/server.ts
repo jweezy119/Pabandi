@@ -16,7 +16,13 @@ const httpServer = createServer(app);
 if (process.env.NODE_ENV === 'production') {
   const missing: string[] = [];
   if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 16) missing.push('JWT_SECRET (min 16 chars)');
-  if (!process.env.PTP_SIGNING_SECRET) missing.push('PTP_SIGNING_SECRET');
+  // PTP is intentionally NOT a boot requirement: ptp.spec.ts checks the secret
+  // where it is used, so a missing value gives agent attestations a clear 503
+  // while human auth, discovery and every unrelated route keep working. Killing
+  // the whole API here turned one optional integration secret into a total outage.
+  if (!process.env.PTP_SIGNING_SECRET) {
+    logger.warn('PTP_SIGNING_SECRET not set — agent attestation signing/verification is disabled until configured');
+  }
   if (!process.env.ENCRYPTION_KEY) missing.push('ENCRYPTION_KEY');
   if (!process.env.TELEGRAM_BOT_SECRET && !process.env.TELEGRAM_WEBHOOK_SECRET) missing.push('TELEGRAM_BOT_SECRET');
   if (missing.length > 0) {
