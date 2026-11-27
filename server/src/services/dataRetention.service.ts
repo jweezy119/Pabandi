@@ -1,7 +1,8 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { logger } from '../utils/logger';
-
-const prisma = new PrismaClient();
+// Retention is a maintenance job, not a tenant request: use the shared pool so
+// it does not open a second set of connections that nothing ever disconnects.
+import { prisma } from '../utils/database';
 
 export interface RetentionPolicyConfig {
   name: string;

@@ -353,25 +353,24 @@ export function setSchemaCheckStatus(status: SchemaCheckResult) {
 app.get('/health', (_req, res) => {
   const isProduction = process.env.NODE_ENV === 'production';
   
-  const healthData: any = {
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-  };
+  // Debug config is assembled separately so the final response stays a single
+  // object literal — the /health structural tests assert that deploy identity
+  // fields are literal properties, not field-by-field assignments.
+  const debugInfo: Record<string, unknown> = {};
 
   // In non-production, include detailed config status for debugging
   if (!isProduction) {
-    healthData.googleOAuth = !!process.env.GOOGLE_CLIENT_ID;
-    healthData.emailConfigured = Boolean((process.env.RESEND_API_KEY || '').trim());
-    healthData.tokenEncryptionConfigured = Boolean((process.env.ENCRYPTION_KEY || '').trim());
-    healthData.smsConfigured = Boolean(
+    debugInfo.googleOAuth = !!process.env.GOOGLE_CLIENT_ID;
+    debugInfo.emailConfigured = Boolean((process.env.RESEND_API_KEY || '').trim());
+    debugInfo.tokenEncryptionConfigured = Boolean((process.env.ENCRYPTION_KEY || '').trim());
+    debugInfo.smsConfigured = Boolean(
       (process.env.TWILIO_ACCOUNT_SID || '').trim() &&
         (process.env.TWILIO_AUTH_TOKEN || '').trim() &&
         (process.env.TWILIO_PHONE_NUMBER || '').trim()
     );
-    healthData.whopConfigured = Boolean((process.env.WHOP_API_KEY || '').trim());
-    healthData.ptpSigningConfigured = Boolean((process.env.PTP_SIGNING_SECRET || '').trim());
-    healthData.security = {
+    debugInfo.whopConfigured = Boolean((process.env.WHOP_API_KEY || '').trim());
+    debugInfo.ptpSigningConfigured = Boolean((process.env.PTP_SIGNING_SECRET || '').trim());
+    debugInfo.security = {
       aiGuardActive: true,
       aiProvidersConfigured: Boolean(
         process.env.OPENAI_API_KEY ||
@@ -394,32 +393,36 @@ app.get('/health', (_req, res) => {
     };
   }
 
-  healthData.schema = {
-    ok: lastSchemaCheck.ok,
-    checked: lastSchemaCheck.checked,
-    // The counts alone say "something is wrong"; the names say which migration
-    // to run. /health is public, but these are column names and reasons, not
-    // credentials — and an operator who can curl the site can already see it
-    // is broken.
-    missing: lastSchemaCheck.missing,
-    notNullable: lastSchemaCheck.notNullable,
-    wrongType: lastSchemaCheck.wrongType,
-    // Derived from Prisma.dmmf rather than the hand-maintained list above, so a
-    // column added to schema.prisma cannot be forgotten here again. drift is
-    // capped at 50 entries; driftTruncated says when it was.
-    drift: lastSchemaCheck.drift ?? [],
-    driftTruncated: lastSchemaCheck.driftTruncated ?? false,
-    absentTables: lastSchemaCheck.absentTables ?? 0,
-  };
-  // The bootstrap is the ONLY thing that creates these tables in production,
-  // so "did it run, and did it work?" is the first question whenever the schema
-  // check above is red. Without this the answer lived only in the deploy log.
-  healthData.bootstrap = getBootstrapStatus();
-  healthData.deployVersion = process.env.RENDER_GIT_COMMIT || 'unknown';
-  healthData.commitSha = process.env.RENDER_GIT_COMMIT || null;
-  healthData.startedAt = process.env.PABANDI_STARTED_AT || null;
-
-  res.status(200).json(healthData);
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    ...debugInfo,
+    schema: {
+      ok: lastSchemaCheck.ok,
+      checked: lastSchemaCheck.checked,
+      // The counts alone say "something is wrong"; the names say which migration
+      // to run. /health is public, but these are column names and reasons, not
+      // credentials — and an operator who can curl the site can already see it
+      // is broken.
+      missing: lastSchemaCheck.missing,
+      notNullable: lastSchemaCheck.notNullable,
+      wrongType: lastSchemaCheck.wrongType,
+      // Derived from Prisma.dmmf rather than the hand-maintained list above, so a
+      // column added to schema.prisma cannot be forgotten here again. drift is
+      // capped at 50 entries; driftTruncated says when it was.
+      drift: lastSchemaCheck.drift ?? [],
+      driftTruncated: lastSchemaCheck.driftTruncated ?? false,
+      absentTables: lastSchemaCheck.absentTables ?? 0,
+    },
+    // The bootstrap is the ONLY thing that creates these tables in production,
+    // so "did it run, and did it work?" is the first question whenever the schema
+    // check above is red. Without this the answer lived only in the deploy log.
+    bootstrap: getBootstrapStatus(),
+    deployVersion: process.env.RENDER_GIT_COMMIT || 'unknown',
+    commitSha: process.env.RENDER_GIT_COMMIT || null,
+    startedAt: process.env.PABANDI_STARTED_AT || null,
+  });
 });
 
 app.get('/healthz', (_req, res) => {
