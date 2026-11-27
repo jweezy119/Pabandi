@@ -157,3 +157,30 @@ describe('CRM automation and permissions', () => {
     expect(app).toMatch(/contact\/settings\/automations/);
   });
 });
+
+describe('CRM inline editing, preview and API docs', () => {
+  it('serves an OpenAPI description on the versioned API', () => {
+    const index = src('routes/index.ts');
+    expect(index).toMatch(/openapi\.routes/);
+    const spec = src('routes/openapi.routes.ts');
+    expect(spec).toMatch(/openapi: '3\.0\.3'/);
+    for (const path of ['/crm/clients', '/crm/deals', '/crm/tasks', '/crm/automations', '/agents/tools']) {
+      expect(spec).toContain(`'${path}'`);
+    }
+  });
+
+  it('wires inline editing and the side-panel preview into the clients list', () => {
+    const table = readFileSync(
+      resolve(__dirname, '../../client/src/pages/crm/components/ClientListTable.tsx'),
+      'utf8',
+    );
+    expect(table).toMatch(/InlineEdit/);
+    expect(table).toMatch(/onPreview/);
+    const page = readFileSync(
+      resolve(__dirname, '../../client/src/pages/contact/ContactClientsPage.tsx'),
+      'utf8',
+    );
+    expect(page).toMatch(/ClientPreviewPanel/);
+    expect(page).toMatch(/handleInlineUpdate/);
+  });
+});

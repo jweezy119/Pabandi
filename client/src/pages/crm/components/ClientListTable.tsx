@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Input, Chip } from '../../../components/primitives';
+import { Button, Input, Chip, InlineEdit } from '../../../components/primitives';
 
 /**
  * onBulkDelete is optional so a caller that cannot delete reports that
@@ -20,6 +20,9 @@ export interface ClientListTableRow {
 export interface ClientListTableProps {
   clients: ClientListTableRow[];
   onEdit?: (client: ClientListTableRow) => void;
+  onPreview?: (client: ClientListTableRow) => void;
+  /** Inline auto-save for row fields. Omitted means read-only cells. */
+  onInlineUpdate?: (client: ClientListTableRow, patch: Record<string, unknown>) => Promise<void> | void;
   /** Takes the id, not the row: the confirm dialog is keyed by id. */
   onDelete?: (id: string) => void;
   onBulkDelete?: (ids: string[]) => void | Promise<void>;
@@ -44,7 +47,7 @@ export interface ClientListTableProps {
 }
 
 export default function ClientListTable({
-  clients, onEdit, onDelete, onBulkDelete, onBulkStatus, query, pagination, onQueryChange,
+  clients, onEdit, onPreview, onInlineUpdate, onDelete, onBulkDelete, onBulkStatus, query, pagination, onQueryChange,
 }: ClientListTableProps) {
   const serverDriven = Boolean(onQueryChange);
   const [search, setSearch] = useState('');
@@ -244,9 +247,18 @@ export default function ClientListTable({
                 </td>
                 {columns.includes('name') && (
                   <td className="p-4 font-medium text-[var(--warm-ink)]">
-                    <Link to={`/contact/clients/${client.id}`} className="hover:text-[var(--clay)] transition">
-                      {client.name}
-                    </Link>
+                    {onInlineUpdate ? (
+                      <InlineEdit
+                        value={client.name}
+                        onSave={(value) => onInlineUpdate(client, { name: String(value) })}
+                        validate={(value) => (String(value).trim() ? null : 'Name cannot be empty')}
+                        placeholder="Client name"
+                      />
+                    ) : (
+                      <Link to={`/contact/clients/${client.id}`} className="hover:text-[var(--clay)] transition">
+                        {client.name}
+                      </Link>
+                    )}
                   </td>
                 )}
                 {columns.includes('company') && <td className="p-4 text-[var(--soft-stone)] text-sm">{client.company || '—'}</td>}
@@ -270,6 +282,16 @@ export default function ClientListTable({
                   <td className="p-4 text-right">
                     {/* Each action renders only when the caller supplied it, so
                         the table never shows a control that cannot act. */}
+                    {onPreview && (
+                      <button
+                        onClick={() => onPreview(client)}
+                        title={`Preview ${client.name}`}
+                        aria-label={`Preview ${client.name}`}
+                        className="p-2 text-[var(--soft-stone)] hover:text-[var(--clay)] transition"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">visibility</span>
+                      </button>
+                    )}
                     {onEdit && (
                       <button
                         onClick={() => onEdit(client)}

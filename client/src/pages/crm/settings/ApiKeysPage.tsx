@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../../../components/DashboardLayout';
 import { Card } from '../../../components/primitives/Card';
 import { Button } from '../../../components/primitives/Button';
@@ -60,7 +60,17 @@ export function ApiKeysPage() {
         <div className="flex items-center justify-between clay-heading pb-2">
           <div>
             <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>API Keys</h1>
-            <p className="text-sm text-[var(--soft-stone)] mt-0.5">Manage access to your CRM via API</p>
+            <p className="text-sm text-[var(--soft-stone)] mt-0.5">
+              Manage access to your CRM via API ·{' '}
+              <a
+                href={`${API_BASE}/api/v1/openapi.json`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--clay)] hover:underline font-semibold"
+              >
+                OpenAPI spec
+              </a>
+            </p>
           </div>
           <Button variant="primary" icon="add" onClick={generateKey}>Generate Key</Button>
         </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import { SavedViewsBar } from '../crm/components/SavedViewsBar';
+import { ClientPreviewPanel } from '../crm/components/RecordPreviewPanel';
 import { Button, Modal, EmptyState, ClaySkeletonCard } from '../../components/primitives';
 import ClientListTable from '../crm/components/ClientListTable';
 import ClientFormModal from '../crm/components/ClientFormModal';
@@ -40,6 +41,7 @@ export default function ContactClientsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [customFields, setCustomFields] = useState<any[]>([]);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [previewId, setPreviewId] = useState<string | null>(null);
   // A failed delete used to be logged to the console and the dialog closed
   // anyway, so the user was shown a success they never got.
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -207,6 +209,17 @@ export default function ContactClientsPage() {
     await fetchClients();
   }
 
+  /** Inline auto-save from the list table. */
+  async function handleInlineUpdate(client: any, patch: Record<string, unknown>) {
+    const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/clients/${client.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) throw new Error('Could not save that field');
+    setClients((rows) => rows.map((row) => (row.id === client.id ? { ...row, ...patch } : row)));
+  }
+
   /** Bulk status change from the table's selection bar. */
   async function handleBulkStatusClients(ids: string[], status: string) {
     const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.pabandi.com'}/api/v1/crm/clients/bulk`, {
@@ -289,6 +302,8 @@ export default function ContactClientsPage() {
             onDelete={(id: string) => { setDeleteError(null); setShowDeleteConfirm(id); }}
             onBulkDelete={handleBulkDeleteClients}
             onBulkStatus={handleBulkStatusClients}
+            onPreview={(client) => setPreviewId(client.id)}
+            onInlineUpdate={handleInlineUpdate}
             query={listQuery}
             pagination={pagination}
             onQueryChange={(patch) => setListQuery((q) => ({ ...q, ...patch }))}
@@ -344,6 +359,7 @@ export default function ContactClientsPage() {
             </div>
           )}
         </Modal>
+        <ClientPreviewPanel clientId={previewId} onClose={() => setPreviewId(null)} />
       </div>
     </DashboardLayout>
   );

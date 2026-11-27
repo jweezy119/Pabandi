@@ -10,6 +10,9 @@ export const apiRouter = Router();
 // Critical direct routes
 apiRouter.use('/auth', authRoutes);
 apiRouter.use('/auth/social', githubAuthRoutes);
+// Always-on API description; served here so it is not behind a lazy domain import.
+const openapiRoutes = require('./openapi.routes');
+apiRouter.use(openapiRoutes.default || openapiRoutes);
 
 // Helper for lazy loading domain routes to keep startup memory low (Render 512MB RAM constraint)
 function lazyRoute(router: Router, routePath: string, importPath: string) {
