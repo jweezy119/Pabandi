@@ -4,6 +4,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { Button, Chip, EmptyState } from '../../components/primitives';
 import ClientSidebar from '../crm/components/ClientSidebar';
 import ClientTimeline from '../crm/components/ClientTimeline';
+import { NotesCommentsPanel } from '../crm/components/NotesCommentsPanel';
 import { Modal } from '../../components/primitives/Modal';
 import { Input } from '../../components/primitives/Input';
 // TrustPanel was removed from this page: it fetched /trust/passports/:id, an
@@ -246,6 +247,7 @@ export default function ContactClientDetailPage() {
               <ClientIntelligencePanel clientId={id!} />
               <TrustScoreBreakdown clientId={id!} />
               <ClientTimeline activities={activities} deals={deals} invoices={invoices} jobs={jobs} notes={client.notes} files={files} />
+              {id && <NotesCommentsPanel clientId={id} />}
             </div>
             <div className="space-y-6">
               {/* First in the sidebar and at gauge size: standing is what you

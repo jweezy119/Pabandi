@@ -1597,6 +1597,62 @@ model CrmAlert {
   @@map("crm_alerts")
 }
 
+/// Company/account records. CrmClient.company remains a free-text label for
+/// backwards compatibility; this model is the first-class account record.
+model CrmCompany {
+  id                String    @id @default(cuid())
+  businessId        String?
+  serviceBusinessId String?
+  name              String
+  domain            String?
+  industry          String?
+  phone             String?
+  address           String?
+  notes             String?
+  customData        Json?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([serviceBusinessId])
+  @@index([name])
+  @@map("CrmCompany")
+}
+
+/// Rich notes attached to a client or deal. Activities are events; notes are
+/// durable written context, which is why they get their own object.
+model CrmNote {
+  id                String    @id @default(cuid())
+  businessId        String?
+  serviceBusinessId String?
+  title             String?
+  body              String
+  clientId          String?
+  dealId            String?
+  authorName        String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([serviceBusinessId, clientId])
+  @@index([dealId])
+  @@map("CrmNote")
+}
+
+/// Record-level discussion threads — the missing collaboration primitive.
+model CrmComment {
+  id                String    @id @default(cuid())
+  businessId        String?
+  serviceBusinessId String?
+  entityType        String
+  entityId          String
+  body              String
+  authorName        String?
+  createdAt         DateTime  @default(now())
+
+  @@index([entityType, entityId])
+  @@index([serviceBusinessId])
+  @@map("CrmComment")
+}
+
 /// A user's saved table/kanban configuration for a CRM object: filters, sorts,
 /// visible columns and grouping. Mirrors Twenty's saved-view model at a small scale.
 model CrmSavedView {

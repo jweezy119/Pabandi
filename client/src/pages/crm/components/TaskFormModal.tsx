@@ -24,6 +24,7 @@ export function TaskFormModal({ isOpen, onClose, onSubmit, clients, deals, initi
     clientId: '',
     dealId: '',
     authorName: 'Owner',
+    assignedTo: '',
   });
 
   useEffect(() => {
@@ -37,9 +38,10 @@ export function TaskFormModal({ isOpen, onClose, onSubmit, clients, deals, initi
           clientId: initialData.clientId || '',
           dealId: initialData.dealId || '',
           authorName: initialData.authorName || 'Owner',
+          assignedTo: initialData.assignedTo || '',
         });
       } else {
-        setFormData({ title: '', description: '', dueDate: '', priority: 'MEDIUM', clientId: '', dealId: '', authorName: 'Owner' });
+        setFormData({ title: '', description: '', dueDate: '', priority: 'MEDIUM', clientId: '', dealId: '', authorName: 'Owner', assignedTo: '' });
       }
     }
   }, [isOpen, initialData]);
@@ -100,6 +102,14 @@ export function TaskFormModal({ isOpen, onClose, onSubmit, clients, deals, initi
             {deals?.map((d: any) => <option key={d.id} value={d.id}>{d.title}</option>)}
           </select>
         </div>
+
+        <Input
+          label="Assigned to"
+          placeholder="Name or email of the teammate"
+          value={formData.assignedTo}
+          onChange={(e: any) => setFormData({ ...formData, assignedTo: e.target.value })}
+          hint="The CRM stores an assignee on the task and shows it on the board."
+        />
 
         <Input
           label="Description"

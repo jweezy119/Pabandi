@@ -127,6 +127,7 @@ function buildNavFromSettings(settings: any, osName: string, defaultNav?: NavIte
       // Industry-personalized display labels powered by verticalPersonas.ts.
       // Underlying routes and canonical CRM states stay unified across all verticals.
       { path: '/contact/clients', label: persona.navLabels.clients, icon: 'verified_user', feature: 'clients' },
+      { path: '/contact/companies', label: 'Companies', icon: 'business', feature: 'clients' },
       { path: '/contact/deals', label: persona.navLabels.deals, icon: 'workspace_premium', feature: 'deals' },
       { path: '/contact/jobs', label: persona.navLabels.jobs, icon: 'work', feature: 'jobs' },
       { path: '/coordinator', label: 'Coordinator', icon: 'precision_manufacturing', feature: 'jobs' },

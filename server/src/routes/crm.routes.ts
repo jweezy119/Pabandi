@@ -1728,6 +1728,143 @@ router.post('/alerts/:id/dismiss', async (req: AuthRequest, res: Response, next:
   }
 });
 
+// ── Companies ───────────────────────────────────────────────────────────────
+
+router.get('/companies', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    const businessId = crm.businessId!;
+    const q = String(req.query.q || '').trim();
+    const companies = await prisma.crmCompany.findMany({
+      where: {
+        OR: [{ businessId }, { serviceBusinessId: businessId }],
+        ...(q ? { name: { contains: q, mode: 'insensitive' } } : {}),
+      },
+      orderBy: { name: 'asc' },
+      take: 100,
+    });
+    ok(res, companies);
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.post('/companies', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    const name = String(req.body?.name || '').trim();
+    if (!name) throw new CustomError('name is required', 400);
+    const { domain, industry, phone, address, notes, customData } = req.body ?? {};
+    const company = await prisma.crmCompany.create({
+      data: {
+        name,
+        domain: domain ? String(domain) : null,
+        industry: industry ? String(industry) : null,
+        phone: phone ? String(phone) : null,
+        address: address ? String(address) : null,
+        notes: notes ? String(notes) : null,
+        ...(customData && typeof customData === 'object' ? { customData: customData as any } : {}),
+        businessId: crm.businessId,
+        serviceBusinessId: crm.businessId,
+      },
+    });
+    res.status(201).json({ success: true, data: company });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// ── Notes & comments ────────────────────────────────────────────────────────
+
+router.get('/notes', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    const businessId = crm.businessId!;
+    const clientId = String(req.query.clientId || '');
+    const dealId = String(req.query.dealId || '');
+    const notes = await prisma.crmNote.findMany({
+      where: {
+        OR: [{ businessId }, { serviceBusinessId: businessId }],
+        ...(clientId ? { clientId } : {}),
+        ...(dealId ? { dealId } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+    ok(res, notes);
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.post('/notes', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    const body = String(req.body?.body || '').trim();
+    const clientId = String(req.body?.clientId || '');
+    const dealId = String(req.body?.dealId || '');
+    if (!body || (!clientId && !dealId)) throw new CustomError('body and a clientId or dealId are required', 400);
+    const note = await prisma.crmNote.create({
+      data: {
+        body,
+        title: req.body?.title ? String(req.body.title) : null,
+        clientId: clientId || null,
+        dealId: dealId || null,
+        authorName: String(req.body?.authorName || req.user?.email || 'Owner'),
+        businessId: crm.businessId,
+        serviceBusinessId: crm.businessId,
+      },
+    });
+    res.status(201).json({ success: true, data: note });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.get('/comments', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    const entityType = String(req.query.entityType || '');
+    const entityId = String(req.query.entityId || '');
+    if (!entityType || !entityId) throw new CustomError('entityType and entityId are required', 400);
+    const comments = await prisma.crmComment.findMany({
+      where: {
+        entityType,
+        entityId,
+        OR: [{ businessId: crm.businessId }, { serviceBusinessId: crm.businessId }],
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 200,
+    });
+    ok(res, comments);
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.post('/comments', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    const entityType = String(req.body?.entityType || '');
+    const entityId = String(req.body?.entityId || '');
+    const body = String(req.body?.body || '').trim();
+    if (!entityType || !entityId || !body) throw new CustomError('entityType, entityId and body are required', 400);
+    const comment = await prisma.crmComment.create({
+      data: {
+        entityType,
+        entityId,
+        body,
+        authorName: String(req.body?.authorName || req.user?.email || 'Owner'),
+        businessId: crm.businessId,
+        serviceBusinessId: crm.businessId,
+      },
+    });
+    res.status(201).json({ success: true, data: comment });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // ── Saved views ─────────────────────────────────────────────────────────────
 
 router.get('/views', async (req: AuthRequest, res: Response, next: NextFunction) => {

@@ -93,3 +93,40 @@ describe('CRM saved views and bulk actions', () => {
     expect(board).toMatch(/onDrop/);
   });
 });
+
+describe('CRM data depth', () => {
+  it('adds first-class company, note and comment objects', () => {
+    const schema = readFileSync(resolve(__dirname, '../prisma/schema.prisma'), 'utf8');
+    for (const model of ['CrmCompany', 'CrmNote', 'CrmComment']) {
+      expect(schema).toContain(`model ${model}`);
+    }
+    const routes = src('routes/crm.routes.ts');
+    for (const path of ['/companies', '/notes', '/comments']) {
+      expect(routes).toContain(`router.get('${path}'`);
+      expect(routes).toContain(`router.post('${path}'`);
+    }
+  });
+
+  it('exposes task assignee UI and the notes/comments panel', () => {
+    const taskForm = readFileSync(
+      resolve(__dirname, '../../client/src/pages/crm/components/TaskFormModal.tsx'),
+      'utf8',
+    );
+    expect(taskForm).toMatch(/assignedTo/);
+    const detail = readFileSync(
+      resolve(__dirname, '../../client/src/pages/contact/ContactClientDetailPage.tsx'),
+      'utf8',
+    );
+    expect(detail).toMatch(/NotesCommentsPanel/);
+  });
+
+  it('routes the companies page and adds it to CRM navigation', () => {
+    const app = readFileSync(resolve(__dirname, '../../client/src/App.tsx'), 'utf8');
+    expect(app).toMatch(/path="contact\/companies"/);
+    const nav = readFileSync(
+      resolve(__dirname, '../../client/src/components/DashboardLayout.tsx'),
+      'utf8',
+    );
+    expect(nav).toMatch(/path: '\/contact\/companies'/);
+  });
+});
