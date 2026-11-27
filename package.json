@@ -20,8 +20,8 @@
     "lint-staged": "^15.4.3"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.0",
-    "headroom-ai": "^0.37.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "headroom-ai": "^0.45.0",
     "zod": "^4.6.5"
   }
 }
