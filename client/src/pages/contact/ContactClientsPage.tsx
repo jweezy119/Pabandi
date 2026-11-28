@@ -58,9 +58,9 @@ export default function ContactClientsPage() {
       if (res.ok) {
         const data = await res.json();
         const settings = data.data;
-        if (settings?.customFields?.client) {
-          setCustomFields(settings.customFields.client);
-        }
+        // Settings writes capitalized entity keys; older settings used lowercase.
+        const fields = settings?.customFields?.Client ?? settings?.customFields?.client;
+        if (Array.isArray(fields)) setCustomFields(fields);
       }
     } catch (err) {
       console.error('Failed to fetch settings:', err);

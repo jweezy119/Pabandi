@@ -30,6 +30,7 @@ export function ContactTasksPage() {
    */
   const [filters, setFilters] = useState<{ status: string; priority: string }>({ status: '', priority: '' });
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(() => new URLSearchParams(window.location.search).get('new') === '1');
+  const [customFields, setCustomFields] = useState<any[]>([]);
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -47,11 +48,16 @@ export function ContactTasksPage() {
     const taskQuery = `${API_BASE}/api/v1/crm/tasks?${params.toString()}`;
     setLoading(true);
     try {
-      const [taskRes, cliRes, dealRes] = await Promise.all([
+      const [taskRes, cliRes, dealRes, settingsRes] = await Promise.all([
         fetch(taskQuery, { headers: getHeaders() }),
         fetch(`${API_BASE}/api/v1/crm/clients?businessId=${businessId}`, { headers: getHeaders() }),
         fetch(`${API_BASE}/api/v1/crm/deals?businessId=${businessId}`, { headers: getHeaders() }),
+        fetch(`${API_BASE}/api/v1/crm/settings?businessId=${businessId}`, { headers: getHeaders() }),
       ]);
+      if (settingsRes.ok) {
+        const settings = (await settingsRes.json()).data;
+        setCustomFields(settings?.customFields?.Task ?? settings?.customFields?.task ?? []);
+      }
       // readList: /crm/tasks answers with a bare array on success and `{error}` on
       // failure, so an unchecked read put an object into `tasks` and the board's
       // tasks.filter threw — the same error boundary the Activities page hit.
@@ -232,6 +238,7 @@ export function ContactTasksPage() {
           onSubmit={handleSaveTask}
           clients={clients}
           deals={deals}
+          customFields={customFields}
           initialData={selectedTask}
         />
       </div>

@@ -56,6 +56,7 @@ export default function ContactDealsPage() {
   const [lostReason, setLostReason] = useState('');
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
   const [showImportModal, setShowImportModal] = useState(false);
+  const [customFields, setCustomFields] = useState<any[]>([]);
 
   useEffect(() => {
     fetchDealsAndClients();
@@ -68,13 +69,18 @@ export default function ContactDealsPage() {
       const headers = { Authorization: `Bearer ${token}` };
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-      const [dealsRes, clientsRes] = await Promise.all([
+      const [dealsRes, clientsRes, settingsRes] = await Promise.all([
         fetch(`${baseUrl}/api/v1/crm/deals`, { headers }),
         fetch(`${baseUrl}/api/v1/crm/clients`, { headers }),
+        fetch(`${baseUrl}/api/v1/crm/settings`, { headers }),
       ]);
 
       if (dealsRes.ok) setDeals((await dealsRes.json()).data || []);
       if (clientsRes.ok) setClients((await clientsRes.json()).data || []);
+      if (settingsRes.ok) {
+        const settings = (await settingsRes.json()).data;
+        setCustomFields(settings?.customFields?.Deal ?? settings?.customFields?.deal ?? []);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -193,7 +199,7 @@ export default function ContactDealsPage() {
         />
 
         <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Create New Deal">
-          <DealFormModal clients={clients} onClose={() => setIsCreateOpen(false)} onSave={handleCreateDeal} />
+          <DealFormModal clients={clients} customFields={customFields} onClose={() => setIsCreateOpen(false)} onSave={handleCreateDeal} />
         </Modal>
 
         <Modal isOpen={isLostModalOpen} onClose={() => setIsLostModalOpen(false)} title="Close Deal as Lost">

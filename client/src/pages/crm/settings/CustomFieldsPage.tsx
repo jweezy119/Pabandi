@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../../../components/DashboardLayout';
 import { Card } from '../../../components/primitives/Card';
 import { Button } from '../../../components/primitives/Button';
@@ -78,7 +78,8 @@ export function CustomFieldsPage() {
       name: 'New Field',
       type: 'text',
       required: false,
-      showInList: true
+      showInList: true,
+      options: []
     });
     setConfig(updated);
   };
@@ -109,7 +110,7 @@ export function CustomFieldsPage() {
           <Card key={entity} padding="lg" className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-[var(--warm-ink)]">{entity} Fields</h3>
-              <Button variant="ghost" icon="add" onClick={() => addField(entity)} whileTap={{ scale: 0.95 }}>Add Field</Button>
+              <Button variant="ghost" icon="add" onClick={() => addField(entity)}>Add Field</Button>
             </div>
 
             <AnimatePresence mode="popLayout">
@@ -148,7 +149,19 @@ export function CustomFieldsPage() {
                       <option value="number">Number</option>
                       <option value="date">Date</option>
                       <option value="boolean">Checkbox</option>
+                      <option value="select">Choice</option>
                     </select>
+                    {field.type === 'select' && (
+                      <input
+                        className="px-3 py-2 border rounded-lg text-sm"
+                        placeholder="Choices, separated by commas"
+                        value={(field.options || []).join(', ')}
+                        onChange={e => updateField(entity, idx, {
+                          ...field,
+                          options: e.target.value.split(',').map((v) => v.trim()).filter(Boolean),
+                        })}
+                      />
+                    )}
                     <label className="flex items-center gap-2 text-sm">
                       <input
                         type="checkbox"
@@ -169,7 +182,7 @@ export function CustomFieldsPage() {
                       const updated = { ...config };
                       updated.customFields[entity].splice(idx, 1);
                       setConfig(updated);
-                    }} whileTap={{ scale: 0.95 }}>
+                    }}>
                       <span className="material-symbols-outlined text-[var(--rose)]">delete</span>
                     </Button>
                   </motion.div>

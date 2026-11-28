@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Input, Button } from '../../../components/primitives';
 import ClaySelect from './ClaySelect';
+import CustomFieldsRenderer from './CustomFieldsRenderer';
 import { DEAL_STAGES, DEAL_STAGE_LABELS, type DealStage } from '@shared/crm';
 
 interface DealFormModalProps {
@@ -18,7 +19,7 @@ interface DealFormModalProps {
   clients: { id: string; name: string; email?: string }[];
   onClose: () => void;
   onSave: (form: Record<string, unknown>) => void;
-  customFields?: { id: string; label: string; type: string }[];
+  customFields?: import('./CustomFieldsRenderer').CustomField[];
 }
 
 /**
@@ -41,9 +42,9 @@ export default function DealFormModal({ deal, clients, onClose, onSave, customFi
     title: '', value: '', stage: 'LEAD', clientId: '', probability: '10', expectedCloseDate: '', notes: '', customData: {}
   });
 
-  const handleChange = (field: string, value: unknown) => setForm((p: Record<string, unknown>) => ({ ...p, [field]: value }));
-  const handleCustomChange = (field: string, value: unknown) => setForm((p: Record<string, unknown>) => ({
-    ...p, customData: { ...(p.customData as Record<string, unknown> || {}), [field]: value }
+  const handleChange = (field: string, value: unknown) => setForm((p: any) => ({ ...p, [field]: value }));
+  const handleCustomChange = (field: string, value: unknown) => setForm((p: any) => ({
+    ...p, customData: { ...(p.customData || {}), [field]: value }
   }));
 
   const clientOptions = clients.map(c => ({ value: c.id, label: c.name }));
@@ -78,11 +79,11 @@ export default function DealFormModal({ deal, clients, onClose, onSave, customFi
       {customFields && customFields.length > 0 && (
         <div className="mt-4 border-t pt-4 border-[rgba(191,179,163,0.3)]">
           <h4 className="text-sm font-bold text-[var(--warm-ink)] mb-3">Custom Fields</h4>
-          {customFields.map((cf) => (
-            <div key={cf.id} className="mb-3">
-              <Input label={cf.label} type={cf.type || 'text'} value={(form.customData as Record<string, unknown>)?.[cf.id] as string || ''} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCustomChange(cf.id, e.target.value)} />
-            </div>
-          ))}
+          <CustomFieldsRenderer
+            fields={customFields}
+            values={(form.customData as Record<string, unknown>) || {}}
+            onChange={handleCustomChange}
+          />
         </div>
       )}
 

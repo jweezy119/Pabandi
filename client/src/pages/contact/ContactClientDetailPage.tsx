@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
-import { Button, Chip, EmptyState } from '../../components/primitives';
+import { Button, Card, Chip, EmptyState } from '../../components/primitives';
 import ClientSidebar from '../crm/components/ClientSidebar';
 import ClientTimeline from '../crm/components/ClientTimeline';
 import { NotesCommentsPanel } from '../crm/components/NotesCommentsPanel';
@@ -226,6 +226,7 @@ export default function ContactClientDetailPage() {
                   worth pricing terms on. */}
               <ClientTermsSuggestion clientId={id!} />
               <QuickFriendlyMessageCard
+                clientId={id}
                 clientName={client.name}
                 clientPhone={client.phone}
                 clientEmail={client.email}
@@ -248,6 +249,19 @@ export default function ContactClientDetailPage() {
               <TrustScoreBreakdown clientId={id!} />
               <ClientTimeline activities={activities} deals={deals} invoices={invoices} jobs={jobs} notes={client.notes} files={files} />
               {id && <NotesCommentsPanel clientId={id} />}
+              {activities.some((a: any) => a.type === 'MEETING') && (
+                <Card className="p-4">
+                  <h3 className="mb-2 font-bold text-[var(--warm-ink)]">Meetings</h3>
+                  <div className="space-y-2">
+                    {activities.filter((a: any) => a.type === 'MEETING').slice(0, 5).map((a: any) => (
+                      <p key={a.id} className="text-sm text-[var(--soft-stone)]">
+                        <span className="font-semibold text-[var(--warm-ink)]">{a.title || 'Meeting'}</span>
+                        {' — '}{a.description || new Date(a.createdAt).toLocaleDateString()}
+                      </p>
+                    ))}
+                  </div>
+                </Card>
+              )}
             </div>
             <div className="space-y-6">
               {/* First in the sidebar and at gauge size: standing is what you

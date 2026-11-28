@@ -3,6 +3,7 @@ import { Modal } from '../../../components/primitives/Modal';
 import { Button } from '../../../components/primitives/Button';
 import { Input } from '../../../components/primitives/Input';
 import ClaySelect from './ClaySelect';
+import CustomFieldsRenderer from './CustomFieldsRenderer';
 import { TASK_PRIORITIES, TASK_PRIORITY_LABELS, options } from '@shared/crm';
 
 /**
@@ -15,7 +16,7 @@ import { TASK_PRIORITIES, TASK_PRIORITY_LABELS, options } from '@shared/crm';
  * came from somewhere else.
  */
 
-export function TaskFormModal({ isOpen, onClose, onSubmit, clients, deals, initialData = null }: any) {
+export function TaskFormModal({ isOpen, onClose, onSubmit, clients, deals, customFields = [], initialData = null }: any) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -25,6 +26,7 @@ export function TaskFormModal({ isOpen, onClose, onSubmit, clients, deals, initi
     dealId: '',
     authorName: 'Owner',
     assignedTo: '',
+    customData: {} as Record<string, unknown>,
   });
 
   useEffect(() => {
@@ -39,9 +41,10 @@ export function TaskFormModal({ isOpen, onClose, onSubmit, clients, deals, initi
           dealId: initialData.dealId || '',
           authorName: initialData.authorName || 'Owner',
           assignedTo: initialData.assignedTo || '',
+          customData: initialData.customData || {},
         });
       } else {
-        setFormData({ title: '', description: '', dueDate: '', priority: 'MEDIUM', clientId: '', dealId: '', authorName: 'Owner', assignedTo: '' });
+        setFormData({ title: '', description: '', dueDate: '', priority: 'MEDIUM', clientId: '', dealId: '', authorName: 'Owner', assignedTo: '', customData: {} });
       }
     }
   }, [isOpen, initialData]);
@@ -102,6 +105,17 @@ export function TaskFormModal({ isOpen, onClose, onSubmit, clients, deals, initi
             {deals?.map((d: any) => <option key={d.id} value={d.id}>{d.title}</option>)}
           </select>
         </div>
+
+        {customFields.length > 0 && (
+          <div className="border-t border-[var(--warm-sand)] pt-4">
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--soft-stone)]">Custom details</p>
+            <CustomFieldsRenderer
+              fields={customFields}
+              values={formData.customData}
+              onChange={(id: string, value: unknown) => setFormData((f: any) => ({ ...f, customData: { ...f.customData, [id]: value } }))}
+            />
+          </div>
+        )}
 
         <Input
           label="Assigned to"

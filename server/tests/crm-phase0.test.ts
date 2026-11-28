@@ -191,6 +191,41 @@ describe('CRM inline editing, preview and API docs', () => {
     expect(routes).toMatch(/BUILTIN_TEMPLATES/);
   });
 
+  it('gives standard objects the same custom-field metadata as custom objects', () => {
+    const clientPage = readFileSync(
+      resolve(__dirname, '../../client/src/pages/contact/ContactClientsPage.tsx'),
+      'utf8',
+    );
+    expect(clientPage).toMatch(/customFields\?\.Client \?\? settings\?\.customFields\?\.client/);
+    const deal = readFileSync(
+      resolve(__dirname, '../../client/src/pages/crm/components/DealFormModal.tsx'),
+      'utf8',
+    );
+    expect(deal).toMatch(/CustomFieldsRenderer/);
+    const task = readFileSync(
+      resolve(__dirname, '../../client/src/pages/crm/components/TaskFormModal.tsx'),
+      'utf8',
+    );
+    expect(task).toMatch(/CustomFieldsRenderer/);
+    const settings = readFileSync(
+      resolve(__dirname, '../../client/src/pages/crm/settings/CustomFieldsPage.tsx'),
+      'utf8',
+    );
+    expect(settings).toMatch(/<option value="select">Choice<\/option>/);
+  });
+
+  it('ships a signed, provider-agnostic email/calendar channel layer', () => {
+    const routes = src('routes/channels.routes.ts');
+    expect(routes).toMatch(/router\.get\('\/:businessId\/messages'/);
+    expect(routes).toMatch(/router\.post\('\/route'/);
+    expect(routes).toMatch(/router\.post\('\/ingest'/);
+    expect(routes).toMatch(/CHANNEL_INGEST_SECRET/);
+    expect(routes).toMatch(/createHmac\('sha256'/);
+    expect(routes).toMatch(/type: channel === 'CALENDAR' \? 'MEETING' : 'EMAIL'/);
+    const index = src('routes/index.ts');
+    expect(index).toMatch(/\['\/channels', '\.\/channels.routes'\]/);
+  });
+
   it('makes custom objects first-class navigation with their own views', () => {
     const hook = readFileSync(
       resolve(__dirname, '../../client/src/hooks/useCustomObjects.ts'),

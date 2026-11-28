@@ -108,6 +108,9 @@ const domainRoutes: [string, string][] = [
 
   // 8. Integrations & Platform
   ['/telegram', './telegram.routes'],
+  // Shared inbox / email + calendar ingest. Provider-agnostic: inbound events
+  // are signed with CHANNEL_INGEST_SECRET.
+  ['/channels', './channels.routes'],
   ['/whatsapp', './whatsapp.routes'],
   ['/webhooks', './webhook.routes'],
   ['/notifications', './notifications.routes'],

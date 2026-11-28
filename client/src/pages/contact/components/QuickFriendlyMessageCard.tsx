@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Copy, Check, MessageCircle, Mail, Smartphone, Clock } from 'lucide-react';
 import { useVerticalPersona, formatOutreachMessage } from '../../../config/verticalPersonas';
 import { useAuthStore } from '../../../store/authStore';
+import { getAuthToken } from '../../../utils/authToken';
 
 interface QuickFriendlyMessageCardProps {
+  clientId?: string;
   clientName?: string;
   clientPhone?: string;
   clientEmail?: string;
@@ -14,7 +16,10 @@ function cleanPhoneDigits(phone?: string): string {
   return (phone || '').replace(/[^\d+]/g, '').replace(/^\+/, '');
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || 'https://api.pabandi.com';
+
 export const QuickFriendlyMessageCard: React.FC<QuickFriendlyMessageCardProps> = ({
+  clientId,
   clientName,
   clientPhone,
   clientEmail,
@@ -28,6 +33,41 @@ export const QuickFriendlyMessageCard: React.FC<QuickFriendlyMessageCardProps> =
     persona.exampleBusiness;
 
   const [selectedId, setSelectedId] = useState(persona.outreachTemplates[0]?.id || 'reminder');
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+  const sendEmailFromRecord = async () => {
+    setSendingEmail(true);
+    try {
+      const businessId = (user as any)?.business?.id || localStorage.getItem('businessId') || '';
+      const res = await fetch(`${API_BASE}/api/v1/channels/route`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getAuthToken() || ''}`,
+        },
+        body: JSON.stringify({
+          businessId,
+          channel: 'EMAIL',
+          customerId: clientId,
+          clientId,
+          to: clientEmail,
+          subject,
+          body: draft,
+        }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      const result = await res.json().catch(() => null);
+      if (result?.data?.status === 'SENT' && onLogActivity) {
+        await onLogActivity({ type: 'EMAIL', title: subject, description: draft });
+      }
+    } catch {
+      // Keep the old behaviour as a fallback: opening the mail client still
+      // lets the owner send the message if the API is unreachable.
+      window.location.href = `mailto:${clientEmail || ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(draft)}`;
+    } finally {
+      setSendingEmail(false);
+    }
+  };
   const [draft, setDraft] = useState('');
   const [copied, setCopied] = useState(false);
   const [logging, setLogging] = useState(false);
@@ -157,13 +197,15 @@ export const QuickFriendlyMessageCard: React.FC<QuickFriendlyMessageCardProps> =
           Text (SMS)
         </a>
 
-        <a
-          href={`mailto:${clientEmail || ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(draft)}`}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--warm-sand)]/50 text-[var(--warm-ink)] hover:opacity-90 transition"
+        <button
+          type="button"
+          onClick={sendEmailFromRecord}
+          disabled={sendingEmail || !clientEmail}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--warm-sand)]/50 text-[var(--warm-ink)] hover:opacity-90 transition disabled:opacity-50"
         >
           <Mail size={14} />
-          Email
-        </a>
+          {sendingEmail ? 'Sending…' : 'Email'}
+        </button>
 
         {onLogActivity && (
           <button
