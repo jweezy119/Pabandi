@@ -24,7 +24,7 @@
     "@stripe/stripe-js": "^9.17.0",
     "@tanstack/react-virtual": "^3.14.26",
     "@vis.gl/react-google-maps": "^1.8.3",
-    "axios": "^1.6.2",
+    "axios": "1.20.0",
     "bs58": "^6.0.0",
     "buffer": "^6.0.3",
     "date-fns": "^3.6.0",
@@ -91,6 +91,8 @@
     "follow-redirects": "^1.16.2",
     "undici": "^8.12.3",
     "fast-uri": "^3.1.9",
-    "decode-uri-component": "^0.2.1"
+    "decode-uri-component": "^0.2.1",
+    "axios": "$axios",
+    "zod": "4.6.7"
   }
 }
