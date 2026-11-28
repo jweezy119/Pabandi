@@ -152,6 +152,19 @@ describe('CRM automation and permissions', () => {
     expect(routes).toMatch(/function assertManager/);
   });
 
+  it('records automation runs, notifies on notable events and retries webhooks', () => {
+    const schema = readFileSync(resolve(__dirname, '../prisma/schema.prisma'), 'utf8');
+    expect(schema).toContain('model CrmAutomationRun');
+    expect(schema).toContain('model CrmWebhookDelivery');
+    const service = src('services/crmAutomation.service.ts');
+    expect(service).toMatch(/deliverWebhookDelivery/);
+    expect(service).toMatch(/notifyNotableEvent/);
+    expect(service).toMatch(/crmAutomationRun\.create/);
+    const routes = src('routes/crm.routes.ts');
+    expect(routes).toMatch(/\/automations\/:id\/runs/);
+    expect(routes).toMatch(/\/webhook-deliveries\/:id\/retry/);
+  });
+
   it('wires the automation settings UI', () => {
     const app = readFileSync(resolve(__dirname, '../../client/src/App.tsx'), 'utf8');
     expect(app).toMatch(/contact\/settings\/automations/);

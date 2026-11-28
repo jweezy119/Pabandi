@@ -75,42 +75,112 @@ async function applyAction(
   }
 }
 
-/** HMAC-signed outbound webhook delivery. Failures are logged, never thrown. */
-async function deliverWebhooks(businessId: string, event: string, payload: unknown): Promise<void> {
-  try {
-    const endpoints = await prisma.webhookEndpoint.findMany({ where: { businessId } });
-    const body = JSON.stringify({ event, data: payload, deliveredAt: new Date().toISOString() });
-    for (const endpoint of endpoints) {
-      const events: string[] = Array.isArray(endpoint.subscribedEvents)
-        ? (endpoint.subscribedEvents as string[])
-        : [];
-      if (!events.includes(event) && !events.includes('*')) continue;
-      if (!endpoint.signingSecret) {
-        logger.warn(`[CrmAutomation] webhook ${endpoint.id} has no signing secret; skipping`);
-        continue;
-      }
-      try {
-        const signature = crypto.createHmac('sha256', endpoint.signingSecret).update(body).digest('hex');
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
-        await fetch(endpoint.targetUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-pabandi-event': event,
-            'x-pabandi-signature': signature,
-          },
-          body,
-          signal: controller.signal,
-        });
-        clearTimeout(timeout);
-      } catch (error) {
-        logger.warn(`[CrmAutomation] webhook ${endpoint.id} delivery failed: ${error instanceof Error ? error.message : String(error)}`);
-      }
-    }
-  } catch (error) {
-    logger.warn(`[CrmAutomation] webhook lookup failed: ${error instanceof Error ? error.message : String(error)}`);
+/** HMAC-signed outbound webhook delivery. One row per attempt, retryable. */
+export async function deliverWebhookDelivery(deliveryId: string): Promise<boolean> {
+  const delivery = await prisma.crmWebhookDelivery.findUnique({ where: { id: deliveryId } });
+  if (!delivery) return false;
+  const endpoint = await prisma.webhookEndpoint.findUnique({ where: { id: delivery.endpointId } });
+  if (!endpoint?.signingSecret) {
+    await prisma.crmWebhookDelivery.update({
+      where: { id: deliveryId },
+      data: { status: 'FAILED', lastError: 'Webhook endpoint has no signing secret', attempts: { increment: 1 } },
+    });
+    return false;
   }
+
+  const body = JSON.stringify({ event: delivery.event, data: delivery.payload, deliveredAt: new Date().toISOString() });
+  const signature = crypto.createHmac('sha256', endpoint.signingSecret).update(body).digest('hex');
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const response = await fetch(endpoint.targetUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-pabandi-event': delivery.event,
+        'x-pabandi-signature': signature,
+      },
+      body,
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    const ok = response.ok;
+    await prisma.crmWebhookDelivery.update({
+      where: { id: deliveryId },
+      data: {
+        status: ok ? 'DELIVERED' : 'FAILED',
+        lastError: ok ? null : `HTTP ${response.status}`,
+        attempts: { increment: 1 },
+        deliveredAt: ok ? new Date() : null,
+      },
+    });
+    return ok;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.warn(`[CrmAutomation] webhook ${deliveryId} failed: ${message}`);
+    await prisma.crmWebhookDelivery.update({
+      where: { id: deliveryId },
+      data: { status: 'FAILED', lastError: message, attempts: { increment: 1 } },
+    });
+    return false;
+  }
+}
+
+async function queueWebhooks(businessId: string, event: string, payload: unknown): Promise<void> {
+  const endpoints = await prisma.webhookEndpoint.findMany({ where: { businessId } });
+  for (const endpoint of endpoints) {
+    const events: string[] = Array.isArray(endpoint.subscribedEvents)
+      ? (endpoint.subscribedEvents as string[])
+      : [];
+    if (!events.includes(event) && !events.includes('*')) continue;
+    const delivery = await prisma.crmWebhookDelivery.create({
+      data: {
+        endpointId: endpoint.id,
+        businessId,
+        event,
+        payload: payload as any,
+      },
+    });
+    void deliverWebhookDelivery(delivery.id);
+  }
+}
+
+/** Generate a CRM alert and an in-app notification for notable record events. */
+async function notifyNotableEvent(
+  businessId: string,
+  object: CrmObject,
+  event: string,
+  record: Record<string, any>,
+): Promise<void> {
+  const notable =
+    (object === 'deal' && event === 'status_changed' && String(record.stage || '').toUpperCase() === 'LOST') ||
+    (object === 'task' && record.priority === 'HIGH' && event === 'created');
+  if (!notable) return;
+  const business = await prisma.business.findUnique({ where: { id: businessId }, select: { ownerId: true } });
+  if (!business?.ownerId) return;
+  const title = object === 'deal' ? 'A deal was lost' : 'High-priority task created';
+  const description = object === 'deal'
+    ? `${record.title || 'Deal'} was marked lost — review the reason and follow up.`
+    : `${record.title || 'Task'} needs attention.`;
+  await prisma.crmAlert.create({
+    data: {
+      serviceBusinessId: businessId,
+      type: object === 'deal' ? 'deal_lost' : 'high_priority_task',
+      title,
+      message: description,
+      entityType: object,
+      entityId: String(record.id),
+    },
+  }).catch(() => undefined);
+  await prisma.notification.create({
+    data: {
+      userId: business.ownerId,
+      type: 'crm_alert',
+      title,
+      body: description,
+      actionUrl: `/contact/${object === 'deal' ? 'deals' : 'tasks'}/${record.id}`,
+    },
+  }).catch(() => undefined);
 }
 
 /**
@@ -132,10 +202,32 @@ export function emitCrmEvent(
         const conditions = (Array.isArray(rule.conditions) ? rule.conditions : []) as unknown as Condition[];
         if (!matches(record, conditions)) continue;
         const actions = (Array.isArray(rule.actions) ? rule.actions : []) as unknown as Action[];
-        for (const action of actions) await applyAction(businessId, object, String(record.id), action);
-        logger.info(`[CrmAutomation] rule ${rule.id} fired for ${object}.${event}`);
+        const run = await prisma.crmAutomationRun.create({
+          data: {
+            ruleId: rule.id,
+            businessId,
+            event: `${object}.${event}`,
+            recordId: String(record.id),
+            status: 'RUNNING',
+          },
+        });
+        try {
+          for (const action of actions) await applyAction(businessId, object, String(record.id), action);
+          await prisma.crmAutomationRun.update({
+            where: { id: run.id },
+            data: { status: 'SUCCESS', actions: actions as any },
+          });
+          logger.info(`[CrmAutomation] rule ${rule.id} fired for ${object}.${event}`);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          await prisma.crmAutomationRun.update({
+            where: { id: run.id },
+            data: { status: 'FAILED', error: message },
+          });
+        }
       }
-      await deliverWebhooks(businessId, `${object}.${event}`, record);
+      await notifyNotableEvent(businessId, object, event, record);
+      await queueWebhooks(businessId, `${object}.${event}`, record);
     } catch (error) {
       logger.warn(`[CrmAutomation] emit failed: ${error instanceof Error ? error.message : String(error)}`);
     }

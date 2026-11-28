@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../../../components/DashboardLayout';
 import { Card } from '../../../components/primitives/Card';
 import { Button } from '../../../components/primitives/Button';
@@ -12,11 +12,29 @@ const getHeaders = () => ({ 'Content-Type': 'application/json', Authorization: `
 export function WebhooksPage() {
   const businessId = localStorage.getItem('businessId') || '';
   const [webhooks, setWebhooks] = useState<any[]>([]);
+  const [deliveries, setDeliveries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (businessId) loadWebhooks();
+    if (businessId) {
+      loadWebhooks();
+      loadDeliveries();
+    }
   }, [businessId]);
+
+  const loadDeliveries = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/crm/webhook-deliveries`, { headers: getHeaders() });
+      if (res.ok) setDeliveries((await res.json()).data || []);
+    } catch {
+      // Delivery history is diagnostic; the endpoint list still works.
+    }
+  };
+
+  const retryDelivery = async (id: string) => {
+    await fetch(`${API_BASE}/api/v1/crm/webhook-deliveries/${id}/retry`, { method: 'POST', headers: getHeaders() });
+    await loadDeliveries();
+  };
 
   const loadWebhooks = async () => {
     try {
@@ -101,6 +119,31 @@ export function WebhooksPage() {
               )}
             </tbody>
           </table>
+        </Card>
+
+        <Card padding="lg">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold" style={{ color: 'var(--warm-ink)' }}>Recent deliveries</h2>
+            <Button variant="ghost" onClick={loadDeliveries}>Refresh</Button>
+          </div>
+          {deliveries.length === 0 && <p className="text-sm text-[var(--soft-stone)]">No deliveries yet.</p>}
+          <div className="space-y-2">
+            {deliveries.map((d) => (
+              <div key={d.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--warm-sand)] p-3">
+                <div>
+                  <p className="text-sm font-semibold text-[var(--warm-ink)]">{d.event}</p>
+                  <p className="text-xs text-[var(--soft-stone)]">
+                    <span className={d.status === 'DELIVERED' ? 'text-[var(--sage)]' : 'text-[var(--dusty-rose)]'}>{d.status}</span>
+                    {' · '}{d.attempts} attempt(s) · {new Date(d.createdAt).toLocaleString()}
+                    {d.lastError ? ` · ${d.lastError}` : ''}
+                  </p>
+                </div>
+                {d.status !== 'DELIVERED' && (
+                  <Button variant="secondary" size="sm" onClick={() => retryDelivery(d.id)}>Retry</Button>
+                )}
+              </div>
+            ))}
+          </div>
         </Card>
       </div>
     </DashboardLayout>

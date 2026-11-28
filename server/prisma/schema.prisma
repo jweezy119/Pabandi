@@ -1689,6 +1689,41 @@ model CrmCalendarAccount {
   @@map("CrmCalendarAccount")
 }
 
+/// One execution of an automation rule, kept for debugging and run history.
+model CrmAutomationRun {
+  id         String   @id @default(cuid())
+  ruleId     String
+  businessId String?
+  event      String
+  recordId   String?
+  status     String   @default("SUCCESS")
+  actions    Json?
+  error      String?
+  createdAt  DateTime @default(now())
+
+  @@index([ruleId, createdAt])
+  @@index([businessId])
+  @@map("CrmAutomationRun")
+}
+
+/// Outbound webhook attempt, with the payload retained so it can be retried.
+model CrmWebhookDelivery {
+  id         String   @id @default(cuid())
+  endpointId String
+  businessId String?
+  event      String
+  payload    Json
+  status     String   @default("PENDING")
+  attempts   Int      @default(0)
+  lastError  String?
+  deliveredAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([endpointId, createdAt])
+  @@index([businessId])
+  @@map("CrmWebhookDelivery")
+}
+
 /// A reusable object blueprint. Built-ins have businessId = null; owners can
 /// publish their own setup for other businesses to use in one tap.
 model CrmBlueprintTemplate {

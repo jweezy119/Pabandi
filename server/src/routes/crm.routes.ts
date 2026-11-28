@@ -1811,6 +1811,53 @@ router.delete('/automations/:id', async (req: AuthRequest, res: Response, next: 
   }
 });
 
+router.get('/automations/:id/runs', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    const rule = await prisma.crmAutomationRule.findFirst({
+      where: { id: req.params.id, OR: [{ businessId: crm.businessId }, { serviceBusinessId: crm.businessId }] },
+      select: { id: true },
+    });
+    if (!rule) throw new CustomError('Automation rule not found', 404);
+    ok(res, await prisma.crmAutomationRun.findMany({
+      where: { ruleId: rule.id },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    }));
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.get('/webhook-deliveries', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    ok(res, await prisma.crmWebhookDelivery.findMany({
+      where: { businessId: crm.businessId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    }));
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.post('/webhook-deliveries/:id/retry', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const crm = requireCrmContext(req);
+    const delivery = await prisma.crmWebhookDelivery.findFirst({
+      where: { id: req.params.id, businessId: crm.businessId },
+      select: { id: true },
+    });
+    if (!delivery) throw new CustomError('Delivery not found', 404);
+    const { deliverWebhookDelivery } = await import('../services/crmAutomation.service');
+    const delivered = await deliverWebhookDelivery(delivery.id);
+    ok(res, { delivered });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // ── Companies ───────────────────────────────────────────────────────────────
 
 router.get('/companies', async (req: AuthRequest, res: Response, next: NextFunction) => {

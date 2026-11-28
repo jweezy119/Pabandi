@@ -468,3 +468,32 @@ CREATE TABLE IF NOT EXISTS "CrmCalendarAccount" (
   CONSTRAINT "CrmCalendarAccount_pkey" PRIMARY KEY ("id")
 );
 CREATE UNIQUE INDEX IF NOT EXISTS "CrmCalendarAccount_businessId_key" ON "CrmCalendarAccount"("businessId");
+
+CREATE TABLE IF NOT EXISTS "CrmAutomationRun" (
+  "id" TEXT NOT NULL,
+  "ruleId" TEXT NOT NULL,
+  "businessId" TEXT,
+  "event" TEXT NOT NULL,
+  "recordId" TEXT,
+  "status" TEXT NOT NULL DEFAULT 'SUCCESS',
+  "actions" JSONB,
+  "error" TEXT,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "CrmAutomationRun_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX IF NOT EXISTS "CrmAutomationRun_ruleId_createdAt_idx" ON "CrmAutomationRun"("ruleId", "createdAt");
+
+CREATE TABLE IF NOT EXISTS "CrmWebhookDelivery" (
+  "id" TEXT NOT NULL,
+  "endpointId" TEXT NOT NULL,
+  "businessId" TEXT,
+  "event" TEXT NOT NULL,
+  "payload" JSONB NOT NULL,
+  "status" TEXT NOT NULL DEFAULT 'PENDING',
+  "attempts" INTEGER NOT NULL DEFAULT 0,
+  "lastError" TEXT,
+  "deliveredAt" TIMESTAMP(3),
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "CrmWebhookDelivery_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX IF NOT EXISTS "CrmWebhookDelivery_endpointId_createdAt_idx" ON "CrmWebhookDelivery"("endpointId", "createdAt");
