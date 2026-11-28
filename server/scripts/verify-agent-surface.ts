@@ -19,7 +19,13 @@
 import fs from 'fs';
 import path from 'path';
 import { TOOLS } from '../src/mcp/pabandiMcpServer';
-import { pabandiToolsRegistry } from '../src/services/pabandiTools.service';
+// McpTool is the source of truth; the old registry's extra fields are derived
+// here so downstream checks keep working without a second hand-maintained list.
+const pabandiToolsRegistry = TOOLS.map((tool) => ({
+  ...tool,
+  mcpName: tool.name,
+  endpoints: [] as Array<{ method: string; path: string }>,
+}));
 import { AGENT_API_BASE, AGENT_MCP_URL } from '../src/mcp/agentEndpoint';
 import { PTP_RISK_BANDS } from '../src/protocol/ptp.spec';
 
@@ -153,12 +159,15 @@ for (const rel of MANIFESTS) {
 }
 
 // ── 4/5. advertised endpoints are mounted ─────────────────────────────────────
-const index = read('server/src/index.ts');
+// Router mounts live in routes/index.ts; app.ts carries the /api/v1 root and MCP.
+const index = read('server/src/routes/index.ts') + '\n' + read('server/src/app.ts');
 const v1 = 'v1';
 const mounted = new Set<string>();
 const addMount = (frag: string) => mounted.add(frag.replace(/\/$/, '') || '/');
 for (const m of index.matchAll(/`\/api\/\$\{v\}([^`]*)`/g)) addMount(m[1]);
 for (const m of index.matchAll(/app\.use\(`\/api\/\$\{v\}([^`]*)`/g)) addMount(m[1]);
+// Domain route table: ['/payments', './payment.routes'] etc.
+for (const m of index.matchAll(/\['\/([\w-]+)', '\.\/[^']+'\]/g)) addMount('/' + m[1]);
 // express-style sub-paths registered inside a router (e.g. agentDiscovery declares /.well-known/agent-registry.json)
 for (const m of index.matchAll(/'\/(\.well-known\/[^']+)'/g)) mounted.add('/' + m[1]);
 mounted.add('/.well-known');
@@ -189,7 +198,7 @@ for (const raw of [...llms.matchAll(/https:\/\/[^)\s"']*?(?=\s|$)/g)].map((m) =>
 }
 
 // Signup checklist curls (paths only — the URLs are templated on the host).
-const signup = read('server/src/routes/agentSignup.routes.ts');
+const signup = read('server/src/routes/agent.routes.ts');
 for (const m of signup.matchAll(/https:\/\/pabandi\.com(\/[^\s\\]*)/g)) {
   const p = m[1].replace(/['`,\s].*$/, '').replace(/\/$/, '');
   // static docs (/llms.txt, /openapi.yaml) are served by the SPA/static layer, not routeMap

@@ -16,102 +16,89 @@
   ],
   "tools": [
     {
-      "name": "pabandi_verify_passport",
-      "description": "Verify a PTP trust attestation (offline-verifiable HMAC signature)"
-    },
-    {
-      "name": "pabandi_discover",
-      "description": "PTP protocol discovery document"
-    },
-    {
-      "name": "pabandi_get_ledger",
-      "description": "Public audit lookup of a passport issuance charge by idempotency key"
-    },
-    {
-      "name": "pabandi_issue_passport",
-      "description": "See /api/v1/pabandi/tools",
-      "payment": "x402"
-    },
-    {
-      "name": "pabandi_execute_transaction",
-      "description": "See /api/v1/pabandi/tools"
-    },
-    {
-      "name": "pabandi_open_session",
-      "description": "See /api/v1/pabandi/tools"
-    },
-    {
-      "name": "pabandi_discover_platform",
-      "description": "Full platform capability manifest"
-    },
-    {
-      "name": "pabandi_platform_access",
-      "description": "Grant or inspect an exclusive platform access credential"
-    },
-    {
-      "name": "pabandi_platform_discovery",
-      "description": "Pabandi platform discovery"
-    },
-    {
-      "name": "pabandi_verify_trust_attestation",
-      "description": "Verify a portable trust attestation"
-    },
-    {
-      "name": "pabandi_search_services",
-      "description": "Search the Pabandi business directory"
+      "name": "pabandi_list_businesses",
+      "description": "List active businesses for booking, with optional city, category, search, and cursor pagination."
     },
     {
       "name": "pabandi_get_business",
-      "description": "Look up a single business by id"
+      "description": "Get one business by ID."
     },
     {
-      "name": "pabandi_list_properties",
-      "description": "Browse verified stay listings"
+      "name": "pabandi_create_booking",
+      "description": "Create a booking and its escrow record. Requires authentication.",
+      "payment": "x402"
     },
     {
-      "name": "pabandi_book_stay",
-      "description": "Book a stay with guest deposit escrow Gated to businesses with an attested open-finance settlement rail OR PTP Band A/B, so every booked stay has a real, verified payout path. This is what makes the hospitality vertical trustworthy to guests and exclusive to quality hosts.",
-      "access": "verified"
+      "name": "pabandi_get_booking",
+      "description": "Get a booking with its escrow state."
     },
     {
-      "name": "pabandi_connect_finance",
-      "description": "Link an open-finance settlement rail",
-      "access": "owner"
+      "name": "pabandi_mark_checkin",
+      "description": "Mark a booking as attended. A verified check-in moves escrow to conditions_met; an overridden check-in opens a dispute."
     },
     {
-      "name": "pabandi_list_finance",
-      "description": "List a business's verified settlement rails",
-      "access": "owner"
+      "name": "pabandi_release_escrow",
+      "description": "Release a booking escrow to the business after verified completion. Requires business owner or admin."
     },
     {
-      "name": "pabandi_start_escrow",
-      "description": "Initialize a booking deposit escrow Exclusive: real-chain escrow writes are gated behind a verified PTP trust band (A/B) or an exclusive platform grant, so only trusted counterparties open real money on chain. Verified-only stays use the simulated escrow path. This is the premium moat — the real rail, gated.",
-      "access": "exclusive"
+      "name": "pabandi_refund_booking",
+      "description": "Refund a booking deposit under policy. Requires client, business owner, or admin."
     },
     {
-      "name": "pabandi_finance_quote",
-      "description": "Quote a payout / offramp",
-      "access": "owner"
+      "name": "pabandi_verify_passport",
+      "description": "Verify a Pabandi trust disclosure or passport signature."
     },
     {
-      "name": "pabandi_predict_booking",
-      "description": "Forecast booking no-show / completion",
-      "access": "owner"
+      "name": "pabandi_screen_wallet",
+      "description": "Screen a Solana wallet address for on-chain threat score, drainer activity, and sanctions risk via Webacy Risk Intelligence before funding escrow."
     },
     {
-      "name": "pabandi_predict_demand",
-      "description": "Hourly demand forecast for a business",
-      "access": "owner"
+      "name": "pabandi_request_payout",
+      "description": "Request a USDC payout to a local rail, bank, or connected account. Requires authentication."
     },
     {
-      "name": "pabandi_recommend_slots",
-      "description": "Recommend optimal booking slots",
-      "access": "owner"
+      "name": "pabandi_get_payout_history",
+      "description": "Get the authenticated user's payout history."
     },
     {
-      "name": "pabandi_zk_realestate_proof",
-      "description": "Issue a ZK proof of escrow split (real-estate / hospitality) Proves the escrow split is correct without revealing the valuation — the privacy + verifiability moat for real-estate/hospitality deals. Upgrades to a succinct on-chain-verifiable SNARK when Barretenberg is in the pipeline.",
-      "access": "owner"
+      "name": "pabandi_get_paid_proof",
+      "description": "Get a public payment proof by its public ID."
+    },
+    {
+      "name": "pabandi_get_my_paid_proofs",
+      "description": "Get the authenticated worker's payment proofs."
+    },
+    {
+      "name": "pabandi_get_identity",
+      "description": "Return the authenticated agent or user identity."
+    },
+    {
+      "name": "pabandi_search_auto_repair",
+      "description": "Search US auto repair shops by zip code / location and service type (e.g. \"brakes\"). Returns shops, ML Trust Scores (Fair Price & Communication), and next available bay."
+    },
+    {
+      "name": "pabandi_book_auto_repair",
+      "description": "Book an auto repair order on behalf of a car owner. Decodes the vehicle VIN via NHTSA, creates a RepairOrder (isBookedByAgent: true), runs the AI Fair-Price Guardrail, and triggers an SMS Magic Link for the owner to approve & fund the deposit. Requires an agent API key with booking scope."
+    },
+    {
+      "name": "pabandi_check_shop_trust",
+      "description": "Check an auto repair shop's ML-calculated Pabandi Trust Score including Fair Price Score, Communication Score, and verified inspection proof metrics."
+    },
+    {
+      "name": "pabandi_ai_status",
+      "description": "Report which AI providers and the Jev decision engine are configured. Booleans only, never credentials — useful for agents deciding whether to request AI-backed work."
+    },
+    {
+      "name": "pabandi_ai_classify",
+      "description": "Classify a customer message into intent, language and confidence using the internal NLP model chain (with deterministic fallback)."
+    },
+    {
+      "name": "pabandi_ai_concierge",
+      "description": "Natural-language business discovery: returns a ranked proposal with trust/escrow framing and alternatives. Read-only — it never books or moves funds."
+    },
+    {
+      "name": "pabandi_get_booking_risk",
+      "description": "Read the latest learned risk assessment (score, band, policy, factors) for a booking."
     }
   ],
   "payment": {

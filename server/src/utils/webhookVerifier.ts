@@ -284,12 +284,43 @@ registerWebhookVerifier('raast', async (req) => {
   return verifyRaastWebhook(req, secret);
 });
 
+/** Bounded in-process replay guard. A shared Redis set is the multi-instance upgrade. */
+const seenWebhooks = new Set<string>();
+const MAX_SEEN_WEBHOOKS = 5000;
+
+function isReplay(key: string): boolean {
+  if (seenWebhooks.has(key)) return true;
+  if (seenWebhooks.size >= MAX_SEEN_WEBHOOKS) seenWebhooks.clear();
+  seenWebhooks.add(key);
+  return false;
+}
+
+function signatureFrom(req: Request): string {
+  for (const [name, value] of Object.entries(req.headers)) {
+    if (/signature|btcpay-sig/i.test(name) && typeof value === 'string' && value) return value;
+  }
+  return '';
+}
+
 export const webhookVerifierMiddleware = (provider: string) => {
   return async (req: Request, res: Response, next: NextFunction) => {
+    const timestamp = String(req.headers['x-pabandi-timestamp'] || req.headers['x-webhook-timestamp'] || '');
+    if (timestamp) {
+      const seconds = Number(timestamp);
+      if (!Number.isFinite(seconds) || Math.abs(Date.now() / 1000 - seconds) > 300) {
+        return res.status(401).json({ success: false, error: 'Webhook timestamp outside the 5-minute window' });
+      }
+    }
+
     const result = await verifyWebhook(provider, req);
     if (!result.verified) {
       logger.warn(`[WebhookVerifier] ${provider} verification failed: ${result.error}`);
       return res.status(401).json({ success: false, error: `Webhook verification failed: ${result.error}` });
+    }
+    const signature = signatureFrom(req);
+    if (signature && isReplay(`${provider}:${signature}:${timestamp}`)) {
+      logger.warn(`[WebhookVerifier] replayed ${provider} webhook rejected`);
+      return res.status(401).json({ success: false, error: 'Webhook already processed' });
     }
     (req as any).webhookEvent = result;
     next();

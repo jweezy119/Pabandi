@@ -56,10 +56,14 @@ export async function createAgentKey(
 
   const rawKey = generateAgentKey();
   const keyHash = hashAgentKey(rawKey);
+  // Never sign with the stored hash: a database read must not grant the ability
+  // to mint valid agent signatures. Returned to the caller once, at creation.
+  const hmacSecret = crypto.randomBytes(32).toString('hex');
 
   const row = await prisma.agentApiKey.create({
     data: {
       keyHash,
+      hmacSecret,
       name,
       ownerUserId,
       agentId: input.agentId || null,
@@ -73,6 +77,7 @@ export async function createAgentKey(
     id: row.id,
     name: row.name,
     key: rawKey,
+    hmacSecret,
     ownerUserId: row.ownerUserId,
     agentId: row.agentId,
     scopes: row.scopes,

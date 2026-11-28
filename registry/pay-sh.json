@@ -1,9 +1,106 @@
 {
-  "name": "pabandi-mcp",
-  "slug": "pabandi-mcp",
-  "description": "Trust and settlement layer for AI agents: portable trust attestations (PTP), reputation risk bands, escrow, and x402/USDC payments on Solana.",
-  "url": "https://api.pabandi.com/mcp",
-  "mcp_url": "https://api.pabandi.com/mcp",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.jweezy119/Pabandi",
+  "title": "PabandiOS",
+  "description": "Trust and settlement for AI agents: portable attestations, escrow, x402/USDC payments on Solana.",
+  "version": "1.0.1",
+  "repository": {
+    "url": "https://github.com/jweezy119/Pabandi",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://pabandi.onrender.com/mcp"
+    }
+  ],
+  "tools": [
+    {
+      "name": "pabandi_list_businesses",
+      "description": "List active businesses for booking, with optional city, category, search, and cursor pagination."
+    },
+    {
+      "name": "pabandi_get_business",
+      "description": "Get one business by ID."
+    },
+    {
+      "name": "pabandi_create_booking",
+      "description": "Create a booking and its escrow record. Requires authentication.",
+      "payment": "x402"
+    },
+    {
+      "name": "pabandi_get_booking",
+      "description": "Get a booking with its escrow state."
+    },
+    {
+      "name": "pabandi_mark_checkin",
+      "description": "Mark a booking as attended. A verified check-in moves escrow to conditions_met; an overridden check-in opens a dispute."
+    },
+    {
+      "name": "pabandi_release_escrow",
+      "description": "Release a booking escrow to the business after verified completion. Requires business owner or admin."
+    },
+    {
+      "name": "pabandi_refund_booking",
+      "description": "Refund a booking deposit under policy. Requires client, business owner, or admin."
+    },
+    {
+      "name": "pabandi_verify_passport",
+      "description": "Verify a Pabandi trust disclosure or passport signature."
+    },
+    {
+      "name": "pabandi_screen_wallet",
+      "description": "Screen a Solana wallet address for on-chain threat score, drainer activity, and sanctions risk via Webacy Risk Intelligence before funding escrow."
+    },
+    {
+      "name": "pabandi_request_payout",
+      "description": "Request a USDC payout to a local rail, bank, or connected account. Requires authentication."
+    },
+    {
+      "name": "pabandi_get_payout_history",
+      "description": "Get the authenticated user's payout history."
+    },
+    {
+      "name": "pabandi_get_paid_proof",
+      "description": "Get a public payment proof by its public ID."
+    },
+    {
+      "name": "pabandi_get_my_paid_proofs",
+      "description": "Get the authenticated worker's payment proofs."
+    },
+    {
+      "name": "pabandi_get_identity",
+      "description": "Return the authenticated agent or user identity."
+    },
+    {
+      "name": "pabandi_search_auto_repair",
+      "description": "Search US auto repair shops by zip code / location and service type (e.g. \"brakes\"). Returns shops, ML Trust Scores (Fair Price & Communication), and next available bay."
+    },
+    {
+      "name": "pabandi_book_auto_repair",
+      "description": "Book an auto repair order on behalf of a car owner. Decodes the vehicle VIN via NHTSA, creates a RepairOrder (isBookedByAgent: true), runs the AI Fair-Price Guardrail, and triggers an SMS Magic Link for the owner to approve & fund the deposit. Requires an agent API key with booking scope."
+    },
+    {
+      "name": "pabandi_check_shop_trust",
+      "description": "Check an auto repair shop's ML-calculated Pabandi Trust Score including Fair Price Score, Communication Score, and verified inspection proof metrics."
+    },
+    {
+      "name": "pabandi_ai_status",
+      "description": "Report which AI providers and the Jev decision engine are configured. Booleans only, never credentials — useful for agents deciding whether to request AI-backed work."
+    },
+    {
+      "name": "pabandi_ai_classify",
+      "description": "Classify a customer message into intent, language and confidence using the internal NLP model chain (with deterministic fallback)."
+    },
+    {
+      "name": "pabandi_ai_concierge",
+      "description": "Natural-language business discovery: returns a ranked proposal with trust/escrow framing and alternatives. Read-only — it never books or moves funds."
+    },
+    {
+      "name": "pabandi_get_booking_risk",
+      "description": "Read the latest learned risk assessment (score, band, policy, factors) for a booking."
+    }
+  ],
   "payment": {
     "scheme": "x402",
     "network": "solana",
@@ -16,34 +113,5 @@
       "cart",
       "payment"
     ]
-  },
-  "pricing": {
-    "pabandi_issue_passport": "1 USDC",
-    "pabandi_book_stay": "0.25 USDC",
-    "pabandi_start_escrow": "0.5 USDC"
-  },
-  "tools": [
-    "pabandi_verify_passport",
-    "pabandi_discover",
-    "pabandi_get_ledger",
-    "pabandi_issue_passport",
-    "pabandi_discover_platform",
-    "pabandi_platform_access",
-    "pabandi_platform_discovery",
-    "pabandi_verify_trust_attestation",
-    "pabandi_search_services",
-    "pabandi_get_business",
-    "pabandi_list_properties",
-    "pabandi_book_stay",
-    "pabandi_connect_finance",
-    "pabandi_list_finance",
-    "pabandi_start_escrow",
-    "pabandi_finance_quote",
-    "pabandi_predict_booking",
-    "pabandi_predict_demand",
-    "pabandi_recommend_slots",
-    "pabandi_zk_realestate_proof"
-  ],
-  "repository": "https://github.com/jweezy119/Pabandi",
-  "license": "MIT"
+  }
 }

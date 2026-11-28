@@ -1,71 +1,117 @@
 {
-  "name": "PabandiOS",
-  "version": "1.1.0",
-  "description": "The trust operating system for service businesses — bookings, freight, property, CRM, and finance with AI-powered reliability scoring and Solana escrow.",
-  "base_url": "https://api.pabandi.com",
-  "mcp_endpoint": "https://api.pabandi.com/mcp",
-  "openapi_spec": "https://api.pabandi.com/openapi.yaml",
-  "capabilities": [
-    "booking.create",
-    "booking.status",
-    "freight.quote",
-    "property.list",
-    "property.verify",
-    "crm.lead",
-    "crm.contact",
-    "ledger.invoice",
-    "ledger.cashflow",
-    "escrow.initiate",
-    "escrow.release",
-    "trust.verify",
-    "trust.score",
-    "passport.issue",
-    "passport.verify",
-    "compliance.sharia",
-    "pabandi_check_sharia_compliance"
-  ],
-  "compliance": {
-    "sharia": {
-      "is_compliant": true,
-      "standard": "AAOIFI Sharia Standards",
-      "endpoint": "https://pabandi.onrender.com/api/v1/sharia-compliance",
-      "tool": "pabandi_check_sharia_compliance",
-      "url": "https://pabandi.com/sharia-compliance",
-      "features": {
-        "riba_free": true,
-        "gharar_mitigated": true,
-        "asset_backed": true
-      }
-    }
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.jweezy119/Pabandi",
+  "title": "PabandiOS",
+  "description": "Trust and settlement for AI agents: portable attestations, escrow, x402/USDC payments on Solana.",
+  "version": "1.0.1",
+  "repository": {
+    "url": "https://github.com/jweezy119/Pabandi",
+    "source": "github"
   },
-  "risk_bands": [
-    "A",
-    "B",
-    "C",
-    "D",
-    "E"
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://pabandi.onrender.com/mcp"
+    }
   ],
-  "risk_band_source": "PTP (Pabandi Trust Protocol) — the same bands used to sign attestations",
+  "tools": [
+    {
+      "name": "pabandi_list_businesses",
+      "description": "List active businesses for booking, with optional city, category, search, and cursor pagination."
+    },
+    {
+      "name": "pabandi_get_business",
+      "description": "Get one business by ID."
+    },
+    {
+      "name": "pabandi_create_booking",
+      "description": "Create a booking and its escrow record. Requires authentication.",
+      "payment": "x402"
+    },
+    {
+      "name": "pabandi_get_booking",
+      "description": "Get a booking with its escrow state."
+    },
+    {
+      "name": "pabandi_mark_checkin",
+      "description": "Mark a booking as attended. A verified check-in moves escrow to conditions_met; an overridden check-in opens a dispute."
+    },
+    {
+      "name": "pabandi_release_escrow",
+      "description": "Release a booking escrow to the business after verified completion. Requires business owner or admin."
+    },
+    {
+      "name": "pabandi_refund_booking",
+      "description": "Refund a booking deposit under policy. Requires client, business owner, or admin."
+    },
+    {
+      "name": "pabandi_verify_passport",
+      "description": "Verify a Pabandi trust disclosure or passport signature."
+    },
+    {
+      "name": "pabandi_screen_wallet",
+      "description": "Screen a Solana wallet address for on-chain threat score, drainer activity, and sanctions risk via Webacy Risk Intelligence before funding escrow."
+    },
+    {
+      "name": "pabandi_request_payout",
+      "description": "Request a USDC payout to a local rail, bank, or connected account. Requires authentication."
+    },
+    {
+      "name": "pabandi_get_payout_history",
+      "description": "Get the authenticated user's payout history."
+    },
+    {
+      "name": "pabandi_get_paid_proof",
+      "description": "Get a public payment proof by its public ID."
+    },
+    {
+      "name": "pabandi_get_my_paid_proofs",
+      "description": "Get the authenticated worker's payment proofs."
+    },
+    {
+      "name": "pabandi_get_identity",
+      "description": "Return the authenticated agent or user identity."
+    },
+    {
+      "name": "pabandi_search_auto_repair",
+      "description": "Search US auto repair shops by zip code / location and service type (e.g. \"brakes\"). Returns shops, ML Trust Scores (Fair Price & Communication), and next available bay."
+    },
+    {
+      "name": "pabandi_book_auto_repair",
+      "description": "Book an auto repair order on behalf of a car owner. Decodes the vehicle VIN via NHTSA, creates a RepairOrder (isBookedByAgent: true), runs the AI Fair-Price Guardrail, and triggers an SMS Magic Link for the owner to approve & fund the deposit. Requires an agent API key with booking scope."
+    },
+    {
+      "name": "pabandi_check_shop_trust",
+      "description": "Check an auto repair shop's ML-calculated Pabandi Trust Score including Fair Price Score, Communication Score, and verified inspection proof metrics."
+    },
+    {
+      "name": "pabandi_ai_status",
+      "description": "Report which AI providers and the Jev decision engine are configured. Booleans only, never credentials — useful for agents deciding whether to request AI-backed work."
+    },
+    {
+      "name": "pabandi_ai_classify",
+      "description": "Classify a customer message into intent, language and confidence using the internal NLP model chain (with deterministic fallback)."
+    },
+    {
+      "name": "pabandi_ai_concierge",
+      "description": "Natural-language business discovery: returns a ranked proposal with trust/escrow framing and alternatives. Read-only — it never books or moves funds."
+    },
+    {
+      "name": "pabandi_get_booking_risk",
+      "description": "Read the latest learned risk assessment (score, band, policy, factors) for a booking."
+    }
+  ],
   "payment": {
-    "schemes": [
-      "x402",
-      "solana-usdc"
-    ],
+    "scheme": "x402",
     "network": "solana",
     "currency": "USDC"
   },
   "authorization": {
-    "schemes": [
-      "ap2",
-      "bearer",
-      "ptp"
-    ],
+    "scheme": "ap2",
     "mandates": [
       "intent",
       "cart",
       "payment"
     ]
-  },
-  "contact": "agents@pabandi.com",
-  "license": "MIT"
+  }
 }

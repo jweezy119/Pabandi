@@ -497,3 +497,5 @@ CREATE TABLE IF NOT EXISTS "CrmWebhookDelivery" (
   CONSTRAINT "CrmWebhookDelivery_pkey" PRIMARY KEY ("id")
 );
 CREATE INDEX IF NOT EXISTS "CrmWebhookDelivery_endpointId_createdAt_idx" ON "CrmWebhookDelivery"("endpointId", "createdAt");
+
+ALTER TABLE "AgentApiKey" ADD COLUMN IF NOT EXISTS "hmacSecret" TEXT;

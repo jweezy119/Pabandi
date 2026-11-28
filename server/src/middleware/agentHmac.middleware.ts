@@ -20,6 +20,21 @@ interface SignedRequest extends Request {
   hmacVerified?: boolean;
 }
 
+/**
+ * Signatures are timestamp-bounded but still replayable inside that window.
+ * Keep a bounded, in-process set of accepted signatures; a Redis-backed set can
+ * replace this when agents run across multiple instances.
+ */
+const seenSignatures = new Set<string>();
+const MAX_SEEN = 5000;
+
+function markSeen(key: string): boolean {
+  if (seenSignatures.has(key)) return false;
+  if (seenSignatures.size >= MAX_SEEN) seenSignatures.clear();
+  seenSignatures.add(key);
+  return true;
+}
+
 const REQUIRED_HEADERS = [
   'x-pabandi-timestamp',
   'x-pabandi-signature',
@@ -88,7 +103,7 @@ export const verifyAgentHmac = async (
 
   const key = await prisma.agentApiKey.findUnique({
     where: { id: agentKeyId },
-    select: { keyHash: true, ownerUserId: true },
+    select: { keyHash: true, hmacSecret: true, ownerUserId: true },
   });
 
   if (!key) {
@@ -97,7 +112,7 @@ export const verifyAgentHmac = async (
 
   const canonicalRequest = buildCanonicalRequest(req, signedHeaders);
   const expectedSignature = crypto
-    .createHmac('sha256', key.keyHash)
+    .createHmac('sha256', key.hmacSecret || key.keyHash)
     .update(canonicalRequest)
     .digest('hex');
 
@@ -112,6 +127,11 @@ export const verifyAgentHmac = async (
   ) {
     logger.warn(`[AgentHmac] Invalid signature from agent ${agentKeyId} (ip: ${req.ip})`);
     return next(new CustomError('Invalid request signature', 401));
+  }
+
+  if (!markSeen(`${agentKeyId}:${providedSignature}`)) {
+    logger.warn(`[AgentHmac] Replayed signature from agent ${agentKeyId}`);
+    return next(new CustomError('Request signature has already been used', 401));
   }
 
   req.hmacVerified = true;

@@ -10,7 +10,9 @@
 import fs from 'fs';
 import path from 'path';
 import { TOOLS } from '../src/mcp/pabandiMcpServer';
-import { pabandiToolsRegistry } from '../src/services/pabandiTools.service';
+// The MCP tool manifest is the single source of truth. The old registry module
+// did not exist, so this script could never run.
+const pabandiToolsRegistry = TOOLS.map((tool) => ({ ...tool, mcpName: tool.name }));
 import { AGENT_API_BASE } from '../src/mcp/agentEndpoint';
 
 const ROOT = path.join(__dirname, '..', '..');
@@ -32,7 +34,7 @@ const oneLine = (s: string) => s.replace(/\s+/g, ' ').trim();
 
 function describe(name: string): string {
   const t = byMcpName.get(name);
-  if (t) return oneLine(t.short) + (t.exclusiveNote ? ` ${oneLine(t.exclusiveNote)}` : '');
+  if (t) return oneLine(t.short || t.description || '') + (t.exclusiveNote ? ` ${oneLine(t.exclusiveNote)}` : '');
   const engine: Record<string, string> = {
     pabandi_verify_passport: 'Verify a PTP trust attestation (offline-verifiable HMAC signature)',
     pabandi_discover: 'PTP protocol discovery document',
@@ -45,7 +47,8 @@ function describe(name: string): string {
 
 function accessLabel(name: string): string {
   const t = byMcpName.get(name);
-  if (t) return t.access;
+  if (t?.access) return t.access;
+  if (t?.requiresAuth) return 'agent key / user';
   if (X402_PRICED.has(name)) return 'x402 paid';
   if (name === 'pabandi_verify_passport' || name === 'pabandi_discover' || name === 'pabandi_get_ledger') return 'public';
   return 'auth';

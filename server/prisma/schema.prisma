@@ -700,6 +700,9 @@ model BookingRisk {
 model AgentApiKey {
   id            String    @id @default(cuid())
   keyHash       String    @unique
+  // Dedicated HMAC signing secret. Older keys fall back to keyHash, but new
+  // keys never expose their stored hash as a signing capability.
+  hmacSecret    String?
   name          String
   ownerUserId   String
   agentId       String?

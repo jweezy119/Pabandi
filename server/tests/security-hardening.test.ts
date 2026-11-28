@@ -69,6 +69,31 @@ describe('agent money routes require a scoped API key', () => {
   });
 });
 
+describe('agent and webhook replay hardening', () => {
+  it('signs agent requests with a dedicated secret instead of the stored hash', () => {
+    const schema = readFileSync(resolve(__dirname, '../prisma/schema.prisma'), 'utf8');
+    expect(schema).toContain('hmacSecret');
+    const keys = src('services/agentKeys.service.ts');
+    expect(keys).toMatch(/randomBytes\(32\)\.toString\('hex'\)/);
+    const hmac = src('middleware/agentHmac.middleware.ts');
+    expect(hmac).toMatch(/key\.hmacSecret \|\| key\.keyHash/);
+    expect(hmac).toMatch(/markSeen/);
+  });
+
+  it('rejects replayed signed webhooks', () => {
+    const verifier = src('utils/webhookVerifier.ts');
+    expect(verifier).toMatch(/isReplay/);
+    expect(verifier).toMatch(/5-minute window/);
+  });
+
+  it('redacts sensitive fields for non-manager roles', () => {
+    const access = src('middleware/fieldAccess.ts');
+    expect(access).toMatch(/redactFields/);
+    const routes = src('routes/crm.routes.ts');
+    expect(routes).toMatch(/redactFields\(crm\.role/);
+  });
+});
+
 describe('production session configuration', () => {
   it('accepts the JWT_SECRET fallback instead of hard-failing on two extra vars', () => {
     const app = src('app.ts');

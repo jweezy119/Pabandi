@@ -12,6 +12,7 @@ import { createInvoice } from '../services/invoice.service';
 import { CLIENT_STATUSES, DEAL_STAGES, STAGE_PROBABILITY } from '../domain/crm';
 import { parseCsv, csvCell } from '../utils/csv';
 import { emitCrmEvent } from '../services/crmAutomation.service';
+import { redactFields } from '../middleware/fieldAccess';
 
 /**
  * Contact OS CRM API.
@@ -168,7 +169,7 @@ router.get('/clients', async (req: AuthRequest, res: Response, next: NextFunctio
       prisma.crmClient.count({ where }),
     ]);
 
-    ok(res, clients, { pagination: { page, limit, total } });
+    ok(res, clients.map((client) => redactFields(crm.role, crm.isOwner, 'client', client as any)), { pagination: { page, limit, total } });
   } catch (e) {
     next(e);
   }
@@ -238,7 +239,7 @@ router.get('/clients/:id', async (req: AuthRequest, res: Response, next: NextFun
       where: { id: req.params.id, OR: [{ businessId }, { serviceBusinessId: businessId }] },
     });
     if (!client) throw new CustomError('Client not found', 404);
-    ok(res, client);
+    ok(res, redactFields(crm.role, crm.isOwner, 'client', client as any));
   } catch (e) {
     next(e);
   }
@@ -967,7 +968,7 @@ router.get('/deals', async (req: AuthRequest, res: Response, next: NextFunction)
       where,
       orderBy: [{ stage: 'asc' }, { createdAt: 'desc' }],
     });
-    ok(res, deals);
+    ok(res, deals.map((deal) => redactFields(crm.role, crm.isOwner, 'deal', deal as any)));
   } catch (e) {
     next(e);
   }
@@ -1044,7 +1045,7 @@ router.get('/deals/:id', async (req: AuthRequest, res: Response, next: NextFunct
       where: { id: req.params.id, OR: [{ businessId }, { serviceBusinessId: businessId }] },
     });
     if (!deal) throw new CustomError('Deal not found', 404);
-    ok(res, deal);
+    ok(res, redactFields(crm.role, crm.isOwner, 'deal', deal as any));
   } catch (e) {
     next(e);
   }
