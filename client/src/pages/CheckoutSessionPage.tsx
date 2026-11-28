@@ -6,9 +6,13 @@ import { useAuthStore } from '../store/authStore';
 import api from '../services/api';
 import PaymentService from '../services/payment';
 import toast from 'react-hot-toast';
-import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction } from '@solana/web3.js';
 import { getAssociatedTokenAddress } from '../lib/solanaToken';
-import IDL from '../utils/pabandi_escrow.json';
+import {
+  buildInitializeEscrowInstruction,
+  deriveBusinessPubkey,
+  ESCROW_PROGRAM_ID,
+} from '../lib/escrowInstruction';
 
 // Simple Phantom provider interface for MVP
 interface PhantomProvider {
@@ -81,18 +85,6 @@ export const CheckoutSessionPage = () => {
     }
   };
 
-  const PROGRAM_ID = new PublicKey('6ebgdhyUV7zEHqRmpnaPguWQPYJu9Vq4dpFs79VduTjG');
-
-  const isAnchorAvailable = () => {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const anchorModule = require('@coral-xyz/anchor');
-      return Boolean(anchorModule);
-    } catch {
-      return false;
-    }
-  };
-
   const handlePayment = async () => {
     if (!session) return;
 
@@ -101,20 +93,9 @@ export const CheckoutSessionPage = () => {
       return;
     }
 
-    if (!isAnchorAvailable()) {
-      toast.error('Solana escrow checkout is temporarily unavailable. Please use Credit Card checkout.');
-      return;
-    }
-
     setPaying(true);
     try {
-      const anchor = require('@coral-xyz/anchor') as any;
-      const AnchorProvider = anchor.AnchorProvider;
-      const BN = anchor.BN;
-      const Program = anchor.Program;
       const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
-      const provider = new AnchorProvider(connection, (window as any).solana, { commitment: 'confirmed' });
-      const program = new Program(IDL as any, provider);
 
       const customerPubkey = new PublicKey(phantomWallet);
       const mintPubkey = new PublicKey(import.meta.env.VITE_SOLANA_PAB_MINT_ADDRESS || 'PAB1111111111111111111111111111111111111111');
@@ -125,34 +106,35 @@ export const CheckoutSessionPage = () => {
 
       const [escrowStatePDA] = PublicKey.findProgramAddressSync(
         [Buffer.from('escrow_state'), Buffer.from(reservationId), customerPubkey.toBuffer()],
-        PROGRAM_ID
+        ESCROW_PROGRAM_ID
       );
       const [vaultTokenPDA] = PublicKey.findProgramAddressSync(
         [Buffer.from('escrow_vault'), Buffer.from(reservationId), customerPubkey.toBuffer()],
-        PROGRAM_ID
+        ESCROW_PROGRAM_ID
       );
       const customerTokenAccount = await getAssociatedTokenAddress(mintPubkey, customerPubkey);
 
       toast('Building transaction...', { icon: '🏗️' });
 
-      // Build the initialize_escrow instruction
-      const ix = await program.methods
-        .initializeEscrow(
+      // Build the same initialize_escrow instruction directly, without the
+      // @coral-xyz/anchor runtime (which carries an unfixed toml advisory).
+      const ix = await buildInitializeEscrowInstruction(
+        {
           reservationId,
-          new BN(user?.trustScore || 50),
-          new BN(session.amount * 10 ** 9),
-          new BN(Math.floor(Date.now() / 1000) + 86400) // 24h deadline
-        )
-        .accounts({
+          trustScore: user?.trustScore || 50,
+          totalAmount: BigInt(Math.round(session.amount * 10 ** 9)),
+          deadline: BigInt(Math.floor(Date.now() / 1000) + 86400), // 24h
+        },
+        {
           customer: customerPubkey,
+          business: deriveBusinessPubkey(session.business.id),
+          mint: mintPubkey,
+          customerTokenAccount,
           escrowState: escrowStatePDA,
           vaultTokenAccount: vaultTokenPDA,
-          customerTokenAccount,
-          mint: mintPubkey,
           oracle: oraclePubkey,
-          systemProgram: SystemProgram.programId,
-        })
-        .instruction();
+        },
+      );
 
       const { blockhash } = await connection.getLatestBlockhash('confirmed');
 
