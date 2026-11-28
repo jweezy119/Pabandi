@@ -97,6 +97,12 @@ services:
       # instances. Without it the API falls back to in-memory sessions.
       - key: REDIS_URL
         sync: false
+      # Signed inbound email/calendar events. The matching client/webhook must
+      # send x-pabandi-signature = HMAC-SHA256(rawBody, this value).
+      - key: CHANNEL_INGEST_SECRET
+        generateValue: true
+      - key: ENABLE_CHANNEL_SYNC
+        value: "false"
       # DIRECT_URL is not needed for Supabase (it's not a Render-managed DB).
       # Remove the fromDatabase block — Supabase is external to Render.
       - key: COURTLISTENER_API_KEY
@@ -193,6 +199,8 @@ services:
       # that still has to be made by hand.
       - key: REDIS_URL
         sync: false
+      - key: ENABLE_CHANNEL_SYNC
+        value: "true"
       - key: DATABASE_URL
         sync: false
       # DIRECT_URL not needed for Supabase (external to Render).
