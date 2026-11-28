@@ -6,6 +6,7 @@ import { initializeTrustCore } from './services/trust-core.service';
 import { eventBus } from './services/event-bus.service';
 import { scanOverdueInvoices } from './services/invoice.service';
 import cron from 'node-cron';
+import { syncAllChannels } from './services/channelSync.service';
 
 const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 8080 : 5000);
 const parsedPort = typeof PORT === 'string' ? parseInt(PORT, 10) : PORT;
@@ -80,6 +81,14 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
 
   // Background Crons
   try {
+    // Inbound email/calendar sync. Opt-in because it needs provider credentials.
+    if (process.env.ENABLE_CHANNEL_SYNC === 'true') {
+      const runSync = () => void syncAllChannels();
+      setTimeout(runSync, 15_000).unref();
+      setInterval(runSync, 5 * 60 * 1000).unref();
+      logger.info('[ChannelSync] scheduled every 5 minutes');
+    }
+
     // Invoice overdue check
     cron.schedule('0 9 * * *', async () => {
       try {

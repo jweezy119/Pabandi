@@ -1649,6 +1649,46 @@ model CrmCustomRecord {
   @@map("CrmCustomRecord")
 }
 
+/// Encrypted IMAP/SMTP credentials for one mailbox belonging to a business.
+model CrmMailAccount {
+  id                String    @id @default(cuid())
+  businessId        String    @unique
+  email             String
+  imapHost          String
+  imapPort          Int       @default(993)
+  imapSecure        Boolean   @default(true)
+  imapUser          String
+  imapPassword      String
+  smtpHost          String?
+  smtpPort          Int?      @default(587)
+  smtpUser          String?
+  smtpPassword      String?
+  lastSyncAt        DateTime?
+  lastError         String?
+  enabled           Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("CrmMailAccount")
+}
+
+/// Encrypted CalDAV credentials. Synced meetings become CRM tasks/activities.
+model CrmCalendarAccount {
+  id           String    @id @default(cuid())
+  businessId   String    @unique
+  name         String    @default("Calendar")
+  calendarUrl  String
+  username     String
+  password     String
+  lastSyncAt   DateTime?
+  lastError    String?
+  enabled      Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("CrmCalendarAccount")
+}
+
 /// A reusable object blueprint. Built-ins have businessId = null; owners can
 /// publish their own setup for other businesses to use in one tap.
 model CrmBlueprintTemplate {

@@ -430,3 +430,41 @@ CREATE TABLE IF NOT EXISTS "CrmBlueprintTemplate" (
 );
 CREATE INDEX IF NOT EXISTS "CrmBlueprintTemplate_isPublic_idx" ON "CrmBlueprintTemplate"("isPublic");
 CREATE INDEX IF NOT EXISTS "CrmBlueprintTemplate_businessId_idx" ON "CrmBlueprintTemplate"("businessId");
+
+CREATE TABLE IF NOT EXISTS "CrmMailAccount" (
+  "id" TEXT NOT NULL,
+  "businessId" TEXT NOT NULL,
+  "email" TEXT NOT NULL,
+  "imapHost" TEXT NOT NULL,
+  "imapPort" INTEGER NOT NULL DEFAULT 993,
+  "imapSecure" BOOLEAN NOT NULL DEFAULT true,
+  "imapUser" TEXT NOT NULL,
+  "imapPassword" TEXT NOT NULL,
+  "smtpHost" TEXT,
+  "smtpPort" INTEGER DEFAULT 587,
+  "smtpUser" TEXT,
+  "smtpPassword" TEXT,
+  "lastSyncAt" TIMESTAMP(3),
+  "lastError" TEXT,
+  "enabled" BOOLEAN NOT NULL DEFAULT true,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "CrmMailAccount_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "CrmMailAccount_businessId_key" ON "CrmMailAccount"("businessId");
+
+CREATE TABLE IF NOT EXISTS "CrmCalendarAccount" (
+  "id" TEXT NOT NULL,
+  "businessId" TEXT NOT NULL,
+  "name" TEXT NOT NULL DEFAULT 'Calendar',
+  "calendarUrl" TEXT NOT NULL,
+  "username" TEXT NOT NULL,
+  "password" TEXT NOT NULL,
+  "lastSyncAt" TIMESTAMP(3),
+  "lastError" TEXT,
+  "enabled" BOOLEAN NOT NULL DEFAULT true,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "CrmCalendarAccount_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "CrmCalendarAccount_businessId_key" ON "CrmCalendarAccount"("businessId");

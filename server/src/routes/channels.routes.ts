@@ -5,6 +5,8 @@ import { logger } from '../utils/logger';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { CustomError } from '../middleware/errorHandler';
 import { sendEmail } from '../services/email.service';
+import { encrypt } from '../utils/encryption';
+import { syncMailAccount, syncCalendarAccount } from '../services/channelSync.service';
 
 const router = Router();
 
@@ -152,6 +154,120 @@ router.post('/ingest', async (req: Request, res: Response, next: NextFunction) =
   } catch (e) {
     next(e);
   }
+});
+
+// ── Provider account setup (credentials encrypted at rest) ────────────────
+
+function publicMail(account: any) {
+  return {
+    id: account.id, businessId: account.businessId, email: account.email,
+    imapHost: account.imapHost, imapPort: account.imapPort,
+    smtpHost: account.smtpHost, smtpPort: account.smtpPort,
+    lastSyncAt: account.lastSyncAt, lastError: account.lastError, enabled: account.enabled,
+  };
+}
+
+function publicCalendar(account: any) {
+  return {
+    id: account.id, businessId: account.businessId, name: account.name,
+    calendarUrl: account.calendarUrl, username: account.username,
+    lastSyncAt: account.lastSyncAt, lastError: account.lastError, enabled: account.enabled,
+  };
+}
+
+router.get('/mail', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const business = await prisma.business.findFirst({ where: { ownerId: req.user!.id }, select: { id: true } });
+    if (!business) return res.json({ success: true, data: null });
+    const account = await prisma.crmMailAccount.findUnique({ where: { businessId: business.id } });
+    res.json({ success: true, data: account ? publicMail(account) : null });
+  } catch (e) { next(e); }
+});
+
+router.post('/mail', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const business = await ownedBusiness(req, String(req.body?.businessId || ''));
+    const { email, imapHost, imapPassword, smtpHost, smtpPassword } = req.body || {};
+    if (!email || !imapHost || !imapPassword) throw new CustomError('email, imapHost and imapPassword are required', 400);
+    const data = {
+      email: String(email),
+      imapHost: String(imapHost),
+      imapPort: Number(req.body.imapPort || 993),
+      imapSecure: req.body.imapSecure === undefined ? true : Boolean(req.body.imapSecure),
+      imapUser: String(req.body.imapUser || email),
+      imapPassword: encrypt(String(imapPassword)),
+      smtpHost: smtpHost ? String(smtpHost) : null,
+      smtpPort: Number(req.body.smtpPort || 587),
+      smtpUser: req.body.smtpUser ? String(req.body.smtpUser) : null,
+      smtpPassword: smtpPassword ? encrypt(String(smtpPassword)) : null,
+      enabled: req.body.enabled === undefined ? true : Boolean(req.body.enabled),
+    };
+    const account = await prisma.crmMailAccount.upsert({
+      where: { businessId: business.id },
+      create: { businessId: business.id, ...data },
+      update: data,
+    });
+    res.json({ success: true, data: publicMail(account) });
+  } catch (e) { next(e); }
+});
+
+router.delete('/mail', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const business = await prisma.business.findFirst({ where: { ownerId: req.user!.id }, select: { id: true } });
+    if (business) await prisma.crmMailAccount.deleteMany({ where: { businessId: business.id } });
+    res.json({ success: true });
+  } catch (e) { next(e); }
+});
+
+router.get('/calendar', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const business = await prisma.business.findFirst({ where: { ownerId: req.user!.id }, select: { id: true } });
+    if (!business) return res.json({ success: true, data: null });
+    const account = await prisma.crmCalendarAccount.findUnique({ where: { businessId: business.id } });
+    res.json({ success: true, data: account ? publicCalendar(account) : null });
+  } catch (e) { next(e); }
+});
+
+router.post('/calendar', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const business = await ownedBusiness(req, String(req.body?.businessId || ''));
+    const { calendarUrl, username, password } = req.body || {};
+    if (!calendarUrl || !username || !password) throw new CustomError('calendarUrl, username and password are required', 400);
+    const data = {
+      name: String(req.body.name || 'Calendar'),
+      calendarUrl: String(calendarUrl),
+      username: String(username),
+      password: encrypt(String(password)),
+      enabled: req.body.enabled === undefined ? true : Boolean(req.body.enabled),
+    };
+    const account = await prisma.crmCalendarAccount.upsert({
+      where: { businessId: business.id },
+      create: { businessId: business.id, ...data },
+      update: data,
+    });
+    res.json({ success: true, data: publicCalendar(account) });
+  } catch (e) { next(e); }
+});
+
+router.delete('/calendar', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const business = await prisma.business.findFirst({ where: { ownerId: req.user!.id }, select: { id: true } });
+    if (business) await prisma.crmCalendarAccount.deleteMany({ where: { businessId: business.id } });
+    res.json({ success: true });
+  } catch (e) { next(e); }
+});
+
+router.post('/sync', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const business = await ownedBusiness(req, String(req.body?.businessId || ''));
+    const [mail, calendar] = await Promise.all([
+      prisma.crmMailAccount.findUnique({ where: { businessId: business.id } }),
+      prisma.crmCalendarAccount.findUnique({ where: { businessId: business.id } }),
+    ]);
+    if (mail?.enabled) await syncMailAccount(mail.id);
+    if (calendar?.enabled) await syncCalendarAccount(calendar.id);
+    res.json({ success: true, data: { synced: true } });
+  } catch (e) { next(e); }
 });
 
 export default router;

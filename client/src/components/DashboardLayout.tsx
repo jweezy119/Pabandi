@@ -151,6 +151,7 @@ function buildNavFromSettings(settings: any, osName: string, defaultNav?: NavIte
       { path: '/contact/builder', label: 'Build your CRM', icon: 'auto_awesome', feature: null },
       { path: '/business-os', label: 'Workspace', icon: 'grid_view', feature: null },
       { path: '/contact/settings/automations', label: 'Automations', icon: 'bolt', feature: null },
+      { path: '/contact/settings/channels', label: 'Email & Calendar', icon: 'mail', feature: null },
       { path: '/contact/settings/modules', label: 'Settings', icon: 'settings', feature: null },
     ],
     'Trust OS': [

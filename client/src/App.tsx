@@ -111,6 +111,7 @@ const CompaniesPage = lazy(() => import('./pages/crm/CompaniesPage').then((m) =>
 const AutomationPage = lazy(() => import('./pages/crm/settings/AutomationPage').then((m) => ({ default: m.AutomationPage })));
 const CrmBuilderPage = lazy(() => import('./pages/crm/CrmBuilderPage').then((m) => ({ default: m.CrmBuilderPage })));
 const CustomObjectPage = lazy(() => import('./pages/crm/CustomObjectPage').then((m) => ({ default: m.CustomObjectPage })));
+const ChannelsSettingsPage = lazy(() => import('./pages/crm/settings/ChannelsSettingsPage').then((m) => ({ default: m.ChannelsSettingsPage })));
 const ContactClientDetailPage = lazy(() => import('./pages/contact/ContactClientDetailPage'));
 const ContactDealsPage = lazy(() => import('./pages/contact/ContactDealsPage'));
 const ContactArbitrationPage = lazy(() => import('./pages/contact/ContactArbitrationPage'));
@@ -372,6 +373,7 @@ function AnimatedAppRoutes() {
           <Route path="contact/settings/notifications" element={<NotificationsPage />} />
           <Route path="contact/settings/api-keys" element={<ApiKeysPage />} />
           <Route path="contact/settings/automations" element={<BusinessGuard><AutomationPage /></BusinessGuard>} />
+          <Route path="contact/settings/channels" element={<BusinessGuard><ChannelsSettingsPage /></BusinessGuard>} />
           <Route path="contact/settings/webhooks" element={<WebhooksPage />} />
           {/* Was unguarded, so a personal-mode user could reach it by typing the URL
               while every other ContactOS route showed the mode gate. It enrolls a

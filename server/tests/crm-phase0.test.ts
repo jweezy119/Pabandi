@@ -214,6 +214,33 @@ describe('CRM inline editing, preview and API docs', () => {
     expect(settings).toMatch(/<option value="select">Choice<\/option>/);
   });
 
+  it('wires real IMAP/CalDAV sync with encrypted credentials', () => {
+    const schema = readFileSync(resolve(__dirname, '../prisma/schema.prisma'), 'utf8');
+    expect(schema).toContain('model CrmMailAccount');
+    expect(schema).toContain('model CrmCalendarAccount');
+    const service = src('services/channelSync.service.ts');
+    expect(service).toMatch(/from 'imapflow'/);
+    expect(service).toMatch(/from 'tsdav'/);
+    expect(service).toMatch(/decrypt\(/);
+    expect(service).toMatch(/syncAllChannels/);
+    const pkg = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf8'));
+    expect(pkg.scripts.worker).toMatch(/dist\/src\/queues\/worker\.js/);
+    const worker = src('queues/worker.ts');
+    expect(worker).toMatch(/new Worker/);
+    expect(worker).toMatch(/runEmailJob/);
+  });
+
+  it('exposes channel account setup in CRM settings', () => {
+    const app = readFileSync(resolve(__dirname, '../../client/src/App.tsx'), 'utf8');
+    expect(app).toMatch(/contact\/settings\/channels/);
+    const page = readFileSync(
+      resolve(__dirname, '../../client/src/pages/crm/settings/ChannelsSettingsPage.tsx'),
+      'utf8',
+    );
+    expect(page).toMatch(/channels\/mail/);
+    expect(page).toMatch(/channels\/calendar/);
+  });
+
   it('ships a signed, provider-agnostic email/calendar channel layer', () => {
     const routes = src('routes/channels.routes.ts');
     expect(routes).toMatch(/router\.get\('\/:businessId\/messages'/);
