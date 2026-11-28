@@ -24,7 +24,7 @@ router.post('/', async (req: any, res) => {
     if (!parsed.success) {
       return res.status(400).json({
         error: 'Validation failed',
-        details: parsed.error.errors.map(e => ({ path: e.path.join('.'), message: e.message })),
+        details: parsed.error.issues.map((e: any) => ({ path: e.path.join('.'), message: e.message })),
       });
     }
 

@@ -94,7 +94,7 @@ export const createBookingSchema = z.object({
   customerEmail: z.string().trim().email().max(200),
   customerPhone: optShortText(40),
   notes: optShortText(2000),
-  customFields: z.record(z.unknown()).optional(),
+  customFields: z.record(z.string(), z.unknown()).optional(),
   depositAmount: usd.optional(),
   clientAddress: optShortText(300),
   clientLat: z.number().min(-90).max(90).optional(),

@@ -46,10 +46,10 @@ const CreateEscrowSchema = z.object({
   currency: z.string().default('USDC'),
   conditions: z.array(z.object({
     type: z.enum(['delivery', 'milestone', 'checkin', 'manual']),
-    verify: z.record(z.any()),
+    verify: z.record(z.string(), z.any()),
   })) as z.ZodType<EscrowCondition[]>,
   deadline: z.string().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 const StatusUpdateSchema = z.object({
@@ -82,7 +82,7 @@ router.post('/', authenticate, writeLimiter, async (req: AuthRequest, res: Respo
     });
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ success: false, error: error.errors });
+      return res.status(400).json({ success: false, error: error.issues });
     }
     logger.error(`[UniversalEscrow] create error: ${error.message}`);
     return res.status(500).json({ success: false, error: error.message });
@@ -111,7 +111,7 @@ router.patch('/:referenceId/status', authenticate, writeLimiter, async (req: Aut
     });
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ success: false, error: error.errors });
+      return res.status(400).json({ success: false, error: error.issues });
     }
     // Preserve the status a CustomError carries. Without this the party check
     // below throws a 403 that the generic catch flattens to a 500, which both

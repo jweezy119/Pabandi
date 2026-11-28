@@ -30,13 +30,13 @@ const CreatePaymentSchema = z.object({
   amount: z.number().positive('Amount must be greater than 0'),
   currency: z.string().length(3, 'Currency must be 3-letter ISO code').default('USD'),
   reference: z.string().max(100).optional(),
-  payer: z.record(z.any()).optional(),
-  payee: z.record(z.any()).optional(),
+  payer: z.record(z.string(), z.any()).optional(),
+  payee: z.record(z.string(), z.any()).optional(),
   preferredRail: z.string().default('auto'),
   requireSharia: z.boolean().default(false),
   isAgent: z.boolean().default(false),
   webhookUrl: z.string().url().optional().or(z.literal('')),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   dryRun: z.boolean().optional(),
 });
 
