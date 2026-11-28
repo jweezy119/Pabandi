@@ -7,7 +7,7 @@ import api from '../services/api';
 import PaymentService from '../services/payment';
 import toast from 'react-hot-toast';
 import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
-import { getAssociatedTokenAddressSync } from '@solana/spl-token';
+import { getAssociatedTokenAddress } from '../lib/solanaToken';
 import IDL from '../utils/pabandi_escrow.json';
 
 // Simple Phantom provider interface for MVP
@@ -131,7 +131,7 @@ export const CheckoutSessionPage = () => {
         [Buffer.from('escrow_vault'), Buffer.from(reservationId), customerPubkey.toBuffer()],
         PROGRAM_ID
       );
-      const customerTokenAccount = getAssociatedTokenAddressSync(mintPubkey, customerPubkey);
+      const customerTokenAccount = await getAssociatedTokenAddress(mintPubkey, customerPubkey);
 
       toast('Building transaction...', { icon: '🏗️' });
 

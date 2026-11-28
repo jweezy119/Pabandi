@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { CLAY_FADE, CLAY_SETTLE, CLAY_SPRING } from './animations/clayMotion';
+import { CLAY_FADE, CLAY_SETTLE } from './animations/clayMotion';
 import { Connection, PublicKey } from '@solana/web3.js';
-import { getAssociatedTokenAddress } from '@solana/spl-token';
+import { getAssociatedTokenAddress } from '../lib/solanaToken';
 import { useAuthStore } from '../store/authStore';
 import { useWalletModal } from '../hooks/useWalletModal';
 import { useEmbeddedSolanaWallet } from '../hooks/useEmbeddedSolanaWallet';
@@ -10,7 +10,7 @@ import { walletService } from '../services/api';
 import { Modal } from './primitives/Modal';
 import { Button } from './primitives';
 import { ClayTabs } from './primitives/ClayTabs';
-import { Bot, Clock, Zap } from 'lucide-react';
+import { Bot, Clock } from 'lucide-react';
 
 /**
  * Universal wallet — the identity layer for both Business and Personal modes.

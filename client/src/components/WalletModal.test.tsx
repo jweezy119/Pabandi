@@ -39,7 +39,7 @@ vi.mock('@solana/web3.js', () => ({
   PublicKey: vi.fn((v: string) => ({ toBase58: () => v })),
 }));
 
-vi.mock('@solana/spl-token', () => ({
+vi.mock('../lib/solanaToken', () => ({
   getAssociatedTokenAddress: async (mint: unknown, owner: unknown) => ({ mint, owner }),
 }));
 
